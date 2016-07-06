@@ -2,42 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace FluentTask
+namespace SpectacleSample
 {
-	public class Program
-	{
-		public static void Main()
-		{
-			var spectacle = new Spectacle()
-				.Say("Привет мир!")
-				.Delay(TimeSpan.FromSeconds(1))
-				.UntilKeyPressed(s =>
-					s.TypeText("тра-ля-ля")
-					.TypeText("тру-лю-лю")
-				)
-				.Say("Пока-пока!");
-
-			spectacle.Play();
-		}
-	}
-
-	public static class SpectacleExtensions
-	{
-		public static Spectacle TypeText(this Spectacle spectacle, string message)
-		{
-			spectacle.Schedule(() =>
-			{
-				foreach (var ch in message)
-				{
-					Console.Write(ch);
-					Thread.Sleep(50);
-				}
-				Console.WriteLine();
-			});
-			return spectacle;
-		}
-	}
-
 	public class Spectacle
 	{
 		private readonly List<Action> actions = new List<Action>();

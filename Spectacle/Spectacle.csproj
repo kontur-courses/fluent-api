@@ -7,8 +7,8 @@
     <ProjectGuid>{EFA9335C-411B-4597-B0B6-5438D1AE04C3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FluentTask</RootNamespace>
-    <AssemblyName>FluentTask</AssemblyName>
+    <RootNamespace>SpectacleSample</RootNamespace>
+    <AssemblyName>SpectacleSample</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -43,6 +43,8 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Spectacle.cs" />
+    <Compile Include="SpectacleExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
