@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping", "FluentMapper\FluentMapping.csproj", "{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "FluentMapper.Tests\FluentMapping.Tests.csproj", "{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
