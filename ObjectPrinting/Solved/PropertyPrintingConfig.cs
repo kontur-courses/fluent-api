@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Solved
 {
-	public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
 	{
 		private readonly PrintingConfig<TOwner> printingConfig;
 

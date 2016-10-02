@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
-using System.Text;
-
-namespace ObjectPrinting
+namespace ObjectPrinting.Solved
 {
 	public class ObjectPrinter
 	{

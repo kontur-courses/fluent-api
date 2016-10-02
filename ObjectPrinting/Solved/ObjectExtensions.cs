@@ -1,4 +1,4 @@
-namespace ObjectPrinting
+namespace ObjectPrinting.Solved
 {
 	public static class ObjectExtensions
 	{
