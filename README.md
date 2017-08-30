@@ -29,7 +29,7 @@ A.CallTo(() => shop.GetTopSellingCandy()).Returns(lollipop);
 
 ## Очная встреча
 
-~ 3.5 часа
+~ 3 часа
 
 
 ## Закрепление материала
