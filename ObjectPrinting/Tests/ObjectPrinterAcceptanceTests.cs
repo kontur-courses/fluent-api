@@ -14,32 +14,26 @@ namespace ObjectPrinting.Tests
 
 			var printer = ObjectPrinter.For<Person>()
 				//1. Исключить из сериализации свойства определенного типа
-				.ExcludeType<Guid>()
+				.Exclude<Guid>()
 				//2. Указать альтернативный способ сериализации для определенного типа
-				.ConfigureType<Guid>()
-					.SetSerializer(config => config.ToString())
+				.Printing<Guid>().Using(g => g.ToString())
 				//3. Для числовых типов (int, double, long) указать культуру
-				.ConfigureType<int>()
-					.SetSerializer(i => "")
-				.ConfigureType<int>()
-					.SetCulture(CultureInfo.CurrentUICulture)
+				.Printing<int>().SetCulture(CultureInfo.InvariantCulture)
 				//4. Настроить сериализацию конкретного свойства
-				.ConfigureProperty(obj => obj.Name)
-					.SetSerializer(e => e.ToString())
+				.Printing(obj => obj.Height).Using(h => $"{h} cm")
 				//5. Настроить обрезание строковых свойств 
-				.ConfigureType<string>()
-					.ShrinkToLength(10)
 			    //   (метод должен быть виден только для строковых свойств)
+				.Printing<string>().ShrinkToLength(15)
 				//6. Исключить из сериализации конкретного свойства
-				.ExcludeProperty(obj => obj.Name);
+				.Exclude(obj => obj.Name);
             
             string s1 = printer.PrintToString(person);
 
 			//7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию		
 			string s2 = person.PrintToString();
 			//8. ...с конфигурированием
-			string s3 = person.PrintToString(o =>
-				o.ConfigureType<int>().SetCulture(CultureInfo.CurrentCulture));
+			string s3 = person.PrintToString(config => 
+                config.Printing<double>().SetCulture(CultureInfo.CurrentCulture));
 		}
 	}
 }
