@@ -1,15 +1,24 @@
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public  PrintingConfig<TOwner> ExcludeType<T>()
+        {
+            return this;
+        }
+
+        
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
+        
 
         private string PrintToString(object obj, int nestingLevel)
         {
@@ -37,5 +46,16 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(object unknown)
+        {
+            return new PropertyPrintingConfig<TOwner,TPropType>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing(Expression<Func<TOwner, TPropType>> selector)
+        {
+            return 
+        }
+                
     }
 }
