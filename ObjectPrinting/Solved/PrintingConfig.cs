@@ -1,13 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting.Solved
 {
 	public class PrintingConfig<TOwner>
 	{
-		public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+	    private List<Type> excludingTypes;
+	    private List<MemberInfo> excludingProperties;
+
+	    public PrintingConfig()
+	    {
+	        excludingTypes = new List<Type>();
+            excludingProperties = new List<MemberInfo>();
+        }
+
+	    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
 		{
 			return new PropertyPrintingConfig<TOwner, TPropType>(this);
 		}
@@ -19,11 +30,13 @@ namespace ObjectPrinting.Solved
 
 		public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
 		{
-			return this;
+            excludingProperties.Add(((MemberExpression)memberSelector.Body).Member);
+            return this;
 		}
 
 		internal PrintingConfig<TOwner> Excluding<TPropType>()
 		{
+            excludingTypes.Add(typeof(TPropType));
 			return this;
 		}
 
