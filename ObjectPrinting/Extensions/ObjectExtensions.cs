@@ -2,7 +2,7 @@ using System;
 
 namespace ObjectPrinting
 {
-    public static class PrintingExtensions
+    public static class ObjectExtensions
     {
         public static string PrintToString<T>(this T obj)
         {

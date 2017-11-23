@@ -1,6 +1,6 @@
 namespace ObjectPrinting
 {
-    public interface IPropertyPrintingConfig<TOwner, TProp>
+    public interface IChildPrintingConfig<TOwner, TContent>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
     }
