@@ -10,27 +10,11 @@ namespace ObjectPrinting.Tests
     [TestFixture]
 	public class ObjectPrinterAcceptanceTests
     {
-        private Person person;
-        private Student student;
-
-	    [SetUp]
-	    public void SetUp()
-	    {
-	        person = new Person { Name = "Alexeeeeeeeey", Age = 19, Height = 178.5 };
-            student = new Student
-            {
-                Name = "Alexeeeeeeeeeeeeeeeeeey",
-                Age = 19,
-                Height = 178.5,
-                Number = 5,
-                School = new School { Number = 5, Address = "Address" }
-            };
-        }
-
 		[Test]
 		public void Demo()
 		{
-			var printer = ObjectPrinter.For<Person>()
+            var person = new Person { Name = "Alexeeeeeeeey", Age = 19, Height = 178.5 };
+            var printer = ObjectPrinter.For<Person>()
 				//1. Исключить из сериализации свойства определенного типа
 				.Excluding<Guid>()
 				//2. Указать альтернативный способ сериализации для определенного типа
@@ -57,40 +41,5 @@ namespace ObjectPrinting.Tests
                 config.Printing<double>().WithCulture(CultureInfo.InvariantCulture));
 		    Console.WriteLine(s3);
 		}
-
-	    [Test]
-	    public void ApplyConfiguration_ToNestedProperties()
-	    {
-	        var printer = ObjectPrinter.For<Student>()
-	            .Excluding<Guid>()
-	            .Excluding<int>()
-	            .Printing<string>().ShrinkedToLength(4)
-	            .Build();
-
-	        Console.WriteLine(printer.PrintToString(student));
-
-	    }
-
-	    [Test]
-	    public void ShouldNotOverrideExclusion_WithDifferentBehaviour()
-	    {
-	        var printer = ObjectPrinter.For<Person>()
-	            .Excluding<int>()
-	            .Printing(p => p.Age).Using(age => "it shouldn't be printed")
-	            .Build();
-
-	        Console.WriteLine(printer.PrintToString(person));
-	    }
-
-        [Test]
-        public void ShouldNotExcludeProperties_WithSameNames()
-        {
-            var printer = ObjectPrinter.For<Student>()
-                .Excluding(s => s.Number)
-                .Printing(s => s.School.Number).Using(n => "it should be printed")
-                .Build();
-
-            Console.WriteLine(printer.PrintToString(student));
-        }
     }
 }

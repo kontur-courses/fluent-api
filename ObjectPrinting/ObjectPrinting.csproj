@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Configs\IChildPrintingConfig.cs" />
     <Compile Include="Configs\IPrintingConfig.cs" />
+    <Compile Include="Tests\ObjectPrinter_Should.cs" />
     <Compile Include="Tests\TestClasses\School.cs" />
     <Compile Include="Tests\TestClasses\Student.cs" />
     <Compile Include="Transformators\ITransformator.cs" />
