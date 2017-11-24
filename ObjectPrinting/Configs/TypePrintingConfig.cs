@@ -13,7 +13,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<T, string> serialize)
         {
-            parentConfig.SetTypeTransformationRule(serialize);
+            parentConfig.SetTypeTransformationRule(serialize, TransformationType.TypeSerialization);
             return parentConfig;
         }
 

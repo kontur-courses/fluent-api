@@ -2,6 +2,7 @@ namespace ObjectPrinting
 {
     public interface ITransformator
     {
+        TransformationType TransformationType { get; }
         string Transform(object obj);
     }
 

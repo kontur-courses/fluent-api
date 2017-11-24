@@ -53,8 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configs\IChildPrintingConfig.cs" />
-    <Compile Include="Tests\TestData\School.cs" />
-    <Compile Include="Tests\TestData\Student.cs" />
+    <Compile Include="Configs\IPrintingConfig.cs" />
+    <Compile Include="Tests\TestClasses\School.cs" />
+    <Compile Include="Tests\TestClasses\Student.cs" />
     <Compile Include="Transformators\ITransformator.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="Configs\PrintingConfig.cs" />
@@ -63,7 +64,8 @@
     <Compile Include="Configs\PropertyPrintingConfig.cs" />
     <Compile Include="Extensions\TypePrintingConfigExtensions.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Tests\TestData\Person.cs" />
+    <Compile Include="Tests\TestClasses\Person.cs" />
+    <Compile Include="Transformators\TransformationType.cs" />
     <Compile Include="Transformators\Transformator.cs" />
     <Compile Include="Configs\TypePrintingConfig.cs" />
   </ItemGroup>

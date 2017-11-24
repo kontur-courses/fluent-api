@@ -6,12 +6,12 @@ namespace ObjectPrinting
     {
         public static string PrintToString<T>(this T obj)
         {
-            return ObjectPrinter.For<T>().PrintToString(obj);
+            return ObjectPrinter.For<T>().Build().PrintToString(obj);
         }
 
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> configure)
         {
-            return configure(ObjectPrinter.For<T>()).PrintToString(obj);
+            return configure(ObjectPrinter.For<T>()).Build().PrintToString(obj);
         }
     }
 }

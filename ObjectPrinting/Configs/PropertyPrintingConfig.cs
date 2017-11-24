@@ -1,21 +1,23 @@
 using System;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TProp> : IChildPrintingConfig<TOwner, TProp>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
-        private readonly string propertyName;
+        private readonly PropertyInfo propertyInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, string propertyName)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo)
         {
             this.parentConfig = parentConfig;
-            this.propertyName = propertyName;
+            this.propertyInfo = propertyInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProp, string> serialize)
         {
-            parentConfig.SetPropertyTransformationRule(propertyName, serialize);
+            parentConfig.SetPropertyTransformationRule(
+                propertyInfo, serialize, TransformationType.PropertyySerialization);
             return parentConfig;
         }
 
