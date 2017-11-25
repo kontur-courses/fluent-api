@@ -7,19 +7,23 @@ using System.Text;
 
 namespace ObjectPrinting.Solved
 {
-	public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
 	{
 	    private List<Type> excludingTypes;
 	    private List<string> excludingPropertiesNames;
-	    private Dictionary<Type, Func<TOwner, string>> typePrintingFuncs;
-        private Dictionary<string, Func<TOwner, string>> propertiesPrintingFuncs;
+	    private Dictionary<Type, Func<object, string>> typeSerialisations;
+        private Dictionary<string, Func<object, string>> propertiesSerialisations;
+	    Action<Type, Func<object, string>> IPrintingConfig<TOwner>.AddTypeSerialisation => AddTypeSerialisation;
+
+	    Action<string, Func<object, string>> IPrintingConfig<TOwner>.AddPropertySerialisation
+	        => AddPropertySerialisation;
 
         public PrintingConfig()
 	    {
 	        excludingTypes = new List<Type>();
             excludingPropertiesNames = new List<string>();
-            typePrintingFuncs = new Dictionary<Type, Func<TOwner, string>>();
-            propertiesPrintingFuncs = new Dictionary<string, Func<TOwner, string>>();
+            typeSerialisations = new Dictionary<Type, Func<object, string>>();
+            propertiesSerialisations = new Dictionary<string, Func<object, string>>();
         }
 
 	    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -78,5 +82,15 @@ namespace ObjectPrinting.Solved
 			}
 			return sb.ToString();
 		}
+
+	    private void AddTypeSerialisation(Type type, Func<object, string> serialisation)
+	    {
+	        typeSerialisations.Add(type, serialisation);
+	    }
+
+	    private void AddPropertySerialisation(string propertyName, Func<object, string> serialisation)
+	    {
+	        propertiesSerialisations.Add(propertyName, serialisation);
+	    }
 	}
 }
