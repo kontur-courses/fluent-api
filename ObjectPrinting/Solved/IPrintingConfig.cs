@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Solved
 {
@@ -6,5 +7,6 @@ namespace ObjectPrinting.Solved
     {
         Action<Type, Func<object, string>> AddTypeSerialisation { get; }
         Action<string, Func<object, string>> AddPropertySerialisation { get; }
+        Action<Type, CultureInfo> AddTypeCulture { get; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,14 +10,17 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
 	{
-	    private List<Type> excludingTypes;
-	    private List<string> excludingPropertiesNames;
-	    private Dictionary<Type, Func<object, string>> typeSerialisations;
-        private Dictionary<string, Func<object, string>> propertiesSerialisations;
+	    private readonly List<Type> excludingTypes;
+	    private readonly List<string> excludingPropertiesNames;
+	    private readonly Dictionary<Type, Func<object, string>> typeSerialisations;
+        private readonly Dictionary<string, Func<object, string>> propertiesSerialisations;
+	    private readonly Dictionary<Type, CultureInfo> typeCultures;
 	    Action<Type, Func<object, string>> IPrintingConfig<TOwner>.AddTypeSerialisation => AddTypeSerialisation;
 
 	    Action<string, Func<object, string>> IPrintingConfig<TOwner>.AddPropertySerialisation
 	        => AddPropertySerialisation;
+        Action<Type, CultureInfo> IPrintingConfig<TOwner>.AddTypeCulture => AddTypeCulture;
+
 
         public PrintingConfig()
 	    {
@@ -24,6 +28,7 @@ namespace ObjectPrinting.Solved
             excludingPropertiesNames = new List<string>();
             typeSerialisations = new Dictionary<Type, Func<object, string>>();
             propertiesSerialisations = new Dictionary<string, Func<object, string>>();
+            typeCultures = new Dictionary<Type, CultureInfo>();
         }
 
 	    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -91,6 +96,11 @@ namespace ObjectPrinting.Solved
 	    private void AddPropertySerialisation(string propertyName, Func<object, string> serialisation)
 	    {
 	        propertiesSerialisations.Add(propertyName, serialisation);
+	    }
+
+	    private void AddTypeCulture(Type type, CultureInfo culture)
+	    {
+	        typeCultures.Add(type, culture);
 	    }
 	}
 }
