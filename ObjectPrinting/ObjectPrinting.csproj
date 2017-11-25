@@ -55,6 +55,7 @@
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Solved\IPropertyPrintingConfig.cs" />
     <Compile Include="Solved\ObjectExtensions.cs" />
     <Compile Include="Solved\ObjectPrinter.cs" />
     <Compile Include="Solved\PrintingConfig.cs" />

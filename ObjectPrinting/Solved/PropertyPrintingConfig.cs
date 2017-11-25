@@ -4,10 +4,11 @@ using System.Globalization;
 namespace ObjectPrinting.Solved
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
-	{
-		private readonly PrintingConfig<TOwner> printingConfig;
+    {
+        private readonly PrintingConfig<TOwner> printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
-		public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
 		{
 			this.printingConfig = printingConfig;
 		}
@@ -16,17 +17,5 @@ namespace ObjectPrinting.Solved
 		{
 			return printingConfig;
 		}
-
-		public PrintingConfig<TOwner> Using(CultureInfo culture)
-		{
-			return printingConfig;
-		}
-
-		PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-	}
-
-	public interface IPropertyPrintingConfig<TOwner, TPropType>
-	{
-		PrintingConfig<TOwner> ParentConfig { get; }
 	}
 }
