@@ -68,53 +68,66 @@ namespace ObjectPrinting.Solved
             var type = obj.GetType();
 
 		    if (typeSerialisations.ContainsKey(type))
-		        return typeSerialisations[type](obj);
+		        return typeSerialisations[type](obj) + Environment.NewLine;
+
+            var numericTypes = new[]
+            {
+                typeof(int), typeof(double), typeof(float)
+            };
+            if (numericTypes.Contains(type) && typeCultures.ContainsKey(type))
+                return NumericToString(obj) + Environment.NewLine;
 
             var finalTypes = new[]
 		    {
 		        typeof(int), typeof(double), typeof(float), typeof(string),
 		        typeof(DateTime), typeof(TimeSpan)
 		    };
-            var numericTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float)
-            };
-            if (numericTypes.Contains(type) && typeCultures.ContainsKey(type))
-                // ReSharper disable once PossibleNullReferenceException
-                return (string)type.GetMethod("ToString", new [] {typeof(CultureInfo)})
-                    .Invoke(obj, new object[] {typeCultures[type]}) + Environment.NewLine;
             if (finalTypes.Contains(type))
 				return obj + Environment.NewLine;
 
 			var identation = new string('\t', nestingLevel + 1);
 			var sb = new StringBuilder();
 			sb.AppendLine(type.Name);
-			foreach (var propertyInfo in type.GetProperties().Where(i => !ignoringTypes.Contains(i.PropertyType)))
-			{
-			    var propName = propertyInfo.Name;
-                if(ignoringPropertiesNames.Contains(propName) || ignoringTypes.Contains(propertyInfo.PropertyType))
-                    continue;
+		    var properPropertiesStrings = type.GetProperties()
+		        .Where(p => !(ignoringTypes.Contains(p.PropertyType) || ignoringPropertiesNames.Contains(p.Name)))
+		        .Select(p => GetPropertyString(obj, p, nestingLevel));
+		    foreach (var propertyStr in properPropertiesStrings)
+		        sb.Append(propertyStr);
+			//foreach (var propertyInfo in type.GetProperties().Where(i => !ignoringTypes.Contains(i.PropertyType)))
+			//{
+			//    var propName = propertyInfo.Name;
+   //             if(ignoringPropertiesNames.Contains(propName))
+   //                 continue;
 
-			    if (propertiesSerialisations.ContainsKey(propName))
-			    {
-			        sb.Append(identation + propName + " = " +
-                              propertiesSerialisations[propName](propertyInfo.GetValue(obj)) + Environment.NewLine);
-                    continue;
-                }
+			//    if (propertiesSerialisations.ContainsKey(propName))
+			//    {
+			//        sb.Append(identation + propName + " = " +
+   //                           propertiesSerialisations[propName](propertyInfo.GetValue(obj)) + Environment.NewLine);
+   //                 continue;
+   //             }
 
-                if (typeSerialisations.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + propName + " = " +
-                              typeSerialisations[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) + Environment.NewLine);
-                    continue;
-                }
-
-                sb.Append(identation + propName + " = " +
-			              PrintToString(propertyInfo.GetValue(obj),
-			                  nestingLevel + 1));
-			}
+   //             sb.Append(identation + propName + " = " +
+			//              PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+			//}
 			return sb.ToString();
 		}
+
+	    private string GetPropertyString(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            var prefix = new string('\t', nestingLevel + 1) + propertyInfo.Name + " = ";
+            if (propertiesSerialisations.ContainsKey(propertyInfo.Name))
+                return prefix + propertiesSerialisations[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine;
+
+            return prefix + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+        }
+
+	    private string NumericToString(object printingObj)
+	    {
+	        // ReSharper disable once PossibleNullReferenceException
+	        return (string) printingObj.GetType()
+	            .GetMethod("ToString", new[] {typeof(CultureInfo)})
+	            .Invoke(printingObj, new object[] {typeCultures[printingObj.GetType()]});
+	    }
 
 	    private void AddTypeSerialisation(Type type, Func<object, string> serialisation)
 	    {
