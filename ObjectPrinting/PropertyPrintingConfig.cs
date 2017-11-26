@@ -5,8 +5,9 @@ namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
-        private PrintingConfig<TOwner> printingConfig;
-
+        private readonly PrintingConfig<TOwner> printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
@@ -14,17 +15,22 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> resializeFuction)
         {
+            return printingConfig;
+        }
+             
+        public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
+        {
+            return printingConfig;
+        }
+
+        public PrintingConfig<TOwner> CutToLenght(int i)
+        {
             return new PrintingConfig<TOwner>();
         }
-        
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>
-            .PrintingConfig => printingConfig;
-
-
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
-        PrintingConfig<TOwner> PrintingConfig { get; }
+        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }

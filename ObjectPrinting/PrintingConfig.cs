@@ -12,13 +12,11 @@ namespace ObjectPrinting
         {
             return this;
         }
-
         
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
-        
 
         private string PrintToString(object obj, int nestingLevel)
         {
@@ -47,15 +45,19 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(object unknown)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner,TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing(Expression<Func<TOwner, TPropType>> selector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
-            return 
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
-                
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+		{
+			return this;
+		}
     }
 }

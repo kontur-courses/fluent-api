@@ -24,14 +24,19 @@ namespace ObjectPrinting.Tests
 				//3. Для числовых типов указать культуру
 				.Printing<int>().Using(CultureInfo.CurrentCulture)
 				//4. Настроить сериализацию конкретного свойства
-				.Printing<int>(p => p.Name).Using(age => age.ToString());
+				.Printing<int>(p => p.Age).Using(age => age.ToString())
 				//5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+				.Printing<string>(p => p.Name).CutToLenght(10)
 				//6. Исключить из сериализации конкретного свойства
+				.Excluding(p => p.Name);
             
             string s1 = printer.PrintToString(person);
 
-			//7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию		
+			//7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию	
+			
+			string s2 = person.PrintToString();
 			//8. ...с конфигурированием
+			string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
 		}
 	}
 }
