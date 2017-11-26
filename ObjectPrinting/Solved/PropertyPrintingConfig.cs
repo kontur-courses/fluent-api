@@ -17,12 +17,12 @@ namespace ObjectPrinting.Solved
 
 		public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
 		{
-		    if (string.IsNullOrWhiteSpace(propertyName))
+		    if (!string.IsNullOrWhiteSpace(propertyName))
 		        ((IPrintingConfig<TOwner>) printingConfig)
-		            .AddPropertySerialisation(propertyName, print as Func<object, string>);
+		            .AddPropertySerialisation(propertyName, obj => print((TPropType)obj));
 		    else
 		        ((IPrintingConfig<TOwner>) printingConfig)
-		            .AddTypeSerialisation(typeof(TPropType), print as Func<object, string>);
+		            .AddTypeSerialisation(typeof(TPropType), obj => print((TPropType)obj));
             return printingConfig;
 		}
 	}
