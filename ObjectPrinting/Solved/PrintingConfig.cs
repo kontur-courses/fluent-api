@@ -61,7 +61,6 @@ namespace ObjectPrinting.Solved
 
 		private string PrintToString(object obj, int nestingLevel)
 		{
-			//TODO apply configurations
 		    if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -84,31 +83,15 @@ namespace ObjectPrinting.Solved
 		    };
             if (finalTypes.Contains(type))
 				return obj + Environment.NewLine;
+            
+			var sb = new StringBuilder(type.Name);
 
-			var identation = new string('\t', nestingLevel + 1);
-			var sb = new StringBuilder();
-			sb.AppendLine(type.Name);
 		    var properPropertiesStrings = type.GetProperties()
 		        .Where(p => !(ignoringTypes.Contains(p.PropertyType) || ignoringPropertiesNames.Contains(p.Name)))
 		        .Select(p => GetPropertyString(obj, p, nestingLevel));
 		    foreach (var propertyStr in properPropertiesStrings)
 		        sb.Append(propertyStr);
-			//foreach (var propertyInfo in type.GetProperties().Where(i => !ignoringTypes.Contains(i.PropertyType)))
-			//{
-			//    var propName = propertyInfo.Name;
-   //             if(ignoringPropertiesNames.Contains(propName))
-   //                 continue;
 
-			//    if (propertiesSerialisations.ContainsKey(propName))
-			//    {
-			//        sb.Append(identation + propName + " = " +
-   //                           propertiesSerialisations[propName](propertyInfo.GetValue(obj)) + Environment.NewLine);
-   //                 continue;
-   //             }
-
-   //             sb.Append(identation + propName + " = " +
-			//              PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-			//}
 			return sb.ToString();
 		}
 
