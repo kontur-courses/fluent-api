@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,8 +9,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        
         public  PrintingConfig<TOwner> ExcludeType<T>()
         {
+            excludedTypes.Add(typeof(TOwner));
             return this;
         }
         
