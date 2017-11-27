@@ -15,11 +15,14 @@ namespace ObjectPrinting.Solved
 	    private readonly Dictionary<Type, Func<object, string>> typeSerialisations;
         private readonly Dictionary<string, Func<object, string>> propertiesSerialisations;
 	    private readonly Dictionary<Type, CultureInfo> typeCultures;
+	    private readonly Dictionary<string, int> strPropsLengths;
+	    private int averageStringLength;
 	    Action<Type, Func<object, string>> IPrintingConfig<TOwner>.AddTypeSerialisation => AddTypeSerialisation;
-
 	    Action<string, Func<object, string>> IPrintingConfig<TOwner>.AddPropertySerialisation
 	        => AddPropertySerialisation;
         Action<Type, CultureInfo> IPrintingConfig<TOwner>.AddTypeCulture => AddTypeCulture;
+        Action<int> IPrintingConfig<TOwner>.SetAverageStringLength => SetAverageStringLength;
+        Action<string, int> IPrintingConfig<TOwner>.SetStringPropertyLength => SetStringPropertyLength;
 
 
         public PrintingConfig()
@@ -29,7 +32,9 @@ namespace ObjectPrinting.Solved
             typeSerialisations = new Dictionary<Type, Func<object, string>>();
             propertiesSerialisations = new Dictionary<string, Func<object, string>>();
             typeCultures = new Dictionary<Type, CultureInfo>();
-        }
+            strPropsLengths = new Dictionary<string, int>();
+	        averageStringLength = -1;
+	    }
 
 	    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
 		{
@@ -69,6 +74,9 @@ namespace ObjectPrinting.Solved
 		    if (typeSerialisations.ContainsKey(type))
 		        return typeSerialisations[type](obj) + Environment.NewLine;
 
+		    if (obj is string && averageStringLength > 0)
+		        return ((string) obj).Substring(0, averageStringLength);
+
             var numericTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float)
@@ -101,6 +109,9 @@ namespace ObjectPrinting.Solved
             if (propertiesSerialisations.ContainsKey(propertyInfo.Name))
                 return prefix + propertiesSerialisations[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine;
 
+            if(strPropsLengths.ContainsKey(propertyInfo.Name))
+                return prefix + ((string)propertyInfo.GetValue(obj)).Substring(0, strPropsLengths[propertyInfo.Name]) + Environment.NewLine;
+
             return prefix + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
 
@@ -125,6 +136,16 @@ namespace ObjectPrinting.Solved
 	    private void AddTypeCulture(Type type, CultureInfo culture)
 	    {
 	        typeCultures.Add(type, culture);
-	    }
-	}
+        }
+
+        private void SetStringPropertyLength(string propertyName, int maxLength)
+        {
+            strPropsLengths.Add(propertyName, maxLength);
+        }
+
+        private void SetAverageStringLength(int maxLength)
+        {
+            averageStringLength = maxLength;
+        }
+    }
 }

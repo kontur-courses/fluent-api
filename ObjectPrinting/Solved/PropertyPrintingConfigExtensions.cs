@@ -7,7 +7,14 @@ namespace ObjectPrinting.Solved
 		public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, 
             int maxLen)
 		{
-			return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+		    IPropertyPrintingConfig<TOwner, string> propertyConfig = propConfig;
+
+		    if (string.IsNullOrWhiteSpace(propertyConfig.PropName))
+		        ((IPrintingConfig<TOwner>) propertyConfig.ParentConfig).SetAverageStringLength(maxLen);
+		    else
+                ((IPrintingConfig<TOwner>)propertyConfig.ParentConfig).SetStringPropertyLength(propertyConfig.PropName, maxLen);
+
+            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, 
             CultureInfo cultureInfo)

@@ -6,6 +6,7 @@ namespace ObjectPrinting.Solved
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly string propertyName;
+        string IPropertyPrintingConfig<TOwner, TPropType>.PropName => propertyName;
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName=null)
