@@ -1,19 +1,46 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
+using System.Reflection;
 using System.Text;
+using System.Xml.Schema;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private Dictionary<Type, Delegate> specialTypeSerialization = new Dictionary<Type, Delegate>();
+        private Dictionary<Type, CultureInfo> cultureTypeSerialization = new Dictionary<Type, CultureInfo>();
         
-        public  PrintingConfig<TOwner> ExcludeType<T>()
+        
+        public void AddTypeSerializing(Type type, Delegate func)
         {
-            excludedTypes.Add(typeof(TOwner));
+            specialTypeSerialization[type] = func;
+        }
+        
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
         
@@ -24,7 +51,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -33,35 +59,37 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            var stringBuilder = new StringBuilder(type.Name + Environment.NewLine);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propertyType = propertyInfo.PropertyType;
+                if (excludedTypes.Contains(propertyType)) continue;
+                stringBuilder.Append(identation + propertyInfo.Name + " = " +
+                     PrintToString(GetPropertyObj(obj, propertyInfo), nestingLevel + 1));
             }
-            return sb.ToString();
+            return stringBuilder.ToString();
         }
-
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        
+        private object GetPropertyObj(object obj, PropertyInfo propertyInfo)
         {
-            return new PropertyPrintingConfig<TOwner,TPropType>(this);
+            var propertyType = propertyInfo.PropertyType;
+            if (specialTypeSerialization.ContainsKey(propertyType))
+                return specialTypeSerialization[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
+            if (cultureTypeSerialization.ContainsKey(propertyType))
+                return ((IFormattable) propertyInfo.GetValue(obj)).ToString("G", cultureTypeSerialization[propertyType]);
+            return propertyInfo.GetValue(obj);
+
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector)
+        public void AddCultureForType(Type type, CultureInfo cultureInfo)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            cultureTypeSerialization[type] = cultureInfo;
         }
-
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-		{
-			return this;
-		}
     }
 }

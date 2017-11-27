@@ -15,17 +15,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> resializeFuction)
         {
+            printingConfig.AddTypeSerializing(typeof(TPropType), resializeFuction);
             return printingConfig;
-        }
-             
-        public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
-        {
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> CutToLenght(int i)
-        {
-            return new PrintingConfig<TOwner>();
         }
     }
 

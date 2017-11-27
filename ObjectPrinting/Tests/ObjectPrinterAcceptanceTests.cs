@@ -18,11 +18,11 @@ namespace ObjectPrinting.Tests
 
 			var printer = ObjectPrinter.For<Person>()
 				//1. Исключить из сериализации свойства определенного типа
-				.ExcludeType<Guid>()
+				.Excluding<Guid>()
 				//2. Указать альтернативный способ сериализации для определенного типа
 				.Printing<int>().Using(i => i.ToString())
 				//3. Для числовых типов указать культуру
-				.Printing<int>().Using(CultureInfo.CurrentCulture)
+				.Printing<double>().Using(CultureInfo.CurrentCulture)
 				//4. Настроить сериализацию конкретного свойства
 				.Printing<int>(p => p.Age).Using(age => age.ToString())
 				//5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
