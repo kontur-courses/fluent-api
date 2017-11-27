@@ -75,10 +75,10 @@ namespace ObjectPrinting
             var testClass = new ExampleClass<string>() {Field = "aaa"};
             var type = testClass.GetType();
 
-            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Printing<string>().CutToLenght(2);
+            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Printing<string>().Using(p => p.Length.ToString());
 
             printingConfig.PrintToString(testClass)
-                .Should().Be($"{type.Name}{Environment.NewLine}\tField = aa{Environment.NewLine}");
+                .Should().Be($"{type.Name}{Environment.NewLine}\tField = 3{Environment.NewLine}");
         }
         
         [Test]
