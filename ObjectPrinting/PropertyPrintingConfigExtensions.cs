@@ -51,9 +51,11 @@ namespace ObjectPrinting
         }
         
         public static PrintingConfig<TOwner> CutToLenght<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int i)
+            this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int lenght)
         {
-            return new PrintingConfig<TOwner>();
+            var config = ((IPropertyPrintingConfig<TOwner, string>) propertyPrintingConfig).ParentConfig;
+            config.LengthOfStringProperties = lenght;
+            return config;
         }
     }
 }

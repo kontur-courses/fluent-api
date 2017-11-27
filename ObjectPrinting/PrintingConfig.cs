@@ -16,8 +16,9 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> specialTypeSerialization = new Dictionary<Type, Delegate>();
         private Dictionary<Type, CultureInfo> cultureTypeSerialization = new Dictionary<Type, CultureInfo>();
-        
-        
+        public int LengthOfStringProperties { get; set; } = -1;
+
+
         public void AddTypeSerializing(Type type, Delegate func)
         {
             specialTypeSerialization[type] = func;
@@ -83,6 +84,8 @@ namespace ObjectPrinting
                 return specialTypeSerialization[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
             if (cultureTypeSerialization.ContainsKey(propertyType))
                 return ((IFormattable) propertyInfo.GetValue(obj)).ToString("G", cultureTypeSerialization[propertyType]);
+            if (propertyType == typeof(string) && LengthOfStringProperties >= 0)
+                return ((string) propertyInfo.GetValue(obj)).Substring(0, LengthOfStringProperties);
             return propertyInfo.GetValue(obj);
 
         }

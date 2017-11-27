@@ -24,9 +24,9 @@ namespace ObjectPrinting.Tests
 				//3. Для числовых типов указать культуру
 				.Printing<double>().Using(CultureInfo.CurrentCulture)
 				//4. Настроить сериализацию конкретного свойства
-				.Printing<int>(p => p.Age).Using(age => age.ToString())
+				.Printing(p => p.Age).Using(age => age.ToString())
 				//5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-				.Printing<string>(p => p.Name).CutToLenght(10)
+				.Printing<string>(p => p.Name).CutToLenght(3)
 				//6. Исключить из сериализации конкретного свойства
 				.Excluding(p => p.Name);
             
