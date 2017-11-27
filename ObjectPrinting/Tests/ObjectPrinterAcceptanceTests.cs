@@ -26,14 +26,13 @@ namespace ObjectPrinting.Tests
 				//4. Настроить сериализацию конкретного свойства
 				.Printing(p => p.Age).Using(age => age.ToString())
 				//5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-				.Printing<string>(p => p.Name).CutToLenght(3)
+				.Printing(p => p.Name).CutToLenght(3)
 				//6. Исключить из сериализации конкретного свойства
 				.Excluding(p => p.Name);
             
             string s1 = printer.PrintToString(person);
 
 			//7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию	
-			
 			string s2 = person.PrintToString();
 			//8. ...с конфигурированием
 			string s3 = person.PrintToString(s => s.Excluding(p => p.Age));

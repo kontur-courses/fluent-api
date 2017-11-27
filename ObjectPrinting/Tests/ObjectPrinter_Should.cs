@@ -2,6 +2,7 @@
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
@@ -72,13 +73,13 @@ namespace ObjectPrinting
         [Test]
         public void Printer_ShouldChangeSerializationForProperty()
         {
-            var testClass = new ExampleClass<string>() {Field = "aaa"};
-            var type = testClass.GetType();
+            var person = new Person() {Age = 20, Name = "Denis", Height = 65};
+            var type = person.GetType();
 
-            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Printing<string>().Using(p => p.Length.ToString());
+            var printingConfig = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(age=> "двадцать!");
 
-            printingConfig.PrintToString(testClass)
-                .Should().Be($"{type.Name}{Environment.NewLine}\tField = 3{Environment.NewLine}");
+            printingConfig.PrintToString(person)
+                .Should().Be($"{type.Name}{Environment.NewLine}\tId = Guid{Environment.NewLine}\tName = Denis{Environment.NewLine}\tHeight = 65{Environment.NewLine}\tAge = двадцать!{Environment.NewLine}");
         }
         
         [Test]
@@ -91,6 +92,18 @@ namespace ObjectPrinting
 
             printingConfig.PrintToString(testClass)
                 .Should().Be($"{type.Name}{Environment.NewLine}\tField = aa{Environment.NewLine}");
+        }
+        
+        [Test]
+        public void Printer_ShouldExcludingProperties()
+        {
+            var testClass = new ExampleClass<string>() {Field = "aaa"};
+            var type = testClass.GetType();
+
+            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Excluding(p => p.Field);
+
+            printingConfig.PrintToString(testClass)
+                .Should().Be($"{type.Name}{Environment.NewLine}");
         }
     }
 }

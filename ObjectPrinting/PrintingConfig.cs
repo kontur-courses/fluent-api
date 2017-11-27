@@ -16,6 +16,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> specialTypeSerialization = new Dictionary<Type, Delegate>();
         private Dictionary<Type, CultureInfo> cultureTypeSerialization = new Dictionary<Type, CultureInfo>();
+        private HashSet<string> excludedProperties = new HashSet<string>();
         public int LengthOfStringProperties { get; set; } = -1;
 
 
@@ -36,6 +37,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var propertyMapper = new PropertyMapper<TOwner>();
+            var name = propertyMapper.PropertyName(memberSelector);
+            excludedProperties.Add(name);
             return this;
         }
 
@@ -44,6 +48,7 @@ namespace ObjectPrinting
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
+        
         
         public string PrintToString(TOwner obj)
         {
@@ -70,7 +75,9 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyType = propertyInfo.PropertyType;
+                var propertyName = propertyInfo.Name;
                 if (excludedTypes.Contains(propertyType)) continue;
+                if (excludedProperties.Contains(propertyName)) continue;
                 stringBuilder.Append(identation + propertyInfo.Name + " = " +
                      PrintToString(GetPropertyObj(obj, propertyInfo), nestingLevel + 1));
             }
