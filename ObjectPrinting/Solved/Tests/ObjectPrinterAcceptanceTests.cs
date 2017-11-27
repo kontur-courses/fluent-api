@@ -188,5 +188,42 @@ namespace ObjectPrinting.Solved.Tests
             printer.PrintToString(person)
                 .ShouldBeEquivalentTo(expectedResult);
         }
+
+        [Test]
+        public void ObjectExtantionTest()
+        {
+            var person = new Person { Name = "Artyom Gorodetskiy", Age = 19 };
+            var culture = new CultureInfo(42);
+            var expectedResult = String.Join(Environment.NewLine,
+                new[]
+                {
+                    "Person",
+                    "\tId = Guid",
+                    "\tName = Artyom Gorodetskiy",
+                    "\tHeight = 0",
+                    "\tAge = 19" + Environment.NewLine
+                });
+            person.PrintToString().ShouldBeEquivalentTo(expectedResult);
+        }
+
+        [Test]
+        public void ObjectExtantionWithParametersTest()
+        {
+            var person = new Person { Name = "Artyom Gorodetskiy", Age = 19 };
+            var culture = new CultureInfo(42);
+            var expectedResult = String.Join(Environment.NewLine,
+                new[]
+                {
+                    "Person",
+                    "\tId = Guid",
+                    "\tName = Artyomka",
+                    "\tHeight = 0",
+                    "\tAge = 19" + Environment.NewLine
+                });
+            person.PrintToString(q => q
+                .Printing(p => p.Name).TrimmedToLength(10)
+                .Printing(p => p.Name).Using(n => "Artyomka"))
+                .ShouldBeEquivalentTo(expectedResult);
+        }
     }
 }
