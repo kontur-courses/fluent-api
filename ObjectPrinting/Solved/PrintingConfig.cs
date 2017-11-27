@@ -75,7 +75,7 @@ namespace ObjectPrinting.Solved
 		        return typeSerialisations[type](obj) + Environment.NewLine;
 
 		    if (obj is string && averageStringLength > 0)
-		        return ((string) obj).Substring(0, averageStringLength);
+		        return ((string) obj).Substring(0, averageStringLength) + Environment.NewLine;
 
             var numericTypes = new[]
             {
@@ -92,7 +92,7 @@ namespace ObjectPrinting.Solved
             if (finalTypes.Contains(type))
 				return obj + Environment.NewLine;
             
-			var sb = new StringBuilder(type.Name);
+			var sb = new StringBuilder(type.Name + Environment.NewLine);
 
 		    var properPropertiesStrings = type.GetProperties()
 		        .Where(p => !(ignoringTypes.Contains(p.PropertyType) || ignoringPropertiesNames.Contains(p.Name)))
