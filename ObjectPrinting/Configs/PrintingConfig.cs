@@ -9,15 +9,15 @@ namespace ObjectPrinting
     {
         private readonly Dictionary<Type, ITransformator> typeTransformators;
         private readonly Dictionary<PropertyInfo, ITransformator> propertyTransformators;
-        private readonly List<Type> excludedTypes;
-        private readonly List<PropertyInfo> excludedProperties;
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<PropertyInfo> excludedProperties;
 
         public PrintingConfig()
         {
             typeTransformators = new Dictionary<Type, ITransformator>();
             propertyTransformators = new Dictionary<PropertyInfo, ITransformator>();
-            excludedTypes = new List<Type>();
-            excludedProperties = new List<PropertyInfo>();
+            excludedTypes = new HashSet<Type>();
+            excludedProperties = new HashSet<PropertyInfo>();
         }
 
         public PrintingConfig<TOwner> Excluding<TExcluded>()
@@ -38,19 +38,16 @@ namespace ObjectPrinting
         public void SetTypeTransformationRule<T>(Func<T, string> transformFunction, TransformationType transformationType)
         {
             var transformator = Transformator.CreateFrom(transformFunction, transformationType);
-            TryUpdateTransformator(typeTransformators, typeof(T), transformator);
+            if (!typeTransformators.TryGetValue(typeof(T), out var value) || value.TransformationType <= transformator.TransformationType) typeTransformators[typeof(T)] = transformator;
         }
 
         public void SetPropertyTransformationRule<TProp>(PropertyInfo propertyInfo, Func<TProp, string> transformFunction, TransformationType transformationType)
         {
             var transformator = Transformator.CreateFrom(transformFunction, transformationType);
-            TryUpdateTransformator(propertyTransformators, propertyInfo, transformator);
+            if (!propertyTransformators.TryGetValue(propertyInfo, out var value) || value.TransformationType <= transformator.TransformationType) propertyTransformators[propertyInfo] = transformator;
         }
 
-        public TypePrintingConfig<TOwner, T> Printing<T>()
-        {
-            return new TypePrintingConfig<TOwner, T>(this);
-        }
+        public TypePrintingConfig<TOwner, T> Printing<T>() => new TypePrintingConfig<TOwner, T>(this);
 
         public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(
             Expression<Func<TOwner, TProp>> selector
@@ -78,16 +75,5 @@ namespace ObjectPrinting
 
         IReadOnlyDictionary<PropertyInfo, ITransformator> IPrintingConfig<TOwner>.PropertyTransformators
             => propertyTransformators;
-
-        private void TryUpdateTransformator<T>(Dictionary<T, ITransformator> dict, T key, ITransformator transformator)
-        {
-            if (!dict.ContainsKey(key)) dict[key] = transformator;
-            else
-            {
-                var currentTransformator = dict[key];
-                if (currentTransformator.TransformationType <= transformator.TransformationType)
-                    dict[key] = transformator;
-            }
-        }
     }
 }

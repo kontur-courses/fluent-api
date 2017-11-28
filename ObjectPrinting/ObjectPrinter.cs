@@ -17,46 +17,47 @@ namespace ObjectPrinting
     {
         private readonly IPrintingConfig<T> config;
 
-        public ObjectPrinter(IPrintingConfig<T> config)
+        public ObjectPrinter(IPrintingConfig<T> config) => this.config = config;
+
+        public string PrintToString(T obj) => Serialize(obj);
+
+        private string Serialize(object obj)
         {
-            this.config = config;
-        }
-
-        public string PrintToString(T obj) => Serialize(obj, null, 0, out bool _);
-
-        private string Serialize(object obj, PropertyInfo propertyInfo, int nestingLevel, out bool isCompositeObject)
-        {
-            isCompositeObject = false;
-
             if (obj == null) return "null";
 
             var objectType = obj.GetType();
-            if (IsObjectExcluded(objectType, propertyInfo))
-                return null;
-
-            if (nestingLevel != 0)
-            {
-                var transforamtor = GetObjectTransforamtor(objectType, propertyInfo);
-                if (transforamtor != null)
-                    return transforamtor.Transform(obj);
-            }
-
             if (config.FinalTypes.Contains(objectType))
                 return obj.ToString();
 
-            isCompositeObject = true;
-            return SerializeCompositeObject(obj, propertyInfo, nestingLevel);
+            return SerializeCompositeObject(obj, objectType.Name, 0);
         }
 
+        private string SerializeProperty(object propertyValue, PropertyInfo propertyInfo, int nestingLevel, out bool isCompositeProperty)
+        {
+            isCompositeProperty = false;
 
-        private string SerializeCompositeObject(object obj, PropertyInfo property, int nestingLevel)
+            if (IsPropertyExcluded(propertyInfo))
+                return null;
+
+            if (propertyValue == null) return "null";
+
+            if (TryGetPropertyTransforamtor(propertyInfo, out var transforamtor))
+                return transforamtor.Transform(propertyValue);
+
+            if (config.FinalTypes.Contains(propertyInfo.PropertyType))
+                return propertyValue.ToString();
+
+            isCompositeProperty = true;
+            return SerializeCompositeObject(propertyValue, propertyInfo.Name, nestingLevel);
+        }
+
+        private string SerializeCompositeObject(object obj, string objectName, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var objectType = obj.GetType();
-            sb.AppendLine(property?.Name ?? objectType.Name);
-            foreach (var propertyInfo in objectType.GetProperties())
+            sb.AppendLine(objectName);
+            foreach (var propertyInfo in obj.GetType().GetProperties())
             {
-                var serializedProperty = Serialize(
+                var serializedProperty = SerializeProperty(
                     propertyInfo.GetValue(obj), propertyInfo, nestingLevel + 1, out var isCompositeProperty);
 
                 if (serializedProperty != null)
@@ -69,18 +70,10 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private ITransformator GetObjectTransforamtor(Type objectType, PropertyInfo propertyInfo)
-        {
-            if (config.PropertyTransformators.ContainsKey(propertyInfo))
-                return config.PropertyTransformators[propertyInfo];
+        private bool TryGetPropertyTransforamtor(PropertyInfo propertyInfo, out ITransformator transformator) => 
+            config.PropertyTransformators.TryGetValue(propertyInfo, out transformator) || config.TypeTransformators.TryGetValue(propertyInfo.PropertyType, out transformator);
 
-            if (config.TypeTransformators.ContainsKey(objectType))
-                return config.TypeTransformators[objectType];
-
-            return null;
-        }
-
-        private bool IsObjectExcluded(Type objectType, PropertyInfo propertyInfo) 
-            => config.ExcludedTypes.Contains(objectType) || config.ExcludedProperties.Contains(propertyInfo);
+        private bool IsPropertyExcluded(PropertyInfo propertyInfo) 
+            => config.ExcludedTypes.Contains(propertyInfo.PropertyType) || config.ExcludedProperties.Contains(propertyInfo);
     }
 }
