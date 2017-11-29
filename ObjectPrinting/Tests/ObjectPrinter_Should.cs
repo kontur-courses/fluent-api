@@ -106,10 +106,22 @@ namespace ObjectPrinting
             var testClass = new ExampleClass<string>() {Field = "aaa"};
             var type = testClass.GetType();
 
-            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Printing<string>().CutToLenght(2);
+            var printingConfig = ObjectPrinter.For<ExampleClass<string>>().Printing(p => p.Field).CutToLenght(2);
 
             printingConfig.PrintToString(testClass)
                 .Should().Be($"{type.Name}{Environment.NewLine}\tField = aa{Environment.NewLine}");
+        }
+        
+        [Test]
+        public void Printer_ShouldCorrectCuttingExactlyOneStringProperty()
+        {
+            var testClass = new ExampleClassWithTwoFields<string>() {Field1 = "one", Field2 = "two"};
+            var type = testClass.GetType();
+
+            var printingConfig = ObjectPrinter.For<ExampleClassWithTwoFields<string>>().Printing(p => p.Field1).CutToLenght(2);
+
+            printingConfig.PrintToString(testClass)
+                .Should().Be($"{type.Name}{Environment.NewLine}\tField1 = on{Environment.NewLine}\tField2 = two{Environment.NewLine}");
         }
         
         [Test]

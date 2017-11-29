@@ -18,15 +18,20 @@ namespace ObjectPrinting
         private Dictionary<string, Delegate> specialPropertySerialization = new Dictionary<string, Delegate>();
         private Dictionary<Type, CultureInfo> cultureTypeSerialization = new Dictionary<Type, CultureInfo>();
         private HashSet<string> excludedProperties = new HashSet<string>();
-        public int LengthOfStringProperties { get; set; } = -1;
-
-
-        public void AddTypeSerializing(Type type, Delegate func)
+        private readonly Dictionary<string, int> cuttedStringProperty = 
+            new Dictionary<string, int>();
+        private readonly Type[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        
+        
+        internal void AddTypeSerializing(Type type, Delegate func)
         {
             specialTypeSerialization[type] = func;
         }
         
-        public void AddPropertySerialization(string propertyName, Delegate resializeFuction)
+        internal void AddPropertySerialization(string propertyName, Delegate resializeFuction)
         {
             specialPropertySerialization[propertyName] = resializeFuction;
         }
@@ -38,7 +43,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            string propertyName = GetPropertyName(memberSelector);
+            var propertyName = GetPropertyName(memberSelector);
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
         }
 
@@ -52,18 +57,16 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyMapper = new PropertyMapper<TOwner>();
-            var name = propertyMapper.PropertyName(memberSelector);
-            excludedProperties.Add(name);
+            var propertyName = GetPropertyName(memberSelector);
+            excludedProperties.Add(propertyName);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
-        
         
         public string PrintToString(TOwner obj)
         {
@@ -74,12 +77,6 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -103,20 +100,29 @@ namespace ObjectPrinting
         {
             var propertyType = propertyInfo.PropertyType;
             var propertyName = propertyInfo.Name;
+            
             if (specialTypeSerialization.ContainsKey(propertyType))
                 return specialTypeSerialization[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
+            
             if (specialPropertySerialization.ContainsKey(propertyName))
                 return specialPropertySerialization[propertyName].DynamicInvoke(propertyInfo.GetValue(obj));
+            
             if (cultureTypeSerialization.ContainsKey(propertyType))
                 return ((IFormattable) propertyInfo.GetValue(obj)).ToString("G", cultureTypeSerialization[propertyType]);
-            if (propertyType == typeof(string) && LengthOfStringProperties >= 0)
-                return ((string) propertyInfo.GetValue(obj)).Substring(0, LengthOfStringProperties);
+            
+            if (cuttedStringProperty.ContainsKey(propertyName))
+                return ((string) propertyInfo.GetValue(obj)).Substring(0, cuttedStringProperty[propertyName]);
             return propertyInfo.GetValue(obj);
         }
 
-        public void AddCultureForType(Type type, CultureInfo cultureInfo)
+        internal void AddCultureForType(Type type, CultureInfo cultureInfo)
         {
             cultureTypeSerialization[type] = cultureInfo;
+        }
+
+        internal void CuttedStringPropertyAdd(PrintingConfig<TOwner> printingConfig, string propertyName, int lenght)
+        {
+            cuttedStringProperty[propertyName] = lenght;
         }
     }
 }   

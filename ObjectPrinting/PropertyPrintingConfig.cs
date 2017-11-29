@@ -6,7 +6,7 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public string propertyName;
+        public string PropertyName { get; private set; }
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
         
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
@@ -17,17 +17,18 @@ namespace ObjectPrinting
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName)
         {
             this.printingConfig = printingConfig;
-            this.propertyName = propertyName;
+            PropertyName = propertyName;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> resializeFuction)
         {
-            if (string.IsNullOrEmpty(propertyName))
+            if (string.IsNullOrEmpty(PropertyName))
                 printingConfig.AddTypeSerializing(typeof(TPropType), resializeFuction);
             else
-                printingConfig.AddPropertySerialization(propertyName, resializeFuction);
+                printingConfig.AddPropertySerialization(PropertyName, resializeFuction);
             return printingConfig;
         }
+
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>

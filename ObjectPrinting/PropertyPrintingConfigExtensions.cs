@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ObjectPrinting
 {
@@ -54,9 +55,9 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> CutToLenght<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int lenght)
         {
-            var config = ((IPropertyPrintingConfig<TOwner, string>) propertyPrintingConfig).ParentConfig;
-            config.LengthOfStringProperties = lenght;
-            return config;
+            var printingConfig = ((IPropertyPrintingConfig<TOwner, string>) propertyPrintingConfig).ParentConfig;
+            printingConfig.CuttedStringPropertyAdd(printingConfig, propertyPrintingConfig.PropertyName, lenght);
+            return printingConfig;
         }
     }
 }
