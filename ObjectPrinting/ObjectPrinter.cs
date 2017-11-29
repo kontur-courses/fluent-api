@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -15,9 +16,15 @@ namespace ObjectPrinting
 
     public class ObjectPrinter<T>
     {
-        private readonly IPrintingConfig<T> config;
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
+        {
+            typeof(string), typeof(decimal), typeof(DateTime),
+            typeof(TimeSpan), typeof(Guid)
+        };
 
-        public ObjectPrinter(IPrintingConfig<T> config) => this.config = config;
+        private readonly IPrintingConfig config;
+
+        public ObjectPrinter(IPrintingConfig config) => this.config = config;
 
         public string PrintToString(T obj) => Serialize(obj);
 
@@ -26,7 +33,7 @@ namespace ObjectPrinting
             if (obj == null) return "null";
 
             var objectType = obj.GetType();
-            if (config.FinalTypes.Contains(objectType))
+            if (IsFinalType(objectType))
                 return obj.ToString();
 
             return SerializeCompositeObject(obj, objectType.Name, 0);
@@ -44,7 +51,7 @@ namespace ObjectPrinting
             if (TryGetPropertyTransforamtor(propertyInfo, out var transforamtor))
                 return transforamtor.Transform(propertyValue);
 
-            if (config.FinalTypes.Contains(propertyInfo.PropertyType))
+            if (IsFinalType(propertyInfo.PropertyType))
                 return propertyValue.ToString();
 
             isCompositeProperty = true;
@@ -75,5 +82,7 @@ namespace ObjectPrinting
 
         private bool IsPropertyExcluded(PropertyInfo propertyInfo) 
             => config.ExcludedTypes.Contains(propertyInfo.PropertyType) || config.ExcludedProperties.Contains(propertyInfo);
+
+        private bool IsFinalType(Type type) => type.IsPrimitive || finalTypes.Contains(type);
     }
 }

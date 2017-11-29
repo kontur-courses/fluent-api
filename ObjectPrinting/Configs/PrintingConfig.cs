@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private class TransformationEntry
         {
@@ -72,21 +72,14 @@ namespace ObjectPrinting
 
         public ObjectPrinter<TOwner> Build() => new ObjectPrinter<TOwner>(this);
 
-        IEnumerable<Type> IPrintingConfig<TOwner>.ExcludedTypes => excludedTypes;
+        IEnumerable<Type> IPrintingConfig.ExcludedTypes => excludedTypes;
 
-        IEnumerable<PropertyInfo> IPrintingConfig<TOwner>.ExcludedProperties => excludedProperties;
-
-        IEnumerable<Type> IPrintingConfig<TOwner>.FinalTypes
-            => new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-
-        IReadOnlyDictionary<Type, ITransformator> IPrintingConfig<TOwner>.TypeTransformators
+        IEnumerable<PropertyInfo> IPrintingConfig.ExcludedProperties => excludedProperties;
+        
+        IReadOnlyDictionary<Type, ITransformator> IPrintingConfig.TypeTransformators
             => typeTransformations.ToDictionary(pair => pair.Key, pair => pair.Value.Transformator);
 
-        IReadOnlyDictionary<PropertyInfo, ITransformator> IPrintingConfig<TOwner>.PropertyTransformators
+        IReadOnlyDictionary<PropertyInfo, ITransformator> IPrintingConfig.PropertyTransformators
             => propertyTransformations.ToDictionary(pair => pair.Key, pair => pair.Value.Transformator);
     }
 
