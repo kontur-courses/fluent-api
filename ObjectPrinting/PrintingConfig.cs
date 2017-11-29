@@ -15,6 +15,7 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> specialTypeSerialization = new Dictionary<Type, Delegate>();
+        private Dictionary<string, Delegate> specialPropertySerialization = new Dictionary<string, Delegate>();
         private Dictionary<Type, CultureInfo> cultureTypeSerialization = new Dictionary<Type, CultureInfo>();
         private HashSet<string> excludedProperties = new HashSet<string>();
         public int LengthOfStringProperties { get; set; } = -1;
@@ -25,6 +26,11 @@ namespace ObjectPrinting
             specialTypeSerialization[type] = func;
         }
         
+        public void AddPropertySerialization(string propertyName, Delegate resializeFuction)
+        {
+            specialPropertySerialization[propertyName] = resializeFuction;
+        }
+        
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -32,7 +38,16 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            string propertyName = GetPropertyName(memberSelector);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+        }
+
+        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var body = memberSelector.Body as MemberExpression;
+            if (body == null)
+                body = ((UnaryExpression) memberSelector.Body).Operand as MemberExpression;
+            return body.Member.Name;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -87,14 +102,16 @@ namespace ObjectPrinting
         private object GetPropertyObj(object obj, PropertyInfo propertyInfo)
         {
             var propertyType = propertyInfo.PropertyType;
+            var propertyName = propertyInfo.Name;
             if (specialTypeSerialization.ContainsKey(propertyType))
                 return specialTypeSerialization[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
+            if (specialPropertySerialization.ContainsKey(propertyName))
+                return specialPropertySerialization[propertyName].DynamicInvoke(propertyInfo.GetValue(obj));
             if (cultureTypeSerialization.ContainsKey(propertyType))
                 return ((IFormattable) propertyInfo.GetValue(obj)).ToString("G", cultureTypeSerialization[propertyType]);
             if (propertyType == typeof(string) && LengthOfStringProperties >= 0)
                 return ((string) propertyInfo.GetValue(obj)).Substring(0, LengthOfStringProperties);
             return propertyInfo.GetValue(obj);
-
         }
 
         public void AddCultureForType(Type type, CultureInfo cultureInfo)
@@ -102,4 +119,4 @@ namespace ObjectPrinting
             cultureTypeSerialization[type] = cultureInfo;
         }
     }
-}
+}   
