@@ -16,7 +16,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TProp, string> serialize)
         {
-            parentConfig.SetPropertyTransformationRule(propertyInfo, serialize, TransformationType.PropertyySerialization);
+            parentConfig.SetPropertyTransformationRule(propertyInfo, serialize, PropertyTransformations.Serialization);
+
             return parentConfig;
         }
 

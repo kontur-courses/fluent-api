@@ -66,7 +66,8 @@
     <Compile Include="Extensions\TypePrintingConfigExtensions.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\TestClasses\Person.cs" />
-    <Compile Include="Transformators\TransformationType.cs" />
+    <Compile Include="Transformators\PropertyTransformations.cs" />
+    <Compile Include="Transformators\TypeTransformations.cs" />
     <Compile Include="Transformators\Transformator.cs" />
     <Compile Include="Configs\TypePrintingConfig.cs" />
   </ItemGroup>

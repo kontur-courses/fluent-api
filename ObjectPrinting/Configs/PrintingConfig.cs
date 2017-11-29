@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -7,15 +8,27 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly Dictionary<Type, ITransformator> typeTransformators;
-        private readonly Dictionary<PropertyInfo, ITransformator> propertyTransformators;
+        private class TransformationEntry
+        {
+            internal TransformationEntry(ITransformator transformator, int transforamtionPriority)
+            {
+                Transformator = transformator;
+                Priority = transforamtionPriority;
+            }
+
+            internal ITransformator Transformator { get; }
+            internal int Priority { get; }
+        }
+
+        private readonly Dictionary<Type, TransformationEntry> typeTransformations;
+        private readonly Dictionary<PropertyInfo, TransformationEntry> propertyTransformations;
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<PropertyInfo> excludedProperties;
 
         public PrintingConfig()
         {
-            typeTransformators = new Dictionary<Type, ITransformator>();
-            propertyTransformators = new Dictionary<PropertyInfo, ITransformator>();
+            typeTransformations = new Dictionary<Type, TransformationEntry>();
+            propertyTransformations = new Dictionary<PropertyInfo, TransformationEntry>();
             excludedTypes = new HashSet<Type>();
             excludedProperties = new HashSet<PropertyInfo>();
         }
@@ -35,16 +48,16 @@ namespace ObjectPrinting
             return this;
         }
 
-        public void SetTypeTransformationRule<T>(Func<T, string> transformFunction, TransformationType transformationType)
+        public void SetTypeTransformationRule<T>(Func<T, string> transformFunction, TypeTransformations transformationType)
         {
-            var transformator = Transformator.CreateFrom(transformFunction, transformationType);
-            if (!typeTransformators.TryGetValue(typeof(T), out var value) || value.TransformationType <= transformator.TransformationType) typeTransformators[typeof(T)] = transformator;
+            var newEntry = new TransformationEntry(Transformator.CreateFrom(transformFunction), (int) transformationType);
+            if (!typeTransformations.TryGetValue(typeof(T), out var value) || value.Priority <= newEntry.Priority) typeTransformations[typeof(T)] = newEntry;
         }
 
-        public void SetPropertyTransformationRule<TProp>(PropertyInfo propertyInfo, Func<TProp, string> transformFunction, TransformationType transformationType)
+        public void SetPropertyTransformationRule<TProp>(PropertyInfo propertyInfo, Func<TProp, string> transformFunction, PropertyTransformations transformationType)
         {
-            var transformator = Transformator.CreateFrom(transformFunction, transformationType);
-            if (!propertyTransformators.TryGetValue(propertyInfo, out var value) || value.TransformationType <= transformator.TransformationType) propertyTransformators[propertyInfo] = transformator;
+            var newEntry = new TransformationEntry(Transformator.CreateFrom(transformFunction), (int)transformationType);
+            if (!propertyTransformations.TryGetValue(propertyInfo, out var value) || value.Priority <= newEntry.Priority) propertyTransformations[propertyInfo] = newEntry;
         }
 
         public TypePrintingConfig<TOwner, T> Printing<T>() => new TypePrintingConfig<TOwner, T>(this);
@@ -71,9 +84,10 @@ namespace ObjectPrinting
             };
 
         IReadOnlyDictionary<Type, ITransformator> IPrintingConfig<TOwner>.TypeTransformators
-            => typeTransformators;
+            => typeTransformations.ToDictionary(pair => pair.Key, pair => pair.Value.Transformator);
 
         IReadOnlyDictionary<PropertyInfo, ITransformator> IPrintingConfig<TOwner>.PropertyTransformators
-            => propertyTransformators;
+            => propertyTransformations.ToDictionary(pair => pair.Key, pair => pair.Value.Transformator);
     }
+
 }

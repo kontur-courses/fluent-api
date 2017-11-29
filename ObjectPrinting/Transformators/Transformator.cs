@@ -6,13 +6,10 @@ namespace ObjectPrinting
     {
         private readonly Func<T, string> transformFunc;
 
-        public Transformator(Func<T, string> transformFunc, TransformationType type)
+        public Transformator(Func<T, string> transformFunc)
         {
             this.transformFunc = transformFunc;
-            TransformationType = type;
         }
-
-        public TransformationType TransformationType { get; }
 
         public string Transform(T obj) => transformFunc(obj);
 
@@ -21,7 +18,6 @@ namespace ObjectPrinting
 
     public static class Transformator
     {
-        public static Transformator<T> CreateFrom<T>(Func<T, string> transformFunc, TransformationType type)
-            => new Transformator<T>(transformFunc, type);
+        public static Transformator<T> CreateFrom<T>(Func<T, string> transformFunc) => new Transformator<T>(transformFunc);
     }
 }

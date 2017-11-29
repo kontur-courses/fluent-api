@@ -9,59 +9,57 @@ namespace ObjectPrinting
             this TypePrintingConfig<TOwner, int> config,
             CultureInfo cultureInfo)
         {
-            var parentConfig = ExtractParentConfig(config);
-            parentConfig.SetTypeTransformationRule<int>(number => number.ToString(cultureInfo), TransformationType.TypeFeature);
-            return parentConfig;
+            return WithCultureInternal(config, cultureInfo);
         }
 
         public static PrintingConfig<TOwner> WithCulture<TOwner>(
             this TypePrintingConfig<TOwner, long> config,
             CultureInfo cultureInfo)
         {
-            var parentConfig = ExtractParentConfig(config);
-            parentConfig.SetTypeTransformationRule<long>(number => number.ToString(cultureInfo), TransformationType.TypeFeature);
-            return parentConfig;
+            return WithCultureInternal(config, cultureInfo);
         }
 
         public static PrintingConfig<TOwner> WithCulture<TOwner>(
             this TypePrintingConfig<TOwner, double> config,
             CultureInfo cultureInfo)
         {
-            var parentConfig = ExtractParentConfig(config);
-            parentConfig.SetTypeTransformationRule<double>(number => number.ToString(cultureInfo), TransformationType.TypeFeature);
-            return parentConfig;
+            return WithCultureInternal(config, cultureInfo);
         }
 
         public static PrintingConfig<TOwner> WithCulture<TOwner>(
             this TypePrintingConfig<TOwner, float> config,
             CultureInfo cultureInfo)
         {
-            var parentConfig = ExtractParentConfig(config);
-            parentConfig.SetTypeTransformationRule<float>(number => number.ToString(cultureInfo), TransformationType.TypeFeature);
-            return parentConfig;
+            return WithCultureInternal(config, cultureInfo);
         }
 
         public static PrintingConfig<TOwner> WithCulture<TOwner>(
             this TypePrintingConfig<TOwner, decimal> config,
             CultureInfo cultureInfo)
         {
-            var parentConfig = ExtractParentConfig(config);
-            parentConfig.SetTypeTransformationRule<decimal>(
-                number => number.ToString(cultureInfo), TransformationType.TypeFeature);
-            return parentConfig;
+            return WithCultureInternal(config, cultureInfo);
         }
 
         public static PrintingConfig<TOwner> ShrinkedToLength<TOwner>(
             this TypePrintingConfig<TOwner, string> config,
             int length)
         {
-            var parentConfig = ExtractParentConfig(config);
+            var parentConfig = config.GetParentConfig();
             parentConfig.SetTypeTransformationRule<string>(
-                str => str.Substring(0, Math.Min(str.Length, length)), TransformationType.TypeFeature);
+                str => str.Substring(0, Math.Min(str.Length, length)), TypeTransformations.Feature);
             return parentConfig;
         }
 
-        private static PrintingConfig<TOwner> ExtractParentConfig<TOwner, T>(IChildPrintingConfig<TOwner, T> config)
+        private static PrintingConfig<TOwner> GetParentConfig<TOwner, T>(this IChildPrintingConfig<TOwner, T> config)
             => config.ParentConfig;
+
+        private static PrintingConfig<TOwner> WithCultureInternal<TOwner, T>(
+            this TypePrintingConfig<TOwner, T> config,
+            CultureInfo cultureInfo) where T : IFormattable
+        {
+            var parentConfig = config.GetParentConfig();
+            parentConfig.SetTypeTransformationRule<T>(number => number.ToString(null, cultureInfo), TypeTransformations.Feature);
+            return parentConfig;
+        }
     }
 }
