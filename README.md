@@ -19,6 +19,8 @@ A.CallTo(() => shop.GetTopSellingCandy()).Returns(lollipop);
 
 ## Необходимые знания
 
+Понадобится знание C#
+
 Рекомендуется пройти блоки [LINQ](https://github.com/kontur-csharper/linq) и [Чистый код](https://github.com/kontur-csharper/clean-code)
 
 
