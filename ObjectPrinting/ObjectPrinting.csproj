@@ -52,11 +52,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configs\IChildPrintingConfig.cs" />
+    <Compile Include="Configs\IPrintingConfig.cs" />
+    <Compile Include="Tests\ObjectPrinter_Should.cs" />
+    <Compile Include="Tests\TestClasses\School.cs" />
+    <Compile Include="Tests\TestClasses\Student.cs" />
+    <Compile Include="Transformators\ITransformator.cs" />
     <Compile Include="ObjectPrinter.cs" />
-    <Compile Include="PrintingConfig.cs" />
+    <Compile Include="Configs\PrintingConfig.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Configs\PropertyPrintingConfig.cs" />
+    <Compile Include="Extensions\TypePrintingConfigExtensions.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Tests\Person.cs" />
+    <Compile Include="Tests\TestClasses\Person.cs" />
+    <Compile Include="Transformators\PropertyTransformations.cs" />
+    <Compile Include="Transformators\TypeTransformations.cs" />
+    <Compile Include="Transformators\Transformator.cs" />
+    <Compile Include="Configs\TypePrintingConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
