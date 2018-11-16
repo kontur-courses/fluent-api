@@ -26,7 +26,7 @@ A.CallTo(() => shop.GetTopSellingCandy()).Returns(lollipop);
 
 ## Самостоятельная подготовка
 
-1. Посмотри [все видео-лекции про Fluent API](https://ulearn.azurewebsites.net/Course/cs2/Fluent_API_f317d52a-3a74-4138-98bf-565a5d593465) (~1 час)
+1. Посмотри [все видео-лекции про Fluent API](https://ulearn.me/Course/cs2/Fluent_API_f317d52a-3a74-4138-98bf-565a5d593465) (~1 час)
 
 
 ## Очная встреча
