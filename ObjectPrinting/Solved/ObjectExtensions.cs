@@ -1,10 +1,10 @@
 namespace ObjectPrinting.Solved
 {
-	public static class ObjectExtensions
-	{
-		public static string PrintToString<T>(this T obj)
-		{
-			return ObjectPrinter.For<T>().PrintToString(obj);
-		}
-	}
+    public static class ObjectExtensions
+    {
+        public static string PrintToString<T>(this T obj)
+        {
+            return ObjectPrinter.For<T>().PrintToString(obj);
+        }
+    }
 }
