@@ -34,6 +34,10 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            //TODO Add excluding of types 
+
+            //TODO Add altarnative way to print 
+
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -52,6 +56,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                //TODO Add triming of strings 
+
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
