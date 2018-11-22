@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -14,5 +15,19 @@ namespace ObjectPrinting
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
 
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
+        {
+            return ((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        {
+            return ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
+        {
+            return ((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
+        }
     }
 }
