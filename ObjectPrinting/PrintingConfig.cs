@@ -45,6 +45,17 @@ namespace ObjectPrinting
         {
             return ((ISerializingConfig<TOwner>) config).SerializingConfig;
         }
+        
+        
+        public static PrintingConfig<TOwner> Default<TOwner>(this SerializingConfig<TOwner, int> config)
+        {
+            return ((ISerializingConfig<TOwner>) config).SerializingConfig;
+        }
+        
+        public static PrintingConfig<TOwner> Default<TOwner>(this SerializingConfig<TOwner, double> config)
+        {
+            return ((ISerializingConfig<TOwner>) config).SerializingConfig;
+        }
     }
     
     public class PrintingConfig<TOwner>
