@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,11 +11,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly List<String> excludedProperties = new List<String>();
-        private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<Type, Delegate> typeSerializations = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<String, Delegate> propertySerializations = new Dictionary<String, Delegate>();
+        private ImmutableList<Type> excludedTypes = ImmutableList<Type>.Empty;
+        private ImmutableList<String> excludedProperties = ImmutableList<String>.Empty;
+        private ImmutableDictionary<Type, CultureInfo> typeCultures = ImmutableDictionary<Type, CultureInfo>.Empty;
+        private ImmutableDictionary<Type, Delegate> typeSerializations = ImmutableDictionary<Type, Delegate>.Empty;
+        private ImmutableDictionary<String, Delegate> propertySerializations = ImmutableDictionary<String, Delegate>.Empty;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -30,16 +31,18 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
             var propertyInfo = (PropertyInfo)((MemberExpression) memberSelector.Body).Member;
             var propertyName = propertyInfo.Name;
-            excludedProperties.Add(propertyName);
-            return this;
+            currentConfig.excludedProperties = excludedProperties.Add(propertyName);
+            return currentConfig;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
-            return this;
+            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
+            excludedTypes = excludedTypes.Add(typeof(TPropType));
+            return currentConfig;
         }
 
         public string PrintToString(TOwner obj)
@@ -89,17 +92,20 @@ namespace ObjectPrinting
 
         public void ChangeCultureForType(Type type, CultureInfo cultureInfo)
         {
-            typeCultures[type] = cultureInfo;
+            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
+            typeCultures = typeCultures.SetItem(type, cultureInfo);
         }
 
         public void ChangeSerializationForType(Type type, Delegate serializator)
         {
-            typeSerializations[type] = serializator;
+            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
+            typeSerializations = typeSerializations.SetItem(type, serializator);
         }
 
         public void ChangeSerializationForProperty(string propertyName, Delegate serializator)
         {
-            propertySerializations[propertyName] = serializator;
+            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
+            propertySerializations = propertySerializations.SetItem(propertyName, serializator);
         }
     }
 }

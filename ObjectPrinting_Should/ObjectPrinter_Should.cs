@@ -68,8 +68,7 @@ namespace ObjectPrinting_Should
                                "Person", "\tId = Guid",
                                "\tHeight = 1,82",
                                "\tAge = 18") + Environment.NewLine;
-            printer.Excluding(p => p.Name);
-            printer.PrintToString(person).Should().Be(expected);
+            printer.Excluding(p => p.Name).PrintToString(person).Should().Be(expected);
         }
 
         [Test]
@@ -92,6 +91,20 @@ namespace ObjectPrinting_Should
                                "\tAge = 12") + Environment.NewLine;
             printer.Printing(p => p.Age).Using(i => i.ToString("X"));
             printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldBeImmutable()
+        {
+            var withoutAge = string.Join(Environment.NewLine,
+                               "Person", "\tId = Guid", "\tName = Romutchio",
+                               "\tHeight = 1,82") + Environment.NewLine;
+            var withoutHeight = string.Join(Environment.NewLine,
+                                 "Person", "\tId = Guid", "\tName = Romutchio",
+                                 "\tAge = 18") + Environment.NewLine;
+            printer.Excluding(p => p.Age).PrintToString(person).Should().Be(withoutAge);
+            printer.Excluding(p => p.Height).PrintToString(person).Should().Be(withoutHeight);
+            
         }
 
 
