@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -35,6 +36,18 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+        }
+
+        [Test]
+        public void ExcludeFieldType()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>();
+
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n		Name = Alex\r\n	Height = 0\r\n	Age = 19\r\n");
+
         }
     }
 }

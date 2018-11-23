@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,6 +9,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private List<Type> excludedTypes = new List<Type>(); 
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -25,6 +28,7 @@ namespace ObjectPrinting
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -35,6 +39,8 @@ namespace ObjectPrinting
 
         private string GetPropertyPrintingValue(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
+            if (excludedTypes.Contains(propertyInfo.PropertyType))
+                return string.Empty;
             //TODO Add trimming of strings 
 
             //TODO Add excluding of types 
