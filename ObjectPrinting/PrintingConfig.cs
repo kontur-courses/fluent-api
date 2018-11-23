@@ -90,21 +90,18 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public void ChangeCultureForType(Type type, CultureInfo cultureInfo)
+        internal void ChangeCultureForType(Type type, CultureInfo cultureInfo)
         {
-            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
             typeCultures = typeCultures.SetItem(type, cultureInfo);
         }
 
-        public void ChangeSerializationForType(Type type, Delegate serializator)
+        internal void ChangeSerializationForType(Type type, Delegate serializator)
         {
-            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
             typeSerializations = typeSerializations.SetItem(type, serializator);
         }
 
-        public void ChangeSerializationForProperty(string propertyName, Delegate serializator)
+        internal void ChangeSerializationForProperty(string propertyName, Delegate serializator)
         {
-            var currentConfig = (PrintingConfig<TOwner>) MemberwiseClone();
             propertySerializations = propertySerializations.SetItem(propertyName, serializator);
         }
     }
