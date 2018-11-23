@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -32,13 +33,21 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string GetPropertyPrintingValue(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
+            //TODO Add trimming of strings 
+
             //TODO Add excluding of types 
 
-            //TODO Add altarnative way to print 
+            //TODO Add alternative way to print 
 
             //TODO apply configurations
+            return propertyInfo.Name + " = " +
+                   PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+        }
+
+        private string PrintToString(object obj, int nestingLevel)
+        {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -56,11 +65,7 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                //TODO Add triming of strings 
-
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
             }
             return sb.ToString();
         }
