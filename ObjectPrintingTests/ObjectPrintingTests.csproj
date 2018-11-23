@@ -54,6 +54,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="ObjectPrinterTests.cs" />
+    <Compile Include="Numbers.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

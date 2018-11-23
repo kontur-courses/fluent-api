@@ -1,10 +1,22 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        private Func<object, string> printingFunction;
+
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
+
+        Func<object, string> IPropertyPrintingConfig<TOwner>.PrintingFunction
+        {
+            get => printingFunction;
+            set => printingFunction = value;
+        }
+
+        CultureInfo IPropertyPrintingConfig<TOwner>.Culture { get; set; }
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
@@ -13,14 +25,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingFunction = property => print((TPropType) property);
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }
