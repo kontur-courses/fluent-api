@@ -1,17 +1,36 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
-
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public PrintingConfig<TOwner> Exclude<TPorpType>()
+        {
+            return this;
+        }
+
+        public SerializingConfig<TOwner, TPropType> Serialize<TPropType>()
+        {
+            return new SerializingConfig<TOwner, TPropType>(this);
+        }
+
+        public SerializingConfig<TOwner, Expression> Serialize(Expression<Func<TOwner, object>> propSelector)
+        {
+            return new SerializingConfig<TOwner, Expression>(this);
+        }
+
+        public PrintingConfig<TOwner> DefaultSerialize()
+        {
+            return this;
+        }
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
@@ -35,6 +54,7 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }
