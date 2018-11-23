@@ -49,5 +49,16 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n		Name = Alex\r\n	Height = 0\r\n	Age = 19\r\n");
 
         }
+
+        [Test]
+        public void ExcludeFieldByName()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Id);
+
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n		Name = Alex\r\n	Height = 0\r\n	Age = 19\r\n");
+        }
     }
 }

@@ -9,7 +9,9 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private List<Type> excludedTypes = new List<Type>(); 
+        private List<Type> excludedTypes = new List<Type>();
+        private List<string> excluded = new List<string>();
+
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -23,6 +25,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            //TODO add excluding by name
+            excluded.Add(memberSelector.ReturnType.Name);
             return this;
         }
 
@@ -40,6 +44,9 @@ namespace ObjectPrinting
         private string GetPropertyPrintingValue(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             if (excludedTypes.Contains(propertyInfo.PropertyType))
+                return string.Empty;
+
+            if (excluded.Contains(propertyInfo.Name))
                 return string.Empty;
             //TODO Add trimming of strings 
 
