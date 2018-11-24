@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,43 +9,58 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly ConfigsBunch configsBunch = new ConfigsBunch();
+        private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
+        private readonly HashSet<string> propertiesToExclude = new HashSet<string>();
+
+        private readonly Dictionary<Type, Func<object, string>> printersForTypes =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<string, Func<object, string>> printersForProperties =
+            new Dictionary<string, Func<object, string>>();
+
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            configsBunch.TypesToExclude.Add(typeof(TPropType));
+            typesToExclude.Add(typeof(TPropType));
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TPropType>(
+            Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            if (memberSelector.Body is MemberExpression)
-            {
-                var propertyInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-                configsBunch.PropertiesToExclude.Add(propertyInfo.Name);
-            }
-
+            var propertyInfo = ExtractPropertyInfo(propertySelector);
+            propertiesToExclude.Add(propertyInfo.Name);
             return this;
+        }
+
+
+        private PropertyInfo ExtractPropertyInfo<TPropType>(
+            Expression<Func<TOwner, TPropType>> propertySelector)
+        {
+            var memberExpression = propertySelector.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ArgumentException("Delegate is not a member selector");
+            var propertyInfo = memberExpression.Member as PropertyInfo;
+            if (propertyInfo == null)
+                throw new ArgumentException("Delegate selects not a property");
+            return propertyInfo;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             var printingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            configsBunch.PrintersForTypes[typeof(TPropType)] =
+            printersForTypes[typeof(TPropType)] =
                 obj => (printingConfig as IPropertyPrintingConfig<TOwner, TPropType>).PrintingFunction((TPropType) obj);
             return printingConfig;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+            Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var printingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            if (memberSelector.Body is MemberExpression)
-            {
-                var propertyInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-                configsBunch.PrintersForProperties[propertyInfo.Name] = 
-                    obj => ((IPropertyPrintingConfig<TOwner, TPropType>) printingConfig).PrintingFunction((TPropType)obj);
-            }
+            var propertyInfo = ExtractPropertyInfo(propertySelector);
+            printersForProperties[propertyInfo.Name] = 
+                obj => ((IPropertyPrintingConfig<TOwner, TPropType>) printingConfig).PrintingFunction((TPropType)obj);
 
             return printingConfig;
         }
@@ -56,7 +72,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -74,17 +89,17 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (configsBunch.TypesToExclude.Contains(propertyInfo.PropertyType))
+                if (typesToExclude.Contains(propertyInfo.PropertyType))
                     continue;
-                if (configsBunch.PropertiesToExclude.Contains(propertyInfo.Name))
+                if (propertiesToExclude.Contains(propertyInfo.Name))
                     continue;
 
                 sb.Append(indentation + propertyInfo.Name + " = ");
-                if (configsBunch.PrintersForProperties.ContainsKey(propertyInfo.Name))
-                    sb.Append(configsBunch.PrintersForProperties[propertyInfo.Name](propertyInfo.GetValue(obj))
+                if (printersForProperties.ContainsKey(propertyInfo.Name))
+                    sb.Append(printersForProperties[propertyInfo.Name](propertyInfo.GetValue(obj))
                               + Environment.NewLine);
-                else if (configsBunch.PrintersForTypes.ContainsKey(propertyInfo.PropertyType))
-                    sb.Append(configsBunch.PrintersForTypes[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
+                else if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
+                    sb.Append(printersForTypes[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
                     + Environment.NewLine);
                 else
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));

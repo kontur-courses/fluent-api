@@ -52,7 +52,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DoubleWrapper.cs" />
+    <Compile Include="Wrapper.cs" />
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinterTests.cs" />
     <Compile Include="Person.cs" />
