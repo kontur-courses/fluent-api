@@ -10,16 +10,20 @@ namespace ObjectPrinting
 {
     public interface IPrintingConfig<TOwner>
     {
-        Dictionary<Type, Expression<Func<object, string>>> Printers { get; }
+        Dictionary<Type, Expression<Func<object, string>>> PrintersForTypes { get; }
         Dictionary<Type, CultureInfo> CultureInfoForTypes { get; }
+        Dictionary<string, Expression<Func<object, string>>> PrintersForPropertiesNames { get; }
+        int? MaxLength { get; set; }
     }
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private List<Type> excludedTypes = new List<Type>();
         private List<string> excluded = new List<string>();
-        private Dictionary<Type, CultureInfo> cultureInfoForTypes = new Dictionary<Type, CultureInfo>();
-        private Dictionary<Type, Expression<Func<object, string>>> printers = new Dictionary<Type, Expression<Func<object, string>>>();
 
+        private Dictionary<Type, CultureInfo> cultureInfoForTypes = new Dictionary<Type, CultureInfo>();
+        private Dictionary<Type, Expression<Func<object, string>>> printersForTypes = new Dictionary<Type, Expression<Func<object, string>>>();
+        private Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName = new Dictionary<string, Expression<Func<object, string>>>();
+        private int? maxLength = null;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -28,7 +32,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -57,8 +61,8 @@ namespace ObjectPrinting
             if (excluded.Contains(propertyInfo.Name))
                 return string.Empty;
 
-            if (printers.ContainsKey(propertyInfo.PropertyType))
-                return propertyInfo.Name + " = " + printers[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj));
+            if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
+                return propertyInfo.Name + " = " + printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj));
 
             if (cultureInfoForTypes.ContainsKey(propertyInfo.PropertyType))
             {
@@ -71,6 +75,16 @@ namespace ObjectPrinting
                     return propertyInfo.Name + " = " + ((long)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
 
             }
+
+            if (printersForPropertiesName.ContainsKey(propertyInfo.Name))
+                return propertyInfo.Name + " = " + printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj));
+
+            if (propertyInfo.PropertyType == typeof(string) &&
+                maxLength != null &&
+                PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
+
+                return propertyInfo.Name + " = " +
+                       PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength);
             //TODO Add trimming of strings 
 
             //TODO Add excluding of types 
@@ -106,7 +120,13 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.Printers => printers;
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintersForTypes => printersForTypes;
         Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CultureInfoForTypes => cultureInfoForTypes;
+        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintersForPropertiesNames => printersForPropertiesName;
+        int? IPrintingConfig<TOwner>.MaxLength
+        {
+            get => maxLength;
+            set => maxLength = value;
+        }
     }
 }

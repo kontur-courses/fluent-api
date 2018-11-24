@@ -21,6 +21,7 @@ namespace ObjectPrinting.Tests
                 //3. Для числовых типов указать культуру
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
+                .Printing(i=>i.Height).Using(i => i.ToString("X"))
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
@@ -62,12 +63,23 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void AlternativePrinting()
+        public void AlternativePrintingByType()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(x=>"x");
+
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x");
+        }
+
+        [Test]
+        public void AlternativePrintingByPropertyName()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x=>x.Age).Using(x => "x");
 
             printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x");
         }
@@ -81,6 +93,17 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(CultureInfo.GetCultureInfo("en-UK"));
 
             printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 1.2	Age = 0\r\n");
+        }
+
+        [Test]
+        public void TrimmingOfLongStrings()
+        {
+            var person = new Person { Name = "Alex" };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(1);
+
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = A	Height = 0\r\n	Age = 0\r\n");
         }
     }
 }
