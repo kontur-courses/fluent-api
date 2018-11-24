@@ -11,11 +11,13 @@ namespace ObjectPrinting
     {
         private List<Type> excludedTypes = new List<Type>();
         private List<string> excluded = new List<string>();
-
+        private Dictionary<Type, Func<object, string>> printers = new Dictionary<Type, Func<object, string>>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
+            printers[typeof(TPropType)] = ((IPropertyPrintingConfig<TOwner, TPropType>) config).Printer;
+            return config;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -48,6 +50,9 @@ namespace ObjectPrinting
 
             if (excluded.Contains(propertyInfo.Name))
                 return string.Empty;
+
+            if (printers.ContainsKey(propertyInfo.PropertyType))
+                return propertyInfo.Name + " = " + printers[propertyInfo.PropertyType].Invoke(obj);
             //TODO Add trimming of strings 
 
             //TODO Add excluding of types 
