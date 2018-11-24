@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(x=>"x");
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 1\r\n	Age = 1");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = x\r\n	Age = x");
         }
     }
 }

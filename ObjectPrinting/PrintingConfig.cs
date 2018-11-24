@@ -28,7 +28,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             //TODO add excluding by name
-            excluded.Add(memberSelector.ReturnType.Name);
+            excluded.Add(((MemberExpression)memberSelector.Body).Member.Name);
             return this;
         }
 
