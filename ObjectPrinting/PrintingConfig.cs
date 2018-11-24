@@ -1,11 +1,32 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public partial class PrintingConfig<TOwner>
     {
+
+        public PrintingConfig<TOwner> Exclude<TPropType>()
+        {
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> field)
+        {
+            return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(Expression<Func<TOwner, TPropType>> field)
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, field);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
