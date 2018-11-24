@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,14 +12,14 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-        private HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-        private Dictionary<Type, Delegate> typeSerializationFormats = new Dictionary<Type, Delegate>();
-        private Dictionary<PropertyInfo, Delegate> propertySerializationFormats = new Dictionary<PropertyInfo, Delegate>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private ImmutableDictionary<Type, Delegate> typeSerializationFormats = ImmutableDictionary<Type, Delegate>.Empty;
+        private ImmutableDictionary<PropertyInfo, Delegate> propertySerializationFormats = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> property)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, property);
         }
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> property)
         {
@@ -67,21 +68,16 @@ namespace ObjectPrinting
                     excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
 
+                sb.Append(identation);
+
                 if (propertySerializationFormats.ContainsKey(propertyInfo))
-                {
-                    sb.Append(identation + propertySerializationFormats[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
-                    continue;
-                }
-
-                if (typeSerializationFormats.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + typeSerializationFormats[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
-                    continue;
-                }
-
-                
-
-                sb.Append(identation + propertyInfo.Name + " = " +
+                    sb.Append(propertySerializationFormats[propertyInfo]
+                                  .DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else if (typeSerializationFormats.ContainsKey(propertyInfo.PropertyType))
+                    sb.Append(typeSerializationFormats[propertyInfo.PropertyType]
+                                  .DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else
+                    sb.Append(propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
@@ -89,7 +85,14 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypeSerializationFormats => typeSerializationFormats;
-        Dictionary<PropertyInfo, Delegate> IPrintingConfig<TOwner>.PropertySerializationFormats => propertySerializationFormats;
+        void IPrintingConfig<TOwner>.AddPropertySerializationFormat(PropertyInfo property, Delegate format)
+        {
+            propertySerializationFormats = propertySerializationFormats.Add(property, format);
+        }
+
+        void IPrintingConfig<TOwner>.AddTypeSerializationFormat(Type type, Delegate format)
+        {
+            typeSerializationFormats = typeSerializationFormats.Add(type, format);
+        }
     }
 }

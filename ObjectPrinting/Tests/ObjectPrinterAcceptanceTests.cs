@@ -7,11 +7,15 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+        private Person person;
+        [SetUp]
+        public void SetUp()
+        {
+            person = new Person {Name = "Alex", Age = 19, Height = 180 };
+        }
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
-
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<double>()
@@ -33,17 +37,26 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Exclude_Both()
+        public void ExcludeInt()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 180};
-            var printer = ObjectPrinter.For<Person>().Exclude<int>().Exclude(p => p.Id);
-            Console.WriteLine(printer.PrintToString(person));
+            var printer = ObjectPrinter.For<Person>().Exclude<int>();
+            var result = printer.PrintToString(person);
+            Console.WriteLine(result);
+            Assert.False(result.Contains("Age = 19"));
+        }
+
+        [Test]
+        public void ExcludeId()
+        {
+            var printer = ObjectPrinter.For<Person>().Exclude(p => p.Id);
+            var result = printer.PrintToString(person);
+            Console.WriteLine(result);
+            Assert.False(result.Contains("Id"));
         }
 
         [Test]
         public void TypeAndProperty_Using()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 180 };
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(num => "Ы " + num)
                 .Printing(p => p.Name).Using(n => "ИМЯ: " + n);
