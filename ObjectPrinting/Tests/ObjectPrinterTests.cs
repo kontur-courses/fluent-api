@@ -141,18 +141,24 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_OnRecursiveLinks_ThrowsInfiniteRecursionException()
+        public void ObjectPrinter_OnRecursiveLinks_SerializesRecursiveLinkAsCircular()
         {
             var objectPrinter = ObjectPrinter.For<Node>();
             var parent = new Node() {Value = 1};
             var node = new Node {Value = 1, Parent = parent};
             parent.Parent = node;
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Node",
+                "\tValue = 1",
+                "\tParent = Node",
+                "\t\tValue = 1",
+                $"\t\tParent = {Constants.Circular}",
+            });
 
-            Action action = () => objectPrinter
-                .PrintToString(node);
-
-            action.Should()
-                .Throw<InfiniteRecursionException>();
+            objectPrinter.PrintToString(node)
+                .Should()
+                .BeEquivalentTo(expected);
         }
 
         [Test]

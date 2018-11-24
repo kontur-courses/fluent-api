@@ -55,7 +55,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="InfiniteRecursionException.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="IPropertyPrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="ObjectPrinterExtensions.cs" />

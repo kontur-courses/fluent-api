@@ -98,7 +98,8 @@ namespace ObjectPrinting
 
                 if (excludedValues.Contains(propertyValue))
                 {
-                    throw new InfiniteRecursionException();
+                    sb.Append(identation + propertyInfo.Name + " = " + Constants.Circular);
+                    continue;
                 }
 
                 if (TypesSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
@@ -124,7 +125,7 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                     PrintToString(propertyValue,
-                        nestingLevel + 1, excludedValues.Add(propertyValue)));
+                        nestingLevel + 1, excludedValues.Add(obj)));
             }
 
             return sb.ToString();
