@@ -107,7 +107,7 @@ namespace ObjectPrinting.Tests
             {
                 "Person",
                 "\tId = Guid",
-                "\tName = ob",
+                "\tName = Bo",
                 "\tHeight = 0",
                 $"\tAge = 100{Environment.NewLine}",
             });
@@ -164,14 +164,74 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_OnCollection_WorksCorrectly()
         {
-            var objectPrinter = ObjectPrinter.For<Player>();
-            var player = new Player {Name = "Sasha", Scores = new List<int> {3, 2, 1}};
+            var objectPrinter = ObjectPrinter.For<Player<int>>();
+            var player = new Player<int> {Name = "Sasha", Scores = new List<int> {3, 2, 1}};
 
             var expected = string.Join(Environment.NewLine, new[]
             {
-                "Player",
+                "Player`1",
                 "\tName = Sasha",
-                "\tScores = ICollection`1",
+                "\tScores = List`1",
+                "\t\tElement 0 = 3",
+                "\t\tElement 1 = 2",
+                $"\t\tElement 2 = 1{Environment.NewLine}",
+            });
+
+            objectPrinter
+                .PrintToString(player)
+                .Should()
+                .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnDictionaryOfObjects_WorksCorrectly()
+        {
+            var objectPrinter = ObjectPrinter.For<Dictionary<int, Tree<int>>>();
+            var dict = new Dictionary<int, Tree<int>>
+            {
+                {0, new Tree<int>()},
+                { 1, new Tree<int> {Left = 42, Right = 24}}
+            };
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Dictionary`2",
+                "\tElement 0 = KeyValuePair`2",
+                "\t\tKey = 0",
+                "\t\tValue = Tree`1",
+                "\t\t\tLeft = 0",
+                "\t\t\tRight = 0",
+                "\tElement 1 = KeyValuePair`2",
+                "\t\tKey = 1",
+                "\t\tValue = Tree`1",
+                "\t\t\tLeft = 42",
+                $"\t\t\tRight = 24{Environment.NewLine}",
+            });
+
+            objectPrinter
+                .PrintToString(dict)
+                .Should()
+                .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnCollectionOfObjects_WorksCorrectly()
+        {
+            var objectPrinter = ObjectPrinter.For<Player<Player<int>>>();
+            var playerWithIntScores = new Player<int> {Name = "Bob", Scores = new List<int> {3, 2, 1}};
+            var player = new Player<Player<int>> {Name = "Sasha", Scores = new List<Player<int>> {playerWithIntScores}};
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Player`1",
+                "\tName = Sasha",
+                "\tScores = List`1",
+                "\t\tElement 0 = Player`1",
+                "\t\t\tName = Bob",
+                "\t\t\tScores = List`1",
+                "\t\t\t\tElement 0 = 3",
+                "\t\t\t\tElement 1 = 2",
+                $"\t\t\t\tElement 2 = 1{Environment.NewLine}",
             });
 
             objectPrinter

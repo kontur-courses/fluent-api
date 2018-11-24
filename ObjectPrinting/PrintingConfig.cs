@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.TypesHandlers;
 
 namespace ObjectPrinting
 {
@@ -50,85 +51,29 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, ImmutableHashSet<object>.Empty);
+            var handler = new FinalTypesHandler();
+            var propertiesHandler = new PropertiesHandler(
+                excludedProperties.ToImmutableHashSet(),
+                (IReadOnlyDictionary<Type, Delegate>)TypesSerializers,
+                (IReadOnlyDictionary<Type, CultureInfo>)CustomCultures,
+                (IReadOnlyDictionary<PropertyInfo, Delegate>)PropertiesSerializers,
+                (IReadOnlyDictionary<PropertyInfo, int>)StringsTrimValues,
+                excludedSpecificProperties.ToImmutableHashSet());
+            handler.SetSuccessor(new IEnumerableHandler().SetSuccessor(propertiesHandler));
+
+            return PrintToString(handler, obj, 0, ImmutableHashSet<object>.Empty);
         }
 
-        private string PrintToString(object obj, int nestingLevel, ImmutableHashSet<object> excludedValues)
+        private string PrintToString(
+            TypeHandler handler,
+            object obj,
+            int nestingLevel,
+            ImmutableHashSet<object> excludedValues)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
-            if (finalTypes.Contains(obj.GetType()))
-            {
-                return obj + Environment.NewLine;
-            }
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (propertyInfo.PropertyType.IsGenericType &&
-                    typeof(ICollection<>).IsAssignableFrom(propertyInfo.PropertyType.GetGenericTypeDefinition()))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " + propertyInfo.PropertyType.Name);
-
-                    continue;
-                }
-
-                var propertyValue = propertyInfo.GetValue(obj);
-
-                if (excludedProperties.Contains(propertyInfo.PropertyType))
-                {
-                    continue;
-                }
-
-                if (excludedSpecificProperties.Contains(propertyInfo))
-                {
-                    continue;
-                }
-
-                if (excludedValues.Contains(propertyValue))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " + Constants.Circular);
-                    continue;
-                }
-
-                if (TypesSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-                {
-                    propertyValue = typeSerializer.DynamicInvoke(propertyValue);
-                }
-
-                if (CustomCultures.TryGetValue(propertyInfo.PropertyType, out var culture))
-                {
-                    propertyValue = ((IConvertible)propertyValue).ToString(culture);
-                }
-
-                if (PropertiesSerializers.TryGetValue(propertyInfo, out var propSerializer))
-                {
-                    propertyValue = propSerializer.DynamicInvoke(propertyValue);
-                }
-
-                if (StringsTrimValues.TryGetValue(propertyInfo, out var startIndex))
-                {
-                    propertyValue = propertyValue.ToString()
-                        .Substring(startIndex);
-                }
-
-                sb.Append(identation + propertyInfo.Name + " = " +
-                    PrintToString(propertyValue,
-                        nestingLevel + 1, excludedValues.Add(obj)));
-            }
-
-            return sb.ToString();
+            return handler.Handle(obj, nestingLevel, excludedValues, handler);
         }
     }
 }

@@ -69,6 +69,10 @@
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Models\Person.cs" />
     <Compile Include="Tests\Models\Player.cs" />
+    <Compile Include="TypesHandlers\FinalTypesHandler.cs" />
+    <Compile Include="TypesHandlers\IEnumerableHandler.cs" />
+    <Compile Include="TypesHandlers\PropertiesHandler.cs" />
+    <Compile Include="TypesHandlers\TypeHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
