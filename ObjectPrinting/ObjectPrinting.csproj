@@ -40,6 +40,9 @@
       <HintPath>..\packages\NUnit.3.11.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.2.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.1.5.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
@@ -52,6 +55,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InfiniteRecursionException.cs" />
     <Compile Include="IPropertyPrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="ObjectPrinterExtensions.cs" />
@@ -60,6 +64,7 @@
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtensions.cs" />
     <Compile Include="Tests\Models\Node.cs" />
+    <Compile Include="Tests\Models\Tree.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Models\Person.cs" />

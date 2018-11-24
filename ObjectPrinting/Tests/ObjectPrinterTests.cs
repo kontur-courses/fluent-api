@@ -141,25 +141,18 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_OnRecursiveLinks_DoesntThrowException()
+        public void ObjectPrinter_OnRecursiveLinks_ThrowsInfiniteRecursionException()
         {
             var objectPrinter = ObjectPrinter.For<Node>();
             var parent = new Node() {Value = 1};
             var node = new Node {Value = 1, Parent = parent};
             parent.Parent = node;
 
-            var expected = string.Join(Environment.NewLine, new[]
-            {
-                "Node",
-                "\tValue = 1",
-                "\tParent = Node",
-                $"\t\tParent = Node{Environment.NewLine}",
-            });
+            Action action = () => objectPrinter
+                .PrintToString(node);
 
-            objectPrinter
-                .PrintToString(node)
-                .Should()
-                .BeEquivalentTo(expected);
+            action.Should()
+                .Throw<InfiniteRecursionException>();
         }
 
         [Test]
@@ -177,6 +170,34 @@ namespace ObjectPrinting.Tests
 
             objectPrinter
                 .PrintToString(player)
+                .Should()
+                .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnRecursiveLinks_DoesntExcludesSameObjects()
+        {
+            var objectPrinter = ObjectPrinter.For<Tree<Person>>();
+            var person = new Person {Name = "Bob"};
+            var tree = new Tree<Person> {Left = person, Right = person};
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Tree`1",
+                "\tLeft = Person",
+                "\t\tId = Guid",
+                "\t\tName = Bob",
+                "\t\tHeight = 0",
+                "\t\tAge = 0",
+                "\tRight = Person",
+                "\t\tId = Guid",
+                "\t\tName = Bob",
+                "\t\tHeight = 0",
+                $"\t\tAge = 0{Environment.NewLine}",
+            });
+
+            objectPrinter
+                .PrintToString(tree)
                 .Should()
                 .BeEquivalentTo(expected);
         }

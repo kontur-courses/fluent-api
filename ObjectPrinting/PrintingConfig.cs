@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -18,7 +19,6 @@ namespace ObjectPrinting
             new Dictionary<PropertyInfo, Delegate>();
         internal readonly IDictionary<PropertyInfo, int> StringsTrimValues = new Dictionary<PropertyInfo, int>();
         private readonly HashSet<PropertyInfo> excludedSpecificProperties = new HashSet<PropertyInfo>();
-        private readonly HashSet<object> excludedValues = new HashSet<object>();
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -50,10 +50,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, ImmutableHashSet<object>.Empty);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, ImmutableHashSet<object> excludedValues)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -98,7 +98,7 @@ namespace ObjectPrinting
 
                 if (excludedValues.Contains(propertyValue))
                 {
-                    continue;
+                    throw new InfiniteRecursionException();
                 }
 
                 if (TypesSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
@@ -122,11 +122,9 @@ namespace ObjectPrinting
                         .Substring(startIndex);
                 }
 
-                excludedValues.Add(propertyValue);
-
                 sb.Append(identation + propertyInfo.Name + " = " +
                     PrintToString(propertyValue,
-                        nestingLevel + 1));
+                        nestingLevel + 1, excludedValues.Add(propertyValue)));
             }
 
             return sb.ToString();
