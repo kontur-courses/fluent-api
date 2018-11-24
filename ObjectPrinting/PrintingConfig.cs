@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,17 +8,22 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public interface IPrintingConfig<TOwner>
+    {
+        Dictionary<Type, Expression<Func<object, string>>> Printers { get; }
+        Dictionary<Type, CultureInfo> CultureInfoForTypes { get; }
+    }
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private List<Type> excludedTypes = new List<Type>();
         private List<string> excluded = new List<string>();
-        private Dictionary<Type, Func<object, string>> printers = new Dictionary<Type, Func<object, string>>();
+        private Dictionary<Type, CultureInfo> cultureInfoForTypes = new Dictionary<Type, CultureInfo>();
+        private Dictionary<Type, Expression<Func<object, string>>> printers = new Dictionary<Type, Expression<Func<object, string>>>();
+
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            printers[typeof(TPropType)] = ((IPropertyPrintingConfig<TOwner, TPropType>) config).Printer;
-            return config;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -52,7 +58,19 @@ namespace ObjectPrinting
                 return string.Empty;
 
             if (printers.ContainsKey(propertyInfo.PropertyType))
-                return propertyInfo.Name + " = " + printers[propertyInfo.PropertyType].Invoke(obj);
+                return propertyInfo.Name + " = " + printers[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj));
+
+            if (cultureInfoForTypes.ContainsKey(propertyInfo.PropertyType))
+            {
+                var type = propertyInfo.PropertyType;
+                if (type == typeof(int))
+                    return propertyInfo.Name + " = " + ((int)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
+                if (type == typeof(double))
+                    return propertyInfo.Name + " = " + ((double)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
+                if (type == typeof(long))
+                    return propertyInfo.Name + " = " + ((long)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
+
+            }
             //TODO Add trimming of strings 
 
             //TODO Add excluding of types 
@@ -87,5 +105,8 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.Printers => printers;
+        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CultureInfoForTypes => cultureInfoForTypes;
     }
 }

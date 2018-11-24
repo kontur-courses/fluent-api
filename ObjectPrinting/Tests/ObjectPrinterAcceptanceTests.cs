@@ -62,14 +62,25 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void AlteringPrinting()
+        public void AlternativePrinting()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(x=>"x");
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = x\r\n	Age = x");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x");
+        }
+
+        [Test]
+        public void AlternativeCultureInfo()
+        {
+            var person = new Person {Name = "Alex", Height = 1.2};
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(CultureInfo.GetCultureInfo("en-UK"));
+
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 1.2	Age = 0\r\n");
         }
     }
 }
