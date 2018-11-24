@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -25,17 +24,17 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Expression<Func<TPropType, string>> print)
         {
             if (memberName == null)
-                ((IPrintingConfig<TOwner>) printingConfig).PrintersForTypes[typeof(TPropType)] =
-                    prop => print.Compile().Invoke((TPropType) prop);
+                ((IPrintingConfig)printingConfig).PrintersForTypes[typeof(TPropType)] =
+                    prop => print.Compile().Invoke((TPropType)prop);
             else
-                ((IPrintingConfig<TOwner>) printingConfig).PrintersForPropertiesNames[memberName] =
-                    prop => print.Compile().Invoke((TPropType) prop);
+                ((IPrintingConfig)printingConfig).PrintersForPropertiesNames[memberName] =
+                    prop => print.Compile().Invoke((TPropType)prop);
             return printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            ((IPrintingConfig<TOwner>) printingConfig).CultureInfoForTypes[typeof(TPropType)] = culture;
+            ((IPrintingConfig)printingConfig).CultureInfoForTypes[typeof(TPropType)] = culture;
             return printingConfig;
         }
 

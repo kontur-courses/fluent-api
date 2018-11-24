@@ -8,22 +8,26 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public interface IPrintingConfig<TOwner>
+    public interface IPrintingConfig
     {
         Dictionary<Type, Expression<Func<object, string>>> PrintersForTypes { get; }
         Dictionary<Type, CultureInfo> CultureInfoForTypes { get; }
         Dictionary<string, Expression<Func<object, string>>> PrintersForPropertiesNames { get; }
         int? MaxLength { get; set; }
     }
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
-    {
-        private List<Type> excludedTypes = new List<Type>();
-        private List<string> excluded = new List<string>();
 
-        private Dictionary<Type, CultureInfo> cultureInfoForTypes = new Dictionary<Type, CultureInfo>();
-        private Dictionary<Type, Expression<Func<object, string>>> printersForTypes = new Dictionary<Type, Expression<Func<object, string>>>();
-        private Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName = new Dictionary<string, Expression<Func<object, string>>>();
-        private int? maxLength = null;
+    public class PrintingConfig<TOwner> : IPrintingConfig
+    {
+        private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<string> excluded = new List<string>();
+
+        private readonly Dictionary<Type, CultureInfo> cultureInfoForTypes =
+            new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, Expression<Func<object, string>>> printersForTypes =
+            new Dictionary<Type, Expression<Func<object, string>>>();
+        private readonly Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName =
+            new Dictionary<string, Expression<Func<object, string>>>();
+        private int? maxLength;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -37,7 +41,6 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            //TODO add excluding by name
             excluded.Add(((MemberExpression)memberSelector.Body).Member.Name);
             return this;
         }
@@ -82,16 +85,11 @@ namespace ObjectPrinting
             if (propertyInfo.PropertyType == typeof(string) &&
                 maxLength != null &&
                 PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
-
+            {
                 return propertyInfo.Name + " = " +
                        PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength);
-            //TODO Add trimming of strings 
+            }
 
-            //TODO Add excluding of types 
-
-            //TODO Add alternative way to print 
-
-            //TODO apply configurations
             return propertyInfo.Name + " = " +
                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
@@ -120,13 +118,9 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintersForTypes => printersForTypes;
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CultureInfoForTypes => cultureInfoForTypes;
-        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintersForPropertiesNames => printersForPropertiesName;
-        int? IPrintingConfig<TOwner>.MaxLength
-        {
-            get => maxLength;
-            set => maxLength = value;
-        }
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
+        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
+        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
+        int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
     }
 }
