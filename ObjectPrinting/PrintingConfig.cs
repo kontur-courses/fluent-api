@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -6,8 +7,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public PrintingConfig<TOwner> Exclude<TPorpType>()
+        private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
+        public Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+
+        public PrintingConfig<TOwner> Exclude<TPropertyType>()
         {
+            excludeTypes.Add(typeof(TPropertyType));
             return this;
         }
 
@@ -25,6 +30,7 @@ namespace ObjectPrinting
         {
             return this;
         }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -41,6 +47,7 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
@@ -50,9 +57,22 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propType = propertyInfo.PropertyType;
+
+                if (excludeTypes.Contains(propType))
+                    continue;
+
+                sb.Append(identation + propertyInfo.Name + " = ");
+
+                if (typeOperations.ContainsKey(propType))
+                {
+                    sb.Append(PrintToString(typeOperations[propType].DynamicInvoke(propertyInfo.GetValue(obj)),
+                                  nestingLevel + 1));
+                }
+                else
+                {
+                    sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                }
             }
 
             return sb.ToString();

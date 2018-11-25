@@ -2,23 +2,24 @@
 
 namespace ObjectPrinting
 {
-    public class SerializingConfig<TOwner, TPropType> : ISerializingConfig<TOwner>
+    public class SerializingConfig<TOwner, TPropertyType> : ISerializingConfig<TOwner>
     {
-        private readonly PrintingConfig<TOwner> baseClass;
+        private readonly PrintingConfig<TOwner> printingConfig;
 
-        public SerializingConfig(PrintingConfig<TOwner> baseClass)
+        public SerializingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            this.baseClass = baseClass;
+            this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> param)
+        public PrintingConfig<TOwner> Using(Func<TPropertyType, string> operation)
         {
-            return baseClass;
+            printingConfig.typeOperations[typeof(TPropertyType)] = operation;
+            return printingConfig;
         }
         public PrintingConfig<TOwner> Exclude()
         {
-            return baseClass;
+            return printingConfig;
         }
-        PrintingConfig<TOwner> ISerializingConfig<TOwner>.SerializingConfig => baseClass;
+        PrintingConfig<TOwner> ISerializingConfig<TOwner>.SerializingConfig => printingConfig;
     }
 }
