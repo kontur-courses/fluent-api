@@ -35,6 +35,8 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> PrintingConfig { get; }
     }
 
+    
+    
     public static class TypePrintingConfigExtensions
     {
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> name,
@@ -56,7 +58,7 @@ namespace ObjectPrinting
             return name.Using(arg => arg.ToString(cultureInfo));
         }
 
-        public static PrintingConfig<TOwner> CutLast<TOwner>(this PropertyPrintingConfig<TOwner, string> number,
+        public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> number,
             int count)
         {
             return ((ITypePrintingConfig<TOwner>) number).PrintingConfig;

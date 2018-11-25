@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -10,7 +11,9 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly Dictionary<Type, Func<object, string>> serializationMap = new Dictionary<Type, Func<object, string>>();
+        private readonly List<MemberInfo> excludedMembers =  new List<MemberInfo>();
+        private readonly Dictionary<Type, Func<object, string>> serializationTypeMap = new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<MemberInfo, Func<object, string>> serializationMemberMap = new Dictionary<MemberInfo, Func<object, string>>();
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -20,34 +23,54 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> field)
         {
-            return this;
+            var expression = field.Body;
+            if (expression is MemberExpression memberExpression)
+            {
+                excludedMembers.Add(memberExpression.Member);
+                return this;
+            }
+
+            throw new ArgumentException();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, serializationMap);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, serializationTypeMap);
         }
 
-//        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
-//            Expression<Func<TOwner, TPropType>> field)
-//        {
-//            return new PropertyPrintingConfig<TOwner, TPropType>(this, field);
-//        }
+        public MemberPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
+            Expression<Func<TOwner, TPropType>> field)
+        {
+            var expression = field.Body;
+            if (expression is MemberExpression memberExpression)
+            {
+                return new MemberPrintingConfig<TOwner,TPropType>(serializationMemberMap, memberExpression.Member, this);
+            }
 
+            throw new ArgumentException();
+        }
+
+        
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, typeof(TOwner));
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, MemberInfo member)
         {
             //TODO apply configurations
 
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (serializationMap.TryGetValue(obj.GetType(), out var method))
+           
+            if (serializationMemberMap.TryGetValue(member, out var methodForMember))
+                return methodForMember(obj) + Environment.NewLine;
+            
+            if (serializationTypeMap.TryGetValue(obj.GetType(), out var method))
                 return method(obj) + Environment.NewLine;
+            
+            
             
             var finalTypes = new[]
             {
@@ -63,10 +86,12 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                var propertyType = propertyInfo.PropertyType;
+                if (excludedTypes.Contains(propertyType) || excludedMembers.Contains(propertyInfo))
                     continue;
+                
                 var value = propertyInfo.GetValue(obj);
-                var nestedPrint = PrintToString(value, nestingLevel + 1);
+                var nestedPrint = PrintToString(value, nestingLevel + 1, propertyInfo);
                 sb.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
             }
 
