@@ -52,6 +52,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cycle.cs" />
     <Compile Include="Wrapper.cs" />
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinterTests.cs" />

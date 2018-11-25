@@ -98,5 +98,15 @@ namespace ObjectPrintingTests
             
             Assert.AreEqual(expected, actual);
         }
+
+        [Test]
+        public void TestResolvingCircularReferences()
+        {
+            var cycle = new Cycle();
+            var expected = $"Cycle{newLine}\tValue = (cycle){newLine}";
+            var actual = ObjectPrinter.For<Cycle>().PrintToString(cycle);
+
+            Assert.AreEqual(expected, actual);
+        }
     }
 }
