@@ -16,15 +16,16 @@ namespace ObjectPrinting.TypesSerializers
         private readonly IReadOnlyDictionary<PropertyInfo, Delegate> PropertiesSerializers;
         private readonly IReadOnlyDictionary<PropertyInfo, int> StringsTrimValues;
         private readonly ImmutableHashSet<PropertyInfo> excludedSpecificProperties;
-
+        private readonly Lazy<TypeSerializer> typeSerializer;
 
         public PropertiesSerializer(
             ImmutableHashSet<Type> excludedProperties,
             IReadOnlyDictionary<Type, Delegate> typesSerializers,
-            IReadOnlyDictionary<Type, CultureInfo> customCultures, 
+            IReadOnlyDictionary<Type, CultureInfo> customCultures,
             IReadOnlyDictionary<PropertyInfo, Delegate> propertiesSerializers,
             IReadOnlyDictionary<PropertyInfo, int> stringsTrimValues,
-            ImmutableHashSet<PropertyInfo> excludedSpecificProperties)
+            ImmutableHashSet<PropertyInfo> excludedSpecificProperties,
+            TypeSerializer typeSerializer)
         {
             this.excludedProperties = excludedProperties;
             TypesSerializers = typesSerializers;
@@ -32,13 +33,13 @@ namespace ObjectPrinting.TypesSerializers
             PropertiesSerializers = propertiesSerializers;
             StringsTrimValues = stringsTrimValues;
             this.excludedSpecificProperties = excludedSpecificProperties;
+            this.typeSerializer = new Lazy<TypeSerializer>(() => typeSerializer);
         }
 
         public override string Serialize(
             object obj,
             int nestingLevel,
-            ImmutableHashSet<object> excludedValues,
-            TypeSerializer serializer)
+            ImmutableHashSet<object> excludedValues)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -66,9 +67,9 @@ namespace ObjectPrinting.TypesSerializers
                     continue;
                 }
 
-                if (TypesSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
+                if (TypesSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
                 {
-                    propertyValue = typeSerializer.DynamicInvoke(propertyValue);
+                    propertyValue = serializer.DynamicInvoke(propertyValue);
                 }
 
                 if (CustomCultures.TryGetValue(propertyInfo.PropertyType, out var culture))
@@ -89,13 +90,13 @@ namespace ObjectPrinting.TypesSerializers
                 }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
-                    serializer.Serialize(propertyValue,
-                        nestingLevel + 1, excludedValues.Add(obj), serializer));
+                    typeSerializer.Value.Serialize(propertyValue,
+                        nestingLevel + 1, excludedValues.Add(obj)));
             }
 
-                return sb
-                    .Append(Successor?.Serialize(obj, nestingLevel, excludedValues, serializer))
-                    .ToString();
+            return sb
+                .Append(Successor?.Serialize(obj, nestingLevel, excludedValues))
+                .ToString();
         }
     }
 }

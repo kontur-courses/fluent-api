@@ -20,10 +20,18 @@ namespace ObjectPrinting
             new Dictionary<PropertyInfo, Delegate>();
         internal readonly IDictionary<PropertyInfo, int> StringsTrimValues = new Dictionary<PropertyInfo, int>();
         private readonly HashSet<PropertyInfo> excludedSpecificProperties = new HashSet<PropertyInfo>();
+        private int maxElementsCountForEnumerables = Constants.MaxElementCountForCollection;
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedProperties.Add(typeof(TPropType));
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetMaxElementsCountForEnumerables(int count)
+        {
+            maxElementsCountForEnumerables = count;
 
             return this;
         }
@@ -51,22 +59,23 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            var typeHandler = new NullSerializer();
+            TypeSerializer typeSerializer = new NullSerializer();
             var propertiesHandler = new PropertiesSerializer(
                 excludedProperties.ToImmutableHashSet(),
                 (IReadOnlyDictionary<Type, Delegate>)TypesSerializers,
                 (IReadOnlyDictionary<Type, CultureInfo>)CustomCultures,
                 (IReadOnlyDictionary<PropertyInfo, Delegate>)PropertiesSerializers,
                 (IReadOnlyDictionary<PropertyInfo, int>)StringsTrimValues,
-                excludedSpecificProperties.ToImmutableHashSet());
+                excludedSpecificProperties.ToImmutableHashSet(),
+                typeSerializer);
 
-            typeHandler.SetSuccessor(new FinalTypesSerializer()
-                .SetSuccessor(new EnumerableSerializer()
+            typeSerializer.SetSuccessor(new FinalTypesSerializer()
+                .SetSuccessor(new EnumerableSerializer(maxElementsCountForEnumerables, typeSerializer)
                     .SetSuccessor(propertiesHandler
-                        .SetSuccessor(new FieldsSerializer()))
+                        .SetSuccessor(new FieldsSerializer(typeSerializer)))
                 ));
 
-            return PrintToString(typeHandler, obj, 0, ImmutableHashSet<object>.Empty);
+            return PrintToString(typeSerializer, obj, 0, ImmutableHashSet<object>.Empty);
         }
 
         private string PrintToString(
@@ -75,7 +84,7 @@ namespace ObjectPrinting
             int nestingLevel,
             ImmutableHashSet<object> excludedValues)
         {
-            return typeSerializer.Serialize(obj, nestingLevel, excludedValues, typeSerializer);
+            return typeSerializer.Serialize(obj, nestingLevel, excludedValues);
         }
     }
 }

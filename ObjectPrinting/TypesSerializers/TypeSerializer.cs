@@ -13,6 +13,6 @@ namespace ObjectPrinting.TypesSerializers
             return this;
         }
 
-        public abstract string Serialize(object obj, int nestingLevel, ImmutableHashSet<object> excludedValues, TypeSerializer serializer);
+        public abstract string Serialize(object obj, int nestingLevel, ImmutableHashSet<object> excludedValues);
     }
 }

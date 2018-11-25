@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -319,6 +320,22 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person)
                 .Should()
                 .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnInfiniteIEnumerable_DoesntThrowsException()
+        {
+            IEnumerable<long> PositiveNumbers()
+            {
+                long x = 1;
+                while (true) { 
+                    yield return x++;
+                }
+            }
+
+            Action a = () => PositiveNumbers().PrintToString();
+
+            a.Should().NotThrow();
         }
     }
 }

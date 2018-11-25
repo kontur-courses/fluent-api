@@ -9,8 +9,7 @@ namespace ObjectPrinting.TypesSerializers
         public override string Serialize(
             object obj,
             int nestingLevel,
-            ImmutableHashSet<object> excludedValues,
-            TypeSerializer serializer)
+            ImmutableHashSet<object> excludedValues)
         {
             var finalTypes = new[]
             {
@@ -24,7 +23,7 @@ namespace ObjectPrinting.TypesSerializers
                 return obj + Environment.NewLine;
             }
 
-            return Successor?.Serialize(obj, nestingLevel, excludedValues, serializer);
+            return Successor?.Serialize(obj, nestingLevel, excludedValues);
         }
     }
 }

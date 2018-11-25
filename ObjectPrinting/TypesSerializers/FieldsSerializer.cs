@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -7,8 +8,16 @@ namespace ObjectPrinting.TypesSerializers
 {
     public class FieldsSerializer : TypeSerializer
     {
-        public override string Serialize(object obj, int nestingLevel, ImmutableHashSet<object> excludedValues,
-            TypeSerializer serializer)
+        private readonly Lazy<TypeSerializer> typeSerializer;
+
+        public FieldsSerializer(TypeSerializer typeSerializer)
+        {
+            this.typeSerializer = new Lazy<TypeSerializer>(() => typeSerializer);
+        }
+
+        public override string Serialize(object obj,
+            int nestingLevel,
+            ImmutableHashSet<object> excludedValues)
         {
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
@@ -28,12 +37,12 @@ namespace ObjectPrinting.TypesSerializers
                 }
 
                 sb.Append(identation + fieldInfo.Name + " = " +
-                    serializer.Serialize(fieldValue,
-                        nestingLevel + 1, excludedValues.Add(fieldValue), serializer));
+                    typeSerializer.Value.Serialize(fieldValue,
+                        nestingLevel + 1, excludedValues.Add(fieldValue)));
             }
 
             return sb
-                .Append(Successor?.Serialize(obj, nestingLevel, excludedValues, serializer))
+                .Append(Successor?.Serialize(obj, nestingLevel, excludedValues))
                 .ToString();
         }
     }

@@ -8,15 +8,14 @@ namespace ObjectPrinting.TypesSerializers
         public override string Serialize(
             object obj,
             int nestingLevel,
-            ImmutableHashSet<object> excludedValues,
-            TypeSerializer serializer)
+            ImmutableHashSet<object> excludedValues)
         {
             if (obj == null)
             {
                 return "null" + Environment.NewLine;
             }
 
-            return Successor?.Serialize(obj, nestingLevel, excludedValues, serializer);
+            return Successor?.Serialize(obj, nestingLevel, excludedValues);
         }
     }
 }
