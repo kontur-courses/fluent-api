@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class MemberPrintingConfig<TOwner, TPropType>
     {
-        private readonly Dictionary<MemberInfo, Func<object, string>> serializationMemberMap;
         private readonly MemberInfo memberInfo;
         private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly Dictionary<MemberInfo, Func<object, string>> serializationMemberMap;
 
-        public MemberPrintingConfig(Dictionary<MemberInfo, Func<object, string>> serializationMemberMap, MemberInfo memberInfo, PrintingConfig<TOwner> printingConfig)
+        public MemberPrintingConfig(Dictionary<MemberInfo, Func<object, string>> serializationMemberMap,
+            MemberInfo memberInfo, PrintingConfig<TOwner> printingConfig)
         {
             this.serializationMemberMap = serializationMemberMap;
             this.memberInfo = memberInfo;
@@ -20,10 +20,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
         {
-            serializationMemberMap[memberInfo] = arg => func((TPropType)arg);
+            serializationMemberMap[memberInfo] = arg => func((TPropType) arg);
             return printingConfig;
         }
-        
     }
 
     public static class MemberPrintingConfigExtension

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
@@ -9,19 +8,21 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Dictionary<Type, Func<object, string>> serializationMap;
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Dictionary<Type, Func<object, string>> serializationMap)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
+            Dictionary<Type, Func<object, string>> serializationMap)
         {
             this.printingConfig = printingConfig;
             this.serializationMap = serializationMap;
         }
-     
+
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
+
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
         {
@@ -35,8 +36,7 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> PrintingConfig { get; }
     }
 
-    
-    
+
     public static class TypePrintingConfigExtensions
     {
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> name,
@@ -54,7 +54,6 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> name,
             CultureInfo cultureInfo)
         {
-            
             return name.Using(arg => arg.ToString(cultureInfo));
         }
 
