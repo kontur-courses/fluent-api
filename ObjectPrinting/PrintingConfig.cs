@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -9,6 +10,8 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly Dictionary<Type, Func<object, string>> serializationMap = new Dictionary<Type, Func<object, string>>();
+
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
@@ -22,14 +25,14 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, serializationMap);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
-            Expression<Func<TOwner, TPropType>> field)
-        {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, field);
-        }
+//        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
+//            Expression<Func<TOwner, TPropType>> field)
+//        {
+//            return new PropertyPrintingConfig<TOwner, TPropType>(this, field);
+//        }
 
         public string PrintToString(TOwner obj)
         {
@@ -39,10 +42,13 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (serializationMap.TryGetValue(obj.GetType(), out var method))
+                return method(obj) + Environment.NewLine;
+            
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -63,6 +69,7 @@ namespace ObjectPrinting
                 var nestedPrint = PrintToString(value, nestingLevel + 1);
                 sb.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
             }
+
             return sb.ToString();
         }
     }

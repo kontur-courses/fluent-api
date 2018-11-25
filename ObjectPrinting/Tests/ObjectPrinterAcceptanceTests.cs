@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -14,9 +13,9 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Exclude<Guid>();
+                .Exclude<Guid>()
 //                //2. Указать альтернативный способ сериализации для определенного типа
-//                .Serializing<int>().Using(s => s.ToString())
+                .Serializing<string>().Using(s => "##" + s.ToString());
 //                //3. Для числовых типов указать культуру
 //                .Serializing<int>().Using(CultureInfo.CurrentCulture)
 //                //4. Настроить сериализацию конкретного свойства

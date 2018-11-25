@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -7,21 +8,26 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly Dictionary<Type, Func<object, string>> serializationMap;
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> field)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Dictionary<Type, Func<object, string>> serializationMap)
         {
             this.printingConfig = printingConfig;
+            this.serializationMap = serializationMap;
         }
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
+     
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
         {
+            serializationMap.Add(
+                typeof(TPropType),
+                arg => method((TPropType) arg));
             return printingConfig;
         }
     }
