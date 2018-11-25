@@ -27,8 +27,11 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            person.Print();
             //8. ...с конфигурированием
+            person.Print(config => config
+                .Serializing<double>().Using(CultureInfo.InstalledUICulture));
         }
     }
 }
