@@ -25,9 +25,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
         {
-            serializationMap.Add(
-                typeof(TPropType),
-                arg => method((TPropType) arg));
+            serializationMap[typeof(TPropType)] = arg => method((TPropType) arg);
             return printingConfig;
         }
     }
@@ -39,22 +37,23 @@ namespace ObjectPrinting
 
     public static class TypePrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> intName,
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> name,
             CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>) intName).PrintingConfig;
+            return name.Using(arg => arg.ToString(cultureInfo));
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> intName,
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> name,
             CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>) intName).PrintingConfig;
+            return name.Using(arg => arg.ToString(cultureInfo));
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> number,
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> name,
             CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>) number).PrintingConfig;
+            
+            return name.Using(arg => arg.ToString(cultureInfo));
         }
 
         public static PrintingConfig<TOwner> CutLast<TOwner>(this PropertyPrintingConfig<TOwner, string> number,
