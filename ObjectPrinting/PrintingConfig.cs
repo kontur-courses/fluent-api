@@ -1,15 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public partial class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner>
     {
-
+        private readonly List<Type> excludedTypes = new List<Type>();
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -22,7 +24,9 @@ namespace ObjectPrinting
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
-        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(Expression<Func<TOwner, TPropType>> field)
+
+        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
+            Expression<Func<TOwner, TPropType>> field)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, field);
         }
@@ -35,6 +39,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
+            
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -46,15 +51,17 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                var value = propertyInfo.GetValue(obj);
+                var nestedPrint = PrintToString(value, nestingLevel + 1);
+                sb.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
             }
             return sb.ToString();
         }

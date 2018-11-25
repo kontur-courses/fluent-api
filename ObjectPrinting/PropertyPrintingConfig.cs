@@ -18,36 +18,43 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
+
         public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
         {
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
     }
 
-    interface ITypePrintingConfig<TOwner>
-    { 
+    internal interface ITypePrintingConfig<TOwner>
+    {
         PrintingConfig<TOwner> PrintingConfig { get; }
     }
 
     public static class TypePrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> intName, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> intName,
+            CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>)intName).PrintingConfig;
+            return ((ITypePrintingConfig<TOwner>) intName).PrintingConfig;
         }
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> intName, CultureInfo cultureInfo)
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> intName,
+            CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>)intName).PrintingConfig;
+            return ((ITypePrintingConfig<TOwner>) intName).PrintingConfig;
         }
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> number, CultureInfo cultureInfo)
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> number,
+            CultureInfo cultureInfo)
         {
-            return ((ITypePrintingConfig<TOwner>)number).PrintingConfig;
+            return ((ITypePrintingConfig<TOwner>) number).PrintingConfig;
         }
-        public static PrintingConfig<TOwner> CutLast<TOwner>(this PropertyPrintingConfig<TOwner, string> number, int count)
+
+        public static PrintingConfig<TOwner> CutLast<TOwner>(this PropertyPrintingConfig<TOwner, string> number,
+            int count)
         {
-            return ((ITypePrintingConfig<TOwner>)number).PrintingConfig;
+            return ((ITypePrintingConfig<TOwner>) number).PrintingConfig;
         }
     }
 }
