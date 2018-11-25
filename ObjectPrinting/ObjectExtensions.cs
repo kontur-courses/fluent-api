@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public static class ObjectPrinterExtensions
+    public static class ObjectExtensions
     {
         public static string PrintToString<T>(this T obj)
         {

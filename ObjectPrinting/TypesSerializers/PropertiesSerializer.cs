@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting.TypesHandlers
+namespace ObjectPrinting.TypesSerializers
 {
-    public class PropertiesHandler : TypeHandler
+    public class PropertiesSerializer : TypeSerializer
     {
         private readonly ImmutableHashSet<Type> excludedProperties;
         private readonly IReadOnlyDictionary<Type, Delegate> TypesSerializers;
@@ -17,7 +18,7 @@ namespace ObjectPrinting.TypesHandlers
         private readonly ImmutableHashSet<PropertyInfo> excludedSpecificProperties;
 
 
-        public PropertiesHandler(
+        public PropertiesSerializer(
             ImmutableHashSet<Type> excludedProperties,
             IReadOnlyDictionary<Type, Delegate> typesSerializers,
             IReadOnlyDictionary<Type, CultureInfo> customCultures, 
@@ -33,11 +34,11 @@ namespace ObjectPrinting.TypesHandlers
             this.excludedSpecificProperties = excludedSpecificProperties;
         }
 
-        public override string Handle(
+        public override string Serialize(
             object obj,
             int nestingLevel,
             ImmutableHashSet<object> excludedValues,
-            TypeHandler handler)
+            TypeSerializer serializer)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -80,19 +81,21 @@ namespace ObjectPrinting.TypesHandlers
                     propertyValue = propSerializer.DynamicInvoke(propertyValue);
                 }
 
-                if (StringsTrimValues.TryGetValue(propertyInfo, out var startIndex))
+                if (StringsTrimValues.TryGetValue(propertyInfo, out var count))
                 {
                     var propertyValueAsString = propertyValue.ToString();
                     propertyValue = propertyValueAsString
-                        .Substring(0, propertyValueAsString.Length - startIndex);
+                        .Substring(0, count);
                 }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
-                    handler.Handle(propertyValue,
-                        nestingLevel + 1, excludedValues.Add(obj), handler));
+                    serializer.Serialize(propertyValue,
+                        nestingLevel + 1, excludedValues.Add(obj), serializer));
             }
 
-            return sb.ToString();
+                return sb
+                    .Append(Successor?.Serialize(obj, nestingLevel, excludedValues, serializer))
+                    .ToString();
         }
     }
 }

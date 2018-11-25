@@ -6,12 +6,12 @@ namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly PrintingConfig<TOwner> ownerConfig;
         private readonly PropertyInfo property;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo property = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> ownerConfig, PropertyInfo property = null)
         {
-            this.printingConfig = printingConfig;
+            this.ownerConfig = ownerConfig;
             this.property = property;
         }
 
@@ -19,17 +19,17 @@ namespace ObjectPrinting
         {
             if (property != null)
             {
-                printingConfig.PropertiesSerializers[property] = printingMethod;
+                ownerConfig.PropertiesSerializers[property] = printingMethod;
             }
             else
             {
-                printingConfig.TypesSerializers[typeof(TPropType)] = printingMethod;
+                ownerConfig.TypesSerializers[typeof(TPropType)] = printingMethod;
             }
 
-            return printingConfig;
+            return ownerConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => ownerConfig;
 
         PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.Property => property;
     }

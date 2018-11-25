@@ -114,7 +114,7 @@ namespace ObjectPrinting.Tests
 
             objectPrinter
                 .Printing(p => p.Name)
-                .Trim(1)
+                .Trim(2)
                 .PrintToString(person)
                 .Should()
                 .BeEquivalentTo(expected);
@@ -264,6 +264,59 @@ namespace ObjectPrinting.Tests
 
             objectPrinter
                 .PrintToString(tree)
+                .Should()
+                .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnFieldsWithProperties_WorksCorrectly()
+        {
+            var objectPrinter = ObjectPrinter.For<FooBar>();
+            var numbers = new List<int> {1, 2};
+            var foobar1 = new FooBar {Name = "foobar1", Numbers = numbers, Value =  10};
+            var foobar2 = new FooBar {Name = "foobar2", Numbers = numbers, Parent = foobar1, Value = 20};
+            foobar1.Parent = foobar1;
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "FooBar",
+                "\tName = foobar2",
+                "\tValue = 20",
+                "\tNumbers = List`1",
+                "\t\tElement 0 = 1",
+                "\t\tElement 1 = 2",
+                "\tParent = FooBar",
+                "\t\tName = foobar1",
+                "\t\tValue = 10",
+                "\t\tNumbers = List`1",
+                "\t\t\tElement 0 = 1",
+                "\t\t\tElement 1 = 2",
+                "\t\tParent = Circular"
+            });
+
+            objectPrinter
+                .PrintToString(foobar2)
+                .Should()
+                .BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_OnPropertyWithNull_WorksCorrectly()
+        {
+            var objectPrinter = ObjectPrinter.For<Person>();;
+            var person = new Person();
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = null",
+                "\tHeight = 0",
+                $"\tAge = 0{Environment.NewLine}",
+            });
+
+            objectPrinter
+                .PrintToString(person)
                 .Should()
                 .BeEquivalentTo(expected);
         }

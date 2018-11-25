@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Immutable;
 using System.Text;
 
-namespace ObjectPrinting.TypesHandlers
+namespace ObjectPrinting.TypesSerializers
 {
-    public class IEnumerableHandler : TypeHandler
+    public class EnumerableSerializer : TypeSerializer
     {
-        public override string Handle(
+        public override string Serialize(
             object obj,
             int nestingLevel,
             ImmutableHashSet<object> excludedValues,
-            TypeHandler handler)
+            TypeSerializer serializer)
         {
             if (obj is IEnumerable enumerable)
             {
@@ -24,13 +23,13 @@ namespace ObjectPrinting.TypesHandlers
                 foreach (var element in enumerable)
                 {
                     sb.Append(
-                        $"{identation}Element {counter++} = {handler.Handle(element, nestingLevel + 1, excludedValues, handler)}");
+                        $"{identation}Element {counter++} = {serializer.Serialize(element, nestingLevel + 1, excludedValues, serializer)}");
                 }
 
                 return sb.ToString();
             }
 
-            return Successor.Handle(obj, nestingLevel, excludedValues, handler);
+            return Successor.Serialize(obj, nestingLevel, excludedValues, serializer);
         }
     }
 }

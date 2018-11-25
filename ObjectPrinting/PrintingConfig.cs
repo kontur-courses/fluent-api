@@ -7,7 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.TypesHandlers;
+using ObjectPrinting.TypesSerializers;
 
 namespace ObjectPrinting
 {
@@ -51,29 +51,31 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            var handler = new FinalTypesHandler();
-            var propertiesHandler = new PropertiesHandler(
+            var typeHandler = new NullSerializer();
+            var propertiesHandler = new PropertiesSerializer(
                 excludedProperties.ToImmutableHashSet(),
                 (IReadOnlyDictionary<Type, Delegate>)TypesSerializers,
                 (IReadOnlyDictionary<Type, CultureInfo>)CustomCultures,
                 (IReadOnlyDictionary<PropertyInfo, Delegate>)PropertiesSerializers,
                 (IReadOnlyDictionary<PropertyInfo, int>)StringsTrimValues,
                 excludedSpecificProperties.ToImmutableHashSet());
-            handler.SetSuccessor(new IEnumerableHandler().SetSuccessor(propertiesHandler));
 
-            return PrintToString(handler, obj, 0, ImmutableHashSet<object>.Empty);
+            typeHandler.SetSuccessor(new FinalTypesSerializer()
+                .SetSuccessor(new EnumerableSerializer()
+                    .SetSuccessor(propertiesHandler
+                        .SetSuccessor(new FieldsSerializer()))
+                ));
+
+            return PrintToString(typeHandler, obj, 0, ImmutableHashSet<object>.Empty);
         }
 
         private string PrintToString(
-            TypeHandler handler,
+            TypeSerializer typeSerializer,
             object obj,
             int nestingLevel,
             ImmutableHashSet<object> excludedValues)
         {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            return handler.Handle(obj, nestingLevel, excludedValues, handler);
+            return typeSerializer.Serialize(obj, nestingLevel, excludedValues, typeSerializer);
         }
     }
 }

@@ -58,21 +58,24 @@
     <Compile Include="Constants.cs" />
     <Compile Include="IPropertyPrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
-    <Compile Include="ObjectPrinterExtensions.cs" />
+    <Compile Include="ObjectExtensions.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="Tests\Models\FooBar.cs" />
     <Compile Include="Tests\Models\Node.cs" />
     <Compile Include="Tests\Models\Tree.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Models\Person.cs" />
     <Compile Include="Tests\Models\Player.cs" />
-    <Compile Include="TypesHandlers\FinalTypesHandler.cs" />
-    <Compile Include="TypesHandlers\IEnumerableHandler.cs" />
-    <Compile Include="TypesHandlers\PropertiesHandler.cs" />
-    <Compile Include="TypesHandlers\TypeHandler.cs" />
+    <Compile Include="TypesSerializers\FieldsSerializer.cs" />
+    <Compile Include="TypesSerializers\FinalTypesSerializer.cs" />
+    <Compile Include="TypesSerializers\EnumerableSerializer.cs" />
+    <Compile Include="TypesSerializers\NullSerializer.cs" />
+    <Compile Include="TypesSerializers\PropertiesSerializer.cs" />
+    <Compile Include="TypesSerializers\TypeSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
