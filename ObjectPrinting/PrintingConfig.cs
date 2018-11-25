@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,6 +8,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly List<Type> typesToBeExcluded = new List<Type>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -24,6 +27,8 @@ namespace ObjectPrinting
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            typesToBeExcluded.Add(typeof(TPropType));
+
             return this;
         }
 
@@ -46,13 +51,17 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
+
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
+                if(!typesToBeExcluded.Contains(propertyInfo.PropertyType))
+
+                    sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
