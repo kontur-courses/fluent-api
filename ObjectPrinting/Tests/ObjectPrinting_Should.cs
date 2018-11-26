@@ -32,7 +32,20 @@ namespace ObjectPrinting.Tests
         {
             var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith", "\tHeight = 13,37")
                            + Environment.NewLine;
+
             printer.Excluding<int>();
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldExcludePropertyFromSerialization()
+        {
+            var expected = string.Join(Environment.NewLine, "Person", "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            printer.Excluding(p => p.Id);
+
             printer.PrintToString(person).Should().Be(expected);
         }
     }
