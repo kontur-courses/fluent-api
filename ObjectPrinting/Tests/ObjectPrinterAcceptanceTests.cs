@@ -29,7 +29,7 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serializer(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.GetType().GetProperty("Age"));
+                .Exclude("Age");
 
             string s1 = printer.PrintToString(person);
 
@@ -38,7 +38,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_Should_ExcludeProperty()
+        public void ObjectPrinter_Should_ExcludePropertyByType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<int>()
@@ -47,7 +47,23 @@ namespace ObjectPrinting.Tests
                 .Exclude<string>();
             var result = printer.PrintToString(person);
             var expectedResult = "Person\r\n\tHeight = 192,57\r\n";
+
             result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_ExcludePropertyByName()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Exclude("Height")
+                .Exclude("ArmLength")
+                .Exclude("Id");
+            var result = printer.PrintToString(person);
+            var expectedResult = "Person\r\n\tName = Alex\r\n\tAge = 21\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
         }
     }
 }

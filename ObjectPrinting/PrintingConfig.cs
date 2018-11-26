@@ -62,8 +62,10 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, PropertyInfo>> propertyFunc)
+        public PrintingConfig<TOwner> Exclude(string excludedNameProp)
         {
+            var excludedFunc = new Func<PropertyInfo, bool>(property => property.Name != excludedNameProp);
+            ExcludeProperties.Add(excludedFunc);
             return this;
         }
 
