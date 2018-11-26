@@ -74,28 +74,20 @@ namespace ObjectPrinting
                 return string.Empty;
 
             if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
-                return propertyInfo.Name + " = " + printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj));
+                return $"{propertyInfo.Name} = {printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
 
-            if (cultureInfoForTypes.ContainsKey(propertyInfo.PropertyType))
-            {
-                var type = propertyInfo.PropertyType;
-                if (type == typeof(int))
-                    return propertyInfo.Name + " = " + ((int)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-                if (type == typeof(double))
-                    return propertyInfo.Name + " = " + ((double)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-                if (type == typeof(long))
-                    return propertyInfo.Name + " = " + ((long)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-            }
+            if (cultureInfoForTypes.TryGetValue(propertyInfo.PropertyType, out var culture))
+                return $"{propertyInfo.Name} + { ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, culture)}\r\n";
 
             if (printersForPropertiesName.ContainsKey(propertyInfo.Name))
-                return propertyInfo.Name + " = " + printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj));
+                return $"{propertyInfo.Name} = {printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
 
             if (propertyInfo.PropertyType == typeof(string) &&
                 maxLength != null &&
                 PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
             {
-                return propertyInfo.Name + " = " +
-                       PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength);
+                return $"" propertyInfo.Name + " = " +
+                       PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength) + "\r\n";
             }
 
             return propertyInfo.Name + " = " +
