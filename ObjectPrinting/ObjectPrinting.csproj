@@ -54,11 +54,13 @@
   <ItemGroup>
     <Compile Include="ISerializingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
+    <Compile Include="ObjectPrinterExtensions.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="PrintingUsingConfigExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializingConfig.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
   <ItemGroup>

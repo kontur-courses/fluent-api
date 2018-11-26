@@ -8,7 +8,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public PrintingConfig<TOwner> Exclude<TPorpType>()
+        public PrintingConfig<TOwner> Exclude<TPropType>()
+        {
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Exclude(Func<TOwner, object> propSelector)
         {
             return this;
         }
@@ -39,6 +44,7 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+            
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
@@ -46,12 +52,14 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+            
             foreach (var propertyInfo in type.GetProperties())
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+            
             return sb.ToString();
         }
     }

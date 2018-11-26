@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
 
 namespace ObjectPrinting.Tests
 {
@@ -10,7 +9,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Alex", Age = 19};
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -22,17 +21,17 @@ namespace ObjectPrinting.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .Serialize(p => p.Age).Using(p => p.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serialize<string>().Trim()
+                .Serialize<string>().Cut(5)
                 //6. Исключить из сериализации конкретного свойства
-                .Serialize(p => p.Height).Exclude()
-                //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-                .Serialize<int>().Default()
-                .Serialize<double>().Default()
-                // etc
-                //8. ...с конфигурированием
-                .Serialize<double>().Default();
+                .Exclude(p => p.Id);
+                
+            var s1 = printer.PrintToString(person);
             
-            string s1 = printer.PrintToString(person);
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию 
+            var s2 = person.PrintToString();
+            
+            //8. ...с конфигурированием
+            var s3 = person.PrintToString(config => config.Exclude(p => p.Id));
         }
     }
 }
