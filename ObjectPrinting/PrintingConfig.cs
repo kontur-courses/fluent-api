@@ -1,20 +1,38 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private static Type[] _typesToPrint = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        
+        private List<Type> _excludedTypes = new List<Type>();
+        private List<string> _excludedProps = new List<string>();
+        
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            _excludedTypes.Add(typeof(TPropType));
             return this;
         }
         
-        public PrintingConfig<TOwner> Exclude(Func<TOwner, object> propSelector)
+        public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propSelector)
         {
+            MemberExpression body = propSelector.Body as MemberExpression;
+
+            if (body == null) {
+                UnaryExpression ubody = (UnaryExpression)propSelector.Body;
+                body = ubody.Operand as MemberExpression;
+            }
+
+            _excludedProps.Add(body.Member.Name);
             return this;
         }
         
@@ -36,18 +54,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -55,9 +62,25 @@ namespace ObjectPrinting
             
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propType = propertyInfo.PropertyType;
+                var propName = propertyInfo.Name;
+                var propValue = propertyInfo.GetValue(obj);
+                var isExcluded = _excludedTypes.Contains(propType) || _excludedProps.Contains(propName);
+
+                if (isExcluded)
+                {
+                    continue;
+                }
+                
+                if (_typesToPrint.Contains(propType))
+                {
+                    var value = propValue == null ? "null" : propValue;
+                    sb.AppendLine($"{identation}{propName} = {value}");
+                }
+                else
+                {
+                    sb.Append($"{identation}{propName} = {PrintToString(propValue, nestingLevel + 1)}");
+                }
             }
             
             return sb.ToString();
