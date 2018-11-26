@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -105,6 +106,17 @@ namespace ObjectPrinting_Should
             printer.Excluding(p => p.Age).PrintToString(person).Should().Be(withoutAge);
             printer.Excluding(p => p.Height).PrintToString(person).Should().Be(withoutHeight);
             
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldMaintainEnumberables()
+        {
+            var collection = new[] {8,9,5,0,5,5,7,9,8,9,6};
+            var expected = string.Join(Environment.NewLine,
+                               "Int32[]", "{", "\t8", "\t9", "\t5", "\t0", "\t5", 
+                               "\t5", "\t7", "\t9", "\t8", "\t9", "\t6","}") + Environment.NewLine;
+            var printer = ObjectPrinter.For<int[]>();
+            printer.PrintToString(collection).Should().Be(expected);
         }
 
 

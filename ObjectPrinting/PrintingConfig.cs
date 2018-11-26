@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -11,11 +12,16 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private const int CollectionPrintLength = 100;
         private ImmutableList<Type> excludedTypes = ImmutableList<Type>.Empty;
         private ImmutableList<String> excludedProperties = ImmutableList<String>.Empty;
         private ImmutableDictionary<Type, CultureInfo> typeCultures = ImmutableDictionary<Type, CultureInfo>.Empty;
         private ImmutableDictionary<Type, Delegate> typeSerializations = ImmutableDictionary<Type, Delegate>.Empty;
         private ImmutableDictionary<String, Delegate> propertySerializations = ImmutableDictionary<String, Delegate>.Empty;
+        private readonly Type[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -52,20 +58,22 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            if (nestingLevel > 100) return "Recursion";
+            
             var identation = new string('\t', nestingLevel + 1);
+            
             var sb = new StringBuilder();
+            if (obj is IEnumerable collection)
+            {
+                sb.Append(PrintCollection(obj, collection));
+                return sb.ToString();
+            }
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
@@ -87,6 +95,28 @@ namespace ObjectPrinting
                     propetyValue = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
                 sb.Append(identation + propertyInfo.Name + " = " + propetyValue);
             }
+            return sb.ToString();
+        }
+
+        private string PrintCollection(object obj, IEnumerable collection)
+        {
+            var typeName = obj.GetType().Name;
+            var sb = new StringBuilder();
+            sb.Append(typeName + Environment.NewLine);
+            sb.Append("{" + Environment.NewLine);
+            var itemNumber = 0;
+            foreach (var item in collection)
+            {
+                if (itemNumber > CollectionPrintLength)
+                {
+                    sb.Append("\t..." + Environment.NewLine);
+                    break;
+                }
+                var element = PrintToString(item, 0);
+                sb.Append("\t" + element);
+                itemNumber++;
+            }
+            sb.Append("}" + Environment.NewLine);
             return sb.ToString();
         }
 
