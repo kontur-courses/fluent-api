@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 namespace ObjectPrinting
@@ -13,8 +12,19 @@ namespace ObjectPrinting
         public readonly Dictionary<string, Delegate> propertyOperations = new Dictionary<string, Delegate>();
         private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
 
-        public void SetTypeOperation(Type type, Delegate operation) => typeOperations[type] = operation;
+        private readonly List<Type> finalTypes = new List<Type>
+        {
+            typeof(int),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(long)
+        };
 
+
+    public void SetTypeOperation(Type type, Delegate operation) => typeOperations[type] = operation;
         public void AddTypeOperation(Type type, Delegate operation) => typeOperations.Add(type, operation);
 
         public PrintingConfig<TOwner> Exclude<TPropertyType>()
@@ -50,15 +60,8 @@ namespace ObjectPrinting
 
         public string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -77,14 +80,10 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = ");
 
                 if (typeOperations.ContainsKey(propType))
-                {
                     sb.Append(PrintToString(typeOperations[propType].DynamicInvoke(propertyInfo.GetValue(obj)),
                                   nestingLevel + 1));
-                }
                 else
-                {
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-                }
             }
 
             return sb.ToString();
