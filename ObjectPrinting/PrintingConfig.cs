@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,10 +11,10 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes = 
+        private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(bool), typeof(Guid)
         };
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
@@ -26,7 +27,7 @@ namespace ObjectPrinting
         void IPrintingConfig<TOwner>.AddTypeCulture(Type type, CultureInfo culture) => typesCulture[type] = culture;
         void IPrintingConfig<TOwner>.AddSpecialPropertySerializing(string propName, Delegate format) => specialPropertiesSerializing[propName] = format;
 
-        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> selector) => 
+        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
             ((MemberExpression)selector.Body).Member.Name;
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> selector)
@@ -41,13 +42,13 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => 
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
             new PropertyPrintingConfig<TOwner, TPropType>(this);
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector) => 
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
             new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyName(selector));
 
-        public string PrintToString(TOwner obj, int maxNestingForRecursiveFields = 10) => 
+        public string PrintToString(TOwner obj, int maxNestingForRecursiveFields = 10) =>
             PrintToString(obj, 0, maxNestingForRecursiveFields);
 
         private string PrintToString(object obj, int nestingLevel, int maxNestingForRecursiveFields)
@@ -58,12 +59,40 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+            if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
+
+            if (obj is IEnumerable enumerable)
+            {
+                PrintEnumerable(enumerable, sb, nestingLevel, maxNestingForRecursiveFields, indentation, type);
+            }
+            else
+            {
+                PrintUsualType(sb, nestingLevel, maxNestingForRecursiveFields, indentation, type, obj);
+            }
+
+            return sb.ToString();
+        }
+
+        private void PrintEnumerable(IEnumerable enumerable, StringBuilder sb, int nestingLevel,
+            int maxNestingForRecursiveFields, string indentation, Type type)
+        {
+            sb.AppendLine(type.Name + " consists of");
+            foreach (var element in enumerable)
+            {
+                sb.Append(indentation +
+                          PrintToString(element,
+                              nestingLevel + 1, maxNestingForRecursiveFields));
+            }
+        }
+
+        private void PrintUsualType(StringBuilder sb, int nestingLevel,
+            int maxNestingForRecursiveFields, string indentation, Type type, object obj)
+        {
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in Filter(type.GetProperties()))
             {
@@ -73,10 +102,9 @@ namespace ObjectPrinting
                           PrintToString(propertyValue,
                               nestingLevel + 1, maxNestingForRecursiveFields));
             }
-            return sb.ToString();
         }
 
-        private IEnumerable<PropertyInfo> Filter(IEnumerable<PropertyInfo> properties) => 
+        private IEnumerable<PropertyInfo> Filter(IEnumerable<PropertyInfo> properties) =>
             properties
                 .Where(property => !excludedTypes.Contains(property.PropertyType))
                 .Where(property => !excludedProperties.Contains(property.Name));

@@ -30,7 +30,7 @@ namespace ObjectPrinting.Tests
         public void ExcludeTypes_BySelector()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Age = 19{newLine}";
             printer
                 .Excluding<double>()
                 .PrintToString(person)
@@ -52,7 +52,7 @@ namespace ObjectPrinting.Tests
         public void SpecializeType_BySelector_ForInt()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Height = 188,9{newLine}	Age = int 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Height = 188,9{newLine}	Age = int 19{newLine}";
             printer
                 .Printing<int>()
                 .Using(num => "int " + num.ToString())
@@ -64,7 +64,7 @@ namespace ObjectPrinting.Tests
         public void SpecializeType_BySelector_ForDouble()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Height = double 188,9{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Height = double 188,9{newLine}	Age = 19{newLine}";
             printer
                 .Printing<double>()
                 .Using(num => "double " + num.ToString())
@@ -77,7 +77,7 @@ namespace ObjectPrinting.Tests
         public void Serialize_WithAnotherCulture(string cultureCode, string number)
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Height = {number}{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Height = {number}{newLine}	Age = 19{newLine}";
             printer
                 .Printing<double>()
                 .Using(CultureInfo.CreateSpecificCulture(cultureCode))
@@ -89,7 +89,7 @@ namespace ObjectPrinting.Tests
         public void SpecializeProperties_BySelector()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Height = 188,9 sm{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Height = 188,9 sm{newLine}	Age = 19{newLine}";
             printer
                 .Printing(p => p.Height)
                 .Using(height => height.ToString() + " sm")
@@ -101,7 +101,7 @@ namespace ObjectPrinting.Tests
         public void PrintStrings_WithTrimming()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alex{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alex{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
             printer
                 .Printing<string>()
                 .Trim(4)
@@ -113,7 +113,7 @@ namespace ObjectPrinting.Tests
         public void Print_Default()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = Alexander{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = Alexander{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
             printer
                 .PrintToString(person)
                 .Should().Be(expectedResult);
@@ -123,7 +123,7 @@ namespace ObjectPrinting.Tests
         public void UseLastSpecifiedConfig()
         {
             var expectedResult =
-                $"Person{newLine}	Id = Guid{newLine}	Name = c{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
+                $"Person{newLine}	Id = 00000000-0000-0000-0000-000000000000{newLine}	Name = c{newLine}	Height = 188,9{newLine}	Age = 19{newLine}";
             printer
                 .Printing(p => p.Name)
                 .Using(name => "a")
@@ -152,6 +152,17 @@ namespace ObjectPrinting.Tests
                 $"LinkedListNode{newLine}	Value = 1{newLine}	Next = LinkedListNode{newLine}		Value = 2{newLine}		Next = null{newLine}";
 
             printer.PrintToString(linkedList).Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void PrintElements_OfEnumerable()
+        {
+            var arr = new[] {1, 2, 3, 4};
+            var printer = ObjectPrinter.For<int[]>();
+
+            var expectedResult = $"Int32[] consists of{newLine}	1{newLine}	2{newLine}	3{newLine}	4{newLine}";
+
+            printer.PrintToString(arr).Should().Be(expectedResult);
         }
     }
 }
