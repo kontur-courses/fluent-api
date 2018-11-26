@@ -12,9 +12,9 @@ namespace ObjectPrinting
 {
     public interface IPrintingConfig
     {
-        Dictionary<Type, Expression<Func<object, string>>> PrintersForTypes { get; }
+        Dictionary<Type, Func<object, string>> PrintersForTypes { get; }
         Dictionary<Type, CultureInfo> CultureInfoForTypes { get; }
-        Dictionary<string, Expression<Func<object, string>>> PrintersForPropertiesNames { get; }
+        Dictionary<string, Func<object, string>> PrintersForPropertiesNames { get; }
         int? MaxLength { get; set; }
     }
 
@@ -25,17 +25,17 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, CultureInfo> cultureInfoForTypes =
             new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<Type, Expression<Func<object, string>>> printersForTypes =
-            new Dictionary<Type, Expression<Func<object, string>>>();
-        private readonly Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName =
-            new Dictionary<string, Expression<Func<object, string>>>();
+        private readonly Dictionary<Type, Func<object, string>> printersForTypes =
+            new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<string, Func<object, string>> printersForPropertiesName =
+            new Dictionary<string, Func<object, string>>();
         private int? maxLength;
 
-        private Dictionary<object, int> countOfPrintings = new Dictionary<object, int>();
+        private readonly Dictionary<object, int> countOfPrintings = new Dictionary<object, int>();
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
+        Dictionary<Type, Func<object, string>> IPrintingConfig.PrintersForTypes => printersForTypes;
         Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
-        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
+        Dictionary<string, Func<object, string>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
         int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -74,13 +74,13 @@ namespace ObjectPrinting
                 return string.Empty;
 
             if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
-                return $"{propertyInfo.Name} = {printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
+                return $"{propertyInfo.Name} = {printersForTypes[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj))}\r\n";
 
             if (cultureInfoForTypes.TryGetValue(propertyInfo.PropertyType, out var culture))
                 return $"{propertyInfo.Name} + { ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, culture)}\r\n";
 
             if (printersForPropertiesName.ContainsKey(propertyInfo.Name))
-                return $"{propertyInfo.Name} = {printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
+                return $"{propertyInfo.Name} = {printersForPropertiesName[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))}\r\n";
 
             if (propertyInfo.PropertyType == typeof(string) &&
                 maxLength != null &&
