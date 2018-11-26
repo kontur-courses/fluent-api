@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,6 +15,9 @@ namespace ObjectPrinting
 
         public Dictionary<Type, Delegate> TypesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
 
+        public Dictionary<Type, CultureInfo> NumericTypesToBeAlternativelySerializedUsingCultureInfo = new Dictionary<Type, CultureInfo>();
+
+        
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -75,6 +79,9 @@ namespace ObjectPrinting
                     if (TypesToBeAlternativelySerialized.ContainsKey(propType))
                         value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
+                    if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
+                        value = Convert.ToString(value, NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
+
                     sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(value,
                               nestingLevel + 1));
@@ -85,4 +92,5 @@ namespace ObjectPrinting
             return sb.ToString();
         }
     }
+
 }

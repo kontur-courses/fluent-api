@@ -21,6 +21,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            printingConfig.NumericTypesToBeAlternativelySerializedUsingCultureInfo
+                .Add(typeof(TPropType), culture);
             return printingConfig;
         }
 

@@ -37,18 +37,6 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).Should().Be(expected);
         }
-
-        [Test]
-        public void ObjectPrinter_ShouldExcludePropertyFromSerialization()
-        {
-            var expected = string.Join(Environment.NewLine, "Person", "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
-                           + Environment.NewLine;
-
-            printer.Excluding(p => p.Id);
-
-            printer.PrintToString(person).Should().Be(expected);
-        }
-
         
         [Test]
         public void ObjectPrinter_ShouldSerializeTypesAlternatively()
@@ -63,6 +51,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ObjectPrinter_ShouldSetCulture()
+        {
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith",
+                               "\tHeight = 13.37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            printer.Printing<double>().Using(CultureInfo.InvariantCulture);
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+
+        [Test]
         public void ObjectPrinter_ShouldTrimStringProperties()
         {
             var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John",
@@ -70,6 +71,17 @@ namespace ObjectPrinting.Tests
                            + Environment.NewLine;
 
             printer.Printing(p => p.Name).TrimmedToLength(4);
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldExcludePropertyFromSerialization()
+        {
+            var expected = string.Join(Environment.NewLine, "Person", "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            printer.Excluding(p => p.Id);
 
             printer.PrintToString(person).Should().Be(expected);
         }
