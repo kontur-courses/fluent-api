@@ -48,5 +48,17 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).Should().Be(expected);
         }
+
+        [Test]
+        public void ObjectPrinter_ShouldSerializeTypesAlternatively()
+        {
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith", 
+                               "\tHeight = 13,37", "\tAge = 69 (это инт)")
+                           + Environment.NewLine;
+
+            printer.Printing<int>().Using(x => x + " (это инт)");
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
     }
 }

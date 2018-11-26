@@ -12,6 +12,8 @@ namespace ObjectPrinting
         private readonly List<Type> typesToBeExcluded = new List<Type>();
         private readonly List<string> propertiesToBeExcluded = new List<string>();
 
+        public Dictionary<Type, Delegate> TypesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -63,12 +65,22 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(!typesToBeExcluded.Contains(propertyInfo.PropertyType) 
-                   && !propertiesToBeExcluded.Contains(propertyInfo.Name))
+                var propType = propertyInfo.PropertyType;
+
+                if (!typesToBeExcluded.Contains(propType)
+                    && !propertiesToBeExcluded.Contains(propertyInfo.Name))
+                {
+                    var value = propertyInfo.GetValue(obj);
+
+                    if (TypesToBeAlternativelySerialized.ContainsKey(propType))
+                        value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
                     sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
+                          PrintToString(value,
                               nestingLevel + 1));
+                }
+
+                    
             }
             return sb.ToString();
         }

@@ -6,7 +6,7 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-
+        
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
@@ -14,6 +14,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingConfig.TypesToBeAlternativelySerialized.Add(typeof(TPropType), print);
+
             return printingConfig;
         }
 
