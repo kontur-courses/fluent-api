@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using ObjectPrinting.SerializingConfig;
+
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public readonly HashSet<Type> excludeTypes = new HashSet<Type>();
-        public readonly HashSet<string> excludeProperties = new HashSet<string>();
-
-        public readonly Dictionary<string, Delegate> propertyOperations = new Dictionary<string, Delegate>();
+        private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
+        private readonly HashSet<string> excludeProperties = new HashSet<string>();
         public readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
 
         private readonly List<Type> finalTypes = new List<Type>
@@ -42,19 +42,28 @@ namespace ObjectPrinting
             return new SerializingConfig<TOwner, TPropType>(this);
         }
 
-        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Func<TOwner, TProperty> propSelector)
+        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
         {
             return new SerializingConfig<TOwner, TProperty>(this);
         }
 
         public PrintingConfig<TOwner> DefaultSerialize()
         {
+            excludeTypes.Clear();
+            excludeProperties.Clear();
+            typeOperations.Clear();
             return this;
         }
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        public void PrintToString(List<TOwner> objects)
+        {
+            foreach (var obj in objects)
+                PrintToString(obj);
         }
 
         public string PrintToString(object obj, int nestingLevel)

@@ -52,13 +52,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ISerializingConfig.cs" />
+    <Compile Include="SerializingConfig\ISerializingConfig.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SerializingConfig.cs" />
-    <Compile Include="SerilalizingConfigExtensions.cs" />
+    <Compile Include="SerializingConfig\SerializingConfig.cs" />
+    <Compile Include="SerializingConfig\SerilalizingConfigExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

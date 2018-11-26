@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.SerializingConfig;
 
 namespace ObjectPrintingTests.cs
 {
@@ -16,7 +17,6 @@ namespace ObjectPrintingTests.cs
             printer = ObjectPrinter.For<Person>();
             person = new Person { Name = "Alex", Age = 19 };
         }
-
 
         [Test]
         public void ExcludeSelectedPropertyType()
@@ -69,6 +69,18 @@ namespace ObjectPrintingTests.cs
                 $"Person\r\n\tId = Guid\r\n\tName = ex\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n";
 
             var actual = printer.Serialize<string>().Cut(2).PrintToString(person);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void DefaultSerialize()
+        {
+            var expected =
+                $"Person\r\n\tId = Guid\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n";
+
+            var changedConfig = printer.Exclude(p => p.Age).Serialize<string>().Using(s => $"#{s}#");
+            var actual = changedConfig.DefaultSerialize().PrintToString(person);
 
             Assert.AreEqual(expected, actual);
         }

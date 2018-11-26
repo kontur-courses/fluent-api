@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.SerializingConfig
 {
     public class SerializingConfig<TOwner, TPropertyType> : ISerializingConfig<TOwner, TPropertyType>
     {
@@ -19,7 +18,5 @@ namespace ObjectPrinting
         }
 
         PrintingConfig<TOwner> ISerializingConfig<TOwner, TPropertyType>.SerializingConfig => printingConfig;
-
-        public List<string> ExcludeProperty { get; set; }
     }
 }

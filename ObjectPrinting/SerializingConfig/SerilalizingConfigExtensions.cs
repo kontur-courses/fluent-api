@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Globalization;
-using System.Linq;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.SerializingConfig
 {
     public static class SerilalizingConfigExtensions
     {

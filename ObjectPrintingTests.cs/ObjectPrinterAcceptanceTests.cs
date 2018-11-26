@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.SerializingConfig;
 
 namespace ObjectPrintingTests.cs
 {
@@ -12,6 +14,7 @@ namespace ObjectPrintingTests.cs
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
+
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<double>()
