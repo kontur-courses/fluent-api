@@ -1,10 +1,6 @@
-﻿using System;
-using System.Globalization;
-using System.Security.AccessControl;
-using System.Threading;
+﻿using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrintingTests.cs
 {
@@ -76,6 +72,5 @@ namespace ObjectPrintingTests.cs
 
             Assert.AreEqual(expected, actual);
         }
-
     }
 }

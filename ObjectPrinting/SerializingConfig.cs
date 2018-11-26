@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public class SerializingConfig<TOwner, TPropertyType> : ISerializingConfig<TOwner>
+    public class SerializingConfig<TOwner, TPropertyType> : ISerializingConfig<TOwner, TPropertyType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
@@ -13,13 +13,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropertyType, string> operation)
         {
-            printingConfig.typeOperations[typeof(TPropertyType)] = operation;
+            printingConfig.SetTypeOperation(typeof(TPropertyType), operation);
             return printingConfig;
         }
+
         public PrintingConfig<TOwner> Exclude()
         {
             return printingConfig;
         }
-        PrintingConfig<TOwner> ISerializingConfig<TOwner>.SerializingConfig => printingConfig;
+
+        PrintingConfig<TOwner> ISerializingConfig<TOwner, TPropertyType>.SerializingConfig => printingConfig;
     }
 }

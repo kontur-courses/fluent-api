@@ -8,7 +8,11 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
-        public Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+
+        public void SetTypeOperation(Type type, Delegate operation) => typeOperations[type] = operation;
+
+        public void AddTypeOperation(Type type, Delegate operation) => typeOperations.Add(type, operation);
 
         public PrintingConfig<TOwner> Exclude<TPropertyType>()
         {
@@ -21,9 +25,9 @@ namespace ObjectPrinting
             return new SerializingConfig<TOwner, TPropType>(this);
         }
 
-        public SerializingConfig<TOwner, Expression> Serialize(Expression<Func<TOwner, object>> propSelector)
+        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Func<TOwner, TProperty> propSelector)
         {
-            return new SerializingConfig<TOwner, Expression>(this);
+            return new SerializingConfig<TOwner, TProperty>(this);
         }
 
         public PrintingConfig<TOwner> DefaultSerialize()
