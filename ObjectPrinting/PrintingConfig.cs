@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -28,6 +30,11 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName =
             new Dictionary<string, Expression<Func<object, string>>>();
         private int? maxLength;
+
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
+        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
+        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
+        int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -110,17 +117,40 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            if (type.Implements(typeof(ICollection)))
             {
-                sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
+                sb.Append(GetICollectionPrintingValue((ICollection)obj, nestingLevel));
             }
+            else
+            {
+
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
+                }
+            }
+
             return sb.ToString();
         }
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
-        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
-        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
-        int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
+
+
+        private string GetICollectionPrintingValue(ICollection collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var index = 0;
+
+            foreach (var obj in collection)
+            {
+                sb.Append(identation);
+                sb.Append($"{index}: {PrintToString(obj, nestingLevel)}");
+                index++;
+            }
+
+            return sb.ToString();
+        }
     }
 }
