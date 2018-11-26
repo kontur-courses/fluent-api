@@ -72,5 +72,16 @@ namespace ObjectPrintingTests.cs
 
             Assert.AreEqual(expected, actual);
         }
+
+        [Test]
+        public void ExcludeSelectedProperty()
+        {
+            var expected =
+                $"Person\r\n\tId = Guid\r\n\tName = ex\r\n\tHeight = {person.Height}\r\n";
+
+            var actual = printer.Serialize(p => p.Age).Exclude().PrintToString(person);
+
+            Assert.AreEqual(expected, actual);
+        }
     }
 }

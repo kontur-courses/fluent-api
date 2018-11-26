@@ -17,11 +17,6 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Exclude()
-        {
-            return printingConfig;
-        }
-
         PrintingConfig<TOwner> ISerializingConfig<TOwner, TPropertyType>.SerializingConfig => printingConfig;
     }
 }

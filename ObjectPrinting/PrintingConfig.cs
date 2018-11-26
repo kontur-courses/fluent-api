@@ -8,6 +8,9 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
+        public readonly HashSet<string> properties = new HashSet<string>();
+
+        public readonly Dictionary<string, Delegate> propertyOperations = new Dictionary<string, Delegate>();
         private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
 
         public void SetTypeOperation(Type type, Delegate operation) => typeOperations[type] = operation;
@@ -25,8 +28,13 @@ namespace ObjectPrinting
             return new SerializingConfig<TOwner, TPropType>(this);
         }
 
-        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Func<TOwner, TProperty> propSelector)
+        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
         {
+            var className = typeof(TOwner).ToString();
+            var member = (propSelector.Body as MemberExpression)?.ToString();
+            member = member?.Substring(member.IndexOf('.'));
+            properties.Add(className + member);
+
             return new SerializingConfig<TOwner, TProperty>(this);
         }
 
