@@ -104,5 +104,43 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = A	Height = 0\r\n	Age = 0\r\n");
         }
+
+        [Test]
+        public void Arr()
+        {
+            var p = ObjectPrinter.For<A>();
+            Console.WriteLine(p.PrintToString(new A()));
+            Console.WriteLine(p.PrintToString(new A { arr = new[] { 1, 2 } }));
+        }
+
+        [Test]
+        public void Nested()
+        {
+            var p = ObjectPrinter.For<Y>();
+            var y = new Y();
+            y.y = y;
+            Console.WriteLine(p.PrintToString(y));
+        }
+
+        [Test]
+        public void Decimal()
+        {
+            var p = ObjectPrinter.For<D>().Printing<decimal>().Using(CultureInfo.InvariantCulture);
+            Console.WriteLine(p.PrintToString(new D { d = 1.2m }));
+        }
+
+        class A
+        {
+            public int[] arr { get; set; }
+        }
+        class Y
+        {
+            public int x { get; set; } = 2;
+            public Y y { get; set; }
+        }
+        class D
+        {
+            public decimal d { get; set; }
+        }
     }
 }
