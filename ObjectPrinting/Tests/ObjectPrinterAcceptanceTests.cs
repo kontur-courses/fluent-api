@@ -27,10 +27,10 @@ namespace ObjectPrinting.Tests
                 .Serialize(p => p.Height).Exclude()
                 //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
                 .Serialize<int>().Default()
-                .Serialize<double>().Default();
+                .Serialize<double>().Default()
                 // etc
                 //8. ...с конфигурированием
-                //хз что имеется в виду
+                .Serialize<double>().Default();
             
             string s1 = printer.PrintToString(person);
         }
