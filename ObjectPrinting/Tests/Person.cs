@@ -9,6 +9,7 @@ namespace ObjectPrinting.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public float ArmLength { get; set; }
+        public int NumberChildren = 2;
 
         public Person(Guid id, string name, double height, int age, float armLength)
         {

@@ -62,7 +62,7 @@ namespace ObjectPrinting.Tests
                 .Exclude(p => p.ArmLength)
                 .Exclude(p => p.Id);
             var result = printer.PrintToString(person);
-            var expectedResult = "Person\r\n\tName = Alex\r\n\tAge = 21\r\n";
+            var expectedResult = "Person\r\n\tName = Alex\r\n\tAge = 21\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);
@@ -72,9 +72,11 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_PerformAlternativeSerializationByType()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializer<double>().Using(i => "\tHeight = 192\r\n");
+                .Serializer<double>().Using(i => "\tHeight = 192\r\n")
+                .Serializer<Guid>().Using(i => "\tId = Guid\r\n");
             var result = printer.PrintToString(person);
-            var expectedResult = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n";
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);

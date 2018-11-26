@@ -9,13 +9,15 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public List<Func<PropertyInfo, bool>> ExcludeProperties;
-        public Dictionary<Type, Delegate> AlternativeSerializationByType;
+        public List<Func<MemberInfo, bool>> ExcludeProperties { get; set; }
+        public Dictionary<Type, Delegate> AlternativeSerializationByType { get; set; }
+        public List<object> ViewedObjects { get; set; }
 
         public PrintingConfig()
         {
-            ExcludeProperties = new List<Func<PropertyInfo, bool>>();
+            ExcludeProperties = new List<Func<MemberInfo, bool>>();
             AlternativeSerializationByType = new Dictionary<Type, Delegate>();
+            ViewedObjects = new List<object>();
         }
         public string PrintToString(TOwner obj)
         {
@@ -24,7 +26,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -37,41 +38,74 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
 
-            var properties = type.GetProperties();
+            var members = type.GetMembers().Where(member => (member.MemberType & MemberTypes.Property) != 0 ||
+                                                               (member.MemberType & MemberTypes.Field) != 0).ToArray();
             foreach (var e in ExcludeProperties)
-                properties = properties.Where(e).ToArray();
+                members = members.Where(e).ToArray();
+            var result =PrintMembers(obj, nestingLevel, identation, members);
+            return result;
+        }
 
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in properties)
+        private string PrintMembers(object obj, int nestingLevel, string identation, MemberInfo[] members)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(obj.GetType().Name);
+            foreach (var memberInfo in members)
             {
-                var propertyType = propertyInfo.PropertyType;
+                var value = GetValue(memberInfo, obj);
+                var propertyType = GetType(memberInfo);
                 if (AlternativeSerializationByType.ContainsKey(propertyType))
                 {
-                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
+                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(value);
                     sb.Append(result);
+                    continue;
                 }
-                else
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
+                if (ViewedObjects.Contains(value))
+                    continue;
+                ViewedObjects.Add(value);
+                sb.Append(identation + memberInfo.Name + " = " +
+                              PrintToString(value,
                                   nestingLevel + 1));
             }
+
             return sb.ToString();
+        }
+
+        private Type GetType(MemberInfo memberInfo)
+        {
+            if (memberInfo is PropertyInfo propertyInfo)
+            {
+                return propertyInfo.PropertyType;
+            }
+
+            var fieldInfo = (FieldInfo)memberInfo;
+            return fieldInfo.FieldType;
+        }
+
+        private object GetValue(MemberInfo memberInfo, object obj)
+        {
+            if (memberInfo is PropertyInfo propertyInfo)
+            {
+                return propertyInfo.GetValue(obj);
+            }
+
+            var fieldInfo = (FieldInfo)memberInfo;
+            return fieldInfo.GetValue(obj);
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             var excludedType = typeof(TPropType);
-            var excludedFunc = new Func<PropertyInfo, bool>(property => property.PropertyType != excludedType);
+            var excludedFunc = new Func<MemberInfo, bool>(memberInfo => GetType(memberInfo) != excludedType);
             ExcludeProperties.Add(excludedFunc);
             return this;
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
         {
-            var excludedFunc = new Func<PropertyInfo, bool>(property => property.Name !=
+            var excludedFunc = new Func<MemberInfo, bool>(property => property.Name !=
                                                                         ((MemberExpression)excludedExpression.Body).Member.Name);
             ExcludeProperties.Add(excludedFunc);
             return this;
