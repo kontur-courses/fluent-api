@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -69,7 +70,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(x=>"x");
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x\r\n");
         }
 
         [Test]
@@ -80,7 +81,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(x=>x.Age).Using(x => "x");
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 0\r\n	Age = x\r\n");
         }
 
         [Test]
@@ -91,7 +92,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.GetCultureInfo("en-UK"));
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 1.2	Age = 0\r\n");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height + 1.2\r\n	Age = 0\r\n");
         }
 
         [Test]
@@ -102,9 +103,15 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(1);
 
-            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = A	Height = 0\r\n	Age = 0\r\n");
+            printer.PrintToString(person).ShouldBeEquivalentTo("Person\r\n	Id = Guid\r\n	Name = A\r\n	Height = 0\r\n	Age = 0\r\n");
         }
 
+        [Test]
+        public void TestArrayPrinting()
+        {
+            var list = new []{1, 2, 3, 4, 5};
+            list.PrintToString().ShouldBeEquivalentTo("Int32[]\r\n	0: 1\r\n	1: 2\r\n	2: 3\r\n	3: 4\r\n	4: 5\r\n");
+        }
         [Test]
         public void Arr()
         {

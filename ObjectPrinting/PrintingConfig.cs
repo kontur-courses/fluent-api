@@ -86,12 +86,10 @@ namespace ObjectPrinting
                 maxLength != null &&
                 PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
             {
-                return $"" propertyInfo.Name + " = " +
-                       PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength) + "\r\n";
+                return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength)}\r\n";
             }
 
-            return propertyInfo.Name + " = " +
-                   PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
         }
 
         private bool MoreThen10NestingLevel(object obj)
