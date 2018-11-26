@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -28,6 +30,13 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Expression<Func<object, string>>> printersForPropertiesName =
             new Dictionary<string, Expression<Func<object, string>>>();
         private int? maxLength;
+
+        private Dictionary<object, int> countOfPrintings = new Dictionary<object, int>();
+
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
+        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
+        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
+        int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -65,33 +74,36 @@ namespace ObjectPrinting
                 return string.Empty;
 
             if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
-                return propertyInfo.Name + " = " + printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj));
+                return $"{propertyInfo.Name} = {printersForTypes[propertyInfo.PropertyType].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
 
-            if (cultureInfoForTypes.ContainsKey(propertyInfo.PropertyType))
-            {
-                var type = propertyInfo.PropertyType;
-                if (type == typeof(int))
-                    return propertyInfo.Name + " = " + ((int)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-                if (type == typeof(double))
-                    return propertyInfo.Name + " = " + ((double)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-                if (type == typeof(long))
-                    return propertyInfo.Name + " = " + ((long)propertyInfo.GetValue(obj)).ToString(cultureInfoForTypes[propertyInfo.PropertyType]);
-
-            }
+            if (cultureInfoForTypes.TryGetValue(propertyInfo.PropertyType, out var culture))
+                return $"{propertyInfo.Name} + { ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, culture)}\r\n";
 
             if (printersForPropertiesName.ContainsKey(propertyInfo.Name))
-                return propertyInfo.Name + " = " + printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj));
+                return $"{propertyInfo.Name} = {printersForPropertiesName[propertyInfo.Name].Compile().Invoke(propertyInfo.GetValue(obj))}\r\n";
 
             if (propertyInfo.PropertyType == typeof(string) &&
                 maxLength != null &&
                 PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
             {
-                return propertyInfo.Name + " = " +
-                       PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength);
+                return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength)}\r\n";
             }
 
-            return propertyInfo.Name + " = " +
-                   PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
+        }
+
+        private bool MoreThen10NestingLevel(object obj)
+        {
+            if (countOfPrintings.ContainsKey(obj))
+            {
+                if (countOfPrintings[obj] >= 10)
+                    return true;
+                countOfPrintings[obj]++;
+            }
+            else
+                countOfPrintings.Add(obj, 0);
+
+            return false;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -99,28 +111,49 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (MoreThen10NestingLevel(obj)) return "REC";
+
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+            var identation = new string('\t', nestingLevel + 1);
+
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            if (type.Implements(typeof(ICollection)))
             {
-                sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
+                sb.Append(GetICollectionPrintingValue((ICollection)obj, nestingLevel));
+                return sb.ToString();
             }
+
+            foreach (var propertyInfo in type.GetProperties())
+                sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
+
             return sb.ToString();
         }
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
-        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
-        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
-        int? IPrintingConfig.MaxLength { get => maxLength; set => maxLength = value; }
+        private string GetICollectionPrintingValue(ICollection collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+
+            var index = 0;
+
+            foreach (var obj in collection)
+            {
+                sb.Append($"{identation}{index}: {PrintToString(obj, nestingLevel)}");
+                index++;
+            }
+
+            return sb.ToString();
+        }
     }
 }
