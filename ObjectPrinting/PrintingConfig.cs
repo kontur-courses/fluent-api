@@ -15,6 +15,8 @@ namespace ObjectPrinting
 
         public Dictionary<Type, Delegate> TypesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
 
+        public Dictionary<string, Delegate> PropertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
+
         public Dictionary<Type, CultureInfo> NumericTypesToBeAlternativelySerializedUsingCultureInfo = new Dictionary<Type, CultureInfo>();
 
         
@@ -25,7 +27,10 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var selectorBody = (MemberExpression)memberSelector.Body;
+            var propName = selectorBody.Member;
+
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)propName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -70,9 +75,10 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propType = propertyInfo.PropertyType;
+                var propName = propertyInfo.Name;
 
                 if (!typesToBeExcluded.Contains(propType)
-                    && !propertiesToBeExcluded.Contains(propertyInfo.Name))
+                    && !propertiesToBeExcluded.Contains(propName))
                 {
                     var value = propertyInfo.GetValue(obj);
 
@@ -82,15 +88,15 @@ namespace ObjectPrinting
                     if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
                         value = Convert.ToString(value, NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
 
-                    sb.Append(indentation + propertyInfo.Name + " = " +
+                    if (PropertiesToBeAlternativelySerialized.ContainsKey(propName))
+                        value = PropertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
+
+                    sb.Append(indentation + propName + " = " +
                           PrintToString(value,
                               nestingLevel + 1));
                 }
-
-                    
             }
             return sb.ToString();
         }
     }
-
 }

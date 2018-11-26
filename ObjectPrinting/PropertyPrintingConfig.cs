@@ -1,20 +1,28 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        private readonly PropertyInfo prop;
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo prop = null)
         {
+            this.prop = prop;
             this.printingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingConfig.TypesToBeAlternativelySerialized.Add(typeof(TPropType), print);
+            Console.WriteLine("prop: " + prop);
+
+            if (prop is null)
+                printingConfig.TypesToBeAlternativelySerialized.Add(typeof(TPropType), print);
+            else
+                printingConfig.PropertiesToBeAlternativelySerialized.Add(prop.Name, print);
 
             return printingConfig;
         }
