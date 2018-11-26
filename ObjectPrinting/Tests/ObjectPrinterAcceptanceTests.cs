@@ -9,11 +9,13 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private Person person;
+
         [SetUp]
         public void Init()
         {
-            person = new Person(Guid.NewGuid(), "Alex",192.57,21,15);
+            person = new Person(Guid.NewGuid(), "Alex", 192.57, 21, 15);
         }
+
         [Test]
         public void Demo()
         {
@@ -29,10 +31,10 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serializer(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude("Age");
+                .Exclude(p=> p.Age);
 
             string s1 = printer.PrintToString(person);
-
+            Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
         }
@@ -56,11 +58,23 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_ExcludePropertyByName()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Exclude("Height")
-                .Exclude("ArmLength")
-                .Exclude("Id");
+                .Exclude(p => p.Height)
+                .Exclude(p => p.ArmLength)
+                .Exclude(p => p.Id);
             var result = printer.PrintToString(person);
             var expectedResult = "Person\r\n\tName = Alex\r\n\tAge = 21\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_PerformAlternativeSerializationByType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializer<double>().Using(i => "\tHeight = 192\r\n");
+            var result = printer.PrintToString(person);
+            var expectedResult = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);

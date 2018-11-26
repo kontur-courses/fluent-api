@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         public List<Func<PropertyInfo, bool>> ExcludeProperties;
+        public Dictionary<Type, Delegate> AlternativeSerializationByType;
 
         public PrintingConfig()
         {
             ExcludeProperties = new List<Func<PropertyInfo, bool>>();
+            AlternativeSerializationByType = new Dictionary<Type, Delegate>();
         }
         public string PrintToString(TOwner obj)
         {
@@ -47,9 +47,16 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in properties)
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propertyType = propertyInfo.PropertyType;
+                if (AlternativeSerializationByType.ContainsKey(propertyType))
+                {
+                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(propertyInfo.GetValue(obj));
+                    sb.Append(result);
+                }
+                else
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
             }
             return sb.ToString();
         }
@@ -57,14 +64,15 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             var excludedType = typeof(TPropType);
-            var excludedFunc = new Func<PropertyInfo, bool>(property => property.PropertyType.FullName != excludedType.FullName);
+            var excludedFunc = new Func<PropertyInfo, bool>(property => property.PropertyType != excludedType);
             ExcludeProperties.Add(excludedFunc);
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude(string excludedNameProp)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
         {
-            var excludedFunc = new Func<PropertyInfo, bool>(property => property.Name != excludedNameProp);
+            var excludedFunc = new Func<PropertyInfo, bool>(property => property.Name !=
+                                                                        ((MemberExpression)excludedExpression.Body).Member.Name);
             ExcludeProperties.Add(excludedFunc);
             return this;
         }
