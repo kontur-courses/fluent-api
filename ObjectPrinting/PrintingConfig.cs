@@ -31,6 +31,8 @@ namespace ObjectPrinting
             new Dictionary<string, Expression<Func<object, string>>>();
         private int? maxLength;
 
+        private Dictionary<object, int> countOfPrintings = new Dictionary<object, int>();
+
         Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig.PrintersForTypes => printersForTypes;
         Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
         Dictionary<string, Expression<Func<object, string>>> IPrintingConfig.PrintersForPropertiesNames => printersForPropertiesName;
@@ -106,6 +108,15 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (countOfPrintings.ContainsKey(obj))
+            {
+                if (countOfPrintings[obj] >= 10)
+                    return "REC";
+                countOfPrintings[obj]++;
+            }
+            else
+                countOfPrintings.Add(obj, 0);
+
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -119,13 +130,14 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             sb.AppendLine(type.Name);
+
             if (type.Implements(typeof(ICollection)))
             {
                 sb.Append(GetICollectionPrintingValue((ICollection)obj, nestingLevel));
             }
+
             else
             {
-
                 foreach (var propertyInfo in type.GetProperties())
                 {
                     sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
