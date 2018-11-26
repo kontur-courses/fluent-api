@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
+        private readonly Type[] finalTypes = 
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly Dictionary<Type, Delegate> specialTypesSerializing = new Dictionary<Type, Delegate>();
@@ -52,43 +58,45 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var propertyInfo in Filter(type.GetProperties()))
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-                if (excludedProperties.Contains(propertyInfo.Name))
-                    continue;
+                var propertyValue = GetConfigurationValue(propertyInfo, obj);
 
-                var propertyValue = propertyInfo.GetValue(obj);
-                if (specialTypesSerializing.TryGetValue(propertyInfo.PropertyType, out var @delegate))
-                    propertyValue = @delegate.DynamicInvoke(propertyInfo.GetValue(obj));
-
-                if (typesCulture.TryGetValue(propertyInfo.PropertyType, out var cultureInfo))
-                    propertyValue = ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, cultureInfo);
-
-                if (specialPropertiesSerializing.TryGetValue(propertyInfo.Name, out @delegate))
-                    propertyValue = @delegate.DynamicInvoke(propertyInfo.GetValue(obj));
-
-                if (propertyInfo.PropertyType == typeof(string) && StringTrim != -1)
-                    propertyValue = propertyInfo.GetValue(obj).ToString().SafetySubstring(0, StringTrim);
-
-                sb.Append(identation + propertyInfo.Name + " = " +
+                sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyValue,
                               nestingLevel + 1, maxNestingForRecursiveFields));
             }
             return sb.ToString();
+        }
+
+        private IEnumerable<PropertyInfo> Filter(IEnumerable<PropertyInfo> properties) => 
+            properties
+                .Where(property => !excludedTypes.Contains(property.PropertyType))
+                .Where(property => !excludedProperties.Contains(property.Name));
+
+        private object GetConfigurationValue(PropertyInfo propertyInfo, object obj)
+        {
+            var propertyValue = propertyInfo.GetValue(obj);
+            if (specialTypesSerializing.TryGetValue(propertyInfo.PropertyType, out var @delegate))
+                propertyValue = @delegate.DynamicInvoke(propertyInfo.GetValue(obj));
+
+            if (typesCulture.TryGetValue(propertyInfo.PropertyType, out var cultureInfo))
+                propertyValue = ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, cultureInfo);
+
+            if (specialPropertiesSerializing.TryGetValue(propertyInfo.Name, out @delegate))
+                propertyValue = @delegate.DynamicInvoke(propertyInfo.GetValue(obj));
+
+            if (propertyInfo.PropertyType == typeof(string) && StringTrim != -1)
+                propertyValue = propertyInfo.GetValue(obj).ToString().SafetySubstring(0, StringTrim);
+
+            return propertyValue;
         }
     }
 }
