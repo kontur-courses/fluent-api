@@ -6,11 +6,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
-        public readonly HashSet<string> properties = new HashSet<string>();
+        public readonly HashSet<Type> excludeTypes = new HashSet<Type>();
+        public readonly HashSet<string> excludeProperties = new HashSet<string>();
 
         public readonly Dictionary<string, Delegate> propertyOperations = new Dictionary<string, Delegate>();
-        private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+        public readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
 
         private readonly List<Type> finalTypes = new List<Type>
         {
@@ -23,13 +23,17 @@ namespace ObjectPrinting
             typeof(long)
         };
 
-
-    public void SetTypeOperation(Type type, Delegate operation) => typeOperations[type] = operation;
-        public void AddTypeOperation(Type type, Delegate operation) => typeOperations.Add(type, operation);
-
         public PrintingConfig<TOwner> Exclude<TPropertyType>()
         {
             excludeTypes.Add(typeof(TPropertyType));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
+        {
+            var member = (propSelector.Body as MemberExpression)?.ToString();
+            var property = member?.Substring(member.IndexOf('.'));
+            excludeProperties.Add(property);
             return this;
         }
 
@@ -38,13 +42,8 @@ namespace ObjectPrinting
             return new SerializingConfig<TOwner, TPropType>(this);
         }
 
-        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
+        public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Func<TOwner, TProperty> propSelector)
         {
-            var className = typeof(TOwner).ToString();
-            var member = (propSelector.Body as MemberExpression)?.ToString();
-            member = member?.Substring(member.IndexOf('.'));
-            properties.Add(className + member);
-
             return new SerializingConfig<TOwner, TProperty>(this);
         }
 
@@ -74,7 +73,7 @@ namespace ObjectPrinting
             {
                 var propType = propertyInfo.PropertyType;
 
-                if (excludeTypes.Contains(propType))
+                if (excludeTypes.Contains(propType) || excludeProperties.Contains($".{propertyInfo.Name}"))
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");

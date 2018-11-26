@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting
 {
@@ -13,10 +14,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropertyType, string> operation)
         {
-            printingConfig.SetTypeOperation(typeof(TPropertyType), operation);
+            printingConfig.typeOperations[typeof(TPropertyType)] = operation;
             return printingConfig;
         }
 
         PrintingConfig<TOwner> ISerializingConfig<TOwner, TPropertyType>.SerializingConfig => printingConfig;
+
+        public List<string> ExcludeProperty { get; set; }
     }
 }

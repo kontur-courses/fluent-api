@@ -24,7 +24,7 @@ namespace ObjectPrintingTests.cs
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serialize<string>().Cut(2)
                 //6. Исключить из сериализации конкретного свойства
-                .Serialize(p => p.Height).Exclude();
+                .Exclude(p => p.Height);
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine($"{s1.GetType().FullName} = {s1}");
@@ -34,7 +34,7 @@ namespace ObjectPrintingTests.cs
             Console.WriteLine($"{s2.GetType().FullName} = {s2}");
 
             //8. ...с конфигурированием
-            var s3 = person.PrintToString(s => s.Serialize(p => p.Id).Exclude());
+            var s3 = person.PrintToString(s => s.Exclude(p => p.Id));
             Console.WriteLine($"{s3.GetType().FullName} = {s3}");
         }
     }
