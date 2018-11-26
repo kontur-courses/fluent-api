@@ -15,12 +15,15 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<T>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serialize<T>().As(ToString)
+                .Serialize<T>().As(t => ToString)
                 //3. Для числовых типов указать культуру
                 .SetNumberCulture(CultureInfo).For<T>()
                 //4. Настроить сериализацию конкретного свойства
+                .Serialize(nameof(PropName)).As(p => ToString)
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                .Serialize<string>().As(s => s.Substring(0, 3))
                 //6. Исключить из сериализации конкретного свойства
+                .Exclude(nameof(PropName));
             
             string s1 = printer.PrintToString(person);
 
