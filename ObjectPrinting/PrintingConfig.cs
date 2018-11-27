@@ -27,7 +27,15 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var selectorBody = (MemberExpression)memberSelector.Body;
+            MemberExpression selectorBody;
+            try
+            {
+                selectorBody = (MemberExpression)memberSelector.Body;
+            }
+            catch (InvalidCastException)
+            {
+                throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
+            }
             var propName = selectorBody.Member;
 
             return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)propName);
@@ -54,7 +62,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, char indentSymbol)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
