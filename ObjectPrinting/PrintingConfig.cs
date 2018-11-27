@@ -8,25 +8,25 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        public HashSet<Type> ExcludeMembersByType { get; set; }
-        public HashSet<string> ExcludeMembersByName { get; set; }
-        public Dictionary<Type, Delegate> AlternativeSerializationByType { get; set; }
-        public Dictionary<string, Delegate> AlternativeSerializationByName { get; set; }
-        public HashSet<object> ViewedObjects { get; set; }
-        public Dictionary<string, Delegate> TrimmingFunctions { get; set; }
-        public Dictionary<Type, CultureInfo> CultureInfoForNumbers { get; set; }
+        private HashSet<Type> excludeMembersByType;
+        private HashSet<string> excludeMembersByName;
+        private Dictionary<Type, Delegate> alternativeSerializationByType;
+        private Dictionary<string, Delegate> alternativeSerializationByName;
+        private HashSet<object> viewedObjects;
+        private Dictionary<string, Delegate> trimmingFunctions;
+        private Dictionary<Type, CultureInfo> cultureInfoForNumbers;
 
         public PrintingConfig()
         {
-            ExcludeMembersByType = new HashSet<Type>();
-            AlternativeSerializationByType = new Dictionary<Type, Delegate>();
-            ViewedObjects = new HashSet<object>();
-            AlternativeSerializationByName = new Dictionary<string, Delegate>();
-            TrimmingFunctions = new Dictionary<string, Delegate>();
-            ExcludeMembersByName = new HashSet<string>();
-            CultureInfoForNumbers = new Dictionary<Type, CultureInfo>();
+            excludeMembersByType = new HashSet<Type>();
+            alternativeSerializationByType = new Dictionary<Type, Delegate>();
+            viewedObjects = new HashSet<object>();
+            alternativeSerializationByName = new Dictionary<string, Delegate>();
+            trimmingFunctions = new Dictionary<string, Delegate>();
+            excludeMembersByName = new HashSet<string>();
+            cultureInfoForNumbers = new Dictionary<Type, CultureInfo>();
         }
         public string PrintToString(TOwner obj)
         {
@@ -36,14 +36,14 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             var excludedType = typeof(TPropType);
-            ExcludeMembersByType.Add(excludedType);
+            excludeMembersByType.Add(excludedType);
             return this;
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
         {
             var excludedName = ((MemberExpression)excludedExpression.Body).Member.Name;
-            ExcludeMembersByName.Add(excludedName);
+            excludeMembersByName.Add(excludedName);
             return this;
         }
 
@@ -74,9 +74,9 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return SetCultureInfoForNumber(obj) + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var members = FilteringMembers(type);
-            var result = PrintMembers(obj, nestingLevel, identation, members);
+            var result = PrintMembers(obj, nestingLevel, indentation, members);
             return result;
         }
 
@@ -85,16 +85,16 @@ namespace ObjectPrinting
             switch (obj)
             {
                 case int intObj:
-                    return CultureInfoForNumbers.ContainsKey(typeof(int))
-                        ? intObj.ToString(CultureInfoForNumbers[typeof(int)])
+                    return cultureInfoForNumbers.ContainsKey(typeof(int))
+                        ? intObj.ToString(cultureInfoForNumbers[typeof(int)])
                         : obj;
                 case double doubleObj:
-                    return CultureInfoForNumbers.ContainsKey(typeof(double))
-                        ? doubleObj.ToString(CultureInfoForNumbers[typeof(double)])
+                    return cultureInfoForNumbers.ContainsKey(typeof(double))
+                        ? doubleObj.ToString(cultureInfoForNumbers[typeof(double)])
                         : obj;
                 case float floatObj:
-                    return CultureInfoForNumbers.ContainsKey(typeof(float))
-                        ? floatObj.ToString(CultureInfoForNumbers[typeof(float)])
+                    return cultureInfoForNumbers.ContainsKey(typeof(float))
+                        ? floatObj.ToString(cultureInfoForNumbers[typeof(float)])
                         : obj;
                 default:
                     return obj;
@@ -106,8 +106,8 @@ namespace ObjectPrinting
             return type.GetMembers()
                 .Where(member => (member.MemberType & MemberTypes.Property) != 0 ||
                                                                (member.MemberType & MemberTypes.Field) != 0)
-                .Where(member => !(ExcludeMembersByType.Contains(GetType(member))
-                                                  || ExcludeMembersByName.Contains(member.Name))).ToArray();
+                .Where(member => !(excludeMembersByType.Contains(GetType(member))
+                                                  || excludeMembersByName.Contains(member.Name))).ToArray();
         }
 
         //Отрефакторить, когда будет полная реализация
@@ -119,22 +119,22 @@ namespace ObjectPrinting
             {
                 var value = GetValue(memberInfo, obj);
                 var propertyType = GetType(memberInfo);
-                if (ViewedObjects.Contains(value))
+                if (viewedObjects.Contains(value))
                     continue;
-                ViewedObjects.Add(value);
-                if (value is string str && TrimmingFunctions.ContainsKey(memberInfo.Name))
+                viewedObjects.Add(value);
+                if (value is string str && trimmingFunctions.ContainsKey(memberInfo.Name))
                 {
-                    value = TrimmingFunctions[memberInfo.Name].DynamicInvoke(str);
+                    value = trimmingFunctions[memberInfo.Name].DynamicInvoke(str);
                 }
-                if (AlternativeSerializationByType.ContainsKey(propertyType))
+                if (alternativeSerializationByType.ContainsKey(propertyType))
                 {
-                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(value);
+                    var result = alternativeSerializationByType[propertyType].DynamicInvoke(value);
                     sb.Append(identation + result + "\r\n");
                     continue;
                 }
-                if (AlternativeSerializationByName.ContainsKey(memberInfo.Name))
+                if (alternativeSerializationByName.ContainsKey(memberInfo.Name))
                 {
-                    var result = AlternativeSerializationByName[memberInfo.Name].DynamicInvoke(value);
+                    var result = alternativeSerializationByName[memberInfo.Name].DynamicInvoke(value);
                     sb.Append(identation + result + "\r\n");
                     continue;
                 }
@@ -165,6 +165,42 @@ namespace ObjectPrinting
 
             var fieldInfo = (FieldInfo)memberInfo;
             return fieldInfo.GetValue(obj);
+        }
+
+        HashSet<Type> IPrintingConfig<TOwner>.ExcludeMembersByType
+        {
+            get => excludeMembersByType;
+            set => excludeMembersByType = value;
+        }
+        HashSet<string> IPrintingConfig<TOwner>.ExcludeMembersByName
+        {
+            get => excludeMembersByName;
+            set => excludeMembersByName = value;
+        }
+        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.AlternativeSerializationByType
+        {
+            get => alternativeSerializationByType;
+            set => alternativeSerializationByType = value;
+        }
+        Dictionary<string, Delegate> IPrintingConfig<TOwner>.AlternativeSerializationByName
+        {
+            get => alternativeSerializationByName;
+            set => alternativeSerializationByName = value;
+        }
+        HashSet<object> IPrintingConfig<TOwner>.ViewedObjects
+        {
+            get => viewedObjects;
+            set => viewedObjects = value;
+        }
+        Dictionary<string, Delegate> IPrintingConfig<TOwner>.TrimmingFunctions
+        {
+            get => trimmingFunctions;
+            set => trimmingFunctions = value;
+        }
+        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CultureInfoForNumbers
+        {
+            get => cultureInfoForNumbers;
+            set => cultureInfoForNumbers = value;
         }
     }
 }

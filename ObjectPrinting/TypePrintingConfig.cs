@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Runtime.Remoting.Messaging;
 
 namespace ObjectPrinting
 {
     public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly IPrintingConfig<TOwner> printingConfig;
         private string nameMember;
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public TypePrintingConfig(IPrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
             nameMember = null;
@@ -25,7 +24,7 @@ namespace ObjectPrinting
             if (printingConfig.AlternativeSerializationByType.ContainsKey(typeMember))
                 printingConfig.AlternativeSerializationByType[typeMember] = serializationMethod;
             else printingConfig.AlternativeSerializationByType.Add(typeMember, serializationMethod);
-            return printingConfig;
+            return (PrintingConfig < TOwner >)printingConfig;
         }
 
         private PrintingConfig<TOwner> NewMethod(Func<TPropType, string> serializationMethod)
@@ -33,10 +32,10 @@ namespace ObjectPrinting
             if (printingConfig.AlternativeSerializationByName.ContainsKey(nameMember))
                 printingConfig.AlternativeSerializationByName[nameMember] = serializationMethod;
             else printingConfig.AlternativeSerializationByName.Add(nameMember, serializationMethod);
-            return printingConfig;
+            return (PrintingConfig<TOwner>)printingConfig;
         }
 
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
+        IPrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
 
         string ITypePrintingConfig<TOwner>.NameMember
         {

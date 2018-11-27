@@ -11,7 +11,7 @@ namespace ObjectPrinting
             var typeNumber = typeof(int);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
             SetCultureInfo(culture, typeNumber, printingConfig);
-            return printingConfig;
+            return (PrintingConfig<TOwner>)printingConfig;
         }
 
         public static PrintingConfig<TOwner> SetCultureInfo<TOwner>(this TypePrintingConfig<TOwner, double> typePrintingConfig, CultureInfo culture)
@@ -19,14 +19,14 @@ namespace ObjectPrinting
             var typeNumber = typeof(double);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
             SetCultureInfo(culture, typeNumber, printingConfig);
-            return printingConfig;
+            return (PrintingConfig<TOwner>)printingConfig;
         }
         public static PrintingConfig<TOwner> SetCultureInfo<TOwner>(this TypePrintingConfig<TOwner, float> typePrintingConfig, CultureInfo culture)
         {
             var typeNumber = typeof(float);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
             SetCultureInfo(culture, typeNumber, printingConfig);
-            return printingConfig;
+            return (PrintingConfig<TOwner>)printingConfig;
         }
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> typePrintingConfig, int length)
         {
@@ -39,11 +39,18 @@ namespace ObjectPrinting
                 printingConfig.TrimmingFunctions[nameMember] = trimmingFunc;
             else printingConfig.TrimmingFunctions.Add(nameMember, trimmingFunc);
 
-            return printingConfig;
+            return (PrintingConfig<TOwner>)printingConfig;
+        }
+        public static string Serialize<T>(this T obj)
+        {
+            return ObjectPrinter.For<T>().PrintToString(obj);
+        }
+        public static string Serialize<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        {
+            return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-
-        private static void SetCultureInfo<TOwner>(CultureInfo culture, Type typeNumber, PrintingConfig<TOwner> printingConfig)
+        private static void SetCultureInfo<TOwner>(CultureInfo culture, Type typeNumber, IPrintingConfig<TOwner> printingConfig)
         {
             if (printingConfig.CultureInfoForNumbers.ContainsKey(typeNumber))
                 printingConfig.CultureInfoForNumbers[typeNumber] = culture;

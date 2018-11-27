@@ -17,29 +17,6 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Demo()
-        {
-            var printer = ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
-                .Exclude<int>()
-                //2. Указать альтернативный способ сериализации для определенного типа
-                .Serializer<double>().Using(i => i.ToString())
-                //3. Для числовых типов указать культуру
-                .Serializer<int>().SetCultureInfo(CultureInfo.CurrentCulture)
-                //4. Настроить сериализацию конкретного свойства
-                .Serializer(p => p.Age).Using(i => i.ToString())
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serializer(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Age);
-
-            string s1 = printer.PrintToString(person);
-            Console.WriteLine(s1);
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
-        }
-
-        [Test]
         public void ObjectPrinter_Should_ExcludePropertyByType()
         {
             var printer = ObjectPrinter.For<Person>()
@@ -125,7 +102,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_Should_ChangeCultureInfoForNumber()
+        public void ObjectPrinter_Should_ChangeCultureInfoForNumbers()
         {
             person.Age *= -1; person.ArmLength *= -1;
             var myCultureInfo = (CultureInfo)CultureInfo.CurrentCulture.Clone();
@@ -139,6 +116,30 @@ namespace ObjectPrinting.Tests
             var expectedResult =
                 "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192.57" +
                 "\r\n\tAge = ~~21\r\n\tArmLength = ~~15\r\n\tNumberChildren = 2\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_HaveSyntacticSugarWithConfiguration()
+        {
+            var result = person.Serialize(config => config.Exclude<int>());
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "\r\n\tArmLength = 15\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_HaveSyntacticSugar()
+        {
+            var result = person.Serialize();
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);

@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPrintingConfig.cs" />
     <Compile Include="ITypePrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
