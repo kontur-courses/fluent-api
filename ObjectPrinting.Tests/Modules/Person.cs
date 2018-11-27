@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Tests.Modules
 {
-    public class Person
+    internal class Person
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
