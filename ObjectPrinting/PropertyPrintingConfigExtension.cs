@@ -5,25 +5,25 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtension
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propertyPrintingConfig, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> WithCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, int> propertyPrintingConfig, CultureInfo cultureInfo)
         {
             propertyPrintingConfig.Using(i => i.ToString(cultureInfo));
             return (propertyPrintingConfig as IPropertyPrintingConfig<TOwner, int>).PrintingConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propertyPrintingConfig, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> WithCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, double> propertyPrintingConfig, CultureInfo cultureInfo)
         {
             propertyPrintingConfig.Using(d => d.ToString(cultureInfo));
             return (propertyPrintingConfig as IPropertyPrintingConfig<TOwner, double>).PrintingConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propertyPrintingConfig, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> WithCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, long> propertyPrintingConfig, CultureInfo cultureInfo)
         {
             propertyPrintingConfig.Using(d => d.ToString(cultureInfo));
             return (propertyPrintingConfig as IPropertyPrintingConfig<TOwner, long>).PrintingConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propertyPrintingConfig, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> WithCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, float> propertyPrintingConfig, CultureInfo cultureInfo)
         {
             propertyPrintingConfig.Using(d => d.ToString(cultureInfo));
             return (propertyPrintingConfig as IPropertyPrintingConfig<TOwner, float>).PrintingConfig;

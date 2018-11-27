@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -19,7 +21,7 @@ namespace ObjectPrintingTests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => "int")
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.CurrentCulture)
+                .Printing<double>().WithCultureInfo(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Age).Using(a => "age")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
@@ -42,8 +44,8 @@ namespace ObjectPrintingTests
         [Test]
         public void DemoNew()
         {
-            var wrapper = new Wrapper<int[]>(new []{1, 2, 3});
-            var result = ObjectPrinter.For<Wrapper<int[]>>().PrintToString(wrapper);
+            var wrapper = new Wrapper<List<int>>(new List<int>{1, 2, 3});
+            var result = ObjectPrinter.For<Wrapper<List<int>>>().PrintToString(wrapper);
             Console.WriteLine(result);
         }
     }

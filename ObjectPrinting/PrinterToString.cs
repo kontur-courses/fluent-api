@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,39 +30,60 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private bool Implements(Type type, string interfaceName)
+        
+
+        public string PrintToString(object obj, int nestingLevel)
         {
-            return type.GetInterfaces().Any(t => t.Name == interfaceName);
+            if (obj == null)
+                return "null" + NewLine;
+
+            if (FinalTypes.Contains(obj.GetType()))
+                return obj + NewLine;
+
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.AppendLine(ResolveTypeName(type));
+
+            if (Implements(type, typeof(IList)))
+                return sb.Append(PrintIList(obj, type, nestingLevel)).ToString();
+
+            if (alreadyHandledObjects.Contains(obj))
+                return "(cycle)" + NewLine;
+            alreadyHandledObjects.Add(obj);
+
+            return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
         }
 
-        private string PrintList(object obj, Type type, int nestingLevel)
+        private string ResolveTypeName(Type type)
         {
-            var sb = new StringBuilder();
-            var bracesIndentation = new string('\t', nestingLevel);
-            sb.Append($"{bracesIndentation}[{NewLine}");
-            var count = (int)type.GetProperty("Count").GetValue(obj);
-            for (var index = 0; index < count; index++)
-            {
-                var item = type.GetProperty("Item").GetValue(obj, new object[] { index });
-                sb.Append(bracesIndentation + "\t" + PrintToString(item) + NewLine);
-            }
+            if (!type.IsGenericType)
+                return type.Name;
 
-            sb.Append($"{bracesIndentation}]{NewLine}");
+            var sb = new StringBuilder();
+            sb.Append(type.Name.Substring(0, type.Name.Length - 2) + "<");
+
+            var genericArguments = type.GetGenericArguments();
+
+            for (var index = 0; index < genericArguments.Length - 1; index++)
+                sb.Append(ResolveTypeName(genericArguments[index]) + ", ");
+            sb.Append(ResolveTypeName(genericArguments[genericArguments.Length - 1]) + ">");
+
             return sb.ToString();
         }
 
-        private string PrintArray(object obj, Type type, int nestingLevel)
+        private bool Implements(Type type, Type interfaceName)
+        {
+            return type.GetInterfaces().Any(t => t == interfaceName);
+        }
+
+        private string PrintIList(object obj, Type type, int nestingLevel)
         {
             var sb = new StringBuilder();
             var bracesIndentation = new string('\t', nestingLevel);
             sb.Append($"{bracesIndentation}[{NewLine}");
-            var count = (int)type.GetProperty("Length").GetValue(obj);
-            for (var index = 0; index < count; index++)
-            {
-                var methodInfo = type.GetMethod("GetValue", new [] { typeof(Int32) });
-                var item = methodInfo.Invoke(obj, new object[] { index });
-                sb.Append(bracesIndentation + "\t" + PrintToString(item) + NewLine);
-            }
+
+            foreach (var element in obj as IEnumerable)
+                sb.Append(bracesIndentation + "\t" + PrintToString(element) + NewLine);
 
             sb.Append($"{bracesIndentation}]{NewLine}");
             return sb.ToString();
@@ -91,30 +113,6 @@ namespace ObjectPrinting
             }
 
             return sb.ToString();
-        }
-
-        public string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + NewLine;
-
-            if (FinalTypes.Contains(obj.GetType()))
-                return obj + NewLine;
-
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-
-            if (Implements(type, "List`1"))
-                return sb.Append(PrintList(obj, type, nestingLevel)).ToString();
-            if (type.IsArray)
-                return sb.Append(PrintArray(obj, type, nestingLevel)).ToString();
-
-            if (alreadyHandledObjects.Contains(obj))
-                return "(cycle)" + NewLine;
-            alreadyHandledObjects.Add(obj);
-
-            return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
         }
     }
 }

@@ -7,13 +7,14 @@ namespace ObjectPrintingTests
 {
     class ObjectPrinterTests
     {
-        private readonly String newLine = Environment.NewLine;
-
+        private static readonly String NewLine = Environment.NewLine;
+        
         [Test]
         public void Excluding_ShouldExcludeType()
         {
             var doubleWrapper = new Wrapper<double>(10);
-            var expected = $"{typeof(Wrapper<double>).Name}{newLine}";
+            var expected = $"Wrapper<Double>{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<double>>()
                 .Excluding<double>()
                 .PrintToString(doubleWrapper);
@@ -25,7 +26,8 @@ namespace ObjectPrintingTests
         public void Excluding_ShouldExcludeProperty()
         {
             var doubleWrapper = new Wrapper<int>(10);
-            var expected = $"{typeof(Wrapper<int>).Name}{newLine}";
+            var expected = $"Wrapper<Int32>{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<int>>()
                 .Excluding(wrapper => wrapper.Value)
                 .PrintToString(doubleWrapper);
@@ -33,25 +35,57 @@ namespace ObjectPrintingTests
             Assert.AreEqual(expected, actual);
         }
 
-        [TestCase("ru-RU", "10,1")]
-        [TestCase("en-US", "10.1")]
-        public void UsingCultureInfo_ShouldSetCulture(string cultureName, string expectedDoubleRepr)
+        [Test]
+        public void UsingCultureInfo_ShouldPrintFloatWithPoint_WhenENCulture()
         {
             var doubleWrapper = new Wrapper<float>(10.1f);
-            var expected = $"{typeof(Wrapper<float>).Name}{newLine}\tValue = {expectedDoubleRepr}{newLine}";
+            var expected = $"Wrapper<Single>{NewLine}" + 
+                           $"\tValue = 10.1{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<float>>()
-                .Printing<float>().Using(new CultureInfo(cultureName))
+                .Printing<float>().WithCultureInfo(new CultureInfo("en-US"))
                 .PrintToString(doubleWrapper);
 
             Assert.AreEqual(expected, actual);
         }
 
-        [TestCase(2, "he", TestName = "trim when trimLength is less than property length")]
-        [TestCase(10, "hello", TestName = "leave the same when trimLength is greater than property length")]
-        public void TrimmedToLength_Should(int trimLength, string expectedTrimmedString)
+        [Test]
+        public void UsingCultureInfo_ShouldPrintFloatWithComma_WhenRUCulture()
         {
+            var doubleWrapper = new Wrapper<float>(10.1f);
+            var expected = $"Wrapper<Single>{NewLine}" +
+                           $"\tValue = 10,1{NewLine}";
+
+            var actual = ObjectPrinter.For<Wrapper<float>>()
+                .Printing<float>().WithCultureInfo(new CultureInfo("ru-RU"))
+                .PrintToString(doubleWrapper);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TrimmedToLength_ShouldShorten()
+        {
+            var trimLength = 2;
             var stringWrapper = new Wrapper<string>("hello");
-            var expected = $"{typeof(Wrapper<string>).Name}{newLine}\tValue = {expectedTrimmedString}{newLine}";
+            var expected = $"Wrapper<String>{NewLine}" +
+                           $"\tValue = he{NewLine}";
+
+            var actual = ObjectPrinter.For<Wrapper<string>>()
+                .Printing<string>().TrimmedToLength(trimLength)
+                .PrintToString(stringWrapper);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TrimmedToLength_ShouldLeaveTheSame()
+        {
+            var trimLength = 10;
+            var stringWrapper = new Wrapper<string>("hello");
+            var expected = $"Wrapper<String>{NewLine}" +
+                           $"\tValue = hello{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<string>>()
                 .Printing<string>().TrimmedToLength(trimLength)
                 .PrintToString(stringWrapper);
@@ -63,7 +97,9 @@ namespace ObjectPrintingTests
         public void Using_ShouldSetCustomPropertyPrinter()
         {
             var stringWrapper = new Wrapper<string>("hello");
-            var expected = $"{typeof(Wrapper<string>).Name}{newLine}\tValue = custom{newLine}";
+            var expected = $"Wrapper<String>{NewLine}" +
+                           $"\tValue = custom{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<string>>()
                 .Printing(wrapper => wrapper.Value).Using(prop => "custom")
                 .PrintToString(stringWrapper);
@@ -75,7 +111,9 @@ namespace ObjectPrintingTests
         public void Using_ShouldSetCustomTypePrinter()
         {
             var stringWrapper = new Wrapper<string>("hello");
-            var expected = $"{typeof(Wrapper<string>).Name}{newLine}\tValue = custom{newLine}";
+            var expected = $"Wrapper<String>{NewLine}" +
+                           $"\tValue = custom{NewLine}";
+
             var actual = ObjectPrinter.For<Wrapper<string>>()
                 .Printing<string>().Using(prop => "custom")
                 .PrintToString(stringWrapper);
@@ -88,10 +126,15 @@ namespace ObjectPrintingTests
         {
             var person = new Person
                 { Age = 10, Height = 1.3, Name = "Default"};
-            var expected = $"Person{newLine}\tName = Def{newLine}\tHeight = 1,3{newLine}\tAge = age{newLine}";
+
+            var expected = $"Person{NewLine}" +
+                           $"\tName = Def{NewLine}" +
+                           $"\tHeight = 1,3{NewLine}" +
+                           $"\tAge = age{NewLine}";
+
             var actual = ObjectPrinter.For<Person>()
                 .Excluding<Guid>()
-                .Printing<double>().Using(new CultureInfo("ru-RU"))
+                .Printing<double>().WithCultureInfo(new CultureInfo("ru-RU"))
                 .Printing(p => p.Age).Using(a => "age")
                 .Printing(p => p.Name).TrimmedToLength(3)
                 .PrintToString(person);
@@ -103,9 +146,10 @@ namespace ObjectPrintingTests
         public void TestResolvingCircularReferences()
         {
             var cycle = new Cycle();
-            var expected = $"Cycle{newLine}\tValue = (cycle){newLine}";
-            var actual = ObjectPrinter.For<Cycle>().PrintToString(cycle);
+            var expected = $"Cycle{NewLine}" +
+                           $"\tValue = (cycle){NewLine}";
 
+            var actual = ObjectPrinter.For<Cycle>().PrintToString(cycle);
             Assert.AreEqual(expected, actual);
         }
     }
