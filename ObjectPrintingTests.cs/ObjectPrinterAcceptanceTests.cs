@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -13,6 +14,9 @@ namespace ObjectPrintingTests.cs
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
+
+            var persons = new List<Person>{person};
+            ObjectPrinter.For<Person>().PrintToString(persons);
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа

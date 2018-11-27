@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ObjectPrinting.SerializingConfig;
@@ -78,20 +79,17 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            var types = type.GetProperties().Where(p =>
+                !excludeTypes.Contains(p.PropertyType) && !excludeProperties.Contains($".{p.Name}"));
+
+            foreach (var propertyInfo in types)
             {
                 var propType = propertyInfo.PropertyType;
-
-                if (excludeTypes.Contains(propType) || excludeProperties.Contains($".{propertyInfo.Name}"))
-                    continue;
-
                 sb.Append(identation + propertyInfo.Name + " = ");
-
-                if (typeOperations.ContainsKey(propType))
-                    sb.Append(PrintToString(typeOperations[propType].DynamicInvoke(propertyInfo.GetValue(obj)),
-                                  nestingLevel + 1));
-                else
-                    sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                sb.Append(typeOperations.ContainsKey(propType)
+                    ? PrintToString(typeOperations[propType].DynamicInvoke(propertyInfo.GetValue(obj)),
+                        nestingLevel + 1)
+                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
 
             return sb.ToString();

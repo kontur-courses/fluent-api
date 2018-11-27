@@ -20,8 +20,6 @@ namespace ObjectPrinting.SerializingConfig
             return printingConfig;
         }
 
-
-
         PrintingConfig<TOwner> ISerializingConfig<TOwner, TPropertyType>.SerializingConfig => printingConfig;
         Dictionary<Type, Delegate> ISerializingConfig<TOwner, TPropertyType>.TypeOperations => typeOperations;
     }
