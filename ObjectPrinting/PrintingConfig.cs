@@ -103,23 +103,18 @@ namespace ObjectPrinting
             return namesExcludedProperties.Contains(propertyName);
         }
 
-        private void IncrementNestingLevel()
-        {
-
-        }
-
         #region InterfaceProperties
-        public List<string> NamesExludedProperties => namesExcludedProperties;
+        List<string> NamesExludedProperties => namesExcludedProperties;
 
-        public List<Type> ExcludingTypes => exludedTypes;
+        List<Type> ExcludingTypes => exludedTypes;
 
-        public Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties => printMethodsForProperties;
+        Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties => printMethodsForProperties;
 
-        public Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; } = new Dictionary<Type, Expression<Func<object, string>>>();
+        Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; } = new Dictionary<Type, Expression<Func<object, string>>>();
 
-        public Dictionary<Type, CultureInfo> CulturesForNumbers => culturiesForNumbers;
+        Dictionary<Type, CultureInfo> CulturesForNumbers => culturiesForNumbers;
 
-        public int NestingLevel => nestingLevel;
+        int NestingLevel => nestingLevel;
         #endregion
     }
 
@@ -129,8 +124,6 @@ namespace ObjectPrinting
 
         List<string> NamesExludedProperties { get; }
         List<Type> ExcludingTypes { get; }
-
-
 
         Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties { get; }
         Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; }
