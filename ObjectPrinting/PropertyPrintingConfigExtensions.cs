@@ -26,25 +26,27 @@ namespace ObjectPrinting
             return AddCulture(propConfig, cultureInfo);
         }
 
-        private static PrintingConfig<TOwner> AddCulture<TOwner>(IPropertyPrintingConfig<TOwner> propConfig,
+        private static PrintingConfig<TOwner> AddCulture<TOwner, TPropType>(IPropertyPrintingConfig<TOwner, TPropType> propConfig,
             CultureInfo cultureInfo)
         {
             var config = propConfig.PrintingConfig;
-            ((IPrintingConfig<TOwner>)config).AddCultureInfo(typeof(TOwner), cultureInfo);
+            ((IPrintingConfig<TOwner>)config).AddCultureInfo(typeof(TPropType), cultureInfo);
             return config;
         }
 
         public static PrintingConfig<TOwner> Trim<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
             int count)
         {
-            if (!(propConfig.propertySelector.Body is MemberExpression body))
+            var iPropConfig = (IPropertyPrintingConfig<TOwner, string>) propConfig;
+            var propertySelector = iPropConfig.PropertySelector;
+            if (!(propertySelector.Body is MemberExpression body))
                 throw new ArgumentException();
             var propertyName = body.Member.Name;
             var property = typeof(TOwner).GetProperty(propertyName);
 
             string Trim(string s) => count > s.Length ? s : s.Substring(0, count);
 
-            var config = ((IPropertyPrintingConfig<TOwner>) propConfig).PrintingConfig;
+            var config = iPropConfig.PrintingConfig;
             ((IPrintingConfig<TOwner>)config).AddPostProduction(property, (Func<string, string>) Trim);
             return config;
         }

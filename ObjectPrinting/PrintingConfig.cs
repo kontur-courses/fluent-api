@@ -56,6 +56,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            printedObjects.Clear();
             return PrintToString(obj, 0);
         }
 
@@ -67,7 +68,10 @@ namespace ObjectPrinting
             if (TryPrintFinalType(obj, out var result))
                 return result;
 
-            if (printedObjects.Contains(obj) || nestingLevel > depth)
+            if (printedObjects.Contains(obj))
+                return "Already printed" + Environment.NewLine;
+
+            if (nestingLevel > depth)
                 return "";
             printedObjects.Add(obj);
 
@@ -129,7 +133,8 @@ namespace ObjectPrinting
                 result = DoubleToString((double) obj) + Environment.NewLine;
             else if (type == typeof(float))
                 result = FloatToString((float) obj) + Environment.NewLine;
-            result = obj + Environment.NewLine;
+            else
+                result = obj +Environment.NewLine;
             return true;
         }
 

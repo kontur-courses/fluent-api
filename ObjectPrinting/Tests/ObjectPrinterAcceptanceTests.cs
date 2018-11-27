@@ -84,5 +84,22 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(result);
             Assert.False(result.Contains("67890"));
         }
+
+        [Test]
+        public void TestCultureInfo()
+        {
+            person.Height = 180.2;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(new CultureInfo("ru-RU"));
+            var result = printer.PrintToString(person);
+            Console.WriteLine(result);
+            Assert.True(result.Contains("180,2"));
+
+            printer.Printing<double>().Using(new CultureInfo("en-US"));
+            result = printer.PrintToString(person);
+            Console.WriteLine(result);
+            Assert.True(result.Contains("180.2"));
+        }
     }
 }
