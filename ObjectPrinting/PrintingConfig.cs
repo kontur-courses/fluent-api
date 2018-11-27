@@ -128,9 +128,9 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            if (type.Implements(typeof(ICollection)))
+            if (typeof(IEnumerable).IsAssignableFrom(type))
             {
-                sb.Append(GetICollectionPrintingValue((ICollection)obj, nestingLevel));
+                sb.Append(GetICollectionPrintingValue((IEnumerable)obj, nestingLevel));
                 return sb.ToString();
             }
 
@@ -140,7 +140,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string GetICollectionPrintingValue(ICollection collection, int nestingLevel)
+        private string GetICollectionPrintingValue(IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
