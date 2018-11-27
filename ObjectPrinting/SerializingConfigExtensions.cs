@@ -10,7 +10,7 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Cut<TOwner>(this SerializingConfig<TOwner, string> config, int strLen)
         {
             var cfg = ((ISerializingConfig<TOwner>) config);
-            cfg.Context.TypeSerializers.Add(typeof(string), (str) => ((string)str).Substring(0, strLen));
+            cfg.Context.TypeSerializers.Add(typeof(string), (str) => ((string) str).Cut(strLen));
             return cfg.ParentConfig;
         }
     }
