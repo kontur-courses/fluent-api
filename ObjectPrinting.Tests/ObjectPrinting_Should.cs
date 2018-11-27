@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -37,11 +33,11 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).Should().Be(expected);
         }
-        
+
         [Test]
         public void ObjectPrinter_ShouldSerializeTypesAlternatively()
         {
-            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith", 
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith",
                                "\tHeight = 13,37", "\tAge = 69 (это инт)")
                            + Environment.NewLine;
 
@@ -66,7 +62,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldSerializePropertiesAlternatively()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich", "\tId = Guid", 
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich", "\tId = Guid",
                                "\tName = John Smith (это имя)",
                                "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
@@ -107,6 +103,50 @@ namespace ObjectPrinting.Tests
             printer.Excluding(e => e.Id);
 
             printer.PrintToString(person).Should().Be(expected);
+        }
+
+
+        [Test]
+        public void ObjectPrinter_ShouldOverrideAlternativeTypeSerialization_IfPropertySerializationSpecified()
+        {
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich (это строка)", "\tId = Guid",
+                               "\tName = John Smith (это имя (форматирование для типа не применилось))",
+                               "\tHeight = 13,37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            var printer = ObjectPrinter.For<PersonExtended>();
+            var person = new PersonExtended
+            {
+                Id = Guid.Empty,
+                Name = "John Smith",
+                MiddleName = "Johnovich",
+                Age = 69,
+                Height = 13.37
+            };
+
+            printer
+                .Printing(e => e.Name).Using(e => e + " (это имя (форматирование для типа не применилось))")
+                .Printing<string>().Using(e => e + " (это строка)");
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInPrinting()
+        {
+            Action action = () => printer.Printing(x => new[] { 1, 2, 3 });
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Использованное выражение не является допустимым");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInExcluding()
+        {
+            Action action = () => printer.Excluding(x => x.Age + 1);
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Использованное выражение не является допустимым");
         }
     }
 }
