@@ -2,6 +2,7 @@ namespace ObjectPrinting
 {
     interface ISerializingConfig<TOwner>
     {
-        PrintingConfig<TOwner> SerializingConfig { get; }
+        SerializingConfigContext Context { get; }
+        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }

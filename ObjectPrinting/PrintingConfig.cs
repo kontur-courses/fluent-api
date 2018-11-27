@@ -13,9 +13,15 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
+
         private List<Type> _excludedTypes = new List<Type>();
         private List<string> _excludedProps = new List<string>();
+        
+        private SerializingConfigContext _serializingConfigCtx = new SerializingConfigContext()
+        {
+            TypeSerializers = new Dictionary<Type, Func<object, string>>(),
+            PropSerializers = new Dictionary<string, Func<object, string>>()
+        };
         
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -25,25 +31,20 @@ namespace ObjectPrinting
         
         public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propSelector)
         {
-            MemberExpression body = propSelector.Body as MemberExpression;
-
-            if (body == null) {
-                UnaryExpression ubody = (UnaryExpression)propSelector.Body;
-                body = ubody.Operand as MemberExpression;
-            }
-
-            _excludedProps.Add(body.Member.Name);
+            var propName = getPropNameByPropSelector(propSelector);
+            _excludedProps.Add(propName);
             return this;
         }
         
         public SerializingConfig<TOwner, TPropType> Serialize<TPropType>()
         {
-            return new SerializingConfig<TOwner, TPropType>(this);
+            return new SerializingConfig<TOwner, TPropType>(this, _serializingConfigCtx);
         }
         
         public SerializingConfig<TOwner, Expression> Serialize(Expression<Func<TOwner, object>> propSelector)
-        {
-            return new SerializingConfig<TOwner, Expression>(this);
+        {   
+            var propName = getPropNameByPropSelector(propSelector);
+            return new SerializingConfig<TOwner, Expression>(this, _serializingConfigCtx, propName);
         }
         
         public string PrintToString(TOwner obj)
@@ -72,10 +73,33 @@ namespace ObjectPrinting
                     continue;
                 }
                 
-                if (_typesToPrint.Contains(propType))
+                Func<object, string> propSerializer;
+                _serializingConfigCtx.PropSerializers.TryGetValue(propName, out propSerializer);
+
+                Func<object, string> typeSerializer;
+                _serializingConfigCtx.TypeSerializers.TryGetValue(propType, out typeSerializer);
+
+                string displayPropValue = null;
+                if (propValue == null)
                 {
-                    var value = propValue == null ? "null" : propValue;
-                    sb.AppendLine($"{identation}{propName} = {value}");
+                    displayPropValue = "null";
+                }
+                else if (propSerializer != null)
+                {
+                    displayPropValue = propSerializer(propValue);
+                }
+                else if (typeSerializer != null)
+                {
+                    displayPropValue = typeSerializer(propValue);
+                }
+                
+                if (displayPropValue != null)
+                {
+                    sb.AppendLine($"{identation}{propName} = {displayPropValue}");
+                }
+                else if (_typesToPrint.Contains(propType))
+                {
+                    sb.AppendLine($"{identation}{propName} = {propValue ?? "null"}");
                 }
                 else
                 {
@@ -84,6 +108,18 @@ namespace ObjectPrinting
             }
             
             return sb.ToString();
+        }
+
+        private string getPropNameByPropSelector(Expression<Func<TOwner, object>> propSelector)
+        {
+            MemberExpression body = propSelector.Body as MemberExpression;
+
+            if (body == null) {
+                var uBody = (UnaryExpression)propSelector.Body;
+                body = uBody.Operand as MemberExpression;
+            }
+
+            return body.Member.Name;
         }
     }
 }
