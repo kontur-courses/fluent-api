@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrintingTests.Auxiliary;
 
 namespace ObjectPrintingTests
 {
@@ -44,8 +44,12 @@ namespace ObjectPrintingTests
         [Test]
         public void DemoNew()
         {
-            var wrapper = new Wrapper<List<int>>(new List<int>{1, 2, 3});
-            var result = ObjectPrinter.For<Wrapper<List<int>>>().PrintToString(wrapper);
+            var wrapper = new Wrapper<Dictionary<string, int>>(
+                new Dictionary<string, int>
+                    { {"a", 1}, {"b", 2} }
+                );
+
+            var result = ObjectPrinter.For<Wrapper<Dictionary<string, int>>>().PrintToString(wrapper);
             Console.WriteLine(result);
         }
     }

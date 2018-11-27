@@ -30,6 +30,14 @@ namespace ObjectPrinting
 
         public string PrintToString(object obj)
         {
+            InspectCircularReferences(obj);
+            LabelCircularReferences();
+            printedCircularlyReferencedObjects = new HashSet<object>();
+            return PrintToString(obj, 0);
+        }
+
+        private void InspectCircularReferences(object obj)
+        {
             var typesToSkip = new HashSet<Type>(
                 configsContainer.TypesToExclude.Union(configsContainer.PrintersForTypes.Keys));
             var propertiesToSkip = new HashSet<PropertyInfo>(
@@ -37,6 +45,10 @@ namespace ObjectPrinting
 
             var inspector = new CircularRefsInspector(obj, typesToSkip, propertiesToSkip);
             circularlyReferencedObjects = inspector.GetCircularlyReferencedObjects();
+        }
+
+        private void LabelCircularReferences()
+        {
             circularlyReferencedObjectsLabels = new Dictionary<object, int>();
             var label = 0;
             foreach (var referencedObject in circularlyReferencedObjects)
@@ -44,9 +56,6 @@ namespace ObjectPrinting
                 circularlyReferencedObjectsLabels[referencedObject] = label;
                 label++;
             }
-            
-            printedCircularlyReferencedObjects = new HashSet<object>();
-            return PrintToString(obj, 0);
         }
 
         public string PrintToString(object obj, int nestingLevel)
@@ -75,6 +84,10 @@ namespace ObjectPrinting
 
             if (Implements(type, typeof(IList)))
                 return sb.Append(PrintIList(obj, nestingLevel)).ToString();
+            if (Implements(type, typeof(ISet<>)))
+                return sb.Append(PrintISet(obj, nestingLevel)).ToString();
+            if (Implements(type, typeof(IDictionary)))
+                return sb.Append(PrintIDictionary(obj, nestingLevel)).ToString();
 
             return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
         }
@@ -103,14 +116,29 @@ namespace ObjectPrinting
 
         private string PrintIList(object obj, int nestingLevel)
         {
+            return PrintIEnumerable(obj, '[', ']', nestingLevel);
+        }
+
+        private string PrintISet(object obj, int nestingLevel)
+        {
+            return PrintIEnumerable(obj, '{', '}', nestingLevel);
+        }
+
+        private string PrintIDictionary(object obj, int nestingLevel)
+        {
+            return PrintIEnumerable(obj, '{', '}', nestingLevel);
+        }
+
+        private string PrintIEnumerable(object obj, char openBrace, char closeBrace, int nestingLevel)
+        {
             var sb = new StringBuilder();
             var bracesIndentation = new string('\t', nestingLevel);
-            sb.Append($"{bracesIndentation}[{NewLine}");
+            sb.AppendLine($"{bracesIndentation}{openBrace}");
 
             foreach (var element in obj as IEnumerable)
-                sb.Append(bracesIndentation + "\t" + PrintToString(element) + NewLine);
+                sb.AppendLine(bracesIndentation + "\t" + PrintToString(element, nestingLevel + 1));
 
-            sb.Append($"{bracesIndentation}]{NewLine}");
+            sb.Append($"{bracesIndentation}{closeBrace}");
             return sb.ToString();
         }
 
@@ -128,11 +156,9 @@ namespace ObjectPrinting
 
                 sb.Append(indentation + propertyInfo.Name + " = ");
                 if (configsContainer.PrintersForProperties.ContainsKey(propertyInfo))
-                    sb.Append(configsContainer.PrintersForProperties[propertyInfo](propertyInfo.GetValue(obj))
-                              + NewLine);
+                    sb.AppendLine(configsContainer.PrintersForProperties[propertyInfo](propertyInfo.GetValue(obj)));
                 else if (configsContainer.PrintersForTypes.ContainsKey(propertyInfo.PropertyType))
-                    sb.Append(configsContainer.PrintersForTypes[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
-                              + NewLine);
+                    sb.AppendLine(configsContainer.PrintersForTypes[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
                 else
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }

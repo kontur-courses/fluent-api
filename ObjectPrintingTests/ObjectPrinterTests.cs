@@ -2,6 +2,7 @@
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrintingTests.Auxiliary;
 
 namespace ObjectPrintingTests
 {
@@ -150,6 +151,102 @@ namespace ObjectPrintingTests
                            $"\tValue = Cycle (cycle reference to label 0){NewLine}";
 
             var actual = ObjectPrinter.For<Cycle>().PrintToString(cycle);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestExcludesTypeInAllInnerObjects()
+        {
+            var student = new Student
+            {
+                Name = "First",
+                Grade = 4,
+                Friend = new Student
+                {
+                    Name = "Second",
+                    Grade = 4
+                }
+            };
+
+            var printer = ObjectPrinter.For<Student>()
+                .Excluding<double>();
+
+            var expected = $"Student{NewLine}" +
+                           $"\tName = First{NewLine}" +
+                           $"\tFriend = Student{NewLine}" +
+                           $"\t\tName = Second{NewLine}" +
+                           $"\t\tFriend = null{NewLine}";
+
+            var actual = printer.PrintToString(student);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestExcludesPropertyInAllInnerObjects()
+        {
+            var student = new Student
+            {
+                Name = "First",
+                Grade = 4,
+                Friend = new Student
+                {
+                    Name = "Second",
+                    Grade = 4
+                }
+            };
+
+            var printer = ObjectPrinter.For<Student>()
+                .Excluding(s => s.Grade);
+
+            var expected = $"Student{NewLine}" +
+                           $"\tName = First{NewLine}" +
+                           $"\tFriend = Student{NewLine}" +
+                           $"\t\tName = Second{NewLine}" +
+                           $"\t\tFriend = null{NewLine}";
+
+            var actual = printer.PrintToString(student);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestGivesMorePriorityToPropertyPrinter()
+        {
+            var person = new Person
+                { Age = 10, Height = 1.3, Name = "Default" };
+
+            var expected = $"Person{NewLine}" +
+                           $"\tName = Default{NewLine}" +
+                           $"\tHeight = by property{NewLine}" +
+                           $"\tAge = 10{NewLine}";
+
+            var actual = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing<double>().Using(d => "by type")
+                .Printing(p => p.Height).Using(d => "by property")
+                .PrintToString(person);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestUsesLastSetPrinting()
+        {
+            var person = new Person
+                { Age = 10, Height = 1.3, Name = "Default" };
+
+            var expected = $"Person{NewLine}" +
+                           $"\tName = Default{NewLine}" +
+                           $"\tHeight = last{NewLine}" +
+                           $"\tAge = 10{NewLine}";
+
+            var actual = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing(p => p.Height).Using(d => "first")
+                .Printing(p => p.Height).Using(d => "last")
+                .PrintToString(person);
+
             Assert.AreEqual(expected, actual);
         }
     }

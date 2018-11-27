@@ -61,12 +61,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CicularRefsInspectorTest.cs" />
-    <Compile Include="Cycle.cs" />
-    <Compile Include="Node.cs" />
-    <Compile Include="Wrapper.cs" />
+    <Compile Include="Auxiliary\Cycle.cs" />
+    <Compile Include="Auxiliary\Node.cs" />
+    <Compile Include="Auxiliary\Student.cs" />
+    <Compile Include="Auxiliary\Wrapper.cs" />
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinterTests.cs" />
-    <Compile Include="Person.cs" />
+    <Compile Include="Auxiliary\Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using FluentAssertions;
 using ObjectPrinting;
+using ObjectPrintingTests.Auxiliary;
 
 namespace ObjectPrintingTests
 {

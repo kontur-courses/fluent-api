@@ -53,9 +53,9 @@ namespace ObjectPrinting
 
             alreadyHandledObjects.Add(obj);
 
-            if (Implements(type, typeof(IList)))
+            if (Implements(type, typeof(IEnumerable)))
             {
-                InspectIList(obj);
+                InspectIEnumerable(obj);
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace ObjectPrinting
             return type.GetInterfaces().Any(t => t == interfaceName);
         }
 
-        private void InspectIList(object obj)
+        private void InspectIEnumerable(object obj)
         {
             foreach (var element in obj as IEnumerable)
                 Inspect(element);
