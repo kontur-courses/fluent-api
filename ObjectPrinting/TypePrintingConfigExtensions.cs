@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 
 namespace ObjectPrinting
 {
@@ -21,11 +20,6 @@ namespace ObjectPrinting
         {
             pc.PrintingConfig.SetNumberCulture<float>(ci);
             return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
-        }
-
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> pc, int length)
-        {
-            return ((ITypePrintingConfig<TOwner>) pc).PrintingConfig;
         }
     }
 }

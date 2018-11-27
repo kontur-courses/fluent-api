@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -23,9 +24,11 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .SetAltSerialize(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Name);
+                .Exclude(p => p.Age);
 
             string s1 = printer.PrintToString(person);
+
+            Console.WriteLine(s1);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием

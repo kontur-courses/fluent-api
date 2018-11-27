@@ -4,28 +4,38 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
-using FluentAssertions.Formatting;
-using NUnit.Framework;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private Type[] finalTypes = new[]
+        private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-        private Dictionary<Type, Delegate> typeSerializations = new Dictionary<Type, Delegate>();
-        private Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<string> excludedProperties = new HashSet<string>();
+        private readonly Dictionary<Type, Delegate> typeSerializations = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<string, Delegate> propertySerializations = new Dictionary<string, Delegate>();
+        private readonly Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
 
-        internal void AddTypeSerialization<TPropType>(Delegate func) => typeSerializations[typeof(TPropType)] = func;
-        internal void SetNumberCulture<TPropType>(CultureInfo culture) => numberCultures[typeof(TPropType)] = culture;
+        internal void AddTypeSerialization<TPropType>(Delegate func)
+        {
+            typeSerializations[typeof(TPropType)] = func;
+        }
+
+        internal void AddPropertySerialization<TPropType>(string propName, Delegate func)
+        {
+            propertySerializations[propName] = func;
+        }
+
+        internal void SetNumberCulture<TPropType>(CultureInfo culture)
+        {
+            numberCultures[typeof(TPropType)] = culture;
+        }
 
         public string PrintToString(TOwner obj)
         {
@@ -48,14 +58,21 @@ namespace ObjectPrinting
             {
                 string strValue;
 
-                if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
+                if (typeSerializations.ContainsKey(propertyInfo.PropertyType)
+                ) // TODO Рефактор и вынести в отедльные методы
                 {
                     var tDelegate = typeSerializations[propertyInfo.PropertyType];
-                    strValue = (string)tDelegate.DynamicInvoke(propertyInfo.GetValue(obj));
+                    strValue = (string) tDelegate.DynamicInvoke(propertyInfo.GetValue(obj));
                 }
                 else if (numberCultures.ContainsKey(propertyInfo.PropertyType))
                 {
-                    strValue = ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, numberCultures[propertyInfo.PropertyType]);
+                    strValue = ((IFormattable) propertyInfo.GetValue(obj)).ToString(null,
+                        numberCultures[propertyInfo.PropertyType]);
+                }
+                else if (propertySerializations.ContainsKey(propertyInfo.Name))
+                {
+                    var tDelegate = propertySerializations[propertyInfo.Name];
+                    strValue = (string) tDelegate.DynamicInvoke(propertyInfo.GetValue(obj));
                 }
                 else
                 {
@@ -64,16 +81,17 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = " + strValue);
             }
+
             return sb.ToString();
         }
 
-        
-
-        IEnumerable<PropertyInfo> GetProperties(Type objType)
+        private IEnumerable<PropertyInfo> GetProperties(Type objType)
         {
             foreach (var propertyInfo in objType.GetProperties())
             {
-                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                if (excludedProperties.Contains(propertyInfo.Name))
                     continue;
                 yield return propertyInfo;
             }
@@ -82,7 +100,6 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
-
             return this;
         }
 
@@ -92,16 +109,17 @@ namespace ObjectPrinting
         }
 
 
-        public TypePrintingConfig<TOwner, TPropType> SetAltSerialize<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
+        public PropertyPrintingConfig<TOwner, TPropType> SetAltSerialize<TPropType>(
+            Expression<Func<TOwner, TPropType>> propertyFunc)
         {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this,
+                ((MemberExpression) propertyFunc.Body).Member.Name);
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
         {
+            excludedProperties.Add(((MemberExpression) propertyFunc.Body).Member.Name);
             return this;
         }
     }
-
-
 }
