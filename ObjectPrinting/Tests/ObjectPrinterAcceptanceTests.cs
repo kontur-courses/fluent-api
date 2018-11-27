@@ -1,7 +1,8 @@
-﻿using NUnit.Framework;
+﻿using System;
 using System.Globalization;
+using NUnit.Framework;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Solved.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -13,22 +14,28 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Exclude<int>()
+                .Excluding<Guid>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .NewSerialise<char>().Using((ch) => ((int)ch).ToString())
+                .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
-                .NewSerialise<double>().Using(CultureInfo.CurrentCulture)
+                .Printing<long>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .NewSerialise(p => p.Age).Using((ch) => (ch).ToString())
+                .Printing(p => p.Age).Using((ch) => (ch).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .NewSerialise(p => p.Name).Trimming(3)
+                .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Id);
+                .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            string s2 = person.PrintToString();
+            
             //8. ...с конфигурированием
+            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            Console.WriteLine(s1);
+            Console.WriteLine(s2);
+            Console.WriteLine(s3);
         }
     }
 }
