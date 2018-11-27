@@ -48,9 +48,52 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<double>();
-            printer.PrintToString(person).Should().Be(" ");
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
         }
         
+        [Test]
+        public void SerializeTypeUsing()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing<int>().Using(CultureInfo.CurrentCulture);
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+
+        [Test]
+        public void SerializePropertyUsing()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing(p => p.Id).Using(s => s.ToString());
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = 00000000-0000-0000-0000-000000000000\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
         
+        [Test]
+        public void SerializeStringPropertyWithTrim()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing(p => p.Name).TrimToLength(6);
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexan\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+        
+        [Test]
+        public void ExcludeProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Exclude(p => p.ShoeSize);
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n");
+        }
+        
+        [Test]
+        public void SerializingWithExtension()
+        {
+            person.Serialize().Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+        
+        [Test]
+        public void ConfigureSerializingWithExtension()
+        {
+            person.Serialize(x=>x.Serializing(p=>p.Name).TrimToLength(2))
+                .Should().Be("Person\r\n	Id = Guid\r\n	Name = Al\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
     }
 }
