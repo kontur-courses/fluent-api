@@ -13,17 +13,16 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-        private readonly HashSet<object> printedObjects = new HashSet<object>();
+        private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
+        private ImmutableHashSet<PropertyInfo> excludedProperties = ImmutableHashSet<PropertyInfo>.Empty;
+        private ImmutableHashSet<object> printedObjects = ImmutableHashSet<object>.Empty;
         private int depth = 10;
         private int maxElements = 10;
-        private readonly Dictionary<Type, Delegate> typeSerializationFormats = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<PropertyInfo, Delegate> propertySerializationFormats = new Dictionary<PropertyInfo, Delegate>();
-        private readonly Dictionary<PropertyInfo, Delegate> propertyPostProduction = new Dictionary<PropertyInfo, Delegate>();
-        private readonly Dictionary<Type, CultureInfo> cultureInfo = new Dictionary<Type, CultureInfo>();
-        private readonly Type[] finalTypes = new[]
-        {
+        private ImmutableDictionary<Type, Delegate> typeSerializationFormats = ImmutableDictionary<Type, Delegate>.Empty;
+        private ImmutableDictionary<PropertyInfo, Delegate> propertySerializationFormats = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
+        private ImmutableDictionary<PropertyInfo, Delegate> propertyPostProduction = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
+        private ImmutableDictionary<Type, CultureInfo> cultureInfo = ImmutableDictionary<Type, CultureInfo>.Empty;
+        private readonly Type[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
@@ -49,7 +48,7 @@ namespace ObjectPrinting
             if (!(property.Body is MemberExpression body))
                 throw new ArgumentException();
             var propertyName = body.Member.Name;
-            excludedProperties.Add(typeof(TOwner).GetProperty(propertyName));
+            excludedProperties = excludedProperties.Add(typeof(TOwner).GetProperty(propertyName));
             return this;
         }
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -58,13 +57,13 @@ namespace ObjectPrinting
         }
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            excludedTypes = excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
         public string PrintToString(TOwner obj)
         {
-            printedObjects.Clear();
+            printedObjects = printedObjects.Clear();
             return PrintToString(obj, 0);
         }
 
@@ -88,7 +87,7 @@ namespace ObjectPrinting
         private string PrintObject(object obj, int nestingLevel)
         {
             if (!finalTypes.Contains(obj.GetType()))
-                printedObjects.Add(obj);
+                printedObjects = printedObjects.Add(obj);
 
             var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
@@ -200,22 +199,22 @@ namespace ObjectPrinting
 
         void IPrintingConfig<TOwner>.AddPropertySerializationFormat(PropertyInfo property, Delegate format)
         {
-            propertySerializationFormats[property] = format;
+            propertySerializationFormats = propertySerializationFormats.SetItem(property, format);
         }
 
         void IPrintingConfig<TOwner>.AddTypeSerializationFormat(Type type, Delegate format)
         {
-            typeSerializationFormats[type] = format;
+            typeSerializationFormats = typeSerializationFormats.SetItem(type, format);
         }
 
         void IPrintingConfig<TOwner>.AddPostProduction(PropertyInfo property, Delegate format)
         {
-            propertyPostProduction[property] = format;
+            propertyPostProduction = propertyPostProduction.SetItem(property, format);
         }
 
-        void IPrintingConfig<TOwner>.AddCultureInfo(Type type, CultureInfo cultureInfo)
+        void IPrintingConfig<TOwner>.AddCultureInfo(Type type, CultureInfo info)
         {
-            this.cultureInfo[type] = cultureInfo;
+            cultureInfo = cultureInfo.SetItem(type, info);
         }
     }
 }
