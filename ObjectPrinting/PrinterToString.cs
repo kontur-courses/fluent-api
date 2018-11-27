@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -16,21 +17,37 @@ namespace ObjectPrinting
 
         private static readonly string NewLine = Environment.NewLine;
 
-        private readonly HashSet<object> alreadyHandledObjects;
+        private HashSet<object> circularlyReferencedObjects;
+        private Dictionary<object, int> circularlyReferencedObjectsLabels;
+        private HashSet<object> printedCircularlyReferencedObjects;
         private readonly ConfigsContainer configsContainer;
 
         public PrinterToString(ConfigsContainer configsContainer)
         {
-            alreadyHandledObjects = new HashSet<object>();
+            circularlyReferencedObjects = new HashSet<object>();
             this.configsContainer = configsContainer;
         }
 
         public string PrintToString(object obj)
         {
+            var typesToSkip = new HashSet<Type>(
+                configsContainer.TypesToExclude.Union(configsContainer.PrintersForTypes.Keys));
+            var propertiesToSkip = new HashSet<PropertyInfo>(
+                configsContainer.PropertiesToExclude.Union(configsContainer.PrintersForProperties.Keys));
+
+            var inspector = new CircularRefsInspector(obj, typesToSkip, propertiesToSkip);
+            circularlyReferencedObjects = inspector.GetCircularlyReferencedObjects();
+            circularlyReferencedObjectsLabels = new Dictionary<object, int>();
+            var label = 0;
+            foreach (var referencedObject in circularlyReferencedObjects)
+            {
+                circularlyReferencedObjectsLabels[referencedObject] = label;
+                label++;
+            }
+            
+            printedCircularlyReferencedObjects = new HashSet<object>();
             return PrintToString(obj, 0);
         }
-
-        
 
         public string PrintToString(object obj, int nestingLevel)
         {
@@ -42,14 +59,22 @@ namespace ObjectPrinting
 
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(ResolveTypeName(type));
+            sb.Append(ResolveTypeName(type));
+
+            if (circularlyReferencedObjects.Contains(obj))
+            {
+                if (printedCircularlyReferencedObjects.Contains(obj))
+                    return sb.AppendLine(
+                        $" (cycle reference to label {circularlyReferencedObjectsLabels[obj]})")
+                        .ToString();
+
+                printedCircularlyReferencedObjects.Add(obj);
+                sb.Append($" (label {circularlyReferencedObjectsLabels[obj]})");
+            }
+            sb.AppendLine();
 
             if (Implements(type, typeof(IList)))
-                return sb.Append(PrintIList(obj, type, nestingLevel)).ToString();
-
-            if (alreadyHandledObjects.Contains(obj))
-                return "(cycle)" + NewLine;
-            alreadyHandledObjects.Add(obj);
+                return sb.Append(PrintIList(obj, nestingLevel)).ToString();
 
             return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
         }
@@ -76,7 +101,7 @@ namespace ObjectPrinting
             return type.GetInterfaces().Any(t => t == interfaceName);
         }
 
-        private string PrintIList(object obj, Type type, int nestingLevel)
+        private string PrintIList(object obj, int nestingLevel)
         {
             var sb = new StringBuilder();
             var bracesIndentation = new string('\t', nestingLevel);
@@ -98,12 +123,12 @@ namespace ObjectPrinting
             {
                 if (configsContainer.TypesToExclude.Contains(propertyInfo.PropertyType))
                     continue;
-                if (configsContainer.PropertiesToExclude.Contains(propertyInfo.Name))
+                if (configsContainer.PropertiesToExclude.Contains(propertyInfo))
                     continue;
 
                 sb.Append(indentation + propertyInfo.Name + " = ");
-                if (configsContainer.PrintersForProperties.ContainsKey(propertyInfo.Name))
-                    sb.Append(configsContainer.PrintersForProperties[propertyInfo.Name](propertyInfo.GetValue(obj))
+                if (configsContainer.PrintersForProperties.ContainsKey(propertyInfo))
+                    sb.Append(configsContainer.PrintersForProperties[propertyInfo](propertyInfo.GetValue(obj))
                               + NewLine);
                 else if (configsContainer.PrintersForTypes.ContainsKey(propertyInfo.PropertyType))
                     sb.Append(configsContainer.PrintersForTypes[propertyInfo.PropertyType](propertyInfo.GetValue(obj))

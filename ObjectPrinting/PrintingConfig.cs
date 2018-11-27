@@ -18,7 +18,7 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var propertyInfo = ExtractPropertyInfo(propertySelector);
-            configsContainer.PropertiesToExclude.Add(propertyInfo.Name);
+            configsContainer.PropertiesToExclude.Add(propertyInfo);
             return this;
         }
 
@@ -35,7 +35,7 @@ namespace ObjectPrinting
         {
             var printingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
             var propertyInfo = ExtractPropertyInfo(propertySelector);
-            configsContainer.PrintersForProperties[propertyInfo.Name] = 
+            configsContainer.PrintersForProperties[propertyInfo] = 
                 obj => ((IPropertyPrintingConfig<TOwner, TPropType>) printingConfig).PrintingFunction((TPropType)obj);
 
             return printingConfig;

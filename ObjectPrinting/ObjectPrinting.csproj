@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CircularRefsInspector.cs" />
     <Compile Include="ConfigsContainer.cs" />
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="ObjectPrinter.cs" />

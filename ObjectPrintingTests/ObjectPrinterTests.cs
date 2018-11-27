@@ -146,8 +146,8 @@ namespace ObjectPrintingTests
         public void TestResolvingCircularReferences()
         {
             var cycle = new Cycle();
-            var expected = $"Cycle{NewLine}" +
-                           $"\tValue = (cycle){NewLine}";
+            var expected = $"Cycle (label 0){NewLine}" +
+                           $"\tValue = Cycle (cycle reference to label 0){NewLine}";
 
             var actual = ObjectPrinter.For<Cycle>().PrintToString(cycle);
             Assert.AreEqual(expected, actual);
