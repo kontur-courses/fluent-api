@@ -19,19 +19,26 @@ namespace ObjectPrinting
 
         private readonly Dictionary<string, Expression<Func<object, string>>> printMethodsForProperties =
             new Dictionary<string, Expression<Func<object, string>>>();
+
+        private readonly Dictionary<Type, Expression<Func<object, string>>> printMethodsForTypes =
+            new Dictionary<Type, Expression<Func<object, string>>>();
         private int nestingLevel;
+        private Func<object, string> printMethod = o => o.ToString();
         #endregion
 
+        #region ctor
         public PrintingConfig()
         {
             nestingLevel = 1;
-
         }
 
-        private PrintingConfig(int nestingLevel)
+        private PrintingConfig(int nestingLevel, Func<object, string> printMethod)
         {
             this.nestingLevel = nestingLevel;
+            this.printMethod = printMethod;
         }
+        #endregion
+
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -40,8 +47,11 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var propName = ((MemberExpression) memberSelector.Body).Member.Name;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propName);
         }
+
+
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -54,6 +64,8 @@ namespace ObjectPrinting
             exludedTypes.Add(typeof(TPropType));
             return this;
         }
+
+
 
         public string PrintToString(TOwner obj)
         {
@@ -72,7 +84,7 @@ namespace ObjectPrinting
             };
 
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+                return printMethod.Invoke(obj) + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
@@ -83,13 +95,41 @@ namespace ObjectPrinting
             {
                 if (!IsExcludingType(propertyInfo.PropertyType) && !IsExludedProperty(propertyInfo.Name))
                 {
+                    var expr1 = GetMethodForType(propertyInfo.PropertyType);
+                    var expr2 = GetMethodForProperty(propertyInfo.Name);
+                    Func<object, string> printMethod = o => expr1.Compile().Invoke(expr2.Compile().Invoke(o));
                     var currentObj = propertyInfo.GetValue(obj);
+
                     sb.Append(
-                        $"{identation}{propertyInfo.Name} = {currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel))}");
+                        $"{identation}{propertyInfo.Name} = {currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel, printMethod))}");
                 }
                 
             }
             return sb.ToString();
+        }
+
+        private Expression<Func<object, string>> GetMethodForType(Type type)
+        {
+            if (printMethodsForTypes.ContainsKey(type))
+            {
+                return printMethodsForTypes[type];
+            }
+            else
+            {
+                return o => o.ToString();
+            }
+        }
+
+        private Expression<Func<object, string>> GetMethodForProperty(string propertyName)
+        {
+            if (printMethodsForProperties.ContainsKey(propertyName))
+            {
+                return printMethodsForProperties[propertyName];
+            }
+            else
+            {
+                return o => o.ToString();
+            }
         }
 
 
@@ -104,17 +144,17 @@ namespace ObjectPrinting
         }
 
         #region InterfaceProperties
-        List<string> NamesExludedProperties => namesExcludedProperties;
+        List<string> IPrintingConfig<TOwner>.NamesExludedProperties => namesExcludedProperties;
 
-        List<Type> ExcludingTypes => exludedTypes;
+        List<Type> IPrintingConfig<TOwner>.ExcludingTypes => exludedTypes;
 
-        Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties => printMethodsForProperties;
+        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
 
-        Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; } = new Dictionary<Type, Expression<Func<object, string>>>();
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
 
-        Dictionary<Type, CultureInfo> CulturesForNumbers => culturiesForNumbers;
+        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CulturesForNumbers => culturiesForNumbers;
 
-        int NestingLevel => nestingLevel;
+        int IPrintingConfig<TOwner>.NestingLevel => nestingLevel;
         #endregion
     }
 

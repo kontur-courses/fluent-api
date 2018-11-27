@@ -19,8 +19,9 @@ namespace ObjectPrinting.Solved.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                
                 //4. Настроить сериализацию конкретного свойства
+                .Printing(p => p.Name).Using(n => n.ToUpper())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства

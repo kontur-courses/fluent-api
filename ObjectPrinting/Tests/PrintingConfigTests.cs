@@ -50,7 +50,19 @@ namespace ObjectPrinting.Tests
 
         }
 
+        [Test]
+        public void Printing_ShouldAllowToTunePrintMethodForType()
+        {
+            var resString = testPerson.PrintToString(config => config.Printing<string>().Using(s => s.ToUpper()));
+            resString.Should().Be("Person\r\n\tId = Guid\r\n\tName = JOHN\r\n\tHeight = 180\r\n\tAge = 32\r\n\tPet = null\r\n");
+        }
 
+        [Test]
+        public void Printing_ShouldAllowToTunePrintMethodForProperty()
+        {
+            var resString = testPerson.PrintToString(config => config.Printing(p => p.Age).Using(age => "0"));
+            resString.Should().Be("Person\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 180\r\n\tAge = 0\r\n\tPet = null\r\n");
+        }
 
     }
 }
