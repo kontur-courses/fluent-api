@@ -53,8 +53,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ObjectPrinter.cs" />
+    <Compile Include="ObjectExtensions.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyPrintingConfig.cs" />
+    <Compile Include="PropertyPrintingExtensions.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
