@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -17,6 +18,12 @@ namespace ObjectPrinting
             PropertyName = propertyName;
         }
 
+        public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
+        {
+            printingConfig.AddTypeSerializationCulture(typeof(TPropType), cultureInfo);
+            return printingConfig;
+        }
+        
         public string PropertyName { get; }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
