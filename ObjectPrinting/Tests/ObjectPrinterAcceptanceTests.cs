@@ -17,7 +17,7 @@ namespace ObjectPrinting.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .SetAltSerialize<double>().Using(i => i.ToString())
                 //3. Для числовых типов указать культуру
-                .SetAltSerialize<int>().Using(CultureInfo.CurrentCulture)
+                .SetAltSerialize<float>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .SetAltSerialize(p => p.Name).Using(i => i.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)

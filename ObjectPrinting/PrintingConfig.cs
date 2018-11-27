@@ -1,18 +1,31 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using FluentAssertions.Formatting;
+using NUnit.Framework;
 using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
         private HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> typeSerializations = new Dictionary<Type, Delegate>();
+        private Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
+
+        internal void AddTypeSerialization<TPropType>(Delegate func) => typeSerializations[typeof(TPropType)] = func;
+        internal void SetNumberCulture<TPropType>(CultureInfo culture) => numberCultures[typeof(TPropType)] = culture;
 
         public string PrintToString(TOwner obj)
         {
@@ -21,15 +34,9 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
@@ -39,24 +46,28 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in GetProperties(type))
             {
+                string strValue;
+
                 if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
                 {
                     var tDelegate = typeSerializations[propertyInfo.PropertyType];
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              tDelegate.DynamicInvoke(propertyInfo.GetValue(obj)));
+                    strValue = (string)tDelegate.DynamicInvoke(propertyInfo.GetValue(obj));
+                }
+                else if (numberCultures.ContainsKey(propertyInfo.PropertyType))
+                {
+                    strValue = ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, numberCultures[propertyInfo.PropertyType]);
                 }
                 else
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
+                    strValue = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
                 }
+
+                sb.Append(identation + propertyInfo.Name + " = " + strValue);
             }
             return sb.ToString();
         }
 
-        internal void AddTypeSerialization<TPropType>(Delegate func) => typeSerializations[typeof(TPropType)] = func;
+        
 
         IEnumerable<PropertyInfo> GetProperties(Type objType)
         {
