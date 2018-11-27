@@ -12,6 +12,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private HashSet<Type> excludedTypes = new HashSet<Type>();
+        private Dictionary<Type, Delegate> typeSerializations = new Dictionary<Type, Delegate>();
 
         public string PrintToString(TOwner obj)
         {
@@ -38,12 +39,24 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in GetProperties(type))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var tDelegate = typeSerializations[propertyInfo.PropertyType];
+
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              tDelegate.DynamicInvoke(propertyInfo.GetValue(obj)));
+                }
+                else
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                }
             }
             return sb.ToString();
         }
+
+        internal void AddTypeSerialization<TPropType>(Delegate func) => typeSerializations[typeof(TPropType)] = func;
 
         IEnumerable<PropertyInfo> GetProperties(Type objType)
         {
