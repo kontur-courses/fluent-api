@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,23 +10,54 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public List<Func<MemberInfo, bool>> ExcludeProperties { get; set; }
+        public HashSet<Type> ExcludeMembersByType { get; set; }
+        public HashSet<string> ExcludeMembersByName { get; set; }
         public Dictionary<Type, Delegate> AlternativeSerializationByType { get; set; }
         public Dictionary<string, Delegate> AlternativeSerializationByName { get; set; }
-        public List<object> ViewedObjects { get; set; }
+        public HashSet<object> ViewedObjects { get; set; }
         public Dictionary<string, Delegate> TrimmingFunctions { get; set; }
+        public Dictionary<Type, CultureInfo> CultureInfoForNumbers { get; set; }
 
         public PrintingConfig()
         {
-            ExcludeProperties = new List<Func<MemberInfo, bool>>();
+            ExcludeMembersByType = new HashSet<Type>();
             AlternativeSerializationByType = new Dictionary<Type, Delegate>();
-            ViewedObjects = new List<object>();
+            ViewedObjects = new HashSet<object>();
             AlternativeSerializationByName = new Dictionary<string, Delegate>();
             TrimmingFunctions = new Dictionary<string, Delegate>();
+            ExcludeMembersByName = new HashSet<string>();
+            CultureInfoForNumbers = new Dictionary<Type, CultureInfo>();
         }
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>()
+        {
+            var excludedType = typeof(TPropType);
+            ExcludeMembersByType.Add(excludedType);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
+        {
+            var excludedName = ((MemberExpression)excludedExpression.Body).Member.Name;
+            ExcludeMembersByName.Add(excludedName);
+            return this;
+        }
+
+        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>()
+        {
+            return new TypePrintingConfig<TOwner, TPropType>(this);
+        }
+
+
+        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>(Expression<Func<TOwner, TPropType>> alternativeExpression)
+        {
+            ITypePrintingConfig<TOwner> tPrintingConfig = new TypePrintingConfig<TOwner, TPropType>(this);
+            tPrintingConfig.NameMember = ((MemberExpression)alternativeExpression.Body).Member.Name;
+            return (TypePrintingConfig<TOwner, TPropType>)tPrintingConfig;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -33,22 +65,49 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            var type = obj.GetType();
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            if (finalTypes.Contains(type))
+                return SetCultureInfoForNumber(obj) + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
-            var type = obj.GetType();
-            var members = type.GetMembers().Where(member => (member.MemberType & MemberTypes.Property) != 0 ||
-                                                               (member.MemberType & MemberTypes.Field) != 0).ToArray();
-            foreach (var e in ExcludeProperties)
-                members = members.Where(e).ToArray();
+            var members = FilteringMembers(type);
             var result = PrintMembers(obj, nestingLevel, identation, members);
             return result;
+        }
+
+        private object SetCultureInfoForNumber(object obj)
+        {
+            switch (obj)
+            {
+                case int intObj:
+                    return CultureInfoForNumbers.ContainsKey(typeof(int))
+                        ? intObj.ToString(CultureInfoForNumbers[typeof(int)])
+                        : obj;
+                case double doubleObj:
+                    return CultureInfoForNumbers.ContainsKey(typeof(double))
+                        ? doubleObj.ToString(CultureInfoForNumbers[typeof(double)])
+                        : obj;
+                case float floatObj:
+                    return CultureInfoForNumbers.ContainsKey(typeof(float))
+                        ? floatObj.ToString(CultureInfoForNumbers[typeof(float)])
+                        : obj;
+                default:
+                    return obj;
+            }
+        }
+
+        private MemberInfo[] FilteringMembers(Type type)
+        {
+            return type.GetMembers()
+                .Where(member => (member.MemberType & MemberTypes.Property) != 0 ||
+                                                               (member.MemberType & MemberTypes.Field) != 0)
+                .Where(member => !(ExcludeMembersByType.Contains(GetType(member))
+                                                  || ExcludeMembersByName.Contains(member.Name))).ToArray();
         }
 
         //Отрефакторить, когда будет полная реализация
@@ -106,35 +165,6 @@ namespace ObjectPrinting
 
             var fieldInfo = (FieldInfo)memberInfo;
             return fieldInfo.GetValue(obj);
-        }
-
-        public PrintingConfig<TOwner> Exclude<TPropType>()
-        {
-            var excludedType = typeof(TPropType);
-            var excludedFunc = new Func<MemberInfo, bool>(memberInfo => GetType(memberInfo) != excludedType);
-            ExcludeProperties.Add(excludedFunc);
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
-        {
-            var excludedFunc = new Func<MemberInfo, bool>(memberInfo => memberInfo.Name !=
-                                                                        ((MemberExpression)excludedExpression.Body).Member.Name);
-            ExcludeProperties.Add(excludedFunc);
-            return this;
-        }
-
-        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>()
-        {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
-        }
-
-
-        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>(Expression<Func<TOwner, TPropType>> alternativeExpression)
-        {
-            ITypePrintingConfig<TOwner> tPrintingConfig = new TypePrintingConfig<TOwner, TPropType>(this);
-            tPrintingConfig.NameMember = ((MemberExpression)alternativeExpression.Body).Member.Name;
-            return (TypePrintingConfig<TOwner, TPropType>)tPrintingConfig;
         }
     }
 }

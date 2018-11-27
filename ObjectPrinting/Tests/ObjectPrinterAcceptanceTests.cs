@@ -123,5 +123,25 @@ namespace ObjectPrinting.Tests
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);
         }
+
+        [Test]
+        public void ObjectPrinter_Should_ChangeCultureInfoForNumber()
+        {
+            person.Age *= -1; person.ArmLength *= -1;
+            var myCultureInfo = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+            myCultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+            myCultureInfo.NumberFormat.NegativeSign = "~~";
+            var printer = ObjectPrinter.For<Person>()
+                .Serializer(p => p.Age).SetCultureInfo(myCultureInfo)
+                .Serializer(p => p.ArmLength).SetCultureInfo(myCultureInfo)
+                .Serializer(p => p.Height).SetCultureInfo(myCultureInfo);
+            var result = printer.PrintToString(person);
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192.57" +
+                "\r\n\tAge = ~~21\r\n\tArmLength = ~~15\r\n\tNumberChildren = 2\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
     }
 }
