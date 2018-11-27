@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -16,6 +17,7 @@ namespace ObjectPrinting
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
         private readonly HashSet<object> printedObjects = new HashSet<object>();
         private int depth = 10;
+        private int maxElements = 10;
         private readonly Dictionary<Type, Delegate> typeSerializationFormats = new Dictionary<Type, Delegate>();
         private readonly Dictionary<PropertyInfo, Delegate> propertySerializationFormats = new Dictionary<PropertyInfo, Delegate>();
         private readonly Dictionary<PropertyInfo, Delegate> propertyPostProduction = new Dictionary<PropertyInfo, Delegate>();
@@ -26,9 +28,15 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        public PrintingConfig<TOwner> SetDepth(int depth)
+        public PrintingConfig<TOwner> WithDepth(int depth)
         {
             this.depth = depth;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> MaxElements(int maxElements)
+        {
+            this.maxElements = maxElements;
             return this;
         }
 
@@ -69,20 +77,31 @@ namespace ObjectPrinting
                 return result;
 
             if (printedObjects.Contains(obj))
-                return "Already printed" + Environment.NewLine;
+                return "Already printed " + obj.GetType() + Environment.NewLine;
 
             if (nestingLevel > depth)
                 return "";
-            printedObjects.Add(obj);
+
+            return PrintObject(obj, nestingLevel);
+        }
+
+        private string PrintObject(object obj, int nestingLevel)
+        {
+            if (!finalTypes.Contains(obj.GetType()))
+                printedObjects.Add(obj);
 
             var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
+
             sb.AppendLine(type.Name);
+
+            if (TryPrintElements(obj, nestingLevel, out var result))
+                sb.Append(result);
+
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedProperties.Contains(propertyInfo) ||
-                    excludedTypes.Contains(propertyInfo.PropertyType))
+                if (IsExcluded(propertyInfo))
                     continue;
 
                 sb.Append(identation);
@@ -95,6 +114,41 @@ namespace ObjectPrinting
             }
 
             return sb.ToString();
+        }
+
+        private bool IsExcluded(PropertyInfo propertyInfo)
+        {
+            return excludedProperties.Contains(propertyInfo) ||
+                   excludedTypes.Contains(propertyInfo.PropertyType);
+        }
+
+        private bool TryPrintElements(object obj, int nestingLevel, out string result)
+        {
+            result = null;
+            if (!(obj is IEnumerable enumerable))
+                return false;
+
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            sb.Append(identation + "Elements:" + Environment.NewLine);
+            sb.Append(identation +  "{" + Environment.NewLine);
+            var count = 0;
+            foreach (var e in enumerable)
+            {
+                sb.Append(identation + identation + PrintToString(e, nestingLevel + 1));
+                count++;
+                if (count > maxElements && maxElements != 0)
+                {
+                    sb.Append(identation + identation + $"First {count} elements...{Environment.NewLine}");
+                    break;
+                }
+            }
+
+            sb.Append(identation + "}" + Environment.NewLine);
+
+            result = sb.ToString();
+            return true;
+
         }
 
         private bool TryPrint(object obj, PropertyInfo propertyInfo, out string result)
@@ -128,29 +182,20 @@ namespace ObjectPrinting
                 return false;
 
             if (type == typeof(int))
-                result = IntToString((int) obj) + Environment.NewLine;
+                result = ((int) obj).ToString(GetCulture(type));
             else if (type == typeof(double))
-                result = DoubleToString((double) obj) + Environment.NewLine;
+                result = ((double)obj).ToString(GetCulture(type));
             else if (type == typeof(float))
-                result = FloatToString((float) obj) + Environment.NewLine;
+                result = ((float)obj).ToString(GetCulture(type));
             else
-                result = obj +Environment.NewLine;
+                result = obj.ToString();
+            result += Environment.NewLine;
             return true;
         }
 
-        private string IntToString(int value)
+        private CultureInfo GetCulture(Type type)
         {
-            return cultureInfo.ContainsKey(typeof(int)) ? value.ToString(cultureInfo[typeof(int)]) : value.ToString();
-        }
-
-        private string FloatToString(float value)
-        {
-            return cultureInfo.ContainsKey(typeof(float)) ? value.ToString(cultureInfo[typeof(float)]) : value.ToString();
-        }
-
-        private string DoubleToString(double value)
-        {
-            return cultureInfo.ContainsKey(typeof(double)) ? value.ToString(cultureInfo[typeof(double)]) : value.ToString();
+            return (cultureInfo.ContainsKey(type)) ? cultureInfo[type] : CultureInfo.InvariantCulture;
         }
 
         void IPrintingConfig<TOwner>.AddPropertySerializationFormat(PropertyInfo property, Delegate format)

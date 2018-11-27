@@ -13,8 +13,10 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private PrintingConfig<TOwner> printingConfig { get; }
-        private Expression<Func<TOwner, TPropType>> propertySelector;
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> propertySelector=null)
+        private readonly Expression<Func<TOwner, TPropType>> propertySelector;
+        public PropertyPrintingConfig(
+            PrintingConfig<TOwner> printingConfig, 
+            Expression<Func<TOwner, TPropType>> propertySelector=null)
         {
             this.printingConfig = printingConfig;
             this.propertySelector = propertySelector;

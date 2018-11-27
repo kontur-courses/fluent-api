@@ -10,23 +10,27 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig,
+        public static PrintingConfig<TOwner> Using<TOwner>(
+            this PropertyPrintingConfig<TOwner, int> propConfig,
             CultureInfo cultureInfo)
         {
             return AddCulture(propConfig, cultureInfo);
         }
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig,
+        public static PrintingConfig<TOwner> Using<TOwner>(
+            this PropertyPrintingConfig<TOwner, double> propConfig,
             CultureInfo cultureInfo)
         {
             return AddCulture(propConfig, cultureInfo);
         }
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig,
+        public static PrintingConfig<TOwner> Using<TOwner>(
+            this PropertyPrintingConfig<TOwner, float> propConfig,
             CultureInfo cultureInfo)
         {
             return AddCulture(propConfig, cultureInfo);
         }
 
-        private static PrintingConfig<TOwner> AddCulture<TOwner, TPropType>(IPropertyPrintingConfig<TOwner, TPropType> propConfig,
+        private static PrintingConfig<TOwner> AddCulture<TOwner, TPropType>(
+            IPropertyPrintingConfig<TOwner, TPropType> propConfig,
             CultureInfo cultureInfo)
         {
             var config = propConfig.PrintingConfig;
