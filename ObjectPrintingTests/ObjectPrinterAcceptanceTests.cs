@@ -111,20 +111,36 @@ namespace ObjectPrintingTests
             act.ShouldNotThrow();
         }
 
-        internal class Y
+        internal class YProperty
         {
-            public Y(int y)
+            public YProperty(int yProperty)
             {
-                this.y = y;
+                this.yProperty = yProperty;
+            }
+            
+            public int yProperty { get; }
+        }
+
+        internal class YField
+        {
+            public YField(int yField)
+            {
+                this.yField = yField;
             }
 
-            private int y;
+            public int yField;
         }
 
         [Test]
-        public void ShouldPrintPrivateProperties()
+        public void ShouldPrintFields()
         {
-            new Y(0).PrintToString().ShouldBeEquivalentTo("Y\r\n	y = 0\r\n");
+            new YField(0).PrintToString().ShouldBeEquivalentTo("YField\r\n	yField = 0\r\n");
+        }
+
+        [Test]
+        public void ShouldPrintProperties()
+        {
+            new YProperty(0).PrintToString().ShouldBeEquivalentTo("YProperty\r\n	yProperty = 0\r\n");
         }
     }
 }
