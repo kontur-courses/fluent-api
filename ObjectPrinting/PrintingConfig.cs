@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -30,8 +29,6 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Func<object, string>> printersForPropertiesName =
             new Dictionary<string, Func<object, string>>();
         private int? maxLength;
-
-        private readonly Dictionary<object, int> countOfPrintings = new Dictionary<object, int>();
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.PrintersForTypes => printersForTypes;
         Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfoForTypes => cultureInfoForTypes;
@@ -92,26 +89,13 @@ namespace ObjectPrinting
             return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
         }
 
-        private bool MoreThen10NestingLevel(object obj)
-        {
-            if (countOfPrintings.ContainsKey(obj))
-            {
-                if (countOfPrintings[obj] >= 10)
-                    return true;
-                countOfPrintings[obj]++;
-            }
-            else
-                countOfPrintings.Add(obj, 0);
-
-            return false;
-        }
-
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
 
-            if (MoreThen10NestingLevel(obj)) return "REC";
+            if (obj == null) return "null" + Environment.NewLine;
+            if (nestingLevel > 10) return "REC" + Environment.NewLine;
 
             var finalTypes = new[]
             {
@@ -122,10 +106,7 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var sb = new StringBuilder();
             var type = obj.GetType();
-            var identation = new string('\t', nestingLevel + 1);
-
             sb.AppendLine(type.Name);
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
