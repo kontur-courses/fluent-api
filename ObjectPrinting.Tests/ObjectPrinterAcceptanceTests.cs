@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Security.Policy;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests

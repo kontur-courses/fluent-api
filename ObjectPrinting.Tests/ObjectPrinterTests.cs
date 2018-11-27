@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -191,7 +190,7 @@ namespace ObjectPrinting.Tests
             var dict = new Dictionary<int, Tree<int>>
             {
                 {0, new Tree<int>()},
-                { 1, new Tree<int> {Left = 42, Right = 24}}
+                {1, new Tree<int> {Left = 42, Right = 24}}
             };
 
             var expected = string.Join(Environment.NewLine, new[]
@@ -274,7 +273,7 @@ namespace ObjectPrinting.Tests
         {
             var objectPrinter = ObjectPrinter.For<FooBar>();
             var numbers = new List<int> {1, 2};
-            var foobar1 = new FooBar {Name = "foobar1", Numbers = numbers, Value =  10};
+            var foobar1 = new FooBar {Name = "foobar1", Numbers = numbers, Value = 10};
             var foobar2 = new FooBar {Name = "foobar2", Numbers = numbers, Parent = foobar1, Value = 20};
             foobar1.Parent = foobar1;
 
@@ -304,7 +303,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_OnPropertyWithNull_WorksCorrectly()
         {
-            var objectPrinter = ObjectPrinter.For<Person>();;
+            var objectPrinter = ObjectPrinter.For<Person>();
+            ;
             var person = new Person();
 
             var expected = string.Join(Environment.NewLine, new[]
@@ -328,14 +328,18 @@ namespace ObjectPrinting.Tests
             IEnumerable<long> PositiveNumbers()
             {
                 long x = 1;
-                while (true) { 
+
+                while (true)
+                {
                     yield return x++;
                 }
             }
 
-            Action a = () => PositiveNumbers().PrintToString();
+            Action a = () => PositiveNumbers()
+                .PrintToString();
 
-            a.Should().NotThrow();
+            a.Should()
+                .NotThrow();
         }
     }
 }
