@@ -1,3 +1,4 @@
+
 namespace ObjectPrinting
 {
     public class ObjectPrinter
@@ -6,5 +7,6 @@ namespace ObjectPrinting
         {
             return new PrintingConfig<T>();
         }
+
     }
 }
