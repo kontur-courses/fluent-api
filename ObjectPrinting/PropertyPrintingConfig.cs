@@ -21,14 +21,14 @@ namespace ObjectPrinting
             memberName = ((MemberExpression)memberSelector.Body).Member.Name;
         }
 
-        public PrintingConfig<TOwner> Using(Expression<Func<TPropType, string>> print)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (memberName == null)
                 ((IPrintingConfig)printingConfig).PrintersForTypes[typeof(TPropType)] =
-                    prop => print.Compile().Invoke((TPropType)prop);
+                    prop => print.Invoke((TPropType)prop);
             else
                 ((IPrintingConfig)printingConfig).PrintersForPropertiesNames[memberName] =
-                    prop => print.Compile().Invoke((TPropType)prop);
+                    prop => print.Invoke((TPropType)prop);
             return printingConfig;
         }
 
