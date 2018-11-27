@@ -31,7 +31,7 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serializer(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p=> p.Age);
+                .Exclude(p => p.Age);
 
             string s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
@@ -72,7 +72,7 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_PerformAlternativeSerializationByType()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializer<double>().Using(i => "Height = 192")
+                .Serializer<double>().Using(i => "Height = " + ((int)i).ToString())
                 .Serializer<Guid>().Using(i => "Id = Guid");
             var result = printer.PrintToString(person);
             var expectedResult =
@@ -99,12 +99,26 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_PerformAlternativeSerializationByName()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializer(p=> p.Height).Using(i => "Height = 192")
-                .Serializer(p=>p.NumberChildren).Using(i => "NumberChildren = 3");
+                .Serializer(p => p.Height).Using(i => "Height = " + ((int)i).ToString())
+                .Serializer(p => p.NumberChildren).Using(i => "NumberChildren = 3");
             var result = printer.PrintToString(person);
             var expectedResult =
                 "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192" +
                 "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 3\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_TrimStringMembers()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializer(p => p.Name).TrimmedToLength(2);
+            var result = printer.PrintToString(person);
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Al\r\n\tHeight = 192,57" +
+                "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);

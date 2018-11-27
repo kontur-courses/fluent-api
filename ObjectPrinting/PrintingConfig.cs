@@ -13,6 +13,7 @@ namespace ObjectPrinting
         public Dictionary<Type, Delegate> AlternativeSerializationByType { get; set; }
         public Dictionary<string, Delegate> AlternativeSerializationByName { get; set; }
         public List<object> ViewedObjects { get; set; }
+        public Dictionary<string, Delegate> TrimmingFunctions { get; set; }
 
         public PrintingConfig()
         {
@@ -20,6 +21,7 @@ namespace ObjectPrinting
             AlternativeSerializationByType = new Dictionary<Type, Delegate>();
             ViewedObjects = new List<object>();
             AlternativeSerializationByName = new Dictionary<string, Delegate>();
+            TrimmingFunctions = new Dictionary<string, Delegate>();
         }
         public string PrintToString(TOwner obj)
         {
@@ -45,10 +47,11 @@ namespace ObjectPrinting
                                                                (member.MemberType & MemberTypes.Field) != 0).ToArray();
             foreach (var e in ExcludeProperties)
                 members = members.Where(e).ToArray();
-            var result =PrintMembers(obj, nestingLevel, identation, members);
+            var result = PrintMembers(obj, nestingLevel, identation, members);
             return result;
         }
 
+        //Отрефакторить, когда будет полная реализация
         private string PrintMembers(object obj, int nestingLevel, string identation, MemberInfo[] members)
         {
             var sb = new StringBuilder();
@@ -60,10 +63,14 @@ namespace ObjectPrinting
                 if (ViewedObjects.Contains(value))
                     continue;
                 ViewedObjects.Add(value);
+                if (value is string str && TrimmingFunctions.ContainsKey(memberInfo.Name))
+                {
+                    value = TrimmingFunctions[memberInfo.Name].DynamicInvoke(str);
+                }
                 if (AlternativeSerializationByType.ContainsKey(propertyType))
                 {
                     var result = AlternativeSerializationByType[propertyType].DynamicInvoke(value);
-                    sb.Append(identation+result+"\r\n");
+                    sb.Append(identation + result + "\r\n");
                     continue;
                 }
                 if (AlternativeSerializationByName.ContainsKey(memberInfo.Name))
@@ -73,7 +80,7 @@ namespace ObjectPrinting
                     continue;
                 }
                 sb.Append(identation + memberInfo.Name + " = " +
-                              PrintToString(value,nestingLevel + 1));
+                              PrintToString(value, nestingLevel + 1));
             }
 
             return sb.ToString();
@@ -127,7 +134,7 @@ namespace ObjectPrinting
         {
             ITypePrintingConfig<TOwner> tPrintingConfig = new TypePrintingConfig<TOwner, TPropType>(this);
             tPrintingConfig.NameMember = ((MemberExpression)alternativeExpression.Body).Member.Name;
-            return  (TypePrintingConfig < TOwner, TPropType > )tPrintingConfig;
+            return (TypePrintingConfig<TOwner, TPropType>)tPrintingConfig;
         }
     }
 }

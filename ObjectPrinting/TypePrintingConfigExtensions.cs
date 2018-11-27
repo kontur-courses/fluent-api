@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -18,9 +19,18 @@ namespace ObjectPrinting
         {
             return ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
         }
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> pc, int length)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> typePrintingConfig, int length)
         {
-            return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
+            var iTPrintingConfig = (ITypePrintingConfig<TOwner>)typePrintingConfig;
+            var printingConfig = iTPrintingConfig.PrintingConfig;
+            var nameMember = iTPrintingConfig.NameMember;
+            var trimmingFunc = new Func<string, string>(str => str.Length >= length ? str.Substring(0, length) : str);
+
+            if (printingConfig.TrimmingFunctions.ContainsKey(nameMember))
+                printingConfig.TrimmingFunctions[nameMember] = trimmingFunc;
+            else printingConfig.TrimmingFunctions.Add(nameMember, trimmingFunc);
+
+            return printingConfig;
         }
     }
 }
