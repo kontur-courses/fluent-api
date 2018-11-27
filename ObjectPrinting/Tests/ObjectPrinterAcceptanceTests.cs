@@ -19,7 +19,7 @@ namespace ObjectPrinting.Solved.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.CurrentCulture)                
+                .Printing<double>().ChangeCultureInfo(CultureInfo.CurrentCulture)                
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Name).Using(n => n.ToUpper())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
@@ -28,8 +28,6 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Name);
 
             string s1 = printer.PrintToString(person);
-
-            Int16 y = 0;
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();

@@ -7,29 +7,27 @@ namespace ObjectPrinting
     {     
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
+            propConfig.Using(n => n.ToString().Substring(0,maxLen));
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
         {
-            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
-            parenConfig.CulturesForNumbers[typeof(int)] = culture;
-            return (PrintingConfig<TOwner>)parenConfig;
+            propConfig.Using(n => n.ToString(culture));
+            return ((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
         {
-            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
-            parenConfig.CulturesForNumbers[typeof(double)] = culture;
-            return (PrintingConfig<TOwner>)parenConfig;
+            propConfig.Using(n => n.ToString(culture));
+            return ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
         }
 
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
         {
-            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
-            parenConfig.CulturesForNumbers[typeof(long)] = culture;
-            return (PrintingConfig<TOwner>)parenConfig;
+            propConfig.Using(n => n.ToString(culture));
+            return ((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
         }
 
     }

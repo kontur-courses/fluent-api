@@ -25,25 +25,25 @@ namespace ObjectPrinting
             new Dictionary<Type, Expression<Func<object, string>>>();
 
         private readonly int nestingLevel;
-        
+        private readonly Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
         #endregion
 
         #region ctor
-
-
         public PrintingConfig()
         {
             nestingLevel = 1;
         }
-
-
 
         private PrintingConfig(int nestingLevel)
         {
             this.nestingLevel = nestingLevel;
         }
         #endregion
-
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -79,17 +79,10 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
             if (TryGetMethodForType(obj.GetType(), out var finalPrinter))
-                return finalPrinter.Invoke(obj);
+               return finalPrinter.Invoke(obj);
             if (finalTypes.Contains(obj.GetType()))
-                return ApplyCultureInfo(obj);
+                return obj.ToString();
 
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
@@ -102,7 +95,7 @@ namespace ObjectPrinting
                 {
                     var currentObj = propertyInfo.GetValue(obj);
                     var propertyName = propertyInfo.Name;
-                    Func<object, string> printer;
+                    Func<object, string> printer;                      
                     if (TryGetMethodForProperty(propertyName, out var printerProperties))
                         printer = printerProperties;
                     else if(TryGetMethodForType(propertyInfo.PropertyType, out var printerTypes))
@@ -151,18 +144,6 @@ namespace ObjectPrinting
             return culturiesForNumbers.ContainsKey(type) ? culturiesForNumbers[type] : CultureInfo.CurrentCulture;
         }
 
-        private string ApplyCultureInfo(Object obj)
-        {
-            var cultureInfo = GetCultureInfo(obj.GetType());
-            if (obj.GetType() == typeof(int))
-                return ((int)obj).ToString(cultureInfo);
-            if (obj.GetType() == typeof(double))
-                return ((double)obj).ToString(cultureInfo);
-            if (obj.GetType() == typeof(long))
-                return ((long)obj).ToString(cultureInfo);
-            return obj.ToString();
-        }
-
     
         private bool IsExcludingType(Type type)
         {
@@ -183,7 +164,7 @@ namespace ObjectPrinting
 
         Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
 
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CulturesForNumbers => culturiesForNumbers;
+
         #endregion
     }
 
@@ -194,7 +175,5 @@ namespace ObjectPrinting
 
         Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties { get; }
         Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; }
-
-        Dictionary<Type, CultureInfo> CulturesForNumbers { get; }
     }
 }
