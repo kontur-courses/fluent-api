@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -22,20 +23,24 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, Expression<Func<object, string>>> printMethodsForTypes =
             new Dictionary<Type, Expression<Func<object, string>>>();
-        private int nestingLevel;
-        private Func<object, string> printMethod = o => o.ToString();
+
+        private readonly int nestingLevel;
+        
         #endregion
 
         #region ctor
+
+
         public PrintingConfig()
         {
             nestingLevel = 1;
         }
 
-        private PrintingConfig(int nestingLevel, Func<object, string> printMethod)
+
+
+        private PrintingConfig(int nestingLevel)
         {
             this.nestingLevel = nestingLevel;
-            this.printMethod = printMethod;
         }
         #endregion
 
@@ -65,8 +70,6 @@ namespace ObjectPrinting
             return this;
         }
 
-
-
         public string PrintToString(TOwner obj)
         {
             return PrintToStringAccordingConfiguration(obj);
@@ -83,56 +86,84 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
 
+            if (TryGetMethodForType(obj.GetType(), out var finalPrinter))
+                return finalPrinter.Invoke(obj);
             if (finalTypes.Contains(obj.GetType()))
-                return printMethod.Invoke(obj) + Environment.NewLine;
+                return ApplyCultureInfo(obj);
 
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.Append(type.Name);
             var nextLevel = nestingLevel+1;
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (!IsExcludingType(propertyInfo.PropertyType) && !IsExludedProperty(propertyInfo.Name))
                 {
-                    var expr1 = GetMethodForType(propertyInfo.PropertyType);
-                    var expr2 = GetMethodForProperty(propertyInfo.Name);
-                    Func<object, string> printMethod = o => expr1.Compile().Invoke(expr2.Compile().Invoke(o));
                     var currentObj = propertyInfo.GetValue(obj);
+                    var propertyName = propertyInfo.Name;
+                    Func<object, string> printer;
+                    if (TryGetMethodForProperty(propertyName, out var printerProperties))
+                        printer = printerProperties;
+                    else if(TryGetMethodForType(propertyInfo.PropertyType, out var printerTypes))
+                        printer = printerTypes;
+                    else
+                        printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
 
-                    sb.Append(
-                        $"{identation}{propertyInfo.Name} = {currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel, printMethod))}");
+                    sb.Append($"\r\n{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
                 }
                 
             }
             return sb.ToString();
         }
 
-        private Expression<Func<object, string>> GetMethodForType(Type type)
+        private bool TryGetMethodForType(Type type, out Func<object, string> expr)
         {
+            var culInfo = GetCultureInfo(type);
             if (printMethodsForTypes.ContainsKey(type))
             {
-                return printMethodsForTypes[type];
+                expr = printMethodsForTypes[type].Compile();
+                return true;
             }
             else
             {
-                return o => o.ToString();
+                expr = null;
+                return false;
             }
         }
 
-        private Expression<Func<object, string>> GetMethodForProperty(string propertyName)
+        private bool TryGetMethodForProperty(string propertyName, out Func<object, string> expr)
         {
             if (printMethodsForProperties.ContainsKey(propertyName))
             {
-                return printMethodsForProperties[propertyName];
+                expr = printMethodsForProperties[propertyName].Compile();
+                return true;
             }
             else
             {
-                return o => o.ToString();
+                expr = null;
+                return false;
             }
         }
 
+        private CultureInfo GetCultureInfo(Type type)
+        {
+            return culturiesForNumbers.ContainsKey(type) ? culturiesForNumbers[type] : CultureInfo.CurrentCulture;
+        }
 
+        private string ApplyCultureInfo(Object obj)
+        {
+            var cultureInfo = GetCultureInfo(obj.GetType());
+            if (obj.GetType() == typeof(int))
+                return ((int)obj).ToString(cultureInfo);
+            if (obj.GetType() == typeof(double))
+                return ((double)obj).ToString(cultureInfo);
+            if (obj.GetType() == typeof(long))
+                return ((long)obj).ToString(cultureInfo);
+            return obj.ToString();
+        }
+
+    
         private bool IsExcludingType(Type type)
         {
             return exludedTypes.Contains(type);
@@ -153,15 +184,11 @@ namespace ObjectPrinting
         Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
 
         Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CulturesForNumbers => culturiesForNumbers;
-
-        int IPrintingConfig<TOwner>.NestingLevel => nestingLevel;
         #endregion
     }
 
     interface IPrintingConfig<TOwner>
     {
-        int NestingLevel { get; }
-
         List<string> NamesExludedProperties { get; }
         List<Type> ExcludingTypes { get; }
 

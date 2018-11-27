@@ -12,7 +12,24 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
         {
-            return ((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
+            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
+            parenConfig.CulturesForNumbers[typeof(int)] = culture;
+            return (PrintingConfig<TOwner>)parenConfig;
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        {
+            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
+            parenConfig.CulturesForNumbers[typeof(double)] = culture;
+            return (PrintingConfig<TOwner>)parenConfig;
+        }
+
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
+        {
+            var parenConfig = (IPrintingConfig<TOwner>)((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
+            parenConfig.CulturesForNumbers[typeof(long)] = culture;
+            return (PrintingConfig<TOwner>)parenConfig;
         }
 
     }
