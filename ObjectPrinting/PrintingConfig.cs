@@ -47,12 +47,12 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(TOwner obj, char indentSymbol = '\t')
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, indentSymbol);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, char indentSymbol)
         {
             //TODO apply configurations
             if (obj == null)
@@ -66,7 +66,7 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var indentation = new string('\t', nestingLevel + 1);
+            var indentation = new string(indentSymbol, nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
 
@@ -82,7 +82,8 @@ namespace ObjectPrinting
                 {
                     var value = propertyInfo.GetValue(obj);
 
-                    if (TypesToBeAlternativelySerialized.ContainsKey(propType))
+                    if (TypesToBeAlternativelySerialized.ContainsKey(propType) 
+                        && !PropertiesToBeAlternativelySerialized.ContainsKey(propName))
                         value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
                     if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
@@ -92,8 +93,7 @@ namespace ObjectPrinting
                         value = PropertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
 
                     sb.Append(indentation + propName + " = " +
-                          PrintToString(value,
-                              nestingLevel + 1));
+                          PrintToString(value, nestingLevel + 1, indentSymbol));
                 }
             }
             return sb.ToString();

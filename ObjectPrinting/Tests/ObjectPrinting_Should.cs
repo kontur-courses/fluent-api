@@ -107,6 +107,32 @@ namespace ObjectPrinting.Tests
             printer.Excluding(e => e.Id);
 
             printer.PrintToString(person).Should().Be(expected);
+       }
+
+
+        [Test]
+        public void ObjectPrinter_ShouldOverrideAlternativeTypeSerialization_IfPropertySerializationSpecified()
+        {
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich (это строка)", "\tId = Guid",
+                               "\tName = John Smith (это имя (форматирование для типа не применилось))",
+                               "\tHeight = 13,37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            var printer = ObjectPrinter.For<PersonExtended>();
+            var person = new PersonExtended
+            {
+                Id = Guid.Empty,
+                Name = "John Smith",
+                MiddleName = "Johnovich",
+                Age = 69,
+                Height = 13.37
+            };
+
+            printer
+                .Printing(e => e.Name).Using(e => e + " (это имя (форматирование для типа не применилось))")
+                .Printing<string>().Using(e => e + " (это строка)");
+
+            printer.PrintToString(person).Should().Be(expected);
         }
     }
 }
