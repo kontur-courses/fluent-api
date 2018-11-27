@@ -86,7 +86,7 @@ namespace ObjectPrinting
 
             if (cultureInfoForTypes.TryGetValue(type, out var culture))
             {
-                specialPrintingValue = $"{name} + {((IFormattable)value).ToString(null, culture)}\r\n";
+                specialPrintingValue = $"{name} = {((IFormattable)value).ToString(null, culture)}\r\n";
                 return true;
             }
 
@@ -105,33 +105,6 @@ namespace ObjectPrinting
             }
 
             return false;
-        }
-
-        private string GetPropertyPrintingValue(PropertyInfo propertyInfo, object obj, int nestingLevel)
-        {
-            if (excludedTypes.Contains(propertyInfo.PropertyType))
-                return string.Empty;
-
-            if (excluded.Contains(propertyInfo.Name))
-                return string.Empty;
-
-            if (printersForTypes.ContainsKey(propertyInfo.PropertyType))
-                return $"{propertyInfo.Name} = {printersForTypes[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj))}\r\n";
-
-            if (cultureInfoForTypes.TryGetValue(propertyInfo.PropertyType, out var culture))
-                return $"{propertyInfo.Name} + { ((IFormattable)propertyInfo.GetValue(obj)).ToString(null, culture)}\r\n";
-
-            if (printersForPropertiesName.ContainsKey(propertyInfo.Name))
-                return $"{propertyInfo.Name} = {printersForPropertiesName[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))}\r\n";
-
-            if (propertyInfo.PropertyType == typeof(string) &&
-                maxLength != null &&
-                PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Length > maxLength)
-            {
-                return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1).Substring(0, (int)maxLength)}\r\n";
-            }
-
-            return $"{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
         }
 
         private string PrintToString(object obj, int nestingLevel)
