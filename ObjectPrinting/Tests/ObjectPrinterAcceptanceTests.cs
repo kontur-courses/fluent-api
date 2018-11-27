@@ -19,7 +19,7 @@ namespace ObjectPrinting.Tests
                 //3. Для числовых типов указать культуру
                 .SetCulture(CultureInfo.InvariantCulture).For<double>()
                 //4. Настроить сериализацию конкретного свойства
-                .Serialize(nameof(Person.Name)).As(p => "Name: " + p.ToString())
+                .Serialize(p => p.Name).As(p => "Name: " + p.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serialize<string>().As(s => s.Substring(0, 3))
                 //6. Исключить из сериализации конкретного свойства
