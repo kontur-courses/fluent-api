@@ -27,7 +27,7 @@ namespace ObjectPrinting.Tests
                 //3. Для числовых типов указать культуру
                 .Serializer<int>().SetCultureInfo(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .Serializer(p => p.GetType().GetProperty("Age").Name).Using(i => i.ToString())
+                .Serializer(p => p.Age).Using(i => i.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serializer(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
@@ -72,11 +72,39 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_PerformAlternativeSerializationByType()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializer<double>().Using(i => "\tHeight = 192\r\n")
-                .Serializer<Guid>().Using(i => "\tId = Guid\r\n");
+                .Serializer<double>().Using(i => "Height = 192")
+                .Serializer<Guid>().Using(i => "Id = Guid");
             var result = printer.PrintToString(person);
             var expectedResult =
                 "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_HandleNestedMembers()
+        {
+            var printer = ObjectPrinter.For<Person>();
+            var result = printer.PrintToString(person);
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
+
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_PerformAlternativeSerializationByName()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializer(p=> p.Height).Using(i => "Height = 192")
+                .Serializer(p=>p.NumberChildren).Using(i => "NumberChildren = 3");
+            var result = printer.PrintToString(person);
+            var expectedResult =
+                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192" +
+                "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 3\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);

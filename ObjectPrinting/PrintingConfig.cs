@@ -11,6 +11,7 @@ namespace ObjectPrinting
     {
         public List<Func<MemberInfo, bool>> ExcludeProperties { get; set; }
         public Dictionary<Type, Delegate> AlternativeSerializationByType { get; set; }
+        public Dictionary<string, Delegate> AlternativeSerializationByName { get; set; }
         public List<object> ViewedObjects { get; set; }
 
         public PrintingConfig()
@@ -18,6 +19,7 @@ namespace ObjectPrinting
             ExcludeProperties = new List<Func<MemberInfo, bool>>();
             AlternativeSerializationByType = new Dictionary<Type, Delegate>();
             ViewedObjects = new List<object>();
+            AlternativeSerializationByName = new Dictionary<string, Delegate>();
         }
         public string PrintToString(TOwner obj)
         {
@@ -39,7 +41,6 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
-
             var members = type.GetMembers().Where(member => (member.MemberType & MemberTypes.Property) != 0 ||
                                                                (member.MemberType & MemberTypes.Field) != 0).ToArray();
             foreach (var e in ExcludeProperties)
@@ -56,18 +57,23 @@ namespace ObjectPrinting
             {
                 var value = GetValue(memberInfo, obj);
                 var propertyType = GetType(memberInfo);
-                if (AlternativeSerializationByType.ContainsKey(propertyType))
-                {
-                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(value);
-                    sb.Append(result);
-                    continue;
-                }
                 if (ViewedObjects.Contains(value))
                     continue;
                 ViewedObjects.Add(value);
+                if (AlternativeSerializationByType.ContainsKey(propertyType))
+                {
+                    var result = AlternativeSerializationByType[propertyType].DynamicInvoke(value);
+                    sb.Append(identation+result+"\r\n");
+                    continue;
+                }
+                if (AlternativeSerializationByName.ContainsKey(memberInfo.Name))
+                {
+                    var result = AlternativeSerializationByName[memberInfo.Name].DynamicInvoke(value);
+                    sb.Append(identation + result + "\r\n");
+                    continue;
+                }
                 sb.Append(identation + memberInfo.Name + " = " +
-                              PrintToString(value,
-                                  nestingLevel + 1));
+                              PrintToString(value,nestingLevel + 1));
             }
 
             return sb.ToString();
@@ -105,7 +111,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> excludedExpression)
         {
-            var excludedFunc = new Func<MemberInfo, bool>(property => property.Name !=
+            var excludedFunc = new Func<MemberInfo, bool>(memberInfo => memberInfo.Name !=
                                                                         ((MemberExpression)excludedExpression.Body).Member.Name);
             ExcludeProperties.Add(excludedFunc);
             return this;
@@ -117,9 +123,11 @@ namespace ObjectPrinting
         }
 
 
-        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
+        public TypePrintingConfig<TOwner, TPropType> Serializer<TPropType>(Expression<Func<TOwner, TPropType>> alternativeExpression)
         {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
+            ITypePrintingConfig<TOwner> tPrintingConfig = new TypePrintingConfig<TOwner, TPropType>(this);
+            tPrintingConfig.NameMember = ((MemberExpression)alternativeExpression.Body).Member.Name;
+            return  (TypePrintingConfig < TOwner, TPropType > )tPrintingConfig;
         }
     }
 }
