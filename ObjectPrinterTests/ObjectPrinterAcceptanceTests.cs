@@ -63,12 +63,6 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void Test()
-        {
-            
-        }
-
-        [Test]
         public void TestSettingCultureForType()
         {
             var printer = ObjectPrinter.For<Person>()
@@ -78,6 +72,17 @@ namespace ObjectPrinterTests
             printer.PrintToString(person).Should()
                 .ContainAll("Height = 1.92", "Birthday = 1/28/2018")
                 .And.NotContain("Height = 1,92");
+        }
+
+        [Test]
+        public void TestSettingPrintingForProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Birthday).Using(d => d.Year.ToString());
+
+            printer.PrintToString(person).Should()
+                .Contain("Birthday = 2018")
+                .And.NotContainAny(person.Birthday.ToString());
         }
 
         [Test, Ignore("Not implemented yet")]

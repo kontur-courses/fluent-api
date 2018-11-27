@@ -53,7 +53,10 @@ namespace ObjectPrinting.Config
 
         public void OverridePropertyPrinting(PropertyInfo propertyInfo, Func<object, string> print)
         {
-            throw new NotImplementedException();
+            if (printingOverridedProperties.ContainsKey(propertyInfo))
+                printingOverridedProperties[propertyInfo] = null;
+
+            printingOverridedProperties[propertyInfo] = print;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -68,11 +71,12 @@ namespace ObjectPrinting.Config
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
 
-
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -83,15 +87,18 @@ namespace ObjectPrinting.Config
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, null, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, PropertyInfo propertyInfo, int nestingLevel)
         {
             if (obj == null)
                 return "null";
 
             var type = obj.GetType();
+
+            if (propertyInfo != null && printingOverridedProperties.ContainsKey(propertyInfo))
+                return printingOverridedProperties[propertyInfo](obj);
 
             if (printingOverridedTypes.ContainsKey(type) && nestingLevel != 0)
                 return printingOverridedTypes[type](obj);
@@ -104,18 +111,17 @@ namespace ObjectPrinting.Config
                 return obj.ToString();
             }
 
-
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var prop in type.GetProperties())
             {
-                if (typesToExclude.Contains(propertyInfo.PropertyType))
+                if (typesToExclude.Contains(prop.PropertyType))
                     continue;
 
-                var propertyString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                sb.Append(identation + propertyInfo.Name + " = " + propertyString + Environment.NewLine);
+                var propertyString = PrintToString(prop.GetValue(obj), prop, nestingLevel + 1);
+                sb.Append(identation + prop.Name + " = " + propertyString + Environment.NewLine);
             }
 
             return sb.ToString();
@@ -126,18 +132,5 @@ namespace ObjectPrinting.Config
             var toStringMethod = obj.GetType().GetMethod("ToString", new[] {typeof(CultureInfo)});
             return toStringMethod?.Invoke(obj, new object[] {cultureInfo}).ToString();
         }
-
-        //private string PropertyToString(PropertyInfo propertyInfo, object value, int nestingLevel,
-        //    Func<object, string> print)
-        //{
-        //    var identation = new string('\t', nestingLevel + 1);
-        //    return identation + propertyInfo.Name + " = " + print(value) + Environment.NewLine;
-        //}
-
-        //if (printingOverridedTypes.ContainsKey(propType))
-        //{
-        //    sb.Append(PropertyToString(propertyInfo, propertyInfo.GetValue(obj), nestingLevel, printingOverridedTypes[propType]));
-        //    continue;
-        //}
     }
 }

@@ -14,9 +14,10 @@ namespace ObjectPrinting.Config
             this.propertyToChange = propertyToChange;
         }
 
-        public PrintingConfig<TOwner> Using(Func<object, string> print)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            ParentConfig.OverridePropertyPrinting(propertyToChange, print);
+            ParentConfig.OverridePropertyPrinting(propertyToChange, obj => print((TPropType) obj));
+
             return ParentConfig;
         }
     }
