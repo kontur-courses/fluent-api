@@ -47,7 +47,6 @@ namespace ObjectPrinting.Tests
             var resString = testPerson.PrintToString(config => config.Excluding<int>());
             resString.Should()
                 .Be("Person\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 180\r\n\tPet = Pet\r\n\t\tName = Lassie\r\n\t\tAge = 8\r\n");
-
         }
 
         [Test]
@@ -63,6 +62,31 @@ namespace ObjectPrinting.Tests
             var resString = testPerson.PrintToString(config => config.Printing(p => p.Age).Using(age => "0"));
             resString.Should().Be("Person\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 180\r\n\tAge = 0\r\n\tPet = null\r\n");
         }
+
+        [Test]
+        public void PrintingConfig_ShouldApplyBothPrintingMethods()
+        {
+            var resString = testPerson.PrintToString(config => config
+                .Printing(p => p.Name)
+                .Using(n => $"{n}!")
+                .Printing<string>()
+                .Using(s => s.ToUpper()));
+            resString.Should().Be("Person\r\n\tId = Guid\r\n\tName = JOHN!\r\n\tHeight = 180\r\n\tAge = 32\r\n\tPet = null\r\n");
+        }
+
+        [Test]
+        public void PrintingConfig_ShouldApplyPrintMeyhodForAllNestingProperties()
+        {
+            testPerson.Pet = new Pet("Lassie") { Age = 8 };
+            var resString = testPerson.PrintToString(config => config
+                .Printing<Pet>()
+                .Using(p => p.Name.ToUpper()));
+            resString.Should()
+                .Be("Person\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 180\r\n\tPet = Pet\r\n\t\tName = Lassie\r\n\t\tAge = 8\r\n");
+        }
+
+
+
 
     }
 }
