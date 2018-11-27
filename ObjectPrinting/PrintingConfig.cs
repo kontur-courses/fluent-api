@@ -10,10 +10,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        public string PrintToString(TOwner obj)=>
+            new Printer(this).PrintRecursive(obj);
 
         private readonly Dictionary<Type,Func<object,string>> specialTypes = new Dictionary<Type,Func<object,string>>();
         private readonly Dictionary<PropertyInfo,Func<object,string>> specialProperties = 
@@ -24,46 +22,6 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                var value = propertyInfo.GetValue(obj);
-                if (TryFinalizeProperty(propertyInfo, value, out var serialized))
-                {
-                    if (serialized != null) 
-                        sb.Append(identation + propertyInfo.Name + " = " + serialized + Environment.NewLine);
-                }
-                else sb.Append(identation + propertyInfo.Name + " = " + PrintToString(value, nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
-
-        private bool TryFinalizeProperty(PropertyInfo propertyInfo,object value ,out string serialized)
-        {
-            serialized = null;
-            //var value = propertyInfo.GetValue(obj);
-
-            if (value == null)
-                serialized = "null";
-            else if (specialProperties.TryGetValue(propertyInfo, out var serializer) ||
-                     specialTypes.TryGetValue(propertyInfo.PropertyType, out serializer))
-            {
-                if (serializer != null)
-                    serialized = serializer(value);
-                return true;
-            }
-            else if (finalTypes.Contains(propertyInfo.PropertyType))
-                serialized = value.ToString();
-
-            return serialized != null;
-        }
         
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -86,7 +44,73 @@ namespace ObjectPrinting
         //TODO smear checks
         private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
             (PropertyInfo) ((MemberExpression) selector.Body).Member;
+
+
+        private class Printer
+        {
+            private string identation;
+            private readonly StringBuilder stringBuilder;
+            private readonly PrintingConfig<TOwner> config;
+
+            public Printer(PrintingConfig<TOwner> config)
+            {
+                this.config = config; 
+                stringBuilder = new StringBuilder();
+            }
+            
+            public string PrintRecursive(TOwner obj)
+            {
+                PrintRecursive(obj, 0);
+                return stringBuilder.ToString();
+            }
     
+            private void PrintRecursive(object obj, int nestingLevel)
+            {
+                var type = obj.GetType();
+                stringBuilder.AppendLine(type.Name);
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    identation = new string('\t', nestingLevel + 1);
+                    var value = propertyInfo.GetValue(obj);
+                    if (TryNullSerialize(propertyInfo, value) ||
+                        TrySpecialSerialize(propertyInfo, value) ||
+                        TryFinalSerialize(propertyInfo, value))  
+                        continue;
+                    stringBuilder.Append(identation + propertyInfo.Name + " = ");
+                    PrintRecursive(value, nestingLevel + 1);
+                }
+            }
+    
+            private void PrintFinalizedProperty(PropertyInfo propertyInfo, string finalized) =>
+                stringBuilder.Append(identation + propertyInfo.Name + " = " + finalized + Environment.NewLine);
+
+
+            private bool TryNullSerialize(PropertyInfo propertyInfo, object value)
+            {
+                if (value != null) return false;
+                PrintFinalizedProperty(propertyInfo, "null");
+                return true;
+            }
+
+            private bool TrySpecialSerialize(PropertyInfo propertyInfo,object value)
+            {
+                if (!config.specialProperties.TryGetValue(propertyInfo, out var serializer) &&
+                    !config.specialTypes.TryGetValue(propertyInfo.PropertyType, out serializer)) 
+                    return false;
+                if (serializer != null)
+                    PrintFinalizedProperty(propertyInfo,serializer(value));
+                return true;
+            }
+    
+            private bool TryFinalSerialize(PropertyInfo propertyInfo, object value)
+            {
+                if (!finalTypes.Contains(propertyInfo.PropertyType)) 
+                    return false;
+                PrintFinalizedProperty(propertyInfo, value.ToString());
+                return true;
+            }
+        }
+        
         
         public class TypeConfig<TPropType> : IPrintingConfig<TOwner>
         {
