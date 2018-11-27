@@ -1,6 +1,9 @@
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
+using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
@@ -37,5 +40,46 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>()
+        {
+            return this;
+        }
+
+        public TypePrintingConfig<TOwner, TPropType> SetAltSerialize<TPropType>()
+        {
+            return new TypePrintingConfig<TOwner, TPropType>(this);
+        }
+
+
+        public TypePrintingConfig<TOwner, TPropType> SetAltSerialize<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
+        {
+            return new TypePrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
+        {
+            return this;
+        }
     }
+
+    public interface ITypePrintingConfig<TOwner>
+    {
+        PrintingConfig<TOwner> PrintingConfig { get; }
+    }
+
+    public static class TypePrintingConfigExtensions
+    {
+        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, int> pc, CultureInfo ci)
+        {
+            return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
+        }
+
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>
+            (this TypePrintingConfig<TOwner, string> pc, int length)
+        {
+            return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
+        }
+    }
+
 }
