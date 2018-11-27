@@ -131,11 +131,19 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(person).Should().Be(expected);
         }
 
-
         [Test]
-        public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpression()
+        public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInPrinting()
         {
             Action action = () => printer.Printing(x => new[] { 1, 2, 3 });
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Использованное выражение не является допустимым");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInExcluding()
+        {
+            Action action = () => printer.Excluding(x => x.Age + 1);
 
             action.Should().Throw<ArgumentException>()
                 .WithMessage("Использованное выражение не является допустимым");

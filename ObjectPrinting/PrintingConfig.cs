@@ -43,7 +43,16 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var memberExpression = (MemberExpression)memberSelector.Body;
+            MemberExpression memberExpression;
+            try
+            {
+                memberExpression = (MemberExpression)memberSelector.Body;
+            }
+            catch (InvalidCastException)
+            {
+                throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
+            }
+
             propertiesToBeExcluded.Add(memberExpression.Member.Name);
             return this;
         }
