@@ -1,7 +1,9 @@
 using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using ObjectPrinting.Tests;
 
@@ -9,6 +11,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private HashSet<Type> excludedTypes = new HashSet<Type>();
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -32,7 +36,7 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var propertyInfo in GetProperties(type))
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
@@ -41,8 +45,20 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        IEnumerable<PropertyInfo> GetProperties(Type objType)
+        {
+            foreach (var propertyInfo in objType.GetProperties())
+            {
+                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                yield return propertyInfo;
+            }
+        }
+
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
+
             return this;
         }
 
@@ -63,23 +79,5 @@ namespace ObjectPrinting
         }
     }
 
-    public interface ITypePrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> PrintingConfig { get; }
-    }
-
-    public static class TypePrintingConfigExtensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, int> pc, CultureInfo ci)
-        {
-            return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
-        }
-
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>
-            (this TypePrintingConfig<TOwner, string> pc, int length)
-        {
-            return ((ITypePrintingConfig<TOwner>)pc).PrintingConfig;
-        }
-    }
 
 }
