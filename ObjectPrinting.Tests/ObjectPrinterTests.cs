@@ -17,8 +17,8 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                $"\tHeight = 0{Environment.NewLine}",
+                "\tHeight = 0",
+                $"\tId = Guid{Environment.NewLine}",
             });
 
             objectPrinter
@@ -37,10 +37,10 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                "\tName = 42",
+                "\tAge = 100",
                 "\tHeight = 0",
-                $"\tAge = 100{Environment.NewLine}",
+                "\tId = Guid",
+                $"\tName = 42{Environment.NewLine}"
             });
 
             objectPrinter
@@ -59,10 +59,10 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                "\tName = Bob",
+                "\tAge = 100",
                 "\tHeight = 186.6",
-                $"\tAge = 100{Environment.NewLine}",
+                "\tId = Guid",
+                $"\tName = Bob{Environment.NewLine}"
             });
 
             objectPrinter
@@ -82,10 +82,10 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                "\tName = bbb",
+                "\tAge = 100",
                 "\tHeight = 0",
-                $"\tAge = 100{Environment.NewLine}",
+                "\tId = Guid",
+                $"\tName = bbb{Environment.NewLine}",
             });
 
             objectPrinter
@@ -106,10 +106,11 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                "\tName = Bo",
+                "\tAge = 100",
                 "\tHeight = 0",
-                $"\tAge = 100{Environment.NewLine}",
+                "\tId = Guid",
+                $"\tName = Bo{Environment.NewLine}",
+                
             });
 
             objectPrinter
@@ -128,9 +129,10 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
+                "\tAge = 100",
                 "\tHeight = 0",
-                $"\tAge = 100{Environment.NewLine}",
+                $"\tId = Guid{Environment.NewLine}"
+                
             });
 
             objectPrinter
@@ -150,10 +152,11 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Node",
-                "\tValue = 1",
                 "\tParent = Node",
-                "\t\tValue = 1",
                 $"\t\tParent = {Constants.Circular}",
+                "\t\tValue = 1",
+                $"\tValue = 1{Environment.NewLine}",
+
             });
 
             objectPrinter.PrintToString(node)
@@ -251,15 +254,15 @@ namespace ObjectPrinting.Tests
             {
                 "Tree`1",
                 "\tLeft = Person",
-                "\t\tId = Guid",
-                "\t\tName = Bob",
-                "\t\tHeight = 0",
                 "\t\tAge = 0",
-                "\tRight = Person",
+                "\t\tHeight = 0",   
                 "\t\tId = Guid",
                 "\t\tName = Bob",
+                "\tRight = Person",
+                "\t\tAge = 0",
                 "\t\tHeight = 0",
-                $"\t\tAge = 0{Environment.NewLine}",
+                "\t\tId = Guid",
+                $"\t\tName = Bob{Environment.NewLine}",
             });
 
             objectPrinter
@@ -269,29 +272,31 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        //[Repeat(100000)]
         public void ObjectPrinter_OnFieldsWithProperties_WorksCorrectly()
         {
             var objectPrinter = ObjectPrinter.For<FooBar>();
             var numbers = new List<int> {1, 2};
-            var foobar1 = new FooBar {Name = "foobar1", Numbers = numbers, Value = 10};
-            var foobar2 = new FooBar {Name = "foobar2", Numbers = numbers, Parent = foobar1, Value = 20};
+            var numbers1 = new List<int> {1, 2};
+            var foobar1 = new FooBar {Name = "foobar1", Value = 10, Numbers = numbers};
+            var foobar2 = new FooBar {Name = "foobar2", Value = 20, Numbers = numbers1, Parent = foobar1};
             foobar1.Parent = foobar1;
 
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "FooBar",
                 "\tName = foobar2",
-                "\tValue = 20",
                 "\tNumbers = List`1",
                 "\t\tElement 0 = 1",
                 "\t\tElement 1 = 2",
                 "\tParent = FooBar",
                 "\t\tName = foobar1",
-                "\t\tValue = 10",
                 "\t\tNumbers = List`1",
                 "\t\t\tElement 0 = 1",
                 "\t\t\tElement 1 = 2",
-                "\t\tParent = Circular"
+                "\t\tParent = Circular",
+                "\t\tValue = 10",
+                $"\tValue = 20{Environment.NewLine}",
             });
 
             objectPrinter
@@ -310,10 +315,11 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, new[]
             {
                 "Person",
-                "\tId = Guid",
-                "\tName = null",
+                "\tAge = 0",
                 "\tHeight = 0",
-                $"\tAge = 0{Environment.NewLine}",
+                "\tId = Guid",
+                $"\tName = null{Environment.NewLine}",
+                
             });
 
             objectPrinter
@@ -340,6 +346,28 @@ namespace ObjectPrinting.Tests
 
             a.Should()
                 .NotThrow();
+        }
+
+        [Test]
+        public void ObjectPrinter_OnFields_WorksCorrectly()
+        {
+            var objectPrinter = ObjectPrinter.For<FooBar>();
+            ;
+            var foobar = new FooBar {Name = "foobar", Numbers = new List<int> {1, 2, 3}, Value = 10};
+
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "Foobar",
+                "\tName = foobar",
+                $"\tParent = null{Environment.NewLine}"
+            });
+
+            objectPrinter
+                .Exclude(z => z.Numbers)
+                .Exclude(z => z.Value)
+                .PrintToString(foobar)
+                .Should()
+                .BeEquivalentTo(expected);
         }
     }
 }

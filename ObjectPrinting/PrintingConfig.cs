@@ -13,18 +13,18 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedProperties = new HashSet<Type>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         internal readonly IDictionary<Type, Delegate> TypesSerializers = new Dictionary<Type, Delegate>();
         internal readonly IDictionary<Type, CultureInfo> CustomCultures = new Dictionary<Type, CultureInfo>();
-        internal readonly IDictionary<PropertyInfo, Delegate> PropertiesSerializers =
-            new Dictionary<PropertyInfo, Delegate>();
-        internal readonly IDictionary<PropertyInfo, int> StringsTrimValues = new Dictionary<PropertyInfo, int>();
-        private readonly HashSet<PropertyInfo> excludedSpecificProperties = new HashSet<PropertyInfo>();
+        internal readonly IDictionary<MemberInfo, Delegate> MembersSerializers =
+            new Dictionary<MemberInfo, Delegate>();
+        internal readonly IDictionary<MemberInfo, int> StringsTrimValues = new Dictionary<MemberInfo, int>();
+        private readonly HashSet<MemberInfo> excludedSpecificMembers = new HashSet<MemberInfo>();
         private int maxElementsCountForEnumerables = Constants.MaxElementCountForCollection;
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            excludedProperties.Add(typeof(TPropType));
+            excludedTypes.Add(typeof(TPropType));
 
             return this;
         }
@@ -36,23 +36,23 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new MemberPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> selector)
         {
             var member = (MemberExpression)selector.Body;
 
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)member.Member);
+            return new MemberPrintingConfig<TOwner, TPropType>(this, member.Member);
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
             var member = (MemberExpression)selector.Body;
-            excludedSpecificProperties.Add((PropertyInfo)member.Member);
+            excludedSpecificMembers.Add(member.Member);
 
             return this;
         }
@@ -60,19 +60,18 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             TypeSerializer typeSerializer = new NullSerializer();
-            var propertiesHandler = new PropertiesSerializer(
-                excludedProperties.ToImmutableHashSet(),
+            var membersSerializer = new MembersSerializer(
+                excludedTypes.ToImmutableHashSet(),
                 (IReadOnlyDictionary<Type, Delegate>)TypesSerializers,
                 (IReadOnlyDictionary<Type, CultureInfo>)CustomCultures,
-                (IReadOnlyDictionary<PropertyInfo, Delegate>)PropertiesSerializers,
-                (IReadOnlyDictionary<PropertyInfo, int>)StringsTrimValues,
-                excludedSpecificProperties.ToImmutableHashSet(),
+                (IReadOnlyDictionary<MemberInfo, Delegate>)MembersSerializers,
+                (IReadOnlyDictionary<MemberInfo, int>)StringsTrimValues,
+                excludedSpecificMembers.ToImmutableHashSet(),
                 typeSerializer);
 
             typeSerializer.SetSuccessor(new FinalTypesSerializer()
                 .SetSuccessor(new EnumerableSerializer(maxElementsCountForEnumerables, typeSerializer)
-                    .SetSuccessor(propertiesHandler
-                        .SetSuccessor(new FieldsSerializer(typeSerializer)))
+                    .SetSuccessor(membersSerializer)
                 ));
 
             return PrintToString(typeSerializer, obj, 0, ImmutableHashSet<object>.Empty);

@@ -2,9 +2,9 @@
 
 namespace ObjectPrinting
 {
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IMemberPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> PrintingConfig { get; }
-        PropertyInfo Property { get; }
+        MemberInfo MemberInfo { get; }
     }
 }
