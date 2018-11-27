@@ -10,7 +10,7 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
         private readonly HashSet<string> excludeProperties = new HashSet<string>();
-        public readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
 
         private readonly List<Type> finalTypes = new List<Type>
         {
@@ -39,12 +39,12 @@ namespace ObjectPrinting
 
         public SerializingConfig<TOwner, TPropType> Serialize<TPropType>()
         {
-            return new SerializingConfig<TOwner, TPropType>(this);
+            return new SerializingConfig<TOwner, TPropType>(this, typeOperations);
         }
 
         public SerializingConfig<TOwner, TProperty> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
         {
-            return new SerializingConfig<TOwner, TProperty>(this);
+            return new SerializingConfig<TOwner, TProperty>(this, typeOperations);
         }
 
         public PrintingConfig<TOwner> DefaultSerialize()
