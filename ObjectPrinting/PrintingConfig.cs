@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace ObjectPrinting
         public PropertyConfig<TPropType> Serializing<TPropType>(Expression<Func<TOwner,TPropType>> selector)=>
             new PropertyConfig<TPropType>(this,selector);
 
-        //TODO smear checks
+        //TODO smear it in checks
         private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
             (PropertyInfo) ((MemberExpression) selector.Body).Member;
 
@@ -66,18 +67,46 @@ namespace ObjectPrinting
     
             private void PrintRecursive(object obj, int nestingLevel)
             {
-                var type = obj.GetType();
-                stringBuilder.AppendLine(type.Name);
-                foreach (var propertyInfo in type.GetProperties())
+                stringBuilder.AppendLine(obj.GetType().Name);
+                if (obj.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                    SerializeAsEnumerable(obj, nestingLevel);
+                else                    
+                    SerializeAsObject(obj, nestingLevel);
+            }
+
+            private void SerializeAsObject(object obj,int nestingLevel)
+            {
+                foreach (var propertyInfo in obj.GetType().GetProperties())
                 {
                     identation = new string('\t', nestingLevel + 1);
                     var value = propertyInfo.GetValue(obj);
                     if (TryNullSerialize(propertyInfo, value) ||
-                        TrySpecialSerialize(propertyInfo, value) ||
-                        TryFinalSerialize(propertyInfo, value))  
+                        TrySerializeSpecials(propertyInfo, value) ||
+                        TrySerializeFinalType(propertyInfo, value))  
                         continue;
                     stringBuilder.Append(identation + propertyInfo.Name + " = ");
                     PrintRecursive(value, nestingLevel + 1);
+                }
+            }
+
+            private void SerializeAsEnumerable(object obj,int nestingLevel)
+            {
+                foreach (var el in (IEnumerable) obj)
+                {//TODO Clean
+                    identation = new string('\t', nestingLevel + 1);
+                    var type = el.GetType();
+                    if (config.specialTypes.TryGetValue(el.GetType(), out var serializer))
+                    {
+                        if(serializer != null)
+                            stringBuilder.AppendLine(identation + serializer(el));
+                    }
+                    else if(finalTypes.Contains(type))
+                        stringBuilder.AppendLine(identation + el);
+                    else
+                    {
+                        stringBuilder.Append(identation);
+                        PrintRecursive(el, nestingLevel + 1);
+                    }
                 }
             }
     
@@ -92,7 +121,7 @@ namespace ObjectPrinting
                 return true;
             }
 
-            private bool TrySpecialSerialize(PropertyInfo propertyInfo,object value)
+            private bool TrySerializeSpecials(PropertyInfo propertyInfo,object value)
             {
                 if (!config.specialProperties.TryGetValue(propertyInfo, out var serializer) &&
                     !config.specialTypes.TryGetValue(propertyInfo.PropertyType, out serializer)) 
@@ -102,7 +131,7 @@ namespace ObjectPrinting
                 return true;
             }
     
-            private bool TryFinalSerialize(PropertyInfo propertyInfo, object value)
+            private bool TrySerializeFinalType(PropertyInfo propertyInfo, object value)
             {
                 if (!finalTypes.Contains(propertyInfo.PropertyType)) 
                     return false;

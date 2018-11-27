@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinter_Should
@@ -94,6 +96,23 @@ namespace ObjectPrinting.Tests
         {
             person.Serialize(x=>x.Serializing(p=>p.Name).TrimToLength(2))
                 .Should().Be("Person\r\n	Id = Guid\r\n	Name = Al\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+
+        [Test]
+        public void EnumerateValueTypeIEnumerbleHeirs()
+        {
+            var keeper = new IntKeeper{Ints = new List<int> {123, 23, 2442}};
+            keeper.Serialize().Should().Be("IntKeeper\r\n\tInts = List`1\r\n\t\t123\r\n\t\t23\r\n\t\t2442\r\n");
+        }
+        
+        [Test]
+        public void EnumerateIEnumerbleHeirs()
+        {
+            var company = new Company
+            {
+                Employees = new List<Person> {person, new Person{Name = "bob"}}
+            };
+            company.Serialize().Should().Be("Company\r\n\tEmployees = List`1\r\n\t\tPerson\r\n\t\t\tId = Guid\r\n\t\t\tName = Alexander\r\n\t\t\tHeight = 4,2\r\n\t\t\tAge = 42\r\n\t\t\tBirthday = 01.01.0001 0:00:00\r\n\t\t\tShoeSize = 42\r\n\t\tPerson\r\n\t\t\tId = Guid\r\n\t\t\tName = bob\r\n\t\t\tHeight = 0\r\n\t\t\tAge = 0\r\n\t\t\tBirthday = 01.01.0001 0:00:00\r\n\t\t\tShoeSize = 0\r\n");
         }
     }
 }
