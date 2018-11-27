@@ -62,6 +62,51 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
+        private bool HasSpecialPrintingValue(object value, Type type, string name, out string specialPrintingValue)
+        {
+            specialPrintingValue = null;
+
+            if (excludedTypes.Contains(type))
+            {
+                specialPrintingValue = string.Empty;
+                return true;
+            }
+
+            if (excluded.Contains(name))
+            {
+                specialPrintingValue = string.Empty;
+                return true;
+            }
+
+            if (printersForTypes.ContainsKey(type))
+            {
+                specialPrintingValue = $"{name} = {printersForTypes[type].Invoke(value)}\r\n";
+                return true;
+            }
+
+            if (cultureInfoForTypes.TryGetValue(type, out var culture))
+            {
+                specialPrintingValue = $"{name} + {((IFormattable)value).ToString(null, culture)}\r\n";
+                return true;
+            }
+
+            if (printersForPropertiesName.ContainsKey(name))
+            {
+                specialPrintingValue = $"{name} = {printersForPropertiesName[name].Invoke(value)}\r\n";
+                return true;
+            }
+            if (type == typeof(string) &&
+                maxLength != null &&
+                ((string)value).Length > maxLength)
+            {
+
+                specialPrintingValue = $"{name} = {((string)value).Substring(0, (int)maxLength)}\r\n";
+                return true;
+            }
+
+            return false;
+        }
+
         private string GetPropertyPrintingValue(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             if (excludedTypes.Contains(propertyInfo.PropertyType))
@@ -116,7 +161,21 @@ namespace ObjectPrinting
             }
 
             foreach (var propertyInfo in type.GetProperties())
-                sb.Append(identation + GetPropertyPrintingValue(propertyInfo, obj, nestingLevel));
+            {
+                sb.Append(
+                    HasSpecialPrintingValue(propertyInfo.GetValue(obj), propertyInfo.PropertyType, propertyInfo.Name, out var specialPrintingValue)
+                    ? identation + specialPrintingValue
+                    : $"{identation}{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}");
+            }
+
+            foreach (var fieldInfo in type.GetFields())
+            {
+                if (fieldInfo.Name == "Empty") continue;
+                sb.Append(
+                    HasSpecialPrintingValue(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name, out var specialPrintingValue)
+                        ? identation + specialPrintingValue
+                        : $"{identation}{fieldInfo.Name} = {PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)}");
+            }
 
             return sb.ToString();
         }
