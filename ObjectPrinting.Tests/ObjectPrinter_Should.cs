@@ -203,7 +203,7 @@ namespace ObjectPrinting.Tests
 
         private static ICollection[] Collections =
         {
-            new List<string> {"0", "1", "2"},
+            new List<bool> {true, true, false},
             new[] {0, 1, 2},
             new Dictionary<int, byte> {{0, 0}, {1, 1}, {2, 2}},
             new Stack<double>(new double[] {0, 1, 2}),
@@ -222,6 +222,55 @@ namespace ObjectPrinting.Tests
 
             result.Should().StartWith($"{type.Name}")
                 .And.ContainAll(values);
+        }
+
+        [Test]
+        public void PrintLimitedCountOfItems_WhenCollectionIsInfinite()
+        {
+            var infiniteCollection = new InfinityCollection<int>();
+            var printer = ObjectPrinter
+                .For<IEnumerable>()
+                .WithCollectionLength(3);
+
+            result = printer.PrintToString(infiniteCollection);
+
+            result.Should().Be("InfinityCollection`1<Int32>\r\n" +
+                               "\tItems:\r\n" +
+                               "\t\t0\r\n" +
+                               "\t\t0\r\n" +
+                               "\t\t0\r\n");
+        }
+
+        [Test]
+        public void ChangeIndentationChar()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .WithIndentationChar('*');
+
+            result = printer.PrintToString(person);
+
+            result.Should().Be("Person\r\n" +
+                               "*Id = Guid\r\n" +
+                               "*Name = Alex\r\n" +
+                               "*Height = 1,8\r\n" +
+                               "*Age = 19\r\n");
+        }
+
+        [Test]
+        public void ChangeIndentationMultiplier()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .WithIdentationMultiplier(2);
+
+            result = printer.PrintToString(person);
+
+            result.Should().Be("Person\r\n" +
+                               "\t\tId = Guid\r\n" +
+                               "\t\tName = Alex\r\n" +
+                               "\t\tHeight = 1,8\r\n" +
+                               "\t\tAge = 19\r\n");
         }
 
         private static IEnumerable<string> CollectItems(IEnumerable collection)
@@ -325,6 +374,18 @@ namespace ObjectPrinting.Tests
             result = first + second;
 
             first.Should().BeEquivalentTo(second);
+        }
+
+        [Test]
+        public void ThrowInvalidOperationExceptionWithInformativeMessage_WhenWrongSelector()
+        {
+            Action printing =
+                () => ObjectPrinter
+                    .For<Person>()
+                    .Printing(p => p.ToString());
+
+            printing.Should().Throw<InvalidOperationException>()
+                .WithMessage("p => p.ToString() -> isn't member selector");
         }
     }
 }

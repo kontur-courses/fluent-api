@@ -20,17 +20,11 @@ namespace ObjectPrinting.Modules.Extensions
             return config;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture)
+            where TPropType : IFormattable
         {
-            var config = ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
-            config.SetTypeCulture<double>(culture);
-            return config;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture)
-        {
-            var config = ((IPropertyPrintingConfig<TOwner, float>)propConfig).ParentConfig;
-            config.SetTypeCulture<float>(culture);
+            var config = ((IPropertyPrintingConfig<TOwner, TPropType>)propConfig).ParentConfig;
+            config.SetCultureForFormattable<TPropType>(culture);
             return config;
         }
     }

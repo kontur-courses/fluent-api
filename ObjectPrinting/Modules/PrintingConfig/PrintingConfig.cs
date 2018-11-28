@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 
 namespace ObjectPrinting.Modules.PrintingConfig
 {
@@ -18,25 +17,28 @@ namespace ObjectPrinting.Modules.PrintingConfig
         private readonly Dictionary<Type, Func<object, string>> typesSerializationRules;
         private readonly Dictionary<string, Func<object, string>> propertiesSerializationRules;
 
-        private readonly Dictionary<Type, CultureInfo> numbersCultureRules;
+        private readonly Dictionary<Type, CultureInfo> formattableCultureRules;
 
         private readonly Dictionary<string, int> stringPropertiesTrimmingRules;
         private int stringTrimmingRule;
 
         private readonly HashSet<Type> finalTypes;
 
-        private readonly CultureInfo startCulture;
-
         private int maxNestingLevel;
         private readonly HashSet<object> nestingCollection;
 
-        public PrintingConfig(int maxNestingLevel = 10)
+        private int maxCollectionLength;
+
+        private char indentationChar;
+        private int indentationMultiplier;
+
+        public PrintingConfig()
         {
             excludedTypes = new HashSet<string>();
             excludedProperties = new HashSet<string>();
             typesSerializationRules = new Dictionary<Type, Func<object, string>>();
             propertiesSerializationRules = new Dictionary<string, Func<object, string>>();
-            numbersCultureRules = new Dictionary<Type, CultureInfo>();
+            formattableCultureRules = new Dictionary<Type, CultureInfo>();
             stringPropertiesTrimmingRules = new Dictionary<string, int>();
             stringTrimmingRule = int.MaxValue;
             finalTypes = new HashSet<Type>
@@ -44,14 +46,34 @@ namespace ObjectPrinting.Modules.PrintingConfig
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(long), typeof(DateTime), typeof(TimeSpan)
             };
-            startCulture = CultureInfo.CurrentCulture;
-            this.maxNestingLevel = maxNestingLevel;
+            maxNestingLevel = 10;
+            maxCollectionLength = 10;
             nestingCollection = new HashSet<object>();
+            indentationChar = '\t';
+            indentationMultiplier = 1;
         }
 
         public PrintingConfig<TOwner> WithNestingLevel(int maxNestingLevel)
         {
             this.maxNestingLevel = maxNestingLevel;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithCollectionLength(int maxCollectionLength)
+        {
+            this.maxCollectionLength = maxCollectionLength;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithIndentationChar(char indentationChar)
+        {
+            this.indentationChar = indentationChar;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithIdentationMultiplier(int multiplier)
+        {
+            indentationMultiplier = multiplier;
             return this;
         }
 
@@ -62,6 +84,8 @@ namespace ObjectPrinting.Modules.PrintingConfig
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            if (!(memberSelector.Body is MemberExpression))
+                throw new InvalidOperationException($"{memberSelector} -> isn't member selector");
             var memberExpression = (MemberExpression)memberSelector.Body;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberExpression.Member.Name);
         }
@@ -96,10 +120,11 @@ namespace ObjectPrinting.Modules.PrintingConfig
             propertiesSerializationRules[propertyName] = obj => print((TPropType)obj);
         }
 
-        internal void SetTypeCulture<TPropType>(CultureInfo culture)
+        internal void SetCultureForFormattable<TPropType>(CultureInfo culture)
+            where TPropType : IFormattable
         {
             var type = typeof(TPropType);
-            numbersCultureRules[type] = culture;
+            formattableCultureRules[type] = culture;
         }
 
         internal void SetTrimmingLength(string propertyName, int maxLength)
@@ -110,26 +135,9 @@ namespace ObjectPrinting.Modules.PrintingConfig
                 stringPropertiesTrimmingRules[propertyName] = maxLength;
         }
 
-        private static bool IsCultureDependent(Type type)
-        {
-            return type == typeof(double) || type == typeof(float);
-        }
-
         private static bool IsString(Type type)
         {
             return type == typeof(string);
-        }
-
-        private void ChangeCulture(Type numberType)
-        {
-            Thread.CurrentThread.CurrentCulture = numbersCultureRules.ContainsKey(numberType)
-                ? numbersCultureRules[numberType]
-                : startCulture;
-        }
-
-        private void ResetCulture()
-        {
-            Thread.CurrentThread.CurrentCulture = startCulture;
         }
 
         private string TrimPropertyValue(string propertyValue, string propertyName)
@@ -155,7 +163,7 @@ namespace ObjectPrinting.Modules.PrintingConfig
             if (type.IsGenericType)
                 return type.Name + string
                            .Concat(type.GenericTypeArguments
-                           .Select(t => $"<{t.Name}>"));
+                               .Select(t => $"<{t.Name}>"));
             return type.Name;
         }
 
@@ -167,27 +175,69 @@ namespace ObjectPrinting.Modules.PrintingConfig
             else if (obj == null)
                 result = "null";
             else if (finalTypes.Contains(obj.GetType()))
+            {
+                var type = obj.GetType();
                 result = obj.ToString();
+                result = formattableCultureRules.ContainsKey(type)
+                    ? ((IFormattable)obj).ToString(null, formattableCultureRules[type])
+                    : obj.ToString();
+            }
             if (nestingCollection.Contains(obj))
                 result = "reached cycle";
             return result == null;
         }
 
-        private string ParseProperties(object obj, Type type, string indentation, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel)
+        {
+            if (!IsObjNeedsToBeParsed(obj, nestingLevel, out var result))
+                return result;
+            nestingCollection.Add(obj);
+            var type = obj.GetType();
+            var sb = new StringBuilder();
+
+            sb.AppendLine(ParseName(type));
+
+            if (obj is IEnumerable collection)
+                sb.Append(ParseCollection(collection, nestingLevel));
+
+            sb.Append(ParseProperties(obj, type, nestingLevel));
+            return sb.ToString();
+        }
+
+        private string GetIndentation(int nestingLevel)
+        {
+            return new string(indentationChar, nestingLevel * indentationMultiplier);
+        }
+
+        private string ParseCollection(IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
+            var enumerator = collection.GetEnumerator();
+            enumerator.MoveNext();
+            var indentation = GetIndentation(nestingLevel + 1);
+            sb.AppendLine($"{indentation}Items:");
+            for (var i = 0; i < maxCollectionLength; i++)
+            {
+                var item = enumerator.Current;
+                sb.AppendLine($"{indentation}{indentationChar}{item}");
+                if (enumerator.MoveNext())
+                    continue;
+                sb.AppendLine("...");
+                break;
+            }
+            return sb.ToString();
+        }
+
+        private string ParseProperties(object obj, Type type, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var indentation = GetIndentation(nestingLevel + 1);
             foreach (var property in GetNotExcludedProperties(type))
             {
                 if (property.GetIndexParameters().Length > 0)
                     continue;
-
-                if (IsCultureDependent(property.PropertyType))
-                    ChangeCulture(property.PropertyType);
-
-                sb.Append(indentation + property.Name + " = ");
+                sb.Append($"{indentation}{property.Name} = ");
                 sb.Append(ParseValue(property, property.GetValue(obj), nestingLevel));
-
-                ResetCulture();
             }
 
             return sb.ToString();
@@ -207,33 +257,6 @@ namespace ObjectPrinting.Modules.PrintingConfig
             if (!result.EndsWith(Environment.NewLine))
                 result += Environment.NewLine;
             return result;
-        }
-
-        private static string ParseCollection(IEnumerable collection, string indentation)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"{indentation}Items:");
-            foreach (var item in collection)
-                sb.AppendLine($"{indentation} \t\t {item}");
-            return sb.ToString();
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (!IsObjNeedsToBeParsed(obj, nestingLevel, out var result))
-                return result;
-            nestingCollection.Add(obj);
-            var type = obj.GetType();
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-
-            sb.AppendLine(ParseName(type));
-
-            if (obj is ICollection collection)
-                sb.Append(ParseCollection(collection, indentation));
-
-            sb.Append(ParseProperties(obj, type, indentation, nestingLevel));
-            return sb.ToString();
         }
     }
 }

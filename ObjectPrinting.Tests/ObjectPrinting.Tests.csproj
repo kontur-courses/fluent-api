@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Modules\CycleClass.cs" />
+    <Compile Include="Modules\InfinityCollection.cs" />
     <Compile Include="Modules\NestingClass.cs" />
     <Compile Include="Modules\StringClass.cs" />
     <Compile Include="ObjectPrinter_Should.cs" />
