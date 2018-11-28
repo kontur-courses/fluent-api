@@ -4,7 +4,8 @@ using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
-using ObjectPrinting.Config;
+using ObjectPrinting.Config.Property;
+using ObjectPrinting.Config.Type;
 
 namespace ObjectPrinterTests
 {
@@ -85,6 +86,19 @@ namespace ObjectPrinterTests
                 .And.NotContainAny(person.Birthday.ToString());
         }
 
+        [Test]
+        public void TestSettingTrimming()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(3);
+
+            var result = printer.PrintToString(person);
+            Console.WriteLine(result);
+            result.Should()
+                .Contain("Name = And")
+                .And.NotContain("Andrey");
+        }
+
         [Test, Ignore("Not implemented yet")]
         public void Demo()
         {
@@ -104,7 +118,7 @@ namespace ObjectPrinterTests
                 .Printing(p => p.Height).Using(i => i.ToString())
 
                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-               //.Printing(p => p.Name).TrimmedToLength(10)
+                .Printing(p => p.Name).TrimmedToLength(10)
 
                //6. Исключить из сериализации конкретного свойства
                .Excluding(p => p.Age);

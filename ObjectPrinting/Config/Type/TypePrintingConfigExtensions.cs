@@ -1,7 +1,6 @@
-using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Config
+namespace ObjectPrinting.Config.Type
 {
     public static class TypePrintingConfigExtensions
     {
@@ -40,12 +39,6 @@ namespace ObjectPrinting.Config
 
             return parentConfig;
         }
-
-        //public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-        //    this TypePrintingConfig<TOwner, string> propConfig, int maxLen)
-        //{
-        //    return ((IPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-        //}
 
         //public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         //{

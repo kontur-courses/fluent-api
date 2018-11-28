@@ -1,29 +1,24 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting.Config
+namespace ObjectPrinting.Config.Property
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPrintingConfig<TOwner, TPropType>
     {
         public PrintingConfig<TOwner> ParentConfig { get; }
-        private PropertyInfo propertyToChange;
+        public readonly PropertyInfo PropertyToChange;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyToChange)
         {
             ParentConfig = printingConfig;
-            this.propertyToChange = propertyToChange;
+            PropertyToChange = propertyToChange;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            ParentConfig.OverridePropertyPrinting(propertyToChange, obj => print((TPropType) obj));
+            ParentConfig.OverridePropertyPrinting(PropertyToChange, obj => print((TPropType) obj));
 
             return ParentConfig;
         }
-    }
-
-    public interface IPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }

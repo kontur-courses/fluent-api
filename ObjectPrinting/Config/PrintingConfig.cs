@@ -4,58 +4,46 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
+using ObjectPrinting.Config.Property;
+using ObjectPrinting.Config.Type;
 
 namespace ObjectPrinting.Config
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
+        private readonly System.Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private readonly HashSet<Type> typesToExclude;
-        protected readonly Dictionary<Type, Func<object, string>> printingOverridedTypes;
-        protected readonly Dictionary<Type, CultureInfo> cultureOverridedTypes;
-        protected readonly Dictionary<PropertyInfo, Func<object, string>> printingOverridedProperties;
+        private readonly HashSet<System.Type> typesToExclude;
+        private readonly Dictionary<System.Type, Func<object, string>> printingOverridedTypes;
+        private readonly Dictionary<System.Type, CultureInfo> cultureOverridedTypes;
+        private readonly Dictionary<PropertyInfo, Func<object, string>> printingOverridedProperties;
 
 
         public PrintingConfig()
         {
-            typesToExclude = new HashSet<Type>();
-            printingOverridedTypes = new Dictionary<Type, Func<object, string>>();
-            cultureOverridedTypes = new Dictionary<Type, CultureInfo>();
+            typesToExclude = new HashSet<System.Type>();
+            printingOverridedTypes = new Dictionary<System.Type, Func<object, string>>();
+            cultureOverridedTypes = new Dictionary<System.Type, CultureInfo>();
             printingOverridedProperties = new Dictionary<PropertyInfo, Func<object, string>>();
         }
 
         public void OverrideTypePrinting<TPropType>(Func<TPropType, string> print)
         {
-            var propType = typeof(TPropType);
-
-            if (printingOverridedTypes.ContainsKey(propType))
-                printingOverridedTypes[propType] = null;
-
-            printingOverridedTypes[propType] = obj => print((TPropType) obj);
+            printingOverridedTypes[typeof(TPropType)] = obj => print((TPropType) obj);
         }
 
         public void OverrideTypeCulture<TPropType>(CultureInfo culture)
         {
-            var propType = typeof(TPropType);
-
-            if (cultureOverridedTypes.ContainsKey(propType))
-                cultureOverridedTypes[propType] = null;
-
-            cultureOverridedTypes[propType] = culture;
+            cultureOverridedTypes[typeof(TPropType)] = culture;
         }
 
         public void OverridePropertyPrinting(PropertyInfo propertyInfo, Func<object, string> print)
         {
-            if (printingOverridedProperties.ContainsKey(propertyInfo))
-                printingOverridedProperties[propertyInfo] = null;
-
             printingOverridedProperties[propertyInfo] = print;
         }
 
@@ -100,7 +88,7 @@ namespace ObjectPrinting.Config
             if (propertyInfo != null && printingOverridedProperties.ContainsKey(propertyInfo))
                 return printingOverridedProperties[propertyInfo](obj);
 
-            if (printingOverridedTypes.ContainsKey(type) && nestingLevel != 0)
+            if (nestingLevel != 0 && printingOverridedTypes.ContainsKey(type))
                 return printingOverridedTypes[type](obj);
 
             if (finalTypes.Contains(type))
@@ -115,13 +103,13 @@ namespace ObjectPrinting.Config
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
 
-            foreach (var prop in type.GetProperties())
+            foreach (var property in type.GetProperties())
             {
-                if (typesToExclude.Contains(prop.PropertyType))
+                if (typesToExclude.Contains(property.PropertyType))
                     continue;
 
-                var propertyString = PrintToString(prop.GetValue(obj), prop, nestingLevel + 1);
-                sb.Append(identation + prop.Name + " = " + propertyString + Environment.NewLine);
+                var propertyString = PrintToString(property.GetValue(obj), property, nestingLevel + 1);
+                sb.Append(identation + property.Name + " = " + propertyString + Environment.NewLine);
             }
 
             return sb.ToString();
