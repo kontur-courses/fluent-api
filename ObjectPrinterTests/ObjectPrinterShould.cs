@@ -28,7 +28,8 @@ namespace ObjectPrinterTests
                 Age = 21,
                 Height = 1.92,
                 Id = System.Guid.Parse(Guid),
-                Birthday = new DateTime(2018, 01, 28)
+                Birthday = new DateTime(2018, 01, 28),
+                SecondName = "Ivanov"
             };
         }
 
@@ -87,6 +88,17 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void OverrideFieldPrinting()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.SecondName).Using(s => "###");
+
+            printer.PrintToString(person).Should()
+                .Contain("###")
+                .And.NotContain("Ivanov");
+        }
+
+        [Test]
         public void TrimProperties()
         {
             var printer = ObjectPrinter.For<Person>()
@@ -126,6 +138,16 @@ namespace ObjectPrinterTests
 
             printer.PrintToString(person).Should()
                 .NotContainAny("Id", "Age");
+        }
+
+        [Test]
+        public void ExcludeFields()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.SecondName);
+
+            printer.PrintToString(person).Should()
+                .NotContainAny("SecondName");
         }
 
         [Test]

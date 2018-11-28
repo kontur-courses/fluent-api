@@ -81,7 +81,6 @@ namespace ObjectPrinting.Config
             return this;
         }
 
-
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
