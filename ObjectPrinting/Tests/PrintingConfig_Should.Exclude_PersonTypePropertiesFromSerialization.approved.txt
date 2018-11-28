@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = null
+	Height = 0
+	Age = 0
