@@ -15,7 +15,7 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<int>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serialize<string>().As(t => t.ToString() + "dsfasdf")
+                .Serialize<string>().As(t => t.ToString() + " - string")
                 //3. Для числовых типов указать культуру
                 .SetCulture(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
@@ -26,9 +26,11 @@ namespace ObjectPrinting.Tests
                 .Exclude(p => p.Id);
             
             string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию   
+            string s2 = person.PrintToStr();
             //8. ...с конфигурированием
+            string s3 = person.PrintToStr(o => o.Exclude<int>());
         }
     }
 }

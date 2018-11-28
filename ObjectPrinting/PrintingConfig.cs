@@ -30,7 +30,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -66,15 +65,8 @@ namespace ObjectPrinting
 
         private object ApplyConfigs(object value, IEnumerable<Delegate> configs)
         {
-            var result = value;
-            foreach (var @delegate in configs)
-            {
-                result = @delegate.DynamicInvoke(result);
-            }
-
-            return result;
-            //return configs
-            //    .Aggregate(value, (current, config) => config.DynamicInvoke(current));
+            return configs
+                .Aggregate(value, (current, config) => config.DynamicInvoke(current));
         }
 
         public ImmutableDictionary<object, List<Delegate>> AddConfig(object key, Func<object, string> value)
