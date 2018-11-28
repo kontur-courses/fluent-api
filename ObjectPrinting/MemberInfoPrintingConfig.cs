@@ -3,19 +3,19 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class MemberInfoPrintingConfig<TOwner, TPropType> : IMemberInfoPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public MemberInfoPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName)
+        public MemberInfoPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberInfoName)
         {
             this.printingConfig = printingConfig;
-            PropertyName = propertyName;
+            MemberInfoName = memberInfoName;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
@@ -24,9 +24,9 @@ namespace ObjectPrinting
             return printingConfig;
         }
         
-        public string PropertyName { get; }
+        public string MemberInfoName { get; }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PrintingConfig<TOwner> IMemberInfoPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> serializeFunc)
         {
@@ -35,7 +35,7 @@ namespace ObjectPrinting
         }
     }
 
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IMemberInfoPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
     }

@@ -2,7 +2,7 @@ using System;
 
 namespace ObjectPrinting
 {
-    public static class PropertyPrintingConfigExtensions
+    public static class MemberInfoPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
@@ -10,11 +10,11 @@ namespace ObjectPrinting
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propConfig,
+            this MemberInfoPrintingConfig<TOwner, string> propConfig,
             int maxLen)
         {
-            var config = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            config.AddCutProperty(propConfig.PropertyName, maxLen);
+            var config = ((IMemberInfoPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            config.AddCutMemberInfo(propConfig.MemberInfoName, maxLen);
             return config;
         }
     }

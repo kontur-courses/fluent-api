@@ -17,9 +17,9 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private readonly Dictionary<string, int> cutProperty = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> cutMemberInfo = new Dictionary<string, int>();
 
-        private readonly List<string> excludingProperty = new List<string>();
+        private readonly List<string> excludingMemberInfo = new List<string>();
         private readonly List<Type> excludingTypes = new List<Type>();
 
         private readonly Dictionary<Type, CultureInfo> specialTypeSerializationCulture =
@@ -27,22 +27,22 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, Delegate> specialTypeSerializationFunction = new Dictionary<Type, Delegate>();
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public MemberInfoPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new MemberInfoPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public MemberInfoPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyName = GetPropertyName(memberSelector);
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+            var memberName = GetMemberName(memberSelector);
+            return new MemberInfoPrintingConfig<TOwner, TPropType>(this, memberName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyName = GetPropertyName(memberSelector);
-            excludingProperty.Add(propertyName);
+            var memberName = GetMemberName(memberSelector);
+            excludingMemberInfo.Add(memberName);
             return this;
         }
 
@@ -68,16 +68,16 @@ namespace ObjectPrinting
             specialTypeSerializationCulture[type] = culture;
         }
 
-        internal void AddCutProperty(string propertyName, int length)
+        internal void AddCutMemberInfo(string memberInfoName, int length)
         {
-            cutProperty[propertyName] = length;
+            cutMemberInfo[memberInfoName] = length;
         }
 
-        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private string GetMemberName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var memberExpression = memberSelector.Body as MemberExpression;
-            var propertyName = memberExpression?.Member.Name;
-            return propertyName;
+            var memberName = memberExpression?.Member.Name;
+            return memberName;
         }
 
         private string PrintToString(object obj, int nestingLevel, Stack<object> visited)
@@ -122,7 +122,7 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
 
             if (excludingTypes.Contains(memberInfoType)) return false;
-            if (excludingProperty.Contains(memberInfo.Name)) return false;
+            if (excludingMemberInfo.Contains(memberInfo.Name)) return false;
             
             if (visited.Contains(memberInfoValue))
             {
@@ -184,7 +184,7 @@ namespace ObjectPrinting
             if (specialTypeSerializationCulture.TryGetValue(type, out var serializeCultureInfo))
                 return ((IFormattable) value).ToString("g", serializeCultureInfo);
 
-            if (cutProperty.TryGetValue(name, out var maxLen))
+            if (cutMemberInfo.TryGetValue(name, out var maxLen))
             {
                 var len = value.ToString().Length > maxLen ? maxLen : value.ToString().Length;
                 return value.ToString().Substring(0, len);
