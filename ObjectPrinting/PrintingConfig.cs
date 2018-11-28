@@ -3,21 +3,24 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        //public readonly ImmutableDictionary<object, List<Func<object, string>>> configs 
-        //    = ImmutableDictionary<object, List<Func<object, string>>>.Empty;
+        public readonly ImmutableDictionary<object, List<Delegate>> Configs;
 
-        public readonly ImmutableDictionary<object, List<Delegate>> configs 
-            = ImmutableDictionary<object, List<Delegate>>.Empty;
-
-        public PrintingConfig(ImmutableDictionary<object, List<Func<object, string>>> configs)
+        public PrintingConfig()
         {
-            this.configs = configs;
+            Configs = ImmutableDictionary<object, List<Delegate>>.Empty;
+        }
+
+        public PrintingConfig(ImmutableDictionary<object, List<Delegate>> configs)
+        {
+            Configs = configs;
         }
 
         public string PrintToString(TOwner obj)
@@ -46,12 +49,12 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyValue = propertyInfo.GetValue(obj);
-                var hasTypeConfig = configs.TryGetValue(propertyInfo.PropertyType, out var typeConfig);
+                var hasTypeConfig = Configs.TryGetValue(propertyInfo.PropertyType, out var configsByType);
                 if (hasTypeConfig)
-                    propertyValue = ApplyConfigs(propertyValue, typeConfig);
-                var hasNameConfig = configs.TryGetValue(propertyInfo.Name, out var nameConfig);
+                    propertyValue = ApplyConfigs(propertyValue, configsByType);
+                var hasNameConfig = Configs.TryGetValue(propertyInfo, out var configsByName);
                 if (hasNameConfig)
-                    propertyValue = ApplyConfigs(propertyValue, nameConfig);
+                    propertyValue = ApplyConfigs(propertyValue, configsByName);
                 if (propertyValue == null)
                     continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
@@ -61,19 +64,24 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private object ApplyConfigs(object value, List<Func<object, string>> configs)
+        private object ApplyConfigs(object value, IEnumerable<Delegate> configs)
         {
             var result = value;
-            foreach (var config in configs)
-                result = config(result);
+            foreach (var @delegate in configs)
+            {
+                result = @delegate.DynamicInvoke(result);
+            }
+
             return result;
+            //return configs
+            //    .Aggregate(value, (current, config) => config.DynamicInvoke(current));
         }
 
-        public ImmutableDictionary<object, List<Func<object, string>>> AddConfig(object key, Func<object, string> value)
+        public ImmutableDictionary<object, List<Delegate>> AddConfig(object key, Func<object, string> value)
         {
-            var newConfigs = configs;
-            if (!configs.ContainsKey(key))
-                newConfigs = configs.Add(key, new List<Func<object, string>>());
+            var newConfigs = Configs;
+            if (!Configs.ContainsKey(key))
+                newConfigs = Configs.Add(key, new List<Delegate>());
             newConfigs[key].Add(value);
             return newConfigs;
         }
@@ -85,15 +93,17 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(newConfigs);
         }
 
-        public PrintingConfig<TOwner> Exclude(string propertyName)
+        public PrintingConfig<TOwner> Exclude<TProp>(Expression<Func<TOwner, TProp>> property)
         {
-            var newConfigs = AddConfig(propertyName, p => null);
+            var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
+            var newConfigs = AddConfig(propertyInfo, p => null);
             return new PrintingConfig<TOwner>(newConfigs);
         }
 
-        public SerializePrintingConfig<TOwner, string> Serialize(string propertyName)
+        public SerializePrintingConfig<TOwner, string> Serialize(Expression<Func<TOwner, string>> property)
         {
-            return new SerializePrintingConfig<TOwner, string>(this, propertyName);
+            var propertyInfo = ((MemberExpression) property.Body).Member as PropertyInfo;
+            return new SerializePrintingConfig<TOwner, string>(this, propertyInfo);
         }
 
         public SerializePrintingConfig<TOwner, T> Serialize<T>()
@@ -102,9 +112,10 @@ namespace ObjectPrinting
             return new SerializePrintingConfig<TOwner, T>(this, type);
         }
 
-        public CulturePrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
+        public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
-            return new CulturePrintingConfig<TOwner>();
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            return new PrintingConfig<TOwner>(Configs);
         }
     }
 }

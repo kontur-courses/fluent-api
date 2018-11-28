@@ -2,19 +2,20 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class SerializePrintingConfig<TOwner, T>
     {
-        private string propertyName;
-        private Type propertyType;
-        private PrintingConfig<TOwner> oldPrintingConfig;
+        private readonly PropertyInfo propertyInfo;
+        private readonly Type propertyType;
+        private readonly PrintingConfig<TOwner> oldPrintingConfig;
 
-        public SerializePrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName)
+        public SerializePrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
         {
             oldPrintingConfig = printingConfig;
-            this.propertyName = propertyName;
+            this.propertyInfo = propertyInfo;
         }
 
         public SerializePrintingConfig(PrintingConfig<TOwner> printingConfig, Type propertyType)
@@ -25,15 +26,14 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> As(Func<T, string> serializer)
         {
-            Delegate s = serializer;
-            var newConfigs = oldPrintingConfig.configs;
+            var newConfigs = oldPrintingConfig.Configs;
             object configKey;
-            if (propertyName == null)
+            if (propertyInfo == null)
                 configKey = propertyType;
             else
-                configKey = propertyName;
+                configKey = propertyInfo;
             if (!newConfigs.ContainsKey(configKey))
-                newConfigs.Add(configKey, new List<Delegate>());
+                newConfigs = newConfigs.Add(configKey, new List<Delegate>());
             newConfigs[configKey].Add(serializer);
             return new PrintingConfig<TOwner>(newConfigs);
         }
