@@ -11,11 +11,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly IEnumerable<Type> baseTypes = new List<Type>
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
 
         private readonly Dictionary<string, int> cutMemberInfo = new Dictionary<string, int>();
 
@@ -85,7 +80,8 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (baseTypes.Contains(obj.GetType()))
+            if (obj.GetType().GetMethod("ToString", Type.EmptyTypes).DeclaringType != typeof(object) &&
+                !obj.GetType().Name.Contains("KeyValue"))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);

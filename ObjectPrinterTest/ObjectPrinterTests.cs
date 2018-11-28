@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using FluentAssertions;
+using FluentAssertions.Common;
 using NUnit.Framework;
 using ObjectPrinting;
 
@@ -170,6 +172,15 @@ namespace ObjectPrinterTest
             var result = printer.PrintToString(testClass);
 
             result.Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void DoSomething_WhenSomething()
+        {
+            var a = 5;
+            var person = new Person();
+            
+            Console.WriteLine(a.GetType().GetMethod("ToString", Type.EmptyTypes).DeclaringType);
         }
     }
 }

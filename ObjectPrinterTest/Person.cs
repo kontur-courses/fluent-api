@@ -10,6 +10,10 @@ namespace ObjectPrinterTest
         public double Height { get; set; }
         public int Age { get; set; }
         public Guid Id { get; set; }
+//        public override string ToString()
+//        {
+//            return "haha";
+//        }
     }
     
     
