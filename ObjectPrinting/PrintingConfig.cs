@@ -64,20 +64,23 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj, char indentSymbol = '\t')
+        public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10)
         {
-            return PrintToString(obj, 0, indentSymbol);
+            return PrintToString(obj, 0, indentSymbol, maxNestingLevel);
         }
 
-        private string PrintToString(object obj, int nestingLevel, char indentSymbol)
+        private string PrintToString(object obj, int nestingLevel, char indentSymbol, int maxNestingLevel)
         {
+            if (nestingLevel >= maxNestingLevel)
+                throw new OverflowException("ѕревышен максимальный уровень вложенности");
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -88,30 +91,38 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties())
+            var members = new List<MemberInfo>();
+            
+            members.AddRange(type.GetFields());
+            members.AddRange(type.GetProperties());
+
+            foreach (var memberInfo in members)
             {
-                var propType = propertyInfo.PropertyType;
-                var propName = propertyInfo.Name;
+                var propType = memberInfo.GetUnderlyingType();
+
+                var propName = memberInfo.Name;
 
                 if (!typesToBeExcluded.Contains(propType)
                     && !propertiesToBeExcluded.Contains(propName))
                 {
-                    var value = propertyInfo.GetValue(obj);
+                    var value = memberInfo.GetValue(obj);
 
-                    if (TypesToBeAlternativelySerialized.ContainsKey(propType) 
+                    if (TypesToBeAlternativelySerialized.ContainsKey(propType)
                         && !PropertiesToBeAlternativelySerialized.ContainsKey(propName))
                         value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
                     if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
-                        value = Convert.ToString(value, NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
+                        value = Convert.ToString(value,
+                            NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
 
                     if (PropertiesToBeAlternativelySerialized.ContainsKey(propName))
                         value = PropertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
 
                     sb.Append(indentation + propName + " = " +
-                          PrintToString(value, nestingLevel + 1, indentSymbol));
+                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel));
                 }
             }
+
             return sb.ToString();
         }
     }

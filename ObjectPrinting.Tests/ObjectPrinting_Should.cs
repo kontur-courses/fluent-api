@@ -26,7 +26,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldExcludeTypeFromSerialization()
         {
-            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith", "\tHeight = 13,37")
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000", 
+                               "\tName = John Smith", "\tHeight = 13,37")
                            + Environment.NewLine;
 
             printer.Excluding<int>();
@@ -37,8 +38,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldSerializeTypesAlternatively()
         {
-            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith",
-                               "\tHeight = 13,37", "\tAge = 69 (это инт)")
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
+                               "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69 (это инт)")
                            + Environment.NewLine;
 
             printer.Printing<int>().Using(e => e + " (это инт)");
@@ -49,8 +50,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldSetCulture()
         {
-            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John Smith",
-                               "\tHeight = 13.37", "\tAge = 69")
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
+                               "\tName = John Smith", "\tHeight = 13.37", "\tAge = 69")
                            + Environment.NewLine;
 
             printer.Printing<double>().Using(CultureInfo.InvariantCulture);
@@ -62,7 +63,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldSerializePropertiesAlternatively()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich", "\tId = Guid",
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 0", "\tMiddleName = Johnovich", 
+                               "\tId = 00000000-0000-0000-0000-000000000000",
                                "\tName = John Smith (это имя)",
                                "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
@@ -85,8 +87,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldTrimStringProperties()
         {
-            var expected = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = John",
-                               "\tHeight = 13,37", "\tAge = 69")
+            var expected = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000", 
+                               "\tName = John", "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
 
             printer.Printing(e => e.Name).TrimmedToLength(4);
@@ -109,7 +111,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldOverrideAlternativeTypeSerialization_IfPropertySerializationSpecified()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tMiddleName = Johnovich (это строка)", "\tId = Guid",
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 0", 
+                               "\tMiddleName = Johnovich (это строка)",
+                               "\tId = 00000000-0000-0000-0000-000000000000",
                                "\tName = John Smith (это имя (форматирование для типа не применилось))",
                                "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
@@ -148,5 +152,29 @@ namespace ObjectPrinting.Tests
             action.Should().Throw<ArgumentException>()
                 .WithMessage("Использованное выражение не является допустимым");
         }
+
+        [Test]
+        public void ObjectPrinter_ShouldSerializeFields()
+        {
+            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 1337",
+                               "\tMiddleName = Johnovich",
+                               "\tId = 00000000-0000-0000-0000-000000000000",
+                               "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
+                           + Environment.NewLine;
+
+            var printer = ObjectPrinter.For<PersonExtended>();
+            var person = new PersonExtended
+            {
+                Id = Guid.Empty,
+                Name = "John Smith",
+                MiddleName = "Johnovich",
+                Age = 69,
+                Height = 13.37,
+                JustAField = 1337
+            };
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
     }
 }
