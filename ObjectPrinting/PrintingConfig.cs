@@ -12,7 +12,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         public string PrintToString(TOwner obj)=>
-            new Printer(this).Print(obj);
+            new Serializer(this).Serialize(obj);
 
         private readonly Dictionary<Type,Func<object,string>> specialTypes = new Dictionary<Type,Func<object,string>>();
         private readonly Dictionary<PropertyInfo,Func<object,string>> specialProperties = 
@@ -47,27 +47,27 @@ namespace ObjectPrinting
             (PropertyInfo) ((MemberExpression) selector.Body).Member;
 
 
-        private class Printer
+        private class Serializer
         {
             private string identation;
             private readonly StringBuilder stringBuilder;
             private readonly PrintingConfig<TOwner> config;
             private readonly Stack<object> serializingObjects;
 
-            public Printer(PrintingConfig<TOwner> config)
+            public Serializer(PrintingConfig<TOwner> config)
             {
                 this.config = config; 
                 stringBuilder = new StringBuilder();
                 serializingObjects = new Stack<object>();
             }
             
-            public string Print(TOwner obj)
+            public string Serialize(TOwner obj)
             {
-                PrintRecursive(obj, 0);
+                SerializeRecursive(obj, 0);
                 return stringBuilder.ToString();
             }
     
-            private void PrintRecursive(object obj, int nestingLevel)
+            private void SerializeRecursive(object obj, int nestingLevel)
             {
                 if (serializingObjects.Contains(obj))
                 {
@@ -76,11 +76,11 @@ namespace ObjectPrinting
                 }
                     
                 serializingObjects.Push(obj);
-                Print(obj, nestingLevel);
+                SerializeByStructure(obj, nestingLevel);
                 serializingObjects.Pop();
             }
 
-            private void Print(object obj, int nestingLevel)
+            private void SerializeByStructure(object obj, int nestingLevel)
             {
                 stringBuilder.AppendLine(obj.GetType().Name);
                 if (obj.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
@@ -100,7 +100,7 @@ namespace ObjectPrinting
                         TrySerializeFinalType(propertyInfo, value))  
                         continue;
                     stringBuilder.Append(identation + propertyInfo.Name + " = ");
-                    PrintRecursive(value, nestingLevel + 1);
+                    SerializeRecursive(value, nestingLevel + 1);
                 }
             }
 
@@ -113,7 +113,7 @@ namespace ObjectPrinting
                        TrySerializeFinalType(el))
                         continue;;
                     stringBuilder.Append(identation);
-                    PrintRecursive(el, nestingLevel + 1);
+                    SerializeRecursive(el, nestingLevel + 1);
                 }
             }
     
