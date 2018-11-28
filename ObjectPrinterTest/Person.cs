@@ -26,4 +26,9 @@ namespace ObjectPrinterTest
         public TestClass A { get; set; }
         public string Name { get; set; }
     }
+
+    public class TestClassWithOneProperty
+    {
+        public List<TestClassWithOneProperty> Prop { get; set; }
+    }
 }

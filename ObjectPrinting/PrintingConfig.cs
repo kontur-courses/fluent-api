@@ -92,23 +92,21 @@ namespace ObjectPrinting
             var objectType = obj.GetType();
             var stringBuilder = new StringBuilder(objectType.Name + Environment.NewLine);
 
-            if (obj is IEnumerable collection) return PrintIEnumerable(collection, nestingLevel);
+            if (obj is IEnumerable collection) return PrintIEnumerable(collection, nestingLevel, visited);
 
-
-            foreach (var propertyInfo in objectType.GetProperties())
+            visited.Push(obj);
+            
+            MemberInfo[] propertyInfos = objectType.GetProperties();
+            MemberInfo[] fieldInfos = objectType.GetFields();
+            var memberInfos = propertyInfos.Concat(fieldInfos);
+            
+            foreach (var memberInfo in memberInfos)
             {
-                var propertyName = propertyInfo.Name;
-                if (TryPrintValueByMemberName(obj, nestingLevel, visited, propertyInfo, stringBuilder,
+                var memberInfoName = memberInfo.Name;
+                if (TryPrintValueByMemberName(obj, nestingLevel, visited, memberInfo, stringBuilder,
                     out var innerInformation))
-                    stringBuilder.Append(indentation + propertyName + " = " + innerInformation);
-            }
+                    stringBuilder.Append(indentation + memberInfoName + " = " + innerInformation);
 
-            foreach (var fieldInfo in objectType.GetFields())
-            {
-                var fieldName = fieldInfo.Name;
-                if (TryPrintValueByMemberName(obj, nestingLevel, visited, fieldInfo, stringBuilder,
-                    out var innerInformation))
-                    stringBuilder.Append(indentation + fieldName + " = " + innerInformation);
             }
 
             visited.Pop();
@@ -117,22 +115,18 @@ namespace ObjectPrinting
 
         private bool TryPrintValueByMemberName(object obj, int nestingLevel, Stack<object> visited,
             MemberInfo memberInfo,
-            StringBuilder stringBuilder,out string innerInformation)
+            StringBuilder stringBuilder, out string innerInformation)
         {
-            var (memberInfoType, memberInfoValue) = GetTypeAndValueMemberInfo(memberInfo, obj);
+            var (memberInfoType, memberInfoValue) = GetMemberInfoTypeAndValue(memberInfo, obj);
             innerInformation = "";
             var indentation = new string('\t', nestingLevel + 1);
-            
+
             if (excludingTypes.Contains(memberInfoType)) return false;
             if (excludingProperty.Contains(memberInfo.Name)) return false;
             
-            visited.Push(obj);
             if (visited.Contains(memberInfoValue))
             {
-                stringBuilder.Append(indentation)
-                    .Append(memberInfo.Name)
-                    .Append(" = itself")
-                    .Append(Environment.NewLine);
+                stringBuilder.Append($"{indentation}{memberInfo.Name} = {memberInfoValue.GetType().Name}{Environment.NewLine}");
                 return false;
             }
 
@@ -141,22 +135,28 @@ namespace ObjectPrinting
             return true;
         }
 
-        private string PrintIEnumerable(IEnumerable collection, int nestingLvl)
+        private string PrintIEnumerable(IEnumerable collection, int nestingLvl, Stack<object> visited)
         {
             var sb = new StringBuilder();
             sb.Append("[");
-            foreach (var item in collection)
-                sb.Append(PrintToString(item, nestingLvl, new Stack<object>()).Trim(Environment.NewLine.ToCharArray()) +
-                          ", ");
+            var values = new List<string>();
 
-            if (sb.Length > 2)
-                sb.Remove(sb.Length - 2, 2);
-            sb.Append("]")
+            foreach (var item in collection)
+            {
+                if (visited.Contains(item))
+                    values.Add(item.GetType().Name);
+                else
+                    values.Add(PrintToString(item, nestingLvl, visited)
+                        .Trim(Environment.NewLine.ToCharArray()));
+            }
+
+            sb.Append(string.Join(", ", values))
+                .Append("]")
                 .Append(Environment.NewLine);
             return sb.ToString();
         }
 
-        private (Type, object) GetTypeAndValueMemberInfo(MemberInfo memberInfo, object obj)
+        private (Type, object) GetMemberInfoTypeAndValue(MemberInfo memberInfo, object obj)
         {
             Type type;
             object value;

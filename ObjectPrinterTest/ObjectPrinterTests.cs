@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -98,7 +99,7 @@ namespace ObjectPrinterTest
 
             var result = printer.PrintToString(testClass);
             
-            result.Should().Be($"TestClass{Environment.NewLine}\tA = itself{Environment.NewLine}\tName = test{Environment.NewLine}");
+            result.Should().Be($"TestClass{Environment.NewLine}\tA = {testClass.GetType().Name}{Environment.NewLine}\tName = test{Environment.NewLine}");
         }
 
         [Test]
@@ -112,25 +113,62 @@ namespace ObjectPrinterTest
         }
 
         [Test]
+        public void Printer_ShouldPrintObjectInIEnumerable()
+        {
+            var enumerable = new List<TestClass>{new TestClass()};
+            
+            var result = enumerable.PrintToString();
+            var expectedResult = $"[TestClass{Environment.NewLine}\tA = null{Environment.NewLine}\tName = null]{Environment.NewLine}";
+
+            result.Should().Be(expectedResult);
+        }
+        
+        [Test]
         public void Printer_ShouldPrintDictionary()
         {
-            var dictionary = new Dictionary<int, string>{{1, "one"}, {2, "two"}};
+            var dictionary = new Dictionary<int, string>{{1, "one"}};
 
             var result = dictionary.PrintToString();
-            
-            Console.WriteLine(result);
+            var expectedResult = $"[KeyValuePair`2{Environment.NewLine}\tKey = 1{Environment.NewLine}\tValue = one]{Environment.NewLine}";
+
+            result.Should().Be(expectedResult);
         }
 
+        [Test]
+        public void Printer_ShouldPrintDictionaryWithObject()
+        {
+            var dictionary = new Dictionary<int, TestClass>{{1, new TestClass()}};
+
+            var result = dictionary.PrintToString();
+            var expectedResult = $"[KeyValuePair`2{Environment.NewLine}\tKey = 1{Environment.NewLine}\tValue = TestClass{Environment.NewLine}\t\tA = null{Environment.NewLine}\t\tName = null]{Environment.NewLine}";
+
+            result.Should().Be(expectedResult);
+        }
+        
         [Test]
         public void Printer_ShouldPrintFieldsAndProperty()
         {
             var testClass = new ClassWithFieldsAndProperty{Field1 = "one", Field2 = 2};
             testClass.Field3 = testClass;
             var printer = ObjectPrinter.For<ClassWithFieldsAndProperty>();
-            var expectedResult = $"ClassWithFieldsAndProperty{Environment.NewLine}\tProperty = null{Environment.NewLine}\tField1 = one{Environment.NewLine}\tField2 = 2{Environment.NewLine}\tField3 = itself{Environment.NewLine}";
+            var expectedResult = $"ClassWithFieldsAndProperty{Environment.NewLine}\tProperty = null{Environment.NewLine}\tField1 = one{Environment.NewLine}\tField2 = 2{Environment.NewLine}\tField3 = {testClass.GetType().Name}{Environment.NewLine}";
 
             var result = printer.PrintToString(testClass);
             
+            result.Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void Printer_ShouldPrintWhenDeepRecursion()
+        {
+            var testClass = new TestClassWithOneProperty();
+            testClass.Prop = new List<TestClassWithOneProperty>();
+            testClass.Prop.Add(testClass);
+            var printer = ObjectPrinter.For<TestClassWithOneProperty>();
+            
+            var expectedResult = $"TestClassWithOneProperty{Environment.NewLine}\tProp = [{testClass.GetType().Name}]{Environment.NewLine}";
+            var result = printer.PrintToString(testClass);
+
             result.Should().Be(expectedResult);
         }
     }
