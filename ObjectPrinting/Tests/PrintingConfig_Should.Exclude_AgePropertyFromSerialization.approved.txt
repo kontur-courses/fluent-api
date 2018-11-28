@@ -1,0 +1,9 @@
+﻿Person
+	Id = Guid
+	Name = Mark
+	Height = 527.963598
+	Child = Person
+		Id = Guid
+		Name = Ford
+		Height = 0
+		Child = null

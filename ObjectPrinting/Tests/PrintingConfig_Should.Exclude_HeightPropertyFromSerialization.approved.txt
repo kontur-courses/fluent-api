@@ -1,0 +1,9 @@
+﻿Person
+	Id = Guid
+	Name = Mark
+	Age = 0
+	Child = Person
+		Id = Guid
+		Name = Ford
+		Age = 0
+		Child = null

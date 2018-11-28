@@ -9,6 +9,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<string> excludedProperties = new List<string>();
 
         public string PrintToString(TOwner obj)
         {
@@ -39,19 +40,23 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                var propertyName = propertyInfo.Name;
                 var propertyType = propertyInfo.PropertyType;
+
+                if (excludedProperties.Contains(propertyName))
+                    continue;
 
                 if (excludedTypes.Contains(propertyType))
                     continue;
 
                 string serialized;
-                if (propertySerializers.TryGetValue(propertyInfo.Name, out var serializer)
+                if (propertySerializers.TryGetValue(propertyName, out var serializer)
                     || typeSerializers.TryGetValue(propertyType, out serializer)
                     || culturallySpecificSerializers.TryGetValue(propertyType, out serializer)
                     || trimmingSerializers.TryGetValue(propertyType, out serializer))
                     serialized = serializer(propertyInfo.GetValue(obj));
                 else
-                    serialized = $"{indentation}{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
+                    serialized = $"{indentation}{propertyName} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
 
                 sb.Append(serialized);
             }
@@ -110,6 +115,14 @@ namespace ObjectPrinting
         {
             ((IPrintingConfig)this).TrimmingSerializers[typeof(TPropertyType)] =
                 property => serializer.Invoke((TPropertyType)property);
+        }
+
+        public PrintingConfig<TOwner> ExcludingProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
+            excludedProperties.Add(propertyName);
+
+            return this;
         }
     }
 

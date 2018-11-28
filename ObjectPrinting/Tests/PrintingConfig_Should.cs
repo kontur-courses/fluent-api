@@ -26,6 +26,56 @@ namespace ObjectPrinting.Tests
         };
 
         [Test]
+        public void Exclude_IdPropertyFromSerialization()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .ExcludingProperty(person => person.Id)
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Exclude_NamePropertyFromSerialization()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .ExcludingProperty(person => person.Name)
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Exclude_AgePropertyFromSerialization()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .ExcludingProperty(person => person.Age)
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Exclude_HeightPropertyFromSerialization()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .ExcludingProperty(person => person.Height)
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Exclude_ChildPropertyFromSerialization()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .ExcludingProperty(person => person.Child)
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
         [TestCase(1, TestName = "1")]
         [TestCase(10, TestName = "10")]
         public void Serialize_TrimmingToLength(int maxLength)
