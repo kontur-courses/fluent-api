@@ -98,7 +98,7 @@ namespace ObjectPrinting.Config
                 if (cultureOverridedTypes.TryGetValue(type, out var cultureInfo))
                     return PrintWithCulture(obj, cultureInfo);
 
-                return obj.ToString();
+                return PrintWithCulture(obj, CultureInfo.InvariantCulture);
             }
             
             var sb = new StringBuilder();
@@ -164,6 +164,9 @@ namespace ObjectPrinting.Config
         private static string PrintWithCulture(object obj, CultureInfo cultureInfo)
         {
             var toStringMethod = obj.GetType().GetMethod("ToString", new[] { typeof(CultureInfo) });
+            if (toStringMethod == null)
+                toStringMethod = obj.GetType().GetMethod("ToString", new System.Type[] { });
+
             return toStringMethod?.Invoke(obj, new object[] { cultureInfo }).ToString();
         }
 

@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinterTests
+﻿namespace ObjectPrinterTests.TestClasses
 {
     public class TestClass
     {

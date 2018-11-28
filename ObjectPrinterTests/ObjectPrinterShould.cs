@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinterTests.TestClasses;
 using ObjectPrinting;
 using ObjectPrinting.Config.Property;
 using ObjectPrinting.Config.Type;
@@ -160,6 +161,42 @@ namespace ObjectPrinterTests
                 .And.NotContainAny(
                     "ProtectedInternalField", "ProtectedInternalProperty", "InternalProperty", "InternalField",
                     "PrivateProperty", "ProtectedField", "PrivateProperty", "privateField");
+        }
+
+        [Test]
+        public void PrintNestedClasses()
+        {
+            var a = new A
+            {
+                B1 = new B {I = 1},
+                B2 = new B {I = 2}
+            };
+
+            ObjectPrinter.For<A>().PrintToString(a).Should()
+                .ContainAll("I = 1", "I = 2");
+        }
+
+        [Test, Ignore("Not implemented")]
+        public void PrintEnumerableMembers()
+        {
+            var s = new Person[0].ToString();
+
+            var company = new Company
+            {
+                Name = "Qualcomm",
+                EstablishedSince = new DateTime(1985, 01, 01),
+                Employees = new[]
+                {
+                    new Person {Name = "Rob"},
+                    new Person {Name = "Bob"},
+                    new Person {Name = "Mark"},
+                }
+            };
+
+
+            ObjectPrinter.For<Company>().PrintToString(company).Should()
+                .ContainAll("Name = Rob", "Name = Bob", "Name = Mark")
+                .And.NotContain("Person[]");
         }
 
         [Test]
