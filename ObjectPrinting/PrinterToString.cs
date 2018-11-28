@@ -9,14 +9,7 @@ namespace ObjectPrinting
 {
     public class PrinterToString
     {
-        private static readonly Type[] FinalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
         private static readonly string NewLine = Environment.NewLine;
-
         private HashSet<object> circularlyReferencedObjects;
         private Dictionary<object, int> circularlyReferencedObjectsLabels;
         private HashSet<object> printedCircularlyReferencedObjects;
@@ -34,6 +27,40 @@ namespace ObjectPrinting
             LabelCircularReferences();
             printedCircularlyReferencedObjects = new HashSet<object>();
             return PrintToString(obj, 0);
+        }
+
+        public string PrintToString(object obj, int nestingLevel)
+        {
+            if (obj == null)
+                return "null" + NewLine;
+
+            if (obj.GetType().IsFinal())
+                return obj + NewLine;
+
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.Append(PrintTypeName(type));
+
+            if (circularlyReferencedObjects.Contains(obj))
+            {
+                if (printedCircularlyReferencedObjects.Contains(obj))
+                    return sb.AppendLine(
+                        $" (cycle reference to label {circularlyReferencedObjectsLabels[obj]})")
+                        .ToString();
+
+                printedCircularlyReferencedObjects.Add(obj);
+                sb.Append($" (label {circularlyReferencedObjectsLabels[obj]})");
+            }
+            sb.AppendLine();
+
+            if (Implements(type, typeof(IList)))
+                return sb.Append(PrintIList(obj, nestingLevel)).ToString();
+            if (Implements(type, typeof(IDictionary)))
+                return sb.Append(PrintIDictionary(obj, nestingLevel)).ToString();
+            if (Implements(type, typeof(IEnumerable)))
+                return sb.Append(PrintIEnumerable(obj, '[', ']', nestingLevel)).ToString();
+
+            return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
         }
 
         private void InspectCircularReferences(object obj)
@@ -58,41 +85,7 @@ namespace ObjectPrinting
             }
         }
 
-        public string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + NewLine;
-
-            if (FinalTypes.Contains(obj.GetType()))
-                return obj + NewLine;
-
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.Append(ResolveTypeName(type));
-
-            if (circularlyReferencedObjects.Contains(obj))
-            {
-                if (printedCircularlyReferencedObjects.Contains(obj))
-                    return sb.AppendLine(
-                        $" (cycle reference to label {circularlyReferencedObjectsLabels[obj]})")
-                        .ToString();
-
-                printedCircularlyReferencedObjects.Add(obj);
-                sb.Append($" (label {circularlyReferencedObjectsLabels[obj]})");
-            }
-            sb.AppendLine();
-
-            if (Implements(type, typeof(IList)))
-                return sb.Append(PrintIList(obj, nestingLevel)).ToString();
-            if (Implements(type, typeof(ISet<>)))
-                return sb.Append(PrintISet(obj, nestingLevel)).ToString();
-            if (Implements(type, typeof(IDictionary)))
-                return sb.Append(PrintIDictionary(obj, nestingLevel)).ToString();
-
-            return sb.Append(PrintComplexType(obj, type, nestingLevel)).ToString();
-        }
-
-        private string ResolveTypeName(Type type)
+        private string PrintTypeName(Type type)
         {
             if (!type.IsGenericType)
                 return type.Name;
@@ -103,8 +96,8 @@ namespace ObjectPrinting
             var genericArguments = type.GetGenericArguments();
 
             for (var index = 0; index < genericArguments.Length - 1; index++)
-                sb.Append(ResolveTypeName(genericArguments[index]) + ", ");
-            sb.Append(ResolveTypeName(genericArguments[genericArguments.Length - 1]) + ">");
+                sb.Append(PrintTypeName(genericArguments[index]) + ", ");
+            sb.Append(PrintTypeName(genericArguments[genericArguments.Length - 1]) + ">");
 
             return sb.ToString();
         }
@@ -117,11 +110,6 @@ namespace ObjectPrinting
         private string PrintIList(object obj, int nestingLevel)
         {
             return PrintIEnumerable(obj, '[', ']', nestingLevel);
-        }
-
-        private string PrintISet(object obj, int nestingLevel)
-        {
-            return PrintIEnumerable(obj, '{', '}', nestingLevel);
         }
 
         private string PrintIDictionary(object obj, int nestingLevel)

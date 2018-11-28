@@ -8,18 +8,12 @@ namespace ObjectPrinting
 {
     public class CircularRefsInspector
     {
-        private static readonly Type[] FinalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
         private readonly HashSet<object> alreadyHandledObjects;
         private readonly HashSet<object> circularlyReferencedObjects;
         private readonly HashSet<Type> typesToSkip;
         private readonly HashSet<PropertyInfo> propertiesToSkip;
         private readonly object objectToInspect;
         
-
         public CircularRefsInspector(object objectToInspect, HashSet<Type> typesToSkip, HashSet<PropertyInfo> propertiesToSkip)
         {
             alreadyHandledObjects = new HashSet<object>();
@@ -37,12 +31,12 @@ namespace ObjectPrinting
 
         private void Inspect(object obj)
         {
-            if (obj == null || FinalTypes.Contains(obj.GetType()))
+            if (obj == null)
                 return;
 
             var type = obj.GetType();
 
-            if (typesToSkip.Contains(type))
+            if (type.IsFinal() || typesToSkip.Contains(type))
                 return;
 
             if (alreadyHandledObjects.Contains(obj))

@@ -12,10 +12,10 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> printingFunction)
+        public AfterUsingContext<TOwner, TPropType> Using(Func<TPropType, string> printingFunction)
         {
             this.printingFunction = printingFunction;
-            return printingConfig;
+            return new AfterUsingContext<TOwner, TPropType>(printingConfig, this);
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;

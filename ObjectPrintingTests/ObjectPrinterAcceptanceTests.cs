@@ -23,11 +23,11 @@ namespace ObjectPrintingTests
                 //3. Для числовых типов указать культуру
                 .Printing<double>().WithCultureInfo(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Age).Using(a => "age")
+                .Printing(p => p.Age).Using(a => "age").TrimmedToLength(12)
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(2)
+                .Printing(p => p.Name).TrimmedToLength(2);
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
+
 
             string s1 = printer.PrintToString(person);
 

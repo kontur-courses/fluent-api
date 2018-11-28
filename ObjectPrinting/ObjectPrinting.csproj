@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AfterUsingContext.cs" />
     <Compile Include="CircularRefsInspector.cs" />
     <Compile Include="ConfigsContainer.cs" />
     <Compile Include="ObjectExtension.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtension.cs" />
+    <Compile Include="TypeExtension.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
