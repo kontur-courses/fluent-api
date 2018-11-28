@@ -11,7 +11,9 @@ namespace ObjectPrinting
 
         public static string PrintToString<TOwner>(this TOwner obj, Action<PrintingConfig<TOwner>> serialize)
         {
-            return ObjectPrinter.For<TOwner>().PrintToString(obj);
+            var printingConfig = ObjectPrinter.For<TOwner>();
+            serialize.Invoke(printingConfig);
+            return printingConfig.PrintToString(obj);
         }
     }
 }

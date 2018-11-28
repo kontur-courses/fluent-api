@@ -14,8 +14,9 @@ namespace ObjectPrintingTests.cs
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
+            var persons = new List<Person>{person, person};
 
-            var persons = new List<Person>{person};
+            //Печать нескольких персон
             ObjectPrinter.For<Person>().PrintToString(persons);
 
             var printer = ObjectPrinter.For<Person>()

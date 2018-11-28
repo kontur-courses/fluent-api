@@ -33,7 +33,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> propSelector)
         {
             var member = (propSelector.Body as MemberExpression)?.ToString();
-            var property = member?.Substring(member.IndexOf('.'));
+            var property = member?.Substring(member.IndexOf('.') + 1);
             excludeProperties.Add(property);
             return this;
         }
@@ -79,10 +79,10 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            var types = type.GetProperties().Where(p =>
-                !excludeTypes.Contains(p.PropertyType) && !excludeProperties.Contains($".{p.Name}"));
+            var propertiesInfo = type.GetProperties().Where(p =>
+                !excludeTypes.Contains(p.PropertyType) && !excludeProperties.Contains(p.Name));
 
-            foreach (var propertyInfo in types)
+            foreach (var propertyInfo in propertiesInfo)
             {
                 var propType = propertyInfo.PropertyType;
                 sb.Append(identation + propertyInfo.Name + " = ");
