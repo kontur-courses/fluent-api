@@ -1,0 +1,11 @@
+﻿Person
+	Id = Guid
+	Name = null
+	Height = 0
+Property type System.Int32 serialized in an alternate way
+	Child = Person
+		Id = Guid
+		Name = null
+		Height = 0
+Property type System.Int32 serialized in an alternate way
+		Child = null

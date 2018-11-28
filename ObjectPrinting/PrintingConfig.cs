@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly List<Type> excludedTypes = new List<Type>();
 
@@ -16,7 +16,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -37,9 +36,18 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
 
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var typeSerializers = ((IPrintingConfig) this).TypeSerializers;
+
+                if (typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
+                {
+                    sb.Append(serializer(propertyInfo.GetValue(obj)));
+                }
+                else
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                }
             }
             return sb.ToString();
         }
@@ -50,5 +58,25 @@ namespace ObjectPrinting
 
             return this;
         }
+
+        public PropertySerializingConfig<TOwner, TPropType> Serialize<TPropType>()
+        {
+            return new PropertySerializingConfig<TOwner, TPropType>(this);
+        }
+
+        Dictionary<Type, Func<object, string>> IPrintingConfig.TypeSerializers { get; set; } =
+            new Dictionary<Type, Func<object, string>>();
+
+        void IPrintingConfig.AddTypeSerializer<TPropertyType>(Func<TPropertyType, string> serializer)
+        {
+            ((IPrintingConfig) this).TypeSerializers[typeof(TPropertyType)] = property => serializer.Invoke((TPropertyType) property);
+        }
+    }
+
+    public interface IPrintingConfig
+    {
+        Dictionary<Type, Func<object, string>> TypeSerializers { get; set; }
+
+        void AddTypeSerializer<TPropertyType>(Func<TPropertyType, string> serializer);
     }
 }
