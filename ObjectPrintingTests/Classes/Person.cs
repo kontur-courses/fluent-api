@@ -12,6 +12,7 @@ namespace ObjectPrinting.Tests
         public int Field;
         public Person Parent { get; set; }
         public Person Relative { get; set; }
+        public string Surname;
 
         public Person GetNextPerson()
         {

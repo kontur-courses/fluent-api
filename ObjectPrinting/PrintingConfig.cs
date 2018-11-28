@@ -13,14 +13,19 @@ namespace ObjectPrinting
         private readonly HashSet<string> excludedNames = new HashSet<string>();
         private readonly Dictionary<Type, Func<object, string>> typesPrintingConfigs = new Dictionary<Type, Func<object, string>>();
         private readonly Dictionary<string, Func<object, string>> namesPrintingConfigs = new Dictionary<string, Func<object, string>>();
-        private readonly HashSet<Type> baseTypes = new HashSet<Type>() {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)};
+        private Func<object, string> stringPrintingConfig;
+        private readonly Dictionary<string, Func<object, string>> namesStringPrintingConfigs = new Dictionary<string, Func<object, string>>();
+
+
+        private readonly HashSet<Type> baseTypes = new HashSet<Type>()
+        {
+            typeof(int), typeof(double), typeof(float), typeof(long), typeof(short), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(char), typeof(long), typeof(byte),
+            typeof(uint), typeof(ulong), typeof(ushort), typeof(sbyte)
+        };
 
         public PrintingConfig<TOwner> Excluding<TProp>()
         {
-            if (typeof(TOwner) == typeof(TProp))
-                throw new ArgumentException("Printing can not exclude printing type!");
             excludedTypes.Add(typeof(TProp));
             return this;
         }
@@ -28,36 +33,72 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>()
         {
             var typePrintingConfig = new PropertyPrintingConfig<TOwner, TProp>(this);
-            typesPrintingConfigs[typeof(TProp)] = ExtractPrintingFunction(typePrintingConfig);
+            if (typeof(TProp) == typeof(string))
+                AddStringPrintingConfig((IPropertyPrintingConfig<string>) typePrintingConfig);
+            else
+                typesPrintingConfigs[typeof(TProp)] = ExtractPrintingFunction(typePrintingConfig);
             return typePrintingConfig;
         }
+
+
 
         public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
         {
             var printingConfig = new PropertyPrintingConfig<TOwner, TProp>(this);
-            var propertyName = GetNameProperty(propertyGetter);
-            namesPrintingConfigs[propertyName] = ExtractPrintingFunction(printingConfig);
+            var propertyName = GetPropertyName(propertyGetter);
+            if (typeof(TProp) == typeof(string))
+                AddStringNamesPrintingConfig((IPropertyPrintingConfig<string>) printingConfig, propertyName);
+            else
+                namesPrintingConfigs[propertyName] = ExtractPrintingFunction(printingConfig);
             return printingConfig;
         }
 
         public PrintingConfig<TOwner> ExcludingProperty<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
         {
-            var propertyName = GetNameProperty(propertyGetter);
+            var propertyName = GetPropertyName(propertyGetter);
             excludedNames.Add(propertyName);
             return this;
         }
 
         public string PrintToString(TOwner obj)
         {
-            var printingResult = new PrintingResult();
+            if (!IsAddedType(obj.GetType()))
+                return string.Empty;
+            var printingResult = new PrintingInformation();
             AddObjectPrinting(printingResult, obj, 0);
             return printingResult.GetPrinting();
         }
 
+        private void AddStringPrintingConfig(IPropertyPrintingConfig<string> printingConfig)
+        {
+            var printingFunction = ExtractPrintingFunction(printingConfig);
+            stringPrintingConfig = stringPrintingConfig == null
+                ? printingFunction
+                : ConcatFunctions(stringPrintingConfig, printingFunction);
+            foreach (var name in namesStringPrintingConfigs.Keys.ToArray())
+                namesStringPrintingConfigs[name] = ConcatFunctions(namesStringPrintingConfigs[name], printingFunction);
+        }
+
+        private void AddStringNamesPrintingConfig(IPropertyPrintingConfig<string> printingConfig, string name)
+        {
+            var printingFunction = ExtractPrintingFunction(printingConfig);
+            Func<object, string> previousFunction;
+            if (namesStringPrintingConfigs.TryGetValue(name, out previousFunction))
+                namesStringPrintingConfigs[name] = ConcatFunctions(previousFunction, printingFunction);
+            else
+                namesStringPrintingConfigs[name] = stringPrintingConfig == null
+                    ? printingFunction
+                    : ConcatFunctions(stringPrintingConfig, printingFunction);
+        }
+
+        private Func<object, string> ConcatFunctions(Func<object, string> firstFunction,
+            Func<object, string> secondFunction)
+            => (x) => secondFunction(firstFunction(x));
+
         private Func<object, string> ExtractPrintingFunction<TProp>(IPropertyPrintingConfig<TProp> printingConfig)
             => x => printingConfig.PrintingFunction((TProp)x);
 
-        private string GetNameProperty<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
+        private string GetPropertyName<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
         {
             if (propertyGetter == null)
                 throw new ArgumentException("Expression is null");
@@ -67,91 +108,103 @@ namespace ObjectPrinting
                 throw new ArgumentException("Expression refers to a method, not a property");
             var expressionBody = propertyGetter.Body.ToString();
             var expressionParameter = propertyGetter.Parameters[0].ToString();
-            
+
             if (expressionParameter == expressionBody)
                 throw new ArgumentException("Expression can not exclude itself");
-            if (!expressionBody.StartsWith(expressionParameter + "."))
+            if (!expressionBody.StartsWith($"{expressionParameter}."))
                 throw new ArgumentException("Expression refers to not given config");
 
-            var propInfo = member.Member as PropertyInfo;
-            if (propInfo == null)
-                throw new ArgumentException("Expression refers to a field, not a property");
+            if (member.Member is PropertyInfo || member.Member is FieldInfo)
+                return expressionBody.Substring(expressionParameter.Length);
+            throw new ArgumentException("Expression should refers to a field or property!");
 
-            return expressionBody.Substring(expressionParameter.Length);
         }
 
-        private void AddObjectPrinting(PrintingResult printingResult, object addedObject, int nestingLevel, string nameObject = "")
+        private void AddObjectPrinting(PrintingInformation printingInformation, object addedObject, int nestingLevel, string nameObject = "")
         {
             Func<object, string> printingFunction;
             if (nestingLevel >= 10)
-                printingResult.AddPrinting("... recursion is too deep" + Environment.NewLine);
+                printingInformation.AddPrintingNewLine("... recursion is too deep");
             else if (addedObject == null)
-                printingResult.AddPrinting("null" + Environment.NewLine);
+                printingInformation.AddPrintingNewLine("null");
             else if (TryGetSpecialPrinting(addedObject, nameObject, out printingFunction))
-                printingResult.AddPrinting(printingFunction(addedObject) + Environment.NewLine);
+                printingInformation.AddPrintingNewLine(printingFunction(addedObject));
             else if (baseTypes.Contains(addedObject.GetType()))
-                printingResult.AddPrinting(addedObject + Environment.NewLine);
-            else if (!printingResult.AddObjectAndSetCurrent(addedObject, nestingLevel, nameObject))
-                printingResult.AddPrinting("... this item was added already" + Environment.NewLine);
+                printingInformation.AddPrintingNewLine(addedObject.ToString());
+            else if (!printingInformation.AddObjectAndSetCurrent(addedObject, nestingLevel, nameObject))
+                printingInformation.AddPrintingNewLine("... this item was added already");
             else
-            {
-                AddCurrentObjectToPrintingResult(printingResult);
-            }
+                AddCurrentObjectToPrintingResult(printingInformation);
         }
 
-        private void AddCurrentObjectToPrintingResult(PrintingResult printingResult)
+        private void AddCurrentObjectToPrintingResult(PrintingInformation printingInformation)
         {
-            var currentObject = printingResult.CurrentObject;
+            var currentObject = printingInformation.CurrentObject;
             var type = currentObject.GetType();
-            printingResult.AddPrinting(type.Name);
+            printingInformation.AddPrinting(type.Name);
             if (currentObject is IEnumerable)
-                AddCurrentCollectionToPrinting(printingResult);
+                AddCurrentCollectionToPrinting(printingInformation);
             else
-                AddCurrentObjectWithPropertiesToPrinting(printingResult);
+                AddCurrentObjectWithPropertiesToPrinting(printingInformation);
         }
 
-        private void AddCurrentCollectionToPrinting(PrintingResult printingResult)
+        private void AddCurrentCollectionToPrinting(PrintingInformation printingInformation)
         {
-            var identation = printingResult.CurrentIdentation;
-            var nestingLevel = printingResult.CurrentNestingLevel;
-            var collection = printingResult.CurrentObject as IEnumerable;
-            var objFullName = printingResult.CurrentFullName;
+            var indentation = printingInformation.CurrentIndentation;
+            var nestingLevel = printingInformation.CurrentNestingLevel;
+            var collection = printingInformation.CurrentObject as IEnumerable;
+            var objFullName = printingInformation.CurrentFullName;
 
-            printingResult.AddPrinting(" {" + Environment.NewLine);
+            printingInformation.AddPrintingNewLine(" {");
             foreach (var obj in GetAddedObjects(collection))
             {
-                printingResult.AddPrinting(identation);
-                AddObjectPrinting(printingResult, obj, nestingLevel + 1, objFullName + ".");
+                printingInformation.AddPrinting(indentation);
+                AddObjectPrinting(printingInformation, obj, nestingLevel + 1, $"{objFullName}.");
             }
-            printingResult.AddPrinting(identation + "}" + Environment.NewLine);
+            printingInformation.AddPrintingNewLine($"{indentation}}}");
         }
 
-        private void AddCurrentObjectWithPropertiesToPrinting(PrintingResult printingResult)
+        private void AddCurrentObjectWithPropertiesToPrinting(PrintingInformation printingInformation)
         {
-            var identation = printingResult.CurrentIdentation;
-            var nestingLevel = printingResult.CurrentNestingLevel;
-            var obj = printingResult.CurrentObject;
-            var objFullName = printingResult.CurrentFullName;
+            var indentation = printingInformation.CurrentIndentation;
+            var nestingLevel = printingInformation.CurrentNestingLevel;
+            var obj = printingInformation.CurrentObject;
+            var objFullName = printingInformation.CurrentFullName;
             var type = obj.GetType();
 
-            printingResult.AddPrinting(Environment.NewLine);
+            printingInformation.AddPrintingNewLine("");
+            
             foreach (var propertyInfo in GetNonExcludedProperties(type))
             {
-                var propertyName = objFullName + "." + propertyInfo.Name;
+                var propertyName = $"{objFullName}.{propertyInfo.Name}";
                 if (IsExcludedName(propertyName))
                     continue;
-                printingResult.AddPrinting(identation + propertyName + " = ");
-                AddObjectPrinting(printingResult, propertyInfo.GetValue(obj), nestingLevel + 1, propertyName);
+                printingInformation.AddPrinting($"{indentation}{propertyName} = ");
+                AddObjectPrinting(printingInformation, propertyInfo.GetValue(obj), nestingLevel + 1, propertyName);
+            }
+
+            foreach (var fieldInfo in GetNonExcludedFields(type))
+            {
+                var fieldName = $"{objFullName}.{fieldInfo.Name}";
+                if (IsExcludedName(fieldName))
+                    continue;
+                printingInformation.AddPrinting($"{indentation}{fieldName} = ");
+                AddObjectPrinting(printingInformation, fieldInfo.GetValue(obj), nestingLevel + 1, fieldName);
             }
         }
 
         private IEnumerable<PropertyInfo> GetNonExcludedProperties(Type type)
-            => type.GetProperties().Where(x => IsAddedProperty(x.PropertyType));
+            => type.GetProperties().Where(x => IsAddedType(x.PropertyType));
+
+        private IEnumerable<FieldInfo> GetNonExcludedFields(Type type)
+            => type.GetFields().Where(x => IsAddedType(x.FieldType));
+
+
 
         private IEnumerable GetAddedObjects(IEnumerable items)
-            => items.Cast<object>().Where(x => IsAddedProperty(x.GetType()));
+            => items.Cast<object>().Where(x => IsAddedType(x.GetType()));
 
-        private bool IsAddedProperty(Type propertyType)
+        private bool IsAddedType(Type propertyType)
             => !excludedTypes.Contains(propertyType);
 
         private bool IsExcludedName(string name)
@@ -160,8 +213,14 @@ namespace ObjectPrinting
         private bool TryGetSpecialPrinting(object obj, string nameObject, out Func<object, string> printingFunction)
         {
             var type = obj.GetType();
-            return (nameObject != "" && namesPrintingConfigs.TryGetValue(nameObject, out printingFunction) && printingFunction != null) ||
-                   (typesPrintingConfigs.TryGetValue(type, out printingFunction) && printingFunction != null);
+            if (type != typeof(string))
+                return (nameObject != "" && namesPrintingConfigs.TryGetValue(nameObject, out printingFunction) && printingFunction != null) ||
+                    (typesPrintingConfigs.TryGetValue(type, out printingFunction) && printingFunction != null);
+            if (nameObject != "" && namesStringPrintingConfigs.TryGetValue(nameObject, out printingFunction) &&
+                printingFunction != null)
+                return true;
+            printingFunction = stringPrintingConfig;
+            return printingFunction != null;
         }
     }
 }

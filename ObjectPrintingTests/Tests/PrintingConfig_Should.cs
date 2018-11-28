@@ -39,7 +39,7 @@ namespace ObjectPrintingTests.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(x => x.Name).Using(x => x.ToLower())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing<string>().Trim(3)
+                .Printing<string>().TrimmedToLength(3)
                 //6. Исключить из сериализации конкретного свойства
                 .ExcludingProperty(x => x.Age);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
@@ -125,9 +125,14 @@ namespace ObjectPrintingTests.Tests
         }
 
         [Test]
-        public void ExcludingProperty_ThrowsException_WhenGetsFieldInsteadOfProperty()
+        public void Printing_DoesNotContainProperty_WhenExcludesCurrentProperty()
         {
-            Assert.Throws<ArgumentException>(() => printer.ExcludingProperty(x => x.Field));
+            person.Surname = "Surname";
+
+            var printing = printer.ExcludingProperty(x => x.Surname)
+                .PrintToString(person);
+
+            printing.Should().NotContain(person.Surname);
         }
 
         [Test]
@@ -173,9 +178,12 @@ namespace ObjectPrintingTests.Tests
         }
 
         [Test]
-        public void Exclude_ThrowsException_WhenGetsTypeOfPrintingItem()
+        public void Printing_ReturnsEmptyString_WhenExlucdeTypeOfPrintingItem()
         {
-            Assert.Throws<ArgumentException>(() => printer.Excluding<Person>());
+            var printing = printer.Excluding<Person>()
+                .PrintToString(person);
+
+            printing.Should().Be(string.Empty);
         }
 
         [Test]
@@ -204,10 +212,32 @@ namespace ObjectPrintingTests.Tests
             grandParent.Relative = person;
 
             var printing = printer.PrintToString(person);
-
-            ParseByWhiteSpaces(printing).Where(x => x == "19")
+            Console.WriteLine(printing);
+            ParseByWhiteSpaces(printing).Where(x => x == person.Age.ToString())
                 .Should()
                 .HaveCount(1);
+        }
+
+        [Test]
+        public void PrintToString_ContainsAddedProperty()
+        {
+            person.Surname = "Surname";
+
+            var printing = printer.PrintToString(person);
+
+            printing.Should().Contain(person.Surname);
+        }
+
+        [Test]
+        public void PrintToString_TrimsString_WhenIncludesCurrentOption()
+        {
+            var printing = printer.Printing<string>()
+                .TrimmedToLength(3)
+                .PrintToString(person);
+            Console.WriteLine(printing);
+            printing.Should().NotContain(person.Name)
+                .And
+                .Contain(person.Name.Substring(0, 3));
         }
 
         [Test]
@@ -248,7 +278,7 @@ namespace ObjectPrintingTests.Tests
         }
 
         [Test]
-        public void PrintToString_ExcludeItemsInCollection_WhenTheyHasExcludedTypesObjects()
+        public void PrintToString_ExcludeItemsInCollection_WhenTheyHaveExcludedTypesObjects()
         {
             var objects = new object[] {1, "aaaab"};
 
@@ -257,6 +287,20 @@ namespace ObjectPrintingTests.Tests
                 .PrintToString(objects);
 
             printing.Should().NotContain("aaaab");
+        }
+
+        [Test]
+        public void PrintToString_UsingCanWorkWithTrim()
+        {
+            person.Name = "PersonName";
+
+            var printing = printer.Printing<string>()
+                .TrimmedToLength(3)
+                .Printing<string>()
+                .Using(x => x + x)
+                .PrintToString(person);
+
+            printing.Should().NotContain(person.Name);
         }
 
         private IEnumerable<PropertyInfo> GetProperties(object obj)
