@@ -13,7 +13,6 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
             this.propertyName = propertyName;
         }
-
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (propertyName == null)
@@ -21,8 +20,7 @@ namespace ObjectPrinting
             else printingConfig.ChangeSerializationForProperty(propertyName, print);
             return printingConfig;
         }
-
-
+        
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 

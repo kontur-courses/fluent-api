@@ -13,6 +13,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private const int CollectionPrintLength = 100;
+        private const char Identation = '\t';
         private ImmutableList<Type> excludedTypes = ImmutableList<Type>.Empty;
         private ImmutableList<String> excludedProperties = ImmutableList<String>.Empty;
         private ImmutableDictionary<Type, CultureInfo> typeCultures = ImmutableDictionary<Type, CultureInfo>.Empty;
@@ -60,14 +61,10 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
-            if (nestingLevel > 100) return "Recursion";
-            
-            var identation = new string('\t', nestingLevel + 1);
-            
+            if (nestingLevel > 100) return "Recursion"; 
+            var identation = new string(Identation, nestingLevel + 1);           
             var sb = new StringBuilder();
             if (obj is IEnumerable collection)
             {
@@ -93,7 +90,7 @@ namespace ObjectPrinting
                            .ToString(null, typeCultures[propertyInfo.PropertyType]) + Environment.NewLine;
                 if (propetyValue == String.Empty)
                     propetyValue = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                sb.Append(identation + propertyInfo.Name + " = " + propetyValue);
+                sb.Append($"{identation}{propertyInfo.Name} = {propetyValue}");
             }
             return sb.ToString();
         }
@@ -104,17 +101,17 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.Append(typeName + Environment.NewLine);
             sb.Append("{" + Environment.NewLine);
-            var itemNumber = 0;
+            var itemsCount = 0;
             foreach (var item in collection)
             {
-                if (itemNumber > CollectionPrintLength)
+                if (itemsCount > CollectionPrintLength)
                 {
-                    sb.Append("\t..." + Environment.NewLine);
+                    sb.Append(Environment.NewLine + "..." + Environment.NewLine);
                     break;
                 }
                 var element = PrintToString(item, 0);
-                sb.Append("\t" + element);
-                itemNumber++;
+                sb.Append(Environment.NewLine + element);
+                itemsCount++;
             }
             sb.Append("}" + Environment.NewLine);
             return sb.ToString();

@@ -46,6 +46,5 @@ namespace ObjectPrinting
             return parentConfig;
         }
 
-
     }
 }
