@@ -13,11 +13,31 @@ namespace ObjectPrinting.Tests
         private readonly Person objectForSerialization = new Person()
         {
             Id = Guid.Empty,
-            Name = null,
+            Name = "Mark",
             Height = 527.963598,
             Age = 0,
             Child = new Person()
+            {
+                Id = Guid.Empty,
+                Name = "Ford",
+                Height = 0.0,
+                Age = 0
+            }
         };
+
+        [Test]
+        [TestCase(1, TestName = "1")]
+        [TestCase(10, TestName = "10")]
+        public void Serialize_TrimmingToLength(int maxLength)
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize<string>()
+                .TrimmingToLength(maxLength)
+                .PrintToString(objectForSerialization);
+
+            using (ApprovalTests.Namers.ApprovalResults.ForScenario(maxLength.ToString()))
+                Approvals.Verify(serialized);
+        }
 
         [Test]
         public void Serialize_IdPropertyInAnAlternateWay()

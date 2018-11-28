@@ -1,6 +1,6 @@
 ﻿Person
 	Id = Guid
-	Name = null
+	Name = Mark
 	Height = 527.963598
 	Age = 0
 Specific property Child serialized in an alternate way

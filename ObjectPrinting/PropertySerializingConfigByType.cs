@@ -30,5 +30,14 @@ namespace ObjectPrinting
 
             return propertySerializingConfigByType.PrintingConfig;
         }
+
+        public static PrintingConfig<TOwner> TrimmingToLength<TOwner>(
+            this PropertySerializingConfigByType<TOwner, string> propertySerializingConfigByType, int maxLength)
+        {
+            ((IPrintingConfig) propertySerializingConfigByType.PrintingConfig)
+                .AddTrimmingSerializer<string>(property => property.Substring(0, Math.Min(maxLength, property.Length)));
+
+            return propertySerializingConfigByType.PrintingConfig;
+        }
     }
 }
