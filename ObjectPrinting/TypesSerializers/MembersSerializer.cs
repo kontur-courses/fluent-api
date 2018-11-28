@@ -92,7 +92,7 @@ namespace ObjectPrinting.TypesSerializers
 
                     if (count < 0)
                     {
-                        throw new ArgumentException("{0} can't be less than zero.", nameof(count));
+                        throw new ArgumentException("Given count can't be less than zero.", nameof(count));
                     }
 
                     if (count > memberValueAsString.Length)
