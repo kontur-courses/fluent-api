@@ -1,5 +1,4 @@
 ﻿using FluentMapping.Internal;
-using System;
 
 namespace FluentMapping
 {

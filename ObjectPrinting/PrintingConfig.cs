@@ -48,13 +48,11 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyValue = propertyInfo.GetValue(obj);
-                var hasTypeConfig = Configs.TryGetValue(propertyInfo.PropertyType, out var configsByType);
-                if (hasTypeConfig)
-                    propertyValue = ApplyConfigs(propertyValue, configsByType);
-                var hasNameConfig = Configs.TryGetValue(propertyInfo, out var configsByName);
-                if (hasNameConfig)
-                    propertyValue = ApplyConfigs(propertyValue, configsByName);
-                if (propertyValue == null)
+                if (Configure(propertyInfo.PropertyType, propertyValue, out var result))
+                    propertyValue = result;
+                if (Configure(propertyInfo, propertyValue, out result))
+                    propertyValue = result;
+                if (propertyValue is Excluded)
                     continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyValue,
@@ -63,13 +61,20 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private bool Configure(object key, object propertyValue, out object result)
+        {
+            var hasConfig = Configs.TryGetValue(key, out var configsByName);
+            result = hasConfig ? ApplyConfigs(propertyValue, configsByName) : null;
+            return hasConfig;
+        }
+
         private object ApplyConfigs(object value, IEnumerable<Delegate> configs)
         {
             return configs
                 .Aggregate(value, (current, config) => config.DynamicInvoke(current));
         }
 
-        public ImmutableDictionary<object, List<Delegate>> AddConfig(object key, Func<object, string> value)
+        public ImmutableDictionary<object, List<Delegate>> AddConfig(object key, Func<object, object> value)
         {
             var newConfigs = Configs;
             if (!Configs.ContainsKey(key))
@@ -81,21 +86,21 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<T>()
         {
             var type = typeof(T);
-            var newConfigs = AddConfig(type, p => null);
+            var newConfigs = AddConfig(type, p => new Excluded());
             return new PrintingConfig<TOwner>(newConfigs);
         }
 
         public PrintingConfig<TOwner> Exclude<TProp>(Expression<Func<TOwner, TProp>> property)
         {
             var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
-            var newConfigs = AddConfig(propertyInfo, p => null);
+            var newConfigs = AddConfig(propertyInfo, p => new Excluded());
             return new PrintingConfig<TOwner>(newConfigs);
         }
 
-        public SerializePrintingConfig<TOwner, string> Serialize(Expression<Func<TOwner, string>> property)
+        public SerializePrintingConfig<TOwner, TProp> Serialize<TProp>(Expression<Func<TOwner, TProp>> property)
         {
             var propertyInfo = ((MemberExpression) property.Body).Member as PropertyInfo;
-            return new SerializePrintingConfig<TOwner, string>(this, propertyInfo);
+            return new SerializePrintingConfig<TOwner, TProp>(this, propertyInfo);
         }
 
         public SerializePrintingConfig<TOwner, T> Serialize<T>()
@@ -104,10 +109,10 @@ namespace ObjectPrinting
             return new SerializePrintingConfig<TOwner, T>(this, type);
         }
 
-        public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
+        public PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo cultureInfo)
         {
-            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-            return new PrintingConfig<TOwner>(Configs);
+            var newConfig = AddConfig(typeof(T), o => string.Format(cultureInfo, "{0}", o));
+            return new PrintingConfig<TOwner>(newConfig);
         }
     }
 }
