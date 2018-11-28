@@ -1,0 +1,11 @@
+﻿Person
+	Id = Guid
+	Name = null
+Specific property Height serialized in an alternate way
+	Age = 0
+	Child = Person
+		Id = Guid
+		Name = null
+Specific property Height serialized in an alternate way
+		Age = 0
+		Child = null

@@ -3,11 +3,11 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertySerializingConfig<TOwner, TPropertyType>
+    public class PropertySerializingConfigByType<TOwner, TPropertyType>
     {
         public PrintingConfig<TOwner> PrintingConfig { get; }
 
-        public PropertySerializingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertySerializingConfigByType(PrintingConfig<TOwner> printingConfig)
         {
             PrintingConfig = printingConfig;
         }
@@ -23,12 +23,12 @@ namespace ObjectPrinting
     public static class PropertySerializingConfigExtensions
     {
         public static PrintingConfig<TOwner> Using<TOwner>(
-            this PropertySerializingConfig<TOwner, double> propertySerializingConfig, CultureInfo cultureInfo)
+            this PropertySerializingConfigByType<TOwner, double> propertySerializingConfigByType, CultureInfo cultureInfo)
         {
-            ((IPrintingConfig) propertySerializingConfig.PrintingConfig)
-                .AddCulturallySpecificSerializers<double>(property => property.ToString(cultureInfo));
+            ((IPrintingConfig) propertySerializingConfigByType.PrintingConfig)
+                .AddCulturallySpecificSerializer<double>(property => property.ToString(cultureInfo));
 
-            return propertySerializingConfig.PrintingConfig;
+            return propertySerializingConfigByType.PrintingConfig;
         }
     }
 }

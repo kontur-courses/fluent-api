@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
@@ -36,10 +37,15 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
 
+                var propertySerializers = ((IPrintingConfig) this).PropertySerializers;
                 var typeSerializers = ((IPrintingConfig) this).TypeSerializers;
                 var culturallySpecificSerializers = ((IPrintingConfig) this).CulturallySpecificSerializers;
 
-                if (typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
+                if (propertySerializers.TryGetValue(propertyInfo.Name, out var serializer))
+                {
+                    sb.Append(serializer(propertyInfo.GetValue(obj)));
+                }
+                else if (typeSerializers.TryGetValue(propertyInfo.PropertyType, out serializer))
                 {
                     sb.Append(serializer(propertyInfo.GetValue(obj)));
                 }
@@ -64,9 +70,9 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertySerializingConfig<TOwner, TPropType> Serialize<TPropType>()
+        public PropertySerializingConfigByType<TOwner, TPropertyTypeType> Serialize<TPropertyTypeType>()
         {
-            return new PropertySerializingConfig<TOwner, TPropType>(this);
+            return new PropertySerializingConfigByType<TOwner, TPropertyTypeType>(this);
         }
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.TypeSerializers { get; set; } =
@@ -80,9 +86,25 @@ namespace ObjectPrinting
         Dictionary<Type, Func<object, string>> IPrintingConfig.CulturallySpecificSerializers { get; set; } =
             new Dictionary<Type, Func<object, string>>();
 
-        void IPrintingConfig.AddCulturallySpecificSerializers<TPropertyType>(Func<TPropertyType, string> serializer)
+        void IPrintingConfig.AddCulturallySpecificSerializer<TPropertyType>(Func<TPropertyType, string> serializer)
         {
             ((IPrintingConfig) this).CulturallySpecificSerializers[typeof(TPropertyType)] =
+                property => serializer.Invoke((TPropertyType) property);
+        }
+
+        public PropertySerializingConfigByName<TOwner, TPropertyType> Serialize<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
+        {
+            var propertyName = ((MemberExpression) memberSelector.Body).Member.Name;
+
+            return new PropertySerializingConfigByName<TOwner, TPropertyType>(this, propertyName);
+        }
+
+        Dictionary<string, Func<object, string>> IPrintingConfig.PropertySerializers { get; set; } =
+            new Dictionary<string, Func<object, string>>();
+
+        void IPrintingConfig.AddNameSerializer<TPropertyType>(string propertyName, Func<TPropertyType, string> serializer)
+        {
+            ((IPrintingConfig) this).PropertySerializers[propertyName] =
                 property => serializer.Invoke((TPropertyType) property);
         }
     }
@@ -95,6 +117,10 @@ namespace ObjectPrinting
 
         Dictionary<Type, Func<object, string>> CulturallySpecificSerializers { get; set; }
 
-        void AddCulturallySpecificSerializers<TPropertyType>(Func<TPropertyType, string> serializer);
+        void AddCulturallySpecificSerializer<TPropertyType>(Func<TPropertyType, string> serializer);
+
+        Dictionary<string, Func<object, string>> PropertySerializers { get; set; }
+
+        void AddNameSerializer<TPropertyType>(string propertyName, Func<TPropertyType, string> serializer);
     }
 }

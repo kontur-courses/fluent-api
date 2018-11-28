@@ -20,6 +20,61 @@ namespace ObjectPrinting.Tests
         };
 
         [Test]
+        public void Serialize_IdPropertyInAnAlternateWay()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize(person => person.Id)
+                .Using(id => "Specific property Id serialized in an alternate way\r\n")
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Serialize_NamePropertyInAnAlternateWay()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize(person => person.Name)
+                .Using(name => "Specific property Name serialized in an alternate way\r\n")
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Serialize_AgePropertyInAnAlternateWay()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize(person => person.Age)
+                .Using(age => "Specific property Age serialized in an alternate way\r\n")
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Serialize_HeightPropertyInAnAlternateWay()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize(person => person.Height)
+                .Using(height => "Specific property Height serialized in an alternate way\r\n")
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void Serialize_ChildPropertyInAnAlternateWay()
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize(person => person.Child)
+                .Using(child => "Specific property Child serialized in an alternate way\r\n")
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
         [TestCase("ru-RU", TestName = "Russian")]
         [TestCase("en-US", TestName = "English US")]
         public void Serialize_DoubleTypePropertiesWithRussianCulture(string culture)

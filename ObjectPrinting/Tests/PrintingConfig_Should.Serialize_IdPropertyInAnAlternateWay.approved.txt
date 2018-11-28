@@ -1,0 +1,11 @@
+﻿Person
+Specific property Id serialized in an alternate way
+	Name = null
+	Height = 527.963598
+	Age = 0
+	Child = Person
+Specific property Id serialized in an alternate way
+		Name = null
+		Height = 0
+		Age = 0
+		Child = null
