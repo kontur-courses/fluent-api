@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinting", "ObjectPrinting\ObjectPrinting.csproj", "{07B8C9B7-8289-46CB-9875-048A57758EEE}"
 EndProject
@@ -43,5 +43,8 @@ Global
 		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
 		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {580DE169-6669-404F-B5EC-8451604B6A6A}
 	EndGlobalSection
 EndGlobal

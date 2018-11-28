@@ -2,7 +2,6 @@
 {
     public interface ITypePrintingConfig<TOwner>
     {
-        IPrintingConfig<TOwner> PrintingConfig { get; }
-        string NameMember { get; set; }
+        PrintingConfig<TOwner> PrintingConfig { get; }
     }
 }
