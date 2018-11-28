@@ -6,16 +6,16 @@ namespace FluentMapping
     {
         TTgt IAssembler<TTgt, TSrc>.Assemble(TSrc source, Action<TTgt, TSrc> mappingAction)
         {
-            return DefaultAssembler<TTgt, TSrc>.Assemble(source, mappingAction);
+            return Assemble(source, mappingAction);
         }
 
         public static TTgt Assemble(TSrc source, Action<TTgt, TSrc> mappingAction)
-        { 
+        {
             if (source == null)
                 throw new ArgumentNullException("source", $"Cannot map instance of {typeof(TTgt).Name}" +
-                    $" from null instance of {typeof(TSrc).Name}.");
+                                                          $" from null instance of {typeof(TSrc).Name}.");
 
-            var target = (TTgt)Activator.CreateInstance(typeof(TTgt));
+            var target = (TTgt) Activator.CreateInstance(typeof(TTgt));
 
             mappingAction(target, source);
 

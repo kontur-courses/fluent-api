@@ -6,9 +6,9 @@ namespace ObjectPrinting
 {
     public class SerializePrintingConfig<TOwner, T>
     {
+        private readonly PrintingConfig<TOwner> oldPrintingConfig;
         private readonly PropertyInfo propertyInfo;
         private readonly Type propertyType;
-        private readonly PrintingConfig<TOwner> oldPrintingConfig;
 
         public SerializePrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
         {

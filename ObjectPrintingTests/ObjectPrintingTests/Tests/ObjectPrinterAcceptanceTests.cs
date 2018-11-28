@@ -9,7 +9,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Alex", Age = 19};
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -24,13 +24,13 @@ namespace ObjectPrinting.Tests
                 .Serialize<string>().As(s => s.Substring(0, 3))
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Id);
-            
-            string s1 = printer.PrintToString(person);
-            
+
+            var s1 = printer.PrintToString(person);
+
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию   
-            string s2 = person.PrintToStr();
+            var s2 = person.PrintToStr();
             //8. ...с конфигурированием
-            string s3 = person.PrintToStr(o => o.Exclude<int>());
+            var s3 = person.PrintToStr(o => o.Exclude<int>());
         }
     }
 }

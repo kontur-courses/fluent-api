@@ -1,45 +1,22 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
+using NUnit.Framework;
 
 namespace FluentMapping.Tests
 {
     [TestFixture]
     public sealed class SimplePropertyMappingTests
     {
-        [Test]
-        public void InvalidMapping()
+        public sealed class Target
         {
-            var spec = FluentMapper
-                .ThatMaps<Target>()
-                .From<Source>();
-
-            var ex = Assert.Throws<Exception>(() => spec.Create());
-
-            var expectedMessage = "Unmapped properties: " +
-                "Target.Num, Target.Str, " +
-                "Source.ID, Source.Name";
-
-            Assert.That(ex.Message, Is.EqualTo(expectedMessage));
+            public int AField;
+            public string Str { get; set; }
+            public int Num { get; set; }
         }
 
-        [Test]
-        public void PropertyMatching()
+        public sealed class Source
         {
-            var mapper = FluentMapper.ThatMaps<Target>()
-                .From<Source>()
-                .ThatSets(tgt => tgt.Str).From(src => src.Name)
-                .ThatSets(tgt => tgt.Num).From(src => src.ID)
-                .Create();
-
-            var source = new Source {
-                ID = 7,
-                Name = "Bob"
-            };
-
-            var target = mapper.Map(source);
-
-            Assert.That(target.Num, Is.EqualTo(7));
-            Assert.That(target.Str, Is.EqualTo("Bob"));
+            public string Name { get; set; }
+            public int ID { get; set; }
         }
 
         [Test]
@@ -71,8 +48,8 @@ namespace FluentMapping.Tests
             var ex = Assert.Throws<Exception>(() => spec.IgnoringSourceProperty(src => 7));
 
             Assert.That(ex.Message, Is.EqualTo("IgnoringSourceProperty(...) requires an expression "
-                + "that is a simple property access of the form 'src => src.Property'."
-                ));
+                                               + "that is a simple property access of the form 'src => src.Property'."
+            ));
         }
 
         [Test]
@@ -83,22 +60,45 @@ namespace FluentMapping.Tests
             var ex = Assert.Throws<Exception>(() => spec.IgnoringTargetProperty(tgt => tgt.AField));
 
             Assert.That(ex.Message, Is.EqualTo("IgnoringTargetProperty(...) requires an expression "
-                + "that is a simple property access of the form 'tgt => tgt.Property'."
-                ));
+                                               + "that is a simple property access of the form 'tgt => tgt.Property'."
+            ));
         }
 
-        public sealed class Target
+        [Test]
+        public void InvalidMapping()
         {
-            public string Str { get; set; }
-            public int Num { get; set; }
+            var spec = FluentMapper
+                .ThatMaps<Target>()
+                .From<Source>();
 
-            public int AField;
+            var ex = Assert.Throws<Exception>(() => spec.Create());
+
+            var expectedMessage = "Unmapped properties: " +
+                                  "Target.Num, Target.Str, " +
+                                  "Source.ID, Source.Name";
+
+            Assert.That(ex.Message, Is.EqualTo(expectedMessage));
         }
 
-        public sealed class Source
+        [Test]
+        public void PropertyMatching()
         {
-            public string Name { get; set; }
-            public int ID { get; set; }
+            var mapper = FluentMapper.ThatMaps<Target>()
+                .From<Source>()
+                .ThatSets(tgt => tgt.Str).From(src => src.Name)
+                .ThatSets(tgt => tgt.Num).From(src => src.ID)
+                .Create();
+
+            var source = new Source
+            {
+                ID = 7,
+                Name = "Bob"
+            };
+
+            var target = mapper.Map(source);
+
+            Assert.That(target.Num, Is.EqualTo(7));
+            Assert.That(target.Str, Is.EqualTo("Bob"));
         }
     }
 }

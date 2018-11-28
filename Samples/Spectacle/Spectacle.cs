@@ -27,10 +27,7 @@ namespace SpectacleSample
 
         public void Play()
         {
-            foreach (var action in actions)
-            {
-                action();
-            }
+            foreach (var action in actions) action();
         }
 
         public Spectacle UntilKeyPressed(Func<Spectacle, Spectacle> inner)
@@ -38,10 +35,7 @@ namespace SpectacleSample
             var innerSpectacle = inner(new Spectacle());
             Schedule(() =>
             {
-                while (!Console.KeyAvailable)
-                {
-                    innerSpectacle.Play();
-                }
+                while (!Console.KeyAvailable) innerSpectacle.Play();
                 Console.ReadKey(true);
             });
             return this;
