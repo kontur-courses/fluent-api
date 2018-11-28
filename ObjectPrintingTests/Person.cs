@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     public class Person
     {
-        public List<string> Nicknames { get; set; }
         public Guid Id { get; set; }
         public string Name { get; set; }
         public double Height { get; set; }
@@ -13,6 +11,7 @@ namespace ObjectPrinting.Tests
 
         public Person Parent { get; set; }
         public Person Child { get; set; }
+        public int[] LuckyNumbers { get; set; }
         public int Weight { get; set; }
         public float UselessField { get; set; }
         
