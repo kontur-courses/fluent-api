@@ -37,8 +37,13 @@ namespace ObjectPrinting
                     continue;
 
                 var typeSerializers = ((IPrintingConfig) this).TypeSerializers;
+                var culturallySpecificSerializers = ((IPrintingConfig) this).CulturallySpecificSerializers;
 
                 if (typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
+                {
+                    sb.Append(serializer(propertyInfo.GetValue(obj)));
+                }
+                else if (culturallySpecificSerializers.TryGetValue(propertyInfo.PropertyType, out serializer))
                 {
                     sb.Append(serializer(propertyInfo.GetValue(obj)));
                 }
@@ -71,6 +76,15 @@ namespace ObjectPrinting
         {
             ((IPrintingConfig) this).TypeSerializers[typeof(TPropertyType)] = property => serializer.Invoke((TPropertyType) property);
         }
+
+        Dictionary<Type, Func<object, string>> IPrintingConfig.CulturallySpecificSerializers { get; set; } =
+            new Dictionary<Type, Func<object, string>>();
+
+        void IPrintingConfig.AddCulturallySpecificSerializers<TPropertyType>(Func<TPropertyType, string> serializer)
+        {
+            ((IPrintingConfig) this).CulturallySpecificSerializers[typeof(TPropertyType)] =
+                property => serializer.Invoke((TPropertyType) property);
+        }
     }
 
     public interface IPrintingConfig
@@ -78,5 +92,9 @@ namespace ObjectPrinting
         Dictionary<Type, Func<object, string>> TypeSerializers { get; set; }
 
         void AddTypeSerializer<TPropertyType>(Func<TPropertyType, string> serializer);
+
+        Dictionary<Type, Func<object, string>> CulturallySpecificSerializers { get; set; }
+
+        void AddCulturallySpecificSerializers<TPropertyType>(Func<TPropertyType, string> serializer);
     }
 }

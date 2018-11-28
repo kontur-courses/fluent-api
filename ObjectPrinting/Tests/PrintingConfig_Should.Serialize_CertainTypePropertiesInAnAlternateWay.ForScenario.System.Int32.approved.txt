@@ -1,7 +1,7 @@
 ﻿Person
 	Id = Guid
 	Name = null
-	Height = 0
+	Height = 527.963598
 Property type System.Int32 serialized in an alternate way
 	Child = Person
 		Id = Guid

@@ -1,21 +1,34 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
     public class PropertySerializingConfig<TOwner, TPropertyType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        public PrintingConfig<TOwner> PrintingConfig { get; }
 
         public PropertySerializingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            this.printingConfig = printingConfig;
+            PrintingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropertyType, string> serializer)
         {
-            ((IPrintingConfig) printingConfig).AddTypeSerializer(serializer);
+            ((IPrintingConfig) PrintingConfig).AddTypeSerializer(serializer);
 
-            return printingConfig;
+            return PrintingConfig;
+        }
+    }
+
+    public static class PropertySerializingConfigExtensions
+    {
+        public static PrintingConfig<TOwner> Using<TOwner>(
+            this PropertySerializingConfig<TOwner, double> propertySerializingConfig, CultureInfo cultureInfo)
+        {
+            ((IPrintingConfig) propertySerializingConfig.PrintingConfig)
+                .AddCulturallySpecificSerializers<double>(property => property.ToString(cultureInfo));
+
+            return propertySerializingConfig.PrintingConfig;
         }
     }
 }

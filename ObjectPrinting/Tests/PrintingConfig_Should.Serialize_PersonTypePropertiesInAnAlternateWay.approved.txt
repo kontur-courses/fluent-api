@@ -1,6 +1,6 @@
 ﻿Person
 	Id = Guid
 	Name = null
-	Height = 0
+	Height = 527.963598
 	Age = 0
 Property type ObjectPrinting.Tests.Person serialized in an alternate way

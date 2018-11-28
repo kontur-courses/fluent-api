@@ -1,9 +1,9 @@
-﻿Person
+﻿ Person
 	Id = Guid
 	Name = null
-	Height = 527.963598
+527,963598	Age = 0
 	Child = Person
 		Id = Guid
 		Name = null
-		Height = 0
+0		Age = 0
 		Child = null

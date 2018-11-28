@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using ApprovalTests;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
@@ -13,10 +14,24 @@ namespace ObjectPrinting.Tests
         {
             Id = Guid.Empty,
             Name = null,
-            Height = 0.0,
+            Height = 527.963598,
             Age = 0,
             Child = new Person()
         };
+
+        [Test]
+        [TestCase("ru-RU", TestName = "Russian")]
+        [TestCase("en-US", TestName = "English US")]
+        public void Serialize_DoubleTypePropertiesWithRussianCulture(string culture)
+        {
+            var serialized = ObjectPrinter.For<Person>()
+                .Serialize<double>()
+                .Using(CultureInfo.GetCultureInfo(culture))
+                .PrintToString(objectForSerialization);
+
+            using (ApprovalTests.Namers.ApprovalResults.ForScenario(culture))
+                Approvals.Verify(serialized);
+        }
 
         [Test]
         [TestCase(default(int), TestName = "int")]

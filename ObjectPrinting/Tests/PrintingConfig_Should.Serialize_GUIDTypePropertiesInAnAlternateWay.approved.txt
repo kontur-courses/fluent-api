@@ -1,7 +1,7 @@
 ﻿Person
 Property type System.Guid serialized in an alternate way
 	Name = null
-	Height = 0
+	Height = 527.963598
 	Age = 0
 	Child = Person
 Property type System.Guid serialized in an alternate way
