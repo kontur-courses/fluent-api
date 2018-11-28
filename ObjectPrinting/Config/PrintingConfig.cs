@@ -63,15 +63,12 @@ namespace ObjectPrinting.Config
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
-
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetProperty(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
-            propertiesToExclude.Add(propertyInfo);
+            propertiesToExclude.Add(GetProperty(memberSelector));
 
             return this;
         }
@@ -105,7 +102,7 @@ namespace ObjectPrinting.Config
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            sb.Append(type.Name);
 
             foreach (var property in type.GetProperties())
             {
@@ -113,7 +110,7 @@ namespace ObjectPrinting.Config
                     continue;
 
                 var propertyString = PrintToString(property.GetValue(obj), property, nestingLevel + 1);
-                sb.Append(identation + property.Name + " = " + propertyString + Environment.NewLine);
+                sb.Append(Environment.NewLine + identation + property.Name + " = " + propertyString);
             }
 
             return sb.ToString();
@@ -123,6 +120,11 @@ namespace ObjectPrinting.Config
         {
             var toStringMethod = obj.GetType().GetMethod("ToString", new[] {typeof(CultureInfo)});
             return toStringMethod?.Invoke(obj, new object[] {cultureInfo}).ToString();
+        }
+
+        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            return (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
         }
     }
 }

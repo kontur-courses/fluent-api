@@ -10,7 +10,7 @@ using ObjectPrinting.Config.Type;
 namespace ObjectPrinterTests
 {
     [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    public class ObjectPrinterShould
     {
         private const string Guid = "0f8fad5b-d9cb-469f-a165-70867728950e";
 
@@ -33,7 +33,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestNull()
+        public void PrintNull()
         {
             var printer = ObjectPrinter.For<Person>();
 
@@ -41,7 +41,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestTypeExcluding()
+        public void ExcludeTypes()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>()
@@ -51,7 +51,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestSettingPrintingForType()
+        public void OverrideTypesPrinting()
         {
 
             var printer = ObjectPrinter.For<Person>()
@@ -64,7 +64,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestSettingCultureForType()
+        public void OverrideTypesCulture()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(englishCulture)
@@ -76,7 +76,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestSettingPrintingForProperty()
+        public void OverridePropertiesPrinting()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Birthday).Using(d => d.Year.ToString());
@@ -87,7 +87,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestSettingTrimming()
+        public void TrimProperties()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(3);
@@ -98,9 +98,29 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TestExcludingProperties()
+        public void TrimPropertiesWithShortValues()
         {
             var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(1000);
+
+            printer.PrintToString(person).Should()
+                .Contain("Name = Andrey");
+        }
+
+        [Test]
+        public void ThrowExceptionOnNegativeTrimmingLength()
+        {
+            Action action = () => ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(-2);
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Trimming length can't be negative");
+        }
+
+        [Test]
+        public void ExcludeProperties()
+        {
+            var printer = ObjectPrinting.ObjectPrinter.For<Person>()
                 .Excluding(p => p.Id)
                 .Excluding(p => p.Age);
 
@@ -108,12 +128,10 @@ namespace ObjectPrinterTests
                 .NotContainAny("Id", "Age");
         }
 
-        [Test, Ignore("Not implemented yet")]
+        [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
-
-            var printer = ObjectPrinter.For<Person>()
+            var printer = ObjectPrinting.ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
                 
@@ -121,7 +139,7 @@ namespace ObjectPrinterTests
                 .Printing<int>().Using(i => i.ToString("X"))
                 
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<DateTime>().Using(englishCulture)
 
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Height).Using(i => i.ToString())
@@ -139,7 +157,7 @@ namespace ObjectPrinterTests
 
             //8. ...с конфигурированием
             //string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            //Console.WriteLine(s1);
+            Console.WriteLine(s1);
             //Console.WriteLine(s2);
             //Console.WriteLine(s3);
         }
