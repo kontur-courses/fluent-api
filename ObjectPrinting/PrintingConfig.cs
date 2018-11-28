@@ -92,21 +92,13 @@ namespace ObjectPrinting
             private void SerializeAsEnumerable(object obj,int nestingLevel)
             {
                 foreach (var el in (IEnumerable) obj)
-                {//TODO Clean
+                {
                     identation = new string('\t', nestingLevel + 1);
-                    var type = el.GetType();
-                    if (config.specialTypes.TryGetValue(el.GetType(), out var serializer))
-                    {
-                        if(serializer != null)
-                            stringBuilder.AppendLine(identation + serializer(el));
-                    }
-                    else if(finalTypes.Contains(type))
-                        stringBuilder.AppendLine(identation + el);
-                    else
-                    {
-                        stringBuilder.Append(identation);
-                        PrintRecursive(el, nestingLevel + 1);
-                    }
+                    if(TrySerializeSpecials(el) || 
+                       TrySerializeFinalType(el))
+                        continue;;
+                    stringBuilder.Append(identation);
+                    PrintRecursive(el, nestingLevel + 1);
                 }
             }
     
@@ -130,12 +122,29 @@ namespace ObjectPrinting
                     PrintFinalizedProperty(propertyInfo,serializer(value));
                 return true;
             }
+
+            private bool TrySerializeSpecials(object obj)
+            {
+                if (!config.specialTypes.TryGetValue(obj.GetType(), out var serializer)) 
+                    return false;
+                if(serializer != null)
+                    stringBuilder.AppendLine(identation + serializer(obj));
+                return true;
+            }
     
             private bool TrySerializeFinalType(PropertyInfo propertyInfo, object value)
             {
                 if (!finalTypes.Contains(propertyInfo.PropertyType)) 
                     return false;
                 PrintFinalizedProperty(propertyInfo, value.ToString());
+                return true;
+            }
+            
+            private bool TrySerializeFinalType(object obj)
+            {
+                if (!finalTypes.Contains(obj.GetType())) 
+                    return false;
+                stringBuilder.AppendLine(identation + obj);
                 return true;
             }
         }
