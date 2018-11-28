@@ -27,13 +27,13 @@ namespace ObjectPrinting
 
         private PrintingConfig<TOwner> UsingPropertySerialize(Func<TPropType, string> print)
         {
-            printingConfig.AddPropertySerialize(print, propertyName);
+            printingConfig.AddPropertySerializer(print, propertyName);
             return printingConfig;
         }
 
         private PrintingConfig<TOwner> UsingTypeSerialize(Func<TPropType, string> print)
         {
-            printingConfig.AddTypeSerialize(print);
+            printingConfig.AddTypeSerializer(print);
             return printingConfig;
         }
 

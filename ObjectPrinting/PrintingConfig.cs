@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -23,21 +22,22 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, CultureInfo> culturesForTypes = new Dictionary<Type, CultureInfo>();
 
-        private readonly Dictionary<Type, Delegate> serializedTypes = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> typeSerializers = new Dictionary<Type, Delegate>();
 
-        private readonly Dictionary<string, Delegate> serializedProperties = new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, Delegate> propertiesSerializers = new Dictionary<string, Delegate>();
 
         private readonly Dictionary<string, int> trimmedProperties = new Dictionary<string, int>();
 
-        internal void AddTypeSerialize<TPropType>(Func<TPropType, string> print) => serializedTypes[typeof(TPropType)] = print;
+        internal void AddTypeSerializer<TPropType>(Func<TPropType, string> print) => typeSerializers[typeof(TPropType)] = print;
 
-        internal void AddPropertySerialize<TPropType>(Func<TPropType, string> print, string propertyName) => serializedProperties[propertyName] = print;
+        internal void AddPropertySerializer<TPropType>(Func<TPropType, string> print, string propertyName) => propertiesSerializers[propertyName] = print;
 
         internal void AddCulture<TPropType>(CultureInfo culture) => culturesForTypes[typeof(TPropType)] = culture;
 
         internal void AddPropertyTrimm(string propertyName, int lenght) => trimmedProperties[propertyName] = lenght;
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => new PropertyPrintingConfig<TOwner, TPropType>(this);
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+            => new PropertyPrintingConfig<TOwner, TPropType>(this);
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
             => new PropertyPrintingConfig<TOwner, TPropType>(this, (memberSelector.Body as MemberExpression).Member.Name);
@@ -54,21 +54,21 @@ namespace ObjectPrinting
             return this;
         }
 
-        private bool IsPropertyShouldExclude(PropertyInfo propertyInfo)
+        private bool IsPropertyIncluded(string name, Type type)
         {
-            if (excudedTypes.Contains(propertyInfo.PropertyType))
-                return true;
-            if (excudedProperties.Contains(propertyInfo.Name))
-                return true;
-            return false;
+            if (excudedTypes.Contains(type))
+                return false;
+            if (excudedProperties.Contains(name))
+                return false;
+            return true;
         }
 
-        private bool IsPropertyShouldModified(PropertyInfo propertyInfo)
+        private bool ShouldPropertyAcceptSerializationSettings(string name, Type type)
         {
-            return serializedTypes.ContainsKey(propertyInfo.PropertyType) ||
-                   serializedProperties.ContainsKey(propertyInfo.Name) ||
-                   culturesForTypes.ContainsKey(propertyInfo.PropertyType) ||
-                   trimmedProperties.ContainsKey(propertyInfo.Name);
+            return typeSerializers.ContainsKey(type) ||
+                   propertiesSerializers.ContainsKey(name) ||
+                   culturesForTypes.ContainsKey(type) ||
+                   trimmedProperties.ContainsKey(name);
         }
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
@@ -85,50 +85,50 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string PrintToString(PropertyInfo propertyInfo, object owner)
+        private string PrintToString(string name, Type type, object value)
         {
-            var propertyValue = propertyInfo.GetValue(owner);
-
-            if (serializedTypes.ContainsKey(propertyInfo.PropertyType))
-                return serializedTypes[propertyInfo.PropertyType]
-                    .DynamicInvoke(propertyValue)
+            if (typeSerializers.TryGetValue(type, out var typeSerializer))
+                return typeSerializer
+                    .DynamicInvoke(value)
                     .ToString();
 
-            if (culturesForTypes.ContainsKey(propertyInfo.PropertyType))
-                return ((IFormattable)propertyInfo.GetValue(owner)).ToString("c", culturesForTypes[propertyInfo.PropertyType]);
+            if (culturesForTypes.TryGetValue(type, out var culture))
+                return ((IFormattable)value).ToString("c", culture);
 
-            if (serializedProperties.ContainsKey(propertyInfo.Name))
-                return serializedProperties[propertyInfo.Name]
-                    .DynamicInvoke(propertyValue)
+            if (propertiesSerializers.TryGetValue(name, out var propertySerializer))
+                return propertySerializer
+                    .DynamicInvoke(value)
                     .ToString();
 
-            if (trimmedProperties.ContainsKey(propertyInfo.Name))
+            if (trimmedProperties.TryGetValue(name, out var maxLenght))
             {
-                var str = (propertyValue as string);
-                var maxLenght = trimmedProperties[propertyInfo.Name];
+                var str = (value as string);
                 return str.Length <= maxLenght ? str : str.Substring(0, maxLenght);
             }
 
             throw new ArgumentException();
         }
 
-        private string PrintToString(PropertyInfo[] props, object owner, int nestingLevel)
+        private string PrintToString(IEnumerable<MemberInfo> props, object owner, int nestingLevel)
         {
             var sb = new StringBuilder();
-            foreach (var propertyInfo in props)
+            foreach (var memberInfo in props)
             {
-                if (printedFields.Contains(propertyInfo))
-                    continue;
-                printedFields.Add(propertyInfo);
+                var name = memberInfo.Name;
 
-                if (IsPropertyShouldExclude(propertyInfo))
+                if (!memberInfo.TryGetValue(owner, out var value))
                     continue;
 
-                var propertyValue = IsPropertyShouldModified(propertyInfo)
-                    ? PrintToString(propertyInfo, owner) + Environment.NewLine
-                    : PrintToString(propertyInfo.GetValue(owner), nestingLevel + 1);
+                var type = value.GetType();
 
-                sb.Append(new string('\t', nestingLevel + 1) + propertyInfo.Name + " = " +
+                if (!IsPropertyIncluded(name, type))
+                    continue;
+
+                var propertyValue = ShouldPropertyAcceptSerializationSettings(name, type)
+                    ? PrintToString(name, type, value) + Environment.NewLine
+                    : PrintToString(value, nestingLevel + 1);
+
+                sb.Append(new string('\t', nestingLevel + 1) + memberInfo.Name + " = " +
                           propertyValue);
             }
             return sb.ToString();
@@ -151,7 +151,7 @@ namespace ObjectPrinting
             if (obj is ICollection collection)
                 return type.Name + PrintToString(collection);
 
-            return type.Name + Environment.NewLine + PrintToString(type.GetProperties(), obj, nestingLevel);
+            return type.Name + Environment.NewLine + PrintToString(type.GetMembers(), obj, nestingLevel);
         }
     }
 }
