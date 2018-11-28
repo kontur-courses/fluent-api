@@ -1,13 +1,38 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
+        private static readonly Type[] FinalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private static readonly Type[] NumberTypes = {typeof(int), typeof(double), typeof(float)};
+
+
+        private readonly Dictionary<Type, CultureInfo> NumberTypeCulture =
+            NumberTypes.ToDictionary(t => t, t => CultureInfo.InvariantCulture);
+
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+
+        private readonly Dictionary<Type, Func<object, string>> customTypeSerializers =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<MemberInfo, Func<TOwner, string>> customMemberSerializers =
+            new Dictionary<MemberInfo, Func<TOwner, string>>();
+
+        private readonly Dictionary<MemberInfo, int> stringMembersMaxLength = new Dictionary<MemberInfo, int>();
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -15,110 +40,89 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
+            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            foreach (var memberInfo in type
+                .GetFields(bindingFlags)
+                .Cast<MemberInfo>()
+                .Concat(type.GetProperties(bindingFlags))
+                .Where(m => !excludedTypes.Contains(m.GetMemberType()))
+                .Where(m => !excludedMembers.Contains(m)))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                string memberValue;
+                if (stringMembersMaxLength.TryGetValue(memberInfo, out var maxLength))
+                    memberValue = ((string) memberInfo.GetValue(obj)).Truncate(maxLength);
+                else if (customMemberSerializers.TryGetValue(memberInfo, out var serializer))
+                    memberValue = serializer((TOwner) obj);
+                else if (customTypeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
+                    memberValue = typeSerializer(memberInfo.GetValue(obj));
+                else
+                    memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
+
+                sb.Append($"{indentation}{memberInfo.Name} = {memberValue}");
             }
+
             return sb.ToString();
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
-
-//        public PrintingConfig<TOwner> SetCulture(CultureInfo currentCulture)
-//        {
-//            return this;
-//        }
-
-        public PrintingConfig<TOwner,TPropType> Serializing<TPropType>()
+        public TypePrintingConfig<TOwner, TPropType> Serializing<TPropType>()
         {
-            return new PrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner,TPropType> Serializing<TPropType>(Expression<Func<TOwner,TPropType>> selector)
+        public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
+            Expression<Func<TOwner, TPropType>> selector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this,selector);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, selector);
         }
 
-        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner,TPropType>> selector)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
+            if (selector.Body.NodeType != ExpressionType.MemberAccess)
+            {
+                throw new ArgumentException();
+            }
+
+            excludedMembers.Add(((MemberExpression) selector.Body).Member);
+
             return this;
         }
-    }
-    
-    public class PrintingConfig<TOwner,TPropType> : IPrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        public PrintingConfig(PrintingConfig<TOwner> printingConfig)
+
+        void IPrintingConfig<TOwner>.SetCultureFor<TPropType>(CultureInfo cultureInfo)
         {
-            this.printingConfig = printingConfig;
+            NumberTypeCulture[typeof(TPropType)] = cultureInfo;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializer)
+        void IPrintingConfig<TOwner>.SetTrimmingFor(MemberInfo memberInfo, int maxLength)
         {
-            return printingConfig;
+            stringMembersMaxLength[memberInfo] = maxLength;
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.PrintingConfig => printingConfig;
-    }
-    
-    
-    public class PropertyPrintingConfig<TOwner,TPropType> : IPrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly Expression<Func<TOwner, TPropType>> selector;
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner,TPropType>>  selector)
+        void IPrintingConfig<TOwner>.SetSerializerFor(MemberInfo memberInfo, Func<TOwner, string> serializer)
         {
-            this.printingConfig = printingConfig;
-            this.selector = selector;
+            customMemberSerializers[memberInfo] = serializer;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializer)
+        void IPrintingConfig<TOwner>.SetSerializerFor<T>(Func<T, string> serializer)
         {
-            return printingConfig;
-        }
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.PrintingConfig => printingConfig;
-    }
-
-    public interface IPrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> PrintingConfig { get; }
-    }
-
-    public static class PrintingConfigExtenstion
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PrintingConfig<TOwner, int> printingConfig,
-            CultureInfo currentCulture)
-        {
-            return ((IPrintingConfig<TOwner>)printingConfig).PrintingConfig;
-        }
-        
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> printingConfig,
-            int length)
-        {
-            return ((IPrintingConfig<TOwner>)printingConfig).PrintingConfig;
+            customTypeSerializers[typeof(TOwner)] = o => serializer((T) o);
         }
     }
 }
