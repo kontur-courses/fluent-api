@@ -22,7 +22,7 @@ namespace ObjectPrintingTests.cs
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<double>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serialize<double>().Using(num => num.ToString(CultureInfo.InvariantCulture))
+                .Serialize<double>().Using(num => num.ToString())
                 //3. Для числовых типов указать культуру
                 .Serialize<int>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства

@@ -15,7 +15,7 @@ namespace ObjectPrintingTests.cs
         public void SetUp()
         {
             printer = ObjectPrinter.For<Person>();
-            person = new Person { Name = "Alex", Age = 19 };
+            person = new Person { Name = "Alex", Age = 19, Height = 12.3};
         }
 
         [Test]
@@ -34,19 +34,19 @@ namespace ObjectPrintingTests.cs
             var expected =
                 $"Person\r\n\tId = Guid\r\n\tName = {person.Name}\r\n\tHeight = {person.Height + 1}\r\n\tAge = {person.Age}\r\n";
 
-            var actual = printer.Serialize<double>().Using(num => (num + 1).ToString(CultureInfo.InvariantCulture))
+            var actual = printer.Serialize<double>().Using(num => (num + 1).ToString())
                 .PrintToString(person);
 
             Assert.AreEqual(expected, actual);
         }
 
-        [Test] //Пока не понял, как сделать чтобы тест сваливался, поэтому не сделал реализацию.
+        [Test]
         public void SerializeOnlyDigitTypeWithSelectedCulture_ShouldSerialize()
         {
-            var expected = $"Person\r\n\tId = Guid\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}" +
-                           $"\r\n\tAge = {person.Age.ToString(CultureInfo.InvariantCulture)}\r\n";
+            var expected = $"Person\r\n\tId = Guid\r\n\tName = {person.Name}\r\n\tHeight = " +
+                           $"{person.Height.ToString(CultureInfo.InvariantCulture)}\r\n\tAge = {person.Age}\r\n";
 
-            var actual = printer.Serialize<int>().Using(CultureInfo.InvariantCulture).PrintToString(person);
+            var actual = printer.Serialize<double>().Using(CultureInfo.InvariantCulture).PrintToString(person);
 
             Assert.AreEqual(expected, actual);
         }
