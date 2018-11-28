@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -248,6 +249,71 @@ namespace ObjectPrintingTests
                 .PrintToString(person);
 
             Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestTrimmingAfterUsing()
+        {
+            var wrapper = new Wrapper<int>(100001);
+            var printer = ObjectPrinter.For<Wrapper<int>>()
+                .Printing<int>().Using(i => "hello").TrimmedToLength(3);
+            var expected = $"Wrapper<Int32>{NewLine}" +
+                           $"\tValue = hel{NewLine}";
+
+            var actual = printer.PrintToString(wrapper);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestPrintingList()
+        {
+            var wrapper = new Wrapper<List<int>>(new List<int>{1, 2, 3});
+            var printer = ObjectPrinter.For<Wrapper<List<int>>>();
+            var expected = $"Wrapper<List<Int32>>{NewLine}" +
+                           $"\tValue = List<Int32>{NewLine}" +
+                           $"\t[{NewLine}" +
+                           $"\t\t1{NewLine}" +
+                           $"{NewLine}" +
+                           $"\t\t2{NewLine}" +
+                           $"{NewLine}" +
+                           $"\t\t3{NewLine}" +
+                           $"{NewLine}" +
+                           $"\t]{NewLine}";
+
+            var actual = printer.PrintToString(wrapper);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestPrintingDictionary()
+        {
+            var wrapper = new Wrapper<Dictionary<string, int>>(
+                new Dictionary<string, int> { {"a", 1} });
+            var printer = ObjectPrinter.For<Wrapper<Dictionary<string, int>>>();
+            var expected = $"Wrapper<Dictionary<String, Int32>>{NewLine}" +
+                           $"\tValue = Dictionary<String, Int32>{NewLine}" +
+                           $"\t{{{NewLine}" +
+                           $"\t\tKeyValuePair<String, Int32>{NewLine}" +
+                           $"\t\t\tKey = a{NewLine}" + 
+                           $"\t\t\tValue = 1{NewLine}" +
+                           $"{NewLine}" +
+                           $"\t}}{NewLine}";
+
+            var actual = printer.PrintToString(wrapper);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void TestPrintingEnum()
+        {
+            var wrapper = new Wrapper<ConsoleColor>(ConsoleColor.Black);
+            var printer = ObjectPrinter.For<Wrapper<ConsoleColor>> ();
+            var expected = $"Wrapper<ConsoleColor>{NewLine}" +
+                           $"\tValue = Black{NewLine}";
+
+            var actual = printer.PrintToString(wrapper);
+            Assert.AreEqual(expected, actual);
+            
         }
     }
 }

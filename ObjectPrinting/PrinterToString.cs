@@ -126,7 +126,7 @@ namespace ObjectPrinting
             foreach (var element in obj as IEnumerable)
                 sb.AppendLine(bracesIndentation + "\t" + PrintToString(element, nestingLevel + 1));
 
-            sb.Append($"{bracesIndentation}{closeBrace}");
+            sb.AppendLine($"{bracesIndentation}{closeBrace}");
             return sb.ToString();
         }
 
