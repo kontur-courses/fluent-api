@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Http;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -40,7 +39,6 @@ namespace ObjectPrinting
                 typesPrintingConfigs[typeof(TProp)] = ExtractPrintingFunction(typePrintingConfig);
             return typePrintingConfig;
         }
-
 
 
         public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(Expression<Func<TOwner, TProp>> propertyOrMethodGetter)

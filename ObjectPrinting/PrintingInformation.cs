@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
@@ -38,4 +40,4 @@ namespace ObjectPrinting
         public int CurrentNestingLevel { get; private set; }
         public string CurrentFullName { get; private set; }
     }
-}
+}   
