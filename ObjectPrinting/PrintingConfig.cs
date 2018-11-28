@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -34,7 +35,7 @@ namespace ObjectPrinting
         {
             var typePrintingConfig = new PropertyPrintingConfig<TOwner, TProp>(this);
             if (typeof(TProp) == typeof(string))
-                AddStringPrintingConfig((IPropertyPrintingConfig<string>) typePrintingConfig);
+                AddCommonStringPrintingConfig((IPropertyPrintingConfig<string>)typePrintingConfig);
             else
                 typesPrintingConfigs[typeof(TProp)] = ExtractPrintingFunction(typePrintingConfig);
             return typePrintingConfig;
@@ -42,21 +43,21 @@ namespace ObjectPrinting
 
 
 
-        public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
+        public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(Expression<Func<TOwner, TProp>> propertyOrMethodGetter)
         {
             var printingConfig = new PropertyPrintingConfig<TOwner, TProp>(this);
-            var propertyName = GetPropertyName(propertyGetter);
+            var fullPropertyOrFieldName = GetFullPropertyOrFieldName(propertyOrMethodGetter);
             if (typeof(TProp) == typeof(string))
-                AddStringNamesPrintingConfig((IPropertyPrintingConfig<string>) printingConfig, propertyName);
+                AddStringPrintingConfigWithNames((IPropertyPrintingConfig<string>)printingConfig, fullPropertyOrFieldName);
             else
-                namesPrintingConfigs[propertyName] = ExtractPrintingFunction(printingConfig);
+                namesPrintingConfigs[fullPropertyOrFieldName] = ExtractPrintingFunction(printingConfig);
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> ExcludingProperty<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
+        public PrintingConfig<TOwner> ExcludingPropertyOrField<TProp>(Expression<Func<TOwner, TProp>> propertyOrMethodGetter)
         {
-            var propertyName = GetPropertyName(propertyGetter);
-            excludedNames.Add(propertyName);
+            var propertyOrFieldName = GetFullPropertyOrFieldName(propertyOrMethodGetter);
+            excludedNames.Add(propertyOrFieldName);
             return this;
         }
 
@@ -69,7 +70,7 @@ namespace ObjectPrinting
             return printingResult.GetPrinting();
         }
 
-        private void AddStringPrintingConfig(IPropertyPrintingConfig<string> printingConfig)
+        private void AddCommonStringPrintingConfig(IPropertyPrintingConfig<string> printingConfig)
         {
             var printingFunction = ExtractPrintingFunction(printingConfig);
             stringPrintingConfig = stringPrintingConfig == null
@@ -79,7 +80,7 @@ namespace ObjectPrinting
                 namesStringPrintingConfigs[name] = ConcatFunctions(namesStringPrintingConfigs[name], printingFunction);
         }
 
-        private void AddStringNamesPrintingConfig(IPropertyPrintingConfig<string> printingConfig, string name)
+        private void AddStringPrintingConfigWithNames(IPropertyPrintingConfig<string> printingConfig, string name)
         {
             var printingFunction = ExtractPrintingFunction(printingConfig);
             Func<object, string> previousFunction;
@@ -98,16 +99,16 @@ namespace ObjectPrinting
         private Func<object, string> ExtractPrintingFunction<TProp>(IPropertyPrintingConfig<TProp> printingConfig)
             => x => printingConfig.PrintingFunction((TProp)x);
 
-        private string GetPropertyName<TProp>(Expression<Func<TOwner, TProp>> propertyGetter)
+        private string GetFullPropertyOrFieldName<TProp>(Expression<Func<TOwner, TProp>> propertyOrFieldGetter)
         {
-            if (propertyGetter == null)
+            if (propertyOrFieldGetter == null)
                 throw new ArgumentException("Expression is null");
 
-            var member = propertyGetter.Body as MemberExpression;
+            var member = propertyOrFieldGetter.Body as MemberExpression;
             if (member == null)
                 throw new ArgumentException("Expression refers to a method, not a property");
-            var expressionBody = propertyGetter.Body.ToString();
-            var expressionParameter = propertyGetter.Parameters[0].ToString();
+            var expressionBody = propertyOrFieldGetter.Body.ToString();
+            var expressionParameter = propertyOrFieldGetter.Parameters[0].ToString();
 
             if (expressionParameter == expressionBody)
                 throw new ArgumentException("Expression can not exclude itself");
@@ -117,7 +118,6 @@ namespace ObjectPrinting
             if (member.Member is PropertyInfo || member.Member is FieldInfo)
                 return expressionBody.Substring(expressionParameter.Length);
             throw new ArgumentException("Expression should refers to a field or property!");
-
         }
 
         private void AddObjectPrinting(PrintingInformation printingInformation, object addedObject, int nestingLevel, string nameObject = "")
@@ -173,7 +173,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             printingInformation.AddPrintingNewLine("");
-            
+
             foreach (var propertyInfo in GetNonExcludedProperties(type))
             {
                 var propertyName = $"{objFullName}.{propertyInfo.Name}";
@@ -199,8 +199,6 @@ namespace ObjectPrinting
         private IEnumerable<FieldInfo> GetNonExcludedFields(Type type)
             => type.GetFields().Where(x => IsAddedType(x.FieldType));
 
-
-
         private IEnumerable GetAddedObjects(IEnumerable items)
             => items.Cast<object>().Where(x => IsAddedType(x.GetType()));
 
@@ -213,14 +211,26 @@ namespace ObjectPrinting
         private bool TryGetSpecialPrinting(object obj, string nameObject, out Func<object, string> printingFunction)
         {
             var type = obj.GetType();
-            if (type != typeof(string))
-                return (nameObject != "" && namesPrintingConfigs.TryGetValue(nameObject, out printingFunction) && printingFunction != null) ||
-                    (typesPrintingConfigs.TryGetValue(type, out printingFunction) && printingFunction != null);
+            return type == typeof(string)
+                ? TryGetSpecialStringPrinting(nameObject, out printingFunction)
+                : TryGetSpecialNotStringPrinting(type, nameObject, out printingFunction);
+        }
+
+        private bool TryGetSpecialStringPrinting(string nameObject,
+            out Func<object, string> printingFunction)
+        {
             if (nameObject != "" && namesStringPrintingConfigs.TryGetValue(nameObject, out printingFunction) &&
                 printingFunction != null)
                 return true;
             printingFunction = stringPrintingConfig;
             return printingFunction != null;
+        }
+
+        private bool TryGetSpecialNotStringPrinting(Type type, string nameObject,
+            out Func<object, string> printingFunction)
+        {
+            return (nameObject != "" && namesPrintingConfigs.TryGetValue(nameObject, out printingFunction) && printingFunction != null) ||
+                   (typesPrintingConfigs.TryGetValue(type, out printingFunction) && printingFunction != null);
         }
     }
 }

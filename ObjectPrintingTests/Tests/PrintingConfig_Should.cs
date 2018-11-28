@@ -41,7 +41,7 @@ namespace ObjectPrintingTests.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing<string>().TrimmedToLength(3)
                 //6. Исключить из сериализации конкретного свойства
-                .ExcludingProperty(x => x.Age);
+                .ExcludingPropertyOrField(x => x.Age);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
 
@@ -129,7 +129,7 @@ namespace ObjectPrintingTests.Tests
         {
             person.Surname = "Surname";
 
-            var printing = printer.ExcludingProperty(x => x.Surname)
+            var printing = printer.ExcludingPropertyOrField(x => x.Surname)
                 .PrintToString(person);
 
             printing.Should().NotContain(person.Surname);
@@ -138,25 +138,25 @@ namespace ObjectPrintingTests.Tests
         [Test]
         public void ExcludingProperty_ThrowsException_WhenGetsMethodInsteadOfProperty()
         {
-            Assert.Throws<ArgumentException>(() => printer.ExcludingProperty(x => x.GetNextPerson()));
+            Assert.Throws<ArgumentException>(() => printer.ExcludingPropertyOrField(x => x.GetNextPerson()));
         }
 
         [Test]
         public void ExcludingProperty_ThrowsException_WhenRefersToNotGivenObject()
         {
-            Assert.Throws<ArgumentException>(() => printer.ExcludingProperty(x => new Person().Age));
+            Assert.Throws<ArgumentException>(() => printer.ExcludingPropertyOrField(x => new Person().Age));
         }
 
         [Test]
         public void ExcludingProperty_ThrowsException_WhenExpressionRefersToGivenConfig()
         {
-            Assert.Throws<ArgumentException>(() => printer.ExcludingProperty(x => x));
+            Assert.Throws<ArgumentException>(() => printer.ExcludingPropertyOrField(x => x));
         }
 
         [Test]
         public void PrintToString_DoNotExcludeObject_WhenExcludeOtherObjectWithSameLocalName()
         {
-            var printing = printer.ExcludingProperty(x => x.Parent.Age)
+            var printing = printer.ExcludingPropertyOrField(x => x.Parent.Age)
                 .PrintToString(person);
 
             var agePrinting = person.Age.ToString();
@@ -170,7 +170,7 @@ namespace ObjectPrintingTests.Tests
             var parent = new Person { Age = 40 };
             person.Parent = parent;
 
-            var printing = printer.ExcludingProperty(x => x.Parent.Age)
+            var printing = printer.ExcludingPropertyOrField(x => x.Parent.Age)
                 .PrintToString(person);
             var agePrinting = person.Age.ToString();
 
@@ -290,17 +290,32 @@ namespace ObjectPrintingTests.Tests
         }
 
         [Test]
-        public void PrintToString_UsingCanWorkWithTrim()
+        public void PrintToString_ReturnsCorrectStringPrinting_WhenTrimUsedBeforeUsingForString()
         {
             person.Name = "PersonName";
 
             var printing = printer.Printing<string>()
                 .TrimmedToLength(3)
-                .Printing<string>()
+                .Printing(x => x.Name)
                 .Using(x => x + x)
                 .PrintToString(person);
 
             printing.Should().NotContain(person.Name);
+        }
+
+        [Test]
+        public void PrintToString_ReturnsCorrectStringProperty_WhenPropertyHasPropertyAndTypeConfig()
+        {
+            person.Name = "ab";
+            var addition = "c";
+
+            var printing = printer.Printing<string>()
+                .Using(x => x + x)
+                .Printing<string>()
+                .Using(x => x + addition)
+                .PrintToString(person);
+
+            printing.Should().Contain("ababc");
         }
 
         private IEnumerable<PropertyInfo> GetProperties(object obj)
