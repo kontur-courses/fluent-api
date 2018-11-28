@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="IMemberPrintingConfig.cs" />
+    <Compile Include="ExpressionExtensions.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="PrintingConfig.cs" />

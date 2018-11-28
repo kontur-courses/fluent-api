@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
             {
                 "Person",
                 "\tHeight = 0",
-                $"\tId = Guid{Environment.NewLine}",
+                $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}",
             });
 
             objectPrinter
@@ -39,7 +39,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 100",
                 "\tHeight = 0",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 $"\tName = 42{Environment.NewLine}"
             });
 
@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 100",
                 "\tHeight = 186.6",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 $"\tName = Bob{Environment.NewLine}"
             });
 
@@ -84,7 +84,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 100",
                 "\tHeight = 0",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 $"\tName = bbb{Environment.NewLine}",
             });
 
@@ -108,7 +108,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 100",
                 "\tHeight = 0",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 $"\tName = Bo{Environment.NewLine}",
                 
             });
@@ -131,7 +131,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 100",
                 "\tHeight = 0",
-                $"\tId = Guid{Environment.NewLine}"
+                $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}"
                 
             });
 
@@ -255,13 +255,13 @@ namespace ObjectPrinting.Tests
                 "Tree`1",
                 "\tLeft = Person",
                 "\t\tAge = 0",
-                "\t\tHeight = 0",   
-                "\t\tId = Guid",
+                "\t\tHeight = 0",
+                "\t\tId = 00000000-0000-0000-0000-000000000000",
                 "\t\tName = Bob",
                 "\tRight = Person",
                 "\t\tAge = 0",
                 "\t\tHeight = 0",
-                "\t\tId = Guid",
+                "\t\tId = 00000000-0000-0000-0000-000000000000",
                 $"\t\tName = Bob{Environment.NewLine}",
             });
 
@@ -272,7 +272,6 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        //[Repeat(100000)]
         public void ObjectPrinter_OnFieldsWithProperties_WorksCorrectly()
         {
             var objectPrinter = ObjectPrinter.For<FooBar>();
@@ -317,7 +316,7 @@ namespace ObjectPrinting.Tests
                 "Person",
                 "\tAge = 0",
                 "\tHeight = 0",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 $"\tName = null{Environment.NewLine}",
                 
             });

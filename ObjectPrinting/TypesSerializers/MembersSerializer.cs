@@ -89,6 +89,17 @@ namespace ObjectPrinting.TypesSerializers
                 if (stringsTrimValues.TryGetValue(memberInfo, out var count))
                 {
                     var memberValueAsString = value.ToString();
+
+                    if (count < 0)
+                    {
+                        throw new ArgumentException("{0} can't be less than zero.", nameof(count));
+                    }
+
+                    if (count > memberValueAsString.Length)
+                    {
+                        count = memberValueAsString.Length;
+                    }
+
                     value = memberValueAsString
                         .Substring(0, count);
                 }

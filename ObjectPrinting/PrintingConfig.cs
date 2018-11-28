@@ -44,15 +44,21 @@ namespace ObjectPrinting
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> selector)
         {
-            var member = (MemberExpression)selector.Body;
-
-            return new MemberPrintingConfig<TOwner, TPropType>(this, member.Member);
+            return new MemberPrintingConfig<TOwner, TPropType>(
+                this,
+                selector
+                    .Body
+                    .CastToMemberExpression()
+                    .Member);
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
-            var member = (MemberExpression)selector.Body;
-            excludedSpecificMembers.Add(member.Member);
+            excludedSpecificMembers.Add(
+                selector
+                    .Body
+                    .CastToMemberExpression()
+                    .Member);
 
             return this;
         }

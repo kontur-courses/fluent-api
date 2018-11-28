@@ -10,7 +10,8 @@ namespace ObjectPrinting.TypesSerializers
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(short), typeof(byte),
-            typeof(long), typeof(decimal), typeof(char)
+            typeof(long), typeof(decimal), typeof(char), typeof(bool),
+            typeof(Guid)
         };
 
         public override string Serialize(
