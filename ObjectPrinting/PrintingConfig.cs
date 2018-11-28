@@ -13,7 +13,7 @@ namespace ObjectPrinting
         private static readonly Type[] FinalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private static readonly Type[] NumberTypes = {typeof(int), typeof(double), typeof(float)};
@@ -58,15 +58,18 @@ namespace ObjectPrinting
                 .Cast<MemberInfo>()
                 .Concat(type.GetProperties(bindingFlags))
                 .Where(m => !excludedTypes.Contains(m.GetMemberType()))
-                .Where(m => !excludedMembers.Contains(m)))
+                .Where(m => !excludedMembers.Contains(m))
+                .OrderBy(m => m.Name))
             {
                 string memberValue;
                 if (stringMembersMaxLength.TryGetValue(memberInfo, out var maxLength))
-                    memberValue = ((string) memberInfo.GetValue(obj)).Truncate(maxLength);
+                    memberValue = ((string) memberInfo.GetValue(obj)).Truncate(maxLength) + Environment.NewLine;
                 else if (customMemberSerializers.TryGetValue(memberInfo, out var serializer))
-                    memberValue = serializer((TOwner) obj);
+                    memberValue = serializer((TOwner) obj) + Environment.NewLine;
+                else if (NumberTypeCulture.TryGetValue(memberInfo.GetMemberType(), out var culture))
+                    memberValue = memberInfo.GetValue(obj).ToStringWithCulture(culture) + Environment.NewLine;
                 else if (customTypeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
-                    memberValue = typeSerializer(memberInfo.GetValue(obj));
+                    memberValue = typeSerializer(memberInfo.GetValue(obj)) + Environment.NewLine;
                 else
                     memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
 

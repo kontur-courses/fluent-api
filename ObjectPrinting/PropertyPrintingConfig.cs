@@ -25,6 +25,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> serializer)
         {
+            var selectorCompiled = selector.Compile();
+            ((IPrintingConfig<TOwner>)printingConfig).SetSerializerFor(relatedMember, t => serializer(selectorCompiled(t)));
             return printingConfig;
         }
 

@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
 using NUnit.Framework;
+// ReSharper disable CommentTypo
 
 namespace ObjectPrinting.Tests
 {
-    [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
@@ -25,12 +25,25 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Id);
 
-            var s1 = printer.PrintToString(person);
+            printer.PrintToString(person);
+        }
+
+        [Test]
+        public void SyntaxSugarDemo()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            var s2 = person.Serialize();
+            person.Serialize();
+        }
+
+        [Test]
+        public void ConfigurableSyntaxSugarDemo()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
             //8. ...с конфигурированием
-            var s3 = person.Serialize(x => x.Serializing(p => p.Name).TrimToLength(2));
+            person.Serialize();
         }
     }
 }
