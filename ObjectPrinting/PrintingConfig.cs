@@ -103,7 +103,9 @@ namespace ObjectPrinting
                 throw new ArgumentException();
             }
 
-            excludedMembers.Add(((MemberExpression) selector.Body).Member);
+            var member = ((MemberExpression) selector.Body).Member;
+            member.CheckCanParticipateInSerialization();
+            excludedMembers.Add(member);
 
             return this;
         }
@@ -115,11 +117,15 @@ namespace ObjectPrinting
 
         void IPrintingConfig<TOwner>.SetTrimmingFor(MemberInfo memberInfo, int maxLength)
         {
+            memberInfo.CheckCanParticipateInSerialization();
+
             stringMembersMaxLength[memberInfo] = maxLength;
         }
 
         void IPrintingConfig<TOwner>.SetSerializerFor(MemberInfo memberInfo, Func<TOwner, string> serializer)
         {
+            memberInfo.CheckCanParticipateInSerialization();
+
             customMemberSerializers[memberInfo] = serializer;
         }
 

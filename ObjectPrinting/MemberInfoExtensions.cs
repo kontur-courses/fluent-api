@@ -31,7 +31,7 @@ namespace ObjectPrinting
             }
         }
 
-        public static bool CanParticipateInSerialization(this MemberInfo memberInfo)
+        private static bool CanParticipateInSerialization(this MemberInfo memberInfo)
         {
             switch (memberInfo.MemberType)
             {

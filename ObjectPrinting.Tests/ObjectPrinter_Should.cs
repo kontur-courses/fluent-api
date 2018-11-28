@@ -121,7 +121,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Print_Person_WithDifferentDoubleCulture()
         {
-            var config = new PrintingConfig<Person>().Serializing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("RU-ru"));
+            var config = new PrintingConfig<Person>().Serializing<double>()
+                .Using(CultureInfo.GetCultureInfoByIetfLanguageTag("RU-ru"));
 
             var expected = string.Join(Environment.NewLine,
                 "Person",

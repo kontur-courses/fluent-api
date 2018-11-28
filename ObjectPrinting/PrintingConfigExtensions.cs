@@ -1,4 +1,5 @@
 using System.Globalization;
+// ReSharper disable UnusedMember.Global
 
 namespace ObjectPrinting
 {
