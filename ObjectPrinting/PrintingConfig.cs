@@ -73,15 +73,16 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
-        private string PrintToString(ICollection collection)
+        private string PrintToString(ICollection collection, int nestingLevel)
         {
+            var indent = new string('\t', nestingLevel);
             var sb = new StringBuilder();
-            sb.Append(" {");
+            sb.AppendLine(indent + "{");
 
             foreach (var item in collection)
-                sb.Append(" " + item);
+                sb.Append(indent + PrintToString(item, nestingLevel));
 
-            sb.AppendLine(" }");
+            sb.AppendLine(indent + "}");
             return sb.ToString();
         }
 
@@ -149,7 +150,7 @@ namespace ObjectPrinting
             printedFields.Add(obj);
 
             if (obj is ICollection collection)
-                return type.Name + PrintToString(collection);
+                return type.Name + Environment.NewLine + PrintToString(collection, nestingLevel + 1);
 
             return type.Name + Environment.NewLine + PrintToString(type.GetMembers(), obj, nestingLevel);
         }

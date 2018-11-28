@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace ObjectPrinting.Tests
 {
@@ -232,9 +233,40 @@ namespace ObjectPrinting.Tests
         {
             var container = new PropertyContainer<int[]>(new []{ 1, 2, 3 });
             var type = container.GetType();
-            var expectedResult = type.Name + Environment.NewLine + "\tContent = Int32[] { 1 2 3 }" + Environment.NewLine;
+            var expectedResult = type.Name + Environment.NewLine + 
+                                 "\tContent = Int32[]" + Environment.NewLine +
+                                 "\t\t{" + Environment.NewLine +
+                                 "\t\t1" + Environment.NewLine +
+                                 "\t\t2" + Environment.NewLine +
+                                 "\t\t3" + Environment.NewLine +
+                                 "\t\t}" + Environment.NewLine;
 
             var printingConfig = ObjectPrinter.For<PropertyContainer<int[]>>();
+            var actual = printingConfig.PrintToString(container);
+
+            actual.Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void Printer_CollectionArray_CompositeType_Should()
+        {
+            var firstItem = new PropertyContainer<int>(1);
+            var secondItem = new PropertyContainer<int>(2);
+            var thirdItem = new PropertyContainer<int>(3);
+            var container = new PropertyContainer<PropertyContainer<int>[]>(new [] { firstItem, secondItem, thirdItem });
+            var type = container.GetType();
+            var expectedResult = type.Name + Environment.NewLine + "\tContent = " 
+                                 + container.Content.GetType().Name + Environment.NewLine +
+                                 "\t\t{" + Environment.NewLine +
+                                 "\t\t" + firstItem.GetType().Name + Environment.NewLine +
+                                 "\t\t\tContent = " + firstItem.Content + Environment.NewLine +
+                                 "\t\t" + secondItem.GetType().Name + Environment.NewLine +
+                                 "\t\t\tContent = " + secondItem.Content + Environment.NewLine +
+                                 "\t\t" + thirdItem.GetType().Name + Environment.NewLine +
+                                 "\t\t\tContent = " + thirdItem.Content + Environment.NewLine +
+                                 "\t\t}" + Environment.NewLine;
+
+            var printingConfig = ObjectPrinter.For<PropertyContainer<PropertyContainer<int>[]>>();
             var actual = printingConfig.PrintToString(container);
 
             actual.Should().Be(expectedResult);
@@ -248,9 +280,20 @@ namespace ObjectPrinting.Tests
                 { 1, "1" },
                 { 2, "2" }
             };
+            var firstPair = dic.First();
+            var secondPair = dic.Last();
             var container = new PropertyContainer<Dictionary<int, string>>(dic);
             var type = container.GetType();
-            var expectedResult = type.Name + Environment.NewLine + "\tContent = Dictionary`2 { [1, 1] [2, 2] }" + Environment.NewLine;
+            var expectedResult = type.Name + Environment.NewLine + "\tContent = " 
+                                 + container.Content.GetType().Name + Environment.NewLine +
+                                 "\t\t{" + Environment.NewLine +
+                                 "\t\t"+ firstPair.GetType().Name + Environment.NewLine +
+                                 "\t\t\tKey = " + firstPair.Key + Environment.NewLine +
+                                 "\t\t\tValue = " + firstPair.Value + Environment.NewLine +
+                                 "\t\t"+ secondPair.GetType().Name + Environment.NewLine +
+                                 "\t\t\tKey = " + secondPair.Key + Environment.NewLine +
+                                 "\t\t\tValue = " + secondPair.Value + Environment.NewLine +
+                                 "\t\t}" + Environment.NewLine;
 
             var printingConfig = ObjectPrinter.For<PropertyContainer<Dictionary<int, string>>>();
             var actual = printingConfig.PrintToString(container);
