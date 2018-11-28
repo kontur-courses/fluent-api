@@ -120,12 +120,24 @@ namespace ObjectPrinterTests
         [Test]
         public void ExcludeProperties()
         {
-            var printer = ObjectPrinting.ObjectPrinter.For<Person>()
+            var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Id)
                 .Excluding(p => p.Age);
 
             printer.PrintToString(person).Should()
                 .NotContainAny("Id", "Age");
+        }
+
+        [Test]
+        public void NotPrintNonPublicFieldsEitherNonPublicProperties()
+        {
+            var testInstance = new TestClass();
+
+            ObjectPrinter.For<TestClass>().PrintToString(testInstance).Should()
+                .ContainAll("PublicField", "PublicProperty")
+                .And.NotContainAny(
+                    "ProtectedInternalField", "ProtectedInternalProperty", "InternalProperty", "InternalField",
+                    "PrivateProperty", "ProtectedField", "PrivateProperty", "privateField");
         }
 
         [Test]

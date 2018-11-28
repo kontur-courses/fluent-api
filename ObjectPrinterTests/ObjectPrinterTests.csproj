@@ -55,6 +55,7 @@
     <Compile Include="ObjectPrinterShould.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestClass.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
