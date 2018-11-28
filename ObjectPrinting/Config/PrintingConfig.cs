@@ -22,7 +22,7 @@ namespace ObjectPrinting.Config
         private readonly Dictionary<System.Type, Func<object, string>> printingOverridedTypes;
         private readonly Dictionary<System.Type, CultureInfo> cultureOverridedTypes;
         private readonly Dictionary<PropertyInfo, Func<object, string>> printingOverridedProperties;
-
+        private readonly HashSet<PropertyInfo> propertiesToExclude;
 
         public PrintingConfig()
         {
@@ -30,6 +30,7 @@ namespace ObjectPrinting.Config
             printingOverridedTypes = new Dictionary<System.Type, Func<object, string>>();
             cultureOverridedTypes = new Dictionary<System.Type, CultureInfo>();
             printingOverridedProperties = new Dictionary<PropertyInfo, Func<object, string>>();
+            propertiesToExclude = new HashSet<PropertyInfo>();
         }
 
         public void OverrideTypePrinting<TPropType>(Func<TPropType, string> print)
@@ -69,6 +70,9 @@ namespace ObjectPrinting.Config
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
+            propertiesToExclude.Add(propertyInfo);
+
             return this;
         }
 
@@ -105,7 +109,7 @@ namespace ObjectPrinting.Config
 
             foreach (var property in type.GetProperties())
             {
-                if (typesToExclude.Contains(property.PropertyType))
+                if (typesToExclude.Contains(property.PropertyType) || propertiesToExclude.Contains(property))
                     continue;
 
                 var propertyString = PrintToString(property.GetValue(obj), property, nestingLevel + 1);

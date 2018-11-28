@@ -92,11 +92,20 @@ namespace ObjectPrinterTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(3);
 
-            var result = printer.PrintToString(person);
-            Console.WriteLine(result);
-            result.Should()
+            printer.PrintToString(person).Should()
                 .Contain("Name = And")
                 .And.NotContain("Andrey");
+        }
+
+        [Test]
+        public void TestExcludingProperties()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Id)
+                .Excluding(p => p.Age);
+
+            printer.PrintToString(person).Should()
+                .NotContainAny("Id", "Age");
         }
 
         [Test, Ignore("Not implemented yet")]
