@@ -35,33 +35,21 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            MemberExpression selectorBody;
-            try
-            {
-                selectorBody = (MemberExpression)memberSelector.Body;
-            }
-            catch (InvalidCastException)
-            {
+            if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
-            }
-            var propName = selectorBody.Member;
+            
+            var propName = memberExpression.Member;
 
             return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)propName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            MemberExpression memberExpression;
-            try
-            {
-                memberExpression = (MemberExpression)memberSelector.Body;
-            }
-            catch (InvalidCastException)
-            {
+            if(!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
-            }
 
             propertiesToBeExcluded.Add(memberExpression.Member.Name);
+
             return this;
         }
 
