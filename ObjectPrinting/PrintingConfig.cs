@@ -26,7 +26,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         #endregion
@@ -62,7 +62,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;

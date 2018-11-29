@@ -93,5 +93,13 @@ namespace ObjectPrinting.Tests
                 .Be("Person\r\n\tId = Guid\r\n\tName = J\r\n\tHeight = 180\r\n\tAge = 32\r\n\tPet = null\r\n");
         }
 
+        [Test]
+        public void TrimToLength_ShouldNotCutStringIfArgumentLargerThenStringLength()
+        {
+            var resString = testPerson.PrintToString(config => config.Printing<string>().TrimmedToLength(1000));
+            resString.Should()
+                .Be("Person\r\n\tId = Guid\r\n\tName = J\r\n\tHeight = 180\r\n\tAge = 32\r\n\tPet = null\r\n");
+        }
+
     }
 }
