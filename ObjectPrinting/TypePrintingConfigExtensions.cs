@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Globalization;
 
 namespace ObjectPrinting
@@ -42,6 +43,14 @@ namespace ObjectPrinting
         private static void SetCultureInfo<TOwner>(CultureInfo culture, Type typeNumber, PrintingConfig<TOwner> printingConfig)
         {
             printingConfig.AddCultureInfoForNumbers(typeNumber, culture);
+        }
+
+        public static PrintingConfig<TOwner> AddMemberCountForInfiniteSequence<TOwner>
+            (this TypePrintingConfig<TOwner, IEnumerable> typePrintingConfig, int numberIterations)
+        {
+            var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
+            printingConfig.AddNumberIterationsForEnumerable(numberIterations);
+            return printingConfig;
         }
     }
 }

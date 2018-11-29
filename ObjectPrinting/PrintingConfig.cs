@@ -18,9 +18,11 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Delegate> trimmingFunctions;
         private readonly Dictionary<Type, CultureInfo> cultureInfoForNumbers;
         private readonly HashSet<Type> finalTypes;
+        private int numberIterationsForEnumerable;
 
         public PrintingConfig()
         {
+            numberIterationsForEnumerable = 3;
             excludeMembersByType = new HashSet<Type>();
             alternativeSerializationByType = new Dictionary<Type, Delegate>();
             alternativeSerializationByName = new Dictionary<string, Delegate>();
@@ -77,18 +79,37 @@ namespace ObjectPrinting
 
             var indentation = new string('\t', nestingLevel + 1);
             var members = FilteringMembers(type);
-            var sb = new StringBuilder();
-            if (obj is IEnumerable collection)
-            {
-                sb.AppendLine(obj.GetType().Name + "\r\n" + indentation + "\t" + '{');
-                foreach (var item in collection)
-                    sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
-                sb.AppendLine(indentation + "\t" + '}');
-                return sb.ToString();
-            }
-            var result = PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
+            return ProcessObject(obj, nestingLevel, viewedObjects, indentation, members);
+        }
 
-            return result;
+        private string ProcessObject(object obj, int nestingLevel, HashSet<object> viewedObjects, string indentation, MemberInfo[] members)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder();
+            switch (obj)
+            {
+                case ICollection collection:
+                    {
+                        sb.AppendLine(type.Name);
+                        foreach (var item in collection)
+                            sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+                        return sb.ToString();
+                    }
+                case IEnumerable enumerable:
+                    {
+                        var iterations = 0;
+                        sb.AppendLine(type.Name);
+                        foreach (var item in enumerable)
+                        {
+                            if (iterations < numberIterationsForEnumerable) break;
+                            sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+                            iterations++;
+                        }
+                        return sb.ToString();
+                    }
+                default:
+                    return PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
+            }
         }
 
         private MemberInfo[] FilteringMembers(Type type)
@@ -158,6 +179,10 @@ namespace ObjectPrinting
             if (cultureInfoForNumbers.ContainsKey(type))
                 cultureInfoForNumbers[type] = altSerialize;
             cultureInfoForNumbers.Add(type, altSerialize);
+        }
+        internal void AddNumberIterationsForEnumerable(int numberIterations)
+        {
+            numberIterationsForEnumerable = numberIterations;
         }
     }
 }
