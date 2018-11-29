@@ -53,12 +53,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IMemberPrintingConfig.cs" />
+    <Compile Include="MemberMeta.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="TypePrintingConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

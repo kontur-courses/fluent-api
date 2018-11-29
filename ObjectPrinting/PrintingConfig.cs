@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -28,12 +29,12 @@ namespace ObjectPrinting
         public void AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(Type type, CultureInfo cultureInfo)
             => numericTypesToBeAlternativelySerializedUsingCultureInfo[type] = cultureInfo;
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
@@ -61,14 +62,13 @@ namespace ObjectPrinting
         }
 
         public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10,
-            HashSet<MemberTypes> requiredMemberTypes = null)
+            MemberTypes requiredMemberTypes = MemberTypes.Field | MemberTypes.Property)
         {
-            return PrintToString(obj, 0, indentSymbol, maxNestingLevel,
-                requiredMemberTypes ?? new HashSet<MemberTypes> { MemberTypes.Field, MemberTypes.Property });
+            return PrintToString(obj, 0, indentSymbol, maxNestingLevel, requiredMemberTypes);
         }
 
         private string PrintToString(object obj, int nestingLevel, char indentSymbol,
-            int maxNestingLevel, HashSet<MemberTypes> requiredMemberTypes)
+            int maxNestingLevel, MemberTypes requiredMemberTypes)
         {
             if (nestingLevel >= maxNestingLevel)
                 throw new OverflowException("ѕревышен максимальный уровень вложенности");
@@ -78,7 +78,7 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (type.IsSimpleType())
+            if (IsSimpleType(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string(indentSymbol, nestingLevel + 1);
@@ -86,51 +86,72 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            var members = new List<MemberInfo>();
-
-            foreach (var memberType in requiredMemberTypes)
+            foreach (var memberInfo in GetRequiredMembers(obj, requiredMemberTypes))
             {
-                switch (memberType)
+                if (!typesToBeExcluded.Contains(memberInfo.MemberType)
+                    && !propertiesToBeExcluded.Contains(memberInfo.MemberName))
                 {
-                    case MemberTypes.Field:
-                        members.AddRange(type.GetFields());
-                        break;
-                    case MemberTypes.Property:
-                        members.AddRange(type.GetProperties());
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
+                    var value = memberInfo.MemberValue;
 
-            foreach (var memberInfo in members)
-            {
-                var propType = memberInfo.GetUnderlyingType();
+                    if (typesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberType)
+                        && !propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
+                        value = typesToBeAlternativelySerialized[memberInfo.MemberType].DynamicInvoke(value);
 
-                var propName = memberInfo.Name;
-
-                if (!typesToBeExcluded.Contains(propType)
-                    && !propertiesToBeExcluded.Contains(propName))
-                {
-                    var value = memberInfo.GetValue(obj);
-
-                    if (typesToBeAlternativelySerialized.ContainsKey(propType)
-                        && !propertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = typesToBeAlternativelySerialized[propType].DynamicInvoke(value);
-
-                    if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
+                    if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(memberInfo.MemberType))
                         value = Convert.ToString(value,
-                            numericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
+                            numericTypesToBeAlternativelySerializedUsingCultureInfo[memberInfo.MemberType]);
 
-                    if (propertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = propertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
+                    if (propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
+                        value = propertiesToBeAlternativelySerialized[memberInfo.MemberName].DynamicInvoke(value);
 
-                    sb.Append(indentation + propName + " = " +
+                    sb.Append(indentation + memberInfo.MemberName + " = " +
                               PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel, requiredMemberTypes));
                 }
             }
 
             return sb.ToString();
+        }
+
+        private IEnumerable<MemberMeta> GetRequiredMembers(object obj, MemberTypes requiredMemberTypes)
+        {
+            var type = obj.GetType();
+
+            switch ((int)requiredMemberTypes)
+            {
+                case 4:
+                    return type.GetFields().Select(e
+                        => new MemberMeta { MemberType = e.FieldType, MemberValue = e.GetValue(obj), MemberName = e.Name});
+                case 16:
+                    return type.GetProperties().Select(e
+                        => new MemberMeta { MemberType = e.PropertyType, MemberValue = e.GetValue(obj), MemberName = e.Name });
+                case 20:
+                    return type.GetFields().Select(e
+                        => new MemberMeta { MemberType = e.FieldType, MemberValue = e.GetValue(obj), MemberName = e.Name }).Concat(
+                        type.GetProperties().Select(e
+                            => new MemberMeta { MemberType = e.PropertyType, MemberValue = e.GetValue(obj), MemberName = e.Name }));
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        /// <summary>
+        /// Determine whether a type is simple (String, Decimal, DateTime, etc) 
+        /// or complex (i.e. custom class with public properties and methods).
+        /// </summary>
+        public static bool IsSimpleType(Type type)
+        {
+            return
+                type.IsValueType ||
+                type.IsPrimitive ||
+                new[] {
+                    typeof(String),
+                    typeof(Decimal),
+                    typeof(DateTime),
+                    typeof(DateTimeOffset),
+                    typeof(TimeSpan),
+                    typeof(Guid)
+                }.Contains(type) ||
+                Convert.GetTypeCode(type) != TypeCode.Object;
         }
     }
 }

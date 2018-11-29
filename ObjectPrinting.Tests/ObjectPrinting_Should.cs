@@ -72,6 +72,16 @@ namespace ObjectPrinting.Tests
             personPrinter.PrintToString(person).Should().Be(expected);
         }
 
+        [Test]
+        public void ObjectPrinter_ShouldThrowArgumentException_WhenSettingCultureOnNotNumericTypes()
+        {
+            Action action = () => personPrinter.Printing<string>().Using(CultureInfo.InvariantCulture);
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Использованный тип не является допустимым.");
+
+        }
+
 
         [Test]
         public void ObjectPrinter_ShouldSerializePropertiesAlternatively()
