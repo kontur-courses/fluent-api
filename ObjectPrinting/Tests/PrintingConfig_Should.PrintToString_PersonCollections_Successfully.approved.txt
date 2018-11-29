@@ -1,0 +1,19 @@
+﻿PersonWithCollections
+	Childs = List`1
+		[
+		Person
+		Id = Guid
+		Name = Steve
+		Height = 5247.75
+		Age = 19
+		Child = null
+
+		Person
+		Id = Guid
+		Name = Bob
+		Height = 375.57
+		Age = 13
+		Child = null
+
+		]
+	Heights = null

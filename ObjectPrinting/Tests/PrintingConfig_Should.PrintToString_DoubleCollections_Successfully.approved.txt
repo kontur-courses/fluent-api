@@ -1,0 +1,11 @@
+﻿PersonWithCollections
+	Childs = null
+	Heights = List`1
+		[
+		52.57
+
+		5247.527
+
+		632.2
+
+		]

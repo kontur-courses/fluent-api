@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using ApprovalTests;
 using ApprovalTests.Reporters;
@@ -24,6 +25,46 @@ namespace ObjectPrinting.Tests
                 Age = 0
             }
         };
+
+        [Test]
+        public void PrintToString_PersonCollections_Successfully()
+        {
+            var collectionPerson = new PersonWithCollections
+            {
+                Childs = new List<Person>()
+                {
+                    new Person() {Id = Guid.Empty, Name = "Steve", Height = 5247.75, Age = 19},
+                    new Person() {Id = Guid.Empty, Name = "Bob", Height = 375.57, Age = 13}
+                }
+            };
+
+            var serialized = ObjectPrinter.For<PersonWithCollections>()
+                .PrintToString(collectionPerson);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void PrintToString_DoubleCollections_Successfully()
+        {
+            var collectionPerson = new PersonWithCollections {Heights = new List<double>() {52.57, 5247.527, 632.2}};
+
+            var serialized = ObjectPrinter.For<PersonWithCollections>()
+                .PrintToString(collectionPerson);
+
+            Approvals.Verify(serialized);
+        }
+
+        [Test]
+        public void PrintToString_PropertiesWithCircularReferences_Successfully()
+        {
+
+
+            var serialized = ObjectPrinter.For<Person>()
+                .PrintToString(objectForSerialization);
+
+            Approvals.Verify(serialized);
+        }
 
         [Test]
         public void Exclude_IdPropertyFromSerialization()

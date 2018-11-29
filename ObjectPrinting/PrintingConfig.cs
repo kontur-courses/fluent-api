@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +17,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, int maxRecursionDepth = 2)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -29,12 +30,25 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var propertySerializers = ((IPrintingConfig)this).PropertySerializers;
-            var typeSerializers = ((IPrintingConfig)this).TypeSerializers;
-            var culturallySpecificSerializers = ((IPrintingConfig)this).CulturallySpecificSerializers;
-            var trimmingSerializers = ((IPrintingConfig)this).TrimmingSerializers;
-
             var indentation = new string('\t', nestingLevel + 1);
+
+            var collectionBuilder = new StringBuilder();
+            collectionBuilder.AppendLine(obj.GetType().Name);
+            if (obj is ICollection collection)
+            {
+                collectionBuilder.Append(indentation + "[\r\n");
+                foreach (var item in collection)
+                    collectionBuilder.Append(indentation + PrintToString(item, nestingLevel) + "\r\n");
+                collectionBuilder.Append(indentation + "]\r\n");
+
+                return collectionBuilder.ToString();
+            }
+
+            var propertySerializers = ((IPrintingConfig) this).PropertySerializers;
+            var typeSerializers = ((IPrintingConfig) this).TypeSerializers;
+            var culturallySpecificSerializers = ((IPrintingConfig) this).CulturallySpecificSerializers;
+            var trimmingSerializers = ((IPrintingConfig) this).TrimmingSerializers;
+
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -54,12 +68,22 @@ namespace ObjectPrinting
                     || typeSerializers.TryGetValue(propertyType, out serializer)
                     || culturallySpecificSerializers.TryGetValue(propertyType, out serializer)
                     || trimmingSerializers.TryGetValue(propertyType, out serializer))
+                {
                     serialized = serializer(propertyInfo.GetValue(obj));
+                }
                 else
-                    serialized = $"{indentation}{propertyName} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}";
+                {
+
+                    if (nestingLevel == maxRecursionDepth)
+                        return "null" + Environment.NewLine;
+
+                    serialized =
+                        $"{indentation}{propertyName} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, maxRecursionDepth)}";
+                }
 
                 sb.Append(serialized);
             }
+
             return sb.ToString();
         }
 
@@ -80,7 +104,8 @@ namespace ObjectPrinting
 
         void IPrintingConfig.AddTypeSerializer<TPropertyType>(Func<TPropertyType, string> serializer)
         {
-            ((IPrintingConfig)this).TypeSerializers[typeof(TPropertyType)] = property => serializer.Invoke((TPropertyType)property);
+            ((IPrintingConfig) this).TypeSerializers[typeof(TPropertyType)] =
+                property => serializer.Invoke((TPropertyType) property);
         }
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.CulturallySpecificSerializers { get; set; } =
@@ -88,13 +113,14 @@ namespace ObjectPrinting
 
         void IPrintingConfig.AddCulturallySpecificSerializer<TPropertyType>(Func<TPropertyType, string> serializer)
         {
-            ((IPrintingConfig)this).CulturallySpecificSerializers[typeof(TPropertyType)] =
-                property => serializer.Invoke((TPropertyType)property);
+            ((IPrintingConfig) this).CulturallySpecificSerializers[typeof(TPropertyType)] =
+                property => serializer.Invoke((TPropertyType) property);
         }
 
-        public PropertySerializingConfigByName<TOwner, TPropertyType> Serialize<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
+        public PropertySerializingConfigByName<TOwner, TPropertyType> Serialize<TPropertyType>(
+            Expression<Func<TOwner, TPropertyType>> memberSelector)
         {
-            var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
+            var propertyName = ((MemberExpression) memberSelector.Body).Member.Name;
 
             return new PropertySerializingConfigByName<TOwner, TPropertyType>(this, propertyName);
         }
@@ -102,10 +128,11 @@ namespace ObjectPrinting
         Dictionary<string, Func<object, string>> IPrintingConfig.PropertySerializers { get; set; } =
             new Dictionary<string, Func<object, string>>();
 
-        void IPrintingConfig.AddNameSerializer<TPropertyType>(string propertyName, Func<TPropertyType, string> serializer)
+        void IPrintingConfig.AddNameSerializer<TPropertyType>(string propertyName,
+            Func<TPropertyType, string> serializer)
         {
-            ((IPrintingConfig)this).PropertySerializers[propertyName] =
-                property => serializer.Invoke((TPropertyType)property);
+            ((IPrintingConfig) this).PropertySerializers[propertyName] =
+                property => serializer.Invoke((TPropertyType) property);
         }
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.TrimmingSerializers { get; set; } =
@@ -113,13 +140,13 @@ namespace ObjectPrinting
 
         void IPrintingConfig.AddTrimmingSerializer<TPropertyType>(Func<TPropertyType, string> serializer)
         {
-            ((IPrintingConfig)this).TrimmingSerializers[typeof(TPropertyType)] =
-                property => serializer.Invoke((TPropertyType)property);
+            ((IPrintingConfig) this).TrimmingSerializers[typeof(TPropertyType)] =
+                property => serializer.Invoke((TPropertyType) property);
         }
 
         public PrintingConfig<TOwner> ExcludingProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
+            var propertyName = ((MemberExpression) memberSelector.Body).Member.Name;
             excludedProperties.Add(propertyName);
 
             return this;
