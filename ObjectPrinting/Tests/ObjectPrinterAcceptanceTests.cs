@@ -10,11 +10,13 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private Person person;
+
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Name = "Alex", Age = 19, Height = 180 };
+            person = new Person {Name = "Alex", Age = 19, Height = 180};
         }
+
         [Test]
         public void Demo()
         {
@@ -122,7 +124,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>();
 
             Assert.AreEqual(
-                printer.PrintToString(person), 
+                printer.PrintToString(person),
                 person.PrintToString());
         }
 
@@ -140,7 +142,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ShouldNotThrowExceptions_When_HasCircularReferences()
         {
-            var extendedPerson = new ExtendedPerson() { Age = 20};
+            var extendedPerson = new ExtendedPerson() {Age = 20};
             extendedPerson.Parent = extendedPerson;
 
             Assert.DoesNotThrow(() => extendedPerson.PrintToString());

@@ -14,9 +14,10 @@ namespace ObjectPrinting
     {
         private PrintingConfig<TOwner> printingConfig { get; }
         private readonly Expression<Func<TOwner, TPropType>> propertySelector;
+
         public PropertyPrintingConfig(
-            PrintingConfig<TOwner> printingConfig, 
-            Expression<Func<TOwner, TPropType>> propertySelector=null)
+            PrintingConfig<TOwner> printingConfig,
+            Expression<Func<TOwner, TPropType>> propertySelector = null)
         {
             this.printingConfig = printingConfig;
             this.propertySelector = propertySelector;
@@ -41,7 +42,10 @@ namespace ObjectPrinting
             ((IPrintingConfig) printingConfig).AddTypeSerializationFormat(typeof(TPropType), Function);
             return printingConfig;
         }
+
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;
-        Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.PropertySelector => propertySelector;
+
+        Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.PropertySelector =>
+            propertySelector;
     }
 }

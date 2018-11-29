@@ -18,11 +18,20 @@ namespace ObjectPrinting
         private ImmutableHashSet<object> printedObjects = ImmutableHashSet<object>.Empty;
         private int depth = 10;
         private int maxElements = 10;
-        private ImmutableDictionary<Type, Func<object, string>> typeSerializationFormats = ImmutableDictionary<Type, Func<object, string>>.Empty;
-        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertySerializationFormats = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
-        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertyPostProduction = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+
+        private ImmutableDictionary<Type, Func<object, string>> typeSerializationFormats =
+            ImmutableDictionary<Type, Func<object, string>>.Empty;
+
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertySerializationFormats =
+            ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertyPostProduction =
+            ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+
         private ImmutableDictionary<Type, CultureInfo> cultureInfo = ImmutableDictionary<Type, CultureInfo>.Empty;
-        private readonly Type[] finalTypes = {
+
+        private readonly Type[] finalTypes =
+        {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
@@ -39,10 +48,12 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> property)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> property)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, property);
         }
+
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> property)
         {
             if (!(property.Body is MemberExpression body))
@@ -51,10 +62,12 @@ namespace ObjectPrinting
             excludedProperties = excludedProperties.Add(typeof(TOwner).GetProperty(propertyName));
             return this;
         }
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
+
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedTypes = excludedTypes.Add(typeof(TPropType));
@@ -127,7 +140,7 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.Append(identation + "Elements:" + Environment.NewLine);
-            sb.Append(identation +  "{" + Environment.NewLine);
+            sb.Append(identation + "{" + Environment.NewLine);
             var count = 0;
             foreach (var e in enumerable)
             {
@@ -143,7 +156,6 @@ namespace ObjectPrinting
 
             result = sb.ToString();
             return true;
-
         }
 
         private bool TryPrint(object obj, PropertyInfo propertyInfo, out string result)
@@ -163,7 +175,6 @@ namespace ObjectPrinting
 
             result += Environment.NewLine;
             return true;
-
         }
 
         private bool TryPrintFinalType(object obj, out string result)
@@ -176,9 +187,9 @@ namespace ObjectPrinting
             if (type == typeof(int))
                 result = ((int) obj).ToString(GetCulture(type));
             else if (type == typeof(double))
-                result = ((double)obj).ToString(GetCulture(type));
+                result = ((double) obj).ToString(GetCulture(type));
             else if (type == typeof(float))
-                result = ((float)obj).ToString(GetCulture(type));
+                result = ((float) obj).ToString(GetCulture(type));
             else
                 result = obj.ToString();
             result += Environment.NewLine;

@@ -17,12 +17,14 @@ namespace ObjectPrinting
         {
             return AddCulture(propConfig, cultureInfo);
         }
+
         public static PrintingConfig<TOwner> Using<TOwner>(
             this PropertyPrintingConfig<TOwner, double> propConfig,
             CultureInfo cultureInfo)
         {
             return AddCulture(propConfig, cultureInfo);
         }
+
         public static PrintingConfig<TOwner> Using<TOwner>(
             this PropertyPrintingConfig<TOwner, float> propConfig,
             CultureInfo cultureInfo)
@@ -35,7 +37,7 @@ namespace ObjectPrinting
             CultureInfo cultureInfo)
         {
             var config = propConfig.PrintingConfig;
-            ((IPrintingConfig)config).AddCultureInfo(typeof(TPropType), cultureInfo);
+            ((IPrintingConfig) config).AddCultureInfo(typeof(TPropType), cultureInfo);
             return config;
         }
 
@@ -56,7 +58,7 @@ namespace ObjectPrinting
             }
 
             var config = iPropConfig.PrintingConfig;
-            ((IPrintingConfig)config).AddPostProduction(property, Trim);
+            ((IPrintingConfig) config).AddPostProduction(property, Trim);
             return config;
         }
     }
