@@ -11,7 +11,7 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludeTypes = new HashSet<Type>();
         private readonly HashSet<string> excludeProperties = new HashSet<string>();
-        private readonly Dictionary<Type, Delegate> typeOperations = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Func<object, string>> typeOperations = new Dictionary<Type, Func<object, string>>();
 
         private readonly List<Type> finalTypes = new List<Type>
         {
@@ -87,7 +87,7 @@ namespace ObjectPrinting
                 var propType = propertyInfo.PropertyType;
                 sb.Append(identation + propertyInfo.Name + " = ");
                 sb.Append(typeOperations.ContainsKey(propType)
-                    ? PrintToString(typeOperations[propType].DynamicInvoke(propertyInfo.GetValue(obj)),
+                    ? PrintToString(typeOperations[propType](propertyInfo.GetValue(obj)),
                         nestingLevel + 1)
                     : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }

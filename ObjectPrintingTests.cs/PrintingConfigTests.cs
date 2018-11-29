@@ -34,7 +34,7 @@ namespace ObjectPrintingTests.cs
             var expected =
                 $"Person\r\n\tId = Guid\r\n\tName = {person.Name}\r\n\tHeight = {person.Height + 1}\r\n\tAge = {person.Age}\r\n";
 
-            var actual = printer.Serialize<double>().Using(num => (num + 1).ToString())
+            var actual = printer.Serialize<double>().Using(num => ((double)num + 1).ToString())
                 .PrintToString(person);
 
             Assert.AreEqual(expected, actual);
@@ -97,7 +97,7 @@ namespace ObjectPrintingTests.cs
         }
 
         [Test]
-        public void DoSomething_WhenSomething()
+        public void SerializationWithConfiguration()
         {
             var expected =
                 $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n";

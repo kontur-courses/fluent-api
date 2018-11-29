@@ -6,6 +6,6 @@ namespace ObjectPrinting.SerializingConfig
     public interface ISerializingConfig<TOwner, TPropertyType>
     {
         PrintingConfig<TOwner> SerializingConfig { get; }
-        Dictionary<Type, Delegate> TypeOperations { get; }
+        Dictionary<Type, Func<object, string>> TypeOperations { get; }
     }
 }
