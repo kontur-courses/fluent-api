@@ -101,7 +101,7 @@ namespace ObjectPrinting
                         sb.AppendLine(type.Name);
                         foreach (var item in enumerable)
                         {
-                            if (iterations < numberIterationsForEnumerable) break;
+                            if (numberIterationsForEnumerable <= iterations) break;
                             sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
                             iterations++;
                         }

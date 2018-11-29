@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Globalization;
 using NUnit.Framework;
 using FluentAssertions;
@@ -165,6 +166,21 @@ namespace ObjectPrinting.Tests
                                  "Name = Vadim\r\n\t\t\t\tHeight = 182,22\r\n\t\t\t\tAge = 22\r\n\t\t\t\tArmLength = 97,5\r\n\t\t\t\t" +
                                  "NumberChildren = 2\r\n\tGroupLeader = Person\r\n\t\tId = Guid\r\n\t\t\tEmpty = Guid\r\n\t\t" +
                                  "Name = Alex\r\n\t\tHeight = 192,57\r\n\t\tAge = 21\r\n\t\tArmLength = 15\r\n\t\tNumberChildren = 2\r\n";
+            result.Should().BeEquivalentTo(expectedResult);
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_SerializeInfinitySequences()
+        {
+            var sequence = new Sequences();
+            var result = ObjectPrinter.For<Sequences>()
+                .Serializer<IEnumerable>()
+                .AddMemberCountForInfiniteSequence(5)
+                .PrintToString(sequence);
+            var expectedResult = "Sequences\r\n\tFibonacci = <get_Fibonacci>d__1\r\n\t\t\t1" +
+                                 "\r\n\t\t\t1\r\n\t\t\t2\r\n\t\t\t3\r\n\t\t\t5\r\n";
+
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);
         }
