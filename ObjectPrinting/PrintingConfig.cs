@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -71,7 +73,8 @@ namespace ObjectPrinting
             int maxNestingLevel, MemberTypes requiredMemberTypes)
         {
             if (nestingLevel >= maxNestingLevel)
-                throw new OverflowException("ѕревышен максимальный уровень вложенности");
+                return "WTF";
+//                throw new OverflowException("ѕревышен максимальный уровень вложенности");
 
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -86,26 +89,41 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            foreach (var memberInfo in GetRequiredMembers(obj, requiredMemberTypes))
+            if (type.Implements(typeof(IEnumerable)))
             {
-                if (!typesToBeExcluded.Contains(memberInfo.MemberType)
-                    && !propertiesToBeExcluded.Contains(memberInfo.MemberName))
+                var childPosition = 0;
+                foreach (var value in (IEnumerable) obj)
                 {
-                    var value = memberInfo.MemberValue;
+                    sb.Append(indentation + $"[{childPosition}] = " +
+                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel,
+                                  requiredMemberTypes));
+                    childPosition++;
+                }
+            }
+            else
+            {
+                foreach (var memberInfo in GetRequiredMembers(obj, requiredMemberTypes))
+                {
+                    if (!typesToBeExcluded.Contains(memberInfo.MemberType)
+                        && !propertiesToBeExcluded.Contains(memberInfo.MemberName))
+                    {
+                        var value = memberInfo.MemberValue;
 
-                    if (typesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberType)
-                        && !propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
-                        value = typesToBeAlternativelySerialized[memberInfo.MemberType].DynamicInvoke(value);
+                        if (typesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberType)
+                            && !propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
+                            value = typesToBeAlternativelySerialized[memberInfo.MemberType].DynamicInvoke(value);
 
-                    if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(memberInfo.MemberType))
-                        value = Convert.ToString(value,
-                            numericTypesToBeAlternativelySerializedUsingCultureInfo[memberInfo.MemberType]);
+                        if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(memberInfo.MemberType))
+                            value = Convert.ToString(value,
+                                numericTypesToBeAlternativelySerializedUsingCultureInfo[memberInfo.MemberType]);
 
-                    if (propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
-                        value = propertiesToBeAlternativelySerialized[memberInfo.MemberName].DynamicInvoke(value);
+                        if (propertiesToBeAlternativelySerialized.ContainsKey(memberInfo.MemberName))
+                            value = propertiesToBeAlternativelySerialized[memberInfo.MemberName].DynamicInvoke(value);
 
-                    sb.Append(indentation + memberInfo.MemberName + " = " +
-                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel, requiredMemberTypes));
+                        sb.Append(indentation + memberInfo.MemberName + " = " +
+                                  PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel,
+                                      requiredMemberTypes));
+                    }
                 }
             }
 
@@ -138,7 +156,7 @@ namespace ObjectPrinting
         /// Determine whether a type is simple (String, Decimal, DateTime, etc) 
         /// or complex (i.e. custom class with public properties and methods).
         /// </summary>
-        public static bool IsSimpleType(Type type)
+        private static bool IsSimpleType(Type type)
         {
             return
                 type.IsValueType ||

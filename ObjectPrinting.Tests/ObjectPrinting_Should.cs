@@ -14,6 +14,9 @@ namespace ObjectPrinting.Tests
         private PrintingConfig<MyCustomObject> myCustomObjectPrinter;
         private MyCustomObject myCustomObject;
 
+        private MyObjectWithEnumerables myObjectWithEnumerables;
+        private PrintingConfig<MyObjectWithEnumerables> myObjectWithEnumerablesPrinter;
+
         [SetUp]
         public void SetUp()
         {
@@ -33,6 +36,12 @@ namespace ObjectPrinting.Tests
                 StringProperty = "string",
                 AnotherStringProperty = "another string",
                 Person = person
+            };
+
+            myObjectWithEnumerablesPrinter = ObjectPrinter.For<MyObjectWithEnumerables>();
+            myObjectWithEnumerables = new MyObjectWithEnumerables
+            {
+                Array = new[] {1, 2, 3}
             };
         }
 
@@ -177,6 +186,19 @@ namespace ObjectPrinting.Tests
                            + Environment.NewLine;
 
             myCustomObjectPrinter.PrintToString(myCustomObject).Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldSerializeObjectsWithEnumerations()
+        {
+            var expected = string.Join(Environment.NewLine, "MyObjectWithEnumerables",
+                               "\tArray = Int32[]",
+                               "\t\t[0] = 1",
+                               "\t\t[1] = 2",
+                               "\t\t[2] = 3")
+                           + Environment.NewLine;
+
+            myObjectWithEnumerablesPrinter.PrintToString(myObjectWithEnumerables).Should().Be(expected);
         }
 
     }
