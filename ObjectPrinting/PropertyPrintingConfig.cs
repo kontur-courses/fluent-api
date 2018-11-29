@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Dictionary<Type, Func<object, string>> serializationMap;
@@ -21,7 +21,7 @@ namespace ObjectPrinting
             this.serializationMap = serializationMap;
         }
 
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.PrintingConfig => printingConfig;
 
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
@@ -31,7 +31,7 @@ namespace ObjectPrinting
         }
     }
 
-    internal interface ITypePrintingConfig<TOwner>
+    internal interface IPropertyPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> PrintingConfig { get; }
     }
@@ -60,7 +60,7 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> number,
             int count)
         {
-            return ((ITypePrintingConfig<TOwner>) number).PrintingConfig;
+            return ((IPropertyPrintingConfig<TOwner>) number).PrintingConfig;
         }
     }
 }

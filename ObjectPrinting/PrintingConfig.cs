@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -59,6 +60,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, typeof(TOwner));
         }
 
+
         private string PrintToString(object obj, int nestingLevel, MemberInfo member)
         {
             var maxDepth = 10;
@@ -77,10 +79,21 @@ namespace ObjectPrinting
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(char)
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+            
+            if (obj is IEnumerable enumerable)
+            {
+                var str = new StringBuilder();
+                foreach (var x1 in enumerable)
+                {
+                    str.Append(PrintToString(x1, nestingLevel+1, typeof(TOwner)));
+                }
+
+                return str.ToString();
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();

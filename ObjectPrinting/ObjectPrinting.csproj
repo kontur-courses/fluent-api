@@ -52,10 +52,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPropertyPrintingConfig.cs" />
     <Compile Include="MemberPrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ObjectExtensions.cs" />
+    <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="Tests\Car.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\Person.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />

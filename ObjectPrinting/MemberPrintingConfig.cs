@@ -24,12 +24,4 @@ namespace ObjectPrinting
             return printingConfig;
         }
     }
-
-    public static class MemberPrintingConfigExtension
-    {
-        public static PrintingConfig<TOwner> Cut<TOwner>(this MemberPrintingConfig<TOwner, string> config, int count)
-        {
-            return config.Using(str => str.Substring(0, count));
-        }
-    }
 }
