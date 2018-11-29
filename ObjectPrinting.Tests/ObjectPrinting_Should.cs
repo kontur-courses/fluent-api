@@ -8,18 +8,31 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     class ObjectPrinting_Should
     {
-        private PrintingConfig<Person> printer;
+        private PrintingConfig<Person> personPrinter;
         private Person person;
+
+        private PrintingConfig<MyCustomObject> myCustomObjectPrinter;
+        private MyCustomObject myCustomObject;
+
         [SetUp]
         public void SetUp()
         {
-            printer = ObjectPrinter.For<Person>();
+            personPrinter = ObjectPrinter.For<Person>();
             person = new Person
             {
                 Id = Guid.Empty,
                 Name = "John Smith",
                 Age = 69,
                 Height = 13.37
+            };
+
+            myCustomObjectPrinter = ObjectPrinter.For<MyCustomObject>();
+            myCustomObject = new MyCustomObject
+            {
+                JustAField = 1337,
+                StringProperty = "string",
+                AnotherStringProperty = "another string",
+                Person = person
             };
         }
 
@@ -30,9 +43,9 @@ namespace ObjectPrinting.Tests
                                "\tName = John Smith", "\tHeight = 13,37")
                            + Environment.NewLine;
 
-            printer.Excluding<int>();
+            personPrinter.Excluding<int>();
 
-            printer.PrintToString(person).Should().Be(expected);
+            personPrinter.PrintToString(person).Should().Be(expected);
         }
 
         [Test]
@@ -42,9 +55,9 @@ namespace ObjectPrinting.Tests
                                "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69 (это инт)")
                            + Environment.NewLine;
 
-            printer.Printing<int>().Using(e => e + " (это инт)");
+            personPrinter.Printing<int>().Using(e => e + " (это инт)");
 
-            printer.PrintToString(person).Should().Be(expected);
+            personPrinter.PrintToString(person).Should().Be(expected);
         }
 
         [Test]
@@ -54,34 +67,28 @@ namespace ObjectPrinting.Tests
                                "\tName = John Smith", "\tHeight = 13.37", "\tAge = 69")
                            + Environment.NewLine;
 
-            printer.Printing<double>().Using(CultureInfo.InvariantCulture);
+            personPrinter.Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            printer.PrintToString(person).Should().Be(expected);
+            personPrinter.PrintToString(person).Should().Be(expected);
         }
 
 
         [Test]
         public void ObjectPrinter_ShouldSerializePropertiesAlternatively()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 0", "\tMiddleName = Johnovich", 
-                               "\tId = 00000000-0000-0000-0000-000000000000",
-                               "\tName = John Smith (это имя)",
-                               "\tHeight = 13,37", "\tAge = 69")
+            var expected = string.Join(Environment.NewLine, "MyCustomObject", "\tJustAField = 1337",
+                               "\tStringProperty = string (это строковое свойство)",
+                               "\tAnotherStringProperty = another string",
+                               "\tPerson = Person",
+                               "\t\tId = 00000000-0000-0000-0000-000000000000",
+                               "\t\tName = John Smith",
+                               "\t\tHeight = 13,37",
+                               "\t\tAge = 69")
                            + Environment.NewLine;
 
-            var printer = ObjectPrinter.For<PersonExtended>();
-            var person = new PersonExtended
-            {
-                Id = Guid.Empty,
-                Name = "John Smith",
-                MiddleName = "Johnovich",
-                Age = 69,
-                Height = 13.37
-            };
+            myCustomObjectPrinter.Printing(e => e.StringProperty).Using(e => e + " (это строковое свойство)");
 
-            printer.Printing(e => e.Name).Using(e => e + " (это имя)");
-
-            printer.PrintToString(person).Should().Be(expected);
+            myCustomObjectPrinter.PrintToString(myCustomObject).Should().Be(expected);
         }
 
         [Test]
@@ -91,9 +98,9 @@ namespace ObjectPrinting.Tests
                                "\tName = John", "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
 
-            printer.Printing(e => e.Name).TrimmedToLength(4);
+            personPrinter.Printing(e => e.Name).TrimmedToLength(4);
 
-            printer.PrintToString(person).Should().Be(expected);
+            personPrinter.PrintToString(person).Should().Be(expected);
         }
 
         [Test]
@@ -102,43 +109,36 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine, "Person", "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
                            + Environment.NewLine;
 
-            printer.Excluding(e => e.Id);
+            personPrinter.Excluding(e => e.Id);
 
-            printer.PrintToString(person).Should().Be(expected);
+            personPrinter.PrintToString(person).Should().Be(expected);
         }
 
 
         [Test]
         public void ObjectPrinter_ShouldOverrideAlternativeTypeSerialization_IfPropertySerializationSpecified()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 0", 
-                               "\tMiddleName = Johnovich (это строка)",
-                               "\tId = 00000000-0000-0000-0000-000000000000",
-                               "\tName = John Smith (это имя (форматирование для типа не применилось))",
-                               "\tHeight = 13,37", "\tAge = 69")
+            var expected = string.Join(Environment.NewLine, "MyCustomObject", "\tJustAField = 1337",
+                               "\tStringProperty = string (это StringProperty (форматирование для типа не применилось))",
+                               "\tAnotherStringProperty = another string (это строка)",
+                               "\tPerson = Person",
+                               "\t\tId = 00000000-0000-0000-0000-000000000000",
+                               "\t\tName = John Smith (это строка)",
+                               "\t\tHeight = 13,37",
+                               "\t\tAge = 69")
                            + Environment.NewLine;
-
-            var printer = ObjectPrinter.For<PersonExtended>();
-            var person = new PersonExtended
-            {
-                Id = Guid.Empty,
-                Name = "John Smith",
-                MiddleName = "Johnovich",
-                Age = 69,
-                Height = 13.37
-            };
-
-            printer
-                .Printing(e => e.Name).Using(e => e + " (это имя (форматирование для типа не применилось))")
+            
+            myCustomObjectPrinter
+                .Printing(e => e.StringProperty).Using(e => e + " (это StringProperty (форматирование для типа не применилось))")
                 .Printing<string>().Using(e => e + " (это строка)");
 
-            printer.PrintToString(person).Should().Be(expected);
+            myCustomObjectPrinter.PrintToString(myCustomObject).Should().Be(expected);
         }
 
         [Test]
         public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInPrinting()
         {
-            Action action = () => printer.Printing(x => new[] { 1, 2, 3 });
+            Action action = () => personPrinter.Printing(x => new[] { 1, 2, 3 });
 
             action.Should().Throw<ArgumentException>()
                 .WithMessage("Использованное выражение не является допустимым");
@@ -147,7 +147,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldThrowArgumentException_OnInvalidExpressionInExcluding()
         {
-            Action action = () => printer.Excluding(x => x.Age + 1);
+            Action action = () => personPrinter.Excluding(x => x.Age + 1);
 
             action.Should().Throw<ArgumentException>()
                 .WithMessage("Использованное выражение не является допустимым");
@@ -156,24 +156,17 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldSerializeFields()
         {
-            var expected = string.Join(Environment.NewLine, "PersonExtended", "\tJustAField = 1337",
-                               "\tMiddleName = Johnovich",
-                               "\tId = 00000000-0000-0000-0000-000000000000",
-                               "\tName = John Smith", "\tHeight = 13,37", "\tAge = 69")
+            var expected = string.Join(Environment.NewLine, "MyCustomObject", "\tJustAField = 1337",
+                               "\tStringProperty = string",
+                               "\tAnotherStringProperty = another string",
+                               "\tPerson = Person",
+                               "\t\tId = 00000000-0000-0000-0000-000000000000",
+                               "\t\tName = John Smith",
+                               "\t\tHeight = 13,37",
+                               "\t\tAge = 69")
                            + Environment.NewLine;
 
-            var printer = ObjectPrinter.For<PersonExtended>();
-            var person = new PersonExtended
-            {
-                Id = Guid.Empty,
-                Name = "John Smith",
-                MiddleName = "Johnovich",
-                Age = 69,
-                Height = 13.37,
-                JustAField = 1337
-            };
-
-            printer.PrintToString(person).Should().Be(expected);
+            myCustomObjectPrinter.PrintToString(myCustomObject).Should().Be(expected);
         }
 
     }

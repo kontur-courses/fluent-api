@@ -60,7 +60,7 @@
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinting_Should.cs" />
     <Compile Include="Person.cs" />
-    <Compile Include="PersonExtended.cs" />
+    <Compile Include="MyCustomObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
