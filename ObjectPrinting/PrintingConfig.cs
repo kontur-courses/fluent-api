@@ -19,8 +19,7 @@ namespace ObjectPrinting
         private static readonly Type[] NumberTypes = {typeof(int), typeof(double), typeof(float)};
 
 
-        private readonly Dictionary<Type, CultureInfo> NumberTypeCulture =
-            NumberTypes.ToDictionary(t => t, t => CultureInfo.InvariantCulture);
+        private readonly Dictionary<MemberInfo, CultureInfo> customMemberCulture = new Dictionary<MemberInfo, CultureInfo>();
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
@@ -66,7 +65,7 @@ namespace ObjectPrinting
                     memberValue = ((string) memberInfo.GetValue(obj)).Truncate(maxLength) + Environment.NewLine;
                 else if (customMemberSerializers.TryGetValue(memberInfo, out var serializer))
                     memberValue = serializer((TOwner) obj) + Environment.NewLine;
-                else if (NumberTypeCulture.TryGetValue(memberInfo.GetMemberType(), out var culture))
+                else if (customMemberCulture.TryGetValue(memberInfo.GetMemberType(), out var culture))
                     memberValue = memberInfo.GetValue(obj).ToStringWithCulture(culture) + Environment.NewLine;
                 else if (customTypeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
                     memberValue = typeSerializer(memberInfo.GetValue(obj)) + Environment.NewLine;
@@ -112,7 +111,7 @@ namespace ObjectPrinting
 
         void IPrintingConfig<TOwner>.SetCultureFor<TPropType>(CultureInfo cultureInfo)
         {
-            NumberTypeCulture[typeof(TPropType)] = cultureInfo;
+            customMemberCulture[typeof(TPropType)] = cultureInfo;
         }
 
         void IPrintingConfig<TOwner>.SetTrimmingFor(MemberInfo memberInfo, int maxLength)

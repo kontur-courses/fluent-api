@@ -15,12 +15,8 @@ namespace ObjectPrinting
 
         public static string ToStringWithCulture(this object obj, CultureInfo cultureInfo)
         {
-            if (obj is int i)
-                return i.ToString(cultureInfo);
-            if (obj is double d)
-                return d.ToString(cultureInfo);
-            if (obj is float f)
-                return f.ToString(cultureInfo);
+            if (obj is IFormattable formattable)
+                return formattable.ToString(null, cultureInfo);
 
             throw new ArgumentException("Expected argument to be", nameof(obj));
         }

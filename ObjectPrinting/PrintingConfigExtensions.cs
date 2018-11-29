@@ -1,31 +1,18 @@
+using System;
 using System.Globalization;
+
 // ReSharper disable UnusedMember.Global
 
 namespace ObjectPrinting
 {
     public static class PrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, int> printingConfigContainer,
-            CultureInfo currentCulture)
+        public static PrintingConfig<TOwner> Using<TOwner, TType>(
+            this TypePrintingConfig<TOwner, TType> printingConfigContainer,
+            CultureInfo currentCulture) where TType : IFormattable
         {
             var printingConfig = ((IPrintingConfigContainer<TOwner>) printingConfigContainer).PrintingConfig;
-            ((IPrintingConfig<TOwner>) printingConfig).SetCultureFor<int>(currentCulture);
-            return printingConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, double> printingConfigContainer,
-            CultureInfo currentCulture)
-        {
-            var printingConfig = ((IPrintingConfigContainer<TOwner>)printingConfigContainer).PrintingConfig;
-            ((IPrintingConfig<TOwner>)printingConfig).SetCultureFor<double>(currentCulture);
-            return printingConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, float> printingConfigContainer,
-            CultureInfo currentCulture)
-        {
-            var printingConfig = ((IPrintingConfigContainer<TOwner>)printingConfigContainer).PrintingConfig;
-            ((IPrintingConfig<TOwner>)printingConfig).SetCultureFor<float>(currentCulture);
+            ((IPrintingConfig<TOwner>) printingConfig).SetCultureFor<TType>(currentCulture);
             return printingConfig;
         }
 

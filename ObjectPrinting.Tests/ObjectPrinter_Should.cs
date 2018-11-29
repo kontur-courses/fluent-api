@@ -39,7 +39,7 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine,
                 "Person",
                 "\tAge = 18",
-                "\tHeight = 178.5",
+                "\tHeight = 178,5",
                 "\tId = 12345678-9abc-def1-2345-6789abcdef01",
                 "\tName = Mike");
 
@@ -54,7 +54,7 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine,
                 "Person",
                 "\tAge = 18",
-                "\tHeight = 178.5",
+                "\tHeight = 178,5",
                 "\tName = Mike");
 
             config.PrintToString(person).Should().BeEquivalentTo(expected + Environment.NewLine);
@@ -96,7 +96,7 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine,
                 "Person",
                 "\tAge = 18",
-                "\tHeight = 178.5",
+                "\tHeight = 178,5",
                 "\tId = 12345678-9ABC-DEF1-2345-6789ABCDEF01",
                 "\tName = Mike");
 
@@ -111,7 +111,7 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine,
                 "Person",
                 "\tAge = 18",
-                "\tHeight = 178.5",
+                "\tHeight = 178,5",
                 "\tId = 12345678-9abc-def1-2345-6789abcdef01",
                 "\tName = Blablaike");
 
@@ -142,7 +142,7 @@ namespace ObjectPrinting.Tests
             var expected = string.Join(Environment.NewLine,
                 "Person",
                 "\tAge = 18",
-                "\tHeight = 178.5",
+                "\tHeight = 178,5",
                 "\tId = 12345678-9abc-def1-2345-6789abcdef01",
                 "\tName = Mi");
 

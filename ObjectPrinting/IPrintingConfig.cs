@@ -6,7 +6,7 @@ namespace ObjectPrinting
 {
     internal interface IPrintingConfig<out TOwner>
     {
-        void SetCultureFor<T>(CultureInfo cultureInfo);
+        void SetCultureFor<T>(CultureInfo cultureInfo) where T : IFormattable;
 
         void SetTrimmingFor(MemberInfo memberInfo, int maxLength);
 
