@@ -21,15 +21,17 @@ namespace ObjectPrinting
         private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
         private readonly List<Type> excludedTypes = new List<Type>();
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<PropertyInfo, Delegate> propertySerializators = new Dictionary<PropertyInfo, Delegate>();
+        private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
 
-        internal void ChangeSerializationForProperty<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> serialisation)
+        internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serialisator)
         {
-
+            propertySerializators[propertyInfo] = serialisator;
         }
 
-        internal void ChangeSerialisationForType<TPropType>(Type type, Func<TPropType, string> serialisation)
+        internal void ChangeSerializationForType(Type type, Delegate serialisator)
         {
-
+            typeSerializators[type] = serialisator;
         }
 
         internal void ChangeCultureInfoForType(Type type, CultureInfo cultureInfo)
@@ -84,14 +86,27 @@ namespace ObjectPrinting
                 if (excludedProperties.Contains(propertyInfo)) continue;
 
                 var propertyValue = propertyInfo.GetValue(obj);
-                var propertyValueString = "";
+                var propertyValueString = string.Empty;
 
                 if (typeCultureInfos.ContainsKey(propertyInfo.PropertyType))
                 {
                     var culture = typeCultureInfos[propertyInfo.PropertyType];
                     propertyValueString = string.Format(culture, "{0}", propertyValue) + Environment.NewLine;
                 }
-                else
+
+                if (typeSerializators.ContainsKey(propertyInfo.PropertyType))
+                {
+                    propertyValueString =
+                        typeSerializators[propertyInfo.PropertyType].DynamicInvoke(propertyValue) + Environment.NewLine;
+                }
+
+                if (propertySerializators.ContainsKey(propertyInfo))
+                {
+                    propertyValueString =
+                        propertySerializators[propertyInfo].DynamicInvoke(propertyValue) + Environment.NewLine;
+                }
+
+                if (propertyValueString == string.Empty)
                 {
                     propertyValueString = PrintToString(propertyValue, nestingLevel + 1);
                 }

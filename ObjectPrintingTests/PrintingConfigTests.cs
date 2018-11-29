@@ -43,10 +43,26 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ChangeCultureForDouble()
+        public void ChangeCultureForNumeric_Double()
         {
             const string expected = "Person\r\n\tId = Guid\r\n\tName = mattgroy\r\n\tHeight = 1.89\r\n\tAge = 18\r\n";
             printer.Printing<double>().Using(CultureInfo.InvariantCulture);
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ChangeSerializationForProperty_Age()
+        {
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = mattgroy\r\n\tHeight = 1,89\r\n\tAge = 21\r\n";
+            printer.Printing(p => p.Age).Using(i => (i + 3).ToString());
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void ChangeSerializationForType_String()
+        {
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = c#\r\n\tHeight = 1,89\r\n\tAge = 18\r\n";
+            printer.Printing<string>().Using(s => "c#");
             printer.PrintToString(person).Should().Be(expected);
         }
     }

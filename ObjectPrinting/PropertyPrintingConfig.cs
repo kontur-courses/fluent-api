@@ -22,6 +22,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            if (propertyInfo == null)
+            {
+                printingConfig.ChangeSerializationForType(typeof(TPropType), print);
+            }
+            else
+            {
+                printingConfig.ChangeSerializationForProperty(propertyInfo, print);
+            }
+
             return printingConfig;
         }
 
