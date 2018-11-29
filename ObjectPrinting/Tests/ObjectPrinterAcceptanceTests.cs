@@ -148,7 +148,7 @@ namespace ObjectPrinting.Tests
         }
     }
 
-    class ExtendedPerson : Person
+    internal class ExtendedPerson : Person
     {
         public Person Parent { get; set; }
     }

@@ -30,10 +30,10 @@ namespace ObjectPrinting
                     throw new ArgumentException();
                 var propertyName = body.Member.Name;
                 var property = typeof(TOwner).GetProperty(propertyName);
-                ((IPrintingConfig<TOwner>) printingConfig).AddPropertySerializationFormat(property, func);
+                ((IPrintingConfig) printingConfig).AddPropertySerializationFormat(property, func);
             }
 
-            ((IPrintingConfig<TOwner>) printingConfig).AddTypeSerializationFormat(typeof(TPropType), func);
+            ((IPrintingConfig) printingConfig).AddTypeSerializationFormat(typeof(TPropType), func);
             return printingConfig;
         }
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;

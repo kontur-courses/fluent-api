@@ -35,7 +35,7 @@ namespace ObjectPrinting
             CultureInfo cultureInfo)
         {
             var config = propConfig.PrintingConfig;
-            ((IPrintingConfig<TOwner>)config).AddCultureInfo(typeof(TPropType), cultureInfo);
+            ((IPrintingConfig)config).AddCultureInfo(typeof(TPropType), cultureInfo);
             return config;
         }
 
@@ -49,10 +49,13 @@ namespace ObjectPrinting
             var propertyName = body.Member.Name;
             var property = typeof(TOwner).GetProperty(propertyName);
 
-            string Trim(string s) => count > s.Length ? s : s.Substring(0, count);
+            string Trim(string s)
+            {
+                return count > s.Length ? s : s.Substring(0, count);
+            }
 
             var config = iPropConfig.PrintingConfig;
-            ((IPrintingConfig<TOwner>)config).AddPostProduction(property, (Func<string, string>) Trim);
+            ((IPrintingConfig)config).AddPostProduction(property, (Func<string, string>) Trim);
             return config;
         }
     }

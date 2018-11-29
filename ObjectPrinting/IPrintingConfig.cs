@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ObjectPrinting
 {
-    interface IPrintingConfig<TOwner>
+    internal interface IPrintingConfig
     {
         void AddPropertySerializationFormat(PropertyInfo property, Delegate format);
         void AddTypeSerializationFormat(Type type, Delegate format);

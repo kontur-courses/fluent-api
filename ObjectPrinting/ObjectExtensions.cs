@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ObjectPrinting
 {
-    static class ObjectExtensions
+    internal static class ObjectExtensions
     {
         public static string PrintToString<T>(this T obj)
         {

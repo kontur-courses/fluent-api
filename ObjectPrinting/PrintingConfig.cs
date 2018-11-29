@@ -11,7 +11,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
         private ImmutableHashSet<PropertyInfo> excludedProperties = ImmutableHashSet<PropertyInfo>.Empty;
@@ -27,15 +27,15 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        public PrintingConfig<TOwner> WithDepth(int depth)
+        public PrintingConfig<TOwner> WithDepth(int newDepth)
         {
-            this.depth = depth;
+            depth = newDepth;
             return this;
         }
 
-        public PrintingConfig<TOwner> MaxElements(int maxElements)
+        public PrintingConfig<TOwner> MaxElements(int newMaxElements)
         {
-            this.maxElements = maxElements;
+            maxElements = newMaxElements;
             return this;
         }
 
@@ -78,10 +78,7 @@ namespace ObjectPrinting
             if (printedObjects.Contains(obj))
                 return "Already printed " + obj.GetType() + Environment.NewLine;
 
-            if (nestingLevel > depth)
-                return "";
-
-            return PrintObject(obj, nestingLevel);
+            return nestingLevel > depth ? string.Empty : PrintObject(obj, nestingLevel);
         }
 
         private string PrintObject(object obj, int nestingLevel)
@@ -136,11 +133,10 @@ namespace ObjectPrinting
             {
                 sb.Append(identation + identation + PrintToString(e, nestingLevel + 1));
                 count++;
-                if (count > maxElements && maxElements != 0)
-                {
-                    sb.Append(identation + identation + $"First {count} elements...{Environment.NewLine}");
-                    break;
-                }
+                if (count <= maxElements || maxElements == 0)
+                    continue;
+                sb.Append(identation + identation + $"First {count} elements...{Environment.NewLine}");
+                break;
             }
 
             sb.Append(identation + "}" + Environment.NewLine);
@@ -194,25 +190,25 @@ namespace ObjectPrinting
 
         private CultureInfo GetCulture(Type type)
         {
-            return (cultureInfo.ContainsKey(type)) ? cultureInfo[type] : CultureInfo.InvariantCulture;
+            return cultureInfo.ContainsKey(type) ? cultureInfo[type] : CultureInfo.InvariantCulture;
         }
 
-        void IPrintingConfig<TOwner>.AddPropertySerializationFormat(PropertyInfo property, Delegate format)
+        void IPrintingConfig.AddPropertySerializationFormat(PropertyInfo property, Delegate format)
         {
             propertySerializationFormats = propertySerializationFormats.SetItem(property, format);
         }
 
-        void IPrintingConfig<TOwner>.AddTypeSerializationFormat(Type type, Delegate format)
+        void IPrintingConfig.AddTypeSerializationFormat(Type type, Delegate format)
         {
             typeSerializationFormats = typeSerializationFormats.SetItem(type, format);
         }
 
-        void IPrintingConfig<TOwner>.AddPostProduction(PropertyInfo property, Delegate format)
+        void IPrintingConfig.AddPostProduction(PropertyInfo property, Delegate format)
         {
             propertyPostProduction = propertyPostProduction.SetItem(property, format);
         }
 
-        void IPrintingConfig<TOwner>.AddCultureInfo(Type type, CultureInfo info)
+        void IPrintingConfig.AddCultureInfo(Type type, CultureInfo info)
         {
             cultureInfo = cultureInfo.SetItem(type, info);
         }
