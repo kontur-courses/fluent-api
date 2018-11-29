@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -69,21 +70,22 @@ namespace ObjectPrinting
             if (obj is IEnumerable collection)
                 sb.Append(PrintElements(collection, nestingLevel));
             else
-                sb.Append(PrintProperties(obj, nestingLevel));
+                sb.Append(PrintMembers(obj, nestingLevel));
             currentObjects.Pop();
             return sb.ToString();
         }
 
-        private string PrintProperties(object obj, int nestingLevel)
+        private string PrintMembers(object obj, int nestingLevel)
         {
             var type = obj.GetType();
             var sb = new StringBuilder();
             var indentation = new string('\t', nestingLevel + 1);
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var memberInfo in type.GetProperties().Cast<MemberInfo>().Concat(type.GetFields()))
             {
-                if (!TryGetPropertyStringValue(obj, propertyInfo, nestingLevel, out var propertyRepresentation))
+                var memberRepresentation = TryGetMemberStringValue(obj, memberInfo, nestingLevel);
+                if (memberRepresentation == null)
                     continue;
-                sb.Append(indentation + propertyInfo.Name + " = " + propertyRepresentation);
+                sb.Append(indentation + memberInfo.Name + " = " + memberRepresentation);
             }
 
             return sb.ToString();
@@ -125,23 +127,22 @@ namespace ObjectPrinting
             }
         }
 
-        private bool TryGetPropertyStringValue(object obj, PropertyInfo propertyInfo, int nestingLevel, out string value)
+        private string TryGetMemberStringValue(object obj, MemberInfo memberInfo, int nestingLevel)
         {
             var type = obj.GetType();
-            var property = (type, propertyInfo.Name);
-            if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(property))
-            {
-                value = null;
-                return false;
-            }
-            value = propertySerializationSettings.ContainsKey(property) ?
-                propertySerializationSettings[property].Invoke(propertyInfo.GetValue(obj)) + Environment.NewLine
-                : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            var member = (type, memberInfo.Name);
+            var memberType = (memberInfo as PropertyInfo)?.PropertyType ?? (memberInfo as FieldInfo)?.FieldType;
+            var memberValue = (memberInfo as PropertyInfo)?.GetValue(obj) ?? (memberInfo as FieldInfo)?.GetValue(obj);
+            if (excludedTypes.Contains(memberType) || excludedProperties.Contains(member))
+                return null;
+            var value = propertySerializationSettings.ContainsKey(member) ?
+                propertySerializationSettings[member].Invoke(memberValue) + Environment.NewLine
+                : PrintToString(memberValue, nestingLevel + 1);
 
-            if (propertyTrimmingSettings.ContainsKey(property))
-                value = value.Remove(propertyTrimmingSettings[property]) +
+            if (propertyTrimmingSettings.ContainsKey(member))
+                value = value.Remove(propertyTrimmingSettings[member]) +
                                          Environment.NewLine;
-            return true;
+            return value;
         }
     }
 }

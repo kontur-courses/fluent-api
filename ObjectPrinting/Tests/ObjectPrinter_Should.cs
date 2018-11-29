@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -28,7 +25,7 @@ namespace ObjectPrinting.Tests
                 Id = Guid.NewGuid(),
                 Name = "John",
                 Height = 1.8,
-                Age = 18,
+                Age = 18
             };
         }
 
@@ -161,6 +158,24 @@ namespace ObjectPrinting.Tests
             var actual = list.Print();
 
             actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void BeAbleToPrintFields()
+        {
+            var fieldPerson = new FieldPerson
+            {
+                Id = person.Id,
+                Name = person.Name,
+                Height = person.Height,
+                Age = person.Age
+            };
+
+            var expected = person.Print();
+            var actual = fieldPerson.Print();
+
+            actual.Substring(5) //removing the "Field" part
+                .Should().Be(expected);
         }
     }
 }

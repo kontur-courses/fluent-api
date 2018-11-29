@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="PrintingConfig\IPrintingConfig.cs" />
     <Compile Include="PropertySerializingContext\IPropertySerializingContext.cs" />
+    <Compile Include="Tests\FieldPerson.cs" />
     <Compile Include="TypeSerializingContext\ITypeSerializingContext.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig\PrintingConfig.cs" />
