@@ -38,9 +38,10 @@ namespace ObjectPrinting
             nestingLevel = 1;
         }
 
-        private PrintingConfig(int nestingLevel)
+        private PrintingConfig(int nestingLevel, int maxRecursiveLevel)
         {
             this.nestingLevel = nestingLevel;
+            this.maxRecursiveLevel = maxRecursiveLevel;
         }
         #endregion
 
@@ -53,6 +54,12 @@ namespace ObjectPrinting
         {
             var propName = ((MemberExpression) memberSelector.Body).Member.Name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propName);
+        }
+
+        public PrintingConfig<TOwner> SetMaxNestingLevel(int maxNestingLevel)
+        {
+            maxRecursiveLevel = maxNestingLevel;
+            return this;
         }
 
 
@@ -108,7 +115,7 @@ namespace ObjectPrinting
                 else if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printerTypes))
                     printer = printerTypes;
                 else
-                    printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
+                    printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
 
                 sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
 
