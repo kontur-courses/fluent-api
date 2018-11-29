@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentAssertions;
+﻿using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -17,7 +12,8 @@ namespace ObjectPrinting.Tests
             var printingConfig = new PrintingConfig<Person>();
             printingConfig.Exclude<int>();
 
-            printingConfig.Settings.GetExcludedProperties().Should().Contain(typeof(double));
+            printingConfig.Settings.GetExcludedProperties().Should().Contain(typeof(int));
         }
+
     }
 }
