@@ -14,8 +14,8 @@ namespace ObjectPrinting.Config
     {
         private readonly System.Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string), typeof(decimal),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(int), typeof(double), typeof(float), typeof(decimal),
+            typeof(string), typeof(DateTime), typeof(TimeSpan)
         };
 
         private readonly HashSet<System.Type> typesToExclude;
@@ -25,7 +25,7 @@ namespace ObjectPrinting.Config
         private readonly Dictionary<MemberInfo, Func<object, string>> printingOverridedMembers;
         private readonly HashSet<MemberInfo> membersToExclude;
 
-        private readonly HashSet<object> PrintedObjects;
+        private readonly HashSet<object> printedObjects;
 
         public PrintingConfig()
         {
@@ -36,7 +36,7 @@ namespace ObjectPrinting.Config
             printingOverridedMembers = new Dictionary<MemberInfo, Func<object, string>>();
             membersToExclude = new HashSet<MemberInfo>();
 
-            PrintedObjects = new HashSet<object>();
+            printedObjects = new HashSet<object>();
         }
 
         #region Types Handling
@@ -105,10 +105,10 @@ namespace ObjectPrinting.Config
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (PrintedObjects.Contains(obj))
+            if (printedObjects.Contains(obj))
                 return "...";
 
-            PrintedObjects.Add(obj);
+            printedObjects.Add(obj);
 
             if (obj == null)
                 return "null";
