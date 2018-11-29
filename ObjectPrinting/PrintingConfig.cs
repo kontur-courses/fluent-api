@@ -79,37 +79,34 @@ namespace ObjectPrinting
 
             var indentation = new string('\t', nestingLevel + 1);
             var members = FilteringMembers(type);
-            return ProcessObject(obj, nestingLevel, viewedObjects, indentation, members);
+
+            return obj is ICollection collection 
+                ? PrintingCollections(nestingLevel, indentation, type, collection) 
+                : obj is IEnumerable enumerable ? PrintingEnumerable(nestingLevel, indentation, type, enumerable)
+                    : PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
         }
 
-        private string ProcessObject(object obj, int nestingLevel, HashSet<object> viewedObjects, string indentation, MemberInfo[] members)
+        private string PrintingEnumerable(int nestingLevel, string indentation, Type type, IEnumerable enumerable)
         {
-            var type = obj.GetType();
+            var iterations = 0;
             var sb = new StringBuilder();
-            switch (obj)
+            sb.AppendLine(type.Name);
+            foreach (var item in enumerable)
             {
-                case ICollection collection:
-                    {
-                        sb.AppendLine(type.Name);
-                        foreach (var item in collection)
-                            sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
-                        return sb.ToString();
-                    }
-                case IEnumerable enumerable:
-                    {
-                        var iterations = 0;
-                        sb.AppendLine(type.Name);
-                        foreach (var item in enumerable)
-                        {
-                            if (numberIterationsForEnumerable <= iterations) break;
-                            sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
-                            iterations++;
-                        }
-                        return sb.ToString();
-                    }
-                default:
-                    return PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
+                if (numberIterationsForEnumerable <= iterations) break;
+                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+                iterations++;
             }
+            return sb.ToString();
+        }
+
+        private string PrintingCollections(int nestingLevel, string indentation, Type type, ICollection collection)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(type.Name);
+            foreach (var item in collection)
+                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+            return sb.ToString();
         }
 
         private MemberInfo[] FilteringMembers(Type type)
