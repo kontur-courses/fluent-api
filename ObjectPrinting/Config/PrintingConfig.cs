@@ -125,6 +125,15 @@ namespace ObjectPrinting.Config
             
             var sb = new StringBuilder();
             sb.Append(type.Name);
+            sb.Append(PropertiesAndFieldsToString(obj, nestingLevel));
+
+            return sb.ToString();
+        }
+
+        private string PropertiesAndFieldsToString(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder();
 
             var propertiesAndFields = type
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>()
