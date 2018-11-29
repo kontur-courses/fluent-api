@@ -27,6 +27,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            if(!typeof(TPropType).IsNumericType())
+                throw new ArgumentException("Использованный тип не является допустимым.");
+
             printingConfig
                 .AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(typeof(TPropType), culture);
             return printingConfig;
