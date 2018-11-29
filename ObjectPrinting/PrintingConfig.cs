@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,8 +13,28 @@ namespace ObjectPrinting
     {
         private const char Indent = '\t';
 
-        private List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
-        private List<Type> excludedTypes = new List<Type>();
+        private readonly Type[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+
+        internal void ChangeSerializationForProperty<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> serialisation)
+        {
+
+        }
+
+        internal void ChangeSerialisationForType<TPropType>(Type type, Func<TPropType, string> serialisation)
+        {
+
+        }
+
+        internal void ChangeCultureInfoForType(Type type, CultureInfo cultureInfo)
+        {
+
+        }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -48,11 +70,6 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
@@ -62,10 +79,36 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (excludedTypes.Contains(propertyInfo.PropertyType)) continue;
+                if (excludedProperties.Contains(propertyInfo)) continue;
+
+                var propertyValueString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+
+                sb.Append(identation + propertyInfo.Name + " = " + propertyValueString);
             }
+            return sb.ToString();
+        }
+
+        private string PrintToStringIEnumerable(object obj, IEnumerable collection)
+        {
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+
+            sb.Append(
+                type.Name +
+                Environment.NewLine +
+                '{' +
+                Environment.NewLine);
+
+            foreach (var item in collection)
+            {
+                var itemString = PrintToString(item, 0);
+                sb.Append(Environment.NewLine);
+                sb.Append(itemString);
+            }
+
+            sb.Append("}" + Environment.NewLine);
+
             return sb.ToString();
         }
     }
