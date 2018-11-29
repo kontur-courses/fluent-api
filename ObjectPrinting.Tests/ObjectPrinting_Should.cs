@@ -47,6 +47,11 @@ namespace ObjectPrinting.Tests
                 {
                     person,
                     person
+                },
+                Dictionary = new Dictionary<string, string>
+                {
+                    { "Somebody once told me", "the world is gonna roll me" },
+                    { "I ain't the sharpest", "tool in the shed" }
                 }
             };
         }
@@ -212,7 +217,10 @@ namespace ObjectPrinting.Tests
                                         "\t\t\tId = 00000000-0000-0000-0000-000000000000",
                                         "\t\t\tName = John Smith",
                                         "\t\t\tHeight = 13,37",
-                                        "\t\t\tAge = 69"
+                                        "\t\t\tAge = 69",
+                               "\tDictionary = Dictionary`2",
+                                    "\t\t[0] = [Somebody once told me, the world is gonna roll me]",
+                                    "\t\t[1] = [I ain't the sharpest, tool in the shed]"
                                )
                            + Environment.NewLine;
 

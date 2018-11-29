@@ -10,6 +10,8 @@ namespace ObjectPrinting.Tests
     {
         public int[] Array { get; set; }
 
-        public List<Person> ListOfComplexObjects { get; set; }
+        public IList<Person> ListOfComplexObjects { get; set; }
+
+        public IDictionary<string, string> Dictionary { get; set; }
     }
 }
