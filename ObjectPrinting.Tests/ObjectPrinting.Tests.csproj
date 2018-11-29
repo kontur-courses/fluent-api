@@ -51,6 +51,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MemberInfoExtensions_Should.cs" />
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinter_Should.cs" />
     <Compile Include="Person.cs" />

@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    internal static class MemberInfoExtensions
+    public static class MemberInfoExtensions
     {
         public static Type GetMemberType(this MemberInfo memberInfo)
         {
