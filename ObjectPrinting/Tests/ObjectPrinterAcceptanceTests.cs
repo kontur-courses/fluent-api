@@ -21,7 +21,7 @@ namespace ObjectPrinting.Tests
                 .Serialize<int>().Using(l => l.ToString())
 
                 //3. Для числовых типов указать культуру
-                .Serialize<int>().Using(CultureInfo.CurrentCulture)
+                .Serialize<int>().SetCulture(CultureInfo.CurrentCulture)
 
                 //4. Настроить сериализацию конкретного свойства
                 .Serialize(p => p.Age).Using(a => a.ToString())
