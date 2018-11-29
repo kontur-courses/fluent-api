@@ -49,7 +49,7 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var parentsIndex = parents.IndexOfFirst(o => ReferenceEquals(o, obj));
+            var parentsIndex = Array.FindIndex(parents, o => ReferenceEquals(o, obj));
             if (parentsIndex != -1)
             {
                 return $"Cyclic reference to level {parentsIndex}{Environment.NewLine}";
@@ -62,7 +62,7 @@ namespace ObjectPrinting
 
             if (obj is IEnumerable enumerable)
             {
-                var firstElements = enumerable.Take(11).ToList();
+                var firstElements = enumerable.Cast<object>().Take(11).ToList();
                 if (firstElements.Count == 11)
                     firstElements[10] = indentation + "...";
 

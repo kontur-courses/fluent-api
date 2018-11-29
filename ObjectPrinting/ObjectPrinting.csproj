@@ -52,8 +52,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArrayExtensions.cs" />
-    <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="IMemberConfig.cs" />
     <Compile Include="IPrintingConfig.cs" />
     <Compile Include="IPrintingConfigContainer.cs" />
