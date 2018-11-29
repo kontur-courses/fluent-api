@@ -8,6 +8,13 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public readonly Settings Settings;
+
+        public PrintingConfig()
+        {
+            Settings = new Settings();
+        }
+
         public TypePrintingConfig<TOwner, TPropType> Serialize<TPropType>()
         {
             return new TypePrintingConfig<TOwner, TPropType>(this);
@@ -17,8 +24,11 @@ namespace ObjectPrinting
         {
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
+
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            Settings.AddPropertyToExclude(typeof(TPropType));
+
             return this;
         }
 
@@ -52,46 +62,6 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
-        }
-    }
-
-    public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> printingConfig;
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printingConfig;
-
-        internal TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
-        {
-            this.printingConfig = printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializationMethod)
-        {
-            return printingConfig;
-        }
-        //public PrintingConfig<TOwner> WithCulture(CultureInfo culture)
-        //{
-        //    return printingConfig;
-        //}
-
-    }
-
-    interface ITypePrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> PrintingConfig { get; }
-    }
-
-    public static class TypePrintingConfigExtensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner> (this TypePrintingConfig<TOwner, int> config, CultureInfo culture)
-        {
-            return ((ITypePrintingConfig<TOwner>) config).PrintingConfig;
-        }
-
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this TypePrintingConfig<TOwner, string> config, int length)
-        {
-            return ((ITypePrintingConfig<TOwner>)config).PrintingConfig;
         }
     }
 }

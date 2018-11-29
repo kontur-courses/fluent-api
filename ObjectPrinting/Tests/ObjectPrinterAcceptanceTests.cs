@@ -16,22 +16,25 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<int>()
-                .Serialize<int>().Using(l => l.ToString())
+
                 //2. Указать альтернативный способ сериализации для определенного типа
+                .Serialize<int>().Using(l => l.ToString())
+
                 //3. Для числовых типов указать культуру
-                //---.Serialize<string>().WithCulture(CultureInfo.CurrentCulture);
-                .Serialize<Int32>().Using(CultureInfo.CurrentCulture)
-                .Serialize<string>().Using()
+                .Serialize<int>().Using(CultureInfo.CurrentCulture)
+
                 //4. Настроить сериализацию конкретного свойства
                 .Serialize(p => p.Age).Using(a => a.ToString())
+
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serialize(p => p.Name).TrimToLength(8);
+                .Serialize(p => p.Name).TrimToLength(8)
 
-            //6. Исключить из сериализации конкретного свойства
+                //6. Исключить из сериализации конкретного свойства
 
-            string s1 = printer.PrintToString(person);
+                .Serialize(p => p.Name).Exclude();
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию   
+
             //8. ...с конфигурированием
 
 
@@ -42,6 +45,4 @@ namespace ObjectPrinting.Tests
     {
     }
 }
-
-georgij.al@yandex.ru 
 
