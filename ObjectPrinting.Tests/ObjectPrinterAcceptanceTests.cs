@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using NUnit.Framework;
+
 // ReSharper disable CommentTypo
 
 namespace ObjectPrinting.Tests
@@ -31,7 +32,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SyntaxSugarDemo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Alex", Age = 19};
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             person.Serialize();
@@ -40,10 +41,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ConfigurableSyntaxSugarDemo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Alex", Age = 19};
 
             //8. ...с конфигурированием
-            person.Serialize();
+            person.Serialize(x => x.Serializing(p => p.Name).TrimToLength(2));
         }
     }
 }
