@@ -9,11 +9,6 @@ namespace ObjectPrinting
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly PropertyInfo propertyInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
-        {
-            this.printingConfig = printingConfig;
-        }
-
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
         {
             this.propertyInfo = propertyInfo;
@@ -22,23 +17,16 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (propertyInfo == null)
-            {
-                printingConfig.ChangeSerializationForType(typeof(TPropType), print);
-            }
-            else
-            {
-                printingConfig.ChangeSerializationForProperty(propertyInfo, print);
-            }
-
+            printingConfig.ChangeSerializationForProperty(propertyInfo, print);
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.PropertyInfo => propertyInfo;
     }
 
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IPropertyPrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner, TPropType>
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        PropertyInfo PropertyInfo { get; }
     }
 }

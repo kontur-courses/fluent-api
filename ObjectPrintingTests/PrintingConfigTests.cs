@@ -65,5 +65,21 @@ namespace ObjectPrintingTests
             printer.Printing<string>().Using(s => "c#");
             printer.PrintToString(person).Should().Be(expected);
         }
+
+        [Test]
+        public void TrimmedToLength_LengthLessThanPropertyLength()
+        {
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = matt\r\n\tHeight = 1,89\r\n\tAge = 18\r\n";
+            printer.Printing(p => p.Name).TrimmedToLength(4);
+            printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void TrimmedToLength_LengthBiggerThanPropertyLength()
+        {
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = mattgroy\r\n\tHeight = 1,89\r\n\tAge = 18\r\n";
+            printer.Printing(p => p.Name).TrimmedToLength(30);
+            printer.PrintToString(person).Should().Be(expected);
+        }
     }
 }

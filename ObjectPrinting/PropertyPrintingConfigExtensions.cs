@@ -12,35 +12,9 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
-            return parentConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
-        {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
-            parentConfig.ChangeCultureInfoForType(typeof(int), culture);
-            return parentConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
-        {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
-            parentConfig.ChangeCultureInfoForType(typeof(long), culture);
-            return parentConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
-        {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
-            parentConfig.ChangeCultureInfoForType(typeof(double), culture);
-            return parentConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, decimal> propConfig, CultureInfo culture)
-        {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, decimal>)propConfig).ParentConfig;
-            parentConfig.ChangeCultureInfoForType(typeof(decimal), culture);
+            var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            var propertyInfo = ((IPropertyPrintingConfig<TOwner, string>) propConfig).PropertyInfo;
+            parentConfig.ChangeTrimmedLengthForProperty(propertyInfo, maxLen);
             return parentConfig;
         }
     }

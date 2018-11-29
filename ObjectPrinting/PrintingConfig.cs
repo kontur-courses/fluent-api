@@ -23,15 +23,16 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<PropertyInfo, Delegate> propertySerializators = new Dictionary<PropertyInfo, Delegate>();
         private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
 
-        internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serialisator)
+        internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serializator)
         {
-            propertySerializators[propertyInfo] = serialisator;
+            propertySerializators[propertyInfo] = serializator;
         }
 
-        internal void ChangeSerializationForType(Type type, Delegate serialisator)
+        internal void ChangeSerializationForType(Type type, Delegate serializator)
         {
-            typeSerializators[type] = serialisator;
+            typeSerializators[type] = serializator;
         }
 
         internal void ChangeCultureInfoForType(Type type, CultureInfo cultureInfo)
@@ -39,9 +40,14 @@ namespace ObjectPrinting
             typeCultureInfos[type] = cultureInfo;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        internal void ChangeTrimmedLengthForProperty(PropertyInfo propertyInfo, int length)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            propertyTrimmedLengths[propertyInfo] = length;
+        }
+
+        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
