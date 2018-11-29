@@ -18,11 +18,11 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> culturiesForNumbers =
             new Dictionary<Type, CultureInfo>();
 
-        private readonly Dictionary<string, Expression<Func<object, string>>> printMethodsForProperties =
-            new Dictionary<string, Expression<Func<object, string>>>();
+        private readonly Dictionary<string, Func<object, string>> printMethodsForProperties =
+            new Dictionary<string, Func<object, string>>();
 
-        private readonly Dictionary<Type, Expression<Func<object, string>>> printMethodsForTypes =
-            new Dictionary<Type, Expression<Func<object, string>>>();
+        private readonly Dictionary<Type, Func<object, string>> printMethodsForTypes =
+            new Dictionary<Type, Func<object, string>>();
 
         private readonly int nestingLevel;
         private readonly Type[] finalTypes = new[]
@@ -79,7 +79,7 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (TryGetMethodForType(obj.GetType(), out var finalPrinter))
+            if (printMethodsForTypes.TryGetValue(obj.GetType(), out var finalPrinter))
                return finalPrinter.Invoke(obj);
             if (finalTypes.Contains(obj.GetType()))
                 return obj.ToString();
@@ -103,9 +103,9 @@ namespace ObjectPrinting
                     Func<object, string> printer;
 
 
-                    if (TryGetMethodForProperty(propertyName, out var printerProperties))
+                    if (printMethodsForProperties.TryGetValue(propertyName, out var printerProperties))
                         printer = printerProperties;
-                    else if (TryGetMethodForType(propertyInfo.PropertyType, out var printerTypes))
+                    else if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printerTypes))
                         printer = printerTypes;
                     else
                         printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
@@ -115,34 +115,6 @@ namespace ObjectPrinting
 
             }
             return sb.ToString();
-        }
-
-        private bool TryGetMethodForType(Type type, out Func<object, string> expr)
-        {
-            if (printMethodsForTypes.ContainsKey(type))
-            {
-                expr = printMethodsForTypes[type].Compile();
-                return true;
-            }
-            else
-            {
-                expr = null;
-                return false;
-            }
-        }
-
-        private bool TryGetMethodForProperty(string propertyName, out Func<object, string> expr)
-        {
-            if (printMethodsForProperties.ContainsKey(propertyName))
-            {
-                expr = printMethodsForProperties[propertyName].Compile();
-                return true;
-            }
-            else
-            {
-                expr = null;
-                return false;
-            }
         }
    
         private bool IsExcludingType(Type type)
@@ -160,9 +132,9 @@ namespace ObjectPrinting
 
         List<Type> IPrintingConfig<TOwner>.ExcludingTypes => exludedTypes;
 
-        Dictionary<string, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
+        Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
 
-        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
+        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
         #endregion
     }
 
@@ -171,7 +143,7 @@ namespace ObjectPrinting
         List<string> NamesExludedProperties { get; }
         List<Type> ExcludingTypes { get; }
 
-        Dictionary<string, Expression<Func<object, string>>> PrintMethodsForProperties { get; }
-        Dictionary<Type, Expression<Func<object, string>>> PrintMethodsForTypes { get; }
+        Dictionary<string, Func<object, string>> PrintMethodsForProperties { get; }
+        Dictionary<Type, Func<object, string>> PrintMethodsForTypes { get; }
     }
 }

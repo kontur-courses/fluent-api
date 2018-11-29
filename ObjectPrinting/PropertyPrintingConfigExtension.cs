@@ -23,7 +23,6 @@ namespace ObjectPrinting
             return ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
         }
 
-
         public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
         {
             propConfig.Using(n => n.ToString(culture));
