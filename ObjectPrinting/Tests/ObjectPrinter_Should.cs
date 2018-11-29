@@ -13,12 +13,12 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinter_Should
     {
         private Person person;
-        private string expectedAge => $"\tAge = {person.Age}";
-        private string expectedHeight => $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}";
-        private string expectedName => $"\tName = {person.Name}";
-        private string expectedId => $"\tId = {person.Id}";
-        private const string expectedChild = "\tChild = null";
-        private const string expectedParent = "\tParent = null";
+        private string ExpectedAge => $"\tAge = {person.Age}";
+        private string ExpectedHeight => $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}";
+        private string ExpectedName => $"\tName = {person.Name}";
+        private string ExpectedId => $"\tId = {person.Id}";
+        private const string ExpectedChild = "\tChild = null";
+        private const string ExpectedParent = "\tParent = null";
 
         [SetUp]
         public void SetUp()
@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
         public void ReturnExpectedDefaultSerialization()
         {
             var expected = string.Join("\r\n",
-                "Person", expectedId, expectedName, expectedHeight, expectedAge, expectedParent, expectedChild, "");
+                "Person", ExpectedId, ExpectedName, ExpectedHeight, ExpectedAge, ExpectedParent, ExpectedChild, "");
             var actual = person.Print();
 
             actual.Should().Be(expected);
@@ -80,7 +80,7 @@ namespace ObjectPrinting.Tests
                 .ExcludingType<int>();
 
             var expected = string.Join("\r\n",
-                "Person", expectedId, expectedName, expectedHeight, expectedParent, expectedChild, "");
+                "Person", ExpectedId, ExpectedName, ExpectedHeight, ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
@@ -93,7 +93,7 @@ namespace ObjectPrinting.Tests
                 .Serializing<int>().Using(i => "int");
 
             var expected = string.Join("\r\n",
-                "Person", expectedId, expectedName, expectedHeight, "\tAge = int", expectedParent, expectedChild, "");
+                "Person", ExpectedId, ExpectedName, ExpectedHeight, "\tAge = int", ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
@@ -103,10 +103,10 @@ namespace ObjectPrinting.Tests
         public void BeAbleToUseProvidedCultureInfo()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("en"));
+                .Serializing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("ru"));
 
             var expected = string.Join("\r\n",
-                "Person", expectedId, expectedName, "\tHeight = 1.8", expectedAge, expectedParent, expectedChild, "");
+                "Person", ExpectedId, ExpectedName, "\tHeight = 1,8", ExpectedAge, ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
@@ -116,10 +116,10 @@ namespace ObjectPrinting.Tests
         public void BeAbleToUseAlternativeSerializationForProperties()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Serializing(p => p.Id).Using(i => i.ToString());
+                .Serializing(p => p.Id).Using(i => "Guid");
 
             var expected = string.Join("\r\n",
-                "Person", $"\tId = {person.Id}", expectedName, expectedHeight, expectedAge, expectedParent, expectedChild, "");
+                "Person", "\tId = Guid", ExpectedName, ExpectedHeight, ExpectedAge, ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
@@ -133,7 +133,7 @@ namespace ObjectPrinting.Tests
             person.Name = "Solofonantenaina Randriamaholison";
 
             var expected = string.Join("\r\n",
-                "Person", expectedId, "\tName = Solofonant", expectedHeight, expectedAge, expectedParent, expectedChild, "");
+                "Person", ExpectedId, "\tName = Solofonant", ExpectedHeight, ExpectedAge, ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
@@ -146,7 +146,7 @@ namespace ObjectPrinting.Tests
                 .ExcludingProperty(p => p.Name);
 
             var expected = string.Join("\r\n",
-                "Person", expectedId, expectedHeight, expectedAge, expectedParent, expectedChild, "");
+                "Person", ExpectedId, ExpectedHeight, ExpectedAge, ExpectedParent, ExpectedChild, "");
             var actual = printer.PrintToString(person);
 
             actual.Should().Be(expected);
