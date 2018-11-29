@@ -15,20 +15,20 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<int>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .NewSerialise<char>().Using((ch) => ((int)ch).ToString())
+                .Serialise<char>().Using((ch) => ((int)ch).ToString())
                 //3. Для числовых типов указать культуру
-                .NewSerialise<double>().Using(CultureInfo.CurrentCulture)
+                .Serialise<double>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .NewSerialise(p => p.Age).Using((ch) => (ch).ToString())
+                .Serialise(p => p.Age).Using((ch) => (ch).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .NewSerialise(p => p.Name).Trimming(3)
+                .Serialise(p => p.Name).Trimming(3)
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Id);
 
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию 
+            person.PrintToString();
             //8. ...с конфигурированием
+            person.PrintToString((str) => str.Trim());
         }
     }
 }

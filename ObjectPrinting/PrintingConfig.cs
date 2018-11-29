@@ -1,87 +1,65 @@
 using System;
+using System.CodeDom;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-
-    public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> :IPrintingConfig
     {
-        private readonly PrintingConfig<TOwner> printConfig;
+        private List<string> notSerializingPropertis;
+        private List<Type> notSerializingTypes;
+        private Dictionary<string, Delegate> Serializers;
+        private Dictionary<string, CultureInfo> Cultures;
+        private Dictionary<string, int> TrimLenghts;
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printConfig)
+        Dictionary<string, Delegate> IPrintingConfig.PropertySerializer => Serializers;
+        Dictionary<string, CultureInfo> IPrintingConfig.Cultures => this.Cultures;
+        Dictionary<string, int> IPrintingConfig.TrimLenghts => this.TrimLenghts;
+
+        public PrintingConfig()
         {
-            this.printConfig = printConfig;
+            notSerializingPropertis = new List<string>();
+            notSerializingTypes = new List<Type>();
+            Serializers = new Dictionary<string, Delegate>();
+            TrimLenghts = new Dictionary<string, int>();
+            Cultures = new Dictionary<string, CultureInfo>();
         }
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printConfig, Func<TOwner, TPropType> func)
-        {
-            this.printConfig = printConfig;
-        }
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner>.PrintingConfig => printConfig;
-
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serFunc)
-        {
-            return printConfig;
-        }
-    }
-
-    interface ITypePrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> PrintingConfig { get; }
-    }
-     
-    public static class TypePrintingConfigExtention
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, double> me, CultureInfo culture)
-        {
-            return (me as ITypePrintingConfig<TOwner>).PrintingConfig;
-        }
-
-        public static PrintingConfig<TOwner> Trimming<TOwner>(this TypePrintingConfig<TOwner, string> me, int len)
-        {
-            return (me as ITypePrintingConfig<TOwner>).PrintingConfig;
-        }
-    }
-
-    public class PrintingConfig<TOwner>
-    {
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            notSerializingTypes.Add(typeof(TPropType));
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude<TPropType>(Func<TOwner, TPropType> func)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> func)
         {
+            var propertyName = ((MemberExpression) func.Body).Member.Name;
+            notSerializingPropertis.Add(propertyName);
             return this;
         }
 
-        public TypePrintingConfig<TOwner, TPropType> NewSerialise<TPropType>()
+        public TypePrintingConfig<TOwner, TPropType> Serialise<TPropType>()
         {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TPropType>(this, typeof(TPropType));
         }
 
-        public TypePrintingConfig<TOwner, TPropType> NewSerialise<TPropType>(Func<TOwner, TPropType> func)
+        public TypePrintingConfig<TOwner, TPropType> Serialise<TPropType>(Expression<Func<TOwner, TPropType>> func)
         {
             return new TypePrintingConfig<TOwner, TPropType>(this, func);
         }
 
-        //public PropertyPrintingConfig<TOwner, string> NewSerialise(Func<TOwner, string> func, int len)
-        //{
-        //    return new PropertyPrintingConfig<TOwner, string>(this, (s) => (s as string).Substring(0, len));
-        //}
-
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 1);
         }
-
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -99,11 +77,49 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (notSerializingPropertis.Contains(propertyInfo.Name)) continue;
+                if (notSerializingTypes.Contains(propertyInfo.PropertyType)) continue;
+                sb.Append(identation + propertyInfo.Name + " = ");
+                var serializedProperty = TrySerializePropertyInfo(propertyInfo, obj);
+                if (serializedProperty != null)
+                    sb.Append(serializedProperty);
+                else
+                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
+                        nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+        private string TrySerializePropertyInfo(PropertyInfo propertyInfo, object obj)
+        {
+            
+            var propertyName = propertyInfo.Name;
+            var typeName = propertyInfo.PropertyType.FullName;
+
+            if (Serializers.ContainsKey(propertyName))
+                return Serializers[propertyName]
+                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+
+            if (Serializers.ContainsKey(typeName))
+                return Serializers[typeName]
+                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+
+            if (Cultures.ContainsKey(typeName))
+            {
+                var culture = Cultures[typeName];
+                var tmp = propertyInfo.GetValue(obj) as double?;
+                return tmp?.ToString("F", culture);
+            }
+
+            if (TrimLenghts.ContainsKey(propertyName))
+            {
+                var trimLenght = TrimLenghts[propertyName];
+                return propertyInfo.GetValue(obj)
+                    .ToString()
+                    .Substring(0, trimLenght);
+            }
+
+            return null;
         }
     }
 }
