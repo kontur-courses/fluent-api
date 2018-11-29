@@ -29,12 +29,12 @@ namespace ObjectPrinting
         public void AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(Type type, CultureInfo cultureInfo)
             => numericTypesToBeAlternativelySerializedUsingCultureInfo[type] = cultureInfo;
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
