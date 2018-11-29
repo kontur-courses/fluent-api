@@ -20,6 +20,7 @@ namespace ObjectPrinting
 
         private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
         private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
 
         internal void ChangeSerializationForProperty<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> serialisation)
         {
@@ -33,7 +34,7 @@ namespace ObjectPrinting
 
         internal void ChangeCultureInfoForType(Type type, CultureInfo cultureInfo)
         {
-
+            typeCultureInfos[type] = cultureInfo;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -82,7 +83,18 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType)) continue;
                 if (excludedProperties.Contains(propertyInfo)) continue;
 
-                var propertyValueString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                var propertyValue = propertyInfo.GetValue(obj);
+                var propertyValueString = "";
+
+                if (typeCultureInfos.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var culture = typeCultureInfos[propertyInfo.PropertyType];
+                    propertyValueString = string.Format(culture, "{0}", propertyValue) + Environment.NewLine;
+                }
+                else
+                {
+                    propertyValueString = PrintToString(propertyValue, nestingLevel + 1);
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " + propertyValueString);
             }
