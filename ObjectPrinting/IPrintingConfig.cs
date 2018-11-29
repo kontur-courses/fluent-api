@@ -11,9 +11,9 @@ namespace ObjectPrinting
 {
     internal interface IPrintingConfig
     {
-        void AddPropertySerializationFormat(PropertyInfo property, Delegate format);
-        void AddTypeSerializationFormat(Type type, Delegate format);
-        void AddPostProduction(PropertyInfo property, Delegate format);
+        void AddPropertySerializationFormat(PropertyInfo property, Func<object, string> format);
+        void AddTypeSerializationFormat(Type type, Func<object, string> format);
+        void AddPostProduction(PropertyInfo property, Func<object, string> format);
         void AddCultureInfo(Type type, CultureInfo cultureInfo);
     }
 }

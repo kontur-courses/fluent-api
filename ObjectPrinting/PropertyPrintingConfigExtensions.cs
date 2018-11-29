@@ -49,13 +49,14 @@ namespace ObjectPrinting
             var propertyName = body.Member.Name;
             var property = typeof(TOwner).GetProperty(propertyName);
 
-            string Trim(string s)
+            string Trim(object s)
             {
-                return count > s.Length ? s : s.Substring(0, count);
+                var strS = (string) s;
+                return count > strS.Length ? strS : strS.Substring(0, count);
             }
 
             var config = iPropConfig.PrintingConfig;
-            ((IPrintingConfig)config).AddPostProduction(property, (Func<string, string>) Trim);
+            ((IPrintingConfig)config).AddPostProduction(property, Trim);
             return config;
         }
     }

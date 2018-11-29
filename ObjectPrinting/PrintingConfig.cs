@@ -18,9 +18,9 @@ namespace ObjectPrinting
         private ImmutableHashSet<object> printedObjects = ImmutableHashSet<object>.Empty;
         private int depth = 10;
         private int maxElements = 10;
-        private ImmutableDictionary<Type, Delegate> typeSerializationFormats = ImmutableDictionary<Type, Delegate>.Empty;
-        private ImmutableDictionary<PropertyInfo, Delegate> propertySerializationFormats = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
-        private ImmutableDictionary<PropertyInfo, Delegate> propertyPostProduction = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
+        private ImmutableDictionary<Type, Func<object, string>> typeSerializationFormats = ImmutableDictionary<Type, Func<object, string>>.Empty;
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertySerializationFormats = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertyPostProduction = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
         private ImmutableDictionary<Type, CultureInfo> cultureInfo = ImmutableDictionary<Type, CultureInfo>.Empty;
         private readonly Type[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -151,18 +151,15 @@ namespace ObjectPrinting
             result = null;
 
             if (propertySerializationFormats.ContainsKey(propertyInfo))
-                result = propertySerializationFormats[propertyInfo]
-                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+                result = propertySerializationFormats[propertyInfo](propertyInfo.GetValue(obj));
             else if (typeSerializationFormats.ContainsKey(propertyInfo.PropertyType))
-                result = typeSerializationFormats[propertyInfo.PropertyType]
-                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+                result = typeSerializationFormats[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
 
             if (result == null)
                 return false;
 
             if (propertyPostProduction.ContainsKey(propertyInfo))
-                result = propertyPostProduction[propertyInfo]
-                    .DynamicInvoke(result).ToString();
+                result = propertyPostProduction[propertyInfo](propertyInfo.GetValue(obj));
 
             result += Environment.NewLine;
             return true;
@@ -193,17 +190,17 @@ namespace ObjectPrinting
             return cultureInfo.ContainsKey(type) ? cultureInfo[type] : CultureInfo.InvariantCulture;
         }
 
-        void IPrintingConfig.AddPropertySerializationFormat(PropertyInfo property, Delegate format)
+        void IPrintingConfig.AddPropertySerializationFormat(PropertyInfo property, Func<object, string> format)
         {
             propertySerializationFormats = propertySerializationFormats.SetItem(property, format);
         }
 
-        void IPrintingConfig.AddTypeSerializationFormat(Type type, Delegate format)
+        void IPrintingConfig.AddTypeSerializationFormat(Type type, Func<object, string> format)
         {
             typeSerializationFormats = typeSerializationFormats.SetItem(type, format);
         }
 
-        void IPrintingConfig.AddPostProduction(PropertyInfo property, Delegate format)
+        void IPrintingConfig.AddPostProduction(PropertyInfo property, Func<object, string> format)
         {
             propertyPostProduction = propertyPostProduction.SetItem(property, format);
         }

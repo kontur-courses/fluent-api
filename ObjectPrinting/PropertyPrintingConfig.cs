@@ -24,16 +24,21 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
         {
+            string Function(object obj)
+            {
+                return func((TPropType) obj);
+            }
+
             if (propertySelector != null)
             {
                 if (!(propertySelector.Body is MemberExpression body))
                     throw new ArgumentException();
                 var propertyName = body.Member.Name;
                 var property = typeof(TOwner).GetProperty(propertyName);
-                ((IPrintingConfig) printingConfig).AddPropertySerializationFormat(property, func);
+                ((IPrintingConfig) printingConfig).AddPropertySerializationFormat(property, Function);
             }
 
-            ((IPrintingConfig) printingConfig).AddTypeSerializationFormat(typeof(TPropType), func);
+            ((IPrintingConfig) printingConfig).AddTypeSerializationFormat(typeof(TPropType), Function);
             return printingConfig;
         }
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;
