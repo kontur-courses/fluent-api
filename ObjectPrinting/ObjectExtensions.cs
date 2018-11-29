@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -34,6 +35,27 @@ namespace ObjectPrinting
                 default:
                     throw new ArgumentException("Input MemberInfo must be if type FieldInfo, or PropertyInfo");
             }
+        }
+
+        /// <summary>
+        /// Determine whether a type is simple (String, Decimal, DateTime, etc) 
+        /// or complex (i.e. custom class with public properties and methods).
+        /// </summary>
+        public static bool IsSimpleType(
+            this Type type)
+        {
+            return
+                type.IsValueType ||
+                type.IsPrimitive ||
+                new[] {
+                    typeof(String),
+                    typeof(Decimal),
+                    typeof(DateTime),
+                    typeof(DateTimeOffset),
+                    typeof(TimeSpan),
+                    typeof(Guid)
+                }.Contains(type) ||
+                Convert.GetTypeCode(type) != TypeCode.Object;
         }
     }
 }

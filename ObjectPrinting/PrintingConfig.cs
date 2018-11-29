@@ -77,17 +77,13 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+
+            if (type.IsSimpleType())
                 return obj + Environment.NewLine;
 
             var indentation = new string(indentSymbol, nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
 
             sb.AppendLine(type.Name);
 
