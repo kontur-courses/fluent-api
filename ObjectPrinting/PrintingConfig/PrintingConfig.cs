@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -12,10 +11,6 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly Stack<object> currentObjects = new Stack<object>();
-        private static readonly Type[] finalTypes = {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<(Type, string)> excludedProperties = new HashSet<(Type, string)>();
         private readonly Dictionary<Type, Func<object, string>> typeSerializationSettings =
@@ -64,7 +59,8 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (TryGetFinalObjectStringValue(obj, out var finalValue))
+            var finalValue = TryGetObjectStringValue(obj);
+            if (finalValue != null)
                 return finalValue;
             currentObjects.Push(obj);
             var type = obj.GetType();
@@ -107,33 +103,26 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetFinalObjectStringValue(object obj, out string value)
+        private string TryGetObjectStringValue(object obj)
         {
-            var result = true;
             if (obj == null)
-            { 
-                value = "null" + Environment.NewLine;
-                return true;
-            }
+                return "null" + Environment.NewLine;
             var type = obj.GetType();
+            if (currentObjects.Contains(obj))
+                return type.Name + " (already printed)" + Environment.NewLine;
             if (cultureInfoSettings.ContainsKey(type))
-                value = ((IFormattable)obj).ToString(null, cultureInfoSettings[type]);
-            else if (currentObjects.Contains(obj))
-                value = type.Name + " (already printed)";
-            else if (typeSerializationSettings.ContainsKey(type))
-                value = typeSerializationSettings[type].Invoke(obj);
-            else if (obj is IFormattable formattableObj)
-                value = formattableObj.ToString(null, CultureInfo.InvariantCulture);
-            else if (finalTypes.Contains(type))
-                value = obj.ToString();
-            else
+                return ((IFormattable)obj).ToString(null, cultureInfoSettings[type]) + Environment.NewLine;
+            if (typeSerializationSettings.ContainsKey(type))
+                return typeSerializationSettings[type].Invoke(obj) + Environment.NewLine;
+            switch (obj)
             {
-                result = false;
-                value = null;
+                case IFormattable formattableObj:
+                    return formattableObj.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine;
+                case string _:
+                    return obj + Environment.NewLine;
+                default:
+                    return null;
             }
-
-            value += Environment.NewLine;
-            return result;
         }
 
         private bool TryGetPropertyStringValue(object obj, PropertyInfo propertyInfo, int nestingLevel, out string value)
