@@ -23,7 +23,10 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<PropertyInfo, Delegate> propertySerializators = new Dictionary<PropertyInfo, Delegate>();
         private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
+//        private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
+
+        private readonly Func<string, int, string> trimString = (str, length) =>
+            string.IsNullOrEmpty(str) ? str : str.Substring(0, Math.Min(str.Length, length));
 
         internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serializator)
         {
@@ -42,8 +45,17 @@ namespace ObjectPrinting
 
         internal void ChangeTrimmedLengthForProperty(PropertyInfo propertyInfo, int length)
         {
-            propertyTrimmedLengths[propertyInfo] = length;
+//            propertyTrimmedLengths[propertyInfo] = length;
+            string TrimFunc(string str) => string.IsNullOrEmpty(str) ? str : str.Substring(0, Math.Min(str.Length, length));
+            propertySerializators[propertyInfo] = (Func<string, string>) TrimFunc;
         }
+
+//        private string TrimString(string str, int length)
+//        {
+//            return string.IsNullOrEmpty(str)
+//                ? str
+//                : str.Substring(0, Math.Min(str.Length, length));
+//        }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
