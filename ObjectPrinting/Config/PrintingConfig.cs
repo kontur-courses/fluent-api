@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Config.Property;
+using ObjectPrinting.Config.Member;
 using ObjectPrinting.Config.Type;
 
 namespace ObjectPrinting.Config
@@ -14,7 +14,7 @@ namespace ObjectPrinting.Config
     {
         private readonly System.Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(decimal),
             typeof(DateTime), typeof(TimeSpan)
         };
 
@@ -22,11 +22,10 @@ namespace ObjectPrinting.Config
         private readonly Dictionary<System.Type, Func<object, string>> printingOverridedTypes;
         private readonly Dictionary<System.Type, CultureInfo> cultureOverridedTypes;
 
-        private readonly Dictionary<PropertyInfo, Func<object, string>> printingOverridedProperties;
-        private readonly HashSet<PropertyInfo> propertiesToExclude;
+        private readonly Dictionary<MemberInfo, Func<object, string>> printingOverridedMembers;
+        private readonly HashSet<MemberInfo> membersToExclude;
 
-        private readonly Dictionary<FieldInfo, Func<object, string>> printingOverridedFields;
-        private readonly HashSet<FieldInfo> fieldsToExclude;
+        private readonly HashSet<object> PrintedObjects;
 
         public PrintingConfig()
         {
@@ -34,12 +33,13 @@ namespace ObjectPrinting.Config
             printingOverridedTypes = new Dictionary<System.Type, Func<object, string>>();
             cultureOverridedTypes = new Dictionary<System.Type, CultureInfo>();
 
-            printingOverridedProperties = new Dictionary<PropertyInfo, Func<object, string>>();
-            propertiesToExclude = new HashSet<PropertyInfo>();
+            printingOverridedMembers = new Dictionary<MemberInfo, Func<object, string>>();
+            membersToExclude = new HashSet<MemberInfo>();
 
-            printingOverridedFields = new Dictionary<FieldInfo, Func<object, string>>();
-            fieldsToExclude = new HashSet<FieldInfo>();
+            PrintedObjects = new HashSet<object>();
         }
+
+        #region Types Handling
 
         public void OverrideTypePrinting<TPropType>(Func<TPropType, string> print)
         {
@@ -51,9 +51,9 @@ namespace ObjectPrinting.Config
             cultureOverridedTypes[typeof(TPropType)] = culture;
         }
 
-        public void OverridePropertyPrinting(PropertyInfo propertyInfo, Func<object, string> print)
+        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            printingOverridedProperties[propertyInfo] = print;
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -63,23 +63,40 @@ namespace ObjectPrinting.Config
             return this;
         }
 
-        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        #endregion
+
+
+        #region Properties/Fields Handling
+
+        public void OverrideMember(MemberInfo memberInfo, Func<object, string> print)
         {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
+            printingOverridedMembers[memberInfo] = print;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetProperty(memberSelector));
+            var member = GetMember(memberSelector);
+
+            if (!IsPropertyOrField(member))
+                throw new ArgumentException("Can't exclude non properties/fields objects", nameof(memberSelector));
+
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, member);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            propertiesToExclude.Add(GetProperty(memberSelector));
+            var memberToExlude = GetMember(memberSelector);
+
+            if (!IsPropertyOrField(memberToExlude))
+                throw new ArgumentException("Can't exclude non properties/fields objects", nameof(memberSelector));
+
+            membersToExclude.Add(memberToExlude);
 
             return this;
         }
+
+        #endregion
+
 
         public string PrintToString(TOwner obj)
         {
@@ -88,6 +105,11 @@ namespace ObjectPrinting.Config
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (PrintedObjects.Contains(obj))
+                return "...";
+
+            PrintedObjects.Add(obj);
+
             if (obj == null)
                 return "null";
 
@@ -104,48 +126,29 @@ namespace ObjectPrinting.Config
             var sb = new StringBuilder();
             sb.Append(type.Name);
 
-            foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            var propertiesAndFields = type
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>()
+                .Concat(type.GetFields(BindingFlags.Public | BindingFlags.Instance));
+
+            foreach (var memberInfo in propertiesAndFields)
             {
-                if (typesToExclude.Contains(property.PropertyType) || propertiesToExclude.Contains(property))
+                if (typesToExclude.Contains(GetValueType(memberInfo)) || membersToExclude.Contains(memberInfo))
                     continue;
 
-                var propertyString = PropertyToString(property, obj, nestingLevel);
-                sb.Append(FormatMember(property.Name, propertyString, nestingLevel));
-            }
-
-            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            {
-                if (typesToExclude.Contains(field.FieldType) || fieldsToExclude.Contains(field))
-                    continue;
-
-                var fieldString = FieldToString(field, obj, nestingLevel);
-                sb.Append(FormatMember(field.Name, fieldString, nestingLevel));
+                var propertyString = MemberToString(memberInfo, obj, nestingLevel);
+                sb.Append(FormatMember(memberInfo.Name, propertyString, nestingLevel));
             }
 
             return sb.ToString();
         }
 
-        private string PropertyToString(PropertyInfo property, object container, int nestingLevel)
+        private string MemberToString(MemberInfo memberInfo, object container, int nestingLevel)
         {
-            var type = property.PropertyType;
-            var value = property.GetValue(container);
+            var type = GetValueType(memberInfo);
+            var value = GetValue(memberInfo, container);
 
-            if (printingOverridedProperties.ContainsKey(property))
-                return printingOverridedProperties[property](value);
-
-            if (printingOverridedTypes.ContainsKey(type))
-                return printingOverridedTypes[type](value);
-
-            return PrintToString(value, nestingLevel + 1);
-        }
-
-        private string FieldToString(FieldInfo field, object container, int nestingLevel)
-        {
-            var type = field.FieldType;
-            var value = field.GetValue(container);
-
-            if (printingOverridedFields.ContainsKey(field))
-                return printingOverridedFields[field](value);
+            if (printingOverridedMembers.ContainsKey(memberInfo))
+                return printingOverridedMembers[memberInfo](value);
 
             if (printingOverridedTypes.ContainsKey(type))
                 return printingOverridedTypes[type](value);
@@ -163,16 +166,48 @@ namespace ObjectPrinting.Config
 
         private static string PrintWithCulture(object obj, CultureInfo cultureInfo)
         {
-            var toStringMethod = obj.GetType().GetMethod("ToString", new[] { typeof(CultureInfo) });
-            if (toStringMethod == null)
-                toStringMethod = obj.GetType().GetMethod("ToString", new System.Type[] { });
+            var objAsFormattable = obj as IFormattable;
 
-            return toStringMethod?.Invoke(obj, new object[] { cultureInfo }).ToString();
+            if (objAsFormattable == null)
+                return obj.ToString();
+
+            return objAsFormattable.ToString(null, cultureInfo);
         }
 
-        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private static MemberInfo GetMember<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
+            return ((MemberExpression) memberSelector.Body).Member;
+        }
+
+        private static bool IsPropertyOrField(MemberInfo memberInfo)
+        {
+            return memberInfo.MemberType == MemberTypes.Property || memberInfo.MemberType == MemberTypes.Field;
+        }
+
+        private static System.Type GetValueType(MemberInfo memberInfo)
+        {
+            switch (memberInfo.MemberType)
+            {
+                case MemberTypes.Field:
+                    return ((FieldInfo) memberInfo).FieldType;
+                case MemberTypes.Property:
+                    return ((PropertyInfo) memberInfo).PropertyType;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private static object GetValue(MemberInfo memberInfo, object container)
+        {
+            switch (memberInfo.MemberType)
+            {
+                case MemberTypes.Field:
+                    return ((FieldInfo) memberInfo).GetValue(container);
+                case MemberTypes.Property:
+                    return ((PropertyInfo) memberInfo).GetValue(container);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         #endregion

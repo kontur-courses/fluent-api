@@ -5,7 +5,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinterTests.TestClasses;
 using ObjectPrinting;
-using ObjectPrinting.Config.Property;
+using ObjectPrinting.Config.Member;
 using ObjectPrinting.Config.Type;
 
 namespace ObjectPrinterTests
@@ -23,15 +23,7 @@ namespace ObjectPrinterTests
         [SetUp]
         public void SetUp()
         {
-            person = new Person
-            {
-                Name = "Andrey",
-                Age = 21,
-                Height = 1.92,
-                Id = System.Guid.Parse(Guid),
-                Birthday = new DateTime(2018, 01, 28),
-                SecondName = "Ivanov"
-            };
+            person = new Person(Guid);
         }
 
         [Test]
@@ -53,7 +45,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void OverrideTypesPrinting()
+        public void AllowToOverrideTypesPrinting()
         {
 
             var printer = ObjectPrinter.For<Person>()
@@ -66,41 +58,41 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void OverrideTypesCulture()
+        public void AllowToOverrideTypesCulture()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(englishCulture)
+                .Printing<TimeSpan>().Using(englishCulture)
                 .Printing<DateTime>().Using(englishCulture);
 
             printer.PrintToString(person).Should()
-                .ContainAll("Height = 1.92", "Birthday = 1/28/2018")
-                .And.NotContain("Height = 1,92");
+                .ContainAll("WorkExperience = 3.00:00:00", "Birthday = 1/28/2018")
+                .And.NotContainAny("Birthday = 01/28/2018 12:00:00");
         }
 
         [Test]
-        public void OverridePropertiesPrinting()
+        public void AllowToOverridePropertiesPrinting()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Birthday).Using(d => d.Year.ToString());
 
             printer.PrintToString(person).Should()
                 .Contain("Birthday = 2018")
-                .And.NotContainAny(person.Birthday.ToString());
+                .And.NotContainAny(person.Birthday.ToString(CultureInfo.InvariantCulture));
         }
 
         [Test]
-        public void OverrideFieldPrinting()
+        public void AllowToOverrideFieldPrinting()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(p => p.SecondName).Using(s => "###");
+                .Printing(p => p.SecondName).Using(s => "Egorov");
 
             printer.PrintToString(person).Should()
-                .Contain("###")
-                .And.NotContain("Ivanov");
+                .Contain("SecondName = Egorov")
+                .And.NotContain("SecondName = Ivanov");
         }
 
         [Test]
-        public void TrimProperties()
+        public void AllowToTrimStringProperties()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(3);
@@ -111,7 +103,18 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TrimPropertiesWithShortValues()
+        public void AllowToTrimStringFields()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.SecondName).TrimmedToLength(3);
+
+            printer.PrintToString(person).Should()
+                .Contain("SecondName = Iva")
+                .And.NotContain("Ivanov");
+        }
+
+        [Test]
+        public void TrimStringPropertiesWithBigMaxValues()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(1000);
@@ -121,7 +124,17 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void ThrowExceptionOnNegativeTrimmingLength()
+        public void TrimStringFieldsWithBigMaxValues()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.SecondName).TrimmedToLength(1000);
+
+            printer.PrintToString(person).Should()
+                .Contain("SecondName = Ivanov");
+        }
+
+        [Test]
+        public void ThrowExceptionOnSettingNegativeTrimmingLengthForProperties()
         {
             Action action = () => ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(-2);
@@ -131,7 +144,17 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void ExcludeProperties()
+        public void ThrowExceptionOnSettingNegativeTrimmingLengthForFields()
+        {
+            Action action = () => ObjectPrinter.For<Person>()
+                .Printing(p => p.SecondName).TrimmedToLength(-2);
+
+            action.Should().Throw<ArgumentException>()
+                .WithMessage("Trimming length can't be negative");
+        }
+
+        [Test]
+        public void AllowToExcludeProperties()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Id)
@@ -142,13 +165,13 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void ExcludeFields()
+        public void AllowToExcludeFields()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.SecondName);
 
             printer.PrintToString(person).Should()
-                .NotContainAny("SecondName");
+                .NotContain("SecondName");
         }
 
         [Test]
@@ -187,9 +210,9 @@ namespace ObjectPrinterTests
                 EstablishedSince = new DateTime(1985, 01, 01),
                 Employees = new[]
                 {
-                    new Person {Name = "Rob"},
-                    new Person {Name = "Bob"},
-                    new Person {Name = "Mark"},
+                    new Person(Guid) {Name = "Rob"},
+                    new Person(Guid) {Name = "Bob"},
+                    new Person(Guid) {Name = "Mark"},
                 }
             };
 
@@ -200,37 +223,12 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void Demo()
+        public void NotThrowStackOverflowExceptionOnRecurion()
         {
-            var printer = ObjectPrinting.ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
-                
-                //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString("X"))
-                
-                //3. Для числовых типов указать культуру
-                .Printing<DateTime>().Using(englishCulture)
+            person.Child = person;
 
-                //4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Height).Using(i => i.ToString())
-
-               //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
-
-               //6. Исключить из сериализации конкретного свойства
-               .Excluding(p => p.Age);
-
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            //string s2 = person.PrintToString();
-
-            //8. ...с конфигурированием
-            //string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            //Console.WriteLine(s2);
-            //Console.WriteLine(s3);
+            ObjectPrinter.For<Person>().PrintToString(person).Should()
+                .Contain("Child = ...");
         }
     }
 }
