@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -84,34 +85,35 @@ namespace ObjectPrinting
                 if (excludingPropertiesNames.Contains(propertyInfo.Name))
                     continue;
 
-                if (propNamesPrintingFunctions.ContainsKey(propertyInfo.Name))
-                {
-                    content = propNamesPrintingFunctions[propertyInfo.Name]
-                        .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
-                }
-
-                else if (typePrintingFunctions.ContainsKey(propertyInfo.PropertyType))
-                {
-                    content = typePrintingFunctions[propertyInfo.PropertyType]
-                        .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
-                }
-
-                else if (stringPropNamesTrimming.ContainsKey(propertyInfo.Name))
-                {
-                    var length = propertyInfo.GetValue(obj).ToString().Length;
-                    content = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)
-                        .Substring(0, Math.Min(length, stringPropNamesTrimming[propertyInfo.Name]));
-                }
-
-                else
-                {
-                    content = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                }
-
+                content = GetContent(propertyInfo, obj, nestingLevel);
                 sb.Append(header + content);
             }
 
             return sb.ToString();
+        }
+
+        private string GetContent(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            if (propNamesPrintingFunctions.ContainsKey(propertyInfo.Name))
+            {
+                return propNamesPrintingFunctions[propertyInfo.Name]
+                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+            }
+
+            if (typePrintingFunctions.ContainsKey(propertyInfo.PropertyType))
+            {
+                return typePrintingFunctions[propertyInfo.PropertyType]
+                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
+            }
+
+            if (stringPropNamesTrimming.ContainsKey(propertyInfo.Name))
+            {
+                var length = propertyInfo.GetValue(obj).ToString().Length;
+                return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)
+                    .Substring(0, Math.Min(length, stringPropNamesTrimming[propertyInfo.Name]));
+            }
+
+            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
 
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypePrintingFunctions => typePrintingFunctions;
