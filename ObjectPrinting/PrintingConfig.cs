@@ -84,7 +84,7 @@ namespace ObjectPrinting
         private string PrintToStringAccordingConfiguration(object obj)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
             if (printMethodsForTypes.TryGetValue(obj.GetType(), out var finalPrinter))
                return finalPrinter.Invoke(obj);
             if (finalTypes.Contains(obj.GetType()))

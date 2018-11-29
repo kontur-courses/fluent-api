@@ -28,7 +28,8 @@ namespace ObjectPrinting.Tests
                                   $"\tName = JOHN{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}"+
+                                  $"\tChild = null");
         }
 
         [Test]
@@ -39,7 +40,8 @@ namespace ObjectPrinting.Tests
                                   $"\tName = John{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tAge = 0{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}"+
+                                  $"\tChild = null");
         }
 
         [Test]
@@ -51,7 +53,8 @@ namespace ObjectPrinting.Tests
                                   $"\tName = John{Environment.NewLine}" +
                                   $"\tHeight = 180.7{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}+" +
+                                  $"\tChild = null");
         }
 
         [Test]
@@ -63,7 +66,8 @@ namespace ObjectPrinting.Tests
                                   $"\tName = John{Environment.NewLine}" +
                                   $"\tHeight = 180.7{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
-                                  $"\tPet = null\r\n");
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
         }
 
         [Test]
@@ -74,7 +78,8 @@ namespace ObjectPrinting.Tests
                                   $"\tName = J{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}"
+                                  + $"\tChild = null");
         }
 
         [Test]
@@ -86,7 +91,8 @@ namespace ObjectPrinting.Tests
                     $"\tName = J{Environment.NewLine}" +
                     $"\tHeight = 180{Environment.NewLine}" +
                     $"\tAge = 32{Environment.NewLine}" +
-                    $"\tPet = null{Environment.NewLine}");
+                    $"\tPet = null{Environment.NewLine}"+
+                    $"\tChild = null");
         }
 
         [Test]

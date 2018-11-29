@@ -27,7 +27,8 @@ namespace ObjectPrinting.Tests
             resString.Should().Be($"Person{Environment.NewLine}" +
                                   $"\tName = John{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
         }
 
         [Test]
@@ -37,7 +38,9 @@ namespace ObjectPrinting.Tests
             resString.Should().Be($"Person{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
-                                  $"\tPet = null{Environment.NewLine}");
+                                  $"\tPet = null{Environment.NewLine}"+
+                                  $"\tChild = null"
+                                  );
         }
 
         [Test]
@@ -50,7 +53,9 @@ namespace ObjectPrinting.Tests
                     $"\tHeight = 180{Environment.NewLine}" +
                     $"\tAge = 32{Environment.NewLine}" +
                     $"\tPet = Pet{Environment.NewLine}" +
-                    $"\t\tName = Lassie{Environment.NewLine}\t\tAge = 0");
+                    $"\t\tName = Lassie{Environment.NewLine}" +
+                    $"\t\tAge = 0{Environment.NewLine}" +
+                    $"\tChild = null");
 
         }
 
@@ -65,7 +70,8 @@ namespace ObjectPrinting.Tests
                     $"\tHeight = 180{Environment.NewLine}" +
                     $"\tPet = Pet{Environment.NewLine}" +
                     $"\t\tName = Lassie{Environment.NewLine}" +
-                    $"\t\tAge = 8");
+                    $"\t\tAge = 8{Environment.NewLine}" +
+                    $"\tChild = null");
         }
     }
 }
