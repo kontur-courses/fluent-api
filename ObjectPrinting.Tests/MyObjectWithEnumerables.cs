@@ -9,5 +9,7 @@ namespace ObjectPrinting.Tests
     class MyObjectWithEnumerables
     {
         public int[] Array { get; set; }
+
+        public List<Person> ListOfComplexObjects { get; set; }
     }
 }

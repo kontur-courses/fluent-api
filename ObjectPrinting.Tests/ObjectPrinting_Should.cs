@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -41,7 +42,12 @@ namespace ObjectPrinting.Tests
             myObjectWithEnumerablesPrinter = ObjectPrinter.For<MyObjectWithEnumerables>();
             myObjectWithEnumerables = new MyObjectWithEnumerables
             {
-                Array = new[] {1, 2, 3}
+                Array = new[] {1, 2, 3},
+                ListOfComplexObjects = new List<Person>
+                {
+                    person,
+                    person
+                }
             };
         }
 
@@ -193,9 +199,21 @@ namespace ObjectPrinting.Tests
         {
             var expected = string.Join(Environment.NewLine, "MyObjectWithEnumerables",
                                "\tArray = Int32[]",
-                               "\t\t[0] = 1",
-                               "\t\t[1] = 2",
-                               "\t\t[2] = 3")
+                                    "\t\t[0] = 1",
+                                    "\t\t[1] = 2",
+                                    "\t\t[2] = 3",
+                               "\tListOfComplexObjects = List`1",
+                                    "\t\t[0] = Person",
+                                        "\t\t\tId = 00000000-0000-0000-0000-000000000000",
+                                        "\t\t\tName = John Smith",
+                                        "\t\t\tHeight = 13,37",
+                                        "\t\t\tAge = 69",
+                                    "\t\t[1] = Person",
+                                        "\t\t\tId = 00000000-0000-0000-0000-000000000000",
+                                        "\t\t\tName = John Smith",
+                                        "\t\t\tHeight = 13,37",
+                                        "\t\t\tAge = 69"
+                               )
                            + Environment.NewLine;
 
             myObjectWithEnumerablesPrinter.PrintToString(myObjectWithEnumerables).Should().Be(expected);
