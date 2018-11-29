@@ -108,7 +108,7 @@ namespace ObjectPrinting
                     else
                         printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
 
-                    sb.Append($"\r\n{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
+                    sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
                 }
 
             }
