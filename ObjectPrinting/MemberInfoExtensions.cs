@@ -6,15 +6,14 @@ namespace ObjectPrinting
     {
         public static bool TryGetValue(this MemberInfo memberInfo, object owner, out object value)
         {
-            if (memberInfo is PropertyInfo propertyInfo)
+            switch (memberInfo)
             {
-                value = propertyInfo.GetValue(owner);
-                return true;
-            }
-            else if (memberInfo is FieldInfo fieldInfo)
-            {
-                value = fieldInfo.GetValue(owner);
-                return true;
+                case PropertyInfo propertyInfo:
+                    value = propertyInfo.GetValue(owner);
+                    return true;
+                case FieldInfo fieldInfo:
+                    value = fieldInfo.GetValue(owner);
+                    return true;
             }
 
             value = null;

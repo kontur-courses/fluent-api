@@ -119,11 +119,12 @@ namespace ObjectPrinting.Tests
         {
             var container = new PropertyContainer<double>(1.1);
             var type = container.GetType();
-            var expectedResult = type.Name + Environment.NewLine + "\tContent = 1,10 ₽" + Environment.NewLine;
-            var cultureInfo = CultureInfo.CurrentCulture;
+            var expectedResult = type.Name + Environment.NewLine + "\tContent = 1point10" + Environment.NewLine;
+            var cultureInfo = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+            cultureInfo.NumberFormat.NumberDecimalSeparator = "point";
 
             var printingConfig = ObjectPrinter.For<PropertyContainer<double>>()
-                .Printing<double>().Using(CultureInfo.CurrentCulture);
+                .Printing<double>().Using(cultureInfo);
             var actual = printingConfig.PrintToString(container);
 
             actual.Should().Be(expectedResult);
@@ -134,11 +135,12 @@ namespace ObjectPrinting.Tests
         {
             var container = new FieldContainer<double>(1.1);
             var type = container.GetType();
-            var expectedResult = type.Name + Environment.NewLine + "\tContent = 1,10 ₽" + Environment.NewLine;
-            var cultureInfo = CultureInfo.CurrentCulture;
+            var expectedResult = type.Name + Environment.NewLine + "\tContent = 1point10" + Environment.NewLine;
+            var cultureInfo = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+            cultureInfo.NumberFormat.NumberDecimalSeparator = "point";
 
             var printingConfig = ObjectPrinter.For<FieldContainer<double>>()
-                .Printing<double>().Using(CultureInfo.CurrentCulture);
+                .Printing<double>().Using(cultureInfo);
             var actual = printingConfig.PrintToString(container);
 
             actual.Should().Be(expectedResult);
@@ -201,28 +203,28 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Printer_Property_UsingTrimm_Should()
+        public void Printer_Property_UsingTrim_Should()
         {
             var container = new PropertyContainer<string>("string");
             var type = container.GetType();
             var expectedResult = type.Name + Environment.NewLine + "\tContent = stri" + Environment.NewLine;
 
             var printingConfig = ObjectPrinter.For<PropertyContainer<string>>()
-                .Printing(o => o.Content).TrimmingToLength(4);
+                .Printing(o => o.Content).TrimingToLength(4);
             var actual = printingConfig.PrintToString(container);
 
             actual.Should().Be(expectedResult);
         }
 
         [Test]
-        public void Printer_Field_UsingTrimm_Should()
+        public void Printer_Field_UsingTrim_Should()
         {
             var container = new FieldContainer<string>("string");
             var type = container.GetType();
             var expectedResult = type.Name + Environment.NewLine + "\tContent = stri" + Environment.NewLine;
 
             var printingConfig = ObjectPrinter.For<FieldContainer<string>>()
-                .Printing(o => o.Content).TrimmingToLength(4);
+                .Printing(o => o.Content).TrimingToLength(4);
             var actual = printingConfig.PrintToString(container);
 
             actual.Should().Be(expectedResult);

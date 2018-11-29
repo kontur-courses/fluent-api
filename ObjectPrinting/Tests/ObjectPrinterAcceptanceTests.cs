@@ -22,7 +22,7 @@ namespace ObjectPrinting.Solved.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Age).Using((ch) => (ch).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmingToLength(10)
+                .Printing(p => p.Name).TrimingToLength(10)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 

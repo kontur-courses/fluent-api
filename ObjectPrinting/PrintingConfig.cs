@@ -26,7 +26,7 @@ namespace ObjectPrinting
 
         private readonly Dictionary<string, Delegate> propertiesSerializers = new Dictionary<string, Delegate>();
 
-        private readonly Dictionary<string, int> trimmedProperties = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> trimedProperties = new Dictionary<string, int>();
 
         internal void AddTypeSerializer<TPropType>(Func<TPropType, string> print) => typeSerializers[typeof(TPropType)] = print;
 
@@ -34,7 +34,7 @@ namespace ObjectPrinting
 
         internal void AddCulture<TPropType>(CultureInfo culture) => culturesForTypes[typeof(TPropType)] = culture;
 
-        internal void AddPropertyTrimm(string propertyName, int lenght) => trimmedProperties[propertyName] = lenght;
+        internal void AddPropertyTrim(string propertyName, int length) => trimedProperties[propertyName] = length;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
             => new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -68,7 +68,7 @@ namespace ObjectPrinting
             return typeSerializers.ContainsKey(type) ||
                    propertiesSerializers.ContainsKey(name) ||
                    culturesForTypes.ContainsKey(type) ||
-                   trimmedProperties.ContainsKey(name);
+                   trimedProperties.ContainsKey(name);
         }
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
@@ -94,17 +94,17 @@ namespace ObjectPrinting
                     .ToString();
 
             if (culturesForTypes.TryGetValue(type, out var culture))
-                return ((IFormattable)value).ToString("c", culture);
+                return ((IFormattable)value).ToString("N", culture);
 
             if (propertiesSerializers.TryGetValue(name, out var propertySerializer))
                 return propertySerializer
                     .DynamicInvoke(value)
                     .ToString();
 
-            if (trimmedProperties.TryGetValue(name, out var maxLenght))
+            if (trimedProperties.TryGetValue(name, out var maxlength))
             {
                 var str = (value as string);
-                return str.Length <= maxLenght ? str : str.Substring(0, maxLenght);
+                return str.Length <= maxlength ? str : str.Substring(0, maxlength);
             }
 
             throw new ArgumentException();
