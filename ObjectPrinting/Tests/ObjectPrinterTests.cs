@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -79,6 +80,14 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Name);
             var result = printer.PrintToString(person);
             result.Split().Contains(person.Name).Should().BeFalse();
+        }
+
+        [Test]
+        public void Print_PrintsCollectionInside()
+        {
+            var list = new List<int>() {1, 2, 3};
+            var printer = ObjectPrinter.For<List<int>>();
+            var result = printer.PrintToString(list);
         }
     }
 }

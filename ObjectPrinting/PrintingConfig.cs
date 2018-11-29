@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Common;
+using NUnit.Framework;
 
 namespace ObjectPrinting
 {
@@ -58,6 +61,8 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
+
             var numberTypes = new[]
             {
                 typeof(int), typeof(double), typeof(long)
@@ -76,6 +81,8 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+
+
             foreach (var propertyInfo in type.GetProperties())
             {
                 var header = indentation + propertyInfo.Name + " = ";
@@ -92,8 +99,26 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private string GetCollectionInside(object[] arr)
+        {
+            var elememts = new List<string>();
+            foreach (var e in arr)
+            {
+                elememts.Add(e.ToString());
+            }
+
+            return string.Join(", ", elememts);
+        }
+
         private string GetContent(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
+            if (propertyInfo.IsIndexer())
+            {
+                var value = GetPropertyValue(propertyInfo, obj);
+                return GetCollectionInside(value);
+            }
+
+
             if (propNamesPrintingFunctions.ContainsKey(propertyInfo.Name))
             {
                 return propNamesPrintingFunctions[propertyInfo.Name]
@@ -113,7 +138,20 @@ namespace ObjectPrinting
                     .Substring(0, Math.Min(length, stringPropNamesTrimming[propertyInfo.Name]));
             }
 
+
             return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+        }
+
+        private object[] GetPropertyValue(PropertyInfo propertyInfo, object obj)
+        {
+            var length = ((IEnumerable<int>) obj).Count();
+            var arr = new object[length];
+            for (var i = 0; i < length; i++)
+            {
+                arr[i] = propertyInfo.GetValue(obj, new object[] {i});
+            }
+
+            return arr;
         }
 
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypePrintingFunctions => typePrintingFunctions;
