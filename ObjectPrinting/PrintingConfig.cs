@@ -13,17 +13,21 @@ namespace ObjectPrinting
     {
         private const char Indent = '\t';
 
-        private readonly Type[] finalTypes = {
+        private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+
+        private readonly Type[] finalTypes =
+        {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
-        private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<PropertyInfo, Delegate> propertySerializators = new Dictionary<PropertyInfo, Delegate>();
-        private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<PropertyInfo, Delegate> propertySerializators =
+            new Dictionary<PropertyInfo, Delegate>();
+
         private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
+        private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
 
         internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serializator)
         {
@@ -57,15 +61,16 @@ namespace ObjectPrinting
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo = ((PropertyInfo) ((MemberExpression) memberSelector.Body).Member);
+            var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var excludedPropertyInfo = ((PropertyInfo)((MemberExpression)memberSelector.Body).Member);
+            var excludedPropertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
             excludedProperties.Add(excludedPropertyInfo);
             return this;
         }
@@ -120,29 +125,22 @@ namespace ObjectPrinting
                 }
 
                 if (typeSerializators.ContainsKey(propertyInfo.PropertyType))
-                {
                     propertyValueString =
                         typeSerializators[propertyInfo.PropertyType].DynamicInvoke(propertyValue).ToString();
-                }
 
                 if (propertySerializators.ContainsKey(propertyInfo))
-                {
                     propertyValueString =
                         propertySerializators[propertyInfo].DynamicInvoke(propertyValue).ToString();
-                }
 
                 if (propertyValueString == string.Empty)
-                {
                     propertyValueString = PrintToString(propertyValue, nestingLevel + 1);
-                }
 
                 if (propertyTrimmedLengths.ContainsKey(propertyInfo))
-                {
                     propertyValueString = TrimString(propertyValueString, propertyTrimmedLengths[propertyInfo]);
-                }
 
                 sb.AppendLine(indentation + propertyInfo.Name + " = " + propertyValueString);
             }
+
             return sb.ToString();
         }
 

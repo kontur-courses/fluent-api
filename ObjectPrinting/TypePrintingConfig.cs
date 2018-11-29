@@ -11,13 +11,13 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             printingConfig.ChangeSerializationForType(typeof(TPropType), print);
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 
     public interface ITypePrintingConfig<TOwner, TPropType>
