@@ -58,7 +58,7 @@
     <Compile Include="ITypePrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
-    <Compile Include="PrintingConfigExtensions.cs" />
+    <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\Sequences.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />

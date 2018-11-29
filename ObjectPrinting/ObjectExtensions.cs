@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public static class PrintingConfigExtensions
+    public static class ObjectExtensions
     {
         public static string Serialize<T>(this T obj)
         {

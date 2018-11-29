@@ -17,7 +17,12 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Delegate> alternativeSerializationByName;
         private readonly Dictionary<string, Delegate> trimmingFunctions;
         private readonly Dictionary<Type, CultureInfo> cultureInfoForNumbers;
-        private readonly HashSet<Type> finalTypes;
+        public static HashSet<Type> FinalTypes = new HashSet<Type>
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),typeof(long),typeof(decimal),typeof(char),
+            typeof(bool),typeof(DateTime), typeof(TimeSpan), typeof(byte), typeof(sbyte),typeof(short),typeof(ushort),
+            typeof(uint),typeof(ulong)
+        };
         private int numberIterationsForEnumerable;
 
         public PrintingConfig()
@@ -29,13 +34,10 @@ namespace ObjectPrinting
             trimmingFunctions = new Dictionary<string, Delegate>();
             excludeMembersByName = new HashSet<string>();
             cultureInfoForNumbers = new Dictionary<Type, CultureInfo>();
-            finalTypes = new HashSet<Type>
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),typeof(long),typeof(decimal),typeof(char),
-                typeof(bool),typeof(DateTime), typeof(TimeSpan), typeof(byte), typeof(sbyte),typeof(short),typeof(ushort),
-                typeof(uint),typeof(ulong)
-            };
         }
+
+
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0, new HashSet<object>());
@@ -73,17 +75,23 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (finalTypes.Contains(type))
-                return (cultureInfoForNumbers.ContainsKey(type) ?
-                    ((IFormattable)obj).ToString("", cultureInfoForNumbers[type]) : obj) + Environment.NewLine;
+            if (FinalTypes.Contains(type))
+                return PrintSimpleType(obj, type);
 
+            viewedObjects.Add(obj);
             var indentation = new string('\t', nestingLevel + 1);
             var members = FilteringMembers(type);
+            if (obj is ICollection collection)
+                return PrintingCollections(nestingLevel, indentation, type, collection);
+            if (obj is IEnumerable enumerable)
+                return PrintingEnumerable(nestingLevel, indentation, type, enumerable);
+            return PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
+        }
 
-            return obj is ICollection collection 
-                ? PrintingCollections(nestingLevel, indentation, type, collection) 
-                : obj is IEnumerable enumerable ? PrintingEnumerable(nestingLevel, indentation, type, enumerable)
-                    : PrintMembers(obj, nestingLevel, indentation, members, viewedObjects);
+        private string PrintSimpleType(object obj, Type type)
+        {
+            return (cultureInfoForNumbers.ContainsKey(type) ?
+                ((IFormattable)obj).ToString("", cultureInfoForNumbers[type]) : obj) + Environment.NewLine;
         }
 
         private string PrintingEnumerable(int nestingLevel, string indentation, Type type, IEnumerable enumerable)
@@ -91,10 +99,11 @@ namespace ObjectPrinting
             var iterations = 0;
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
+            var viewedObjects = new HashSet<object>();
             foreach (var item in enumerable)
             {
                 if (numberIterationsForEnumerable <= iterations) break;
-                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, viewedObjects));
                 iterations++;
             }
             return sb.ToString();
@@ -104,8 +113,9 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
+            var viewedObjects = new HashSet<object>();
             foreach (var item in collection)
-                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, new HashSet<object>()));
+                sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, viewedObjects));
             return sb.ToString();
         }
 
@@ -125,19 +135,12 @@ namespace ObjectPrinting
             sb.AppendLine(obj.GetType().Name);
             foreach (var memberInfo in members)
             {
-                var isPropertyInfo = memberInfo is PropertyInfo;
-                var memberType = isPropertyInfo ? ((PropertyInfo)memberInfo).PropertyType : ((FieldInfo)memberInfo).FieldType;
-                var value = isPropertyInfo ? ((PropertyInfo)memberInfo).GetValue(obj) : ((FieldInfo)memberInfo).GetValue(obj);
+                TypeCheck(obj, memberInfo, out var memberType, out var value);
                 if (viewedObjects.Contains(value))
                     continue;
-                viewedObjects.Add(value);
                 if (value is string str && trimmingFunctions.ContainsKey(memberInfo.Name))
                     value = trimmingFunctions[memberInfo.Name].DynamicInvoke(str);
-                var result = alternativeSerializationByType.ContainsKey(memberType)
-                    ? alternativeSerializationByType[memberType].DynamicInvoke(value)
-                    : alternativeSerializationByName.ContainsKey(memberInfo.Name)
-                        ? alternativeSerializationByName[memberInfo.Name].DynamicInvoke(value)
-                        : null;
+                var result = ApplyAlternativeSerialization(memberInfo, memberType, value);
                 if (result != null)
                 {
                     sb.Append(indentation + result + "\r\n");
@@ -148,6 +151,29 @@ namespace ObjectPrinting
             }
 
             return sb.ToString();
+        }
+
+        private static void TypeCheck(object obj, MemberInfo memberInfo, out Type memberType, out object value)
+        {
+            if (memberInfo is PropertyInfo info)
+            {
+                memberType = info.PropertyType;
+                value = info.GetValue(obj);
+            }
+            else
+            {
+                memberType = ((FieldInfo)memberInfo).FieldType;
+                value = ((FieldInfo)memberInfo).GetValue(obj);
+            }
+        }
+
+        private object ApplyAlternativeSerialization(MemberInfo memberInfo, Type memberType, object value)
+        {
+            if (alternativeSerializationByType.ContainsKey(memberType))
+                return alternativeSerializationByType[memberType].DynamicInvoke(value);
+            if (alternativeSerializationByName.ContainsKey(memberInfo.Name))
+                return alternativeSerializationByName[memberInfo.Name].DynamicInvoke(value);
+            return null;
         }
 
         internal void AddAlternativeSerialization(Type type, Delegate altSerialize)

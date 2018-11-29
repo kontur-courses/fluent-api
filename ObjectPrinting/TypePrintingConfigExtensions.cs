@@ -7,7 +7,8 @@ namespace ObjectPrinting
 
     public static class TypePrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>(this TypePrintingConfig<TOwner, int> typePrintingConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>
+            (this TypePrintingConfig<TOwner, int> typePrintingConfig, CultureInfo culture)
         {
             var typeNumber = typeof(int);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
@@ -15,7 +16,8 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>(this TypePrintingConfig<TOwner, double> typePrintingConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>
+            (this TypePrintingConfig<TOwner, double> typePrintingConfig, CultureInfo culture)
         {
             var typeNumber = typeof(double);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
@@ -23,7 +25,8 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>(this TypePrintingConfig<TOwner, float> typePrintingConfig, CultureInfo culture)
+        public static PrintingConfig<TOwner> SetCultureInfo<TOwner>
+            (this TypePrintingConfig<TOwner, float> typePrintingConfig, CultureInfo culture)
         {
             var typeNumber = typeof(float);
             var printingConfig = ((ITypePrintingConfig<TOwner>)typePrintingConfig).PrintingConfig;
