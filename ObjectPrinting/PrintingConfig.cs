@@ -19,7 +19,8 @@ namespace ObjectPrinting
         private static readonly Type[] NumberTypes = {typeof(int), typeof(double), typeof(float)};
 
 
-        private readonly Dictionary<MemberInfo, CultureInfo> customMemberCulture = new Dictionary<MemberInfo, CultureInfo>();
+        private readonly Dictionary<MemberInfo, CultureInfo> customMemberCulture =
+            new Dictionary<MemberInfo, CultureInfo>();
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
@@ -67,16 +68,23 @@ namespace ObjectPrinting
                 .OrderBy(m => m.Name))
             {
                 string memberValue;
-                if (stringMembersMaxLength.TryGetValue(memberInfo, out var maxLength))
-                    memberValue = ((string) memberInfo.GetValue(obj)).Truncate(maxLength) + Environment.NewLine;
-                else if (customMemberSerializers.TryGetValue(memberInfo, out var serializer))
+                if (customMemberSerializers.TryGetValue(memberInfo, out var serializer))
                     memberValue = serializer((TOwner) obj) + Environment.NewLine;
                 else if (customMemberCulture.TryGetValue(memberInfo.GetMemberType(), out var culture))
                     memberValue = memberInfo.GetValue(obj).ToStringWithCulture(culture) + Environment.NewLine;
                 else if (customTypeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
                     memberValue = typeSerializer(memberInfo.GetValue(obj)) + Environment.NewLine;
                 else
-                    memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1, parents.Concat(new [] {obj}).ToArray());
+                    memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1,
+                        parents.Concat(new[] {obj}).ToArray());
+
+                if (memberInfo.GetMemberType() == typeof(string) &&
+                    stringMembersMaxLength.TryGetValue(memberInfo, out var maxLength))
+                {
+                    memberValue =
+                        memberValue.Substring(0, memberValue.Length - Environment.NewLine.Length).Truncate(maxLength) +
+                        Environment.NewLine;
+                }
 
                 sb.Append($"{indentation}{memberInfo.Name} = {memberValue}");
             }
