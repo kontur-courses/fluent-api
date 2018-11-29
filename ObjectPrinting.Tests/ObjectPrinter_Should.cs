@@ -148,5 +148,24 @@ namespace ObjectPrinting.Tests
 
             config.PrintToString(person).Should().BeEquivalentTo(expected + Environment.NewLine);
         }
+
+        [Test]
+        public void Print_ParentWithCyclicReference()
+        {
+            var parent = new Parent{Age = 10, Height = 100, Id = Guid.Empty, Name = "Ivan"};
+            parent.Child = parent;
+
+            var config = new PrintingConfig<Parent>();
+
+            var expected = string.Join(Environment.NewLine,
+                "Parent",
+                "\tAge = 10",
+                "\tChild = Cyclic reference to level 0",
+                "\tHeight = 100",
+                "\tId = 00000000-0000-0000-0000-000000000000",
+                "\tName = Ivan");
+
+            config.PrintToString(parent).Should().BeEquivalentTo(expected + Environment.NewLine);
+        }
     }
 }

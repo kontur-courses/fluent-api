@@ -54,6 +54,7 @@
     <Compile Include="MemberInfoExtensions_Should.cs" />
     <Compile Include="ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="ObjectPrinter_Should.cs" />
+    <Compile Include="Parent.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

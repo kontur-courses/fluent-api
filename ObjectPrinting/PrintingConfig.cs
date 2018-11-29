@@ -37,7 +37,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, params object[] parents)
         {
             const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
 
@@ -46,6 +46,12 @@ namespace ObjectPrinting
 
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
+            var parentsIndex = parents.IndexOfFirst(o => ReferenceEquals(o, obj));
+            if (parentsIndex != -1)
+            {
+                return $"Cyclic reference to level {parentsIndex}{Environment.NewLine}";
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -70,7 +76,7 @@ namespace ObjectPrinting
                 else if (customTypeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
                     memberValue = typeSerializer(memberInfo.GetValue(obj)) + Environment.NewLine;
                 else
-                    memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
+                    memberValue = PrintToString(memberInfo.GetValue(obj), nestingLevel + 1, parents.Concat(new [] {obj}).ToArray());
 
                 sb.Append($"{indentation}{memberInfo.Name} = {memberValue}");
             }
