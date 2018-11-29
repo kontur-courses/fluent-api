@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -17,13 +16,13 @@ namespace ObjectPrinting
 
         private readonly Dictionary<string, Delegate> propertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
 
-        private readonly Dictionary<Type, CultureInfo> numericTypesToBeAlternativelySerializedUsingCultureInfo 
+        private readonly Dictionary<Type, CultureInfo> numericTypesToBeAlternativelySerializedUsingCultureInfo
             = new Dictionary<Type, CultureInfo>();
 
-        public void AddTypeToBeAlternativelySerialized(Type type, Delegate del) 
+        public void AddTypeToBeAlternativelySerialized(Type type, Delegate del)
             => typesToBeAlternativelySerialized[type] = del;
 
-        public void AddPropertyToBeAlternativelySerialized(string propertyName, Delegate del) 
+        public void AddPropertyToBeAlternativelySerialized(string propertyName, Delegate del)
             => propertiesToBeAlternativelySerialized[propertyName] = del;
 
         public void AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(Type type, CultureInfo cultureInfo)
@@ -73,12 +72,15 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10)
+        public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10,
+            HashSet<MemberTypes> requiredMemberTypes = null)
         {
-            return PrintToString(obj, 0, indentSymbol, maxNestingLevel);
+            return PrintToString(obj, 0, indentSymbol, maxNestingLevel,
+                requiredMemberTypes ?? new HashSet<MemberTypes> { MemberTypes.Field, MemberTypes.Property });
         }
 
-        private string PrintToString(object obj, int nestingLevel, char indentSymbol, int maxNestingLevel)
+        private string PrintToString(object obj, int nestingLevel, char indentSymbol,
+            int maxNestingLevel, HashSet<MemberTypes> requiredMemberTypes)
         {
             if (nestingLevel >= maxNestingLevel)
                 throw new OverflowException("ѕревышен максимальный уровень вложенности");
@@ -97,9 +99,21 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
 
             var members = new List<MemberInfo>();
-            
-            members.AddRange(type.GetFields());
-            members.AddRange(type.GetProperties());
+
+            foreach (var memberType in requiredMemberTypes)
+            {
+                switch (memberType)
+                {
+                    case MemberTypes.Field:
+                        members.AddRange(type.GetFields());
+                        break;
+                    case MemberTypes.Property:
+                        members.AddRange(type.GetProperties());
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
 
             foreach (var memberInfo in members)
             {
@@ -124,7 +138,7 @@ namespace ObjectPrinting
                         value = propertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
 
                     sb.Append(indentation + propName + " = " +
-                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel));
+                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel, requiredMemberTypes));
                 }
             }
 
