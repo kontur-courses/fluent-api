@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Configuration;
 using System.Reflection;
 using System.Text;
 
@@ -53,20 +52,27 @@ namespace ObjectPrinting
 
             throw new ArgumentException();
         }
-    
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0, typeof(TOwner));
         }
 
+        private static string GetTypeName(Type type)
+        {
+            var typeName = type.Name;
+            if (!type.IsGenericType)
+                return typeName;
+            var deleteIndex = typeName.IndexOf('`');
+            return typeName.Substring(0, deleteIndex);
+        }
 
         private string PrintToString(object obj, int nestingLevel, MemberInfo member)
         {
             var maxDepth = 10;
             if (nestingLevel >= maxDepth)
                 return "max depth reached";
-            
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -83,22 +89,17 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-            
-            if (obj is IEnumerable enumerable)
-            {
-                var str = new StringBuilder();
-                foreach (var x1 in enumerable)
-                {
-                    str.Append(PrintToString(x1, nestingLevel+1, typeof(TOwner)));
-                }
-
-                return str.ToString();
-            }
 
             var indentation = new string('\t', nestingLevel + 1);
+            if (obj is IEnumerable enumerable)
+            {
+                return PrintCollection(nestingLevel, enumerable, indentation);
+            }
+
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(GetTypeName(type));
+            
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyType = propertyInfo.PropertyType;
@@ -110,7 +111,28 @@ namespace ObjectPrinting
                 sb.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
             }
 
+            foreach (var fieldInfo in type.GetFields())
+            {
+                var propertyType = fieldInfo.FieldType;
+                if (excludedTypes.Contains(propertyType) || excludedMembers.Contains(fieldInfo))
+                    continue;
+
+                var value = fieldInfo.GetValue(obj);
+                var nestedPrint = PrintToString(value, nestingLevel + 1, fieldInfo);
+                sb.Append(indentation + fieldInfo.Name + " = " + nestedPrint);
+            }
+
             return sb.ToString();
+        }
+
+        private string PrintCollection(int nestingLevel, IEnumerable enumerable, string indentation)
+        {
+            var str = new StringBuilder();
+            str.Append(Environment.NewLine);
+            foreach (var x1 in enumerable)
+                str.Append(indentation + PrintToString(x1, nestingLevel + 1, typeof(TOwner)));
+
+            return str.ToString();
         }
     }
 }
