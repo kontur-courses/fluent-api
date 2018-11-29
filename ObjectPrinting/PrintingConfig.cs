@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -78,7 +79,7 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (type.IsSimpleType())
+            if (IsSimpleType(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string(indentSymbol, nestingLevel + 1);
@@ -131,6 +132,26 @@ namespace ObjectPrinting
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Determine whether a type is simple (String, Decimal, DateTime, etc) 
+        /// or complex (i.e. custom class with public properties and methods).
+        /// </summary>
+        public static bool IsSimpleType(Type type)
+        {
+            return
+                type.IsValueType ||
+                type.IsPrimitive ||
+                new[] {
+                    typeof(String),
+                    typeof(Decimal),
+                    typeof(DateTime),
+                    typeof(DateTimeOffset),
+                    typeof(TimeSpan),
+                    typeof(Guid)
+                }.Contains(type) ||
+                Convert.GetTypeCode(type) != TypeCode.Object;
         }
     }
 }

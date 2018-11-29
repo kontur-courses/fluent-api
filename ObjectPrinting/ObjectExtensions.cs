@@ -37,26 +37,6 @@ namespace ObjectPrinting
             }
         }
 
-        /// <summary>
-        /// Determine whether a type is simple (String, Decimal, DateTime, etc) 
-        /// or complex (i.e. custom class with public properties and methods).
-        /// </summary>
-        public static bool IsSimpleType(this Type type)
-        {
-            return
-                type.IsValueType ||
-                type.IsPrimitive ||
-                new[] {
-                    typeof(String),
-                    typeof(Decimal),
-                    typeof(DateTime),
-                    typeof(DateTimeOffset),
-                    typeof(TimeSpan),
-                    typeof(Guid)
-                }.Contains(type) ||
-                Convert.GetTypeCode(type) != TypeCode.Object;
-        }
-
         public static bool IsNumericType(this Type type)
         {
             return new[]
