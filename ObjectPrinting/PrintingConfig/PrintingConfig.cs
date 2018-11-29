@@ -121,6 +121,8 @@ namespace ObjectPrinting
                 value = type.Name + " (already printed)";
             else if (typeSerializationSettings.ContainsKey(type))
                 value = typeSerializationSettings[type].Invoke(obj);
+            else if (obj is IFormattable formattableObj)
+                value = formattableObj.ToString(null, CultureInfo.InvariantCulture);
             else if (finalTypes.Contains(type))
                 value = obj.ToString();
             else

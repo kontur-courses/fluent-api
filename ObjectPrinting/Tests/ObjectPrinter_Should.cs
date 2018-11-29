@@ -14,9 +14,9 @@ namespace ObjectPrinting.Tests
     {
         private Person person;
         private string expectedAge => $"\tAge = {person.Age}";
-        private string expectedHeight => $"\tHeight = {person.Height}";
+        private string expectedHeight => $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}";
         private string expectedName => $"\tName = {person.Name}";
-        private const string expectedId = "\tId = Guid";
+        private string expectedId => $"\tId = {person.Id}";
         private const string expectedChild = "\tChild = null";
         private const string expectedParent = "\tParent = null";
 
@@ -65,8 +65,8 @@ namespace ObjectPrinting.Tests
             person.Parent = parent;
 
             var expected =
-                "Person\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 1,8\r\n\tAge = 18\r\n\tParent = " +
-                "Person\r\n\t\tId = Guid\r\n\t\tName = Steve\r\n\t\tHeight = 1,9\r\n\t\tAge = 35\r\n\t\tParent = " +
+                $"Person\r\n\tId = {person.Id}\r\n\tName = John\r\n\tHeight = 1.8\r\n\tAge = 18\r\n\tParent = " +
+                $"Person\r\n\t\tId = {person.Parent.Id}\r\n\t\tName = Steve\r\n\t\tHeight = 1.9\r\n\t\tAge = 35\r\n\t\tParent = " +
                 "null\r\n\t\tChild = Person (already printed)\r\n\tChild = null\r\n";
             var actual = person.Print();
 
