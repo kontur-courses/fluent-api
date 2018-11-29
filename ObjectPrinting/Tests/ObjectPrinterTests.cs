@@ -27,7 +27,7 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<string>();
-            printer.PrintToString(person).Split().Contains(nameof(person.Name)).Should().BeFalse();
+            printer.PrintToString(person).Split().Should().NotContain(nameof(person.Name));
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => "XXX");
             var result = printer.PrintToString(person);
-            result.Split().Contains("XXX").Should().BeTrue();
+            result.Split().Should().Contain("XXX");
         }
 
         [Test]
@@ -48,7 +48,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
             var result = printer.PrintToString(person);
-            result.Split().Contains(person.Height.ToString(CultureInfo.InvariantCulture)).Should().BeTrue();
+            result.Split().Should().Contain((person.Height.ToString(CultureInfo.InvariantCulture)));
         }
 
         [Test]
@@ -58,7 +58,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(x => x.Height).Using(x => (x * 2).ToString());
             var result = printer.PrintToString(person);
-            result.Split().Contains((person.Height * 2).ToString()).Should().BeTrue();
+            result.Split().Should().Contain((person.Height * 2).ToString());
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(x => x.Name).TrimmedToLength(length);
             var result = printer.PrintToString(person);
-            result.Split().Contains(person.Name.Substring(0, length)).Should().BeTrue();
+            result.Split().Should().Contain(person.Name.Substring(0, length));
         }
 
         [Test]
@@ -79,15 +79,19 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Name);
             var result = printer.PrintToString(person);
-            result.Split().Contains(person.Name).Should().BeFalse();
+            result.Split().Should().NotContain(person.Name);
         }
 
         [Test]
         public void Print_PrintsCollectionInside()
         {
+            //Коллекции
             var list = new List<int>() {1, 2, 3};
             var printer = ObjectPrinter.For<List<int>>();
             var result = printer.PrintToString(list);
+            result.Split().Should().Contain("1,");
+            result.Split().Should().Contain("2,");
+            result.Split().Should().Contain("3");
         }
     }
 }
