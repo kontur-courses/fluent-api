@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,6 +10,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private static readonly Type[] FinalTypes =
@@ -33,6 +35,9 @@ namespace ObjectPrinting
             new Dictionary<MemberInfo, Func<TOwner, string>>();
 
         private readonly Dictionary<MemberInfo, int> stringMembersMaxLength = new Dictionary<MemberInfo, int>();
+
+        private int maxNestingLevel = 5;
+        private int maxEnumerableElementsToPrint = 10;
 
         public string PrintToString(TOwner obj)
         {
@@ -62,9 +67,9 @@ namespace ObjectPrinting
 
             if (obj is IEnumerable enumerable)
             {
-                var firstElements = enumerable.Cast<object>().Take(11).ToList();
-                if (firstElements.Count == 11)
-                    firstElements[10] = indentation + "...";
+                var firstElements = enumerable.Cast<object>().Take(maxEnumerableElementsToPrint + 1).ToList();
+                if (firstElements.Count == maxEnumerableElementsToPrint + 1)
+                    firstElements[maxEnumerableElementsToPrint] = indentation + "...";
 
                 sb.AppendLine(indentation + "[");
                 foreach (var element in firstElements)
@@ -75,6 +80,8 @@ namespace ObjectPrinting
                 sb.AppendLine(indentation + "]");
                 return sb.ToString();
             }
+
+            if (nestingLevel >= maxNestingLevel) return sb.ToString();
 
             foreach (var memberInfo in type
                 .GetFields(bindingFlags)
@@ -137,6 +144,18 @@ namespace ObjectPrinting
             member.CheckCanParticipateInSerialization();
             excludedMembers.Add(member);
 
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithMaxNestingLevel(int newValue)
+        {
+            maxNestingLevel = newValue;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithMaxEnumerableElementsToPrint(int newValue)
+        {
+            maxEnumerableElementsToPrint = newValue;
             return this;
         }
 
