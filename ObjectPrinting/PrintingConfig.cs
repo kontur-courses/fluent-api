@@ -20,7 +20,6 @@ namespace ObjectPrinting
         Dictionary<PropertyInfo, Delegate> IPrintingConfig.PropertyCustomSerializers => propertyCustomSerializers;
 
         private int depth;
-        private readonly int _indentSize;
         private readonly StringBuilder _stringBuilder;
         private readonly List<int> _hashListOfFoundElements;
         private readonly Dictionary<Type, Delegate> typeCustomSerializers;
@@ -181,10 +180,9 @@ namespace ObjectPrinting
 
         private void Write(string value, params object[] args)
         {
-            var space = new string(' ', depth * _indentSize);
             if (args != null)
                 value = string.Format(value, args);
-            _stringBuilder.AppendLine(space + value);
+            _stringBuilder.AppendLine(value);
         }
 
         private string FormatValue(object o)
