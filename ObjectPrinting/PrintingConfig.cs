@@ -13,13 +13,22 @@ namespace ObjectPrinting
         private readonly List<Type> typesToBeExcluded = new List<Type>();
         private readonly List<string> propertiesToBeExcluded = new List<string>();
 
-        public Dictionary<Type, Delegate> TypesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> typesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
 
-        public Dictionary<string, Delegate> PropertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, Delegate> propertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
 
-        public Dictionary<Type, CultureInfo> NumericTypesToBeAlternativelySerializedUsingCultureInfo = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, CultureInfo> numericTypesToBeAlternativelySerializedUsingCultureInfo 
+            = new Dictionary<Type, CultureInfo>();
 
-        
+        public void AddTypeToBeAlternativelySerialized(Type type, Delegate del) 
+            => typesToBeAlternativelySerialized[type] = del;
+
+        public void AddPropertyToBeAlternativelySerialized(string propertyName, Delegate del) 
+            => propertiesToBeAlternativelySerialized[propertyName] = del;
+
+        public void AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(Type type, CultureInfo cultureInfo)
+            => numericTypesToBeAlternativelySerializedUsingCultureInfo[type] = cultureInfo;
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -103,16 +112,16 @@ namespace ObjectPrinting
                 {
                     var value = memberInfo.GetValue(obj);
 
-                    if (TypesToBeAlternativelySerialized.ContainsKey(propType)
-                        && !PropertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
+                    if (typesToBeAlternativelySerialized.ContainsKey(propType)
+                        && !propertiesToBeAlternativelySerialized.ContainsKey(propName))
+                        value = typesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
-                    if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
+                    if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
                         value = Convert.ToString(value,
-                            NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
+                            numericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
 
-                    if (PropertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = PropertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
+                    if (propertiesToBeAlternativelySerialized.ContainsKey(propName))
+                        value = propertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
 
                     sb.Append(indentation + propName + " = " +
                               PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel));
