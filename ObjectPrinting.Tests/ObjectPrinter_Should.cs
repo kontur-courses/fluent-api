@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using FluentAssertions;
@@ -152,7 +153,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Print_ParentWithCyclicReference()
         {
-            var parent = new Parent{Age = 10, Height = 100, Id = Guid.Empty, Name = "Ivan"};
+            var parent = new Parent {Age = 10, Height = 100, Id = Guid.Empty, Name = "Ivan"};
             parent.Child = parent;
 
             var config = new PrintingConfig<Parent>();
@@ -161,6 +162,140 @@ namespace ObjectPrinting.Tests
                 "Parent",
                 "\tAge = 10",
                 "\tChild = Cyclic reference to level 0",
+                "\tHeight = 100",
+                "\tId = 00000000-0000-0000-0000-000000000000",
+                "\tName = Ivan");
+
+            config.PrintToString(parent).Should().BeEquivalentTo(expected + Environment.NewLine);
+        }
+
+        [Test]
+        public void Print_Collections()
+        {
+            var parent = new ParentOfMany
+            {
+                Age = 10,
+                Height = 100,
+                Id = Guid.Empty,
+                Name = "Ivan",
+                Children = new List<Person> {person, person, person}
+            };
+            var config = new PrintingConfig<ParentOfMany>();
+            var expected = string.Join(Environment.NewLine,
+                "ParentOfMany",
+                "\tAge = 10",
+                "\tChildren = \tList`1",
+                "\t\t[",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\t]",
+                "\tHeight = 100",
+                "\tId = 00000000-0000-0000-0000-000000000000",
+                "\tName = Ivan");
+
+            var printToString = config.PrintToString(parent);
+            printToString.Should().BeEquivalentTo(expected + Environment.NewLine);
+        }
+
+        private IEnumerable<Person> InfinitePerson()
+        {
+            while (true)
+            {
+                yield return person;
+            }
+
+            // ReSharper disable once IteratorNeverReturns
+        }
+
+        [Test]
+        public void Print_InfiniteCollections()
+        {
+            var parent = new ParentOfMany
+            {
+                Age = 10,
+                Height = 100,
+                Id = Guid.Empty,
+                Name = "Ivan",
+                Children = InfinitePerson()
+            };
+            var config = new PrintingConfig<ParentOfMany>();
+
+            var expected = string.Join(Environment.NewLine,
+                "ParentOfMany",
+                "\tAge = 10",
+                "\tChildren = \t<InfinitePerson>d__13",
+                "\t\t[",
+
+                #region Person_x10
+
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+                "\t\tPerson",
+                "\t\t\tAge = 18",
+                "\t\t\tHeight = 178,5",
+                "\t\t\tId = 12345678-9abc-def1-2345-6789abcdef01",
+                "\t\t\tName = Mike",
+
+                #endregion
+
+                "\t\t...",
+                "\t\t]",
                 "\tHeight = 100",
                 "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Ivan");

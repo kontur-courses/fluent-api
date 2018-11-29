@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -57,7 +58,23 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(new string('\t', nestingLevel) + type.Name);
+
+            if (obj is IEnumerable enumerable)
+            {
+                var firstElements = enumerable.Take(11).ToList();
+                if (firstElements.Count == 11)
+                    firstElements[10] = indentation + "...";
+
+                sb.AppendLine(indentation + "[");
+                foreach (var element in firstElements)
+                {
+                    sb.Append(PrintToString(element, nestingLevel + 1, parents.Concat(new[] {obj}).ToArray()));
+                }
+
+                sb.AppendLine(indentation + "]");
+                return sb.ToString();
+            }
 
             foreach (var memberInfo in type
                 .GetFields(bindingFlags)
