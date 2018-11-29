@@ -14,6 +14,7 @@ namespace ObjectPrinting
         #region privateFields
         private readonly int nestingLevel;
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private int maxRecursiveLevel = 3;
         private readonly HashSet<string> namesExcludedProperties = new HashSet<string>();
 
         private readonly Dictionary<string, Func<object, string>> printMethodsForProperties =
@@ -87,6 +88,8 @@ namespace ObjectPrinting
 
         private string PrintProperties(object obj)
         {
+            if (nestingLevel > maxRecursiveLevel)
+                return $"{obj.GetType().Name} (Max nesting level!)";
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -94,36 +97,25 @@ namespace ObjectPrinting
             var nextLevel = nestingLevel + 1;
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (!excludedTypes.Contains(propertyInfo.PropertyType) && !namesExcludedProperties.Contains(propertyInfo.Name))
-                {
-                    var currentObj = propertyInfo.GetValue(obj);
-                    var propertyName = propertyInfo.Name;
-                    Func<object, string> printer;
+                if (excludedTypes.Contains(propertyInfo.PropertyType) ||
+                    namesExcludedProperties.Contains(propertyInfo.Name)) continue;
+                var currentObj = propertyInfo.GetValue(obj);
+                var propertyName = propertyInfo.Name;
+                Func<object, string> printer;
 
+                if (printMethodsForProperties.TryGetValue(propertyName, out var printerProperties))
+                    printer = printerProperties;
+                else if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printerTypes))
+                    printer = printerTypes;
+                else
+                    printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
 
-                    if (printMethodsForProperties.TryGetValue(propertyName, out var printerProperties))
-                        printer = printerProperties;
-                    else if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printerTypes))
-                        printer = printerTypes;
-                    else
-                        printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel));
-
-                    sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
-                }
+                sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
 
             }
             return sb.ToString();
         }
-   
-        private bool IsExcludingType(Type type)
-        {
-            return excludedTypes.Contains(type);
-        }
-
-        private bool IsExcludedProperty(string propertyName)
-        {
-            return namesExcludedProperties.Contains(propertyName);
-        }
+  
 
         #region InterfaceProperties
         Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
