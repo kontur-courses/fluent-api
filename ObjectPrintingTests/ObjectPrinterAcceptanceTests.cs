@@ -1,10 +1,9 @@
-﻿using System.Globalization;
-using System.Linq;
-using System.Runtime.Serialization;
-using FluentAssertions;
+﻿using System;
+using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -14,28 +13,29 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter
-                .For<Person>()
+            var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Exclude<int>()
+                .Excluding<Guid>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serializing<Person>().Using(p => p.ToString())
+                .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
-                .Serializing<int>().Using(CultureInfo.InvariantCulture)
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .Serializing(p => p.Age).Using(p => p.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serializing(p => p.Name).SubstringValue(1, 3)
+                .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Age);
+                .Excluding(p => p.Age);
 
-            var s1 = printer.PrintToString(person);
+            string s1 = printer.PrintToString(person);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию 
-            person
-                .Serialize((cfg) => cfg
-                    .Exclude(p => p.Age));
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            string s2 = person.PrintToString();
+
             //8. ...с конфигурированием
+            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            Console.WriteLine(s1);
+            Console.WriteLine(s2);
+            Console.WriteLine(s3);
         }
     }
 }
