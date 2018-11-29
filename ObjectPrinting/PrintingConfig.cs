@@ -112,7 +112,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private IEnumerable<MemberMeta> GetRequiredMembers(object obj, MemberTypes requiredMemberTypes)
+        private static IEnumerable<MemberMeta> GetRequiredMembers(object obj, MemberTypes requiredMemberTypes)
         {
             var type = obj.GetType();
 
