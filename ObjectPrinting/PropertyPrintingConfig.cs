@@ -18,17 +18,17 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (propertyInfo is null)
-                printingConfig.TypesToBeAlternativelySerialized.Add(typeof(TPropType), print);
+                printingConfig.AddTypeToBeAlternativelySerialized(typeof(TPropType), print);
             else
-                printingConfig.PropertiesToBeAlternativelySerialized.Add(propertyInfo.Name, print);
+                printingConfig.AddPropertyToBeAlternativelySerialized(propertyInfo.Name, print);
 
             return printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            printingConfig.NumericTypesToBeAlternativelySerializedUsingCultureInfo
-                .Add(typeof(TPropType), culture);
+            printingConfig
+                .AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(typeof(TPropType), culture);
             return printingConfig;
         }
 

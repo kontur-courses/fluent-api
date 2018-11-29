@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -13,13 +12,22 @@ namespace ObjectPrinting
         private readonly List<Type> typesToBeExcluded = new List<Type>();
         private readonly List<string> propertiesToBeExcluded = new List<string>();
 
-        public Dictionary<Type, Delegate> TypesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> typesToBeAlternativelySerialized = new Dictionary<Type, Delegate>();
 
-        public Dictionary<string, Delegate> PropertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, Delegate> propertiesToBeAlternativelySerialized = new Dictionary<string, Delegate>();
 
-        public Dictionary<Type, CultureInfo> NumericTypesToBeAlternativelySerializedUsingCultureInfo = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, CultureInfo> numericTypesToBeAlternativelySerializedUsingCultureInfo
+            = new Dictionary<Type, CultureInfo>();
 
-        
+        public void AddTypeToBeAlternativelySerialized(Type type, Delegate del)
+            => typesToBeAlternativelySerialized[type] = del;
+
+        public void AddPropertyToBeAlternativelySerialized(string propertyName, Delegate del)
+            => propertiesToBeAlternativelySerialized[propertyName] = del;
+
+        public void AddNumericTypeToBeAlternativelySerializedUsingCultureInfo(Type type, CultureInfo cultureInfo)
+            => numericTypesToBeAlternativelySerializedUsingCultureInfo[type] = cultureInfo;
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -27,33 +35,21 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            MemberExpression selectorBody;
-            try
-            {
-                selectorBody = (MemberExpression)memberSelector.Body;
-            }
-            catch (InvalidCastException)
-            {
+            if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
-            }
-            var propName = selectorBody.Member;
+            
+            var propName = memberExpression.Member;
 
             return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)propName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            MemberExpression memberExpression;
-            try
-            {
-                memberExpression = (MemberExpression)memberSelector.Body;
-            }
-            catch (InvalidCastException)
-            {
+            if(!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("»спользованное выражение не €вл€етс€ допустимым");
-            }
 
             propertiesToBeExcluded.Add(memberExpression.Member.Name);
+
             return this;
         }
 
@@ -64,12 +60,15 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10)
+        public string PrintToString(TOwner obj, char indentSymbol = '\t', int maxNestingLevel = 10,
+            HashSet<MemberTypes> requiredMemberTypes = null)
         {
-            return PrintToString(obj, 0, indentSymbol, maxNestingLevel);
+            return PrintToString(obj, 0, indentSymbol, maxNestingLevel,
+                requiredMemberTypes ?? new HashSet<MemberTypes> { MemberTypes.Field, MemberTypes.Property });
         }
 
-        private string PrintToString(object obj, int nestingLevel, char indentSymbol, int maxNestingLevel)
+        private string PrintToString(object obj, int nestingLevel, char indentSymbol,
+            int maxNestingLevel, HashSet<MemberTypes> requiredMemberTypes)
         {
             if (nestingLevel >= maxNestingLevel)
                 throw new OverflowException("ѕревышен максимальный уровень вложенности");
@@ -77,24 +76,32 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+
+            if (type.IsSimpleType())
                 return obj + Environment.NewLine;
 
             var indentation = new string(indentSymbol, nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
 
             sb.AppendLine(type.Name);
 
             var members = new List<MemberInfo>();
-            
-            members.AddRange(type.GetFields());
-            members.AddRange(type.GetProperties());
+
+            foreach (var memberType in requiredMemberTypes)
+            {
+                switch (memberType)
+                {
+                    case MemberTypes.Field:
+                        members.AddRange(type.GetFields());
+                        break;
+                    case MemberTypes.Property:
+                        members.AddRange(type.GetProperties());
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
 
             foreach (var memberInfo in members)
             {
@@ -107,19 +114,19 @@ namespace ObjectPrinting
                 {
                     var value = memberInfo.GetValue(obj);
 
-                    if (TypesToBeAlternativelySerialized.ContainsKey(propType)
-                        && !PropertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = TypesToBeAlternativelySerialized[propType].DynamicInvoke(value);
+                    if (typesToBeAlternativelySerialized.ContainsKey(propType)
+                        && !propertiesToBeAlternativelySerialized.ContainsKey(propName))
+                        value = typesToBeAlternativelySerialized[propType].DynamicInvoke(value);
 
-                    if (NumericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
+                    if (numericTypesToBeAlternativelySerializedUsingCultureInfo.ContainsKey(propType))
                         value = Convert.ToString(value,
-                            NumericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
+                            numericTypesToBeAlternativelySerializedUsingCultureInfo[propType]);
 
-                    if (PropertiesToBeAlternativelySerialized.ContainsKey(propName))
-                        value = PropertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
+                    if (propertiesToBeAlternativelySerialized.ContainsKey(propName))
+                        value = propertiesToBeAlternativelySerialized[propName].DynamicInvoke(value);
 
                     sb.Append(indentation + propName + " = " +
-                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel));
+                              PrintToString(value, nestingLevel + 1, indentSymbol, maxNestingLevel, requiredMemberTypes));
                 }
             }
 
