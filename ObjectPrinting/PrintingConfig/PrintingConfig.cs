@@ -11,7 +11,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<object> printedObjects = new HashSet<object>();
+        private readonly Stack<object> currentObjects = new Stack<object>();
         private static readonly Type[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
@@ -66,14 +66,15 @@ namespace ObjectPrinting
         {
             if (TryGetFinalObjectStringValue(obj, out var finalValue))
                 return finalValue;
+            currentObjects.Push(obj);
             var type = obj.GetType();
-            printedObjects.Add(obj);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             if (obj is IEnumerable collection)
                 sb.Append(PrintElements(collection, nestingLevel));
             else
                 sb.Append(PrintProperties(obj, nestingLevel));
+            currentObjects.Pop();
             return sb.ToString();
         }
 
@@ -117,7 +118,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
             if (cultureInfoSettings.ContainsKey(type))
                 value = ((IFormattable)obj).ToString(null, cultureInfoSettings[type]);
-            else if (printedObjects.Contains(obj))
+            else if (currentObjects.Contains(obj))
                 value = type.Name + " (already printed)";
             else if (typeSerializationSettings.ContainsKey(type))
                 value = typeSerializationSettings[type].Invoke(obj);
