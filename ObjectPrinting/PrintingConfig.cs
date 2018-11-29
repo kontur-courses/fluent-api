@@ -12,11 +12,9 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         #region privateFields
-        private readonly List<Type> exludedTypes = new List<Type>();
-        private readonly List<string> namesExcludedProperties = new List<string>();
-
-        private readonly Dictionary<Type, CultureInfo> culturiesForNumbers =
-            new Dictionary<Type, CultureInfo>();
+        private readonly int nestingLevel;
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<string> namesExcludedProperties = new HashSet<string>();
 
         private readonly Dictionary<string, Func<object, string>> printMethodsForProperties =
             new Dictionary<string, Func<object, string>>();
@@ -24,7 +22,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<object, string>> printMethodsForTypes =
             new Dictionary<Type, Func<object, string>>();
 
-        private readonly int nestingLevel;
+        
         private readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -66,7 +64,7 @@ namespace ObjectPrinting
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            exludedTypes.Add(typeof(TPropType));
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -96,7 +94,7 @@ namespace ObjectPrinting
             var nextLevel = nestingLevel + 1;
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (!IsExcludingType(propertyInfo.PropertyType) && !IsExludedProperty(propertyInfo.Name))
+                if (!excludedTypes.Contains(propertyInfo.PropertyType) && !namesExcludedProperties.Contains(propertyInfo.Name))
                 {
                     var currentObj = propertyInfo.GetValue(obj);
                     var propertyName = propertyInfo.Name;
@@ -119,19 +117,15 @@ namespace ObjectPrinting
    
         private bool IsExcludingType(Type type)
         {
-            return exludedTypes.Contains(type);
+            return excludedTypes.Contains(type);
         }
 
-        private bool IsExludedProperty(string propertyName)
+        private bool IsExcludedProperty(string propertyName)
         {
             return namesExcludedProperties.Contains(propertyName);
         }
 
         #region InterfaceProperties
-        List<string> IPrintingConfig<TOwner>.NamesExludedProperties => namesExcludedProperties;
-
-        List<Type> IPrintingConfig<TOwner>.ExcludingTypes => exludedTypes;
-
         Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
 
         Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
@@ -140,9 +134,6 @@ namespace ObjectPrinting
 
     interface IPrintingConfig<TOwner>
     {
-        List<string> NamesExludedProperties { get; }
-        List<Type> ExcludingTypes { get; }
-
         Dictionary<string, Func<object, string>> PrintMethodsForProperties { get; }
         Dictionary<Type, Func<object, string>> PrintMethodsForTypes { get; }
     }
