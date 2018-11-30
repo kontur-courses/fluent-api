@@ -116,13 +116,17 @@ namespace ObjectPrinting
         {
             var value = propertyInfo.GetValue(obj);
             var isCustomSer = false;
-
+            
             if (propertySerializations.ContainsKey(propertyInfo))
             {
                 value = (string) propertySerializations[propertyInfo].DynamicInvoke(value);
                 isCustomSer = true;
             }
-
+            else if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
+            {
+                value = (string) typeSerializations[propertyInfo.PropertyType].DynamicInvoke(value);
+                isCustomSer = true;
+            }
 
             if (numberCultures.ContainsKey(propertyInfo.PropertyType))
             {
@@ -133,17 +137,13 @@ namespace ObjectPrinting
                 }
             }
 
-            if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
-            {
-                value = (string) typeSerializations[propertyInfo.PropertyType].DynamicInvoke(value);
-                isCustomSer = true;
-            }
 
             if (propertyTrimmCuts.ContainsKey(propertyInfo))
             {
                 value = ((string) value).Substring(0, propertyTrimmCuts[propertyInfo]);
                 isCustomSer = true;
             }
+            
 
             return isCustomSer ? (string) value : null;
         }

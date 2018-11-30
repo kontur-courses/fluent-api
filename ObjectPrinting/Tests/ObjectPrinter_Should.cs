@@ -102,5 +102,20 @@ namespace ObjectPrinting.Tests
             var expected ="null\r\n";
             result.Should().Be(expected);
         }
+        
+        [Test]
+        public void Test()
+        {
+            var obj = new TestClass();
+
+            var printToString = obj.PrintToString(p =>
+                p.SetAltSerialize<int>().Using(x => x.ToString() + " ")
+                    .SetAltSerialize(x => x.Field).Using(x => "error"));
+        }
+        
+        public class TestClass
+        {
+            public int Field { get; } = 1;
+        }
     }
 }
