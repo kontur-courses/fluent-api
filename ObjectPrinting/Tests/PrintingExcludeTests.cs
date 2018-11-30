@@ -26,6 +26,7 @@ namespace ObjectPrinting.Tests
             var resString = testPerson.PrintToString(config => config.Excluding<int>());
             resString.Should().Be($"Person{Environment.NewLine}" +
                                   $"\tName = John{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tPet = null{Environment.NewLine}" +
                                   $"\tChild = null");
@@ -36,6 +37,7 @@ namespace ObjectPrinting.Tests
         {
             var resString = testPerson.PrintToString(config => config.Excluding(p => p.Name));
             resString.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
                                   $"\tHeight = 180{Environment.NewLine}" +
                                   $"\tAge = 32{Environment.NewLine}" +
                                   $"\tPet = null{Environment.NewLine}"+
@@ -50,6 +52,7 @@ namespace ObjectPrinting.Tests
             var resString = testPerson.PrintToString(config => config.Excluding(p => p.Name));
             resString.Should()
                 .Be($"Person{Environment.NewLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
                     $"\tHeight = 180{Environment.NewLine}" +
                     $"\tAge = 32{Environment.NewLine}" +
                     $"\tPet = Pet{Environment.NewLine}" +
@@ -67,6 +70,7 @@ namespace ObjectPrinting.Tests
             resString.Should()
                 .Be($"Person{Environment.NewLine}" +
                     $"\tName = John{Environment.NewLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
                     $"\tHeight = 180{Environment.NewLine}" +
                     $"\tPet = Pet{Environment.NewLine}" +
                     $"\t\tName = Lassie{Environment.NewLine}" +

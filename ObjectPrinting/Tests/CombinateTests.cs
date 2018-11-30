@@ -9,12 +9,6 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-    public class Student
-    {
-        public string Name { get; set; }
-        public string Group { get; set; }
-    }
-
     [TestFixture]
     public class CombinateTests
     {
@@ -27,33 +21,180 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Printing_ShouldNotOverwritePrintingMethods_ThenInSameTimeConfigurateTypePrintingAndPropertyPrinting()
+        public void Using_ShouldConfiguratePrintMethodProperties()
         {
-            var testStudent = new Student() { Group = "MEH-272201", Name = "Name" };
-            var resString = testStudent.PrintToString(config => config
-                .Printing<string>().Using(s => s.ToUpper())
-                .Printing(s => s.Group).Using(s => s.ToLower()));
-            resString.Should().Be($"Student{Environment.NewLine}" +
+            var serialize = person.PrintToString(cnfg => cnfg.Printing(p => p.Name).Using(n => n.ToUpper()).Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
                                   $"\tName = NAME{Environment.NewLine}" +
-                                  $"\tGroup = meh-272201");
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
         }
-    
 
-    [Test]
-        public void CombinateTest1()
+        [Test]
+        public void Using_ShouldConfiguratePrintMethodTypes()
         {
-            person.Child = new Person("Child", 3.4, 2);
-            var serialize = person.PrintToString(cnf => cnf
-                .Printing(p => p.Child).Using(c => c.Name)
-                .Printing<int>().ChangeCultureInfo(CultureInfo.InstalledUICulture)
-                .Printing(p => p.Name).Using(s => s.ToLower()));
-            serialize.Should()
-                .Be($"Person{Environment.NewLine}" +
-                    $"\tName = name{Environment.NewLine}" +
-                    $"\tHeight = 22,5{Environment.NewLine}" +
-                    $"\tAge = 23{Environment.NewLine}" +
-                    $"\tPet = null{Environment.NewLine}" +
-                    $"\tChild = Child");
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<string>().Using(s => s.ToUpper()).Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = NAME{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
         }
+
+        [Test]
+        public void Using_ShouldNotConfiguratePrintMethodNestingTypes()
+        {
+            person.Child = new Person("Baby", 58, 1);
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<string>().Using(s => s.ToUpper()).Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = NAME{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = Person{Environment.NewLine}" +
+                                  $"\t\tName = Baby{Environment.NewLine}" +
+                                  $"\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\t\tHeight = 58{Environment.NewLine}" +
+                                  $"\t\tAge = 1{Environment.NewLine}" +
+                                  $"\t\tPet = null{Environment.NewLine}" +
+                                  $"\t\tChild = null");
+            
+        }
+
+        [Test]
+        public void Using_ShouldConfigurePrintMethodPropertiesInSeveralWays()
+        {
+            person.Child = new Person("Baby", 58, 1);
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<string>()
+                .Using(s => s.ToUpper())
+                .Using(s => $"!{s}!")
+                .Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = !NAME!{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = Person{Environment.NewLine}" +
+                                  $"\t\tName = Baby{Environment.NewLine}" +
+                                  $"\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\t\tHeight = 58{Environment.NewLine}" +
+                                  $"\t\tAge = 1{Environment.NewLine}" +
+                                  $"\t\tPet = null{Environment.NewLine}" +
+                                  $"\t\tChild = null");
+
+        }
+
+        [Test]
+        public void TrimToLenght_ShouldTrimString()
+        {
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<string>().TrimmedToLength(2).Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = Na{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
+        }
+
+        [Test]
+        public void TrimToLenght_ShouldNotTrimString_ThenStringLenghtIsLongerThenParameter()
+        {
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<string>().TrimmedToLength(10).Apply());
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = Name{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
+        }
+
+        [Test]
+        public void ChangeCultureInfo_ShouldChangeCultureInfoInIFormattableTypes()
+        {
+            var serialize = person.PrintToString(cnfg => cnfg.Printing<IFormattable>()
+                .ChangeCultureInfo(CultureInfo.InvariantCulture)
+                .Apply());
+             serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = Name{Environment.NewLine}" +
+                                   $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 23{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = null");
+        }
+
+        [Test]
+        public void ComplicatedTest1()
+        {
+            person.Child = new Person("Baby", 58, 1);
+            var serialize = person.PrintToString(cnfg => cnfg
+                .Excluding<int>()
+                .Printing(per => per.Name)
+                .Using(n => $"Parent name {n}")
+                .Apply()
+                .Printing<string>()
+                .Using(s => $"!{s}!")
+                .Apply());
+        
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = !Parent name Name!{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = Person{Environment.NewLine}" +
+                                  $"\t\tName = Baby{Environment.NewLine}" +
+                                  $"\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\t\tHeight = 58{Environment.NewLine}" +
+                                  $"\t\tAge = 1{Environment.NewLine}" +
+                                  $"\t\tPet = null{Environment.NewLine}" +
+                                  $"\t\tChild = null");
+
+        }
+
+        [Test]
+        public void ComplicatedTest2()
+        {
+            person.Child = new Person("Baby", 58, 1);
+            var serialize = person.PrintToString(cnfg => cnfg               
+                .Printing<int>()
+                .Using(n => (n*100).ToString())
+                .Apply()
+                .Printing(p => p.Name)
+                .Using(n => n.ToUpper())
+                .Apply());
+
+            serialize.Should().Be($"Person{Environment.NewLine}" +
+                                  $"\tName = NAME{Environment.NewLine}" +
+                                  $"\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\tHeight = 22,5{Environment.NewLine}" +
+                                  $"\tAge = 2300{Environment.NewLine}" +
+                                  $"\tPet = null{Environment.NewLine}" +
+                                  $"\tChild = Person{Environment.NewLine}" +
+                                  $"\t\tName = Baby{Environment.NewLine}" +
+                                  $"\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}" +
+                                  $"\t\tHeight = 58{Environment.NewLine}" +
+                                  $"\t\tAge = 1{Environment.NewLine}" +
+                                  $"\t\tPet = null{Environment.NewLine}" +
+                                  $"\t\tChild = null");
+
+        }
+
+
+
+
+
+
+
+
+
     }
 }

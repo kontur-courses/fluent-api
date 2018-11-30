@@ -5,29 +5,19 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {     
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PropertyPrintingConfig<TOwner,string> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            propConfig.Using(n => n.ToString().Substring(0,maxLen));
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            ((IPropertyPrintingConfig<string>)propConfig).PrintMethods.Add(s =>
+            {
+                return ((string)s).Length > maxLen ? ((string)s).Substring(0, maxLen) : (string)s;
+            });
+            return propConfig;
         }
 
-        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
+        public static PropertyPrintingConfig<TOwner, IFormattable> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, IFormattable> propConfig, CultureInfo culture)
         {
-            propConfig.Using(n => n.ToString(culture));
-            return ((IPropertyPrintingConfig<TOwner, int>)propConfig).ParentConfig;
+            ((IPropertyPrintingConfig<IFormattable>)propConfig).PrintMethods.Add(fo => ((IFormattable)fo).ToString(culture.Name, culture));
+            return propConfig;
         }
-
-        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
-        {
-            propConfig.Using(n => n.ToString(culture));
-            return ((IPropertyPrintingConfig<TOwner, double>)propConfig).ParentConfig;
-        }
-
-        public static PrintingConfig<TOwner> ChangeCultureInfo<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
-        {
-            propConfig.Using(n => n.ToString(culture));
-            return ((IPropertyPrintingConfig<TOwner, long>)propConfig).ParentConfig;
-        }
-
     }
 }

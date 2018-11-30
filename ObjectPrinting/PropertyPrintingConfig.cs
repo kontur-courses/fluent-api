@@ -1,38 +1,49 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly string propertyName;
+        private readonly List<Func<object, string>> printMethods = new List<Func<object, string>>();
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName = "")
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName)
         {
             this.printingConfig = printingConfig;
             this.propertyName = propertyName;
         }
 
-        public PrintingConfig<TOwner> Using(Expression<Func<TPropType, string>> print)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            if (propertyName != "")
-            {
-                ((IPrintingConfig<TOwner>) printingConfig).PrintMethodsForProperties[propertyName] =
-                    prop => print.Compile().Invoke((TPropType) prop);
-            }
+            this.printingConfig = printingConfig;
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Using(Func<TPropType, string> printMethod)
+        {
+           printMethods.Add(val => printMethod.Invoke((TPropType)val));
+           return this;
+        }
+
+        public PrintingConfig<TOwner> Apply()
+        {
+            if(propertyName != null)
+                ((IPrintingConfig<TOwner>)printingConfig).PrintMethodsForProperties[propertyName] = printMethods;
             else
-                ((IPrintingConfig<TOwner>)printingConfig).PrintMethodsForTypes[typeof(TPropType)] =
-                    prop => print.Compile().Invoke((TPropType)prop);         
+                ((IPrintingConfig<TOwner>) printingConfig).PrintMethodsForTypes[typeof(TPropType)] = printMethods;
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        List<Func<object, string>> IPropertyPrintingConfig<TPropType>.PrintMethods => printMethods;
     }
 
-    interface IPropertyPrintingConfig<TOwner, TPropType>
+    interface IPropertyPrintingConfig<TPropType>
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        List<Func<object, string>> PrintMethods { get; }
     }
 }

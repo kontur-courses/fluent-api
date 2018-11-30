@@ -12,19 +12,20 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         #region privateFields
+
         private readonly int nestingLevel;
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private int maxRecursiveLevel = 3;
         private readonly HashSet<string> namesExcludedProperties = new HashSet<string>();
 
-        private readonly Dictionary<string, Func<object, string>> printMethodsForProperties =
-            new Dictionary<string, Func<object, string>>();
+        private readonly Dictionary<string, List<Func<object, string>>> printMethodsForProperties =
+            new Dictionary<string, List<Func<object, string>>>();
 
-        private readonly Dictionary<Type, Func<object, string>> printMethodsForTypes =
-            new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<Type, List<Func<object, string>>> printMethodsForTypes =
+            new Dictionary<Type, List<Func<object, string>>>();
 
         
-        private readonly Type[] finalTypes = new[]
+        private readonly Type[] finalTypes = 
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
@@ -50,9 +51,9 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            var propName = ((MemberExpression) memberSelector.Body).Member.Name;
+            var propName = ((MemberExpression) propertySelector.Body).Member.Name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propName);
         }
 
@@ -85,8 +86,8 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null";
-            if (printMethodsForTypes.TryGetValue(obj.GetType(), out var finalPrinter))
-               return finalPrinter.Invoke(obj);
+            if (printMethodsForTypes.TryGetValue(obj.GetType(), out var finalPrinters))
+               return ApplyAllMethodsByRotation(finalPrinters, obj);
             if (finalTypes.Contains(obj.GetType()))
                 return obj.ToString();
             return PrintProperties(obj);
@@ -106,34 +107,49 @@ namespace ObjectPrinting
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType) ||
                     namesExcludedProperties.Contains(propertyInfo.Name)) continue;
+
                 var currentObj = propertyInfo.GetValue(obj);
-                var propertyName = propertyInfo.Name;
-                Func<object, string> printer;
 
-                if (printMethodsForProperties.TryGetValue(propertyName, out var printerProperties))
-                    printer = printerProperties;
-                else if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printerTypes))
-                    printer = printerTypes;
+                string serializeProperty;
+                List<Func<object, string>> printers = new List<Func<object, string>>();
+                if (printMethodsForProperties.TryGetValue(propertyInfo.Name, out var printersProperties))
+                    printers.AddRange(printersProperties);
+                if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printersTypes))
+                    printers.AddRange(printersTypes);
+                if(printers.Count == 0)
+                    serializeProperty = currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
                 else
-                    printer = o => o.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
+                    serializeProperty = ApplyAllMethodsByRotation(printers, currentObj);
 
-                sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {printer.Invoke(currentObj)}");
-
+                sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {serializeProperty}");
             }
             return sb.ToString();
+        }
+
+
+        private string ApplyAllMethodsByRotation(List<Func<object, string>> methods, object obj)
+        {
+            if (methods.Count == 0)
+                return obj.ToString();
+            var prevObj = methods[0].Invoke(obj);
+            foreach (var method in methods.Skip(1))
+            {
+                prevObj = method.Invoke(prevObj);
+            }
+            return prevObj;
         }
   
 
         #region InterfaceProperties
-        Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
+        Dictionary<string, List<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
 
-        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
+        Dictionary<Type, List<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForTypes => printMethodsForTypes;
         #endregion
     }
 
     interface IPrintingConfig<TOwner>
     {
-        Dictionary<string, Func<object, string>> PrintMethodsForProperties { get; }
-        Dictionary<Type, Func<object, string>> PrintMethodsForTypes { get; }
+        Dictionary<string, List<Func<object, string>>> PrintMethodsForProperties { get; }
+        Dictionary<Type, List<Func<object, string>>> PrintMethodsForTypes { get; }
     }
 }
