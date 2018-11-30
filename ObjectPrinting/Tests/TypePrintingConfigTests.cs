@@ -12,7 +12,7 @@ namespace ObjectPrinting.Tests
             var printingConfig = new PrintingConfig<Person>()
                 .Serialize<int>().Using(t => t.Name);
 
-            printingConfig.Settings.GetChangedTypesSerialization().ContainsKey(typeof(int));
+            ((ISettings)printingConfig).Settings.GetChangedTypesSerialization().ContainsKey(typeof(int));
         }
 
         [Test]
@@ -24,7 +24,7 @@ namespace ObjectPrinting.Tests
             printingConfig
                 .Serialize<int>().Using(t => "new value");
 
-            printingConfig.Settings
+            ((ISettings)printingConfig).Settings
                 .GetChangedTypesSerialization()[typeof(int)](typeof(int))
                 .Should().Be("new value");
         }

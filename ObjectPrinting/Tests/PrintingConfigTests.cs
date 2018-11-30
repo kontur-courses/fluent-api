@@ -12,8 +12,7 @@ namespace ObjectPrinting.Tests
             var printingConfig = new PrintingConfig<Person>();
             printingConfig.Exclude<int>();
 
-            printingConfig.Settings.GetExcludedProperties().Should().Contain(typeof(int));
+            ((ISettings)printingConfig).Settings.GetExcludedTypes().Should().Contain(typeof(int));
         }
-
     }
 }

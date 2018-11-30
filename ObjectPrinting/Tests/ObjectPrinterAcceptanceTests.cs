@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.Runtime.Remoting.Messaging;
+﻿using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -22,7 +20,7 @@ namespace ObjectPrinting.Tests
 
                 //3. Для числовых типов указать культуру
                 .Serialize<int>().SetCulture(CultureInfo.CurrentCulture)
-
+                
                 //4. Настроить сериализацию конкретного свойства
                 .Serialize(p => p.Age).Using(a => a.ToString())
 
@@ -30,19 +28,8 @@ namespace ObjectPrinting.Tests
                 .Serialize(p => p.Name).TrimToLength(8)
 
                 //6. Исключить из сериализации конкретного свойства
-
                 .Serialize(p => p.Name).Exclude();
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию   
-
-            //8. ...с конфигурированием
-
-
         }
-    }
-
-    class Serializer
-    {
     }
 }
 

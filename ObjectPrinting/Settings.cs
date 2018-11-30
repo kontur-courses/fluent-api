@@ -7,51 +7,78 @@ namespace ObjectPrinting
 {
     public class Settings
     {
-        private readonly HashSet<Type> _excludedProperties;
-        private readonly Dictionary<Type, Func<Type, string>> _changedTypesSerialization;
-        private readonly Dictionary<Type, CultureInfo> _changedCulturInfo;
+        private readonly HashSet<Type> excludedTypes;
+        private readonly Dictionary<Type, Func<Type, string>> changedTypesSerialization;
+        private readonly Dictionary<Type, CultureInfo> changedCultureInfo;
+        private readonly Dictionary<string, Func<Type, string>> changedPropertiesSerialization;
+        private readonly Dictionary<string, Func<string, string>> propertiesToTrim;
+        private readonly HashSet<string> excludedProperties;
 
         public Settings()
         {
-            _excludedProperties = new HashSet<Type>();
-            _changedTypesSerialization = new Dictionary<Type, Func<Type, string>>();
-            _changedCulturInfo = new Dictionary<Type, CultureInfo>();
+            excludedTypes = new HashSet<Type>();
+            changedTypesSerialization = new Dictionary<Type, Func<Type, string>>();
+            changedCultureInfo = new Dictionary<Type, CultureInfo>();
+            changedPropertiesSerialization = new Dictionary<string, Func<Type, string>>();
+            propertiesToTrim = new Dictionary<string, Func<string, string>>();
+            excludedProperties = new HashSet<string>();
         }
 
-        public void AddPropertyToExclude(Type property)
+        public void AddTypeToExclude(Type type)
         {
-            _excludedProperties.Add(property);
+            excludedTypes.Add(type);
         }
 
-        public HashSet<Type> GetExcludedProperties()
+        public HashSet<Type> GetExcludedTypes()
         {
-            return _excludedProperties;
+            return excludedTypes;
         }
 
         public void SetSerializationForType(Type type, Func<Type, string> newSerializationMethod)
         {
-            if (_changedTypesSerialization.ContainsKey(type))
-                _changedTypesSerialization[type] = newSerializationMethod;
+            if (changedTypesSerialization.ContainsKey(type))
+                changedTypesSerialization[type] = newSerializationMethod;
             else
-                _changedTypesSerialization.Add(type, newSerializationMethod);
+                changedTypesSerialization.Add(type, newSerializationMethod);
         }
 
         public Dictionary<Type, Func<Type, string>> GetChangedTypesSerialization()
         {
-            return _changedTypesSerialization;
+            return changedTypesSerialization;
         }
 
         public void SetCultureInfoForType(Type type, CultureInfo cultureInfo)
         {
-            if (_changedCulturInfo.ContainsKey(type))
-                _changedCulturInfo[type] = cultureInfo;
+            if (changedCultureInfo.ContainsKey(type))
+                changedCultureInfo[type] = cultureInfo;
             else
-                _changedCulturInfo.Add(type, cultureInfo);
+                changedCultureInfo.Add(type, cultureInfo);
         }
 
-        public Dictionary<Type, CultureInfo> GetChangedCultureInfo()
+        public void SetPropertySerialization(string propName, Func<Type, string> serializationFunc)
         {
-            return _changedCulturInfo;
+            if (changedPropertiesSerialization.ContainsKey(propName))
+                changedPropertiesSerialization[propName] = serializationFunc;
+            else
+                changedPropertiesSerialization.Add(propName, serializationFunc);
+        }
+
+        public Dictionary<string, Func<Type, string>> GetPropertiesSerialization()
+        {
+            return changedPropertiesSerialization;
+        }
+
+        public void SetPropertyToTrim(string propName, Func<string, string> trimFunc)
+        {
+            if (propertiesToTrim.ContainsKey(propName))
+                propertiesToTrim[propName] = trimFunc;
+            else
+                propertiesToTrim.Add(propName, trimFunc);
+        }
+
+        public void AddPropertyToExclude(string propertyName)
+        {
+            excludedProperties.Add(propertyName);
         }
     }
 }

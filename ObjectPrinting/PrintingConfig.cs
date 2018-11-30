@@ -1,18 +1,18 @@
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner>: ISettings
     {
-        public readonly Settings Settings;
+        private readonly Settings settings;
+        Settings ISettings.Settings => settings;
 
         public PrintingConfig()
         {
-            Settings = new Settings();
+            settings = new Settings();
         }
 
         public TypePrintingConfig<TOwner, TPropType> Serialize<TPropType>()
@@ -20,14 +20,17 @@ namespace ObjectPrinting
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public TypePrintingConfig<TOwner, TPropType> Serialize<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
+        public PropertySerializationConfig<TOwner, TPropType> Serialize<TPropType>(Expression<Func<TOwner, TPropType>> propertyFunc)
         {
-            return new TypePrintingConfig<TOwner, TPropType>(this);
+            var memberExpression = (MemberExpression) propertyFunc.Body;
+            var result = new PropertySerializationConfig<TOwner, TPropType>(this, memberExpression.Member.Name);
+
+            return result;
         }
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            Settings.AddPropertyToExclude(typeof(TPropType));
+            settings.AddTypeToExclude(typeof(TPropType));
 
             return this;
         }

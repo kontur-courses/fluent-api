@@ -16,13 +16,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<Type, string> serializationMethod)
         {
-            printingConfig.Settings.SetSerializationForType(typeof(TPropType), serializationMethod);
+            ((ISettings)printingConfig).Settings.SetSerializationForType(typeof(TPropType), serializationMethod);
 
             return printingConfig;
-        }
-        public PrintingConfig<TOwner> Exclude()
-        {
-            return new PrintingConfig<TOwner>();
         }
     }
 }

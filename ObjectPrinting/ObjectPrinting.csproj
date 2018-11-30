@@ -52,10 +52,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPropertySerializationConfig.cs" />
+    <Compile Include="ISettings.cs" />
     <Compile Include="ITypePrintingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertySerializationConfig.cs" />
+    <Compile Include="PropertySerializationConfigExtensions.cs" />
+    <Compile Include="Tests\PropertySerializationConfigTests.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Person.cs" />
