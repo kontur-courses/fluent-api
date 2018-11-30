@@ -1,44 +1,51 @@
-﻿using System;
-using System.Globalization;
-using NUnit.Framework;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting.Tests
 {
+    using System;
+    using System.Globalization;
+
+    using NUnit.Framework;
+
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
         public void Demo()
         {
-            var person = new Person {Name = "Alex", Age = 19};
+            var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
                                        .Excluding(p => p.Height)
                                        .Printing<Person>()
                                        .Using(p => p.ToString())
-                                       //1. Исключить из сериализации свойства определенного типа v
+
+                                       // 1. Исключить из сериализации свойства определенного типа v
                                        .Excluding<Guid>()
-                                       //2. Указать альтернативный способ сериализации для определенного типа v
+
+                                       // 2. Указать альтернативный способ сериализации для определенного типа v
                                        .Printing<int>()
                                        .Using(i => i.ToString("X"))
-                                       //3. Для числовых типов указать культуру v
+
+                                       // 3. Для числовых типов указать культуру v
                                        .Printing<double>()
                                        .Using(CultureInfo.InvariantCulture)
-                                       //4. Настроить сериализацию конкретного свойства v
+
+                                       // 4. Настроить сериализацию конкретного свойства v
                                        .Printing(p => p.Age)
                                        .Using(i => $"{i}!")
-                                       //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств) 
+
+                                       // 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств) 
                                        .Printing(p => p.Name)
                                        .TrimmedToLength(10)
-                                       //6. Исключить из сериализации конкретного свойства v
+
+                                       // 6. Исключить из сериализации конкретного свойства v
                                        .Excluding(p => p.Age);
 
             var s1 = printer.PrintToString(person);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            // 7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             var s2 = person.PrintToString();
 
-            //8. ...с конфигурированием
+            // 8. ...с конфигурированием
             var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
             Console.WriteLine(s1);
             Console.WriteLine(s2);

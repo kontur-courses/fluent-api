@@ -1,6 +1,6 @@
 ﻿namespace ObjectPrinting.Tests
 {
-    public class Double
+    public class TestingDouble
     {
         public double Value { get; set; }
     }

@@ -1,8 +1,8 @@
-using System;
-using System.Globalization;
-
 namespace ObjectPrinting
 {
+    using System;
+    using System.Globalization;
+
     public static class PropertyPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config) =>
@@ -32,6 +32,6 @@ namespace ObjectPrinting
         private static PrintingConfig<TOwner> Using<TOwner, TPropType>(
             this IPropertyPrintingConfig<TOwner, TPropType> config,
             Func<TPropType, string> printer) =>
-            ((IPrintingConfig<TOwner>) config.ParentConfig).With(printer);
+            ((IPrintingConfig<TOwner>)config.ParentConfig).With(printer);
     }
 }

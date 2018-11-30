@@ -1,22 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
+    using System;
+    using System.Collections.Immutable;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Text;
+
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<string> forbiddenNames = new HashSet<string>();
-        private readonly HashSet<Type> forbiddenTypes = new HashSet<Type>();
-        private readonly Dictionary<Type, Delegate> changedTypes = new Dictionary<Type, Delegate>();
+        private readonly ImmutableDictionary<Type, Delegate> _changedTypes;
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
+        private readonly ImmutableHashSet<string> _forbiddenNames;
+
+        private readonly ImmutableHashSet<Type> _forbiddenTypes;
+
+        public PrintingConfig()
         {
-            changedTypes[typeof(TPropType)] = printer;
-            return this;
+            _changedTypes = ImmutableDictionary<Type, Delegate>.Empty;
+            _forbiddenTypes = ImmutableHashSet<Type>.Empty;
+            _forbiddenNames = ImmutableHashSet<string>.Empty;
+        }
+
+        private PrintingConfig(
+            ImmutableHashSet<string> names,
+            ImmutableHashSet<Type> types,
+            ImmutableDictionary<Type, Delegate> changedTypes)
+        {
+            _forbiddenNames = names;
+            _changedTypes = changedTypes;
+            _forbiddenTypes = types;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var name =
+                ((memberSelector.Body as MemberExpression
+               ?? throw new ArgumentException("Selector expression is invalid")).Member as PropertyInfo
+              ?? throw new ArgumentException("Selector expression is invalid")).Name;
+            var names = _forbiddenNames.Add(name);
+            return new PrintingConfig<TOwner>(names, _forbiddenTypes, _changedTypes);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
@@ -26,52 +49,48 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector) =>
             new PropertyPrintingConfig<TOwner, TPropType>(this);
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
         {
-            var name =
-                ((memberSelector.Body as MemberExpression ??
-                  throw new ArgumentException("Selector expression is invalid")).Member as PropertyInfo ??
-                 throw new ArgumentException("Selector expression is invalid")).Name;
-            forbiddenNames.Add(name);
-            return this;
+            var changedTypes = _changedTypes.SetItem(typeof(TPropType), printer);
+
+            return new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, changedTypes);
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            forbiddenTypes.Add(typeof(TPropType));
-            return this;
+            var types = _forbiddenTypes.Add(typeof(TPropType));
+            return new PrintingConfig<TOwner>(_forbiddenNames, types, _changedTypes);
         }
-
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
 
-            if (changedTypes.ContainsKey(type))
-                return (string) changedTypes[type]
-                           .DynamicInvoke(obj) +
-                       Environment.NewLine;
+            if (_changedTypes.ContainsKey(type))
+                return (string)_changedTypes[type]
+                           .DynamicInvoke(obj)
+                     + Environment.NewLine;
 
             var finalTypes = new[]
-            {
-                typeof(string), typeof(int), typeof(double), typeof(long),
-                typeof(float), typeof(decimal), typeof(DateTime), typeof(TimeSpan)
-            };
+                                 {
+                                     typeof(string), typeof(int), typeof(double), typeof(long),
+                                     typeof(float), typeof(decimal), typeof(DateTime), typeof(TimeSpan)
+                                 };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
-            if (forbiddenTypes.Contains(type))
+            if (_forbiddenTypes.Contains(type))
                 return null;
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties()
-                                             .Where(info => !forbiddenNames.Contains(info.Name)))
+                                             .Where(info => !_forbiddenNames.Contains(info.Name)))
             {
                 var innerPrint = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
                 if (innerPrint != null)

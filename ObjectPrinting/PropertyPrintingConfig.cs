@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
+    using System;
+
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
@@ -14,6 +14,6 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> printer) =>
-            ((IPrintingConfig<TOwner>) printingConfig).With(printer);
+            ((IPrintingConfig<TOwner>)printingConfig).With(printer);
     }
 }
