@@ -29,6 +29,13 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
 
+        public PrintingConfig()
+        {
+            CollectionLookDepth = 50;
+        }
+
+        public int CollectionLookDepth { get; private set; }
+
         internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serializator)
         {
             propertySerializators[propertyInfo] = serializator;
@@ -54,6 +61,12 @@ namespace ObjectPrinting
             return string.IsNullOrEmpty(str)
                 ? str
                 : str.Substring(0, Math.Min(str.Length, maxLen));
+        }
+
+        public PrintingConfig<TOwner> SetCollectionLookDepthTo(int depth)
+        {
+            CollectionLookDepth = depth;
+            return this;
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -147,6 +160,7 @@ namespace ObjectPrinting
         private string PrintToStringIEnumerable(object obj, IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
+            var collectionCount = 0;
             var type = obj.GetType();
             var indentation = new string(Indent, nestingLevel);
 
@@ -155,8 +169,14 @@ namespace ObjectPrinting
 
             foreach (var item in collection)
             {
+                if (collectionCount > CollectionLookDepth)
+                {
+                    sb.AppendLine(indentation + Indent + "...");
+                    break;
+                }
                 var itemString = PrintToString(item, nestingLevel + 1);
-                sb.Append(indentation + Indent + itemString);
+                sb.AppendLine(indentation + Indent + itemString);
+                collectionCount++;
             }
 
             sb.Append(indentation + "}");

@@ -148,5 +148,17 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Name).Using(s => "Hello World");
             printer.PrintToString(person).Should().Be(expected);
         }
+
+        [Test]
+        public void PrintLongCollection_NotAllElements()
+        {
+            var array = new int[10];
+            for (var i = 0; i < 10; i++)
+            {
+                array[i] = i;
+            }
+            var expected = "asdasdasd";
+            array.PrintToString(config => config.SetCollectionLookDepthTo(5)).Should().Be(expected);
+        }
     }
 }
