@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -9,14 +11,24 @@ namespace ObjectPrinting
             this PropertyPrintingConfig<TOwner, TPropType> config,
             CultureInfo cultureInfo)
         {
-            return ((IPropertyPrintingConfig<TOwner>) config).ParentConfig;
+            var parentConfig = ((IPropertyPrintingConfig<TOwner, TPropType>) config)
+                .ParentConfig;
+            parentConfig.typeCultureInfo[typeof(TPropType)] = cultureInfo;
+            return parentConfig;
         }
         
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> config,
             int length)
         {
-            return ((IPropertyPrintingConfig<TOwner>) config).ParentConfig;
+            var propertySelector = ((IPropertyPrintingConfig<TOwner, string>) config)
+                .PropertySelector;
+            var propertyInfo = (PropertyInfo)((MemberExpression) propertySelector.Body).Member;
+
+            var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) config).ParentConfig;
+            parentConfig.trimmedProperties[propertyInfo] = length;
+            
+            return parentConfig;
         }
     }
 }

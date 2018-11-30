@@ -1,23 +1,29 @@
 using System;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
+    public class PropertyPrintingConfig<TOwner, TPropType> : Config, 
+        IPropertyPrintingConfig<TOwner, TPropType>
     {
-        private PrintingConfig<TOwner> config;
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> config) =>
-            this.config = config;
+        private readonly PrintingConfig<TOwner> config;
+        private readonly Expression<Func<TOwner, TPropType>> propertySelector;
         
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> printer)
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => 
+            config;
+        Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.PropertySelector =>
+            propertySelector;
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> config, 
+            Expression<Func<TOwner, TPropType>> propertySelector=null)
         {
-            return config;
+            this.config = config;
+            this.propertySelector = propertySelector;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => config;
-
-        public PrintingConfig<TOwner> Excluding(Func<TOwner, TPropType> printer)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> printer)
         {
+            config.typePrinters[typeof(TPropType)] = printer as Func<object, string>;
             return config;
         }
     }

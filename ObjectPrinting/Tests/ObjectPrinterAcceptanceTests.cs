@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alex", Age = 20 };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -27,7 +27,10 @@ namespace ObjectPrinting.Tests
 
             
             string s1 = printer.PrintToString(person);
+            string s2 = person.PrintToString();
 
+            Console.WriteLine(s1);
+            Console.WriteLine(s2);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
         }

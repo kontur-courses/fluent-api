@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{07B8C9B7-8289-46CB-9875-048A57758EEE}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ObjectPrinting</RootNamespace>
     <AssemblyName>ObjectPrinting</AssemblyName>
@@ -52,7 +52,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.cs" />
     <Compile Include="IPropertyPrintingConfig.cs" />
+    <Compile Include="ObjectExtension.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="PropertyPrintingConfigExtension.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
