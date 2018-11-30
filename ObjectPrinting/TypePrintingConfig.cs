@@ -2,11 +2,6 @@
 
 namespace ObjectPrinting
 {
-    public interface ITypePrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> PrintingConfig { get; }
-    }
-
     public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
@@ -19,8 +14,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> serializationMethod)
         {
-            printingConfig.AddTypeSerialization<TPropType>(serializationMethod);
-
+            printingConfig.AddTypeSerialization<TPropType>(obj => serializationMethod((TPropType)obj));
             return printingConfig;
         }
     }
