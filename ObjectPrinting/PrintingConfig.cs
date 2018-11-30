@@ -123,11 +123,6 @@ namespace ObjectPrinting
                 isCustomSer = true;
             }
 
-            if (propertyTrimmCuts.ContainsKey(propertyInfo))
-            {
-                value = ((string) value).Substring(0, propertyTrimmCuts[propertyInfo]);
-                isCustomSer = true;
-            }
 
             if (numberCultures.ContainsKey(propertyInfo.PropertyType))
             {
@@ -141,6 +136,12 @@ namespace ObjectPrinting
             if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
             {
                 value = (string) typeSerializations[propertyInfo.PropertyType].DynamicInvoke(value);
+                isCustomSer = true;
+            }
+
+            if (propertyTrimmCuts.ContainsKey(propertyInfo))
+            {
+                value = ((string) value).Substring(0, propertyTrimmCuts[propertyInfo]);
                 isCustomSer = true;
             }
 
