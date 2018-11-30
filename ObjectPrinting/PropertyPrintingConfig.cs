@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly string propertyName;
+        private readonly MemberInfo memberInfo;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
@@ -16,17 +17,19 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> member)
         {
-            propertyName = ((MemberExpression) member.Body).Member.Name;
+            memberInfo = ((MemberExpression) member.Body).Member;
             this.printingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (propertyName is null)
-                ((IPrintingConfig<TOwner>) printingConfig).TypePrintingFunctions[typeof(TPropType)] = print;
+            if (memberInfo is null)
+                ((IPrintingConfig<TOwner>) printingConfig).PrintingConfigData.TypePrintingFunctions[typeof(TPropType)] =
+                    print;
             else
             {
-                ((IPrintingConfig<TOwner>) printingConfig).PropNamesPrintingFunctions[propertyName] = print;
+                ((IPrintingConfig<TOwner>) printingConfig).PrintingConfigData.PropNamesPrintingFunctions[memberInfo] =
+                    print;
             }
 
             return printingConfig;
@@ -35,16 +38,16 @@ namespace ObjectPrinting
 
         public void SetCulture(Type type, CultureInfo cultureInfo)
         {
-            ((IPrintingConfig<TOwner>) printingConfig).NumberTypesToCulture[type] = cultureInfo;
+            ((IPrintingConfig<TOwner>) printingConfig).PrintingConfigData.NumberTypesToCulture[type] = cultureInfo;
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-        string IPropertyPrintingConfig<TOwner, TPropType>.PropertyName => propertyName;
+        MemberInfo IPropertyPrintingConfig<TOwner, TPropType>.MemberInfo => memberInfo;
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
-        string PropertyName { get; }
+        MemberInfo MemberInfo { get; }
     }
 }

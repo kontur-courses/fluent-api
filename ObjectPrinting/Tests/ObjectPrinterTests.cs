@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using FluentAssertions;
@@ -82,16 +83,47 @@ namespace ObjectPrinting.Tests
             result.Split().Should().NotContain(person.Name);
         }
 
+
         [Test]
-        public void Print_PrintsCollectionInside()
+        public void Print_ResolvesCyclicReferences()
         {
-            //Коллекции
-            var list = new List<int>() {1, 2, 3};
-            var printer = ObjectPrinter.For<List<int>>();
-            var result = printer.PrintToString(list);
-            result.Split().Should().Contain("1,");
-            result.Split().Should().Contain("2,");
-            result.Split().Should().Contain("3");
+            var root = new TreeNode(0);
+            root.LeftNode = new TreeNode(1);
+            root.RightNode = new TreeNode(2);
+            root.RightNode.LeftNode = root;
+            var printer = ObjectPrinter.For<TreeNode>();
+            var result = printer.PrintToString(root);
         }
+
+
+        [TestCaseSource(nameof(IenumerablesOfInt))]
+        public void Print_PrintsCollectionInside_IenumerableOfInt(IEnumerable collection)
+        {
+            var printer = ObjectPrinter.For<IEnumerable>();
+            var result = printer.PrintToString(collection);
+            result.Split('\r', '\n', '\t').Should().Contain("1, 2, 3");
+        }
+
+        private static object[] IenumerablesOfInt =
+        {
+            new object[] {new List<int> {1, 2, 3}},
+            new object[] {new HashSet<int> {1, 2, 3}},
+            new object[] {new int[] {1, 2, 3}},
+        };
+
+        [TestCaseSource(nameof(IenumerablesOfString))]
+        public void Print_PrintsCollectionInside_IenumerableOfString(IEnumerable collection)
+        {
+            var printer = ObjectPrinter.For<IEnumerable>();
+            var result = printer.PrintToString(collection);
+            result.Split('\r', '\n', '\t').Should().Contain("a, b, c");
+        }
+
+        private static object[] IenumerablesOfString =
+        {
+            new object[] {new List<string> {"a", "b", "c"}},
+            new object[] {new HashSet<string> {"a", "b", "c"}},
+            new object[] {new String[] {"a", "b", "c"}},
+        };
     }
 }

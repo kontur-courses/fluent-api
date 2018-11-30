@@ -1,24 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using FluentAssertions.Common;
-using NUnit.Framework;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly Dictionary<Type, Delegate> typePrintingFunctions = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<Type, CultureInfo> numberTypesToCulture = new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<string, Delegate> propNamesPrintingFunctions = new Dictionary<string, Delegate>();
-        private readonly Dictionary<string, int> stringPropNamesTrimming = new Dictionary<string, int>();
-        private readonly HashSet<string> excludingPropertiesNames = new HashSet<string>();
-        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+        private readonly PrintingConfigData printingConfigData = new PrintingConfigData();
 
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -34,14 +27,14 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propName = ((MemberExpression) memberSelector.Body).Member.Name;
-            excludingPropertiesNames.Add(propName);
+            var memberInfo = ((MemberExpression) memberSelector.Body).Member;
+            printingConfigData.ExcludingPropertiesNames.Add(memberInfo);
             return this;
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludingTypes.Add(typeof(TPropType));
+            printingConfigData.ExcludingTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -62,113 +55,106 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
 
-
-            var numberTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(long)
-            };
             if (finalTypes.Contains(obj.GetType()))
             {
-                if (numberTypes.Contains(obj.GetType()) && numberTypesToCulture.ContainsKey(obj.GetType()))
+                if (obj is IFormattable formattable &&
+                    printingConfigData.NumberTypesToCulture.TryGetValue(formattable.GetType(),
+                        out var cultureInfo))
                 {
-                    return ((IFormattable) obj).ToString("", numberTypesToCulture[obj.GetType()]) + Environment.NewLine;
+                    return formattable.ToString("", cultureInfo) + Environment.NewLine;
                 }
 
                 return obj + Environment.NewLine;
             }
+
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
+            if (obj is IEnumerable collection)
+            {
+                sb.AppendLine(indentation + GetIenumerableContent(collection));
+            }
 
             foreach (var propertyInfo in type.GetProperties())
             {
-                var header = indentation + propertyInfo.Name + " = ";
-                string content = null;
-                if (excludingTypes.Contains(propertyInfo.PropertyType))
+                if (propertyInfo.IsIndexer())
                     continue;
-                if (excludingPropertiesNames.Contains(propertyInfo.Name))
+                var propertyValue = propertyInfo.GetValue(obj);
+                if (printingConfigData.VisitedProperties.Contains(propertyValue))
+                {
+                    sb.AppendLine(indentation + propertyInfo.Name + ": Cyclic...");
+                    continue;
+                }
+
+                if (!finalTypes.Contains(propertyInfo.PropertyType) && propertyValue != null)
+                    printingConfigData.VisitedProperties.Add(propertyValue);
+
+                if (printingConfigData.ExcludingTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                if (printingConfigData.ExcludingPropertiesNames.Contains(propertyInfo))
                     continue;
 
-                content = GetContent(propertyInfo, obj, nestingLevel);
+                var content = GetContent(propertyInfo, obj, nestingLevel);
+                var header = indentation + propertyInfo.Name + " = ";
                 sb.Append(header + content);
             }
 
             return sb.ToString();
         }
 
-        private string GetCollectionInside(object[] arr)
+        private string GetIenumerableContent(IEnumerable obj)
         {
-            var elememts = new List<string>();
-            foreach (var e in arr)
+            var contentList = new List<object>();
+            foreach (var e in obj)
             {
-                elememts.Add(e.ToString());
+                var content = "";
+                if (e is IFormattable formattable &&
+                    printingConfigData.NumberTypesToCulture.TryGetValue(e.GetType(), out var cultureInfo))
+                    content = formattable.ToString("", cultureInfo);
+                else
+                {
+                    content = e.ToString();
+                }
+
+                contentList.Add(content);
             }
 
-            return string.Join(", ", elememts);
+            return string.Join(", ", contentList);
         }
+
 
         private string GetContent(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
-            if (propertyInfo.IsIndexer())
+            var propertyValue = propertyInfo.GetValue(obj);
+            if (printingConfigData.PropNamesPrintingFunctions.TryGetValue(propertyInfo, out var val))
             {
-                var value = GetPropertyValue(propertyInfo, obj);
-                return GetCollectionInside(value);
+                return val.DynamicInvoke(propertyValue).ToString();
+            }
+
+            if (printingConfigData.TypePrintingFunctions.TryGetValue(propertyInfo.PropertyType, out val))
+            {
+                return val.DynamicInvoke(propertyValue).ToString();
+            }
+
+            if (printingConfigData.StringPropNamesTrimming.TryGetValue(propertyInfo, out var length))
+            {
+                var maxLength = propertyValue.ToString().Length;
+                return PrintToString(propertyValue, nestingLevel + 1)
+                    .Substring(0, Math.Min(maxLength, length));
             }
 
 
-            if (propNamesPrintingFunctions.ContainsKey(propertyInfo.Name))
-            {
-                return propNamesPrintingFunctions[propertyInfo.Name]
-                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
-            }
-
-            if (typePrintingFunctions.ContainsKey(propertyInfo.PropertyType))
-            {
-                return typePrintingFunctions[propertyInfo.PropertyType]
-                    .DynamicInvoke(propertyInfo.GetValue(obj)).ToString();
-            }
-
-            if (stringPropNamesTrimming.ContainsKey(propertyInfo.Name))
-            {
-                var length = propertyInfo.GetValue(obj).ToString().Length;
-                return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)
-                    .Substring(0, Math.Min(length, stringPropNamesTrimming[propertyInfo.Name]));
-            }
-
-
-            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return PrintToString(propertyValue, nestingLevel + 1);
         }
 
-        private object[] GetPropertyValue(PropertyInfo propertyInfo, object obj)
-        {
-            var length = ((IEnumerable<int>) obj).Count();
-            var arr = new object[length];
-            for (var i = 0; i < length; i++)
-            {
-                arr[i] = propertyInfo.GetValue(obj, new object[] {i});
-            }
-
-            return arr;
-        }
-
-        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypePrintingFunctions => typePrintingFunctions;
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.NumberTypesToCulture => numberTypesToCulture;
-        Dictionary<string, Delegate> IPrintingConfig<TOwner>.PropNamesPrintingFunctions => propNamesPrintingFunctions;
-        Dictionary<string, int> IPrintingConfig<TOwner>.StringPropNamesTrimming => stringPropNamesTrimming;
-        HashSet<string> IPrintingConfig<TOwner>.ExcludingPropertiesNames => excludingPropertiesNames;
-        HashSet<Type> IPrintingConfig<TOwner>.ExcludingTypes => excludingTypes;
+        PrintingConfigData IPrintingConfig<TOwner>.PrintingConfigData => printingConfigData;
     }
 
     public interface IPrintingConfig<TOwner>
     {
-        Dictionary<Type, Delegate> TypePrintingFunctions { get; }
-        Dictionary<Type, CultureInfo> NumberTypesToCulture { get; }
-        Dictionary<string, Delegate> PropNamesPrintingFunctions { get; }
-        Dictionary<string, int> StringPropNamesTrimming { get; }
-        HashSet<string> ExcludingPropertiesNames { get; }
-        HashSet<Type> ExcludingTypes { get; }
+        PrintingConfigData PrintingConfigData { get; }
     }
 }

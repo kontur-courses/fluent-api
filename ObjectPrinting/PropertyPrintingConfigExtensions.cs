@@ -14,7 +14,8 @@ namespace ObjectPrinting
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             ((IPrintingConfig<TOwner>) ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig)
-                .StringPropNamesTrimming[((IPropertyPrintingConfig<TOwner, string>) propConfig).PropertyName] = maxLen;
+                .PrintingConfigData
+                .StringPropNamesTrimming[((IPropertyPrintingConfig<TOwner, string>) propConfig).MemberInfo] = maxLen;
 
             return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
         }

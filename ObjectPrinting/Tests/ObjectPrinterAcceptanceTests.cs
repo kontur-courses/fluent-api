@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using System.Management.Instrumentation;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -38,5 +40,8 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s2);
             Console.WriteLine(s3);
         }
+
+
+        
     }
 }
