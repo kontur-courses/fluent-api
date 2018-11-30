@@ -13,10 +13,11 @@ namespace ObjectPrinting
             return ObjectPrinter.For<T>().PrintToString(obj);
         }
 
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        public static string PrintToString<T>(this T obj, Action<PrintingConfig<T>> config)
         {
             var printer = ObjectPrinter.For<T>();
-            return config(printer).PrintToString(obj);
+            config(printer);
+            return printer.PrintToString(obj);
         }
     }
 }
