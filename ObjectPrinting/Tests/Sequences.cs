@@ -4,7 +4,7 @@ namespace ObjectPrinting.Tests
 {
     public class Sequences
     {
-        public static IEnumerable<int> Fibonacci
+        public  IEnumerable<int> Fibonacci
         {
             get
             {

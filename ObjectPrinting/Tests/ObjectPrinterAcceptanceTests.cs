@@ -51,10 +51,10 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Serializer<double>().Using(i => "Height = " + ((int)i).ToString())
-                .Serializer<Guid>().Using(i => "Id = Guid");
+                .Serializer<Guid>().Using(i => "Id = Gu");
             var result = printer.PrintToString(person);
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
+                "Person\r\n\tId = Gu\r\n\tName = Alex\r\n\tHeight = 192\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);
@@ -66,7 +66,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>();
             var result = printer.PrintToString(person);
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
                 "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -81,7 +81,7 @@ namespace ObjectPrinting.Tests
                 .Serializer(p => p.NumberChildren).Using(i => "NumberChildren = 3");
             var result = printer.PrintToString(person);
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192" +
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192" +
                 "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 3\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -95,7 +95,7 @@ namespace ObjectPrinting.Tests
                 .Serializer(p => p.Name).TrimmedToLength(2);
             var result = printer.PrintToString(person);
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Al\r\n\tHeight = 192,57" +
+                "Person\r\n\tId = Guid\r\n\tName = Al\r\n\tHeight = 192,57" +
                 "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -115,7 +115,7 @@ namespace ObjectPrinting.Tests
                 .Serializer(p => p.Height).SetCultureInfo(myCultureInfo);
             var result = printer.PrintToString(person);
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192.57" +
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192.57" +
                 "\r\n\tAge = ~~21\r\n\tArmLength = ~~15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -127,7 +127,7 @@ namespace ObjectPrinting.Tests
         {
             var result = person.Serialize(config => config.Exclude<int>());
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
                 "\r\n\tArmLength = 15\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -139,7 +139,7 @@ namespace ObjectPrinting.Tests
         {
             var result = person.Serialize();
             var expectedResult =
-                "Person\r\n\tId = Guid\r\n\t\tEmpty = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
+                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 192,57" +
                 "\r\n\tAge = 21\r\n\tArmLength = 15\r\n\tNumberChildren = 2\r\n";
 
             result.Should().BeEquivalentTo(expectedResult);
@@ -156,17 +156,15 @@ namespace ObjectPrinting.Tests
             statistic.Logbook.Add(vadim.Name, 1);
             statistic.Persons.Add(anton);
             statistic.Persons.Add(vadim);
-            var guid = Guid.NewGuid();
-            var res = guid.ToString();
             var result = ObjectPrinter.For<Statistic>().PrintToString(statistic);
             var expectedResult = "Statistic\r\n\tName = GroupStatistic\r\n\tLogbook = Dictionary`2\r\n\t\t\t" +
                                  "KeyValuePair`2\r\n\t\t\t\tKey = Anton\r\n\t\t\t\tValue = 1\r\n\t\t\t" +
                                  "KeyValuePair`2\r\n\t\t\t\tKey = Vadim\r\n\t\t\t\tValue = 1\r\n\tPersons = List`1\r\n\t\t\t" +
-                                 "Person\r\n\t\t\t\tId = Guid\r\n\t\t\t\t\tEmpty = Guid\r\n\t\t\t\tName = Anton\r\n\t\t\t\t" +
+                                 "Person\r\n\t\t\t\tId = Guid\r\n\t\t\t\tName = Anton\r\n\t\t\t\t" +
                                  "Height = 183,7\r\n\t\t\t\tAge = 20\r\n\t\t\t\tArmLength = 60,4\r\n\t\t\t\t" +
                                  "NumberChildren = 2\r\n\t\t\tPerson\r\n\t\t\t\tId = Guid\r\n\t\t\t\t" +
                                  "Name = Vadim\r\n\t\t\t\tHeight = 182,22\r\n\t\t\t\tAge = 22\r\n\t\t\t\tArmLength = 97,5\r\n\t\t\t\t" +
-                                 "NumberChildren = 2\r\n\tGroupLeader = Person\r\n\t\tId = Guid\r\n\t\t\tEmpty = Guid\r\n\t\t" +
+                                 "NumberChildren = 2\r\n\tGroupLeader = Person\r\n\t\tId = Guid\r\n\t\t" +
                                  "Name = Alex\r\n\t\tHeight = 192,57\r\n\t\tAge = 21\r\n\t\tArmLength = 15\r\n\t\tNumberChildren = 2\r\n";
             result.Should().BeEquivalentTo(expectedResult);
             Console.WriteLine(result);
