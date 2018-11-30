@@ -130,10 +130,13 @@ namespace ObjectPrinting
                 wasChanged = true;
             }
 
-            if (wasChanged && propertiesTrim.ContainsKey(memberInfo.Name))
+            if (propertiesTrim.ContainsKey(memberInfo.Name))
             {
+                if (!wasChanged)
+                    formatedString = (string)propertyValue;
                 formatedString = formatedString.Substring(
                     0, Math.Min(formatedString.Length, propertiesTrim[memberInfo.Name]));
+                wasChanged = true;
             }
 
             else if (typesSerialization.ContainsKey(propertyType))
