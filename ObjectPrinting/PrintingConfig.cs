@@ -28,13 +28,8 @@ namespace ObjectPrinting
         private static readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
-
-        //private static readonly Type[] numberTypes = new[]
-        //{
-        //    typeof(int), typeof(float), typeof(double)
-        //};
 
         private bool isIgnored(PropertyInfo property)
         {
