@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
+                $"\tAge = X\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()

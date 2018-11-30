@@ -141,7 +141,7 @@ namespace ObjectPrinting
 
             else if (typesSerialization.ContainsKey(propertyType))
             {
-                formatedString = $"{typesSerialization[propertyType]((TOwner)obj)}";
+                formatedString = $"{typesSerialization[propertyType](propertyValue)}";
                 wasChanged = true;
             }
 
