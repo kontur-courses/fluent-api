@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alex", Age = 19, Height = 185.5 };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -23,7 +23,7 @@ namespace ObjectPrinting.Tests
                     .Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Height)
-                    .Using(height => $"{height}cm")
+                    .Using(height => $"Height ~ {height}cm")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name)
                     .TrimmedToLength(10)

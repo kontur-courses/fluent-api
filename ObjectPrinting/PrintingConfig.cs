@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> typesCulture =
             new Dictionary<Type, CultureInfo>();
 
-        private readonly Dictionary<string, int> propertiesNameTrim =
+        private readonly Dictionary<string, int> propertiesTrim =
             new Dictionary<string, int>();
 
         private static readonly Type[] finalTypes = new[]
@@ -29,6 +30,11 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
+
+        //private static readonly Type[] numberTypes = new[]
+        //{
+        //    typeof(int), typeof(float), typeof(double)
+        //};
 
         private bool isIgnored(PropertyInfo property)
         {
@@ -77,24 +83,78 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> parents = null)
         {
+            parents = parents ?? new HashSet<object>();
             if (obj == null)
                 return "null" + Environment.NewLine;
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
+            if (!parents.Add(obj))
+            {
+                return "A recursive loop was detected." + Environment.NewLine;
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            foreach (var propertyInfo in type
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(property => !isIgnored(property))
+                .OrderBy(property => property.Name))
             {
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propertyValue = propertyInfo.GetValue(obj);
+                var memberInfo = propertyInfo as MemberInfo;
+
+                if (TryGetFormatedTrimmedString(
+                    memberInfo, indentation, propertyValue, obj, out var formatedString))
+                {
+                    sb.Append(formatedString + Environment.NewLine);
+                }
+                else
+                    sb.Append($"{indentation}{propertyInfo.Name} = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1, parents));
             }
             return sb.ToString();
+        }
+
+        private bool TryGetFormatedTrimmedString(MemberInfo memberInfo, string indentation,
+            object propertyValue, object obj, out string formatedString)
+        {
+            var propertyType = propertyValue.GetType();
+            formatedString = "";
+
+            if (propertiesSerialization.ContainsKey(memberInfo.Name))
+            {
+                formatedString = $"{indentation}{propertiesSerialization[memberInfo.Name]((TOwner)obj)}";
+                return true;
+            }
+
+            if (propertiesTrim.ContainsKey(memberInfo.Name))
+            {
+                formatedString = formatedString.Substring(
+                    0, Math.Min(formatedString.Length, propertiesTrim[memberInfo.Name]));
+                return true;
+            }
+
+            if (typesSerialization.ContainsKey(propertyType))
+            {
+                formatedString = $"{indentation}{typesSerialization[propertyType]((TOwner)obj)}";
+                return true;
+            }
+
+            if (typesCulture.ContainsKey(propertyType))
+            {
+                var valueWithCulture = string.Format(typesCulture[propertyType], propertyValue.ToString());
+                formatedString = $"{indentation}{valueWithCulture}";
+                return true;
+            }
+
+            return false;
         }
 
         void ISerializationConfig<TOwner>.SetTypeSerialization<TPropType>
@@ -129,10 +189,10 @@ namespace ObjectPrinting
         void ISerializationConfig<TOwner>.SetTrim(MemberInfo memberInfo, int length)
         {
             var propertyName = memberInfo.Name;
-            if (!propertiesNameTrim.ContainsKey(propertyName))
-                propertiesNameTrim.Add(propertyName, length);
+            if (!propertiesTrim.ContainsKey(propertyName))
+                propertiesTrim.Add(propertyName, length);
             else
-                propertiesNameTrim[propertyName] = length;
+                propertiesTrim[propertyName] = length;
         }
     }
 }
