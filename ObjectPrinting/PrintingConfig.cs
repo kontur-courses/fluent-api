@@ -17,6 +17,14 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
+        private readonly Type[] numeric =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(decimal),
+            typeof(byte), typeof(long), typeof(short)
+        };
+        
+        
+
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
@@ -34,18 +42,21 @@ namespace ObjectPrinting
             typeSerializations[typeof(TPropType)] = func;
         }
 
-        internal void AddPropertySerialization<TPropType>(PropertyInfo propName, Func<object, string> func)
+        internal void AddPropertySerialization(PropertyInfo propName, Func<object, string> func)
         {
             propertySerializations[propName] = func;
         }
 
-        internal void AddTrimmCut<TPropType>(PropertyInfo propName, int num)
+        internal void AddTrimmCut(PropertyInfo propName, int num)
         {
             propertyTrimmCuts[propName] = num;
         }
 
         internal void SetNumberCulture<TPropType>(CultureInfo culture)
         {
+            if(!numeric.Contains(typeof(TPropType)))
+                throw new ArgumentException("Wrond type of data. Type of value must be Numeric");
+            
             numberCultures[typeof(TPropType)] = culture;
         }
 
@@ -66,7 +77,8 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
 
-            if (type.GetInterface(nameof(ICollection)) != null) return PrintIEnumerableObject((IEnumerable<object>)obj, nestingLevel);
+            if (type.GetInterface(nameof(ICollection)) != null) 
+                return PrintIEnumerableObject((IEnumerable<object>)obj, nestingLevel);
 
             sb.AppendLine(type.Name);
 
@@ -119,8 +131,11 @@ namespace ObjectPrinting
 
             if (numberCultures.ContainsKey(propertyInfo.PropertyType))
             {
-                value = ((IFormattable) value).ToString(null, numberCultures[propertyInfo.PropertyType]);
-                isCustomSer = true;
+                if (value is IFormattable)
+                {
+                    value = ((IFormattable) value).ToString(null, numberCultures[propertyInfo.PropertyType]);
+                    isCustomSer = true;
+                }
             }
 
             if (typeSerializations.ContainsKey(propertyInfo.PropertyType))

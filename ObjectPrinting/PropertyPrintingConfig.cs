@@ -21,7 +21,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> serializationMethod)
         {
-            printingConfig.AddPropertySerialization<TPropType>(propertyInfo,
+            printingConfig.AddPropertySerialization(propertyInfo,
                 obj => serializationMethod((TPropType) obj));
             return printingConfig;
         }

@@ -4,7 +4,7 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this IPropertyPrintingConfig<TOwner, string> pc, int length)
         {
-            pc.PrintingConfig.AddTrimmCut<string>(pc.PropertyInfo, length);
+            pc.PrintingConfig.AddTrimmCut(pc.PropertyInfo, length);
             return pc.PrintingConfig;
         }
     }
