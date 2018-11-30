@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -14,15 +13,21 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-        private readonly Dictionary<Type, Func<object, string>> typeSerializations = new Dictionary<Type, Func<object, string>>();
-        private readonly Dictionary<PropertyInfo, Func<object, string>> propertySerializations = new Dictionary<PropertyInfo, Func<object, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> typeSerializations =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<PropertyInfo, Func<object, string>> propertySerializations =
+            new Dictionary<PropertyInfo, Func<object, string>>();
+
+        private readonly Dictionary<PropertyInfo, int> propertyTrimmCuts = new Dictionary<PropertyInfo, int>();
         private readonly Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
-        
+
         internal void AddTypeSerialization<TPropType>(Func<object, string> func)
         {
             typeSerializations[typeof(TPropType)] = func;
@@ -32,7 +37,12 @@ namespace ObjectPrinting
         {
             propertySerializations[propName] = func;
         }
-        
+
+        internal void AddTrimmCut<TPropType>(PropertyInfo propName, int num)
+        {
+            propertyTrimmCuts[propName] = num;
+        }
+
         internal void SetNumberCulture<TPropType>(CultureInfo culture)
         {
             numberCultures[typeof(TPropType)] = culture;
@@ -42,45 +52,38 @@ namespace ObjectPrinting
         {
             return PrintToString(obj, 0);
         }
-        
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(obj.GetType()) || nestingLevel == 10)
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
 
-            if (type is IEnumerable<object> colletion)
-            {
-                return PrintIEnumerableObject(colletion, nestingLevel + 1);
-            }
-            
+            if (type is IEnumerable<object> colletion) return PrintIEnumerableObject(colletion, nestingLevel + 1);
+
             sb.AppendLine(type.Name);
 
-            var props = GetProperties(type).ToList();
-            if (props.Count == 0)
+            var propertyInfos = GetProperties(type).ToList();
+            if (propertyInfos.Count == 0)
             {
-                sb.AppendLine(Environment.NewLine + type.Name + " = " + obj.ToString());
+                sb.AppendLine(Environment.NewLine + type.Name + " = " + obj);
                 return sb.ToString();
             }
-            
-            foreach (var prop in props)
+
+            foreach (var prop in propertyInfos)
             {
-                var customSerialization = TryGetCustomSerialization(prop, nestingLevel + 1);
+                var customSerialization = TryGetCustomSerialization(prop, obj);
 
                 if (customSerialization == null)
-                {
                     sb.Append(identation + prop.Name + " = " + PrintToString(prop.GetValue(obj), nestingLevel + 1));
-                }
                 else
-                {
-                    sb.Append(identation + prop.Name + " = " + customSerialization);
-                }
+                    sb.AppendLine(identation + prop.Name + " = " + customSerialization);
             }
 
             return sb.ToString();
@@ -90,35 +93,46 @@ namespace ObjectPrinting
         {
             var resultStr = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
-            
-            foreach (var element in obj)
-            {
-                resultStr.Append(identation + PrintToString(element, nestingLevel + 1));
-            }
+
+            foreach (var element in obj) resultStr.Append(identation + PrintToString(element, nestingLevel + 1));
+
             return resultStr.ToString();
         }
-        
-        
+
         private string TryGetCustomSerialization(PropertyInfo propertyInfo, object obj)
         {
+            var value = propertyInfo.GetValue(obj);
+            var isCustomSer = false;
+
             if (propertySerializations.ContainsKey(propertyInfo))
-                return (string) propertySerializations[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj));
-            
+            {
+                value = (string) propertySerializations[propertyInfo].DynamicInvoke(value);
+                isCustomSer = true;
+            }
+
+            if (propertyTrimmCuts.ContainsKey(propertyInfo))
+            {
+                value = ((string) value).Substring(0, propertyTrimmCuts[propertyInfo]);
+                isCustomSer = true;
+            }
+
             if (numberCultures.ContainsKey(propertyInfo.PropertyType))
-                return ((IFormattable) propertyInfo.GetValue(obj)).ToString(null,
-                    numberCultures[propertyInfo.PropertyType]);
+            {
+                value = ((IFormattable) value).ToString(null, numberCultures[propertyInfo.PropertyType]);
+                isCustomSer = true;
+            }
 
             if (typeSerializations.ContainsKey(propertyInfo.PropertyType))
-                return (string) typeSerializations[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj));
-            
-            return null;
+            {
+                value = (string) typeSerializations[propertyInfo.PropertyType].DynamicInvoke(value);
+                isCustomSer = true;
+            }
+
+            return isCustomSer ? (string) value : null;
         }
 
         private IEnumerable<PropertyInfo> GetProperties(Type objType)
         {
-            var x = objType.GetProperties();
-            var y = objType.GetFields();
-            
             foreach (var propertyInfo in objType.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType))

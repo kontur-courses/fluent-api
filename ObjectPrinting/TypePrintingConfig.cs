@@ -2,10 +2,10 @@
 
 namespace ObjectPrinting
 {
-    public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner>
+    public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public PrintingConfig<TOwner> PrintingConfig => printingConfig;
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;
 
         public TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
