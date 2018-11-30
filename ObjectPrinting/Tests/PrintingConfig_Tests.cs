@@ -16,7 +16,7 @@ namespace ObjectPrinting.Tests
         public void ExcludeType()
         {
             var person = new Person { Name = "Vasya", Height = 180 };
-            var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
+            var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -31,7 +31,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
+                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -46,7 +46,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
+                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -62,7 +62,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = X\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
+                $"\tAge = X\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -78,7 +78,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = V\r\n";
+                $"\tAge = {person.Age}\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = V\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -94,7 +94,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180.5 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tHeight = 180,5\r\n\tId = {person.Id}\r\n\tName = Vasya\r\n";
+                $"\tAge = {person.Age}\r\n\tHeight = 180,5\r\n\tId = {person.Id}\r\n\tName = Vasya\r\n\tNext = null\r\n";
             var numberFormat = CultureInfo.GetCultureInfo("es-ES");
 
             var printer = ObjectPrinter
