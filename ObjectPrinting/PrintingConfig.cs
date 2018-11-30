@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -65,7 +66,7 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
 
-            if (type is IEnumerable<object> colletion) return PrintIEnumerableObject(colletion, nestingLevel + 1);
+            if (type.GetInterface(nameof(ICollection)) != null) return PrintIEnumerableObject((IEnumerable<object>)obj, nestingLevel);
 
             sb.AppendLine(type.Name);
 
@@ -92,9 +93,9 @@ namespace ObjectPrinting
         private string PrintIEnumerableObject(IEnumerable<object> obj, int nestingLevel)
         {
             var resultStr = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
+            var identation = new string('\t', nestingLevel);
 
-            foreach (var element in obj) resultStr.Append(identation + PrintToString(element, nestingLevel + 1));
+            foreach (var element in obj) resultStr.Append(identation + PrintToString(element, nestingLevel));
 
             return resultStr.ToString();
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -26,10 +27,19 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Age);
 
-            printer = ObjectPrinter.For<Person>();
+            var pers = new List<Person>();
+            pers.Add(new Person() {Name = "Anna", Age = 14, Height = 100});
+            pers.Add(new Person() {Name = "Ben", Age = 18, Height = 120});
+            pers.Add(new Person() {Name = "Zak", Age = 22, Height = 111});
 
-            string s1 = printer.PrintToString(person);
 
+            var collPrinter = ObjectPrinter.For<IEnumerable<Person>>();
+
+            var x = collPrinter.PrintToString(pers);
+            Console.WriteLine(x);
+            
+            
+            //string s1 = printer.PrintToString(person);
 
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
@@ -38,7 +48,6 @@ namespace ObjectPrinting.Tests
             //8. ...с конфигурированием
             string s3 = person.PrintToString(s => s.Exclude(p => p.Age));
             
-            Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
         }
