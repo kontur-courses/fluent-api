@@ -99,7 +99,7 @@ namespace ObjectPrinting
             var iterations = 0;
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            var viewedObjects = new HashSet<object>();
+            var viewedObjects = new HashSet<object> {enumerable};
             foreach (var item in enumerable)
             {
                 if (numberIterationsForEnumerable <= iterations) break;
@@ -113,7 +113,7 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            var viewedObjects = new HashSet<object>();
+            var viewedObjects = new HashSet<object> {collection};
             foreach (var item in collection)
                 sb.Append(indentation + "\t" + PrintToString(item, nestingLevel + 2, viewedObjects));
             return sb.ToString();
@@ -135,7 +135,9 @@ namespace ObjectPrinting
             sb.AppendLine(obj.GetType().Name);
             foreach (var memberInfo in members)
             {
-                TypeCheck(obj, memberInfo, out var memberType, out var value);
+                var member = TryConvertMember(obj, memberInfo);
+                var memberType = member.Item1;
+                var value = member.Item2;
                 if (viewedObjects.Contains(value))
                     continue;
                 if (value is string str && trimmingFunctions.ContainsKey(memberInfo.Name))
@@ -153,18 +155,13 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static void TypeCheck(object obj, MemberInfo memberInfo, out Type memberType, out object value)
+        private static Tuple<Type,object> TryConvertMember(object obj, MemberInfo memberInfo)
         {
-            if (memberInfo is PropertyInfo info)
-            {
-                memberType = info.PropertyType;
-                value = info.GetValue(obj);
-            }
-            else
-            {
-                memberType = ((FieldInfo)memberInfo).FieldType;
-                value = ((FieldInfo)memberInfo).GetValue(obj);
-            }
+            if (memberInfo is PropertyInfo propertyInfo)
+                return Tuple.Create(propertyInfo.PropertyType, propertyInfo.GetValue(obj));
+            if (memberInfo is FieldInfo fieldInfo)
+                return Tuple.Create(fieldInfo.FieldType, fieldInfo.GetValue(obj));
+            throw new ArgumentException("Member is not a property or field");
         }
 
         private object ApplyAlternativeSerialization(MemberInfo memberInfo, Type memberType, object value)
