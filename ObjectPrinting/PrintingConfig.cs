@@ -104,10 +104,10 @@ namespace ObjectPrinting
                 var propertyValue = propertyInfo.GetValue(obj);
                 var memberInfo = propertyInfo as MemberInfo;
 
-                if (TryGetFormatedTrimmedString(
-                    memberInfo, indentation, propertyValue, obj, out var formatedString))
+                if (TryGetFormatedTrimmedValue(
+                    memberInfo, indentation, propertyValue, obj, out var formatedValue))
                 {
-                    sb.Append(formatedString + Environment.NewLine);
+                    sb.Append($"{indentation}{memberInfo.Name} = {formatedValue}" + Environment.NewLine);
                 }
                 else
                     sb.Append($"{indentation}{propertyInfo.Name} = " +
@@ -117,39 +117,39 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetFormatedTrimmedString(MemberInfo memberInfo, string indentation,
+        private bool TryGetFormatedTrimmedValue(MemberInfo memberInfo, string indentation,
             object propertyValue, object obj, out string formatedString)
         {
             var propertyType = propertyValue.GetType();
             formatedString = "";
+            var wasChanged = false;
 
             if (propertiesSerialization.ContainsKey(memberInfo.Name))
             {
-                formatedString = $"{indentation}{propertiesSerialization[memberInfo.Name]((TOwner)obj)}";
-                return true;
+                formatedString = $"{propertiesSerialization[memberInfo.Name]((TOwner)obj)}";
+                wasChanged = true;
             }
 
-            if (propertiesTrim.ContainsKey(memberInfo.Name))
+            if (wasChanged && propertiesTrim.ContainsKey(memberInfo.Name))
             {
                 formatedString = formatedString.Substring(
                     0, Math.Min(formatedString.Length, propertiesTrim[memberInfo.Name]));
-                return true;
             }
 
-            if (typesSerialization.ContainsKey(propertyType))
+            else if (typesSerialization.ContainsKey(propertyType))
             {
-                formatedString = $"{indentation}{typesSerialization[propertyType]((TOwner)obj)}";
-                return true;
+                formatedString = $"{typesSerialization[propertyType]((TOwner)obj)}";
+                wasChanged = true;
             }
 
-            if (typesCulture.ContainsKey(propertyType))
+            else if (typesCulture.ContainsKey(propertyType))
             {
                 var valueWithCulture = string.Format(typesCulture[propertyType], propertyValue.ToString());
-                formatedString = $"{indentation}{valueWithCulture}";
-                return true;
+                formatedString = $"{valueWithCulture}";
+                wasChanged = true;
             }
 
-            return false;
+            return wasChanged;
         }
 
         void ISerializationConfig<TOwner>.SetTypeSerialization<TPropType>

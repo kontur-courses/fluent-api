@@ -14,7 +14,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ExcludeType()
         {
-            var person = new Person{Name = "Vasya", Height = 180};
+            var person = new Person { Name = "Vasya", Height = 180 };
             var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
 
             var printer = ObjectPrinter
@@ -29,7 +29,8 @@ namespace ObjectPrinting.Tests
         public void ExcludeProperty()
         {
             var person = new Person { Name = "Vasya", Height = 180 };
-            var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
+            var expected =
+                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -43,7 +44,8 @@ namespace ObjectPrinting.Tests
         public void SetAlternativeSerialization_ForProperty()
         {
             var person = new Person { Name = "Vasya", Height = 180 };
-            var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
+            var expected =
+                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -58,12 +60,29 @@ namespace ObjectPrinting.Tests
         public void SetAlternativeSerialization_ForType()
         {
             var person = new Person { Name = "Vasya", Height = 180 };
-            var expected = $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
+            var expected =
+                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm";
 
             var printer = ObjectPrinter
                 .For<Person>()
                 .Printing<int>()
-                .Using(number => $"X");
+                .Using(number => "X");
+            var actually = printer.PrintToString(person);
+
+            actually.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void SetTrim()
+        {
+            var person = new Person { Name = "Vasya", Height = 180 };
+            var expected =
+                $"\tAge = {person.Age}\r\n\tHeight = {person.Height}\r\n\tId = {person.Id}\r\n\tName = V\r\nHeight ~ {person.Height}cm";
+
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Printing(p => p.Name)
+                .TrimmedToLength(1);
             var actually = printer.PrintToString(person);
 
             actually.Should().BeEquivalentTo(expected);
