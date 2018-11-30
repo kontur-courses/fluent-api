@@ -37,5 +37,25 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Func<TOwner, TPropType> printer)
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Func<TOwner, TPropType> printer)
+        {
+            return this;
+        }
     }
 }
