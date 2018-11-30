@@ -61,42 +61,31 @@ namespace ObjectPrinting
             return result.ToString();
         }
 
-
         private string GetValue(object obj, PropertyInfo propertyInfo, int nestingLevel)
         {
             var unformattedValue = propertyInfo.GetValue(obj);
-            var value = GetFormatted(propertyInfo, unformattedValue);
-
-            if (nestingLevel == this.nestingLevel)
-                return value ?? $"{unformattedValue.GetType().Name}{Environment.NewLine}Nesting limit reached";
-            
-            return value ?? PrintToString(unformattedValue, nestingLevel + 1);
-        }
-
-        private string GetFormatted(PropertyInfo propertyInfo, object unformattedValue)
-        {
-            string value = null;
-            var type = propertyInfo.PropertyType;
-            var name = propertyInfo.Name;
+            var value = string.Empty;
             if (typePrintingFormat.ContainsKey(propertyInfo.PropertyType))
-                value = InvokeFormatting(typePrintingFormat[type], unformattedValue);
-
+                value = typePrintingFormat[propertyInfo.PropertyType]
+                    .DynamicInvoke(unformattedValue) + Environment.NewLine;
             if (propertyPrintingFormat.ContainsKey(propertyInfo.Name))
-                value = InvokeFormatting(propertyPrintingFormat[name], value ?? unformattedValue);
-            
+                value = propertyPrintingFormat[propertyInfo.Name].DynamicInvoke(value == string.Empty 
+                            ? unformattedValue : value) + Environment.NewLine;
             if (typeCultures.ContainsKey(propertyInfo.PropertyType))
-                value = FormatTypeCulture(type, value ?? unformattedValue);
-            
-            return value;
+                value = string.Format(typeCultures[propertyInfo.PropertyType], "{0}",(value == string.Empty 
+                            ? unformattedValue : value)) + Environment.NewLine;
+            if (nestingLevel == this.nestingLevel)
+                return value == string.Empty 
+                    ? $"{unformattedValue.GetType().Name}{Environment.NewLine}Nesting limit reached" 
+                    : value;
+            return value != string.Empty
+                ? value : PrintToString(unformattedValue, nestingLevel + 1);
         }
-        
-        private string FormatTypeCulture(Type propertyType, object value) =>
-            string.Format(typeCultures[propertyType], "{0}", value) + Environment.NewLine; 
-    
 
-        private string InvokeFormatting(Delegate func, object value) =>
-            func.DynamicInvoke(value) + Environment.NewLine;
-        
+        private string GetTypePrintingFormat(string value)
+        {
+            
+        }
 
         private string PrintToString(object obj, int nestingLevel)
         {

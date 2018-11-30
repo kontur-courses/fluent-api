@@ -44,15 +44,17 @@ namespace ObjectPrinting
             var config = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
             var name = ((IPropertyPrintingConfig<TOwner, string>) propConfig).Name;
             // ReSharper disable once ConvertToLocalFunction
-            Func<string, string> func = s => string.Concat(s.Take(Math.Min(s.Length, length)));
+            Func<string, string> trim = s => s.Substring(0, Math.Min(s.Length, length));
             if (name != string.Empty)
-                config.AddPropertyPrintingSettings(name, func);
+                config.AddPropertyPrintingSettings(name, trim);
             else
             {
-                config.AddTypePrintingSettings(typeof(string), func);
+                config.AddTypePrintingSettings(typeof(string), trim);
             }
 
             return config;
         }
+        
+        
     }
 }
