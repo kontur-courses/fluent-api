@@ -105,11 +105,6 @@ namespace ObjectPrinting.Config
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (printedObjects.Contains(obj))
-                return "...";
-
-            printedObjects.Add(obj);
-
             if (obj == null)
                 return "null";
 
@@ -122,7 +117,12 @@ namespace ObjectPrinting.Config
 
                 return PrintWithCulture(obj, CultureInfo.InvariantCulture);
             }
-            
+
+            if (printedObjects.Contains(obj))
+                return "...";
+
+            printedObjects.Add(obj);
+
             var sb = new StringBuilder();
             sb.Append(type.Name);
             sb.Append(PropertiesAndFieldsToString(obj, nestingLevel));

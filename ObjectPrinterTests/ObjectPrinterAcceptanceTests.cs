@@ -38,7 +38,7 @@ namespace ObjectPrinterTests
                 .Printing(p => p.Name).TrimmedToLength(10)
 
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
+                .Excluding(p => p.Age1);
 
             var s1 = printer.PrintToString(person);
 
@@ -46,7 +46,7 @@ namespace ObjectPrinterTests
             var s2 = person.PrintToString();
 
             //8. ...с конфигурированием
-            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            var s3 = person.PrintToString(s => s.Excluding(p => p.Age1));
 
             Console.WriteLine(s1);
             Console.WriteLine(s2);

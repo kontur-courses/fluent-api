@@ -41,7 +41,7 @@ namespace ObjectPrinterTests
                 .Excluding<int>()
                 .Excluding<Guid>();
 
-            printer.PrintToString(person).Should().NotContainAny("Id", "Age");
+            printer.PrintToString(person).Should().NotContainAny("Id", "Age1");
         }
 
         [Test]
@@ -53,8 +53,8 @@ namespace ObjectPrinterTests
                 .Printing<int>().Using(i => $"int: {i}");
 
             printer.PrintToString(person).Should()
-                .ContainAll($"Id = GUID: {Guid}", "Age = int: 21")
-                .And.NotContainAny("Age = 21", $"Id = {Guid}");
+                .ContainAll($"Id = GUID: {Guid}", "Age1 = int: 21")
+                .And.NotContainAny("Age1 = 21", $"Id = {Guid}");
         }
 
         [Test]
@@ -158,10 +158,10 @@ namespace ObjectPrinterTests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Id)
-                .Excluding(p => p.Age);
+                .Excluding(p => p.Age1);
 
             printer.PrintToString(person).Should()
-                .NotContainAny("Id", "Age");
+                .NotContainAny("Id", "Age1");
         }
 
         [Test]
@@ -229,6 +229,13 @@ namespace ObjectPrinterTests
 
             ObjectPrinter.For<Person>().PrintToString(person).Should()
                 .Contain("Child = ...");
+        }
+
+        [Test]
+        public void NotPrintPreviouslyVisitedOsbjectsOnlyOfNonFinalTypes()
+        {
+            ObjectPrinter.For<Person>().PrintToString(person).Should()
+                .ContainAll("Age1", "Age2");
         }
     }
 }

@@ -8,7 +8,8 @@ namespace ObjectPrinterTests.TestClasses
         public string Name { get; set; }
         public string SecondName;
         public double Height { get; set; }
-        public int Age { get; set; }
+        public int Age1 { get; set; }
+        public int Age2 { get; set; }
         public DateTime Birthday { get; set; }
         public TimeSpan WorkExperience { get; set; }
 
@@ -16,13 +17,14 @@ namespace ObjectPrinterTests.TestClasses
 
         public int GetAge()
         {
-            return Age;
+            return Age1;
         }
 
         public Person(string guid)
         {
             Name = "Andrey";
-            Age = 21;
+            Age1 = 21;
+            Age2 = 21;
             Height = 1.92;
             Id = Guid.Parse(guid);
             Birthday = new DateTime(2018, 01, 28);
