@@ -101,10 +101,10 @@ namespace ObjectPrinting
                 .Where(property => !isIgnored(property))
                 .OrderBy(property => property.Name))
             {
-                var propertyValue = propertyInfo.GetValue(obj);
+                var propertyValue = propertyInfo.GetValue(obj) ?? "";
                 var memberInfo = propertyInfo as MemberInfo;
 
-                if (TryGetFormatedTrimmedValue(
+                if (TryGetFormattedTrimmedValue(
                     memberInfo, indentation, propertyValue, obj, out var formatedValue))
                 {
                     sb.Append($"{indentation}{memberInfo.Name} = {formatedValue}" + Environment.NewLine);
@@ -117,41 +117,41 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetFormatedTrimmedValue(MemberInfo memberInfo, string indentation,
-            object propertyValue, object obj, out string formatedString)
+        private bool TryGetFormattedTrimmedValue(MemberInfo memberInfo, string indentation,
+            object propertyValue, object obj, out string formattedString)
         {
             var propertyType = propertyValue.GetType();
-            formatedString = "";
+            formattedString = "";
             var wasChanged = false;
+
+            if (typesCulture.ContainsKey(propertyType))
+            {
+                var formattableValue = (IFormattable)propertyValue;
+                var valueWithCulture = formattableValue.ToString("", typesCulture[propertyType]);
+                formattedString = $"{valueWithCulture}";
+                wasChanged = true;
+            }
+
+            if (typesSerialization.ContainsKey(propertyType))
+            {
+                formattedString = $"{typesSerialization[propertyType](propertyValue)}";
+                wasChanged = true;
+            }
 
             if (propertiesSerialization.ContainsKey(memberInfo.Name))
             {
-                formatedString = $"{propertiesSerialization[memberInfo.Name]((TOwner)obj)}";
+                formattedString = $"{propertiesSerialization[memberInfo.Name]((TOwner)obj)}";
                 wasChanged = true;
             }
 
             if (propertiesTrim.ContainsKey(memberInfo.Name))
             {
                 if (!wasChanged)
-                    formatedString = (string)propertyValue;
-                formatedString = formatedString.Substring(
-                    0, Math.Min(formatedString.Length, propertiesTrim[memberInfo.Name]));
+                    formattedString = (string)propertyValue;
+                formattedString = formattedString.Substring(
+                    0, Math.Min(formattedString.Length, propertiesTrim[memberInfo.Name]));
                 wasChanged = true;
             }
-
-            else if (typesSerialization.ContainsKey(propertyType))
-            {
-                formatedString = $"{typesSerialization[propertyType](propertyValue)}";
-                wasChanged = true;
-            }
-
-            else if (typesCulture.ContainsKey(propertyType))
-            {
-                var valueWithCulture = string.Format(typesCulture[propertyType], propertyValue.ToString());
-                formatedString = $"{valueWithCulture}";
-                wasChanged = true;
-            }
-
             return wasChanged;
         }
 

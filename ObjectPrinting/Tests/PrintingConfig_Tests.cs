@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -86,6 +87,37 @@ namespace ObjectPrinting.Tests
             var actually = printer.PrintToString(person);
 
             actually.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void SetCulture()
+        {
+            var person = new Person { Name = "Vasya", Height = 180.5 };
+            var expected =
+                $"\tAge = {person.Age}\r\n\tHeight = 180,5\r\n\tId = {person.Id}\r\n\tName = Vasya\r\n";
+            var numberFormat = CultureInfo.GetCultureInfo("es-ES");
+
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Printing<double>()
+                .Using(numberFormat);
+            var actually = printer.PrintToString(person);
+
+            actually.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void NotFailOnRecursiveLoop()
+        {
+            var person = new Person();
+            var nextPerson = new Person();
+            person.Next = nextPerson;
+            nextPerson.Next = person;
+            var expected = "A recursive loop was detected.";
+
+            var actual = person.PrintToString();
+
+            actual.Should().Contain(expected);
         }
     }
 
