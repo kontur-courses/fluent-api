@@ -13,7 +13,5 @@ namespace ObjectPrinting.Tests
         {
             return "Hello";
         }
-
-        public static string[] Coll = new[] {"Some", "perfect"};
     }
 }

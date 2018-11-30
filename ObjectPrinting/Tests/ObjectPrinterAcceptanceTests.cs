@@ -26,7 +26,7 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Age);
 
-            printer = ObjectPrinter.For<Person>();
+            printer = ObjectPrinter.For<Person>().Exclude(p => p.Id);
 
             string s1 = printer.PrintToString(person);
 

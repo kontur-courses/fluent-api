@@ -42,73 +42,48 @@ namespace ObjectPrinting
         {
             return PrintToString(obj, 0);
         }
-
-//        private string PrintToString(object obj, int nestingLevel)
-//        {
-//            
-//            if (obj == null)
-//                return "null" + Environment.NewLine;
-//
-//            if (finalTypes.Contains(obj.GetType()) || nestingLevel == 10)
-//                return obj + Environment.NewLine;
-//
-//            var identation = new string('\t', nestingLevel + 1);
-//            var resultStr = new StringBuilder();
-//            
-//            var type = obj.GetType();
-//            
-//            resultStr.AppendLine(type.Name);
-//            
-//            if (obj is IEnumerable<object>)
-//            {
-//                foreach (var element in (IEnumerable<object>)obj)
-//                    resultStr.Append(PrintToString(element, nestingLevel + 1));
-//            }
-//            else
-//            {
-//                foreach (var propertyInfo in GetProperties(type))
-//                {
-//                    var customSerialization = TryGetCustomSerialization(propertyInfo, obj);
-//
-//                    var strValue = customSerialization != null
-//                        ? customSerialization
-//                        : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-//
-//                    resultStr.Append(identation + propertyInfo.Name + " = " + strValue);
-//                }
-//            }
-//            
-//            return resultStr.ToString();
-//        }
         
         private string PrintToString(object obj, int nestingLevel)
         {
-            // Custom print
-            
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType()) || nestingLevel == 10)
-                return obj.ToString();
-            
-            var identation = new string('\t', nestingLevel + 1);
-            var resultStr = new StringBuilder();
+            if (finalTypes.Contains(obj.GetType()))
+                return obj + Environment.NewLine;
 
-            if (obj is IEnumerable<object> collect)
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+
+            if (type is IEnumerable<object> colletion)
             {
-                resultStr.Append(PrintIEnumerableObject(collect, nestingLevel));
-                return resultStr.ToString();
+                return PrintIEnumerableObject(colletion, nestingLevel + 1);
             }
             
-            resultStr.Append(obj.GetType().Name);
+            sb.AppendLine(type.Name);
 
-            var props = obj.GetType().GetProperties();
-            if (props.Length == 0)
-                return resultStr.ToString() + " = " + obj;
+            var props = GetProperties(type).ToList();
+            if (props.Count == 0)
+            {
+                sb.AppendLine(Environment.NewLine + type.Name + " = " + obj.ToString());
+                return sb.ToString();
+            }
             
-            resultStr.Append(ParseUsualObject(obj, nestingLevel));
-            
-            return resultStr.ToString();
+            foreach (var prop in props)
+            {
+                var customSerialization = TryGetCustomSerialization(prop, nestingLevel + 1);
+
+                if (customSerialization == null)
+                {
+                    sb.Append(identation + prop.Name + " = " + PrintToString(prop.GetValue(obj), nestingLevel + 1));
+                }
+                else
+                {
+                    sb.Append(identation + prop.Name + " = " + customSerialization);
+                }
+            }
+
+            return sb.ToString();
         }
 
         private string PrintIEnumerableObject(IEnumerable<object> obj, int nestingLevel)
@@ -123,20 +98,6 @@ namespace ObjectPrinting
             return resultStr.ToString();
         }
         
-        private string ParseUsualObject(object obj, int nestingLevel)
-        {
-            var resultStr = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
-            
-            resultStr.Append(Environment.NewLine);
-            
-            foreach (var propertyInfo in GetProperties(obj.GetType()))
-            {
-                resultStr.AppendLine(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-            }
-            
-            return resultStr.ToString();
-        }
         
         private string TryGetCustomSerialization(PropertyInfo propertyInfo, object obj)
         {
