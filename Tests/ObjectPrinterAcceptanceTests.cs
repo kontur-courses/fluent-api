@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using Tests.Resources;
 
-namespace ObjectPrinting.Tests
+using ObjectPrinting;
+
+namespace Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -16,11 +19,11 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<int>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<string>().Using(s => s.ToString())
+                .Printing<string>().Using(s => '{' + s.ToString() + '}')
                 //3. Для числовых типов указать культуру
                 .Printing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("ru-RU"))
                 //4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Age).Using(s => s.ToString())
+                .Printing(p => p.Age).Using(s => '{' + s.ToString() + '}')
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства

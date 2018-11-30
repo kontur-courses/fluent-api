@@ -11,17 +11,14 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> mutedTypes = new HashSet<Type>();
-        private readonly HashSet<string> mutedProperties = new HashSet<string>();
+        private readonly HashSet<string> mutedMembers = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> alternativeTypeSerializers = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Delegate> alternativePropertySerializers = new Dictionary<string, Delegate>();
         private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
 
-        private static int maxNestingLevel = 5;
-        private static Type[] finalTypes = {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
+        private static int maxNestingLevel = 10;
+        private static readonly Type[] additionalFinalTypes = { typeof(string), typeof(DateTime), typeof(TimeSpan) };
+        
         public void AddAlternativeTypeSerializer<TProperty>(Func<TProperty, string> printingFunc)
         {
             alternativeTypeSerializers[typeof(TProperty)] = printingFunc;
@@ -45,9 +42,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            var propertyInfo = (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
-            var propertyName = propertyInfo.Name;
-            mutedProperties.Add(propertyName);
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+            var memberName = memberInfo.Name;
+            mutedMembers.Add(memberName);
             return this;
         }
 
@@ -58,9 +55,9 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            var propertyInfo = (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
-            var propertyName = propertyInfo.Name;
-            return new PropertyPrintingConfig<TOwner, TProperty>(this, propertyName);
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+            var memberName = memberInfo.Name;
+            return new PropertyPrintingConfig<TOwner, TProperty>(this, memberName);
         }
 
         public string PrintToString(TOwner obj)
@@ -85,51 +82,70 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (finalTypes.Contains(obj.GetType()))
+            if (obj.GetType().IsPrimitive || additionalFinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
             if (nestingLevel > maxNestingLevel)
-                return "...";
+                return "..." + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            MemberInfo[] properties = type.GetProperties();
+            MemberInfo[] fields = type.GetFields();
+            var allMemberInfo = properties.Concat(fields);
+            foreach (var memberInfo in allMemberInfo)
             {
-                var propertyType = propertyInfo.PropertyType;
-                var propertyName = propertyInfo.Name;
-                var propertyValueForObj = propertyInfo.GetValue(obj);
+                var memberName = memberInfo.Name;
+                var (memberType, memberValueForObj) = GetTypeAndValueFor(memberInfo, obj);
 
-                if (mutedTypes.Contains(propertyType) || mutedProperties.Contains(propertyName)) continue;
+                if (mutedTypes.Contains(memberType) || mutedMembers.Contains(memberName)) continue;
 
-                var valueRepresentation = GetSpecialRepresentationFor(propertyInfo, obj);
+                var valueRepresentation = GetSpecialRepresentationForValue(memberValueForObj, memberName, memberType);
                 if (valueRepresentation == null)
                 {
-                    sb.Append(indentation + propertyName + " = " +
-                          PrintToString(propertyValueForObj, nestingLevel + 1));
+                    var valueRepresentationWithNewLine = PrintToString(memberValueForObj, nestingLevel + 1);
+                    sb.Append(indentation)
+                        .Append($"{memberName} = {valueRepresentationWithNewLine}");
                 }
                 else
                 {
                     sb.Append(indentation)
-                        .Append(propertyName).Append(" = ").Append(valueRepresentation)
+                        .Append($"{memberName} = {valueRepresentation}")
                         .Append(Environment.NewLine);
                 }
             }
             return sb.ToString();
         }
 
-        private object GetSpecialRepresentationFor(PropertyInfo propertyInfo, object obj)
+        private (Type, object) GetTypeAndValueFor(MemberInfo memberInfo, object obj)
         {
-            var propertyType = propertyInfo.PropertyType;
-            var propertyName = propertyInfo.Name;
-            var propertyValueForObj = propertyInfo.GetValue(obj);
+            Type type;
+            object value;
+            switch (memberInfo)
+            {
+                case FieldInfo fieldInfo:
+                    value = fieldInfo.GetValue(obj);
+                    type = fieldInfo.FieldType;
+                    return (type, value);
+                case PropertyInfo propertyInfo:
+                    value = propertyInfo.GetValue(obj);
+                    type = propertyInfo.PropertyType;
+                    return (type, value);
+                default:
+                    throw new Exception($"Unexpected memberInfo: {nameof(memberInfo.Name)}");
+            }
+        }
 
-            if (alternativeTypeSerializers.ContainsKey(propertyType))
-                return alternativeTypeSerializers[propertyType].DynamicInvoke(propertyValueForObj);
-            if (alternativePropertySerializers.ContainsKey(propertyName))
-                return alternativePropertySerializers[propertyName].DynamicInvoke(propertyValueForObj);
-            if (cultures.ContainsKey(propertyType))
-                return ((IFormattable)propertyValueForObj).ToString(null, cultures[propertyType]);
+        private object GetSpecialRepresentationForValue(object value, string name, Type type)
+        {
+            if (alternativeTypeSerializers.ContainsKey(type))
+                return alternativeTypeSerializers[type].DynamicInvoke(value);
+            if (alternativePropertySerializers.ContainsKey(name))
+                return alternativePropertySerializers[name].DynamicInvoke(value);
+            if (cultures.ContainsKey(type))
+                return ((IFormattable)value).ToString(null, cultures[type]);
             return null;
         }
     }
