@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -15,7 +16,8 @@ namespace ObjectPrinting
         private readonly ImmutableHashSet<string> _forbiddenNames;
 
         private readonly ImmutableHashSet<Type> _forbiddenTypes;
-        private readonly Lazy<HashSet<object>> printedObjects = new Lazy<HashSet<object>>();
+        private readonly string _newLine = Environment.NewLine;
+        private readonly Lazy<HashSet<object>> _printedObjects = new Lazy<HashSet<object>>();
 
         public PrintingConfig()
         {
@@ -36,10 +38,15 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
         {
+//            if (_changedTypes.TryGetValue(typeof(TPropType), out var oldPrinter))
+//            {
+//                var temporaryPrinter = printer;
+//                printer = t => (string) oldPrinter.DynamicInvoke(temporaryPrinter(t));
+//            }
+
             var changedTypes = _changedTypes.SetItem(typeof(TPropType), printer);
 
             return new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, changedTypes);
-
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -70,35 +77,61 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (printedObjects.Value.Contains(obj))
-                throw new ArgumentException("Object has some lööps");
-            printedObjects.Value.Add(obj);
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null" + _newLine;
             var type = obj.GetType();
 
             if (_changedTypes.ContainsKey(type))
                 return (string) _changedTypes[type]
                            .DynamicInvoke(obj) +
-                       Environment.NewLine;
-
-            if (obj.GetType()
-                   .IsFinal())
-                return obj + Environment.NewLine;
-
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+                       _newLine;
 
             if (_forbiddenTypes.Contains(type))
                 return null;
+
+            if (type.IsFinal())
+                return obj + _newLine;
+
+            if (_printedObjects.Value.Contains((obj, obj.GetType()
+                                                        .FullName)))
+                throw new ArgumentException("Object has some lööps");
+            _printedObjects.Value.Add((obj, obj.GetType()
+                                               .FullName));
+
+            return PrintActualPropertiesAndFields(obj, nestingLevel, type);
+        }
+
+        private string PrintActualPropertiesAndFields(object obj, int nestingLevel, Type type)
+        {
+            var sb = new StringBuilder();
+
             sb.AppendLine(type.Name);
+
+            var indentation = new string('\t', nestingLevel + 1);
+
             foreach (var propertyInfo in type.GetProperties()
                                              .Where(info => !_forbiddenNames.Contains(info.Name)))
             {
-                var innerPrint = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                var value = propertyInfo.GetValue(obj);
+                var innerPrint = PrintToString(value, nestingLevel + 1);
                 if (innerPrint != null)
                     sb.Append(indentation + propertyInfo.Name + " = " + innerPrint);
             }
+
+            if (obj is IEnumerable enumerable)
+                return sb + PrintEnumerableToString(enumerable, nestingLevel + 2);
+
+            return sb.ToString();
+        }
+
+        private string PrintEnumerableToString(IEnumerable enumerable, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var indentation = new string('\t', nestingLevel);
+            sb.AppendLine("Containing:");
+
+            foreach (var obj in enumerable)
+                sb.Append(indentation + PrintToString(obj, nestingLevel));
 
             return sb.ToString();
         }
