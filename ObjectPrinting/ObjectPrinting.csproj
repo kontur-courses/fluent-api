@@ -56,8 +56,8 @@
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyPrintingConfig.cs" />
-    <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="MemberPrintingConfig.cs" />
+    <Compile Include="MemberPrintingConfigExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -19,19 +20,7 @@ namespace ObjectPrintingTests
                 Name = "Alexander",
                 Age = 19,
                 Height = 5.5,
-                Weight = 58,
-                LuckyNumbers = new int[] { 3, 1, 45, 6, 0, -2, 23, 66, 1, 10, 11, 123 },
-                Parent = new Person { Child = person }
             };
-
-            printedPerson = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alexander\r\n\tHeight = 5,5\r\n\tAge = 19\r\n\tParent = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = null\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tParent = null\r\n\t\tChild = null\r\n\t\tLuckyNumbers = null\r\n\t\tWeight = 0\r\n\t\tUselessField = 0\r\n\tChild = null\r\n\tLuckyNumbers = Int32[]\r\n\t\t3\r\n\t\t1\r\n\t\t45\r\n\t\t...\r\n\tWeight = 58\r\n\tUselessField = 0\r\n";
-        }
-
-        [Test]
-        public void Should_Print_Person()
-        {
-            
-            person.PrintToString().Should().Be(printedPerson);
         }
 
         [Test]
@@ -43,7 +32,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Should_Exclude_SpecifiedProperty()
+        public void Should_Exclude_SpecifiedMember()
         {
             var propertyName = nameof(person.UselessField);
             person.PrintToString().Should().Contain(propertyName);
@@ -58,7 +47,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Should_UseSpecifiedSerialization_ForSpecifiedProperty()
+        public void Should_UseSpecifiedSerialization_ForSpecifiedMember()
         {
             person.PrintToString().Should().Contain("Age = 19");
             person.PrintToString(c => c.Printing(p => p.Age).Using(i => i.ToString("X"))).Should().Contain("Age = 13");
@@ -72,9 +61,11 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Should_TrimSelectedStringProperty_ToFiveChars()
+        public void Should_TrimSelectedStringMember_ToFiveChars()
         {
             person.PrintToString(c => c.Printing(p => p.Name).TrimmedToLength(5)).Should().Contain("Name = Alexa");
         }
+
+        
     }
 }

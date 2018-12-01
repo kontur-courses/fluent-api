@@ -11,34 +11,40 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedPropertyTypes = new HashSet<Type>();
-        private readonly HashSet<string> excludedPropertyNames = new HashSet<string>();
-        private readonly HashSet<int> hashCodes = new HashSet<int>();
-        private readonly Dictionary<string, int> propertiesToTrim = new Dictionary<string, int>();
+        private readonly HashSet<Type> excludedMemberTypes = new HashSet<Type>();
+        private readonly HashSet<string> excludedMemberNames = new HashSet<string>();
+        private readonly Dictionary<object, int> usedObjects = new Dictionary<object, int>();
+        private readonly Dictionary<string, int> membersToTrim = new Dictionary<string, int>();
         private readonly Dictionary<Type, CultureInfo> typesWithCulture = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> typesWithSpecificPrint = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Delegate> namesWithSpecificPrint = new Dictionary<string, Delegate>();
+        private readonly char indent;
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public PrintingConfig(char indent = '\t')
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            this.indent = indent;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new MemberPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+            return new MemberPrintingConfig<TOwner, TPropType>(this, propertyName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedPropertyNames.Add(((MemberExpression)memberSelector.Body).Member.Name);
+            excludedMemberNames.Add(((MemberExpression)memberSelector.Body).Member.Name);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedPropertyTypes.Add(typeof(TPropType));
+            excludedMemberTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -49,65 +55,105 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            foreach (var e in usedObjects.Where(kvp => kvp.Value >= nestingLevel).ToList())
+                usedObjects.Remove(e.Key);
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (obj.GetType().Namespace == nameof(System))
+            if (obj.IsSimpleType())
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string(indent, nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            if (hashCodes.Contains(obj.GetHashCode()))
-                return sb.ToString();
-            hashCodes.Add(obj.GetHashCode());
 
-            var propertyInfos = type.GetProperties().Where(p => !excludedPropertyTypes.Contains(p.PropertyType)
-                                                                && !excludedPropertyNames.Contains(p.Name));
+            if (obj is ICollection collection)
+                return PrintCollection(collection, sb, nestingLevel);
 
-            foreach (var propertyInfo in propertyInfos)
+            if (usedObjects.ContainsKey(obj))
             {
-                var propertyValue = propertyInfo.GetValue(obj);
-                if (propertyValue is ICollection collection)
+                if (usedObjects[obj] != nestingLevel)
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " + collection.GetType().Name + Environment.NewLine);
-                    var count = 0;
-                    foreach (var e in collection)
-                    {
-                        if (++count > 3)
-                        {
-                            sb.Append(identation + '\t' + "..." + Environment.NewLine);
-                            break;
-                        }
-                        sb.Append(identation + '\t' + PrintToString(e, 0));
-                    }
-
+                    sb.Append($"{indentation}...{Environment.NewLine}");
+                    return sb.ToString();
                 }
-                else
-                {
-                    if (propertyValue != null && propertyValue.GetType().Namespace == nameof(System))
-                        propertyValue = ApplyConfig(propertyValue, propertyInfo);
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyValue, nestingLevel + 1));
-                }
+            }
+            else
+                usedObjects.Add(obj, nestingLevel);
 
+            return PrintMembers(sb, obj, nestingLevel);
+        }
+
+        private string GetIndent(int nestingLevel)
+        {
+            return new string(indent, nestingLevel);
+        }
+
+        private string PrintMembers(StringBuilder sb, object obj, int nestingLevel)
+        {
+            var propertyInfos = obj.GetType().GetProperties().Where(p => !excludedMemberTypes.Contains(p.PropertyType)
+                                                                && !excludedMemberNames.Contains(p.Name));
+            var fieldInfos = obj.GetType().GetFields().Where(f => !excludedMemberTypes.Contains(f.FieldType)
+                                                         && !excludedMemberNames.Contains(f.Name));
+
+            var memberInfos = propertyInfos.Cast<MemberInfo>().Concat(fieldInfos);
+
+
+            foreach (var memberInfo in memberInfos)
+            {
+                var memberValue = GetMemberValue(memberInfo, obj);
+
+                if (memberValue.IsSimpleType())
+                    memberValue = ApplyConfig(memberValue, memberInfo.Name);
+                sb.Append($"{GetIndent(nestingLevel + 1)}{memberInfo.Name} = " +
+                          PrintToString(memberValue, nestingLevel + 1));
             }
             return sb.ToString();
         }
 
-        private string Trim(string propertyName, string value)
+        private string PrintCollection(ICollection collection, StringBuilder sb, int nestingLevel)
         {
-            if (value == null)
-                return null;
-            if (propertiesToTrim.ContainsKey(propertyName))
+            var count = 0;
+            var indentation = new string(indent, nestingLevel + 1);
+            foreach (var element in collection)
             {
-                var requiredLength = propertiesToTrim[propertyName];
-                var resultLength = Math.Min(requiredLength, value.Length);
-                return value.Substring(0, resultLength);
+                if (count > 2)
+                {
+                    sb.Append($"{indentation}...{Environment.NewLine}");
+                    break;
+                }
+
+                var elementToString = element.GetType().Namespace == nameof(System) ? element : element.GetType().Name;
+                sb.Append($"{indentation}[{ count}] = {elementToString}{Environment.NewLine}");
+                count++;
             }
 
-            return value;
+            return sb.ToString();
+        }
+
+        private object GetMemberValue(MemberInfo memberInfo, object obj)
+        {
+            if (memberInfo is PropertyInfo propertyInfo)
+                return propertyInfo.GetValue(obj);
+            if (memberInfo is FieldInfo fieldInfo)
+                return fieldInfo.GetValue(obj);
+            throw new ArgumentException("Member is not Field or Property");
+        }
+
+        private string Trim(string memberName, string memberValue)
+        {
+            if (memberValue == null)
+                return null;
+            if (membersToTrim.ContainsKey(memberName))
+            {
+                var requiredLength = membersToTrim[memberName];
+                var resultLength = Math.Min(requiredLength, memberValue.Length);
+                return memberValue.Substring(0, resultLength);
+            }
+
+            return memberValue;
         }
 
         private object ApplyCulture(object obj)
@@ -117,11 +163,11 @@ namespace ObjectPrinting
             return obj;
         }
 
-        private object ApplySpecificPrint(object obj, PropertyInfo propertyInfo)
+        private object ApplySpecificPrint(object obj, string memberName)
         {
-            if (namesWithSpecificPrint.ContainsKey(propertyInfo.Name))
+            if (namesWithSpecificPrint.ContainsKey(memberName))
             {
-                var func = namesWithSpecificPrint[propertyInfo.Name];
+                var func = namesWithSpecificPrint[memberName];
                 return func.DynamicInvoke(obj);
             }
 
@@ -134,19 +180,19 @@ namespace ObjectPrinting
             return obj;
         }
 
-        private string ApplyConfig(object obj, PropertyInfo propertyInfo)
+        private string ApplyConfig(object obj, string name)
         {
             if (obj == null)
                 return "null";
             object result;
-            result = ApplySpecificPrint(obj, propertyInfo);
+            result = ApplySpecificPrint(obj, name);
             result = ApplyCulture(result);
-            result = Trim(propertyInfo.Name, result.ToString());
+            result = Trim(name, result.ToString());
 
             return result.ToString();
         }
 
-        Dictionary<string, int> IPrintingConfig<TOwner>.PropertiesToTrim => propertiesToTrim;
+        Dictionary<string, int> IPrintingConfig<TOwner>.PropertiesToTrim => membersToTrim;
         Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.TypesWithCulture => typesWithCulture;
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypesWithSpecificPrint => typesWithSpecificPrint;
         Dictionary<string, Delegate> IPrintingConfig<TOwner>.NamesWithSpecificPrint => namesWithSpecificPrint;

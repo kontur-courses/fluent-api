@@ -3,28 +3,28 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class MemberPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly string propertyName;
+        private readonly string memberName;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string propertyName)
+        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberName)
         {
             this.printingConfig = printingConfig;
-            this.propertyName = propertyName;
+            this.memberName = memberName;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (propertyName == null)
+            if (memberName == null)
                 ((IPrintingConfig<TOwner>)printingConfig).TypesWithSpecificPrint.Add(typeof(TPropType), print);
             else
-                ((IPrintingConfig<TOwner>)printingConfig).NamesWithSpecificPrint.Add(propertyName, print);
+                ((IPrintingConfig<TOwner>)printingConfig).NamesWithSpecificPrint.Add(memberName, print);
             return printingConfig;
         }
 
@@ -34,13 +34,13 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-        string IPropertyPrintingConfig<TOwner, TPropType>.PropertyNameToTrimValue => propertyName;
+        PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        string IMemberPrintingConfig<TOwner, TPropType>.MemberNameToTrimValue => memberName;
     }
 
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IMemberPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
-        string PropertyNameToTrimValue { get; }
+        string MemberNameToTrimValue { get; }
     }
 }

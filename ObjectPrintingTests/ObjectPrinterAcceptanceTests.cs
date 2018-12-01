@@ -11,7 +11,7 @@ namespace ObjectPrintingTests
         [Test]
         public void Demo()
         {
-            var person = new Person {Name = "Alexander", Age = 19, Height = 5.5, Weight = 58, LuckyNumbers = new int[] { 3, 1, 45, 6, 0, -2, 23, 66, 1, 10, 11, 123 } };
+            var person = new Person { Name = "Alexander", Age = 19, Height = 5.5, Weight = 58, LuckyNumbers = new [] { 3, 1, 45, 6, 0, -2, 23, 66, 1, 10, 11, 123 } };
             person.Parent = new Person { Child = person };
 
             var printer = ObjectPrinter.For<Person>()
@@ -39,6 +39,34 @@ namespace ObjectPrintingTests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+
+            string s4 = new Person[] { new Person(), new Person() }.PrintToString();
+            string s5 = new [] { 15, 22, 34, 34, 5}.PrintToString(); ;
+            string s6 = 57.PrintToString();
+
+            Console.WriteLine(s4);
+            Console.WriteLine(s5);
+            Console.WriteLine(s6);
+
+
+        }
+
+        [Test]
+        public void TestN()
+        {
+            var a = new Node();
+            var b = new Node();
+            a.Left = b;
+            a.Right = b;
+            a.Left.Right = a;
+            Console.WriteLine(a.PrintToString());
+
+        }
+
+        private class Node
+        {
+            public Node Left { get; set; }
+            public Node Right { get; set; }
         }
     }
 }
