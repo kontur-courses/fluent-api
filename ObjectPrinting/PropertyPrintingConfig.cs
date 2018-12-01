@@ -37,11 +37,6 @@ namespace ObjectPrinting.Solved
             settingsHolder.propertySerializers.Add(serializedProperty, print);
             return printingConfig;
         }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            return printingConfig;
-        }
     }
 
     public interface IMemberSelector<TOwner, TPropType>

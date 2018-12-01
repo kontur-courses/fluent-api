@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Solved.Tests
@@ -13,7 +15,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var person = new Person
             {
-                 Age = 19, Name = "AlexAlexAlex", Height = 3
+                 Age = 19, Name = "AlexAlexAlex", Height = 3, List = new List<double>(new[]{1d,2,3,4})
             };
 
             var printer = ObjectPrinter.For<Person>()
@@ -28,7 +30,8 @@ namespace ObjectPrinting.Solved.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
+                .Excluding(p => p.Height);
+                
 
             var s1 = printer.PrintToString(person);
 
@@ -40,6 +43,38 @@ namespace ObjectPrinting.Solved.Tests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+        }
+
+        [Test]
+        public void NestingLevelLoopTest()
+        {
+            var token1 = new Token();
+            var token2 = new Token();
+            token1.Next = token2;
+            token2.Next = token1;
+
+            Console.WriteLine(token1.PrintToString(p => p.WithNestingLevel(5)));
+        }
+        [Test]
+        public void IEnumerablePrintigTest()
+        {
+            List<int> list = new List<int>(new [] {1,2,3,4,5});
+            Console.WriteLine(list.PrintToString(p => p));
+        }
+
+        [Test]
+        public void CulterinfoTest()
+        {
+            var person = new Person() {Height = 3.28};
+            Console.WriteLine(person.PrintToString(p => p.Printing<double>().Using(new CultureInfo("de"))));
+            Console.WriteLine(person.PrintToString(p => p));
+        }
+
+        [Test]
+        public void PrimitivePrintingTest()
+        {
+            int number = 3;
+            Console.WriteLine(number.PrintToString(p => p));
         }
     }
 }
