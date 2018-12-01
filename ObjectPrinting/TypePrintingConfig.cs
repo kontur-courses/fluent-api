@@ -21,15 +21,15 @@ namespace ObjectPrinting
             this.printConfig = printConfig;
         }
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printConfig, Expression<Func<TOwner, TPropType>> func)
+        public TypePrintingConfig(PrintingConfig<TOwner> printConfig, string propetyName)
         {
-            typeName = ((MemberExpression) func.Body).Member.Name;
+            typeName = propetyName;
             this.printConfig = printConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> serializationFunc)
         {
-            (printConfig as IPrintingConfig).PropertySerializer.Add(typeName, serializationFunc);
+            (printConfig as IPrintingConfig).Serializers.Add(typeName, serializationFunc);
             return printConfig;
         }
     }
