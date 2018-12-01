@@ -1,12 +1,13 @@
-﻿namespace ObjectPrinting
-{
-    using System;
-    using System.Collections.Immutable;
-    using System.Linq;
-    using System.Linq.Expressions;
-    using System.Reflection;
-    using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
 
+namespace ObjectPrinting
+{
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly ImmutableDictionary<Type, Delegate> _changedTypes;
@@ -14,6 +15,7 @@
         private readonly ImmutableHashSet<string> _forbiddenNames;
 
         private readonly ImmutableHashSet<Type> _forbiddenTypes;
+        private readonly Lazy<HashSet<object>> printedObjects = new Lazy<HashSet<object>>();
 
         public PrintingConfig()
         {
@@ -32,12 +34,21 @@
             _forbiddenTypes = types;
         }
 
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
+        {
+            var changedTypes = _changedTypes.SetItem(typeof(TPropType), printer);
+
+            return new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, changedTypes);
+
+        }
+
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var name =
-                ((memberSelector.Body as MemberExpression
-               ?? throw new ArgumentException("Selector expression is invalid")).Member as PropertyInfo
-              ?? throw new ArgumentException("Selector expression is invalid")).Name;
+            var memberExpression = memberSelector.Body as MemberExpression ??
+                                   throw new ArgumentException("Selector expression is invalid");
+            var propertyInfo = memberExpression.Member as PropertyInfo ??
+                               throw new ArgumentException("Selector expression is invalid");
+            var name = propertyInfo.Name;
             var names = _forbiddenNames.Add(name);
             return new PrintingConfig<TOwner>(names, _forbiddenTypes, _changedTypes);
         }
@@ -51,13 +62,6 @@
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
-        {
-            var changedTypes = _changedTypes.SetItem(typeof(TPropType), printer);
-
-            return new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, changedTypes);
-        }
-
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
             var types = _forbiddenTypes.Add(typeof(TPropType));
@@ -66,21 +70,20 @@
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (printedObjects.Value.Contains(obj))
+                throw new ArgumentException("Object has some lööps");
+            printedObjects.Value.Add(obj);
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
 
             if (_changedTypes.ContainsKey(type))
-                return (string)_changedTypes[type]
-                           .DynamicInvoke(obj)
-                     + Environment.NewLine;
+                return (string) _changedTypes[type]
+                           .DynamicInvoke(obj) +
+                       Environment.NewLine;
 
-            var finalTypes = new[]
-                                 {
-                                     typeof(string), typeof(int), typeof(double), typeof(long),
-                                     typeof(float), typeof(decimal), typeof(DateTime), typeof(TimeSpan)
-                                 };
-            if (finalTypes.Contains(obj.GetType()))
+            if (obj.GetType()
+                   .IsFinal())
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);

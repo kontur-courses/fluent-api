@@ -128,6 +128,20 @@
         }
 
         [Test]
+        public void Throw_WhenObjectCausesInfiniteLoops()
+        {
+            var loop = new Lööps {Number = 3};
+            loop.Loop = loop;
+            Action printing = () => ObjectPrinter.For<Lööps>().PrintToString(loop);
+            
+            printing.Should()
+                    .Throw<ArgumentException>();
+
+        }
+
+        
+
+        [Test]
         public void PrintObjects_WithConfiguration()
         {
             var result =
