@@ -51,10 +51,10 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var memberExpression = memberSelector.Body as MemberExpression ??
-                                   throw new ArgumentException("Selector expression is invalid");
-            var propertyInfo = memberExpression.Member as PropertyInfo ??
-                               throw new ArgumentException("Selector expression is invalid");
+            if (!(memberSelector.Body is MemberExpression memberExpression &&
+                  memberExpression.Member is PropertyInfo propertyInfo))
+                throw new ArgumentException("Selector expression is invalid");
+
             var name = propertyInfo.Name;
             var names = _forbiddenNames.Add(name);
             return new PrintingConfig<TOwner>(names, _forbiddenTypes, _changedTypes);
