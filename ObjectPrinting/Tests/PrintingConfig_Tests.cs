@@ -46,12 +46,12 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Vasya", Height = 180 };
             var expected =
-                $"\tAge = {person.Age}\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\nHeight ~ {person.Height}cm\r\n\tNext = null\r\n";
+                $"\tAge = {person.Age}\r\n\tHeight = {person.Height}cm\r\n\tId = {person.Id}\r\n\tName = {person.Name}\r\n\tNext = null\r\n";
 
             var printer = ObjectPrinter
                 .For<Person>()
                 .Printing(p => p.Height)
-                .Using(height => $"Height ~ {height}cm");
+                .Using(height => $"{height}cm");
             var actually = printer.PrintToString(person);
 
             actually.Should().BeEquivalentTo(expected);
@@ -119,6 +119,16 @@ namespace ObjectPrinting.Tests
 
             actual.Should().Contain(expected);
         }
-    }
 
+        [Test]
+        public void A()
+        {
+            var entity = new IEnumerableEntity { Digits = new List<int> { 1, 2, 3 } };
+            var expected = "\tDigits = { 1, 2, 3 }";
+
+            var actually = entity.PrintToString();
+
+            actually.Should().BeEquivalentTo(expected);
+        }
+    }
 }

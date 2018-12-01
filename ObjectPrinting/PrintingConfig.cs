@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions;
 
 namespace ObjectPrinting
 {
@@ -31,10 +32,10 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        private bool isIgnored(PropertyInfo property)
+        private bool IsIgnored(MemberInfo member)
         {
-            return typesIgnored.Contains(property.PropertyType) ||
-                   propertiesIgnored.Contains(property.Name);
+            return typesIgnored.Contains(member.GetMemberType()) ||
+                   propertiesIgnored.Contains(member.Name);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -96,45 +97,53 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
 
-            foreach (var propertyInfo in type
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(property => !isIgnored(property))
-                .OrderBy(property => property.Name))
+            if (obj is IEnumerable enumerableObj)
             {
-                var propertyValue = propertyInfo.GetValue(obj) ?? "";
-                var memberInfo = propertyInfo as MemberInfo;
+                var elements = new List<string>();
 
-                if (TryGetFormattedTrimmedValue(
-                    memberInfo, indentation, propertyValue, obj, out var formatedValue))
-                {
-                    sb.Append($"{indentation}{memberInfo.Name} = {formatedValue}" + Environment.NewLine);
-                }
+                foreach (var element in enumerableObj)
+                    elements.Add(element.ToString());
+
+                return $"{{ {string.Join(", ", elements)} }}";
+            }
+
+            foreach (var memberInfo in type
+                .GetProperties()
+                .Cast<MemberInfo>()
+                .Concat(type.GetFields())
+                .Where(member => !IsIgnored(member))
+                .OrderBy(member => member.Name))
+            {
+
+                if (TryGetFormattedTrimmedValue(memberInfo, indentation, obj, out var formattedValue))
+                    sb.Append($"{indentation}{memberInfo.Name} = {formattedValue}" + Environment.NewLine);
                 else
-                    sb.Append($"{indentation}{propertyInfo.Name} = " +
-                              PrintToString(propertyInfo.GetValue(obj),
+                    sb.Append($"{indentation}{memberInfo.Name} = " +
+                              PrintToString(memberInfo.GetMemberValue(obj),
                                   nestingLevel + 1, parents));
             }
             return sb.ToString();
         }
 
-        private bool TryGetFormattedTrimmedValue(MemberInfo memberInfo, string indentation,
-            object propertyValue, object obj, out string formattedString)
+        private bool TryGetFormattedTrimmedValue(MemberInfo memberInfo, string indentation, object obj,
+            out string formattedString)
         {
-            var propertyType = propertyValue.GetType();
+            var memberType = memberInfo.GetMemberType();
+            var memberValue = memberInfo.GetMemberValue(obj);
             formattedString = "";
             var wasChanged = false;
 
-            if (typesCulture.ContainsKey(propertyType))
+            if (typesCulture.ContainsKey(memberType))
             {
-                var formattableValue = (IFormattable)propertyValue;
-                var valueWithCulture = formattableValue.ToString("", typesCulture[propertyType]);
+                var formattableValue = (IFormattable)memberValue;
+                var valueWithCulture = formattableValue.ToString("", typesCulture[memberType]);
                 formattedString = $"{valueWithCulture}";
                 wasChanged = true;
             }
 
-            if (typesSerialization.ContainsKey(propertyType))
+            if (typesSerialization.ContainsKey(memberType))
             {
-                formattedString = $"{typesSerialization[propertyType](propertyValue)}";
+                formattedString = $"{typesSerialization[memberType](memberValue)}";
                 wasChanged = true;
             }
 
@@ -147,7 +156,7 @@ namespace ObjectPrinting
             if (propertiesTrim.ContainsKey(memberInfo.Name))
             {
                 if (!wasChanged)
-                    formattedString = (string)propertyValue;
+                    formattedString = (string)memberValue;
                 formattedString = formattedString.Substring(
                     0, Math.Min(formattedString.Length, propertiesTrim[memberInfo.Name]));
                 wasChanged = true;
