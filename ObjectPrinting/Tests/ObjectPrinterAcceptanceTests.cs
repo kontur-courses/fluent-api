@@ -59,13 +59,14 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString()
+        public void PrintToString_Culture()
         {
             var longNumber = 1000000000L;
             var stringToPrint =
                 longNumber.PrintToString(x => x.Serializing<long>().Using(CultureInfo.GetCultureInfo("de-De")));
             Console.WriteLine(stringToPrint);
         }
+        
         [Test]
         public void PrintToString_Dictionary()
         {
@@ -92,7 +93,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_EmptyArray()
+        public void PrintToString_Array()
         {
             var array = new int[10];
             Console.WriteLine(array.PrintToString());
