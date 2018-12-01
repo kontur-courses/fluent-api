@@ -60,7 +60,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertySerializationConfig.cs" />
     <Compile Include="PropertySerializationConfigExtensions.cs" />
-    <Compile Include="Tests\PropertySerializationConfigTests.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Person.cs" />

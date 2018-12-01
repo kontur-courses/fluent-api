@@ -8,20 +8,22 @@ namespace ObjectPrinting
     public class Settings
     {
         private readonly HashSet<Type> excludedTypes;
-        private readonly Dictionary<Type, Func<Type, string>> changedTypesSerialization;
+        private readonly Dictionary<Type, Delegate> changedTypesSerialization;
+        private readonly Dictionary<string, Delegate> changedPropertiesSerialization;
         private readonly Dictionary<Type, CultureInfo> changedCultureInfo;
-        private readonly Dictionary<string, Func<Type, string>> changedPropertiesSerialization;
         private readonly Dictionary<string, Func<string, string>> propertiesToTrim;
         private readonly HashSet<string> excludedProperties;
+        public int MaxNestingLevel { get; }
 
-        public Settings()
+        public Settings(int maxNestingLevel = 100)
         {
             excludedTypes = new HashSet<Type>();
-            changedTypesSerialization = new Dictionary<Type, Func<Type, string>>();
+            changedTypesSerialization = new Dictionary<Type, Delegate>();
             changedCultureInfo = new Dictionary<Type, CultureInfo>();
-            changedPropertiesSerialization = new Dictionary<string, Func<Type, string>>();
+            changedPropertiesSerialization = new Dictionary<string, Delegate>();
             propertiesToTrim = new Dictionary<string, Func<string, string>>();
             excludedProperties = new HashSet<string>();
+            MaxNestingLevel = maxNestingLevel;
         }
 
         public void AddTypeToExclude(Type type)
@@ -42,7 +44,7 @@ namespace ObjectPrinting
                 changedTypesSerialization.Add(type, newSerializationMethod);
         }
 
-        public Dictionary<Type, Func<Type, string>> GetChangedTypesSerialization()
+        public Dictionary<Type, Delegate> GetChangedTypesSerialization()
         {
             return changedTypesSerialization;
         }
@@ -55,6 +57,11 @@ namespace ObjectPrinting
                 changedCultureInfo.Add(type, cultureInfo);
         }
 
+        public Dictionary<Type, CultureInfo> GetChangedCultureInfo()
+        {
+            return changedCultureInfo;
+        }
+
         public void SetPropertySerialization(string propName, Func<Type, string> serializationFunc)
         {
             if (changedPropertiesSerialization.ContainsKey(propName))
@@ -63,7 +70,7 @@ namespace ObjectPrinting
                 changedPropertiesSerialization.Add(propName, serializationFunc);
         }
 
-        public Dictionary<string, Func<Type, string>> GetPropertiesSerialization()
+        public Dictionary<string, Delegate> GetPropertiesSerialization()
         {
             return changedPropertiesSerialization;
         }
@@ -76,9 +83,19 @@ namespace ObjectPrinting
                 propertiesToTrim.Add(propName, trimFunc);
         }
 
+        public Dictionary<string, Func<string, string>> GetStrPropertiesToTrim()
+        {
+            return propertiesToTrim;
+        }
+
         public void AddPropertyToExclude(string propertyName)
         {
             excludedProperties.Add(propertyName);
+        }
+
+        public HashSet<string> GetExcludedProperties()
+        {
+            return excludedProperties;
         }
     }
 }

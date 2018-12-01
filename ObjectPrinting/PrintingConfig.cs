@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -35,14 +36,8 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -60,11 +55,61 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (settings.GetExcludedTypes().Contains(propertyInfo.PropertyType) ||
+                    settings.GetExcludedProperties().Contains(propertyInfo.Name))
+                    continue;
+
+                sb.Append(identation + propertyInfo.Name + " = " + 
+                          PrepareDataToWrite(obj, propertyInfo, nestingLevel));
             }
             return sb.ToString();
+        }
+
+        private string PrepareDataToWrite(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            var rowValue = propertyInfo.GetValue(obj);
+            var result = "";
+
+            var type = propertyInfo.PropertyType;
+            var name = propertyInfo.Name;
+
+            if (settings.GetChangedTypesSerialization().ContainsKey(type))
+                result = HandleTypeSerialization(type, rowValue);
+
+            if (settings.GetPropertiesSerialization().ContainsKey(name))
+                result = HandlePropertySerialization(name, result != ""? result : rowValue);
+
+            if (settings.GetChangedCultureInfo().ContainsKey(type))
+                result = HandleTypeCultureInfoChanging(type, result != "" ? result : rowValue);
+
+            if (settings.GetStrPropertiesToTrim().ContainsKey(name))
+                result = HandleStrPropertiesTrimming(name, result != "" ? result : rowValue);
+
+            return result != "" ? result : PrintToString(rowValue, nestingLevel + 1);
+        }
+
+        private string HandleTypeSerialization(Type propertyType, object currentValue)
+        {
+            return settings.GetChangedTypesSerialization()[propertyType]
+                       .DynamicInvoke(currentValue) + Environment.NewLine;
+        }
+
+        private string HandlePropertySerialization(string propertyName, object currentValue)
+        {
+            return settings.GetPropertiesSerialization()[propertyName]
+                       .DynamicInvoke(currentValue) + Environment.NewLine;
+        }
+
+        private string HandleTypeCultureInfoChanging(Type propertyType, object currentValue)
+        {
+            return string.Format(settings.GetChangedCultureInfo()[propertyType], "{0}", currentValue)
+                   + Environment.NewLine;
+        }
+
+        private string HandleStrPropertiesTrimming(string propertyName, object currentValue)
+        {
+            return settings.GetStrPropertiesToTrim()[propertyName]
+                       .Invoke(propertyName) + Environment.NewLine;
         }
     }
 }
