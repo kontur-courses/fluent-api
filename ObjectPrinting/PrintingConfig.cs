@@ -17,7 +17,7 @@ namespace ObjectPrinting
 
         private readonly ImmutableHashSet<Type> _forbiddenTypes;
         private readonly string _newLine = Environment.NewLine;
-        private readonly Lazy<HashSet<object>> _printedObjects = new Lazy<HashSet<object>>();
+        private readonly Lazy<HashSet<MemberInfo>> _printedObjects = new Lazy<HashSet<MemberInfo>>();
 
         public PrintingConfig()
         {
@@ -67,6 +67,7 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector) =>
             new PropertyPrintingConfig<TOwner, TPropType>(this);
 
+        /// <exception cref="ArgumentException">Obj may have some lööps</exception>
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
@@ -92,12 +93,6 @@ namespace ObjectPrinting
             if (type.IsFinal())
                 return obj + _newLine;
 
-            if (_printedObjects.Value.Contains((obj, obj.GetType()
-                                                        .FullName)))
-                throw new ArgumentException("Object has some lööps");
-            _printedObjects.Value.Add((obj, obj.GetType()
-                                               .FullName));
-
             return PrintActualPropertiesAndFields(obj, nestingLevel, type);
         }
 
@@ -109,13 +104,19 @@ namespace ObjectPrinting
 
             var indentation = new string('\t', nestingLevel + 1);
 
-            foreach (var propertyInfo in type.GetProperties()
-                                             .Where(info => !_forbiddenNames.Contains(info.Name)))
+            foreach (var memberInfo in type.GetMembers()
+                                           .Where(m => !_forbiddenNames.Contains(m.Name)))
             {
-                var value = propertyInfo.GetValue(obj);
+                if (!memberInfo.TryGetValue(obj, out var value))
+                    continue;
+
+                if (_printedObjects.Value.Contains(memberInfo))
+                    throw new ArgumentException("Object has some lööps");
+                _printedObjects.Value.Add(memberInfo);
+
                 var innerPrint = PrintToString(value, nestingLevel + 1);
                 if (innerPrint != null)
-                    sb.Append(indentation + propertyInfo.Name + " = " + innerPrint);
+                    sb.Append(indentation + memberInfo.Name + " = " + innerPrint);
             }
 
             if (obj is IEnumerable enumerable)

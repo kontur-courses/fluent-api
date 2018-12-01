@@ -1,7 +1,7 @@
-﻿namespace ObjectPrinting.Tests
-{
-    using System;
+﻿using System;
 
+namespace ObjectPrinting.Tests
+{
     public class Person
     {
         public int Age { get; set; }

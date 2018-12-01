@@ -1,17 +1,16 @@
-﻿namespace ObjectPrinting.Tests
+﻿using System;
+using System.Globalization;
+using NUnit.Framework;
+
+namespace ObjectPrinting.Tests
 {
-    using System;
-    using System.Globalization;
-
-    using NUnit.Framework;
-
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Alex", Age = 19};
 
             var printer = ObjectPrinter.For<Person>()
                                        .Excluding(p => p.Height)

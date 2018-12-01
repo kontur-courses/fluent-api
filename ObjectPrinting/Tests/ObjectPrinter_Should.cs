@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
         public void TrimStrings_When(int maxLength, string name)
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = {name}{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = {name}{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
                     .ToHashSet(_newLine);
             _printer.Printing<string>()
                     .TrimmedToLength(maxLength)
@@ -83,7 +83,7 @@ namespace ObjectPrinting.Tests
         public void OverridePrintersForSelector_WhenSeveralGiven()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
                     .ToHashSet(_newLine);
             _printer.Printing(p => p.Age)
                     .Using(i => $"{i}?")
@@ -99,7 +99,7 @@ namespace ObjectPrinting.Tests
         public void OverridePrintersForType_WhenSeveralGiven()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
                     .ToHashSet(_newLine);
             _printer.Printing<int>()
                     .Using(i => $"{i}?")
@@ -112,10 +112,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintFields()
+        {
+            ObjectPrinter.For<ThereIs>()
+                         .PrintToString(new ThereIs())
+                         .Should()
+                         .BeEquivalentTo($"ThereIs{_newLine}\tACow = at the forest{_newLine}");
+        }
+
+        [Test]
         public void PrintInGivenWay_ByGivenSelector()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion!{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion!{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
                     .ToHashSet(_newLine);
             _printer.Printing(p => p.Name)
                     .Using(s => $"{s}!")
@@ -129,7 +138,7 @@ namespace ObjectPrinting.Tests
         public void PrintInGivenWay_ByGivenType()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13!{_newLine}"
                     .ToHashSet(_newLine);
             _printer.Printing<int>()
                     .Using(i => $"{i}!")
@@ -143,7 +152,7 @@ namespace ObjectPrinting.Tests
         public void PrintObjects_ByDefault()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
                     .ToHashSet(_newLine);
             _person.PrintToString()
                    .ToHashSet(_newLine)
@@ -171,7 +180,7 @@ namespace ObjectPrinting.Tests
         public void PrintPerson_WithoutConfiguration()
         {
             var result =
-                $"Person{_newLine}\tId = Guid{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
+                $"Person{_newLine}\tId = {Guid.Empty}{_newLine}\tName = Legion{_newLine}\tHeight = 160{_newLine}\tAge = 13{_newLine}"
                     .ToHashSet(_newLine);
             _printer.PrintToString(_person)
                     .ToHashSet(_newLine)
