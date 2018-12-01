@@ -87,8 +87,8 @@ namespace ObjectPrinting.Solved
                 sb.Append(new string('\t',nestingLevel) + objectType.Name + "=" + pushValue + Environment.NewLine);
                 return sb.ToString();
             }
-            
-            sb.AppendLine(new string('\t',nestingLevel) + objectType.Name);
+
+            sb.AppendLine(objectType.Name);
             if (obj is IEnumerable)
             {
                 foreach (var item in obj as IEnumerable)
