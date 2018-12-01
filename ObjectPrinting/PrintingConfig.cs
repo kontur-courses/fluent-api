@@ -18,6 +18,7 @@ namespace ObjectPrinting
         private readonly ImmutableHashSet<Type> _forbiddenTypes;
         private readonly string _newLine = Environment.NewLine;
         private readonly Lazy<HashSet<MemberInfo>> _printedObjects = new Lazy<HashSet<MemberInfo>>();
+        private readonly int _restrictionAmount = 100;
 
         public PrintingConfig()
         {
@@ -29,11 +30,13 @@ namespace ObjectPrinting
         private PrintingConfig(
             ImmutableHashSet<string> names,
             ImmutableHashSet<Type> types,
-            ImmutableDictionary<Type, Delegate> changedTypes)
+            ImmutableDictionary<Type, Delegate> changedTypes,
+            int restriction = 1000)
         {
             _forbiddenNames = names;
             _changedTypes = changedTypes;
             _forbiddenTypes = types;
+            _restrictionAmount = restriction;
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.With<TPropType>(Func<TPropType, string> printer)
@@ -48,6 +51,9 @@ namespace ObjectPrinting
 
             return new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, changedTypes);
         }
+
+        public PrintingConfig<TOwner> WithSequenceAmountRestriction(int restriction) =>
+            new PrintingConfig<TOwner>(_forbiddenNames, _forbiddenTypes, _changedTypes, restriction);
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -130,9 +136,13 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var indentation = new string('\t', nestingLevel);
             sb.AppendLine("Containing:");
-
+            var counter = 1;
             foreach (var obj in enumerable)
+            {
                 sb.Append(indentation + PrintToString(obj, nestingLevel));
+                if (++counter > _restrictionAmount)
+                    break;
+            }
 
             return sb.ToString();
         }

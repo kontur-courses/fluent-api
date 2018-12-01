@@ -15,23 +15,8 @@ namespace ObjectPrinting
             config.Using(s => s.Substring(0, Math.Min(maxLen, s.Length)));
 
         public static PrintingConfig<TOwner> Using<TOwner, T>(
-            this PropertyPrintingConfig<TOwner, int> config,
-            CultureInfo culture) =>
-            config.Using(i => i.ToString(culture));
-
-        public static PrintingConfig<TOwner> Using<TOwner>(
-            this PropertyPrintingConfig<TOwner, double> config,
-            CultureInfo culture) =>
-            config.Using(i => i.ToString(culture));
-
-        public static PrintingConfig<TOwner> Using<TOwner>(
-            this PropertyPrintingConfig<TOwner, long> config,
-            CultureInfo culture) =>
-            config.Using(i => i.ToString(culture));
-
-        private static PrintingConfig<TOwner> Using<TOwner, TPropType>(
-            this IPropertyPrintingConfig<TOwner, TPropType> config,
-            Func<TPropType, string> printer) =>
-            ((IPrintingConfig<TOwner>) config.ParentConfig).With(printer);
+            this PropertyPrintingConfig<TOwner, T> config,
+            CultureInfo culture) where T : IFormattable =>
+            config.Using(i => i.ToString("", culture));
     }
 }

@@ -121,6 +121,16 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintInfiniteSequence_InFiniteWay()
+        {
+            ObjectPrinter.For<IntegerGenerator>()
+                         .WithSequenceAmountRestriction(2)
+                         .PrintToString(new IntegerGenerator())
+                         .Should()
+                         .BeEquivalentTo($"IntegerGenerator{_newLine}Containing:{_newLine}\t\t1{_newLine}\t\t2{_newLine}");
+        }
+
+        [Test]
         public void PrintInGivenWay_ByGivenSelector()
         {
             var result =

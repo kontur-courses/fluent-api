@@ -60,6 +60,7 @@
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="Tests\IntegerGenerator.cs" />
     <Compile Include="Tests\Lööps.cs" />
     <Compile Include="Tests\TestingDouble.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
