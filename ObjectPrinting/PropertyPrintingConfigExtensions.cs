@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -14,12 +14,12 @@ namespace ObjectPrinting.Solved
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             var settingsHolder =
-                (propConfig as IPrintingConfig<TOwner, string>).ParentConfig as IPrintingConfigurationHolder;
+                (IPrintingConfigurationHolder) ((IPrintingConfig<TOwner, string>) propConfig).ParentConfig;
             var memberSelector = (propConfig as IMemberSelector<TOwner, string>).memberSelector;
             var matchCollection = new Regex(string.Format("{0}.(\\w*)", memberSelector.Parameters[0].Name));
             var trimedProperty = matchCollection.Match(memberSelector.Body.ToString()).Value
                 .Replace(memberSelector.Parameters[0].Name + ".", "");
-            settingsHolder.trimedParams.Add(trimedProperty, maxLen);
+            settingsHolder.TrimedParams.Add(trimedProperty, maxLen);
             return ((IPrintingConfig<TOwner, string>) propConfig).ParentConfig;
         }
     }

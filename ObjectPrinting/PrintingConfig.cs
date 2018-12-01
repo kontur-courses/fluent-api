@@ -5,22 +5,22 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfigurationHolder
     {
-        private readonly Dictionary<Type, CultureInfo> cultureInfos = new Dictionary<Type, CultureInfo>();
-        private readonly HashSet<string> excludedProperties = new HashSet<string>();
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly Dictionary<Type, CultureInfo> cultureInfos;
+        private readonly HashSet<PropertyInfo> excludedProperties;
+        private readonly HashSet<Type> excludedTypes;
         private readonly List<Type> finalTypes;
-        private int nestingLevel = 16;
-        private readonly Dictionary<string, Delegate> propertySerializers = new Dictionary<string, Delegate>();
-        private readonly Dictionary<string, int> trimedParams = new Dictionary<string, int>();
-        private readonly Dictionary<Type, Delegate> typeSerilizers = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<PropertyInfo, Func<object, string>> propertySerializers;
+        private readonly Dictionary<string, int> trimedParams;
+        private readonly Dictionary<Type, Func<object, string>> typeSerilizers;
+        private int nestingLevel;
+
 
         public PrintingConfig()
         {
@@ -29,6 +29,13 @@ namespace ObjectPrinting.Solved
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             });
+            cultureInfos = new Dictionary<Type, CultureInfo>();
+            excludedProperties = new HashSet<PropertyInfo>();
+            excludedTypes = new HashSet<Type>();
+            propertySerializers = new Dictionary<PropertyInfo, Func<object, string>>();
+            trimedParams = new Dictionary<string, int>();
+            typeSerilizers = new Dictionary<Type, Func<object, string>>();
+            nestingLevel = 16;
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -47,7 +54,7 @@ namespace ObjectPrinting.Solved
             var matchCollection = new Regex(string.Format("{0}.(\\w*)", memberSelector.Parameters[0].Name));
             var excludedProperty = matchCollection.Match(memberSelector.Body.ToString()).Value
                 .Replace(memberSelector.Parameters[0].Name + ".", "");
-            excludedProperties.Add(excludedProperty);
+            excludedProperties.Add(typeof(TOwner).GetProperty(excludedProperty));
             return this;
         }
 
@@ -67,11 +74,10 @@ namespace ObjectPrinting.Solved
         {
             return PrintToString(obj, 0);
         }
-      
+
         private string PrintToString(object obj, int nestingLevel)
-        {           
-            
-            if (nestingLevel >= this.nestingLevel)
+        {
+            if (nestingLevel > this.nestingLevel)
                 return "Nesting Level Overflow!";
 
             if (obj == null)
@@ -81,10 +87,10 @@ namespace ObjectPrinting.Solved
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var objectType = obj.GetType();
-            
-            if (TryFinalizeSerialization(obj,out pushValue))
+
+            if (TryFinalizeSerialization(obj, out pushValue))
             {
-                sb.Append(new string('\t',nestingLevel) + objectType.Name + "=" + pushValue + Environment.NewLine);
+                sb.Append(new string('\t', nestingLevel) + objectType.Name + "=" + pushValue + Environment.NewLine);
                 return sb.ToString();
             }
 
@@ -92,41 +98,45 @@ namespace ObjectPrinting.Solved
             if (obj is IEnumerable)
             {
                 foreach (var item in obj as IEnumerable)
-                {
                     sb.Append(PrintToString(item, nestingLevel + 1));
-                }
+                return sb.ToString().RemoveEmptyLines();
             }
-            
+
             foreach (var propertyInfo in objectType.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo.Name))
-                    continue;               
-               
-                try
-                {
-                    if (TryGetPropertySerialization(propertyInfo, obj, out pushValue)){}
-                    else if (TryGetTypeSerialization(propertyInfo, obj, out pushValue)){}
-                    else if (TryFinalizeSerialization(propertyInfo, obj, out pushValue)){}
-                    else
-                        pushValue = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);                  
-                    sb.Append(identation + propertyInfo.PropertyType + " "  + propertyInfo.Name + "=");
-                    sb.Append(TrimmProperty(pushValue, propertyInfo) + Environment.NewLine);
-                }
-                catch (TargetParameterCountException e)
-                {}
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
+                    continue;
+                pushValue = SerializeProperty(propertyInfo, obj, nestingLevel);
+                sb.Append(identation + propertyInfo.PropertyType + " " + propertyInfo.Name + "=");
+                sb.Append(TrimmProperty(pushValue, propertyInfo) + Environment.NewLine);
             }
-            return sb.ToString(); 
+
+            return sb.ToString().RemoveEmptyLines();
         }
 
-        private bool TryGetPropertySerialization(PropertyInfo propertyInfo,object obj, out string pushValue)
+        private string SerializeProperty(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            string pushValue;
+            if (TryGetPropertySerialization(propertyInfo, obj, out pushValue))
+                return pushValue;
+            if (TryGetTypeSerialization(propertyInfo, obj, out pushValue))
+                return pushValue;
+            if (TryFinalizeSerialization(propertyInfo, obj, out pushValue))
+                return pushValue;
+            pushValue = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return pushValue;
+        }
+
+        private bool TryGetPropertySerialization(PropertyInfo propertyInfo, object obj, out string pushValue)
         {
             pushValue = string.Empty;
-            if (!propertySerializers.ContainsKey(propertyInfo.Name))
+            if (!propertySerializers.ContainsKey(propertyInfo))
                 return false;
-            pushValue = propertySerializers[propertyInfo.Name].DynamicInvoke(propertyInfo.GetValue(obj)) as string;
+            pushValue = propertySerializers[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj)) as string;
             return true;
         }
-        private bool TryGetTypeSerialization(PropertyInfo propertyInfo,object obj, out string pushValue)
+
+        private bool TryGetTypeSerialization(PropertyInfo propertyInfo, object obj, out string pushValue)
         {
             pushValue = string.Empty;
             if (!typeSerilizers.ContainsKey(propertyInfo.PropertyType))
@@ -134,14 +144,12 @@ namespace ObjectPrinting.Solved
             pushValue = typeSerilizers[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)) as string;
             return true;
         }
-        private bool TryFinalizeSerialization(PropertyInfo propertyInfo,object obj,out string pushValue)
+
+        private bool TryFinalizeSerialization(PropertyInfo propertyInfo, object obj, out string pushValue)
         {
             pushValue = string.Empty;
 
-            if (!finalTypes.Contains(propertyInfo.PropertyType))
-            {
-                return false;
-            }            
+            if (!finalTypes.Contains(propertyInfo.PropertyType)) return false;
             var culture = CultureInfo.InvariantCulture;
             if (cultureInfos.ContainsKey(propertyInfo.PropertyType))
                 culture = cultureInfos[propertyInfo.PropertyType];
@@ -151,59 +159,63 @@ namespace ObjectPrinting.Solved
             {
                 pushValue = "null";
                 return false;
-            }            
+            }
+
             var formatable = propertyInfo.GetValue(obj) as IFormattable;
             if (formatable == null)
                 pushValue = propValue.ToString();
             else
                 pushValue = (propValue as IFormattable).ToString(null, culture);
             return true;
-        }       
-        private bool TryFinalizeSerialization(object obj,out string pushValue)
+        }
+
+        private bool TryFinalizeSerialization(object obj, out string pushValue)
         {
             pushValue = string.Empty;
             if (!finalTypes.Contains(obj.GetType()))
                 return false;
             if (cultureInfos.ContainsKey(obj.GetType()) && obj is IFormattable)
-                pushValue = (obj as IFormattable).ToString(null,cultureInfos[obj.GetType()]);
+                pushValue = (obj as IFormattable).ToString(null, cultureInfos[obj.GetType()]);
             else
-                pushValue = obj.ToString();            
+                pushValue = obj.ToString();
             return true;
         }
+
         private string TrimmProperty(string str, PropertyInfo propertyInfo)
         {
             if (trimedParams.ContainsKey(propertyInfo.Name))
                 str = string.Join("", str.Take(trimedParams[propertyInfo.Name]));
             return str;
         }
+
         #region InterfaceRealization
 
-        HashSet<Type> IPrintingConfigurationHolder.excludedTypes
+        HashSet<Type> IPrintingConfigurationHolder.ExcludedTypes
         {
             get { return excludedTypes; }
         }
 
-        HashSet<string> IPrintingConfigurationHolder.excludedProperties
+        HashSet<PropertyInfo> IPrintingConfigurationHolder.ExcludedProperties
         {
             get { return excludedProperties; }
         }
 
-        Dictionary<string, Delegate> IPrintingConfigurationHolder.propertySerializers
+        Dictionary<PropertyInfo, Func<object, string>> IPrintingConfigurationHolder.PropertySerializers
         {
             get { return propertySerializers; }
         }
 
-        Dictionary<Type, Delegate> IPrintingConfigurationHolder.typeSerilizers
+        Dictionary<Type, Func<object, string>> IPrintingConfigurationHolder.TypeSerilizers
         {
             get { return typeSerilizers; }
         }
 
-        Dictionary<Type, CultureInfo> IPrintingConfigurationHolder.cultureInfos
+        Dictionary<Type, CultureInfo> IPrintingConfigurationHolder.CultureInfos
         {
             get { return cultureInfos; }
         }
 
-        Dictionary<string, int> IPrintingConfigurationHolder.trimedParams
+        Dictionary<string, int> IPrintingConfigurationHolder.TrimedParams
         {
             get { return trimedParams; }
         }
@@ -211,4 +223,3 @@ namespace ObjectPrinting.Solved
         #endregion
     }
 }
-           

@@ -10,7 +10,7 @@ namespace ObjectPrinting.Solved.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public List<double> List { get; set; }
-}
+    }
 
     public class Token
     {

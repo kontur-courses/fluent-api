@@ -1,4 +1,4 @@
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public interface IPrintingConfig<TOwner, TPropType>
     {

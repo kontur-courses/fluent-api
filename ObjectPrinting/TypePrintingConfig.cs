@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class TypePrintingConfig<TOwner, TPropType> : IPrintingConfig<TOwner, TPropType>
     {
@@ -20,14 +20,14 @@ namespace ObjectPrinting.Solved
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             var SettingsHolder = printingConfig as IPrintingConfigurationHolder;
-            SettingsHolder.typeSerilizers.Add(typeof(TPropType), print);
+            SettingsHolder.TypeSerilizers.Add(typeof(TPropType), obj => print((TPropType) obj));
             return printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             var SettingsHolder = printingConfig as IPrintingConfigurationHolder;
-            SettingsHolder.cultureInfos.Add(typeof(TPropType), culture);
+            SettingsHolder.CultureInfos.Add(typeof(TPropType), culture);
             return printingConfig;
         }
     }

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPrintingConfig<TOwner, TPropType>,
         IMemberSelector<TOwner, TPropType>
@@ -34,7 +33,8 @@ namespace ObjectPrinting.Solved
             var matchCollection = new Regex(string.Format("{0}.(\\w*)", memberSelectorExp.Parameters[0].Name));
             var serializedProperty = matchCollection.Match(memberSelectorExp.Body.ToString()).Value
                 .Replace(memberSelectorExp.Parameters[0].Name + ".", "");
-            settingsHolder.propertySerializers.Add(serializedProperty, print);
+            settingsHolder.PropertySerializers.Add(typeof(TOwner).GetProperty(serializedProperty),
+                obj => print((TPropType) obj));
             return printingConfig;
         }
     }

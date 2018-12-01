@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public interface IPrintingConfigurationHolder
     {
-        HashSet<Type> excludedTypes { get; }
-        HashSet<string> excludedProperties { get; }
-        Dictionary<Type, Delegate> typeSerilizers { get; }
-        Dictionary<string, Delegate> propertySerializers { get; }
-        Dictionary<Type, CultureInfo> cultureInfos { get; }
-        Dictionary<string, int> trimedParams { get; }
+        HashSet<Type> ExcludedTypes { get; }
+        HashSet<PropertyInfo> ExcludedProperties { get; }
+        Dictionary<Type, Func<object, string>> TypeSerilizers { get; }
+        Dictionary<PropertyInfo, Func<object, string>> PropertySerializers { get; }
+        Dictionary<Type, CultureInfo> CultureInfos { get; }
+        Dictionary<string, int> TrimedParams { get; }
     }
 }

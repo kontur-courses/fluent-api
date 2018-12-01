@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Solved.Tests
@@ -11,11 +9,19 @@ namespace ObjectPrinting.Solved.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
+        public void CulterinfoTest()
+        {
+            var person = new Person {Height = 3.28};
+            Console.WriteLine(person.PrintToString(p => p.Printing<double>().Using(new CultureInfo("de"))));
+            Console.WriteLine(person.PrintToString(p => p));
+        }
+
+        [Test]
         public void Demo()
         {
             var person = new Person
             {
-                 Age = 19, Name = "AlexAlexAlex", Height = 3, List = new List<double>(new[]{1d,2,3,4})
+                Age = 19, Name = "AlexAlexAlex", Height = 3, List = new List<double>(new[] {1d, 2, 3, 4})
             };
 
             var printer = ObjectPrinter.For<Person>()
@@ -31,7 +37,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Height);
-                
+
 
             var s1 = printer.PrintToString(person);
 
@@ -46,6 +52,13 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         [Test]
+        public void IEnumerablePrintigTest()
+        {
+            var list = new List<int>(new[] {1, 2, 3, 4, 5});
+            Console.WriteLine(list.PrintToString(p => p));
+        }
+
+        [Test]
         public void NestingLevelLoopTest()
         {
             var token1 = new Token();
@@ -55,25 +68,11 @@ namespace ObjectPrinting.Solved.Tests
 
             Console.WriteLine(token1.PrintToString(p => p.WithNestingLevel(5)));
         }
-        [Test]
-        public void IEnumerablePrintigTest()
-        {
-            List<int> list = new List<int>(new [] {1,2,3,4,5});
-            Console.WriteLine(list.PrintToString(p => p));
-        }
-
-        [Test]
-        public void CulterinfoTest()
-        {
-            var person = new Person() {Height = 3.28};
-            Console.WriteLine(person.PrintToString(p => p.Printing<double>().Using(new CultureInfo("de"))));
-            Console.WriteLine(person.PrintToString(p => p));
-        }
 
         [Test]
         public void PrimitivePrintingTest()
         {
-            int number = 3;
+            var number = 3;
             Console.WriteLine(number.PrintToString(p => p));
         }
     }
