@@ -32,8 +32,8 @@ namespace ObjectPrinting
 
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
-            return new MemberPrintingConfig<TOwner, TPropType>(this, propertyName);
+            var memberName = ((MemberExpression)memberSelector.Body).Member.Name;
+            return new MemberPrintingConfig<TOwner, TPropType>(this, memberName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -55,22 +55,14 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            foreach (var e in usedObjects.Where(kvp => kvp.Value >= nestingLevel).ToList())
-                usedObjects.Remove(e.Key);
-
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            PrepareUsedObjects(nestingLevel);
 
             if (obj.IsSimpleType())
                 return obj + Environment.NewLine;
 
             var indentation = new string(indent, nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-
-            if (obj is ICollection collection)
-                return PrintCollection(collection, sb, nestingLevel);
+            sb.AppendLine(obj.GetType().Name);
 
             if (usedObjects.ContainsKey(obj))
             {
@@ -83,7 +75,18 @@ namespace ObjectPrinting
             else
                 usedObjects.Add(obj, nestingLevel);
 
+            if (obj is IEnumerable enumerable)
+                return PrintEnumerable(enumerable, sb, nestingLevel);
+
             return PrintMembers(sb, obj, nestingLevel);
+        }
+
+        private void PrepareUsedObjects(int nestingLevel)
+        {
+            var objects = usedObjects.Where(kv => kv.Value >= nestingLevel)
+                                     .Select(kv => kv.Key).ToList();
+            foreach (var obj in objects)
+                usedObjects.Remove(obj);
         }
 
         private string GetIndent(int nestingLevel)
@@ -93,31 +96,35 @@ namespace ObjectPrinting
 
         private string PrintMembers(StringBuilder sb, object obj, int nestingLevel)
         {
-            var propertyInfos = obj.GetType().GetProperties().Where(p => !excludedMemberTypes.Contains(p.PropertyType)
-                                                                && !excludedMemberNames.Contains(p.Name));
-            var fieldInfos = obj.GetType().GetFields().Where(f => !excludedMemberTypes.Contains(f.FieldType)
-                                                         && !excludedMemberNames.Contains(f.Name));
-
-            var memberInfos = propertyInfos.Cast<MemberInfo>().Concat(fieldInfos);
-
-
-            foreach (var memberInfo in memberInfos)
+            var membersInfo = GetMembersInfo(obj);
+            foreach (var memberInfo in membersInfo)
             {
-                var memberValue = GetMemberValue(memberInfo, obj);
+                var value = GetMemberValue(memberInfo, obj);
+                if (value.IsSimpleType())
+                    value = ApplyConfig(value, memberInfo.Name);
 
-                if (memberValue.IsSimpleType())
-                    memberValue = ApplyConfig(memberValue, memberInfo.Name);
                 sb.Append($"{GetIndent(nestingLevel + 1)}{memberInfo.Name} = " +
-                          PrintToString(memberValue, nestingLevel + 1));
+                          PrintToString(value, nestingLevel + 1));
             }
+
             return sb.ToString();
         }
 
-        private string PrintCollection(ICollection collection, StringBuilder sb, int nestingLevel)
+        private IEnumerable<MemberInfo> GetMembersInfo(object obj)
+        {
+            var propertiesInfo = obj.GetType().GetProperties().Where(p => !excludedMemberTypes.Contains(p.PropertyType)
+                                                                         && !excludedMemberNames.Contains(p.Name));
+            var fieldsInfo = obj.GetType().GetFields().Where(f => !excludedMemberTypes.Contains(f.FieldType)
+                                                                  && !excludedMemberNames.Contains(f.Name));
+
+            return propertiesInfo.Cast<MemberInfo>().Concat(fieldsInfo);
+        }
+
+        private string PrintEnumerable(IEnumerable enumerable, StringBuilder sb, int nestingLevel)
         {
             var count = 0;
             var indentation = new string(indent, nestingLevel + 1);
-            foreach (var element in collection)
+            foreach (var element in enumerable)
             {
                 if (count > 2)
                 {
@@ -125,8 +132,10 @@ namespace ObjectPrinting
                     break;
                 }
 
-                var elementToString = element.GetType().Namespace == nameof(System) ? element : element.GetType().Name;
-                sb.Append($"{indentation}[{ count}] = {elementToString}{Environment.NewLine}");
+                var preparedElement = element.IsSimpleType() ? ApplyConfig(element) : element;
+                sb.Append($"{GetIndent(nestingLevel + 1)}[{count}] = " +
+                          PrintToString(preparedElement, nestingLevel + 1));
+
                 count++;
             }
 
@@ -142,34 +151,35 @@ namespace ObjectPrinting
             throw new ArgumentException("Member is not Field or Property");
         }
 
-        private string Trim(string memberName, string memberValue)
+        private object Trim(object value, string memberName)
         {
-            if (memberValue == null)
-                return null;
-            if (membersToTrim.ContainsKey(memberName))
-            {
-                var requiredLength = membersToTrim[memberName];
-                var resultLength = Math.Min(requiredLength, memberValue.Length);
-                return memberValue.Substring(0, resultLength);
-            }
+            if (memberName != null)
+                if (membersToTrim.ContainsKey(memberName))
+                {
+                    var requiredLength = membersToTrim[memberName];
+                    var resultLength = Math.Min(requiredLength, value.ToString().Length);
+                    return value.ToString().Substring(0, resultLength);
+                }
 
-            return memberValue;
+            return value;
         }
 
         private object ApplyCulture(object obj)
         {
             if (typesWithCulture.ContainsKey(obj.GetType()))
                 obj = string.Format(typesWithCulture[obj.GetType()], "{0}", obj);
+
             return obj;
         }
 
         private object ApplySpecificPrint(object obj, string memberName)
         {
-            if (namesWithSpecificPrint.ContainsKey(memberName))
-            {
-                var func = namesWithSpecificPrint[memberName];
-                return func.DynamicInvoke(obj);
-            }
+            if (memberName != null)
+                if (namesWithSpecificPrint.ContainsKey(memberName))
+                {
+                    var func = namesWithSpecificPrint[memberName];
+                    return func.DynamicInvoke(obj);
+                }
 
             if (typesWithSpecificPrint.ContainsKey(obj.GetType()))
             {
@@ -180,14 +190,14 @@ namespace ObjectPrinting
             return obj;
         }
 
-        private string ApplyConfig(object obj, string name)
+        private string ApplyConfig(object obj, string memberName = null)
         {
             if (obj == null)
                 return "null";
-            object result;
-            result = ApplySpecificPrint(obj, name);
+            var result = obj;
+            result = ApplySpecificPrint(result, memberName);
             result = ApplyCulture(result);
-            result = Trim(name, result.ToString());
+            result = Trim(result, memberName);
 
             return result.ToString();
         }

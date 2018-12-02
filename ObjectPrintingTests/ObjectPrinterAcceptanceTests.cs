@@ -23,7 +23,7 @@ namespace ObjectPrintingTests
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //.Printing<double>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Weight).Using(w => w.ToString("N"))
+                .Printing(p => p.Weight).Using(w => w.ToString("D5"))
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(5)
                 //6. Исключить из сериализации конкретного свойства
@@ -47,20 +47,18 @@ namespace ObjectPrintingTests
             Console.WriteLine(s4);
             Console.WriteLine(s5);
             Console.WriteLine(s6);
-
-
         }
 
         [Test]
-        public void TestN()
+        public void TestNesting()
         {
             var a = new Node();
             var b = new Node();
             a.Left = b;
             a.Right = b;
             a.Left.Right = a;
-            Console.WriteLine(a.PrintToString());
 
+            Console.WriteLine(a.PrintToString());
         }
 
         private class Node

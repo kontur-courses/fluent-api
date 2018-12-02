@@ -10,6 +10,11 @@ namespace ObjectPrinting
             return ObjectPrinter.For<T>().PrintToString(obj);
         }
 
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        {
+            return config(ObjectPrinter.For<T>()).PrintToString(obj);
+        }
+
         public static bool IsSimpleType(this object obj)
         {
             if (obj == null)
