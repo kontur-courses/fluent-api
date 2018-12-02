@@ -19,7 +19,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private readonly Dictionary<PropertyInfo, Delegate> propertySerializators =
@@ -28,13 +28,38 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
+        private int propertiesLookDepth;
+        private int collectionLookDepth;
 
         public PrintingConfig()
         {
+            propertiesLookDepth = 50;
             CollectionLookDepth = 50;
         }
 
-        public int CollectionLookDepth { get; private set; }
+        private bool CanThrowWhenTooDeep { get; set; }
+
+        public int PropertiesLookDepth
+        {
+            get => propertiesLookDepth;
+            private set
+            {
+                if (value < 1)
+                    throw new ArgumentOutOfRangeException("Depth should be positive");
+                propertiesLookDepth = value;
+            }
+        }
+
+        public int CollectionLookDepth
+        {
+            get => collectionLookDepth;
+            private set
+            {
+                if (value < 1)
+                    throw new ArgumentOutOfRangeException("Depth should be positive");
+                collectionLookDepth = value;
+            }
+        }
 
         internal void ChangeSerializationForProperty(PropertyInfo propertyInfo, Delegate serializator)
         {
@@ -66,6 +91,19 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> SetCollectionLookDepthTo(int depth)
         {
             CollectionLookDepth = depth;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetPropetiesLookDepthTo(int depth, bool thowsException = false)
+        {
+            PropertiesLookDepth = depth;
+            CanThrowWhenTooDeep = thowsException;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> CanThrowExceptionWhenTooDeep(bool thowsException = true)
+        {
+            CanThrowWhenTooDeep = thowsException;
             return this;
         }
 
@@ -108,6 +146,13 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return obj.ToString();
 
+            if (nestingLevel > PropertiesLookDepth)
+            {
+                return CanThrowWhenTooDeep
+                    ? throw new InvalidOperationException("Printing too deep (possible recursion)")
+                    : "...";
+            }
+
             var indentation = new string(Indent, nestingLevel + 1);
             var sb = new StringBuilder();
 
@@ -122,7 +167,6 @@ namespace ObjectPrinting
             var typeProperties = type.GetProperties();
             if (!typeProperties.Any()) return sb.ToString();
 
-            sb.Append(Environment.NewLine);
             foreach (var propertyInfo in typeProperties)
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType)) continue;
@@ -151,7 +195,7 @@ namespace ObjectPrinting
                 if (propertyTrimmedLengths.ContainsKey(propertyInfo))
                     propertyValueString = TrimString(propertyValueString, propertyTrimmedLengths[propertyInfo]);
 
-                sb.AppendLine(indentation + propertyInfo.Name + " = " + propertyValueString);
+                sb.Append(Environment.NewLine + indentation + propertyInfo.Name + " = " + propertyValueString);
             }
 
             return sb.ToString();
@@ -160,7 +204,7 @@ namespace ObjectPrinting
         private string PrintToStringIEnumerable(object obj, IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var collectionCount = 0;
+            var collectionCount = 1;
             var type = obj.GetType();
             var indentation = new string(Indent, nestingLevel);
 
