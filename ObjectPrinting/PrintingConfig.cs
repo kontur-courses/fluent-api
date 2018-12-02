@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -62,41 +63,74 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
             
-            foreach (var propertyInfo in type.GetProperties())
+            var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+            var isList = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
+
+            if (type.IsArray || isList)
             {
-                var propType = propertyInfo.PropertyType;
-                var propName = propertyInfo.Name;
-                var propValue = propertyInfo.GetValue(obj);
-                var isExcluded = excludedTypes.Contains(propType) || excludedProps.Contains(propName);
-
-                if (isExcluded)
+                if (isList)
                 {
-                    continue;
-                }
-
-                var displayPropValue = GetDisplayPropValue(propName, propType, propValue);
-                    
-                if (displayPropValue != null)
-                {
-                    sb.AppendLine($"{identation}{propName} = {displayPropValue}");
-                }
-                else if (typesToPrint.Contains(propType))
-                {
-                    sb.AppendLine($"{identation}{propName} = {propValue ?? "null"}");
-                }
-                else if (nestingLevel < maxDepth)
-                {
-                    sb.Append($"{identation}{propName} = {PrintToString(propValue, nestingLevel + 1)}");
+                    sb.AppendLine("List");
                 }
                 else
                 {
-                    sb.AppendLine($"{identation}{propName} = {propType.Name}");
+                    sb.AppendLine("Array");
+                }
+                
+                var i = 0;
+                foreach(var item in (IEnumerable) obj)
+                {
+                    sb.Append($"{identation}[{i++}] = {PrintToString(item, nestingLevel + 1)}");
+                }
+            }
+            else if (isDict)
+            {
+                sb.AppendLine("Dictionary");
+                
+                var objAsDict = (IDictionary) obj;
+                foreach(var key in objAsDict.Keys)
+                {
+                    sb.Append($"{identation}[`{key}`] = {PrintToString(objAsDict[key], nestingLevel + 1)}");
+                }
+            }
+            else
+            {
+                sb.AppendLine(type.Name);
+                
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    var propType = propertyInfo.PropertyType;
+                    var propName = propertyInfo.Name;
+                    var propValue = propertyInfo.GetValue(obj);
+                    var isExcluded = excludedTypes.Contains(propType) || excludedProps.Contains(propName);
+
+                    if (isExcluded)
+                    {
+                        continue;
+                    }
+
+                    var displayPropValue = GetDisplayPropValue(propName, propType, propValue);
+                        
+                    if (displayPropValue != null)
+                    {
+                        sb.AppendLine($"{identation}{propName} = {displayPropValue}");
+                    }
+                    else if (typesToPrint.Contains(propType))
+                    {
+                        sb.AppendLine($"{identation}{propName} = {propValue ?? "null"}");
+                    }
+                    else if (nestingLevel < maxDepth)
+                    {
+                        sb.Append($"{identation}{propName} = {PrintToString(propValue, nestingLevel + 1)}");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{identation}{propName} = {propType.Name}");
+                    }
                 }
             }
             

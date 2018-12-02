@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using FluentAssertions;
@@ -12,17 +13,17 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldPrintCorrectString()
         {
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("Person");
-            stringBuilder.AppendLine("\tId = Guid");
-            stringBuilder.AppendLine("\tName = null");
-            stringBuilder.AppendLine("\tHeight = 0");
-            stringBuilder.AppendLine("\tAge = 0");
-            stringBuilder.AppendLine("\tChild = null");
+            var expected = new StringBuilder();
+            expected.AppendLine("Person");
+            expected.AppendLine("\tId = Guid");
+            expected.AppendLine("\tName = null");
+            expected.AppendLine("\tHeight = 0");
+            expected.AppendLine("\tAge = 0");
+            expected.AppendLine("\tChild = null");
             
             var obj = new Person();
             var printer = ObjectPrinter.For<Person>();
-            printer.PrintToString(obj).Should().Be(stringBuilder.ToString());
+            printer.PrintToString(obj).Should().Be(expected.ToString());
         }
         
         [Test]
@@ -131,21 +132,105 @@ namespace ObjectPrinting.Tests
             p1.Child = p2;
             p2.Child = p1;
             
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("Person");
-            stringBuilder.AppendLine("\tId = Guid");
-            stringBuilder.AppendLine("\tName = Person 1");
-            stringBuilder.AppendLine("\tHeight = 0");
-            stringBuilder.AppendLine("\tAge = 0");
-            stringBuilder.AppendLine("\tChild = Person");
-            stringBuilder.AppendLine("\t\tId = Guid");
-            stringBuilder.AppendLine("\t\tName = Person 2");
-            stringBuilder.AppendLine("\t\tHeight = 0");
-            stringBuilder.AppendLine("\t\tAge = 0");
-            stringBuilder.AppendLine("\t\tChild = Person");
+            var expected = new StringBuilder();
+            expected.AppendLine("Person");
+            expected.AppendLine("\tId = Guid");
+            expected.AppendLine("\tName = Person 1");
+            expected.AppendLine("\tHeight = 0");
+            expected.AppendLine("\tAge = 0");
+            expected.AppendLine("\tChild = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 2");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = Person");
             
             var printer = ObjectPrinter.For<Person>(1);
-            printer.PrintToString(p1).Should().Be(stringBuilder.ToString());
+            printer.PrintToString(p1).Should().Be(expected.ToString());
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintCorrectString_WhenObjectIsList()
+        {
+            var personsList = new List<Person>()
+            {
+                new Person() { Name = "Person 1" },
+                new Person() { Name = "Person 2" },
+            };
+            
+            var expected = new StringBuilder();
+            expected.AppendLine("List");
+            expected.AppendLine("\t[0] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 1");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            expected.AppendLine("\t[1] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 2");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            
+            var printer = ObjectPrinter.For<List<Person>>();
+            printer.PrintToString(personsList).Should().Be(expected.ToString());
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintCorrectString_WhenObjectIsArray()
+        {
+            var personsList = new Person[]
+            {
+                new Person() { Name = "Person 1" },
+                new Person() { Name = "Person 2" },
+            };
+            
+            var expected = new StringBuilder();
+            expected.AppendLine("Array");
+            expected.AppendLine("\t[0] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 1");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            expected.AppendLine("\t[1] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 2");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            
+            var printer = ObjectPrinter.For<Person[]>();
+            printer.PrintToString(personsList).Should().Be(expected.ToString());
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintCorrectString_WhenObjectIsDictionary()
+        {
+            var personsList = new Dictionary<string, Person>()
+            {
+                {"p1", new Person() { Name = "Person 1" }},
+                {"p2", new Person() { Name = "Person 2" }},
+            };
+            
+            var expected = new StringBuilder();
+            expected.AppendLine("Dictionary");
+            expected.AppendLine("\t[`p1`] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 1");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            expected.AppendLine("\t[`p2`] = Person");
+            expected.AppendLine("\t\tId = Guid");
+            expected.AppendLine("\t\tName = Person 2");
+            expected.AppendLine("\t\tHeight = 0");
+            expected.AppendLine("\t\tAge = 0");
+            expected.AppendLine("\t\tChild = null");
+            
+            var printer = ObjectPrinter.For<Dictionary<string, Person>>();
+            printer.PrintToString(personsList).Should().Be(expected.ToString());
         }
     }
 }
