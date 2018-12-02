@@ -7,6 +7,7 @@ namespace ObjectPrinting
     public static class PropertyPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+            where T : new()
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
@@ -15,11 +16,9 @@ namespace ObjectPrinting
         {
             var printingConfig =  ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
             var property = (propConfig as IPropertyPrintingConfig<TOwner, string>).Property;
-            (printingConfig as IPrintingConfig).PropertyCustomSerializers.Add(property, new Func<string, string>(v => v?.Substring(0, maxLen) ?? String.Empty));
+            ((IPrintingConfig) printingConfig).PropertyCustomSerializers.Add(property, new Func<string, string>(v => v?.Substring(0, maxLen) ?? string.Empty));
             return printingConfig;
         }
-
-        #region Культура для числовых типов
 
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> config, CultureInfo culture)
         {
@@ -27,6 +26,5 @@ namespace ObjectPrinting
             (printingConfig as IPrintingConfig).TypeCustomSerializers.Add(typeof(double), new Func<double, string>(x => $"{x.ToString(culture)} - {culture.DisplayName}"));
             return printingConfig;
         }
-        #endregion
     }
 }

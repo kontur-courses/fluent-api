@@ -12,41 +12,40 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        private List<Type> TypesToExclude;
-        private List<PropertyInfo> PropsToExclude;
+        private readonly List<Type> typesToExclude;
+        private readonly List<PropertyInfo> propsToExclude;
 
         Dictionary<Type, Delegate> IPrintingConfig.TypeCustomSerializers => typeCustomSerializers;
 
         Dictionary<PropertyInfo, Delegate> IPrintingConfig.PropertyCustomSerializers => propertyCustomSerializers;
 
         private int depth;
-        private readonly StringBuilder _stringBuilder;
-        private readonly List<int> _hashListOfFoundElements;
+        private readonly StringBuilder stringBuilder;
+        private readonly List<int> hashListOfFoundElements;
         private readonly Dictionary<Type, Delegate> typeCustomSerializers;
         private readonly Dictionary<PropertyInfo, Delegate> propertyCustomSerializers;
 
-
-        public PrintingConfig()
+        internal PrintingConfig()
         {
-            TypesToExclude = new List<Type>();
-            PropsToExclude = new List<PropertyInfo>();
+            typesToExclude = new List<Type>();
+            propsToExclude = new List<PropertyInfo>();
             typeCustomSerializers = new Dictionary<Type, Delegate>();
             propertyCustomSerializers = new Dictionary<PropertyInfo, Delegate>();
-            _stringBuilder = new StringBuilder();
-            _hashListOfFoundElements = new List<int>();
+            stringBuilder = new StringBuilder();
+            hashListOfFoundElements = new List<int>();
         }
 
         #region Fluent-API members
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            TypesToExclude.Add(typeof(TPropType));
+            typesToExclude.Add(typeof(TPropType));
             return this;
         }
 
         public PrintingConfig<TOwner> ExcludingProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            PropsToExclude.Add(memberSelector.GetPropertyInfo());
+            propsToExclude.Add(memberSelector.GetPropertyInfo());
             return this;
         }
 
@@ -59,7 +58,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetNestingLevel(int nestingLevel)
         {
-            this.depth = nestingLevel;
+            depth = nestingLevel;
             return this;
         }
 
@@ -71,6 +70,7 @@ namespace ObjectPrinting
 
         private string Stringify(object obj)
         {
+            
             if (obj == null || obj is ValueType || obj is string)
                 Write(FormatValue(obj));
             else
@@ -79,17 +79,20 @@ namespace ObjectPrinting
                 Write("{{{0}}}", objectType.FullName);
                 if (!typeof(IEnumerable).IsAssignableFrom(objectType))
                 {
-                    _hashListOfFoundElements.Add(obj.GetHashCode());
+                    hashListOfFoundElements.Add(obj.GetHashCode());
                     depth++;
                 }
 
                 var enumerableElement = obj as IEnumerable;
                 if (enumerableElement != null)
                     foreach (object item in enumerableElement)
+                    {
                         ExploreIEnumerableItem(item);
+                    }
+                        
                 else
                 {
-                    MemberInfo[] members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance);
+                    var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance);
                     foreach (var memberInfo in members)
                         ExploreObjectMember(obj, memberInfo);
                 }
@@ -98,7 +101,7 @@ namespace ObjectPrinting
                     depth--;
             }
 
-            return _stringBuilder.ToString();
+            return stringBuilder.ToString();
         }
 
         private void ExploreIEnumerableItem(object item)
@@ -127,12 +130,12 @@ namespace ObjectPrinting
                 return;
 
             //Если тип свойства или поля исключены из преобразования
-            if (TypesToExclude.Contains(fieldInfo?.FieldType) ||
-                TypesToExclude.Contains(propertyInfo?.PropertyType))
+            if (typesToExclude.Contains(fieldInfo?.FieldType) ||
+                typesToExclude.Contains(propertyInfo?.PropertyType))
                 return;
 
             //Если свойство исключено из преобразования
-            if (PropsToExclude.Contains(propertyInfo))
+            if (propsToExclude.Contains(propertyInfo))
                 return;
 
             object value = fieldInfo != null
@@ -175,32 +178,34 @@ namespace ObjectPrinting
             if (value == null)
                 return false;
             var hash = value.GetHashCode();
-            return _hashListOfFoundElements.Any(t => t == hash);
+            return hashListOfFoundElements.Any(t => t == hash);
         }
 
         private void Write(string value, params object[] args)
         {
+            var space = new string(' ', depth * 5);
             if (args != null)
                 value = string.Format(value, args);
-            _stringBuilder.AppendLine(value);
+            stringBuilder.AppendLine(space + value);
         }
 
-        private string FormatValue(object o)
+        private static string FormatValue(object o)
         {
-            if (o == null)
-                return ("null");
-            if (o is DateTime)
-                return (((DateTime) o).ToShortDateString());
-            if (o is string)
-                return string.Format("\"{0}\"", o);
-            if (o is char && (char) o == '\0')
-                return string.Empty;
-            if (o is ValueType)
-                return (o.ToString());
-            if (o is IEnumerable<TOwner>)
-                return ("...");
+            switch (o)
+            {
+                case null:
+                    return ("null");
+                case DateTime _:
+                    return (((DateTime) o).ToShortDateString());
+                case string _:
+                    return $"\"{o}\"";
+                case char c when c == '\0':
+                    return string.Empty;
+                case ValueType _:
+                    return (o.ToString());
+            }
 
-            return ("{ }");
+            return o is IEnumerable<TOwner> ? "..." : "{ }";
         }
 
         #endregion
