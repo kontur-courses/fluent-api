@@ -2,22 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static Type[] _typesToPrint = new[]
+        private static Type[] typesToPrint = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private List<Type> _excludedTypes = new List<Type>();
-        private List<string> _excludedProps = new List<string>();
+        private List<Type> excludedTypes = new List<Type>();
+        private List<string> excludedProps = new List<string>();
         
-        private SerializingConfigContext _serializingConfigCtx = new SerializingConfigContext()
+        private SerializingConfigContext serializingConfigCtx = new SerializingConfigContext()
         {
             TypeSerializers = new Dictionary<Type, Func<object, string>>(),
             PropSerializers = new Dictionary<string, Func<object, string>>()
@@ -25,26 +26,26 @@ namespace ObjectPrinting
         
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            _excludedTypes.Add(typeof(TPropType));
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
         
         public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propSelector)
         {
-            var propName = getPropNameByPropSelector(propSelector);
-            _excludedProps.Add(propName);
+            var propName = GetPropNameByPropSelector(propSelector);
+            excludedProps.Add(propName);
             return this;
         }
         
         public SerializingConfig<TOwner, TPropType> Serialize<TPropType>()
         {
-            return new SerializingConfig<TOwner, TPropType>(this, _serializingConfigCtx);
+            return new SerializingConfig<TOwner, TPropType>(this, serializingConfigCtx);
         }
         
         public SerializingConfig<TOwner, Expression> Serialize(Expression<Func<TOwner, object>> propSelector)
         {   
-            var propName = getPropNameByPropSelector(propSelector);
-            return new SerializingConfig<TOwner, Expression>(this, _serializingConfigCtx, propName);
+            var propName = GetPropNameByPropSelector(propSelector);
+            return new SerializingConfig<TOwner, Expression>(this, serializingConfigCtx, propName);
         }
         
         public string PrintToString(TOwner obj)
@@ -64,38 +65,20 @@ namespace ObjectPrinting
                 var propType = propertyInfo.PropertyType;
                 var propName = propertyInfo.Name;
                 var propValue = propertyInfo.GetValue(obj);
-                var isExcluded = _excludedTypes.Contains(propType) || _excludedProps.Contains(propName);
+                var isExcluded = excludedTypes.Contains(propType) || excludedProps.Contains(propName);
 
                 if (isExcluded)
                 {
                     continue;
                 }
-                
-                Func<object, string> propSerializer;
-                _serializingConfigCtx.PropSerializers.TryGetValue(propName, out propSerializer);
 
-                Func<object, string> typeSerializer;
-                _serializingConfigCtx.TypeSerializers.TryGetValue(propType, out typeSerializer);
-
-                string displayPropValue = null;
-                if (propValue == null)
-                {
-                    displayPropValue = "null";
-                }
-                else if (propSerializer != null)
-                {
-                    displayPropValue = propSerializer(propValue);
-                }
-                else if (typeSerializer != null)
-                {
-                    displayPropValue = typeSerializer(propValue);
-                }
-                
+                var displayPropValue = GetDisplayPropValue(propName, propType, propValue);
+                    
                 if (displayPropValue != null)
                 {
                     sb.AppendLine($"{identation}{propName} = {displayPropValue}");
                 }
-                else if (_typesToPrint.Contains(propType))
+                else if (typesToPrint.Contains(propType))
                 {
                     sb.AppendLine($"{identation}{propName} = {propValue ?? "null"}");
                 }
@@ -108,7 +91,32 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string getPropNameByPropSelector(Expression<Func<TOwner, object>> propSelector)
+        private string GetDisplayPropValue(string propName, Type propType, object propValue)
+        {
+            Func<object, string> propSerializer;
+            serializingConfigCtx.PropSerializers.TryGetValue(propName, out propSerializer);
+
+            Func<object, string> typeSerializer;
+            serializingConfigCtx.TypeSerializers.TryGetValue(propType, out typeSerializer);
+
+            string displayPropValue = null;
+            if (propValue == null)
+            {
+                displayPropValue = "null";
+            }
+            else if (propSerializer != null)
+            {
+                displayPropValue = propSerializer(propValue);
+            }
+            else if (typeSerializer != null)
+            {
+                displayPropValue = typeSerializer(propValue);
+            }
+
+            return displayPropValue;
+        }
+
+        private string GetPropNameByPropSelector(Expression<Func<TOwner, object>> propSelector)
         {
             MemberExpression body = propSelector.Body as MemberExpression;
 
