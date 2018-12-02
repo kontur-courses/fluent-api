@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -11,9 +12,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldPrintCorrectString()
         {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("Person");
+            stringBuilder.AppendLine("\tId = Guid");
+            stringBuilder.AppendLine("\tName = null");
+            stringBuilder.AppendLine("\tHeight = 0");
+            stringBuilder.AppendLine("\tAge = 0");
+            
             var obj = new Person();
             var printer = ObjectPrinter.For<Person>();
-            printer.PrintToString(obj).Should().Be("Person\n\tId = Guid\n\tName = null\n\tHeight = 0\n\tAge = 0\n");
+            printer.PrintToString(obj).Should().Be(stringBuilder.ToString());
         }
         
         [Test]
