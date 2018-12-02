@@ -28,8 +28,8 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, int> propertyTrimmedLengths = new Dictionary<PropertyInfo, int>();
         private readonly Dictionary<Type, CultureInfo> typeCultureInfos = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> typeSerializators = new Dictionary<Type, Delegate>();
-        private int propertiesLookDepth;
         private int collectionLookDepth;
+        private int propertiesLookDepth;
 
         public PrintingConfig()
         {
@@ -139,19 +139,15 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-                return "null";
+            if (obj == null) return "null";
 
             var type = obj.GetType();
-            if (finalTypes.Contains(type))
-                return obj.ToString();
+            if (finalTypes.Contains(type)) return obj.ToString();
 
             if (nestingLevel > PropertiesLookDepth)
-            {
                 return CanThrowWhenTooDeep
                     ? throw new InvalidOperationException("Printing too deep (possible recursion)")
                     : "...";
-            }
 
             var indentation = new string(Indent, nestingLevel + 1);
             var sb = new StringBuilder();
@@ -173,32 +169,39 @@ namespace ObjectPrinting
                 if (excludedProperties.Contains(propertyInfo)) continue;
 
                 var propertyValue = propertyInfo.GetValue(obj);
-                var propertyValueString = string.Empty;
-
-                if (typeCultureInfos.ContainsKey(propertyInfo.PropertyType))
-                {
-                    var culture = typeCultureInfos[propertyInfo.PropertyType];
-                    propertyValueString = string.Format(culture, "{0}", propertyValue);
-                }
-
-                if (typeSerializators.ContainsKey(propertyInfo.PropertyType))
-                    propertyValueString =
-                        typeSerializators[propertyInfo.PropertyType].DynamicInvoke(propertyValue).ToString();
-
-                if (propertySerializators.ContainsKey(propertyInfo))
-                    propertyValueString =
-                        propertySerializators[propertyInfo].DynamicInvoke(propertyValue).ToString();
-
-                if (propertyValueString == string.Empty)
-                    propertyValueString = PrintToString(propertyValue, nestingLevel + 1);
-
-                if (propertyTrimmedLengths.ContainsKey(propertyInfo))
-                    propertyValueString = TrimString(propertyValueString, propertyTrimmedLengths[propertyInfo]);
+                var propertyValueString = GetPropertyValueString(propertyValue, propertyInfo, nestingLevel);
 
                 sb.Append(Environment.NewLine + indentation + propertyInfo.Name + " = " + propertyValueString);
             }
 
             return sb.ToString();
+        }
+
+        private string GetPropertyValueString(object propertyValue, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            var propertyValueString = string.Empty;
+
+            if (typeCultureInfos.ContainsKey(propertyInfo.PropertyType))
+            {
+                var culture = typeCultureInfos[propertyInfo.PropertyType];
+                propertyValueString = string.Format(culture, "{0}", propertyValue);
+            }
+
+            if (typeSerializators.ContainsKey(propertyInfo.PropertyType))
+                propertyValueString =
+                    typeSerializators[propertyInfo.PropertyType].DynamicInvoke(propertyValue).ToString();
+
+            if (propertySerializators.ContainsKey(propertyInfo))
+                propertyValueString =
+                    propertySerializators[propertyInfo].DynamicInvoke(propertyValue).ToString();
+
+            if (propertyValueString == string.Empty)
+                propertyValueString = PrintToString(propertyValue, nestingLevel + 1);
+
+            if (propertyTrimmedLengths.ContainsKey(propertyInfo))
+                propertyValueString = TrimString(propertyValueString, propertyTrimmedLengths[propertyInfo]);
+
+            return propertyValueString;
         }
 
         private string PrintToStringIEnumerable(object obj, IEnumerable collection, int nestingLevel)
@@ -218,6 +221,7 @@ namespace ObjectPrinting
                     sb.AppendLine(indentation + Indent + "...");
                     break;
                 }
+
                 var itemString = PrintToString(item, nestingLevel + 1);
                 sb.AppendLine(indentation + Indent + itemString);
                 collectionCount++;

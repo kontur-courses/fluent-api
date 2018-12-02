@@ -57,7 +57,8 @@ namespace ObjectPrintingTests
         [Test]
         public void ChangeSerializationForProperty_Age()
         {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 21";
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 21";
             printer.Printing(p => p.Age).Using(i => (i + 3).ToString());
             printer.PrintToString(person).Should().Be(expected);
         }
@@ -65,7 +66,8 @@ namespace ObjectPrintingTests
         [Test]
         public void ChangeSerializationForProperty_Name_ThenCall_TrimmedToLength()
         {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = Hello\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = Hello\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
             printer
                 .Printing(p => p.Name).Using(s => "Hello World")
                 .Printing(p => p.Name).TrimmedToLength(5);
@@ -75,7 +77,8 @@ namespace ObjectPrintingTests
         [Test]
         public void ChangeSerializationForType_String()
         {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = c#\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = c#\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
             printer.Printing<string>().Using(s => "c#");
             printer.PrintToString(person).Should().Be(expected);
         }
@@ -91,9 +94,22 @@ namespace ObjectPrintingTests
         [Test]
         public void ExcludeTypeFromSerialization()
         {
-            var expected = $"Person\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            var expected =
+                $"Person\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
             printer.Excluding<Guid>();
             printer.PrintToString(person).Should().Be(expected);
+        }
+
+        [Test]
+        public void Print_WhenRecursion()
+        {
+            const string expected =
+                "Foo\r\n\tMyBar = Bar\r\n\t\tMyFoo = ...";
+
+            var myFoo = new Foo();
+            myFoo.MyBar = new Bar {MyFoo = myFoo};
+
+            myFoo.PrintToString(config => config.SetPropetiesLookDepthTo(1)).Should().Be(expected);
         }
 
         [Test]
@@ -126,7 +142,7 @@ namespace ObjectPrintingTests
         {
             var myClassInstance = new MyClass
             {
-                MyList = new List<Person> { person, new Person { Name = "Vsauce", Age = 9, Height = 1.46 } }
+                MyList = new List<Person> {person, new Person {Name = "Vsauce", Age = 9, Height = 1.46}}
             };
 
             var expected =
@@ -141,32 +157,6 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void TrimmedToLength_LengthBiggerThanPropertyLength()
-        {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
-            printer.Printing(p => p.Name).TrimmedToLength(30);
-            printer.PrintToString(person).Should().Be(expected);
-        }
-
-        [Test]
-        public void TrimmedToLength_LengthLessThanPropertyLength()
-        {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = matt\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
-            printer.Printing(p => p.Name).TrimmedToLength(4);
-            printer.PrintToString(person).Should().Be(expected);
-        }
-
-        [Test]
-        public void TrimmedToLength_ThenCall_ChangeSerializationForProperty_Name()
-        {
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = Hello\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
-            printer
-                .Printing(p => p.Name).TrimmedToLength(5)
-                .Printing(p => p.Name).Using(s => "Hello World");
-            printer.PrintToString(person).Should().Be(expected);
-        }
-
-        [Test]
         public void PrintLongCollection_NotAllElements()
         {
             const string expected =
@@ -178,20 +168,37 @@ namespace ObjectPrintingTests
             for (var i = 0; i < 10; i++)
                 array[i] = i;
 
-            var myClassInstance = new MyClass { MyArray = array };
+            var myClassInstance = new MyClass {MyArray = array};
             myClassInstance.PrintToString(config => config.SetCollectionLookDepthTo(5)).Should().Be(expected);
         }
 
         [Test]
-        public void Print_WhenRecursion()
+        public void TrimmedToLength_LengthBiggerThanPropertyLength()
         {
-            const string expected = 
-                "Foo\r\n\tMyBar = Bar\r\n\t\tMyFoo = ...";
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            printer.Printing(p => p.Name).TrimmedToLength(30);
+            printer.PrintToString(person).Should().Be(expected);
+        }
 
-            var myFoo = new Foo();
-            myFoo.MyBar = new Bar {MyFoo = myFoo};
+        [Test]
+        public void TrimmedToLength_LengthLessThanPropertyLength()
+        {
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = matt\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            printer.Printing(p => p.Name).TrimmedToLength(4);
+            printer.PrintToString(person).Should().Be(expected);
+        }
 
-            myFoo.PrintToString(config => config.SetPropetiesLookDepthTo(1)).Should().Be(expected);
+        [Test]
+        public void TrimmedToLength_ThenCall_ChangeSerializationForProperty_Name()
+        {
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = Hello\r\n\tHeight = {person.Height.ToString(CultureInfo.CurrentCulture)}\r\n\tAge = 18";
+            printer
+                .Printing(p => p.Name).TrimmedToLength(5)
+                .Printing(p => p.Name).Using(s => "Hello World");
+            printer.PrintToString(person).Should().Be(expected);
         }
     }
 }
