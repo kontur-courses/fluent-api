@@ -38,12 +38,13 @@ namespace ObjectPrinting.Tests
             var list = new List<int> {1, 5, 6, 7, -5};
             var printer = ObjectPrinter.For<List<int>>();
             var result = printer.PrintToString(list);
-            result.Should().Be(String.Format("List`1{0}" +
-                                                "\t1{0}" +
-                                                "\t5{0}" +
-                                                "\t6{0}" +
-                                                "\t7{0}" +
-                                                "\t-5{0}", Environment.NewLine));
+            result.Should().Be(String.Format(
+                "List`1{0}" +
+                    "\t1{0}" +
+                    "\t5{0}" +
+                    "\t6{0}" +
+                    "\t7{0}" +
+                    "\t-5{0}", Environment.NewLine));
         }
 
         [Test]
@@ -52,13 +53,14 @@ namespace ObjectPrinting.Tests
             var dict = new Dictionary<int, string> {{1, "one"}, {-3, "minus three"}};
             var printer = ObjectPrinter.For<Dictionary<int,string>>();
             var result = printer.PrintToString(dict);
-            result.Should().Be(String.Format("Dictionary`2{0}" +
-                                                  "\tKeyValuePair`2{0}" +
-                                                      "\t\tKey = 1{0}" +
-                                                      "\t\tValue = one{0}" +
-                                                  "\tKeyValuePair`2{0}" +
-                                                      "\t\tKey = -3{0}" +
-                                                      "\t\tValue = minus three{0}", Environment.NewLine));
+            result.Should().Be(String.Format(
+                "Dictionary`2{0}" +
+                  "\tKeyValuePair`2{0}" +
+                      "\t\tKey = 1{0}" +
+                      "\t\tValue = one{0}" +
+                  "\tKeyValuePair`2{0}" +
+                      "\t\tKey = -3{0}" +
+                      "\t\tValue = minus three{0}", Environment.NewLine));
         }
 
         [Test]
@@ -383,6 +385,68 @@ namespace ObjectPrinting.Tests
                    "\tHeight = XXX{0}" +
                    "\tFather = null{0}", Environment.NewLine));
         }
-       
+
+        [Test]
+        public void PrintToString_WorksCorrectly_WithCombinationOfMethods1()
+        {
+            var father = new Person { Name = "Alexander", Age = 43, Id = Guid.Empty, Height = 168.5 };
+            var person = new Person { Name = "Dmitry", Age = 19, Id = Guid.Empty, Height = 173.5, Father = father };
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing<double>().Using(new CultureInfo("en-US"))
+                .Printing<int>().Using(i => i + " years")
+                .Printing<string>().Using(i => i + " Woodman");
+            var result = printer.PrintToString(person);
+            result.Should().Be(String.Format(
+                "Person{0}" +
+                "\tName = Dmitry Woodman{0}" +
+                "\tHeight = 173.5{0}" +
+                "\tAge = 19 years{0}" +
+                "\tFather = Person{0}" +
+                    "\t\tName = Alexander Woodman{0}" +
+                    "\t\tHeight = 168.5{0}" +
+                    "\t\tAge = 43 years{0}" +
+                    "\t\tFather = null{0}", Environment.NewLine));
+        }
+
+        [Test]
+        public void PrintToString_WorksCorrectly_WithCombinationOfMethods2()
+        {
+            var marks = new List<int> { 2, 3, 2, 4 };
+            var student = new Student { FirstName = "Dima", SecondName = "Ivanovsky is not so long second name", Marks = marks };
+            var printer = ObjectPrinter.For<Student>()
+                .Printing(p => p.SecondName).TrimmedToLength(9)
+                .Excluding(p => p.FirstName);
+            var result = printer.PrintToString(student);
+            result.Should().Be(String.Format(
+                "Student{0}" +
+                    "\tSecondName = Ivanovsky{0}" +
+                    "\tMarks = List`1{0}" +
+                        "\t\t2{0}" +
+                        "\t\t3{0}" +
+                        "\t\t2{0}" +
+                        "\t\t4{0}", Environment.NewLine));
+        }
+
+        [Test]
+        public void PrintToString_WorksCorrectly_WithOverwrittenMethods()
+        {
+            var marks = new List<int> { 2, 3, 2, 4 };
+            var student = new Student { FirstName = "Dima", SecondName = "Ivanovsky", Marks = marks };
+            var printer = ObjectPrinter.For<Student>()
+                .Printing(s => s.FirstName).Using(n => n + "1")
+                .Printing(s => s.FirstName).Using(n => n + "2")
+                .Printing(s => s.FirstName).Using(n => n + "3");
+            var result = printer.PrintToString(student);
+            result.Should().Be(String.Format(
+                "Student{0}" +
+                "\tFirstName = Dima3{0}" +
+                "\tSecondName = Ivanovsky{0}" +
+                "\tMarks = List`1{0}" +
+                "\t\t2{0}" +
+                "\t\t3{0}" +
+                "\t\t2{0}" +
+                "\t\t4{0}", Environment.NewLine));
+        }
     }
 }
