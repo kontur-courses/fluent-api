@@ -133,7 +133,8 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ComplicatedTest1()
+        [Category("ComplicatedTest")]
+        public void Printing_ShouldCorrectPrinting()
         {
             person.Child = new Person("Baby", 58, 1);
             var serialize = person.PrintToString(cnfg => cnfg

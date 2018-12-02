@@ -13,6 +13,5 @@ namespace ObjectPrinting
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
-
     }
 }

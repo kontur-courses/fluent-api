@@ -63,6 +63,7 @@
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="Tests\CombinateTests.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\PrintingCollectionTests.cs" />
     <Compile Include="Tests\PrintingExcludeTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>

@@ -1,11 +1,13 @@
 using System;
 using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -15,7 +17,7 @@ namespace ObjectPrinting
 
         private readonly int nestingLevel;
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private int maxRecursiveLevel = 3;
+        private int maxRecursiveLevel = 10;
         private readonly HashSet<string> namesExcludedProperties = new HashSet<string>();
 
         private readonly Dictionary<string, List<Func<object, string>>> printMethodsForProperties =
@@ -24,11 +26,11 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, List<Func<object, string>>> printMethodsForTypes =
             new Dictionary<Type, List<Func<object, string>>>();
 
-        
-        private readonly Type[] finalTypes = 
+
+        private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid),
         };
 
         #endregion
@@ -53,7 +55,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            var propName = ((MemberExpression) propertySelector.Body).Member.Name;
+            var propName = ((MemberExpression)propertySelector.Body).Member.Name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propName);
         }
 
@@ -87,9 +89,11 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null";
             if (printMethodsForTypes.TryGetValue(obj.GetType(), out var finalPrinters))
-               return ApplyAllMethodsByRotation(finalPrinters, obj);
+                return ApplyAllMethods(finalPrinters, obj);
             if (finalTypes.Contains(obj.GetType()))
                 return obj.ToString();
+            if (obj is IEnumerable)
+                return CollectionProcessing((IEnumerable)obj);
             return PrintProperties(obj);
 
         }
@@ -108,26 +112,52 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType) ||
                     namesExcludedProperties.Contains(propertyInfo.Name)) continue;
 
-                var currentObj = propertyInfo.GetValue(obj);
+
+                if (propertyInfo.IsIndexer())
+                {
+                    sb.Append($"{Environment.NewLine}{identation}{CollectionProcessing((IEnumerable) obj)}");
+                    continue;
+                }
 
                 string serializeProperty;
-                List<Func<object, string>> printers = new List<Func<object, string>>();
-                if (printMethodsForProperties.TryGetValue(propertyInfo.Name, out var printersProperties))
-                    printers.AddRange(printersProperties);
-                if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printersTypes))
-                    printers.AddRange(printersTypes);
-                if(printers.Count == 0)
-                    serializeProperty = currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
+                var currentObj = propertyInfo.GetValue(obj);
+                var printMethods = GetPrintMethods(propertyInfo);
+                if (printMethods.Count == 0)
+                    serializeProperty = " = " + currentObj.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
                 else
-                    serializeProperty = ApplyAllMethodsByRotation(printers, currentObj);
+                    serializeProperty = " = " + ApplyAllMethods(printMethods, currentObj);
 
-                sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {serializeProperty}");
+                sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name}{serializeProperty}");
             }
             return sb.ToString();
         }
 
+        private List<Func<object, string>> GetPrintMethods(PropertyInfo propertyInfo)
+        {
+            List<Func<object, string>> printers = new List<Func<object, string>>();
+            if (printMethodsForProperties.TryGetValue(propertyInfo.Name, out var printersProperties))
+                printers.AddRange(printersProperties);
+            if (printMethodsForTypes.TryGetValue(propertyInfo.PropertyType, out var printersTypes))
+                printers.AddRange(printersTypes);
+            return printers;
 
-        private string ApplyAllMethodsByRotation(List<Func<object, string>> methods, object obj)
+        }
+
+        private string CollectionProcessing(IEnumerable collection)
+        {
+            var nextLevel = nestingLevel + 1;
+            var ident = new string('\t', nestingLevel);
+            var sb = new StringBuilder($"{collection.GetType().Name} :{Environment.NewLine}{ident}");           
+            foreach (var item in collection)
+            {
+                var serialItem = item.PrintToString(config => new PrintingConfig<object>(nextLevel, maxRecursiveLevel));
+                sb.Append($"   {serialItem},{Environment.NewLine}{ident}");
+            }
+
+            return sb.ToString();
+        }
+
+        private string ApplyAllMethods(List<Func<object, string>> methods, object obj)
         {
             if (methods.Count == 0)
                 return obj.ToString();
@@ -138,7 +168,7 @@ namespace ObjectPrinting
             }
             return prevObj;
         }
-  
+
 
         #region InterfaceProperties
         Dictionary<string, List<Func<object, string>>> IPrintingConfig<TOwner>.PrintMethodsForProperties => printMethodsForProperties;
