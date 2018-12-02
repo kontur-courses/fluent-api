@@ -11,7 +11,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly Stack<object> currentObjects = new Stack<object>();
+        private readonly HashSet<object> currentObjects = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<(Type, string)> excludedProperties = new HashSet<(Type, string)>();
         private readonly Dictionary<Type, Func<object, string>> typeSerializationSettings =
@@ -62,8 +62,8 @@ namespace ObjectPrinting
         {
             var finalValue = TryGetObjectStringValue(obj);
             if (finalValue != null)
-                return finalValue;
-            currentObjects.Push(obj);
+                return finalValue + Environment.NewLine;
+            currentObjects.Add(obj);
             var type = obj.GetType();
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -71,7 +71,7 @@ namespace ObjectPrinting
                 sb.Append(PrintElements(collection, nestingLevel));
             else
                 sb.Append(PrintMembers(obj, nestingLevel));
-            currentObjects.Pop();
+            currentObjects.Remove(obj);
             return sb.ToString();
         }
 
@@ -85,7 +85,7 @@ namespace ObjectPrinting
                 var memberRepresentation = TryGetMemberStringValue(obj, memberInfo, nestingLevel);
                 if (memberRepresentation == null)
                     continue;
-                sb.Append(indentation + memberInfo.Name + " = " + memberRepresentation);
+                sb.Append($"{indentation}{memberInfo.Name} = {memberRepresentation}");
             }
 
             return sb.ToString();
@@ -99,7 +99,7 @@ namespace ObjectPrinting
             foreach (var element in collection)
             {
                 var value = PrintToString(element, nestingLevel + 1);
-                sb.Append(indentation + $"{counter++}: " + value);
+                sb.Append($"{indentation}{counter++}: {value}");
             }
 
             return sb.ToString();
@@ -108,20 +108,20 @@ namespace ObjectPrinting
         private string TryGetObjectStringValue(object obj)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
             var type = obj.GetType();
             if (currentObjects.Contains(obj))
-                return type.Name + " (already printed)" + Environment.NewLine;
+                return $"{type.Name} (already printed)";
             if (cultureInfoSettings.ContainsKey(type))
-                return ((IFormattable)obj).ToString(null, cultureInfoSettings[type]) + Environment.NewLine;
+                return ((IFormattable) obj).ToString(null, cultureInfoSettings[type]);
             if (typeSerializationSettings.ContainsKey(type))
-                return typeSerializationSettings[type].Invoke(obj) + Environment.NewLine;
+                return typeSerializationSettings[type].Invoke(obj);
             switch (obj)
             {
                 case IFormattable formattableObj:
-                    return formattableObj.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine;
+                    return formattableObj.ToString(null, CultureInfo.InvariantCulture);
                 case string _:
-                    return obj + Environment.NewLine;
+                    return obj.ToString();
                 default:
                     return null;
             }
