@@ -20,6 +20,7 @@ namespace ObjectPrintingTests
                 .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<Guid>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Height).Using(d => (d + 12.34).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)

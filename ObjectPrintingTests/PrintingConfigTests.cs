@@ -49,8 +49,12 @@ namespace ObjectPrintingTests
         public void ChangeCultureForNumeric_Double()
         {
             var culture = CultureInfo.InvariantCulture;
-            var expected = $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = 1.89\r\n\tAge = 18";
-            printer.Printing<double>().Using(culture);
+            var expected =
+                $"Person\r\n\tId = {emptyGuidString}\r\n\tName = mattgroy\r\n\tHeight = {person.Height.ToString(culture)}\r\n\tAge = 18";
+            printer
+                .Printing<double>().Using(culture)
+                .Printing<Guid>().Using(culture)
+                .Printing<int>().Using(culture);
             printer.PrintToString(person).Should().Be(expected);
         }
 
