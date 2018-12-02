@@ -159,7 +159,7 @@ namespace ObjectPrinting.Tests
             };
             
             var expected = new StringBuilder();
-            expected.AppendLine("List");
+            expected.AppendLine("Collection");
             expected.AppendLine("\t[0] = Person");
             expected.AppendLine("\t\tId = Guid");
             expected.AppendLine("\t\tName = Person 1");
@@ -187,7 +187,7 @@ namespace ObjectPrinting.Tests
             };
             
             var expected = new StringBuilder();
-            expected.AppendLine("Array");
+            expected.AppendLine("Collection");
             expected.AppendLine("\t[0] = Person");
             expected.AppendLine("\t\tId = Guid");
             expected.AppendLine("\t\tName = Person 1");

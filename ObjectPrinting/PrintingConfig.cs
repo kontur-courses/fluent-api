@@ -67,34 +67,27 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             
-            var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
-            var isList = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
-
-            if (type.IsArray || isList)
+            if (type.IsArray || obj is ICollection)
             {
-                if (isList)
+                var objAsDict = obj as IDictionary;
+                if (objAsDict != null)
                 {
-                    sb.AppendLine("List");
+                    sb.AppendLine("Dictionary");
+
+                    foreach(var key in objAsDict.Keys)
+                    {
+                        sb.Append($"{identation}[`{key}`] = {PrintToString(objAsDict[key], nestingLevel + 1)}");
+                    }
                 }
                 else
                 {
-                    sb.AppendLine("Array");
-                }
-                
-                var i = 0;
-                foreach(var item in (IEnumerable) obj)
-                {
-                    sb.Append($"{identation}[{i++}] = {PrintToString(item, nestingLevel + 1)}");
-                }
-            }
-            else if (isDict)
-            {
-                sb.AppendLine("Dictionary");
-                
-                var objAsDict = (IDictionary) obj;
-                foreach(var key in objAsDict.Keys)
-                {
-                    sb.Append($"{identation}[`{key}`] = {PrintToString(objAsDict[key], nestingLevel + 1)}");
+                    sb.AppendLine("Collection");
+                    
+                    var i = 0;
+                    foreach(var item in (IEnumerable) obj)
+                    {
+                        sb.Append($"{identation}[{i++}] = {PrintToString(item, nestingLevel + 1)}");
+                    }
                 }
             }
             else
