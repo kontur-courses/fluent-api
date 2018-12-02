@@ -15,6 +15,8 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
+        private int maxDepth;
+
         private List<Type> excludedTypes = new List<Type>();
         private List<string> excludedProps = new List<string>();
         
@@ -23,7 +25,12 @@ namespace ObjectPrinting
             TypeSerializers = new Dictionary<Type, Func<object, string>>(),
             PropSerializers = new Dictionary<string, Func<object, string>>()
         };
-        
+
+        public PrintingConfig(int maxDepth)
+        {
+            this.maxDepth = maxDepth;
+        }
+
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
@@ -55,6 +62,7 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -82,9 +90,13 @@ namespace ObjectPrinting
                 {
                     sb.AppendLine($"{identation}{propName} = {propValue ?? "null"}");
                 }
-                else
+                else if (nestingLevel < maxDepth)
                 {
                     sb.Append($"{identation}{propName} = {PrintToString(propValue, nestingLevel + 1)}");
+                }
+                else
+                {
+                    sb.AppendLine($"{identation}{propName} = {propType.Name}");
                 }
             }
             

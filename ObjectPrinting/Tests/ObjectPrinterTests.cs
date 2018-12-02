@@ -18,6 +18,7 @@ namespace ObjectPrinting.Tests
             stringBuilder.AppendLine("\tName = null");
             stringBuilder.AppendLine("\tHeight = 0");
             stringBuilder.AppendLine("\tAge = 0");
+            stringBuilder.AppendLine("\tChild = null");
             
             var obj = new Person();
             var printer = ObjectPrinter.For<Person>();
@@ -119,6 +120,32 @@ namespace ObjectPrinting.Tests
             var obj = new Person() { Name = "long name" };
             var printer = ObjectPrinter.For<Person>().Serialize<string>().Cut(4);
             printer.PrintToString(obj).Should().Contain("Name = long");
+        }
+        
+        [Test]
+        public void ObjectPrinter_ShouldPrintCorrectString_WhenObjectContainCycleLinks()
+        {
+            var p1 = new Person() { Name = "Person 1" };
+            var p2 = new Person() { Name = "Person 2" };
+
+            p1.Child = p2;
+            p2.Child = p1;
+            
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("Person");
+            stringBuilder.AppendLine("\tId = Guid");
+            stringBuilder.AppendLine("\tName = Person 1");
+            stringBuilder.AppendLine("\tHeight = 0");
+            stringBuilder.AppendLine("\tAge = 0");
+            stringBuilder.AppendLine("\tChild = Person");
+            stringBuilder.AppendLine("\t\tId = Guid");
+            stringBuilder.AppendLine("\t\tName = Person 2");
+            stringBuilder.AppendLine("\t\tHeight = 0");
+            stringBuilder.AppendLine("\t\tAge = 0");
+            stringBuilder.AppendLine("\t\tChild = Person");
+            
+            var printer = ObjectPrinter.For<Person>(1);
+            printer.PrintToString(p1).Should().Be(stringBuilder.ToString());
         }
     }
 }
