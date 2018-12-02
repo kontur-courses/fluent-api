@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace ObjectPrinting
 {
-    class PropertyPrintInfo
+    class ItemPrintInfo
     {
         public readonly string Definition;
         public readonly object Item;
         public readonly Type ItemType;
         public readonly string Name;
 
-        public PropertyPrintInfo(object item, Type itemType, string name = "", string definition = "")
+        public ItemPrintInfo(object item, Type itemType, string name = "", string definition = "")
         {
             Item = item;
             ItemType = itemType;

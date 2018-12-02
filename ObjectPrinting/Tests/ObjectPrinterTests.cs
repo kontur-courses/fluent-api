@@ -448,5 +448,18 @@ namespace ObjectPrinting.Tests
                 "\t\t2{0}" +
                 "\t\t4{0}", Environment.NewLine));
         }
+
+        private IEnumerable<int> GetAllPositive()
+        {
+            for (var i = 1;; i++)
+                yield return i;
+        }
+
+        [Test, Timeout(2000)]
+        public void PrintToString_DoesNotWorkInfinitely_OnInfiniteIEnumerable()
+        {
+            var printer = ObjectPrinter.For<IEnumerable<int>>();
+            printer.PrintToString(GetAllPositive());
+        }
     }
 }

@@ -16,7 +16,8 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> culturesForPrinting = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<string, Delegate> alternativePropertyPrinting = new Dictionary<string, Delegate>();
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
-        private readonly int maxNestingLevel = 10; 
+        private readonly int maxNestingLevel = 10;
+        private readonly int maxCollectionSize = 1000;
 
         private readonly Type[] finalTypes =
         {
@@ -77,12 +78,12 @@ namespace ObjectPrinting
             var builder = new StringBuilder();
             builder.AppendLine(type.Name);
             
-            foreach (var propertyPrintInfo in GetAllPropertiesAndItems(obj))
+            foreach (var propertyPrintInfo in GetAllItems(obj))
                 AppendItemInRightForm(builder, propertyPrintInfo, nestingLevel);
             return builder.ToString();
         }
 
-        private void AppendItemInRightForm(StringBuilder builder, PropertyPrintInfo info, int nestingLevel)
+        private void AppendItemInRightForm(StringBuilder builder, ItemPrintInfo info, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var start = identation + info.Definition;
@@ -98,20 +99,29 @@ namespace ObjectPrinting
                 builder.Append(start + PrintToString(info.Item, nestingLevel + 1));
         }
 
-        private IEnumerable<PropertyPrintInfo> GetAllPropertiesAndItems(object obj)
+        private IEnumerable<ItemPrintInfo> GetAllItems(object obj)
         {
-            if (obj is IEnumerable)
+            if (obj is IEnumerable collection)
             {
-                var collection = (IEnumerable)obj;
+                var count = 0;
                 foreach (var item in collection)
-                    yield return new PropertyPrintInfo(item, item.GetType());
+                {
+                    count++;
+                    yield return new ItemPrintInfo(item, item.GetType());
+                    if (count==maxCollectionSize)
+                        yield break;
+                }
             }
             else
             {
                 var type = obj.GetType();
+                
                 foreach (var propertyInfo in type.GetProperties())
-                    yield return new PropertyPrintInfo(propertyInfo.GetValue(obj),propertyInfo.PropertyType,
+                    yield return new ItemPrintInfo(propertyInfo.GetValue(obj),propertyInfo.PropertyType,
                         propertyInfo.Name, propertyInfo.Name + " = ");
+                foreach (var fieldInfo in type.GetFields())
+                    yield return new ItemPrintInfo(fieldInfo.GetValue(obj), fieldInfo.FieldType,
+                        fieldInfo.Name, fieldInfo.Name + " = ");
             }
         }
 
