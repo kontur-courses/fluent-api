@@ -3,30 +3,38 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
+    public class PropertyPrintingConfig<TOwner, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        private Func<object, string> printingFunction;
+        private readonly string name;
+        internal readonly PrintingConfig<TOwner> PrintingConfig;
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
-
-        Func<object, string> IPropertyPrintingConfig<TOwner>.PrintingFunction
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string name = null)
         {
-            get => printingFunction;
-            set => printingFunction = value;
+            PrintingConfig = printingConfig;
+            this.name = name;
         }
 
-        CultureInfo IPropertyPrintingConfig<TOwner>.Culture { get; set; }
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        internal void AddPrintingFunction(Func<TPropType, string> print)
         {
-            this.printingConfig = printingConfig;
+            string PrintingFunction(object property) => print((TPropType) property);
+            if (name != null)
+                PrintingConfig.PrintingFunctionsByName[name] = PrintingFunction;
+            else
+                PrintingConfig.PrintingFunctionsByType[typeof(TPropType)] = PrintingFunction;
+        }
+
+        internal void AddCulture(CultureInfo culture)
+        {
+            if (name != null)
+                PrintingConfig.CulturesByName[name] = culture;
+            else
+                PrintingConfig.CulturesByType[typeof(TPropType)] = culture;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingFunction = property => print((TPropType) property);
-            return printingConfig;
+            AddPrintingFunction(print);
+            return PrintingConfig;
         }
     }
 }

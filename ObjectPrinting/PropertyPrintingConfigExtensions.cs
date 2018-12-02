@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Globalization;
 
 namespace ObjectPrinting
@@ -10,42 +11,31 @@ namespace ObjectPrinting
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var config = (IPropertyPrintingConfig<TOwner>) propConfig;
-            config.PrintingFunction = obj =>
-            {
-                var str = (string) obj;
-                return str.Length > maxLen ? str.Substring(0, maxLen) : str;
-            };
-            return config.ParentConfig;
+            propConfig.AddPrintingFunction(property => property.Length > maxLen 
+                ? property.Substring(0, maxLen) 
+                : property);
+            return propConfig.PrintingConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
-        {
-            return propConfig.SetCulture(culture);
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
-        {
-            return propConfig.SetCulture(culture);
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture)
-        {
-            return propConfig.SetCulture(culture);
-        }
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig, CultureInfo culture)
-        {
-            return propConfig.SetCulture(culture);
-        }
-
-        private static PrintingConfig<TOwner> SetCulture<TOwner, TPropType>(
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
             this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture)
+            where TPropType: IFormattable
         {
-            var config = (IPropertyPrintingConfig<TOwner>)propConfig;
-            config.Culture = culture;
-            return config.ParentConfig;
+            propConfig.AddCulture(culture);
+            return propConfig.PrintingConfig;
+        }
+
+        public static PrintingConfig<TOwner> WithItemsMaximum<TOwner, TPropType>(
+            this PropertyPrintingConfig<TOwner, TPropType> propConfig, int maxLength)
+            where TPropType: IEnumerable
+        {
+            if (maxLength < 0)
+                throw new ArgumentException("maxLength can't be negative");
+            propConfig.PrintingConfig.MaxCollectionLength = maxLength;
+            return propConfig.PrintingConfig;
         }
     }
 }

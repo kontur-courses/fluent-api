@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -13,25 +14,27 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedPropertiesTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedPropertiesNames = new HashSet<string>();
 
-        private readonly Dictionary<Type, IPropertyPrintingConfig<TOwner>> propertiesConfigByType =
-            new Dictionary<Type, IPropertyPrintingConfig<TOwner>>();
+        internal int MaxCollectionLength = 1000;
 
-        private readonly Dictionary<string, IPropertyPrintingConfig<TOwner>> propertiesConfigByName =
-            new Dictionary<string, IPropertyPrintingConfig<TOwner>>();
+        internal readonly Dictionary<Type, Func<object, string>> PrintingFunctionsByType =
+            new Dictionary<Type, Func<object, string>>();
+
+        internal readonly Dictionary<string, Func<object, string>> PrintingFunctionsByName =
+            new Dictionary<string, Func<object, string>>();
+
+        internal readonly Dictionary<Type, CultureInfo> CulturesByType = new Dictionary<Type, CultureInfo>();
+
+        internal readonly Dictionary<string, CultureInfo> CulturesByName = new Dictionary<string, CultureInfo>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            propertiesConfigByType[typeof(TPropType)] = propertyConfig;
-            return propertyConfig;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
             var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
-            propertiesConfigByName[propertyName] = propertyConfig;
-            return propertyConfig;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -47,59 +50,59 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0, "");
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, string memberName)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (nestingLevel > 1000)
-                return "[Infinite Recursion]";
+            if (FinalTypesLibrary.FinalTypes.Contains(obj.GetType()))
+                return PrintFinalType(obj, memberName);
 
-            if (TryPrintFinalType(obj, out var result))
-                return result;
+            if (obj is IEnumerable collection)
+                return PrintCollection(collection);
 
-            if (TryPrintCollection(obj, out result))
-                return result;
-
-            return PrintAnyType(obj, nestingLevel);
+            return PrintOtherTypes(obj, nestingLevel);
         }
 
-        private string PrintAnyType(object obj, int nestingLevel)
+        private string PrintOtherTypes(object obj, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
             var builder = new StringBuilder();
             var type = obj.GetType();
-            var includedProperties = GetIncludedProperties(type);
-            builder.AppendLine(includedProperties.Any() ? type.Name : obj.ToString());
-            foreach (var propertyInfo in includedProperties)
+            var includedMembers = GetIncludedMembers(obj);
+            builder.AppendLine(includedMembers.Any() ? type.Name : obj.ToString());
+            foreach (var info in includedMembers)
             {
-                builder.Append(indentation + propertyInfo.Name + " = " +
-                               PrintProperty(obj, nestingLevel, propertyInfo));
+                var value = info.Type == type
+                    ? "[Infinite Recursion]" + Environment.NewLine
+                    : PrintMember(nestingLevel, info);
+                builder.Append(indentation + info.Name + " = " + value);
             }
             return builder.ToString();
         }
 
-        private PropertyInfo[] GetIncludedProperties(Type type)
+        private ClassMemberInfo[] GetIncludedMembers(object obj)
         {
-            return type.GetProperties()
-                .Where(property => !excludedPropertiesTypes.Contains(property.PropertyType))
-                .Where(property => !excludedPropertiesNames.Contains(property.Name))
+            return obj.GetType()
+                .GetProperties()
+                .Select(property => new ClassMemberInfo(obj, property))
+                .Concat(obj.GetType()
+                    .GetFields(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(field => new ClassMemberInfo(obj, field)))
+                .Where(info => !excludedPropertiesTypes.Contains(info.Type))
+                .Where(info => !excludedPropertiesNames.Contains(info.Name))
                 .ToArray();
         }
 
-        private bool TryPrintCollection(object obj, out string result)
+        private string PrintCollection(IEnumerable collection)
         {
             var builder = new StringBuilder();
-            result = null;
-            if (!(obj is IEnumerable collection))
-                return false;
-            builder.AppendLine(obj.GetType().Name + Environment.NewLine + "{");
+            builder.AppendLine(collection.GetType().Name + Environment.NewLine + "{");
             AddCollectionItems(collection, builder);
             builder.Append("}" + Environment.NewLine);
-            result = builder.ToString();
-            return true;
+            return builder.ToString();
         }
 
         private void AddCollectionItems(IEnumerable collection, StringBuilder builder)
@@ -107,25 +110,24 @@ namespace ObjectPrinting
             var number = 0;
             foreach (var item in collection)
             {
-                if (number > 1000)
+                if (number > MaxCollectionLength)
                 {
                     builder.Append("\t..." + Environment.NewLine);
                     break;
                 }
-                builder.Append("\t" + PrintToString(item, 1));
+                builder.Append("\t" + PrintToString(item, 1, ""));
                 number++;
             }
         }
 
-        private string PrintProperty(object obj, int nestingLevel, PropertyInfo propertyInfo)
+        private string PrintMember(int nestingLevel, ClassMemberInfo memberInfo)
         {
-            var propertyType = propertyInfo.PropertyType;
-            Func<object, string> printingFunction = property => PrintToString(property, nestingLevel + 1);
-            if (propertiesConfigByType.TryGetValue(propertyType, out var config) && config.PrintingFunction != null)
-                printingFunction = GetPrintingFunctionWithNewLine(config.PrintingFunction);
-            if (propertiesConfigByName.TryGetValue(propertyInfo.Name, out config) && config.PrintingFunction != null)
-                printingFunction = GetPrintingFunctionWithNewLine(config.PrintingFunction);
-            return printingFunction(propertyInfo.GetValue(obj));
+            Func<object, string> printingFunction = member => PrintToString(member, nestingLevel + 1, memberInfo.Name);
+            if (PrintingFunctionsByType.TryGetValue(memberInfo.Type, out var function))
+                printingFunction = GetPrintingFunctionWithNewLine(function);
+            if (PrintingFunctionsByName.TryGetValue(memberInfo.Name, out function))
+                printingFunction = GetPrintingFunctionWithNewLine(function);
+            return printingFunction(memberInfo.Value);
         }
 
         private static Func<object, string> GetPrintingFunctionWithNewLine(Func<object, string> printingFunction)
@@ -133,23 +135,16 @@ namespace ObjectPrinting
             return obj => printingFunction(obj) + Environment.NewLine;
         }
 
-        private bool TryPrintFinalType(object obj, out string result)
+        private string PrintFinalType(object obj, string memberName)
         {
-            result = null;
             var type = obj.GetType();
-
-            var numberTypes = new[] { typeof(int), typeof(double), typeof(float), typeof(long) };
-            var finalTypes = new[] { typeof(string), typeof(DateTime), typeof(TimeSpan) }.Concat(numberTypes);
-
-            if (!finalTypes.Contains(type))
-                return false;
-
             var objectString = obj.ToString();
-            if (numberTypes.Contains(type) && propertiesConfigByType.TryGetValue(type, out var config))
-                objectString = ((IConvertible)obj).ToString(config.Culture);
-
-            result = objectString + Environment.NewLine;
-            return true;
+            if (FinalTypesLibrary.NumberTypes.Contains(type) &&
+                (CulturesByName.TryGetValue(memberName, out var culture) || CulturesByType.TryGetValue(type, out culture)))
+            {
+                objectString = ((IFormattable)obj).ToString(null, culture);
+            }
+            return objectString + Environment.NewLine;
         }
     }
 }

@@ -18,7 +18,7 @@ namespace ObjectPrintingTests
         {
             person = new Person
             {
-                Name = "Alex",
+                Name = "VeryLongName",
                 Surname = "VeryLongSurname",
                 Age = 19,
                 Height = 185.5,
@@ -71,6 +71,17 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_ShouldUseCultureForNumberProperty_AfterUsingWithFunc()
+        {
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Height).Using(CultureInfo.InvariantCulture)
+                .PrintToString(person);
+            result.Should().ContainAll(
+                $"{nameof(Person.Height)} = {person.Height.ToString(CultureInfo.InvariantCulture)}",
+                $"{nameof(Person.Weight)} = {person.Weight.ToString(CultureInfo.CurrentCulture)}");
+        }
+
+        [Test]
         public void PrintToString_ShouldUseSpecialFuncForProperty_AfterUsing()
         {
             var result = ObjectPrinter.For<Person>()
@@ -86,6 +97,17 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Surname).TrimmedToLength(10)
                 .PrintToString(person);
             result.Should().Contain($"{nameof(Person.Surname)} = {person.Surname.Substring(0, 10)}");
+        }
+
+        [Test]
+        public void PrintToString_ShouldTrimStringProperty_AfterUsingWithFuncTrimmedToLength()
+        {
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Surname).TrimmedToLength(10)
+                .PrintToString(person);
+            result.Should().ContainAll(
+                $"{nameof(Person.Surname)} = {person.Surname.Substring(0, 10)}",
+                $"{nameof(Person.Name)} = {person.Name}");
         }
 
         [Test]
@@ -132,7 +154,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldContainAllItems_InvokedWithCollection()
         {
-            var collection = new[] {1, 2, 3};
+            var collection = new[] { 1, 2, 3 };
             var result = ObjectPrinter.For<int[]>().PrintToString(collection);
             result.Should().ContainAll(collection.Select(item => item.ToString()));
         }

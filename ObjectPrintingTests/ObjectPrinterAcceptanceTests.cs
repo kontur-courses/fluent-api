@@ -43,7 +43,8 @@ namespace ObjectPrintingTests
                     .Printing<double>()
                     .Using(CultureInfo.InvariantCulture));
 
-            string s6 = Numbers.GetNumbers().PrintToString();
+            string s6 = Numbers.GetNumbers().PrintToString(c => c
+                .Printing<IEnumerable<int>>().WithItemsMaximum(10));
 
             Console.WriteLine(s1);
             Console.WriteLine(s2);
