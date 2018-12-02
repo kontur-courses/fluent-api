@@ -134,7 +134,7 @@ namespace ObjectPrinting.Tests
 
         [Test]
         [Category("ComplicatedTest")]
-        public void Printing_ShouldCorrectPrinting()
+        public void Printing_ShouldUseBothPrintingMethodsForPropertiesAndTypes()
         {
             person.Child = new Person("Baby", 58, 1);
             var serialize = person.PrintToString(cnfg => cnfg
@@ -162,7 +162,8 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ComplicatedTest2()
+        [Category("ComplicatedTest")]
+        public void Printing_ShouldCorrectPrintingNestingProperties()
         {
             person.Child = new Person("Baby", 58, 1);
             var serialize = person.PrintToString(cnfg => cnfg               
