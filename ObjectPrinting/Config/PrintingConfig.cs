@@ -12,6 +12,8 @@ namespace ObjectPrinting.Config
 {
     public class PrintingConfig<TOwner>
     {
+        public const int DefaultMaxNestingLevel = 3;
+
         private readonly System.Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(decimal),
@@ -25,7 +27,7 @@ namespace ObjectPrinting.Config
         private readonly Dictionary<MemberInfo, Func<object, string>> printingOverridedMembers;
         private readonly HashSet<MemberInfo> membersToExclude;
 
-        private readonly HashSet<object> printedObjects;
+        private int maxNestingLevel;
 
         public PrintingConfig()
         {
@@ -36,7 +38,7 @@ namespace ObjectPrinting.Config
             printingOverridedMembers = new Dictionary<MemberInfo, Func<object, string>>();
             membersToExclude = new HashSet<MemberInfo>();
 
-            printedObjects = new HashSet<object>();
+            maxNestingLevel = DefaultMaxNestingLevel;
         }
 
         #region Types Handling
@@ -59,6 +61,13 @@ namespace ObjectPrinting.Config
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             typesToExclude.Add(typeof(TPropType));
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetMaxNestingLevel(int level)
+        {
+            maxNestingLevel = level;
 
             return this;
         }
@@ -118,11 +127,6 @@ namespace ObjectPrinting.Config
                 return PrintWithCulture(obj, CultureInfo.InvariantCulture);
             }
 
-            if (printedObjects.Contains(obj))
-                return "...";
-
-            printedObjects.Add(obj);
-
             var sb = new StringBuilder();
             sb.Append(type.Name);
             sb.Append(PropertiesAndFieldsToString(obj, nestingLevel));
@@ -141,7 +145,7 @@ namespace ObjectPrinting.Config
 
             foreach (var memberInfo in propertiesAndFields)
             {
-                if (typesToExclude.Contains(GetValueType(memberInfo)) || membersToExclude.Contains(memberInfo))
+                if (typesToExclude.Contains(GetValueType(memberInfo)) || membersToExclude.Contains(memberInfo) || nestingLevel + 1 > maxNestingLevel)
                     continue;
 
                 var propertyString = MemberToString(memberInfo, obj, nestingLevel);

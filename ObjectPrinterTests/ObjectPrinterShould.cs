@@ -189,53 +189,39 @@ namespace ObjectPrinterTests
         [Test]
         public void PrintNestedClasses()
         {
+            var b = new B();
             var a = new A
             {
-                B1 = new B {I = 1},
-                B2 = new B {I = 2}
+                B1 = b,
+                B2 = b
             };
 
             ObjectPrinter.For<A>().PrintToString(a).Should()
-                .ContainAll("I = 1", "I = 2");
-        }
-
-        [Test, Ignore("Not implemented")]
-        public void PrintEnumerableMembers()
-        {
-            var s = new Person[0].ToString();
-
-            var company = new Company
-            {
-                Name = "Qualcomm",
-                EstablishedSince = new DateTime(1985, 01, 01),
-                Employees = new[]
-                {
-                    new Person(Guid) {Name = "Rob"},
-                    new Person(Guid) {Name = "Bob"},
-                    new Person(Guid) {Name = "Mark"},
-                }
-            };
-
-
-            ObjectPrinter.For<Company>().PrintToString(company).Should()
-                .ContainAll("Name = Rob", "Name = Bob", "Name = Mark")
-                .And.NotContain("Person[]");
+                .ContainAll("B1 = B", "B2 = B");
         }
 
         [Test]
-        public void NotThrowStackOverflowExceptionOnRecurion()
+        public void NotThrowStackOverflowExceptionOnRecursion()
         {
             person.Child = person;
+            Action action = () => ObjectPrinter.For<Person>().PrintToString(person);
 
-            ObjectPrinter.For<Person>().PrintToString(person).Should()
-                .Contain("Child = ...");
+            action.Should().NotThrow<StackOverflowException>();
         }
 
         [Test]
-        public void NotPrintPreviouslyVisitedOsbjectsOnlyOfNonFinalTypes()
+        public void SetMaxNestingLevel()
         {
-            ObjectPrinter.For<Person>().PrintToString(person).Should()
-                .ContainAll("Age1", "Age2");
+            var child = new Person(Guid);
+            child.Name = "Egor";
+            person.Child = child;
+
+            var printer = ObjectPrinter.For<Person>()
+                .SetMaxNestingLevel(1);
+
+            printer.PrintToString(person).Should()
+                .Contain("Name = Andrey")
+                .And.NotContain("Name = Egor");
         }
     }
 }

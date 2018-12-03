@@ -38,7 +38,10 @@ namespace ObjectPrinterTests
                 .Printing(p => p.Name).TrimmedToLength(10)
 
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age1);
+                .Excluding(p => p.Age1)
+                
+                // 7. Настроить максимальный уровень вложенности
+                .SetMaxNestingLevel(1);
 
             var s1 = printer.PrintToString(person);
 
