@@ -19,6 +19,12 @@ namespace ObjectPrinting
 
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
+        private readonly Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
         private readonly List<Type> excludedTypes = new List<Type>();
         private readonly List<string> excluded = new List<string>();
 
@@ -110,18 +116,12 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
 
             if (obj == null) return "null" + Environment.NewLine;
-            if (nestingLevel > 10) return "REC" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
 
             var type = obj.GetType();
+
+            if (nestingLevel > 10) return "REC" + Environment.NewLine;
+            if (finalTypes.Contains(type)) return obj + Environment.NewLine;
+
             sb.AppendLine(type.Name);
 
             if (obj is IEnumerable enumerable)
