@@ -68,9 +68,11 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private bool HasSpecialPrintingValue(object value, Type type, string name, out string specialPrintingValue)
+        private bool HasSpecialPrintingValue(MemberExpression expression, object value, out string specialPrintingValue)
         {
             specialPrintingValue = null;
+            var type = expression.Type;
+            var name = expression.Member.Name;
 
             if (excludedTypes.Contains(type))
             {
@@ -130,10 +132,11 @@ namespace ObjectPrinting
                 return sb.ToString();
             }
 
+            var instanceExpression = Expression.Constant(obj, type);
             foreach (var propertyInfo in type.GetProperties())
             {
                 sb.Append(
-                    HasSpecialPrintingValue(propertyInfo.GetValue(obj), propertyInfo.PropertyType, propertyInfo.Name, out var specialPrintingValue)
+                    HasSpecialPrintingValue(Expression.Property(instanceExpression, propertyInfo), propertyInfo.GetValue(obj), out var specialPrintingValue)
                     ? identation + specialPrintingValue
                     : $"{identation}{propertyInfo.Name} = {PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}");
             }
@@ -142,7 +145,7 @@ namespace ObjectPrinting
             {
                 if (fieldInfo.Name == "Empty") continue;
                 sb.Append(
-                    HasSpecialPrintingValue(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name, out var specialPrintingValue)
+                    HasSpecialPrintingValue(Expression.Field(instanceExpression, fieldInfo), fieldInfo.GetValue(obj), out var specialPrintingValue)
                         ? identation + specialPrintingValue
                         : $"{identation}{fieldInfo.Name} = {PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)}");
             }
