@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq.Expressions;
 
 namespace ObjectPrinting
@@ -29,12 +28,6 @@ namespace ObjectPrinting
             else
                 ((IPrintingConfig)printingConfig).PrintersForPropertiesNames[memberName] =
                     prop => print.Invoke((TPropType)prop);
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            ((IPrintingConfig)printingConfig).CultureInfoForTypes[typeof(TPropType)] = culture;
             return printingConfig;
         }
 
