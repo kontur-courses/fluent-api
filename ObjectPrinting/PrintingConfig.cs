@@ -19,7 +19,6 @@ namespace ObjectPrinting
 
         Dictionary<PropertyInfo, Delegate> IPrintingConfig.PropertyCustomSerializers => propertyCustomSerializers;
 
-        private int depth;
         private readonly StringBuilder stringBuilder;
         private readonly List<int> hashListOfFoundElements;
         private readonly Dictionary<Type, Delegate> typeCustomSerializers;
@@ -56,12 +55,6 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector) =>
             new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector.GetPropertyInfo());
 
-        public PrintingConfig<TOwner> SetNestingLevel(int nestingLevel)
-        {
-            depth = nestingLevel;
-            return this;
-        }
-
         #endregion
 
         #region Dumping
@@ -70,7 +63,6 @@ namespace ObjectPrinting
 
         private string Stringify(object obj)
         {
-            
             if (obj == null || obj is ValueType || obj is string)
                 Write(FormatValue(obj));
             else
@@ -78,27 +70,18 @@ namespace ObjectPrinting
                 var objectType = obj.GetType();
                 Write("{{{0}}}", objectType.FullName);
                 if (!typeof(IEnumerable).IsAssignableFrom(objectType))
-                {
                     hashListOfFoundElements.Add(obj.GetHashCode());
-                    depth++;
-                }
 
                 var enumerableElement = obj as IEnumerable;
                 if (enumerableElement != null)
                     foreach (object item in enumerableElement)
-                    {
                         ExploreIEnumerableItem(item);
-                    }
-                        
                 else
                 {
                     var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance);
                     foreach (var memberInfo in members)
                         ExploreObjectMember(obj, memberInfo);
                 }
-
-                if (!typeof(IEnumerable).IsAssignableFrom(objectType))
-                    depth--;
             }
 
             return stringBuilder.ToString();
@@ -107,11 +90,7 @@ namespace ObjectPrinting
         private void ExploreIEnumerableItem(object item)
         {
             if (item is IEnumerable && !(item is string))
-            {
-                depth++;
                 Stringify(item);
-                depth--;
-            }
             else
             {
                 if (!AlreadyTouched(item))
@@ -163,15 +142,12 @@ namespace ObjectPrinting
                 Write("{0}: {1}", memberInfo.Name, isEnumerable ? "..." : "{ }");
 
                 var alreadyTouched = !isEnumerable && AlreadyTouched(value);
-                depth++;
                 if (!alreadyTouched)
                     Stringify(value);
                 else
                     Write("{{{0}}} <-- bidirectional reference found", value.GetType().FullName);
-                depth--;
             }
         }
-
 
         private bool AlreadyTouched(object value)
         {
@@ -183,10 +159,9 @@ namespace ObjectPrinting
 
         private void Write(string value, params object[] args)
         {
-            var space = new string(' ', depth * 5);
             if (args != null)
                 value = string.Format(value, args);
-            stringBuilder.AppendLine(space + value);
+            stringBuilder.AppendLine(value);
         }
 
         private static string FormatValue(object o)
