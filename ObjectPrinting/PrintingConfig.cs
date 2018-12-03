@@ -95,12 +95,9 @@ namespace ObjectPrinting
                 specialPrintingValue = $"{name} = {printersForPropertiesName[name].Invoke(value)}\r\n";
                 return true;
             }
-            if (type == typeof(string) &&
-                maxLength != null &&
-                ((string)value).Length > maxLength)
+            if (maxLength != null && value is string s)
             {
-
-                specialPrintingValue = $"{name} = {((string)value).Substring(0, (int)maxLength)}\r\n";
+                specialPrintingValue = $"{name} = {s.Substring(0, (int)maxLength)}\r\n";
                 return true;
             }
 
@@ -127,9 +124,9 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
-            if (typeof(IEnumerable).IsAssignableFrom(type))
+            if (obj is IEnumerable enumerable)
             {
-                sb.Append(GetICollectionPrintingValue((IEnumerable)obj, nestingLevel));
+                sb.Append(GetICollectionPrintingValue(enumerable, nestingLevel));
                 return sb.ToString();
             }
 
