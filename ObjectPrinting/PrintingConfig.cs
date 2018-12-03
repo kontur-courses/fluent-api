@@ -98,7 +98,7 @@ namespace ObjectPrinting
             private void SerializeByStructure(object obj, int nestingLevel)
             {
                 stringBuilder.AppendLine(obj.GetType().Name);
-                if (obj.GetType().GetInterfaces().Contains(typeof(IEnumerable)))
+                if (obj is IEnumerable)
                     SerializeAsEnumerable(obj, nestingLevel);
                 else                    
                     SerializeAsObject(obj, nestingLevel);
@@ -210,11 +210,12 @@ namespace ObjectPrinting
 
     public static class PrintingConfigExtenstions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PrintingConfig<TOwner>.TypeConfig<int> config,
-            CultureInfo currentCulture) => config.Using(i => i.ToString(currentCulture));
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(this PrintingConfig<TOwner>.TypeConfig<TPropType> config,
+            CultureInfo currentCulture) where TPropType : IFormattable
+            => config.Using(i => i.ToString(null,currentCulture));
 
         public static PrintingConfig<TOwner> TrimToLength<TOwner>(
-            this PrintingConfig<TOwner>.PropertyConfig<string> printingConfig,
-            int length) => printingConfig.Using(x => x.Substring(0, length));
+            this PrintingConfig<TOwner>.PropertyConfig<string> config,
+            int length) => config.Using(x => x.Substring(0, length));
     }
 }

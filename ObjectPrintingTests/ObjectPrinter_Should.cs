@@ -56,9 +56,25 @@ namespace ObjectPrintingTests
         [Test]
         public void SerializeTypeUsing()
         {
+            var printer = ObjectPrinter.For<Person>().Serializing<DateTime>()
+                .Using(x => x.Day.ToString() + '.' + x.Month.ToString());
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 1.1\r\n	ShoeSize = 42\r\n");
+        }
+        
+        [Test]
+        public void SerializeIntUsingCulture()
+        {
             var printer = ObjectPrinter.For<Person>()
-                .Serializing<int>().Using(CultureInfo.CurrentCulture);
+                .Serializing<int>().Using(CultureInfo.InvariantCulture);
             printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+        
+        [Test]
+        public void SerializeDoubleUsingCulture()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing<double>().Using(CultureInfo.InvariantCulture);
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4.2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
         }
 
         [Test]
@@ -99,7 +115,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void EnumerateValueTypeIEnumerbleHeirs()
+        public void EnumerateValueTypeIEnumerableHeirs()
         {
             var keeper = new IntKeeper{Ints = new List<int> {123, 23, 2442}};
             keeper.Serialize().Should().Be("IntKeeper\r\n\tInts = List`1\r\n\t\t123\r\n\t\t23\r\n\t\t2442\r\n");
@@ -116,7 +132,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void DoNotOverflow_WhenSelfReference()
+        public void DoNotOverflow_WhenCycleReference()
         {
             Company company = null;
             company = new Company()
