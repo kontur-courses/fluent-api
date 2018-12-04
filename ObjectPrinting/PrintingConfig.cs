@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -9,6 +10,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly List<string> errors = new List<string>();
         private readonly List<MemberInfo> excludedMembers = new List<MemberInfo>();
         private readonly List<Type> excludedTypes = new List<Type>();
 
@@ -65,7 +67,9 @@ namespace ObjectPrinting
                 return this;
             }
 
-            throw new ArgumentException();
+            errors.Add(
+                $"For method Exclude was incorrect expression: {expression}. This configuration was not applied.");
+            return this;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Serializing<TPropType>()
@@ -73,7 +77,7 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this, serializationTypeMap);
         }
 
-        public MemberPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
+        public IMemberPrintingConfig<TOwner, TPropType> Serializing<TPropType>(
             Expression<Func<TOwner, TPropType>> expression)
         {
             var body = expression.Body;
@@ -81,11 +85,17 @@ namespace ObjectPrinting
                 return new MemberPrintingConfig<TOwner, TPropType>(serializationMemberMap, memberExpression.Member,
                     this);
 
-            throw new ArgumentException("Not valid expression. Expected, for example: p=>p.Name");
+            errors.Add(
+                $"For method Serializing was incorrect expression: {expression}. This configuration was not applied");
+            return new FakePrintingConfig<TOwner, TPropType>(this);
         }
 
         public string PrintToString(TOwner objectToPrint)
         {
+            if (errors.Any())
+                return string.Join(Environment.NewLine, errors) +
+                       Environment.NewLine +
+                       PrintToString(objectToPrint, 0, typeof(TOwner));
             return PrintToString(objectToPrint, 0, typeof(TOwner));
         }
 
@@ -118,12 +128,13 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             if (objectToPrint is IEnumerable enumerable) return PrintCollection(nestingLevel, enumerable, indentation);
 
-            var sb = new StringBuilder();
+            var result = new StringBuilder();
             var type = objectToPrint.GetType();
-            sb.AppendLine(GetTypeName(type));
+            result.AppendLine(GetTypeName(type));
 
-            foreach (var propertyInfo in type.GetProperties(BindingFlags.Instance | BindingFlags.Public |
-                                                            BindingFlags.FlattenHierarchy))
+            const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public;
+            
+            foreach (var propertyInfo in type.GetProperties(bindingFlags))
             {
                 var propertyType = propertyInfo.PropertyType;
                 if (excludedTypes.Contains(propertyType) || excludedMembers.Contains(propertyInfo))
@@ -131,11 +142,10 @@ namespace ObjectPrinting
 
                 var value = propertyInfo.GetValue(objectToPrint);
                 var nestedPrint = PrintToString(value, nestingLevel + 1, propertyInfo);
-                sb.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
+                result.Append(indentation + propertyInfo.Name + " = " + nestedPrint);
             }
 
-            foreach (var fieldInfo in type.GetFields(BindingFlags.Instance | BindingFlags.Public |
-                                                     BindingFlags.FlattenHierarchy))
+            foreach (var fieldInfo in type.GetFields(bindingFlags))
             {
                 var propertyType = fieldInfo.FieldType;
                 if (excludedTypes.Contains(propertyType) || excludedMembers.Contains(fieldInfo))
@@ -143,10 +153,10 @@ namespace ObjectPrinting
 
                 var value = fieldInfo.GetValue(objectToPrint);
                 var nestedPrint = PrintToString(value, nestingLevel + 1, fieldInfo);
-                sb.Append(indentation + fieldInfo.Name + " = " + nestedPrint);
+                result.Append(indentation + fieldInfo.Name + " = " + nestedPrint);
             }
 
-            return sb.ToString();
+            return result.ToString();
         }
 
         private string PrintCollection(int nestingLevel, IEnumerable enumerable, string indentation)

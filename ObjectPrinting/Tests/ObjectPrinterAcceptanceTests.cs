@@ -74,9 +74,8 @@ namespace ObjectPrinting.Tests
                 .Serializing(p => p.Id).Using(s => s.ToString() + "sdf")
 //                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Serializing(p => p.Name).TrimmedToLength(100)
-
 //                //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.ToString());
+                .Exclude(p => p.Id);
 
             Approvals.Verify(printer.PrintToString(student));
         }
@@ -214,6 +213,18 @@ namespace ObjectPrinting.Tests
             var stringToPrint = "hello";
             Approvals.Verify(
                 stringToPrint.PrintToString(config => config.Serializing<string>().TrimmedToLength(2)));
+        }
+
+        [Test]
+        public void PrintToString_WrongConfiguration_PrintErrors()
+        {
+            var product = new
+            {
+                Name = "paper box",
+                Price = 12,
+                Weight = 40
+            };
+            Approvals.Verify(product.PrintToString(config => config.Serializing(p => 10).Using(x => x + "!!!")));
         }
     }
 }

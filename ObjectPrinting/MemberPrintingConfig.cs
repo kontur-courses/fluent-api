@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class MemberPrintingConfig<TOwner, TPropType>
+    public class MemberPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType>
     {
         private readonly MemberInfo memberInfo;
         private readonly PrintingConfig<TOwner> printingConfig;

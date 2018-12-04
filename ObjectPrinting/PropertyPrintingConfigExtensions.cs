@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -16,9 +17,16 @@ namespace ObjectPrinting
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this MemberPrintingConfig<TOwner, string> propConfig, int maxLength)
+            this IMemberPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
             return propConfig.Using(str => str.Substring(0, Math.Min(maxLength, str.Length)));
+        }
+        
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
+            this PropertyPrintingConfig<TOwner, TPropType> config,
+            CultureInfo cultureInfo, int precision = 0) where TPropType : struct, IFormattable
+        {
+            return config.Using(arg => arg.ToString($"n{precision}", cultureInfo));
         }
     }
 }

@@ -1,0 +1,5 @@
+﻿For method Serializing was incorrect expression: p => 10. This configuration was not applied
+<>f__AnonymousType0
+	Name = paper box
+	Price = 12
+	Weight = 40
