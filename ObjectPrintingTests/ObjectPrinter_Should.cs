@@ -46,15 +46,52 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void T()
+        public void SerializePropertyUsingWithFormat()
         {
-            var printer = ObjectPrinter
-                .For<Person>()
-                .Serializing<string>().Using(x => 
-                    "abcdefghijklm")
-                .Serializing(x => x.Name).TrimToLength(6);
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing<string>().Using(x => "stringProperty")
+                .Serializing(x => x.Name).WithFormat(x => x.ToLower());
 
-            printer.PrintToString(new Person{Name = "qwertyuiop"}).Should().Contain($"Name = abcdef{Environment.NewLine}");
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = stringproperty\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+
+        [Test]
+        public void SerializeTypeUsingWithFormat()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing(x => x.Name).Using(x => "stringProperty")
+                .Serializing(x => x.Name).WithFormat(x => x.ToLower());
+
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = stringproperty\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+
+        [Test]
+        public void SerializeWithFormat()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing(x => x.Name).WithFormat(x => x.ToLower());
+
+            printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 01.01.0001 0:00:00\r\n	ShoeSize = 42\r\n");
+        }
+        
+        [Test]
+        public void NotSerializeExcludedPropertyWithFormat()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Exclude(p => p.ShoeSize)
+                .Serializing(x => x.ShoeSize).WithFormat(x => throw new Exception());
+
+            Assert.DoesNotThrow(() => printer.PrintToString(person));
+        }
+        
+        [Test]
+        public void NotSerializeExcludedTypeWithFormat()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Exclude<double>()
+                .Serializing(x => x.Height).WithFormat(x => throw new Exception());
+
+            Assert.DoesNotThrow(() => printer.PrintToString(person));
         }
 
         [Test]
@@ -68,8 +105,8 @@ namespace ObjectPrintingTests
         [Test]
         public void SerializeTypeUsing()
         {
-            var printer = ObjectPrinter.For<Person>().Serializing<DateTime>()
-                .Using(x => x.Day.ToString() + '.' + x.Month.ToString());
+            var printer = ObjectPrinter.For<Person>()
+                .Serializing<DateTime>().Using(x => x.Day.ToString() + '.' + x.Month.ToString());
             printer.PrintToString(person).Should().Be("Person\r\n	Id = Guid\r\n	Name = Alexander\r\n	Height = 4,2\r\n	Age = 42\r\n	Birthday = 1.1\r\n	ShoeSize = 42\r\n");
         }
         
