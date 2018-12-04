@@ -1,0 +1,6 @@
+﻿
+	number = 1
+	number = 5
+	number = 89
+	number = 52
+	number = 8

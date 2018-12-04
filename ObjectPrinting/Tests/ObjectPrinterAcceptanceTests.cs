@@ -1,13 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using ApprovalTests;
+using ApprovalTests.Reporters;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
+    [UseReporter(typeof(DiffReporter), typeof(FileLauncherReporter))]
     public class ObjectPrinterAcceptanceTests
     {
+        [Test]
+        public void PrintToString_AddFinalType()
+        {
+            var product = new
+            {
+                Name = "paper box",
+                Price = 12,
+                Weight = 40
+            };
+
+            Approvals.Verify(product.PrintToString(cfg => cfg.AddFinalType(product.GetType())));
+        }
+
+        [Test]
+        public void PrintToString_Array()
+        {
+            var array = new int[10];
+            Approvals.Verify(array.PrintToString());
+        }
+
         [Test]
         public void PrintToString_CircularReference_NotHaveStackOverFlow()
         {
@@ -16,18 +39,18 @@ namespace ObjectPrinting.Tests
                 Height = 60,
                 Age = 50,
                 Name = "John",
-                Id = Guid.NewGuid()
+                Id = Guid.Parse("2CBFC598-C3BD-467E-987F-71EE87363566")
             };
             var son = new Person
             {
                 Height = 60,
                 Age = 20,
                 Name = "Alex",
-                Id = new Guid(),
+                Id = Guid.Parse("5BED1F5E-17CD-4862-A15D-8C80C71733BE"),
                 Father = father
             };
             father.Father = son;
-            Console.WriteLine(son.PrintToString());
+            Approvals.Verify(son.PrintToString());
         }
 
         [Test]
@@ -38,7 +61,7 @@ namespace ObjectPrinting.Tests
                 Height = 60,
                 Age = 20,
                 Name = "Alex",
-                Id = Guid.NewGuid()
+                Id = Guid.Parse("E6AA2CF0-D273-4016-BADA-DE415AE51C35")
             };
             var printer = ObjectPrinter.For<Person>()
 //                1. Исключить из сериализации свойства определенного типа
@@ -53,9 +76,9 @@ namespace ObjectPrinting.Tests
                 .Serializing(p => p.Name).TrimmedToLength(100)
 
 //                //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Id);
+                .Exclude(p => p.ToString());
 
-            Console.WriteLine(printer.PrintToString(student));
+            Approvals.Verify(printer.PrintToString(student));
         }
 
         [Test]
@@ -64,9 +87,9 @@ namespace ObjectPrinting.Tests
             var longNumber = 1000000000L;
             var stringToPrint =
                 longNumber.PrintToString(x => x.Serializing<long>().Using(CultureInfo.GetCultureInfo("de-De")));
-            Console.WriteLine(stringToPrint);
+            Approvals.Verify(stringToPrint);
         }
-        
+
         [Test]
         public void PrintToString_Dictionary()
         {
@@ -77,7 +100,7 @@ namespace ObjectPrinting.Tests
                 {5, "me"},
                 {2, "i was"}
             };
-            Console.WriteLine(dictionary.PrintToString());
+            Approvals.Verify(dictionary.PrintToString());
         }
 
         [Test]
@@ -89,28 +112,21 @@ namespace ObjectPrinting.Tests
                 {48, new List<string> {"i", "was", "wondering.."}}
             };
 
-            Console.WriteLine(dictionary.PrintToString());
-        }
-
-        [Test]
-        public void PrintToString_Array()
-        {
-            var array = new int[10];
-            Console.WriteLine(array.PrintToString());
+            Approvals.Verify(dictionary.PrintToString());
         }
 
         [Test]
         public void PrintToString_EmptyDictionary()
         {
             var dictionary = new Dictionary<int, string>();
-            Console.WriteLine(dictionary.PrintToString());
+            Approvals.Verify(dictionary.PrintToString());
         }
 
         [Test]
         public void PrintToString_EmptyList()
         {
             var list = new List<string>();
-            Console.WriteLine(list.PrintToString());
+            Approvals.Verify(list.PrintToString());
         }
 
         [Test]
@@ -121,7 +137,7 @@ namespace ObjectPrinting.Tests
                 1, 5, 89, 52, 8, 5
             };
             var stringToPrint = list.PrintToString(cfg => cfg.Serializing<int>().Using(s => "number = " + s));
-            Console.WriteLine(stringToPrint);
+            Approvals.Verify(stringToPrint);
         }
 
         [Test]
@@ -132,7 +148,7 @@ namespace ObjectPrinting.Tests
                 1, 5, 89, 52, 8, 5
             };
 
-            Console.WriteLine(list.PrintToString());
+            Approvals.Verify(list.PrintToString());
         }
 
         [Test]
@@ -148,7 +164,7 @@ namespace ObjectPrinting.Tests
                 "wondering.."
             };
 
-            Console.WriteLine(list.PrintToString());
+            Approvals.Verify(list.PrintToString());
         }
 
         [Test]
@@ -160,7 +176,44 @@ namespace ObjectPrinting.Tests
                 new List<string> {"i", "was", "wondering.."}
             };
 
-            Console.WriteLine(list.PrintToString());
+            Approvals.Verify(list.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_MaxDepth()
+        {
+            var father = new Person
+            {
+                Height = 60,
+                Age = 50,
+                Name = "John",
+                Id = Guid.Parse("8CAE0910-8BAF-454C-9C0B-1AFAA609E8F3")
+            };
+            var son = new Person
+            {
+                Height = 60,
+                Age = 20,
+                Name = "Alex",
+                Id = Guid.Parse("34342592-0E22-4841-A774-AA8CAB8B3631"),
+                Father = father
+            };
+            father.Father = son;
+            Approvals.Verify(son.PrintToString(config => config.SetMaxDepth(2)));
+        }
+
+        [Test]
+        public void PrintToString_RemoveFinalType()
+        {
+            var str = "hello";
+            Approvals.Verify(str.PrintToString(config => config.RemoveFinalType(typeof(string))));
+        }
+
+        [Test]
+        public void PrintToString_TrimToLengthForType()
+        {
+            var stringToPrint = "hello";
+            Approvals.Verify(
+                stringToPrint.PrintToString(config => config.Serializing<string>().TrimmedToLength(2)));
         }
     }
 }

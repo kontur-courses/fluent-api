@@ -1,0 +1,1 @@
+﻿{ Name = paper box, Price = 12, Weight = 40 }

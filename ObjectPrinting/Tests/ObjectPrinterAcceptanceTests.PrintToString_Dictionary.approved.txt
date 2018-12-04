@@ -1,0 +1,13 @@
+﻿
+	KeyValuePair
+		Key = 32
+		Value = hello
+	KeyValuePair
+		Key = 45
+		Value = its
+	KeyValuePair
+		Key = 5
+		Value = me
+	KeyValuePair
+		Key = 2
+		Value = i was

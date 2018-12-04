@@ -1,0 +1,11 @@
+﻿Person
+	Id = 34342592-0e22-4841-a774-aa8cab8b3631
+	Name = Alex
+	Height = 60
+	Age = 20
+	Father = Person
+		Id = 8cae0910-8baf-454c-9c0b-1afaa609e8f3
+		Name = John
+		Height = 60
+		Age = 50
+		Father = Maximum nesting level (2) reached

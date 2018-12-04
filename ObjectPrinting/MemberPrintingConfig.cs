@@ -18,9 +18,9 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> format)
         {
-            serializationMemberMap[memberInfo] = arg => func((TPropType) arg);
+            serializationMemberMap[memberInfo] = objectToPrint => format((TPropType) objectToPrint);
             return printingConfig;
         }
     }

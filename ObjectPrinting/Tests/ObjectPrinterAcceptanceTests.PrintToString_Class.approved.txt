@@ -1,0 +1,4 @@
+﻿Person
+	Name = Alex
+	Age = ##20
+	Father = null

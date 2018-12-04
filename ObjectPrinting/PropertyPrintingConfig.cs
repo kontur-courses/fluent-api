@@ -8,11 +8,6 @@ namespace ObjectPrinting
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Dictionary<Type, Func<object, string>> serializationMap;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
-        {
-            this.printingConfig = printingConfig;
-        }
-
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
             Dictionary<Type, Func<object, string>> serializationMap)
         {
@@ -20,9 +15,9 @@ namespace ObjectPrinting
             this.serializationMap = serializationMap;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> method)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> format)
         {
-            serializationMap[typeof(TPropType)] = arg => method((TPropType) arg);
+            serializationMap[typeof(TPropType)] = objectToPrint => format((TPropType) objectToPrint);
             return printingConfig;
         }
     }
