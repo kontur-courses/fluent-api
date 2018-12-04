@@ -103,8 +103,8 @@ namespace ObjectPrinting
             private void SerializeByStructure(object obj, int nestingLevel)
             {
                 stringBuilder.AppendLine(obj.GetType().Name);
-                if (obj is IEnumerable)
-                    SerializeAsEnumerable(obj, nestingLevel);
+                if (obj is IEnumerable enumerable)
+                    SerializeAsEnumerable(enumerable, nestingLevel);
                 else                    
                     SerializeAsObject(obj, nestingLevel);
             }
@@ -123,9 +123,9 @@ namespace ObjectPrinting
                 }
             }
 
-            private void SerializeAsEnumerable(object obj,int nestingLevel)
+            private void SerializeAsEnumerable(IEnumerable obj,int nestingLevel)
             {
-                foreach (var el in (IEnumerable) obj)
+                foreach (var el in obj)
                 {
                     identation = new string('\t', nestingLevel + 1);
                     if(TrySerializeAsFinal(el))
