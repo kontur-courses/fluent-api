@@ -46,6 +46,18 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void T()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Serializing<string>().Using(x => 
+                    "abcdefghijklm")
+                .Serializing(x => x.Name).TrimToLength(6);
+
+            printer.PrintToString(new Person{Name = "qwertyuiop"}).Should().Contain($"Name = abcdef{Environment.NewLine}");
+        }
+
+        [Test]
         public void ExcludeTypes()
         {
             var printer = ObjectPrinter.For<Person>()

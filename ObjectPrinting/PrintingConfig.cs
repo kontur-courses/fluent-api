@@ -14,9 +14,14 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)=>
             new Serializer(this).Serialize(obj);
 
-        private readonly Dictionary<Type,Func<object,string>> finalTypes = new Dictionary<Type,Func<object,string>>();
-        private readonly Dictionary<PropertyInfo,Func<object,string>> finalProperties = 
-            new Dictionary<PropertyInfo,Func<object,string>> ();
+        private readonly Dictionary<PropertyInfo, Func<string, string>> propertyFormatters =
+            new Dictionary<PropertyInfo, Func<string, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> finalTypes =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<PropertyInfo, Func<object, string>> finalProperties =
+            new Dictionary<PropertyInfo, Func<object, string>>();
 
         public PrintingConfig(params Type[] finalTypes)
         {
@@ -56,8 +61,8 @@ namespace ObjectPrinting
 
         public PropertyConfig<TPropType> Serializing<TPropType>(Expression<Func<TOwner,TPropType>> selector)=>
             new PropertyConfig<TPropType>(this,selector);
-
         //TODO smear it in checks
+
         private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
             (PropertyInfo) ((MemberExpression) selector.Body).Member;
 
@@ -146,8 +151,9 @@ namespace ObjectPrinting
                 if (!config.finalProperties.TryGetValue(propertyInfo, out var serializer) &&
                     !config.finalTypes.TryGetValue(propertyInfo.PropertyType, out serializer)) 
                     return false;
-                if (serializer != null)
-                    PrintFinalizedProperty(propertyInfo,serializer(value));
+                if (serializer == null) return true;
+                var result = ApplyFormatOfProperty(propertyInfo, serializer(value));
+                PrintFinalizedProperty(propertyInfo,result);
                 return true;
             }
 
@@ -159,6 +165,10 @@ namespace ObjectPrinting
                     stringBuilder.AppendLine(identation + serializer(obj));
                 return true;
             }
+
+            private string ApplyFormatOfProperty(PropertyInfo propertyInfo, string str) =>
+                config.propertyFormatters.TryGetValue(propertyInfo, out var formatter)
+                    ? formatter(str) : str;
         }
         
         
@@ -186,7 +196,7 @@ namespace ObjectPrinting
             private readonly PrintingConfig<TOwner> printingConfig;
             private readonly Expression<Func<TOwner, TPropType>> selector;
 
-            public PropertyConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner,TPropType>>  selector)
+            public PropertyConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> selector)
             {
                 this.printingConfig = printingConfig;
                 this.selector = selector;
@@ -199,6 +209,12 @@ namespace ObjectPrinting
                 return printingConfig;
             }
             
+            public PrintingConfig<TOwner> WithFormat(Func<string,string> formatter)
+            {
+                printingConfig.propertyFormatters[GetPropertyInfo(selector)] = formatter;
+                return printingConfig;
+            }
+
             PrintingConfig<TOwner> IPrintingConfig<TOwner>.PrintingConfig => printingConfig;
         }
     }
@@ -216,6 +232,6 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimToLength<TOwner>(
             this PrintingConfig<TOwner>.PropertyConfig<string> config,
-            int length) => config.Using(x => x.Substring(0, length));
+            int length) => config.WithFormat(x => x.Substring(0, length));
     }
 }
