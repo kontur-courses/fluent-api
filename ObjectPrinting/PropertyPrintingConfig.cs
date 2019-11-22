@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
     public interface IPropertyPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
+        PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo culture);
     }
     
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
@@ -21,6 +23,11 @@ namespace ObjectPrinting
             return (parentConfig as IPrintingConfig<TOwner>).AddCustomSerialization(typeof(TPropType), func);;
         }
         
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.SetCultureFor<T>(CultureInfo culture)
+        {
+            return (parentConfig as IPrintingConfig<TOwner>).SetTypeCulture(typeof(T), culture);
+        }
+
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
     }
 }

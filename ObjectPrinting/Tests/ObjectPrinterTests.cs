@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -96,6 +97,40 @@ namespace ObjectPrinting.Tests
             var serialized = person.Printing()
                 .Printing<Guid>().Using(s => s.ToString())
                 .Printing<Guid>().Using(s => s.GetType().Name)
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+
+        [Test]
+        public void CultureInfoForNumericTypes_RussianCulture()
+        {
+            var person = new Person {Name = "Vasiliy", Age = 19, Height = 179.5d};
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 179,5" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+
+            var serialized = person.Printing()
+                .Printing<double>().Using(CultureInfo.CreateSpecificCulture("ru-ru"))
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+        
+        [Test]
+        public void CultureInfoForNumericTypes_InvariantCulture()
+        {
+            var person = new Person {Name = "Vasiliy", Age = 19, Height = 181.7d};
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 181.7" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+
+            var serialized = person.Printing()
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);

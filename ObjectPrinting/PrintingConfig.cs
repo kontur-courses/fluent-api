@@ -11,6 +11,7 @@ namespace ObjectPrinting
     public interface IPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
+        PrintingConfig<TOwner> SetTypeCulture(Type type, CultureInfo culture);
     }
 
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
@@ -19,6 +20,8 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, Delegate> customSerializations =
             new Dictionary<Type, Delegate>();
+
+        private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
 
@@ -55,15 +58,25 @@ namespace ObjectPrinting
 
             var finalTypes = new[]
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(float), typeof(double), typeof(decimal),
+                typeof(sbyte), typeof(byte),
+                typeof(short), typeof(ushort),
+                typeof(int), typeof(uint),
+                typeof(long), typeof(ulong),
+                typeof(string), typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            var objType = obj.GetType();
+            if (finalTypes.Contains(objType))
+            {
+                if (!typeCultures.ContainsKey(objType)) return obj + Environment.NewLine;
+                var culture = typeCultures[objType];
+                dynamic number = Convert.ChangeType(obj, objType);
+                return number.ToString(culture) + Environment.NewLine;
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
+            var type = objType;
 
             if (customSerializations.ContainsKey(type))
             {
@@ -112,6 +125,12 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomSerialization(Type type, Delegate func)
         {
             customSerializations[type] = func;
+            return this;
+        }
+
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetTypeCulture(Type type, CultureInfo culture)
+        {
+            typeCultures[type] = culture;
             return this;
         }
     }

@@ -21,7 +21,16 @@ namespace ObjectPrinting.Tests
                 // ✔ 2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<string>().Using(s => s.Trim())
                 // ✔ 3. Для числовых типов указать культуру
+                .Printing<sbyte>().Using(CultureInfo.InvariantCulture)
+                .Printing<byte>().Using(CultureInfo.InvariantCulture)
+                .Printing<short>().Using(CultureInfo.InvariantCulture)
+                .Printing<ushort>().Using(CultureInfo.InvariantCulture)
                 .Printing<int>().Using(CultureInfo.InvariantCulture)
+                .Printing<uint>().Using(CultureInfo.InvariantCulture)
+                .Printing<long>().Using(CultureInfo.InvariantCulture)
+                .Printing<float>().Using(CultureInfo.InvariantCulture)
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<decimal>().Using(CultureInfo.InvariantCulture)
                 // ✔ 4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Name).Using(s => s.Trim())
                 // ✔ 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
