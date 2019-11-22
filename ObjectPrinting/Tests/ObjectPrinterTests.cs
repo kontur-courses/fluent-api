@@ -235,5 +235,29 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
+
+        [Test]
+        public void ReferenceLoopsHandling()
+        {
+            var selfReferrer = new SelfReferrer();
+            
+            Action printSelfReferrer = () => selfReferrer.PrintToString();
+            
+            printSelfReferrer.Should().NotThrow();
+        }
+
+        [Test]
+        public void MaximumNesting()
+        {
+            var expectedSerialization =
+                "SelfReferrer" + Environment.NewLine
+                               + '\t' + "X = 42" + Environment.NewLine
+                               + '\t' + "Self = SelfReferrer" + Environment.NewLine;
+            var selfReferrer = new SelfReferrer();
+            
+            var serialized = selfReferrer.Printing().WithMaximumNesting(1).PrintToString();
+            
+            serialized.Should().Be(expectedSerialization);
+        }
     }
 }

@@ -36,6 +36,7 @@ namespace ObjectPrinting
 
         private bool trimEnabled = false;
         private int maxLen = 0;
+        private int maxNesting = 10;
 
         public PrintingConfig(TOwner value)
         {
@@ -50,11 +51,6 @@ namespace ObjectPrinting
         public string PrintToString()
         {
             return PrintToString(value);
-        }
-
-        public string PrintToString(int nestingLevel)
-        {
-            return PrintToString(value, nestingLevel);
         }
 
         public string PrintToString(TOwner obj)
@@ -96,6 +92,8 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
 
             sb.AppendLine(type.Name);
+            if (nestingLevel >= maxNesting) 
+                return sb.ToString();
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType)
@@ -159,6 +157,12 @@ namespace ObjectPrinting
         {
             var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
             excludedProperties.Add(propertyInfo?.Name);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithMaximumNesting(int maxNesting)
+        {
+            this.maxNesting = maxNesting;
             return this;
         }
 
