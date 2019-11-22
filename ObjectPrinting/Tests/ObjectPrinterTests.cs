@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -257,6 +258,55 @@ namespace ObjectPrinting.Tests
             
             var serialized = selfReferrer.Printing().WithMaximumNesting(1).PrintToString();
             
+            serialized.Should().Be(expectedSerialization);
+        }
+
+        [Test]
+        public void ArrayPrinting()
+        {
+            var expectedSerialization =
+                "Int32[]" + Environment.NewLine
+                          + "\t - " + "1" + Environment.NewLine
+                          + "\t - " + "2" + Environment.NewLine
+                          + "\t - " + "4" + Environment.NewLine
+                          + "\t - " + "3" + Environment.NewLine;
+            var arr = new[] {1, 2, 4, 3};
+
+            var serialized = arr.PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+
+        [Test]
+        public void ListPrinting()
+        {
+            var expectedSerialization =
+                "List`1" + Environment.NewLine
+                         + "\t - " + "h" + Environment.NewLine
+                         + "\t - " + "e" + Environment.NewLine
+                         + "\t - " + "l" + Environment.NewLine
+                         + "\t - " + "l" + Environment.NewLine
+                         + "\t - " + "o" + Environment.NewLine;
+            string[] input = {"h", "e", "l", "l", "o"};
+            var list = new List<string>(input);
+
+            var serialized = list.PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+
+        [Test]
+        public void DictionaryPrinting()
+        {
+            var expectedSerialization =
+                "Dictionary`2" + Environment.NewLine
+                               + "\t" + "hello" + " - " + "world" + Environment.NewLine
+                               + "\t" + "cold" + " - " + "outside" + Environment.NewLine;
+
+            var dict = new Dictionary<string, string> {{"hello", "world"}, {"cold", "outside"}};
+
+            var serialized = dict.PrintToString();
+
             serialized.Should().Be(expectedSerialization);
         }
     }

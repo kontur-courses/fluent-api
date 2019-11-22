@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -87,12 +88,22 @@ namespace ObjectPrinting
                 return number.ToString(culture) + Environment.NewLine;
             }
 
+            if (nestingLevel >= maxNesting)
+                return type.Name + Environment.NewLine;
+
+            if (obj is IEnumerable enumerable)
+                return PrintEnumerable(enumerable, nestingLevel);
+
+
+            return PrintProperties(obj, nestingLevel);
+        }
+
+        private string PrintProperties(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-
             sb.AppendLine(type.Name);
-            if (nestingLevel >= maxNesting) 
-                return sb.ToString();
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType)
@@ -114,6 +125,30 @@ namespace ObjectPrinting
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               PrintToString(objValue,
                                   nestingLevel + 1));
+            }
+
+            return sb.ToString();
+        }
+
+        private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.Append(enumerable.GetType().Name + Environment.NewLine);
+            var indentation = new string('\t', nestingLevel + 1);
+            if (enumerable is IDictionary dictionary)
+            {
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    sb.Append(indentation + entry.Key + " - " + PrintToString(entry.Value, nestingLevel + 1));
+                }
+
+                return sb.ToString();
+            }
+                
+                
+            foreach (var obj in enumerable)
+            {
+                sb.Append(indentation + " - " + PrintToString(obj, nestingLevel + 1));
             }
 
             return sb.ToString();
