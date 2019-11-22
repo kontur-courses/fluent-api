@@ -38,7 +38,7 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().TrimmedToLength(4)
                 // ✔ 6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
-            
+
             var s1 = printer.PrintToString(person);
 
             // ✔ 7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию     

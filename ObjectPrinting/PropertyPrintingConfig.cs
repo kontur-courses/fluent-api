@@ -10,7 +10,7 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo culture);
         PrintingConfig<TOwner> TrimmedToLength(int maxLen);
     }
-    
+
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
     {
         private PrintingConfig<TOwner> parentConfig;
@@ -34,7 +34,7 @@ namespace ObjectPrinting
                 ? iParentConfig.AddCustomSerialization(typeof(TPropType), func)
                 : iParentConfig.AddCustomPropertySerialization(propertyInfo.Name, func);
         }
-        
+
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.SetCultureFor<T>(CultureInfo culture)
         {
             return (parentConfig as IPrintingConfig<TOwner>).SetTypeCulture(typeof(T), culture);

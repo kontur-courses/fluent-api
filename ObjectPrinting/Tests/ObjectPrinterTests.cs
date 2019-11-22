@@ -35,7 +35,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void MultipleTypesExclusion()
         {
@@ -51,7 +51,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void TypeExclusionOfExcludedType()
         {
@@ -135,7 +135,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void CultureInfoForNumericTypes_InvariantCulture()
         {
@@ -152,7 +152,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void CustomPropertySerialization()
         {
@@ -169,7 +169,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void StringTypesTrimming()
         {
@@ -186,7 +186,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void StringPropertiesTrimming()
         {
@@ -203,7 +203,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void PropertyExclusion()
         {
@@ -219,7 +219,7 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
-        
+
         [Test]
         public void MultiplePropertiesExclusion()
         {

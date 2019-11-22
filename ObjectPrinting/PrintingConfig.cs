@@ -28,7 +28,7 @@ namespace ObjectPrinting
 
         private readonly Dictionary<string, Delegate> customPropertySerializations =
             new Dictionary<string, Delegate>();
-        
+
         private readonly Dictionary<string, int> stringPropertiesToTrim = new Dictionary<string, int>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
@@ -67,7 +67,7 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
+
             var type = obj.GetType();
             if (customSerializations.ContainsKey(type))
             {
@@ -98,11 +98,10 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
                 if (excludedTypes.Contains(propertyInfo.PropertyType)
                     || excludedProperties.Contains(propertyInfo.Name))
                     continue;
-                
+
                 var objValue = propertyInfo.GetValue(obj);
 
                 if (propertyInfo.PropertyType == typeof(string))
@@ -188,7 +187,7 @@ namespace ObjectPrinting
             this.maxLen = maxLen;
             return this;
         }
-        
+
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.TrimmedToLength(string propertyName, int maxLen)
         {
             stringPropertiesToTrim[propertyName] = maxLen;
