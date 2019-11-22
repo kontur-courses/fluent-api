@@ -22,21 +22,20 @@ namespace ObjectPrinting
     {
         private readonly TOwner value;
 
-        private readonly Dictionary<Type, Delegate> customSerializations =
-            new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> customTypeSerializations = new Dictionary<Type, Delegate>();
 
         private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
 
-        private readonly Dictionary<string, Delegate> customPropertySerializations =
-            new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, Delegate> customPropertySerializations = new Dictionary<string, Delegate>();
 
         private readonly Dictionary<string, int> stringPropertiesToTrim = new Dictionary<string, int>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
+
         private readonly List<string> excludedProperties = new List<string>();
 
-        private bool trimEnabled = false;
-        private int maxLen = 0;
+        private bool trimEnabled;
+        private int maxLen;
         private int maxNesting = 10;
 
         public PrintingConfig(TOwner value)
@@ -57,116 +56,6 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var type = obj.GetType();
-            if (customSerializations.ContainsKey(type))
-            {
-                var serializer = customSerializations[type];
-                return serializer.DynamicInvoke(obj) + Environment.NewLine;
-            }
-
-            var finalTypes = new[]
-            {
-                typeof(float), typeof(double), typeof(decimal),
-                typeof(sbyte), typeof(byte),
-                typeof(short), typeof(ushort),
-                typeof(int), typeof(uint),
-                typeof(long), typeof(ulong),
-                typeof(string), typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(type))
-            {
-                if (!typeCultures.ContainsKey(type)) return obj + Environment.NewLine;
-                var culture = typeCultures[type];
-                dynamic number = Convert.ChangeType(obj, type);
-                return number.ToString(culture) + Environment.NewLine;
-            }
-
-            if (nestingLevel >= maxNesting)
-                return type.Name + Environment.NewLine;
-
-            if (obj is IEnumerable enumerable)
-                return PrintEnumerable(enumerable, nestingLevel);
-
-
-            return PrintProperties(obj, nestingLevel);
-        }
-
-        private string PrintProperties(object obj, int nestingLevel)
-        {
-            var type = obj.GetType();
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (excludedTypes.Contains(propertyInfo.PropertyType)
-                    || excludedProperties.Contains(propertyInfo.Name))
-                    continue;
-
-                var objValue = propertyInfo.GetValue(obj);
-
-                if (propertyInfo.PropertyType == typeof(string))
-                {
-                    objValue = TrimToLengthIfNeeded(propertyInfo.Name, objValue as string);
-                }
-
-                if (customPropertySerializations.ContainsKey(propertyInfo.Name))
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              customPropertySerializations[propertyInfo.Name]
-                                  .DynamicInvoke(objValue) + Environment.NewLine);
-                else
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(objValue,
-                                  nestingLevel + 1));
-            }
-
-            return sb.ToString();
-        }
-
-        private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-            sb.Append(enumerable.GetType().Name + Environment.NewLine);
-            var indentation = new string('\t', nestingLevel + 1);
-            if (enumerable is IDictionary dictionary)
-            {
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    sb.Append(indentation + entry.Key + " - " + PrintToString(entry.Value, nestingLevel + 1));
-                }
-
-                return sb.ToString();
-            }
-                
-                
-            foreach (var obj in enumerable)
-            {
-                sb.Append(indentation + " - " + PrintToString(obj, nestingLevel + 1));
-            }
-
-            return sb.ToString();
-        }
-
-        private string TrimToLengthIfNeeded(string propName, string str)
-        {
-            if (trimEnabled)
-            {
-                return str.Substring(0, maxLen);
-            }
-
-            if (stringPropertiesToTrim.ContainsKey(propName))
-            {
-                return str.Substring(0, stringPropertiesToTrim[propName]);
-            }
-
-            return str;
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
@@ -200,9 +89,118 @@ namespace ObjectPrinting
             return this;
         }
 
+        private string PrintToString(object obj, int nestingLevel)
+        {
+            if (obj == null)
+                return "null";
+
+            var type = obj.GetType();
+            if (customTypeSerializations.ContainsKey(type))
+            {
+                var serializer = customTypeSerializations[type];
+                return serializer.DynamicInvoke(obj) + Environment.NewLine;
+            }
+
+            var finalTypes = new[]
+            {
+                typeof(float), typeof(double), typeof(decimal),
+                typeof(sbyte), typeof(byte),
+                typeof(short), typeof(ushort),
+                typeof(int), typeof(uint),
+                typeof(long), typeof(ulong),
+                typeof(string), typeof(DateTime), typeof(TimeSpan)
+            };
+            if (finalTypes.Contains(type))
+            {
+                if (!typeCultures.ContainsKey(type))
+                    return obj.ToString() + Environment.NewLine;
+
+                var culture = typeCultures[type];
+                dynamic number = Convert.ChangeType(obj, type);
+                return number.ToString(culture) + Environment.NewLine;
+            }
+
+            if (nestingLevel >= maxNesting)
+                return type.Name + Environment.NewLine;
+
+            if (obj is IEnumerable enumerable)
+                return PrintEnumerable(enumerable, nestingLevel);
+
+            return PrintProperties(obj, nestingLevel);
+        }
+
+        private string PrintProperties(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine(type.Name);
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                if (excludedTypes.Contains(propertyInfo.PropertyType)
+                    || excludedProperties.Contains(propertyInfo.Name))
+                    continue;
+
+                var objValue = propertyInfo.GetValue(obj);
+
+                if (propertyInfo.PropertyType == typeof(string))
+                {
+                    objValue = TrimToLengthIfNeeded(propertyInfo.Name, objValue as string);
+                }
+
+                sb.Append(indentation + propertyInfo.Name + " = ");
+                if (customPropertySerializations.ContainsKey(propertyInfo.Name))
+                    sb.Append(customPropertySerializations[propertyInfo.Name]
+                                  .DynamicInvoke(objValue) + Environment.NewLine);
+                else
+                    sb.Append(PrintToString(objValue, nestingLevel + 1));
+            }
+
+            return sb.ToString();
+        }
+
+        private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(enumerable.GetType().Name);
+            var indentation = new string('\t', nestingLevel + 1);
+            if (enumerable is IDictionary dictionary)
+            {
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    sb.Append(indentation + entry.Key + " - " + PrintToString(entry.Value, nestingLevel + 1));
+                }
+
+                return sb.ToString();
+            }
+
+
+            foreach (var obj in enumerable)
+            {
+                sb.Append(indentation + " - " + PrintToString(obj, nestingLevel + 1));
+            }
+
+            return sb.ToString();
+        }
+
+        private string TrimToLengthIfNeeded(string propName, string str)
+        {
+            if (trimEnabled)
+            {
+                return str.Substring(0, maxLen);
+            }
+
+            if (stringPropertiesToTrim.ContainsKey(propName))
+            {
+                return str.Substring(0, stringPropertiesToTrim[propName]);
+            }
+
+            return str;
+        }
+
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomSerialization(Type type, Delegate func)
         {
-            customSerializations[type] = func;
+            customTypeSerializations[type] = func;
             return this;
         }
 
