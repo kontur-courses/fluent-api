@@ -6,7 +6,6 @@ namespace ObjectPrinting
 {
     public interface IPropertyPrintingConfig<TOwner>
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
         PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo culture);
         PrintingConfig<TOwner> TrimmedToLength(int maxLen);
     }
@@ -39,8 +38,6 @@ namespace ObjectPrinting
         {
             return (parentConfig as IPrintingConfig<TOwner>).SetTypeCulture(typeof(T), culture);
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.TrimmedToLength(int maxLen)
         {
