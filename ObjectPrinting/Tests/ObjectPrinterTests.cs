@@ -34,6 +34,39 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
+        
+        [Test]
+        public void MultipleTypesExclusion()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var person = new Person {Name = "Vasiliy", Age = 19};
+
+            var serialized = person.Printing()
+                .Excluding<Guid>()
+                .Excluding<string>()
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+        
+        [Test]
+        public void TypeExclusionOfExcludedType()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var person = new Person {Name = "Vasiliy", Age = 19};
+
+            var serialized = person.Printing()
+                .Excluding<Guid>()
+                .Excluding<Guid>()
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
 
         [Test]
         public void CustomTypeSerialization()
