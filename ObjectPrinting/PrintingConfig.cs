@@ -17,8 +17,8 @@ namespace ObjectPrinting
         {
             this.value = value;
         }
-        
-        public PrintingConfig ()
+
+        public PrintingConfig()
         {
             value = default;
         }
@@ -27,12 +27,12 @@ namespace ObjectPrinting
         {
             return PrintToString(value);
         }
-        
+
         public string PrintToString(int nestingLevel)
         {
             return PrintToString(value, nestingLevel);
         }
-        
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -78,7 +78,7 @@ namespace ObjectPrinting
         {
             return new PropertyPrintingConfig<TOwner, T>(this);
         }
-        
+
         public PropertyPrintingConfig<TOwner, T> Printing<T>()
         {
             return new PropertyPrintingConfig<TOwner, T>(this);
