@@ -8,9 +8,18 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public interface IPrintingConfig<TOwner>
+    {
+        PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
+    }
+
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly TOwner value;
+
+        private readonly Dictionary<Type, Delegate> customSerializations =
+            new Dictionary<Type, Delegate>();
+
         private readonly List<Type> excludedTypes = new List<Type>();
 
         public PrintingConfig(TOwner value)
@@ -55,14 +64,24 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            if (customSerializations.ContainsKey(type))
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var serializer = customSerializations[type];
+                sb.Append(serializer.DynamicInvoke(obj));
+                sb.Append(Environment.NewLine);
+            }
+            else
+            {
+                sb.AppendLine(type.Name);
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    if (excludedTypes.Contains(propertyInfo.PropertyType))
+                        continue;
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                }
             }
 
             return sb.ToString();
@@ -86,6 +105,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> expression)
         {
+            return this;
+        }
+
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomSerialization(Type type, Delegate func)
+        {
+            customSerializations[type] = func;
             return this;
         }
     }

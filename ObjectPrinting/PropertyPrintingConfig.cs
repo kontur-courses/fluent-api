@@ -18,7 +18,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
         {
-            return parentConfig;
+            return (parentConfig as IPrintingConfig<TOwner>).AddCustomSerialization(typeof(TPropType), func);;
         }
         
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
