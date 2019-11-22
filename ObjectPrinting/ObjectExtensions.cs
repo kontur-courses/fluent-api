@@ -2,9 +2,9 @@
 {
     public static class ObjectExtensions
     {
-        public static PrintingConfig<TOwner> Printing<TOwner>(this TOwner obj)
+        public static PrintingConfig<T> Printing<T>(this T obj)
         {
-            return new PrintingConfig<TOwner>(obj);
+            return new PrintingConfig<T>(obj);
         }
     }
 }
