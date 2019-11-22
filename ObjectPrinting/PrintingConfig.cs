@@ -13,6 +13,8 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
         PrintingConfig<TOwner> AddCustomPropertySerialization(string propertyName, Delegate func);
         PrintingConfig<TOwner> SetTypeCulture(Type type, CultureInfo culture);
+        PrintingConfig<TOwner> TrimmedToLength(int maxLen);
+        PrintingConfig<TOwner> TrimmedToLength(string propertyName, int maxLen);
     }
 
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
@@ -26,8 +28,13 @@ namespace ObjectPrinting
 
         private readonly Dictionary<string, Delegate> customPropertySerializations =
             new Dictionary<string, Delegate>();
+        
+        private readonly Dictionary<string, int> stringPropertiesToTrim = new Dictionary<string, int>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
+
+        private bool trimEnabled = false;
+        private int maxLen = 0;
 
         public PrintingConfig(TOwner value)
         {
@@ -92,18 +99,40 @@ namespace ObjectPrinting
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
+                
+                var objValue = propertyInfo.GetValue(obj);
+
+                if (propertyInfo.PropertyType == typeof(string))
+                {
+                    objValue = TrimToLengthIfNeeded(propertyInfo.Name, objValue as string);
+                }
 
                 if (customPropertySerializations.ContainsKey(propertyInfo.Name))
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               customPropertySerializations[propertyInfo.Name]
-                                  .DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                                  .DynamicInvoke(objValue) + Environment.NewLine);
                 else
                     sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
+                              PrintToString(objValue,
                                   nestingLevel + 1));
             }
 
             return sb.ToString();
+        }
+
+        private string TrimToLengthIfNeeded(string propName, string str)
+        {
+            if (trimEnabled)
+            {
+                return str.Substring(0, maxLen);
+            }
+
+            if (stringPropertiesToTrim.ContainsKey(propName))
+            {
+                return str.Substring(0, stringPropertiesToTrim[propName]);
+            }
+
+            return str;
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
@@ -145,6 +174,19 @@ namespace ObjectPrinting
             Delegate func)
         {
             customPropertySerializations[propertyName] = func;
+            return this;
+        }
+
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.TrimmedToLength(int maxLen)
+        {
+            trimEnabled = true;
+            this.maxLen = maxLen;
+            return this;
+        }
+        
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.TrimmedToLength(string propertyName, int maxLen)
+        {
+            stringPropertiesToTrim[propertyName] = maxLen;
             return this;
         }
     }

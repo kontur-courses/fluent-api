@@ -169,5 +169,39 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
+        
+        [Test]
+        public void StringTypesTrimming()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Alex" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var person = new Person {Name = "Alexander", Age = 19};
+
+            var serialized = person.Printing()
+                .Printing<string>().TrimmedToLength(4)
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+        
+        [Test]
+        public void StringPropertiesTrimming()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Alex" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var person = new Person {Name = "Alexander", Age = 19};
+
+            var serialized = person.Printing()
+                .Printing(p => p.Name).TrimmedToLength(4)
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
     }
 }

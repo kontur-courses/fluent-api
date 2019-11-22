@@ -71,11 +71,10 @@ namespace ObjectPrinting
             return (config as IPropertyPrintingConfig<TOwner>).SetCultureFor<decimal>(culture);
         }
 
-
-        public static PrintingConfig<TOwner> Substring<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
-            int start, int end)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
+            int maxLen)
         {
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+            return (config as IPropertyPrintingConfig<TOwner>).TrimmedToLength(maxLen);
         }
     }
 }
