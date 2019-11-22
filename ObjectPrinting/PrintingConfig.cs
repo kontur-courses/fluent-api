@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,9 +10,10 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private TOwner value;
-        
-        public PrintingConfig (TOwner value)
+        private readonly TOwner value;
+        private readonly List<Type> excludedTypes = new List<Type>();
+
+        public PrintingConfig(TOwner value)
         {
             this.value = value;
         }
@@ -56,6 +58,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
                 sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
@@ -66,6 +70,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
+            excludedTypes.Add(typeof(T));
             return this;
         }
 
