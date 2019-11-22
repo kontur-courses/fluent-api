@@ -152,5 +152,22 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
+        
+        [Test]
+        public void CustomPropertySerialization()
+        {
+            var person = new Person {Name = "Vasiliy", Age = 19};
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = N/A" + Environment.NewLine
+                                                 + '\t' + "Age = 19" + Environment.NewLine;
+
+            var serialized = person.Printing()
+                .Printing(p => p.Height).Using(h => h < 1 ? "N/A" : h.ToString(CultureInfo.InvariantCulture))
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
     }
 }

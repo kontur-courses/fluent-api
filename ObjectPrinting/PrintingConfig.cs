@@ -11,6 +11,7 @@ namespace ObjectPrinting
     public interface IPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
+        PrintingConfig<TOwner> AddCustomPropertySerialization(string propertyName, Delegate func);
         PrintingConfig<TOwner> SetTypeCulture(Type type, CultureInfo culture);
     }
 
@@ -22,6 +23,9 @@ namespace ObjectPrinting
             new Dictionary<Type, Delegate>();
 
         private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
+
+        private readonly Dictionary<string, Delegate> customPropertySerializations =
+            new Dictionary<string, Delegate>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
 
@@ -88,9 +92,15 @@ namespace ObjectPrinting
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+
+                if (customPropertySerializations.ContainsKey(propertyInfo.Name))
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              customPropertySerializations[propertyInfo.Name]
+                                  .DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
             }
 
             return sb.ToString();
@@ -103,9 +113,10 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, T> Printing<T>(Func<TOwner, T> func)
+        public PropertyPrintingConfig<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> expression)
         {
-            return new PropertyPrintingConfig<TOwner, T>(this);
+            var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
+            return new PropertyPrintingConfig<TOwner, T>(this, propertyInfo);
         }
 
         public PropertyPrintingConfig<TOwner, T> Printing<T>()
@@ -127,6 +138,13 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetTypeCulture(Type type, CultureInfo culture)
         {
             typeCultures[type] = culture;
+            return this;
+        }
+
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPropertySerialization(string propertyName,
+            Delegate func)
+        {
+            customPropertySerializations[propertyName] = func;
             return this;
         }
     }
