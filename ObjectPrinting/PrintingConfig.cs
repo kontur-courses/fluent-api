@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
