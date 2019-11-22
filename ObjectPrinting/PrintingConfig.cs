@@ -89,7 +89,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            excludedTypes.Add(typeof(T));
+            if (!excludedTypes.Contains(typeof(T)))
+                excludedTypes.Add(typeof(T));
             return this;
         }
 
