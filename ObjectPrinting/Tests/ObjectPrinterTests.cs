@@ -203,5 +203,37 @@ namespace ObjectPrinting.Tests
 
             serialized.Should().Be(expectedSerialization);
         }
+        
+        [Test]
+        public void PropertyExclusion()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine;
+            var person = new Person {Name = "Vasiliy", Age = 19};
+
+            var serialized = person.Printing()
+                .Excluding(p => p.Age)
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+        
+        [Test]
+        public void MultiplePropertiesExclusion()
+        {
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine;
+            var person = new Person {Name = "Vasiliy", Age = 19};
+
+            var serialized = person.Printing()
+                .Excluding(p => p.Age)
+                .Excluding(p => p.Id)
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
     }
 }

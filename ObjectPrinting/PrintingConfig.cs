@@ -32,6 +32,7 @@ namespace ObjectPrinting
         private readonly Dictionary<string, int> stringPropertiesToTrim = new Dictionary<string, int>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<string> excludedProperties = new List<string>();
 
         private bool trimEnabled = false;
         private int maxLen = 0;
@@ -98,6 +99,8 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
+                if (excludedTypes.Contains(propertyInfo.PropertyType)
+                    || excludedProperties.Contains(propertyInfo.Name))
                     continue;
                 
                 var objValue = propertyInfo.GetValue(obj);
@@ -155,6 +158,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> expression)
         {
+            var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
+            excludedProperties.Add(propertyInfo?.Name);
             return this;
         }
 
