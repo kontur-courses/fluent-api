@@ -86,6 +86,23 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void CustomTypeSerializationPrecedenceOverFinalTypes()
+        {
+            var person = new Person {Name = "Vasiliy", Age = 19};
+            var expectedSerialization = "Person" + Environment.NewLine
+                                                 + '\t' + $"Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
+                                                 + '\t' + "Height = 0" + Environment.NewLine
+                                                 + '\t' + "Age = NO" + Environment.NewLine;
+
+            var serialized = person.Printing()
+                .Printing<int>().Using(s => "NO")
+                .PrintToString();
+
+            serialized.Should().Be(expectedSerialization);
+        }
+
+        [Test]
         public void RedefinitionOfCustomTypeSerialization()
         {
             var person = new Person {Name = "Vasiliy", Age = 19};

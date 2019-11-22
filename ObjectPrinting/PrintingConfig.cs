@@ -55,6 +55,13 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+            
+            var type = obj.GetType();
+            if (customSerializations.ContainsKey(type))
+            {
+                var serializer = customSerializations[type];
+                return serializer.DynamicInvoke(obj) + Environment.NewLine;
+            }
 
             var finalTypes = new[]
             {
@@ -65,36 +72,25 @@ namespace ObjectPrinting
                 typeof(long), typeof(ulong),
                 typeof(string), typeof(DateTime), typeof(TimeSpan)
             };
-            var objType = obj.GetType();
-            if (finalTypes.Contains(objType))
+            if (finalTypes.Contains(type))
             {
-                if (!typeCultures.ContainsKey(objType)) return obj + Environment.NewLine;
-                var culture = typeCultures[objType];
-                dynamic number = Convert.ChangeType(obj, objType);
+                if (!typeCultures.ContainsKey(type)) return obj + Environment.NewLine;
+                var culture = typeCultures[type];
+                dynamic number = Convert.ChangeType(obj, type);
                 return number.ToString(culture) + Environment.NewLine;
             }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = objType;
 
-            if (customSerializations.ContainsKey(type))
+            sb.AppendLine(type.Name);
+            foreach (var propertyInfo in type.GetProperties())
             {
-                var serializer = customSerializations[type];
-                sb.Append(serializer.DynamicInvoke(obj));
-                sb.Append(Environment.NewLine);
-            }
-            else
-            {
-                sb.AppendLine(type.Name);
-                foreach (var propertyInfo in type.GetProperties())
-                {
-                    if (excludedTypes.Contains(propertyInfo.PropertyType))
-                        continue;
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
-                }
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                sb.Append(indentation + propertyInfo.Name + " = " +
+                          PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1));
             }
 
             return sb.ToString();
