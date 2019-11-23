@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework.Constraints;
 using ObjectPrinting.Configs.ConfigInterfaces;
 
 namespace ObjectPrinting.Configs
@@ -13,26 +12,27 @@ namespace ObjectPrinting.Configs
     {
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<PropertyInfo> excludedProperties;
-        private readonly Dictionary<Type, Func<Type, string>> alternativeSerializations;
+        private readonly Dictionary<Type, Func<object, string>> alternativeSerializations;
 
         HashSet<Type> IPrintingConfig<TOwner>.ExcludedTypes => excludedTypes;
-        Dictionary<Type, Func<Type, string>> IPrintingConfig<TOwner>.AlternativeSerializations => alternativeSerializations;
+        HashSet<PropertyInfo> IPrintingConfig<TOwner>.ExcludedProperties => excludedProperties;
+        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.AlternativeSerializations => alternativeSerializations;
 
         public PrintingConfig()
         {
             excludedTypes = new HashSet<Type>();
             excludedProperties = new HashSet<PropertyInfo>();
-            alternativeSerializations = new Dictionary<Type, Func<Type, string>>();
+            alternativeSerializations = new Dictionary<Type, Func<object, string>>();
         }
         
         public PrintingConfig(
             HashSet<Type> excludedTypes,
             HashSet<PropertyInfo> excludedProperties,
-            Dictionary<Type, Func<Type, string>> alternativeSerializations)
+            Dictionary<Type, Func<object, string>> alternativeSerializations)
         {
             this.excludedTypes = new HashSet<Type>(excludedTypes);
             this.excludedProperties = new HashSet<PropertyInfo>(excludedProperties);
-            this.alternativeSerializations = new Dictionary<Type, Func<Type, string>>(alternativeSerializations);
+            this.alternativeSerializations = new Dictionary<Type, Func<object, string>>(alternativeSerializations);
         }
 
         public string PrintToString(TOwner obj)
@@ -52,6 +52,8 @@ namespace ObjectPrinting.Configs
             };
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
+            if (alternativeSerializations.ContainsKey(obj.GetType()))
+                return alternativeSerializations[obj.GetType()](obj) + Environment.NewLine;
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
