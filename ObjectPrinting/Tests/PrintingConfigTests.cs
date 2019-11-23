@@ -1,10 +1,10 @@
 ﻿using System;
 using FluentAssertions;
 using NUnit.Framework;
-using ObjectPrinting.Configs.ConfigInterfaces;
 
 namespace ObjectPrinting.Tests
 {
+    [TestFixture]
     public class PrintingConfigTests
     {
         private Person person = new Person();
