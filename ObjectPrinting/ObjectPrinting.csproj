@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configs\ConfigInterfaces\IPrintingConfig.cs" />
     <Compile Include="Configs\ConfigInterfaces\IPropertySerializationConfig.cs" />
     <Compile Include="Configs\PrintingConfig.cs" />
     <Compile Include="Configs\PropertySerializationConfig.cs" />
@@ -60,7 +61,7 @@
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Tests\ObjectPrinterTests.cs" />
+    <Compile Include="Tests\PrintingConfigTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
   <ItemGroup>
