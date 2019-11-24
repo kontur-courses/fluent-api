@@ -4,9 +4,14 @@ namespace ObjectPrinting.Extensions
 {
     public static class ObjectExtensions
     {
-        public static PrintingConfig<TOwner> Serialized<TOwner>(this TOwner obj)
+        public static string Serialized<TOwner>(this TOwner obj)
         {
-            return new PrintingConfig<TOwner>();
+            return ObjectPrinter.For<TOwner>().PrintToString(obj);
+        }
+        
+        public static PrintingConfig<TOwner> Serialize<TOwner>(this TOwner obj)
+        {
+            return ObjectPrinter.For<TOwner>();
         }
     }
 }

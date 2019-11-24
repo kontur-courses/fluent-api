@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
 
@@ -32,7 +31,7 @@ namespace ObjectPrinting.Tests
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             person.Serialized();
             //8. ...с конфигурированием
-            person.Serialized().Excluding(p => p.Age);
+            person.Serialize().Excluding(p => p.Age);
         }
     }
 }
