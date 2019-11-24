@@ -14,6 +14,8 @@ namespace ObjectPrinting.Configs
         private readonly HashSet<PropertyInfo> excludedProperties;
         private readonly Dictionary<Type, Queue<Func<object, string>>> typesSerializations;
         private readonly Dictionary<PropertyInfo, Queue<Func<object, string>>> propertiesSerializations;
+
+        private int nestingLevelMax;
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddExcludedType(Type type)
         {
             var newExcludingTypes = new HashSet<Type>(excludedTypes) {type};
@@ -79,6 +81,9 @@ namespace ObjectPrinting.Configs
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (nestingLevel == nestingLevelMax)
+                return "";
+            
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -142,6 +147,12 @@ namespace ObjectPrinting.Configs
             var propertyInfo = ((MemberExpression) propertyDelegate.Body).Member as PropertyInfo;
             if(propertyInfo == null) throw new ArgumentException();
             return new PropertySerializationConfig<TOwner, TPropType>(this, propertyInfo);
+        }
+
+        public void SetNestingLevel(int levelMax)
+        {
+            if(levelMax < 0) throw new ArgumentException();
+            nestingLevelMax = levelMax;
         }
 
         private Dictionary<T, Queue<Func<object, string>>> CopySerializations<T>(
