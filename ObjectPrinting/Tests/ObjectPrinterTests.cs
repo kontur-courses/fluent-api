@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -76,6 +77,18 @@ namespace ObjectPrinting.Tests
             var actual = printer.PrintToString(person);
             
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = NoName\r\n\tHeight = 170\r\n\tAge = X\r\n");
+        }
+        
+        [Test]
+        public void ObjectPrinter_PrintingUsingAnotherCultureInfo_Double()
+        {
+            var person = new Person {Name = "Vasa", Id = new Guid(), Age = 19, Height = 170.1};
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(CultureInfo.CurrentUICulture);
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Vasa\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
     }
 }

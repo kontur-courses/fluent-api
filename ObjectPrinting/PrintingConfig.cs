@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,7 +19,7 @@ namespace ObjectPrinting
         };
         
         private readonly Dictionary<Type, Func<object, string>> serialised = new Dictionary<Type, Func<object, string>>();
-
+        private readonly Dictionary<Type, Func<object, string>> cultureTypes = new Dictionary<Type, Func<object, string>>();
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -51,17 +52,19 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            if (notSerialisedTypeOfProperty.Contains(obj.GetType()))
+            
+            var type = obj.GetType();
+            if (notSerialisedTypeOfProperty.Contains(type))
                 return null;
-            if (serialised.ContainsKey(obj.GetType()))
-                return serialised[obj.GetType()](obj) + Environment.NewLine;
-            if (finalTypes.Contains(obj.GetType()))
+            if (serialised.ContainsKey(type))
+                return serialised[type](obj) + Environment.NewLine;
+            if (cultureTypes.ContainsKey(type))
+                return cultureTypes[type](obj) + Environment.NewLine;
+            if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
