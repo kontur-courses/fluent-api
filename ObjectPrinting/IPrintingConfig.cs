@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ namespace ObjectPrinting
 {
     interface IPrintingConfig<TOwner>
     {
-        PrintingConfig<TOwner> AddCustomPrint<TProperty>(Func<TProperty, string> func);
+        PrintingConfig<TOwner> AddCustomPrintForType<TProperty>(Func<TProperty, string> func);
+        PrintingConfig<TOwner> AddCustomPrintForField<TProperty>(Func<TProperty, string> func, PropertyInfo property);
     }
 }

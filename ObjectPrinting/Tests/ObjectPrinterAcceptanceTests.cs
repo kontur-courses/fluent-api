@@ -20,11 +20,11 @@ namespace ObjectPrinting.Tests
                 ////3. Для числовых типов указать культуру
                 .ChangePrintFor<int>().Using(CultureInfo.CurrentCulture)
                 ////4. Настроить сериализацию конкретного свойства
-                .ChangePrintFor(p => p.Height).Using(value => (value + 10).ToString())
+                .ChangePrintFor(p => p.Height).Using(value => (value + 500).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .ChangePrintFor(p => p.Name).TrimToLength(10);
+                .ChangePrintFor(p => p.Name).TrimToLength(10)
                 //6.Исключить из сериализации конкретного свойства
-                //.Excluding(p => p.Height);
+                .ChangePrintFor(p => p.Age).Using(CultureInfo.CurrentCulture);
 
             string s1 = printer.PrintToString(person);
             Console.Write(s1);

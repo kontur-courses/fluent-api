@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TProperty> : IPropertyPrintingConfig<TOwner>
+    public class PropertyPrintingConfig<TOwner, TProperty>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => this.parentConfig;
+        private readonly PropertyInfo propertyInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo = null)
         {
             this.parentConfig = parentConfig;
+            this.propertyInfo = propertyInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
-            return (parentConfig as IPrintingConfig<TOwner>).AddCustomPrint(serializationFunc);
+            return propertyInfo != null ? 
+                (parentConfig as IPrintingConfig<TOwner>).AddCustomPrintForField(serializationFunc, propertyInfo) 
+                : (parentConfig as IPrintingConfig<TOwner>).AddCustomPrintForType(serializationFunc);
         }
     }
 }
