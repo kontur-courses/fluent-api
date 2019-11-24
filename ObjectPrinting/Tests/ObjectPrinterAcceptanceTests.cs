@@ -31,8 +31,10 @@ namespace ObjectPrinting.Tests
             Console.Write(s1);
 
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию    
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            person.PrintToString();
             //8. ...с конфигурированием
+            person.PrintToString(config => config.SetMaxNestingLevel(5).Excluding(p => p.Name));
         }
     }
 }
