@@ -8,6 +8,7 @@ namespace ObjectPrinting
 {
     interface IPropertyPrintingConfig<TOwner>
     {
-        PrintingConfig<TOwner> ParentConfig { get;}
+        PrintingConfig<TOwner> ParentConfig { get; }
+        System.Reflection.PropertyInfo PropertyInfo { get; }
     }
 }

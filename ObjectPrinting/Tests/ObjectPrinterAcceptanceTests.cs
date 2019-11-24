@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alex", Age = 19, SecondName = "Shmalex" };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -79,6 +79,18 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
 
             Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = ALEX\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shmalex\r\n", s1);
+        }
+
+        [Test]
+        public void ChangePrintFor_String_TrimToLength()
+        {
+            var person = new Person { Name = "Alex", Age = 19, SecondName = "Shmalex" };
+            var printer = ObjectPrinter.For<Person>()
+                .ChangePrintFor<string>().TrimToLength(3);
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Ale\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shm", s1);
         }
     }
 }

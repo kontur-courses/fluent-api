@@ -117,17 +117,14 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
             if (propertyInfo == null)
-                (parentConfig as IPrintingConfig).CustomTypesPrints.Add(
-                    typeof(TProperty),
-                    value => serializationFunc((TProperty)value));
+                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
             else
-                (parentConfig as IPrintingConfig).CustomPropertysPrints.Add(
-                    propertyInfo.Name,
-                    value => serializationFunc((TProperty)value));
+                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
             return parentConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => this.parentConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
+        PropertyInfo IPropertyPrintingConfig<TOwner>.PropertyInfo => propertyInfo;
     }
 
     public static class PropertyPrintingConfigExtensions
@@ -140,6 +137,13 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config, int length)
         {
+            var propertyInfo = (config as IPropertyPrintingConfig<TOwner>).PropertyInfo;
+            var parentConfig = (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+
+            if (propertyInfo == null)
+                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
+            else
+                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
             return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }
     }
