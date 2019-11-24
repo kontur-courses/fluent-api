@@ -42,7 +42,7 @@ namespace ObjectPrinting.Tests
 
             string s1 = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", s1);
+            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = null\r\n", s1);
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace ObjectPrinting.Tests
 
             string s1 = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900\tSecondName = null\r\n", s1);
         }
 
         [Test]
@@ -66,7 +66,19 @@ namespace ObjectPrinting.Tests
 
             string s1 = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU\tSecondName = null\r\n", s1);
+        }
+
+        [Test]
+        public void ChangePrintFor_Function_Using_Function()
+        {
+            var person = new Person { Name = "Alex", Age = 19 , SecondName = "Shmalex"};
+            var printer = ObjectPrinter.For<Person>()
+                .ChangePrintFor(p => p.Name).Using(value => value.ToUpper());
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = ALEX\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shmalex\r\n", s1);
         }
     }
 }

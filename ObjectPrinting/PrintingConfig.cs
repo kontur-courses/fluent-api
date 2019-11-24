@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace ObjectPrinting
@@ -12,12 +13,21 @@ namespace ObjectPrinting
     {
         private readonly List<Type> excludingTypes;
         private readonly Dictionary<Type, Func<object, string>> customTypesPrints;
-        Dictionary<Type, Func<object, string>> IPrintingConfig.CustomTypesPrints => this.customTypesPrints;
+
+        Dictionary<Type, Func<object, string>> IPrintingConfig.CustomTypesPrints => customTypesPrints;
+
+        private readonly List<string> excludingPropertys;
+        private readonly Dictionary<string, Func<object, string>> customPropertysPrints;
+
+        Dictionary<string, Func<object, string>> IPrintingConfig.CustomPropertysPrints => customPropertysPrints;
 
         public PrintingConfig()
         {
             excludingTypes = new List<Type>();
             customTypesPrints = new Dictionary<Type, Func<object, string>>();
+
+            excludingPropertys = new List<string>();
+            customPropertysPrints = new Dictionary<string, Func<object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -53,6 +63,12 @@ namespace ObjectPrinting
                         customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
                     continue;
                 }
+                if (customPropertysPrints.ContainsKey(propertyInfo.Name))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                        customPropertysPrints[propertyInfo.Name](propertyInfo.GetValue(obj)));
+                    continue;
+                }
                 sb.Append(identation + propertyInfo.Name + " = " +
                     PrintToString(propertyInfo.GetValue(obj),
                     nestingLevel + 1));
@@ -73,7 +89,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
-            return new PropertyPrintingConfig<TOwner, T>(this);
+            return new PropertyPrintingConfig<TOwner, T>(this, ((MemberExpression)func.Body).Member as PropertyInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
@@ -85,16 +101,29 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TProperty> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
+        private readonly PropertyInfo propertyInfo;
+
         public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
         {
             this.parentConfig = parentConfig;
         }
 
+        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo)
+        {
+            this.parentConfig = parentConfig;
+            this.propertyInfo = propertyInfo;
+        }
+
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
-            (parentConfig as IPrintingConfig).CustomTypesPrints.Add(
-                typeof(TProperty),
-                value => serializationFunc((TProperty)value));
+            if (propertyInfo == null)
+                (parentConfig as IPrintingConfig).CustomTypesPrints.Add(
+                    typeof(TProperty),
+                    value => serializationFunc((TProperty)value));
+            else
+                (parentConfig as IPrintingConfig).CustomPropertysPrints.Add(
+                    propertyInfo.Name,
+                    value => serializationFunc((TProperty)value));
             return parentConfig;
         }
 
