@@ -17,7 +17,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
             return propertyInfo != null ? 
-                (parentConfig as IPrintingConfig<TOwner>).AddCustomPrintForField(serializationFunc, propertyInfo) 
+                (parentConfig as IPrintingConfig<TOwner>).AddCustomPrintForProperty(serializationFunc, propertyInfo) 
                 : (parentConfig as IPrintingConfig<TOwner>).AddCustomPrintForType(serializationFunc);
         }
     }

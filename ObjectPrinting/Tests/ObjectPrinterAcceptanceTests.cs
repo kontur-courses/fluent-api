@@ -24,7 +24,7 @@ namespace ObjectPrinting.Tests
                 .ChangePrintFor(p => p.Height).Using(value => (value + 500).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .ChangePrintFor(p => p.Name).TrimToLength(10)
-                .SetMaxNestingLevel(0);
+                .SetMaxNestingLevel(2);
                 //6.Исключить из сериализации конкретного свойства
 
             string s1 = printer.PrintToString(person);

@@ -10,6 +10,6 @@ namespace ObjectPrinting
     interface IPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> AddCustomPrintForType<TProperty>(Func<TProperty, string> func);
-        PrintingConfig<TOwner> AddCustomPrintForField<TProperty>(Func<TProperty, string> func, PropertyInfo property);
+        PrintingConfig<TOwner> AddCustomPrintForProperty<TProperty>(Func<TProperty, string> func, PropertyInfo property);
     }
 }

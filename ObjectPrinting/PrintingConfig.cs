@@ -13,8 +13,8 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly ImmutableHashSet<Type> excludingTypes;
-        private readonly ImmutableDictionary<Type, Delegate> customPrintForType;
-        private readonly ImmutableDictionary<PropertyInfo, Delegate> customPrintForField;
+        private readonly ImmutableDictionary<Type, Func<object, string>> customPrintForType;
+        private readonly ImmutableDictionary<PropertyInfo, Func<object, string>> customPrintForField;
         private readonly ImmutableHashSet<PropertyInfo> excludingFields;
         private readonly int maxNestingLevel = 10;
         private readonly object[] finalTypes = {
@@ -25,13 +25,13 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
             excludingTypes = ImmutableHashSet<Type>.Empty;
-            customPrintForType = ImmutableDictionary<Type, Delegate>.Empty;
+            customPrintForType = ImmutableDictionary<Type, Func<object, string>>.Empty;
             excludingFields = ImmutableHashSet<PropertyInfo>.Empty;
-            customPrintForField = ImmutableDictionary<PropertyInfo, Delegate>.Empty;
+            customPrintForField = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
         }
 
-        private PrintingConfig(ImmutableHashSet<Type> excludingTypes, ImmutableDictionary<Type, Delegate> customPrintForType,
-            ImmutableHashSet<PropertyInfo> excludingFields, ImmutableDictionary<PropertyInfo, Delegate> customPrintForField, int maxNestingLevel)
+        private PrintingConfig(ImmutableHashSet<Type> excludingTypes, ImmutableDictionary<Type, Func<object, string>> customPrintForType,
+            ImmutableHashSet<PropertyInfo> excludingFields, ImmutableDictionary<PropertyInfo, Func<object, string>> customPrintForField, int maxNestingLevel)
         {
             this.excludingTypes = excludingTypes;
             this.customPrintForType = customPrintForType;
@@ -87,13 +87,13 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForType<TProperty>(Func<TProperty, string> func)
         {
-            var newCustomPrintForType = customPrintForType.SetItem(typeof(TProperty), func);
+            var newCustomPrintForType = customPrintForType.SetItem(typeof(TProperty), obj => func((TProperty)obj));
             return new PrintingConfig<TOwner>(excludingTypes, newCustomPrintForType, excludingFields, customPrintForField, maxNestingLevel);
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForField<TProperty>(Func<TProperty, string> func, PropertyInfo property)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForProperty<TProperty>(Func<TProperty, string> func, PropertyInfo property)
         {
-            var newCustomPrintForField = customPrintForField.SetItem(property, func);
+            var newCustomPrintForField = customPrintForField.SetItem(property, obj => func((TProperty)obj));
             return new PrintingConfig<TOwner>(excludingTypes, customPrintForType, excludingFields, newCustomPrintForField, maxNestingLevel);
         }
 
