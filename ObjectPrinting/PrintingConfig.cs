@@ -8,14 +8,16 @@ using NUnit.Framework;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly List<Type> excludingTypes;
-        private readonly Dictionary<Type, Func<Type, string>> customPrint;
+        private readonly Dictionary<Type, Func<object, string>> customTypesPrints;
+        Dictionary<Type, Func<object, string>> IPrintingConfig.CustomTypesPrints => this.customTypesPrints;
 
         public PrintingConfig()
         {
-            this.excludingTypes = new List<Type>();
+            excludingTypes = new List<Type>();
+            customTypesPrints = new Dictionary<Type, Func<object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -45,9 +47,15 @@ namespace ObjectPrinting
             {
                 if (excludingTypes.Contains(propertyInfo.PropertyType))
                     continue;
+                if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                        customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
+                    continue;
+                }
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                    PrintToString(propertyInfo.GetValue(obj),
+                    nestingLevel + 1));
             }
             return sb.ToString();
         }
@@ -82,8 +90,11 @@ namespace ObjectPrinting
             this.parentConfig = parentConfig;
         }
 
-        public PrintingConfig<TOwner> Using<T>(Func<TProperty, T> serializationFunc)
+        public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
+            (parentConfig as IPrintingConfig).CustomTypesPrints.Add(
+                typeof(TProperty),
+                value => serializationFunc((TProperty)value));
             return parentConfig;
         }
 

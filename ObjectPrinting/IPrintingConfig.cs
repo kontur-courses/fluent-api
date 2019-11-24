@@ -8,6 +8,6 @@ namespace ObjectPrinting
 {
     interface IPrintingConfig
     {
-        Dictionary<Type, Func<Type, string>> customPrints { get; } 
+        Dictionary<Type, Func<object, string>> CustomTypesPrints { get; } 
     }
 }

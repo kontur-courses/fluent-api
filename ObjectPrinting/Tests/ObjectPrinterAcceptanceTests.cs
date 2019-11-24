@@ -16,7 +16,7 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
                 //2.Указать альтернативный способ сериализации для определенного типа
-                .ChangePrintFor<string>().Using((s => s.Trim()))
+                .ChangePrintFor<string>().Using(s => s.Trim())
                 //3. Для числовых типов указать культуру
                 .ChangePrintFor<int>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
@@ -31,6 +31,30 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию    
             //8. ...с конфигурированием
+        }
+
+        [Test]
+        public void Excluding_Type()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>();
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", s1);
+        }
+
+        [Test]
+        public void ChangePrintFor_Type_Using_Function()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>()
+                .ChangePrintFor<int>().Using(s => (s * 100).ToString());
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900", s1);
         }
     }
 }
