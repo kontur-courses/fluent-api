@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
