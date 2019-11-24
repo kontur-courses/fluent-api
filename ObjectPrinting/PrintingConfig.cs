@@ -42,10 +42,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new  HashSet<object>{obj});
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> viewedObjects)
         {
             //TODO apply configurations
             if (obj == null)
@@ -68,8 +68,11 @@ namespace ObjectPrinting
             }
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (viewedObjects.Contains(propertyInfo.GetValue(obj)) && !finalTypes.Contains(propertyInfo.PropertyType))
+                    continue;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperty.Contains(propertyInfo))
                     continue;
+                viewedObjects.Add(propertyInfo.GetValue(obj));
                 if (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint))
                 {
                     sb.AppendLine(identation + propertyInfo.Name + " = " +
@@ -79,7 +82,7 @@ namespace ObjectPrinting
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                              nestingLevel + 1, viewedObjects));
                 }
             }
             return sb.ToString();
