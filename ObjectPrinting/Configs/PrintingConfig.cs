@@ -59,8 +59,8 @@ namespace ObjectPrinting.Configs
             typesSerializations = new Dictionary<Type, Queue<Func<object, string>>>();
             propertiesSerializations = new Dictionary<PropertyInfo, Queue<Func<object, string>>>();
         }
-        
-        public PrintingConfig(
+
+        private PrintingConfig(
             HashSet<Type> excludedTypes,
             HashSet<PropertyInfo> excludedProperties,
             Dictionary<Type, Queue<Func<object, string>>> typesSerializations,
