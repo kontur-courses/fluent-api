@@ -1,41 +1,41 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        private readonly Config config = new Config();
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return PrintToString(obj, 0);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, config, typeof(TPropType));
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            if (!(memberSelector.Body is MemberExpression exp))
+                throw new ArgumentException($"{nameof(memberSelector)} is not {typeof(MemberExpression).Name} type");
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, config, exp.Member);
+        }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            if (memberSelector.Body is MemberExpression exp)
+                config.Excluding.Add(exp.Member);
+            return this;
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
+        public PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            config.Excluding.Add(typeof(TPropType));
+            return this;
+        }
+
+        public string PrintToString(TOwner obj)
+        {
+            return new Printer(config).PrintToString(obj, 0, 15, new HashSet<object>());
         }
     }
 }
