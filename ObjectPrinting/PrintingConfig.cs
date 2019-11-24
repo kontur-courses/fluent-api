@@ -11,18 +11,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private Dictionary<Type, bool> finalTypes = new Dictionary<Type, bool>();
-
-        public PrintingConfig()
-        {
-            finalTypes = new Dictionary<Type, bool>()
-            {
-                {typeof(int) , true}, {typeof(double) , true},
-                {typeof(float) , true}, {typeof(string) , true},
-                {typeof(DateTime) , true}, {typeof(TimeSpan) , true}
-            };
-        }
-        
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -35,9 +23,6 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
-            
-            if (finalTypes.ContainsKey(obj.GetType()))
-                return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -56,7 +41,6 @@ namespace ObjectPrinting
         
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            //finalTypes.Remove(typeof(T));
             excludedTypes.Add(typeof(T));
             return this;
         }
