@@ -8,15 +8,12 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Demo()
+        public void WorksWithoutAnyChain()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter.For<Person>()
-                .Excluding<string>();
-                
-                
-//                .WithSerilizing<string>().Using<string>(x => String.Format("{0} : {1}", x, x.Length))
+            var printer = ObjectPrinter.For<Person>();
+                //.Printing<string>().Using(x => String.Format("{0} : {1}", x, x.Length));
 //                .WithSerilizing<int>().Using(CultureInfo.CurrentCulture)
 //                .WithSerilizing(x => x.Name).Using<string>(x => String.Format("{0} : {1}", x, x.Length))
 //                .WithSerilizing(x => x.Name).Trim(5)
@@ -34,7 +31,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             
-            Console.WriteLine();
+            Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
         }
