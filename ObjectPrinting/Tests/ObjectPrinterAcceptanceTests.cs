@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -23,11 +24,12 @@ namespace ObjectPrinting.Tests
                 .ChangePrintFor(p => p.Height).Using(value => (value + 500).ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .ChangePrintFor(p => p.Name).TrimToLength(10)
+                .SetMaxNestingLevel(0);
                 //6.Исключить из сериализации конкретного свойства
-                .ChangePrintFor(p => p.Age).Using(CultureInfo.CurrentCulture);
 
             string s1 = printer.PrintToString(person);
             Console.Write(s1);
+
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию    
             //8. ...с конфигурированием

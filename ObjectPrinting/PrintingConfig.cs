@@ -16,6 +16,7 @@ namespace ObjectPrinting
         private readonly ImmutableDictionary<Type, Delegate> customPrintForType;
         private readonly ImmutableDictionary<PropertyInfo, Delegate> customPrintForField;
         private readonly ImmutableHashSet<PropertyInfo> excludingFields;
+        private readonly int maxNestingLevel = 10;
         private readonly object[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
@@ -30,12 +31,13 @@ namespace ObjectPrinting
         }
 
         private PrintingConfig(ImmutableHashSet<Type> excludingTypes, ImmutableDictionary<Type, Delegate> customPrintForType,
-            ImmutableHashSet<PropertyInfo> excludingFields, ImmutableDictionary<PropertyInfo, Delegate> customPrintForField)
+            ImmutableHashSet<PropertyInfo> excludingFields, ImmutableDictionary<PropertyInfo, Delegate> customPrintForField, int maxNestingLevel)
         {
             this.excludingTypes = excludingTypes;
             this.customPrintForType = customPrintForType;
             this.excludingFields = excludingFields;
             this.customPrintForField = customPrintForField;
+            this.maxNestingLevel = maxNestingLevel;
         }
 
         public string PrintToString(TOwner obj)
@@ -48,25 +50,30 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (customPrintForType.ContainsKey(obj.GetType()))
+            var type = obj.GetType();
+            if (customPrintForType.ContainsKey(type))
             {
-                return customPrintForType[obj.GetType()].DynamicInvoke(obj) + Environment.NewLine;
+                return customPrintForType[type].DynamicInvoke(obj) + Environment.NewLine;
             }
-            if (finalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
+            var nextNestingLevel = nestingLevel + 1;
+            if (nextNestingLevel > maxNestingLevel)
+            {
+                sb.AppendLine(identation + "Out of range max nesting level.");
+                return sb.ToString();
+            }
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingFields.Contains(propertyInfo))
                     continue;
-                if (customPrintForField.TryGetValue(propertyInfo, out var result))
+                if (customPrintForField.TryGetValue(propertyInfo, out var customPrint))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              result.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
-
+                    sb.AppendLine(identation + propertyInfo.Name + " = " +
+                              customPrint.DynamicInvoke(propertyInfo.GetValue(obj)));
                 }
                 else
                 {
@@ -80,20 +87,20 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForType<TProperty>(Func<TProperty, string> func)
         {
-            var newCustomPrintForType = this.customPrintForType.SetItem(typeof(TProperty), func);
-            return new PrintingConfig<TOwner>(this.excludingTypes, newCustomPrintForType, this.excludingFields, this.customPrintForField);
+            var newCustomPrintForType = customPrintForType.SetItem(typeof(TProperty), func);
+            return new PrintingConfig<TOwner>(excludingTypes, newCustomPrintForType, excludingFields, customPrintForField, maxNestingLevel);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForField<TProperty>(Func<TProperty, string> func, PropertyInfo property)
         {
-            var newCustomPrintForField = this.customPrintForField.SetItem(property, func);
-            return new PrintingConfig<TOwner>(this.excludingTypes, this.customPrintForType, this.excludingFields, newCustomPrintForField);
+            var newCustomPrintForField = customPrintForField.SetItem(property, func);
+            return new PrintingConfig<TOwner>(excludingTypes, customPrintForType, excludingFields, newCustomPrintForField, maxNestingLevel);
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
             var newExcludingTypes = excludingTypes.Add(typeof(T));
-            return new PrintingConfig<TOwner>(newExcludingTypes, this.customPrintForType, this.excludingFields, this.customPrintForField);
+            return new PrintingConfig<TOwner>(newExcludingTypes, customPrintForType, excludingFields, customPrintForField, maxNestingLevel);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
@@ -104,7 +111,7 @@ namespace ObjectPrinting
             }
             var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
             var newExcludingFields = excludingFields.Add(propInfo);
-            return new PrintingConfig<TOwner>(excludingTypes, customPrintForType, newExcludingFields, this.customPrintForField);
+            return new PrintingConfig<TOwner>(excludingTypes, customPrintForType, newExcludingFields, customPrintForField, maxNestingLevel);
         }
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
@@ -120,6 +127,15 @@ namespace ObjectPrinting
             }
             var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, T>(this, propInfo);
+        }
+
+        public PrintingConfig<TOwner> SetMaxNestingLevel(int maxLevel)
+        {
+            if (maxLevel < 0)
+            {
+                throw new ArgumentException("Nesting level must be positive number.");
+            }
+            return new PrintingConfig<TOwner>(excludingTypes, customPrintForType, excludingFields, customPrintForField, maxLevel);
         }
     }
 }
