@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ObjectPrinting
 {
-    interface IPrintingConfig
+    interface IPrintingConfig<TOwner>
     {
-        Dictionary<Type, Delegate> СustomPrints { get; }
+        PrintingConfig<TOwner> AddCustomPrint<TProperty>(Func<TProperty, string> func);
     }
 }

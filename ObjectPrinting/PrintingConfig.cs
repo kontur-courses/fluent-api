@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,17 +9,29 @@ using NUnit.Framework;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly List<Type> excludingTypes;
-        private readonly Dictionary<Type, Delegate> customPrint;
-        private readonly List<PropertyInfo> excludingFields;
+        private readonly ImmutableHashSet<Type> excludingTypes;
+        private readonly ImmutableDictionary<Type, Delegate> customPrint;
+        private readonly ImmutableHashSet<PropertyInfo> excludingFields;
+        private readonly object[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
 
         public PrintingConfig()
         {
-            this.excludingTypes = new List<Type>();
-            customPrint = new Dictionary<Type, Delegate>();
-            excludingFields = new List<PropertyInfo>();
+            excludingTypes = ImmutableHashSet<Type>.Empty;
+            customPrint = ImmutableDictionary<Type, Delegate>.Empty;
+            excludingFields = ImmutableHashSet<PropertyInfo>.Empty;
+        }
+
+        private PrintingConfig(ImmutableHashSet<Type> excludingTypes, ImmutableDictionary<Type, Delegate> customPrint,
+            ImmutableHashSet<PropertyInfo> excludingFields)
+        {
+            this.excludingTypes = excludingTypes;
+            this.customPrint = customPrint;
+            this.excludingFields = excludingFields;
         }
 
         public string PrintToString(TOwner obj)
@@ -32,12 +44,10 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
+            if (customPrint.ContainsKey(obj.GetType()))
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+                return customPrint[obj.GetType()].DynamicInvoke(obj) + Environment.NewLine;
+            }
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
             var identation = new string('\t', nestingLevel + 1);
@@ -48,26 +58,30 @@ namespace ObjectPrinting
             {
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingFields.Contains(propertyInfo))
                     continue;
-                if (customPrint.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              customPrint[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)));
-                    sb.Append(Environment.NewLine);
-                }
-                else
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
-                }
+                sb.Append(identation + propertyInfo.Name + " = " +
+                          PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1));
             }
             return sb.ToString();
         }
 
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrint<TProperty>(Func<TProperty, string> func)
+        {
+            var newCustomPrint = this.customPrint.SetItem(typeof(TProperty), func);
+            return new PrintingConfig<TOwner>(this.excludingTypes, newCustomPrint, this.excludingFields);
+        }
+
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            excludingTypes.Add(typeof(T));
-            return this;
+            var newExcludingTypes = excludingTypes.Add(typeof(T));
+            return new PrintingConfig<TOwner>(newExcludingTypes, this.customPrint, this.excludingFields);
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
+        {
+            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
+            var newExcludingFields = excludingFields.Add(propInfo);
+            return new PrintingConfig<TOwner>(excludingTypes, customPrint, newExcludingFields);
         }
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
@@ -77,48 +91,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
-            var propInfo = ((MemberExpression) func.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, T>(this);
-        }
-
-        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
-        {
-            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
-            excludingFields.Add(propInfo);
-            return this;
-        }
-        Dictionary<Type, Delegate> IPrintingConfig.ÑustomPrints => customPrint;
-    }
-
-    public class PropertyPrintingConfig<TOwner, TProperty> : IPropertyPrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> parentConfig;
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
-        {
-            this.parentConfig = parentConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
-        {
-            (parentConfig as IPrintingConfig).ÑustomPrints[typeof(TProperty)] = serializationFunc;
-            return parentConfig;
-        }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => this.parentConfig;
-    }
-
-    public static class PropertyPrintingConfigExtensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> config, CultureInfo currentCulture)
-        {
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
-        }
-
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config, int length)
-        {
-            var func = new Func<string, string>((a) => a.Substring(0, a.Length > length ? length : a.Length));
-            ((config as IPropertyPrintingConfig<TOwner>).ParentConfig as IPrintingConfig).ÑustomPrints[typeof(string)] = func;
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }
     }
 }
