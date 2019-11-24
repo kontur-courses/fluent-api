@@ -14,8 +14,8 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
         PrintingConfig<TOwner> AddCustomPropertySerialization(string propertyName, Delegate func);
         PrintingConfig<TOwner> SetTypeCulture(Type type, CultureInfo culture);
-        PrintingConfig<TOwner> TrimmedToLength(int maxLen);
-        PrintingConfig<TOwner> TrimmedToLength(string propertyName, int maxLen);
+        PrintingConfig<TOwner> SetStringTrimming(int maxLen);
+        PrintingConfig<TOwner> SetPropertyTrimming(string propertyName, int maxLen);
     }
 
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
@@ -65,13 +65,13 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> expression)
+        public PropertyPrintingConfig<TOwner, T> PrintingProperty<T>(Expression<Func<TOwner, T>> expression)
         {
             var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, T>(this, propertyInfo);
         }
 
-        public PropertyPrintingConfig<TOwner, T> Printing<T>()
+        public PropertyPrintingConfig<TOwner, T> PrintingType<T>()
         {
             return new PropertyPrintingConfig<TOwner, T>(this);
         }
@@ -217,14 +217,14 @@ namespace ObjectPrinting
             return this;
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.TrimmedToLength(int maxLen)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetStringTrimming(int maxLen)
         {
             trimEnabled = true;
             this.maxLen = maxLen;
             return this;
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.TrimmedToLength(string propertyName, int maxLen)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetPropertyTrimming(string propertyName, int maxLen)
         {
             stringPropertiesToTrim[propertyName] = maxLen;
             return this;

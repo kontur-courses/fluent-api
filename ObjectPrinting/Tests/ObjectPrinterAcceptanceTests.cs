@@ -19,23 +19,23 @@ namespace ObjectPrinting.Tests
                 // ✔ 1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
                 // ✔ 2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<string>().Using(s => s.Trim())
+                .PrintingType<string>().Using(s => s.Trim())
                 // ✔ 3. Для числовых типов указать культуру
-                .Printing<sbyte>().Using(CultureInfo.InvariantCulture)
-                .Printing<byte>().Using(CultureInfo.InvariantCulture)
-                .Printing<short>().Using(CultureInfo.InvariantCulture)
-                .Printing<ushort>().Using(CultureInfo.InvariantCulture)
-                .Printing<int>().Using(CultureInfo.InvariantCulture)
-                .Printing<uint>().Using(CultureInfo.InvariantCulture)
-                .Printing<long>().Using(CultureInfo.InvariantCulture)
-                .Printing<float>().Using(CultureInfo.InvariantCulture)
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
-                .Printing<decimal>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<sbyte>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<byte>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<short>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<ushort>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<int>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<uint>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<long>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<float>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<double>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<decimal>().Using(CultureInfo.InvariantCulture)
                 // ✔ 4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Name).Using(s => s.Trim())
+                .PrintingProperty(p => p.Name).Using(s => s.Trim())
                 // ✔ 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(4)
-                .Printing<string>().TrimmedToLength(4)
+                .PrintingProperty(p => p.Name).TrimmingToLength(4)
+                .PrintingType<string>().TrimmingToLength(4)
                 // ✔ 6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 

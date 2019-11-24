@@ -4,6 +4,8 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
+        #region Using culture all numeric types
+
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, sbyte> config,
             CultureInfo culture)
         {
@@ -71,10 +73,12 @@ namespace ObjectPrinting
             return (config as IPropertyPrintingConfig<TOwner>).SetCultureFor<decimal>(culture);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
+        #endregion
+        
+        public static PrintingConfig<TOwner> TrimmingToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
             int maxLen)
         {
-            return (config as IPropertyPrintingConfig<TOwner>).TrimmedToLength(maxLen);
+            return (config as IPropertyPrintingConfig<TOwner>).TrimmingToLength(maxLen);
         }
     }
 }

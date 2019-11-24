@@ -11,11 +11,12 @@ namespace ObjectPrinting.Tests
         [Test]
         public void DefaultSerialization()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.PrintToString();
@@ -26,13 +27,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void TypeExclusion()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
-            var serialized = person.Printing().Excluding<Guid>().PrintToString();
+            var serialized = person.Printing()
+                .Excluding<Guid>()
+                .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
         }
@@ -40,9 +44,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void MultipleTypesExclusion()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
@@ -56,10 +61,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void TypeExclusionOfExcludedType()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
@@ -75,13 +81,16 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Vasiliy", Age = 19};
             var guid = person.Id.ToString();
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + $"Id = {guid}" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + $"Id = {guid}" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
 
-            var serialized = person.Printing().Printing<Guid>().Using(s => s.ToString()).PrintToString();
+            var serialized = person.Printing()
+                .PrintingType<Guid>().Using(s => s.ToString())
+                .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
         }
@@ -91,13 +100,13 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Vasiliy", Age = 19};
             var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + $"Id = Guid" + Environment.NewLine
+                                                 + '\t' + "Id = Guid" + Environment.NewLine
                                                  + '\t' + "Name = Vasiliy" + Environment.NewLine
                                                  + '\t' + "Height = 0" + Environment.NewLine
                                                  + '\t' + "Age = NO" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .Printing<int>().Using(s => "NO")
+                .PrintingType<int>().Using(s => "NO")
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -113,8 +122,8 @@ namespace ObjectPrinting.Tests
                                                  + '\t' + "Height = 0" + Environment.NewLine
                                                  + '\t' + "Age = 19" + Environment.NewLine;
             var serialized = person.Printing()
-                .Printing<Guid>().Using(s => s.ToString())
-                .Printing<Guid>().Using(s => s.GetType().Name)
+                .PrintingType<Guid>().Using(s => s.ToString())
+                .PrintingType<Guid>().Using(s => s.GetType().Name)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -124,14 +133,15 @@ namespace ObjectPrinting.Tests
         public void CultureInfoForNumericTypes_RussianCulture()
         {
             var person = new Person {Name = "Vasiliy", Age = 19, Height = 179.5d};
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 179,5" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 179,5" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .Printing<double>().Using(CultureInfo.CreateSpecificCulture("ru-ru"))
+                .PrintingType<double>().Using(CultureInfo.CreateSpecificCulture("ru-ru"))
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -141,14 +151,15 @@ namespace ObjectPrinting.Tests
         public void CultureInfoForNumericTypes_InvariantCulture()
         {
             var person = new Person {Name = "Vasiliy", Age = 19, Height = 181.7d};
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 181.7" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 181.7" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .PrintingType<double>().Using(CultureInfo.InvariantCulture)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -158,14 +169,15 @@ namespace ObjectPrinting.Tests
         public void CustomPropertySerialization()
         {
             var person = new Person {Name = "Vasiliy", Age = 19};
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = N/A" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = N/A" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .Printing(p => p.Height).Using(h => h < 1 ? "N/A" : h.ToString(CultureInfo.InvariantCulture))
+                .PrintingProperty(p => p.Height).Using(h => h < 1 ? "N/A" : h.ToString(CultureInfo.InvariantCulture))
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -174,15 +186,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void StringTypesTrimming()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Alex" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Alex" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .Printing<string>().TrimmedToLength(4)
+                .PrintingType<string>().TrimmingToLength(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -191,15 +204,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void StringPropertiesTrimming()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Alex" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine
-                                                 + '\t' + "Age = 19" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Alex" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine +
+                '\t' + "Age = 19" + Environment.NewLine;
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .Printing(p => p.Name).TrimmedToLength(4)
+                .PrintingProperty(p => p.Name).TrimmingToLength(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -208,10 +222,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PropertyExclusion()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Id = Guid" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Id = Guid" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
@@ -224,9 +239,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void MultiplePropertiesExclusion()
         {
-            var expectedSerialization = "Person" + Environment.NewLine
-                                                 + '\t' + "Name = Vasiliy" + Environment.NewLine
-                                                 + '\t' + "Height = 0" + Environment.NewLine;
+            var expectedSerialization =
+                "Person" + Environment.NewLine +
+                '\t' + "Name = Vasiliy" + Environment.NewLine +
+                '\t' + "Height = 0" + Environment.NewLine;
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
@@ -241,9 +257,9 @@ namespace ObjectPrinting.Tests
         public void ReferenceLoopsHandling()
         {
             var selfReferrer = new SelfReferrer();
-            
+
             Action printSelfReferrer = () => selfReferrer.PrintToString();
-            
+
             printSelfReferrer.Should().NotThrow();
         }
 
@@ -251,13 +267,15 @@ namespace ObjectPrinting.Tests
         public void MaximumNesting()
         {
             var expectedSerialization =
-                "SelfReferrer" + Environment.NewLine
-                               + '\t' + "X = 42" + Environment.NewLine
-                               + '\t' + "Self = SelfReferrer" + Environment.NewLine;
+                "SelfReferrer" + Environment.NewLine +
+                '\t' + "X = 42" + Environment.NewLine +
+                '\t' + "Self = SelfReferrer" + Environment.NewLine;
             var selfReferrer = new SelfReferrer();
-            
-            var serialized = selfReferrer.Printing().WithMaximumNesting(1).PrintToString();
-            
+
+            var serialized = selfReferrer.Printing()
+                .WithMaximumNesting(1)
+                .PrintToString();
+
             serialized.Should().Be(expectedSerialization);
         }
 
@@ -265,11 +283,11 @@ namespace ObjectPrinting.Tests
         public void ArrayPrinting()
         {
             var expectedSerialization =
-                "Int32[]" + Environment.NewLine
-                          + "\t - " + "1" + Environment.NewLine
-                          + "\t - " + "2" + Environment.NewLine
-                          + "\t - " + "4" + Environment.NewLine
-                          + "\t - " + "3" + Environment.NewLine;
+                "Int32[]" + Environment.NewLine +
+                "\t - " + "1" + Environment.NewLine +
+                "\t - " + "2" + Environment.NewLine +
+                "\t - " + "4" + Environment.NewLine +
+                "\t - " + "3" + Environment.NewLine;
             var arr = new[] {1, 2, 4, 3};
 
             var serialized = arr.PrintToString();
@@ -281,12 +299,12 @@ namespace ObjectPrinting.Tests
         public void ListPrinting()
         {
             var expectedSerialization =
-                "List`1" + Environment.NewLine
-                         + "\t - " + "h" + Environment.NewLine
-                         + "\t - " + "e" + Environment.NewLine
-                         + "\t - " + "l" + Environment.NewLine
-                         + "\t - " + "l" + Environment.NewLine
-                         + "\t - " + "o" + Environment.NewLine;
+                "List`1" + Environment.NewLine +
+                "\t - " + "h" + Environment.NewLine +
+                "\t - " + "e" + Environment.NewLine +
+                "\t - " + "l" + Environment.NewLine +
+                "\t - " + "l" + Environment.NewLine +
+                "\t - " + "o" + Environment.NewLine;
             string[] input = {"h", "e", "l", "l", "o"};
             var list = new List<string>(input);
 
@@ -299,9 +317,9 @@ namespace ObjectPrinting.Tests
         public void DictionaryPrinting()
         {
             var expectedSerialization =
-                "Dictionary`2" + Environment.NewLine
-                               + "\t" + "hello" + " - " + "world" + Environment.NewLine
-                               + "\t" + "cold" + " - " + "outside" + Environment.NewLine;
+                "Dictionary`2" + Environment.NewLine +
+                "\t" + "hello" + " - " + "world" + Environment.NewLine +
+                "\t" + "cold" + " - " + "outside" + Environment.NewLine;
 
             var dict = new Dictionary<string, string> {{"hello", "world"}, {"cold", "outside"}};
 
