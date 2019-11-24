@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,12 +8,15 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> notSerialisedTypeOfProperty = new HashSet<Type>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
@@ -24,6 +28,7 @@ namespace ObjectPrinting
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            notSerialisedTypeOfProperty.Add(typeof(TPropType));
             return this;
         }
 
@@ -52,10 +57,13 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType))
+                    continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }
