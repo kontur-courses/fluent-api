@@ -105,7 +105,29 @@ namespace ObjectPrinting.Tests
 ";
 			var actualString = _objPrinter
 				.Printing(p => p.Name.Firstname).TrimmedToLength(2)
-				.PrintToString();
+				.PrintToString(_person);
+			actualString.Should().Be(expectedString);
+		}
+
+		[Test]
+		public void PrintsArrayCorrectly()
+		{
+			var array = new[] {1, 2};
+			var expectedString = @"Int32[]
+	Length = 2
+	LongLength = Int64
+	Rank = 1
+	IsReadOnly = False
+	IsFixedSize = True
+	IsSynchronized = False
+	Items:
+		[0] 1
+		[1] 2
+";
+
+			var actualString = ObjectPrinter.For<int[]>()
+				.Excluding(a => a.SyncRoot)
+				.PrintToString(array);
 			actualString.Should().Be(expectedString);
 		}
 	}

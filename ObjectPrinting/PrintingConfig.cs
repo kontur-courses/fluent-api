@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,12 +10,20 @@ namespace ObjectPrinting
 {
 	public class PrintingConfig<TOwner>: IPrintingConfig<TOwner>
 	{
+		private const int MaxNestingLevel = 10;
+		
 		private readonly HashSet<Type> _excludedTypes = new HashSet<Type>();
 		private readonly HashSet<string> _excludedProperties = new HashSet<string>();
 		private readonly Dictionary<Type, Func<object, string>> _typesPrintingBehaviors =
 			new Dictionary<Type, Func<object, string>>();
 		private readonly Dictionary<string, Func<object, string>> _propertiesPrintingBehaviors =
 			new Dictionary<string, Func<object, string>>();
+
+		private readonly HashSet<Type> _finalTypes = new HashSet<Type>
+		{
+			typeof(int), typeof(double), typeof(float), typeof(string),
+			typeof(DateTime), typeof(TimeSpan), typeof(bool)
+		};
 
 		public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
 		{
@@ -47,7 +56,7 @@ namespace ObjectPrinting
 			if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
 				throw new ArgumentException("member selector type must be member access");
 			var selectedMember = ((MemberExpression) memberSelector.Body).Member;
-			var propertyName = $"{selectedMember.ReflectedType?.FullName}.{selectedMember.Name}";
+			var propertyName = $"{selectedMember.DeclaringType?.FullName}.{selectedMember.Name}";
 			return propertyName;
 		}
 
@@ -62,48 +71,67 @@ namespace ObjectPrinting
 			return PrintToString(obj, 0);
 		}
 
-		private string PrintToString(object obj, int nestingLevel)
+		private string PrintToString(object obj, int nestingLevel, PropertyInfo propertyInfo=null)
 		{
+			if (nestingLevel > MaxNestingLevel)
+				return "Max nesting level exceeded" + Environment.NewLine;
 			if (obj == null)
 				return "null" + Environment.NewLine;
-
-			var finalTypes = new HashSet<Type>
-			{
-				typeof(int), typeof(double), typeof(float), typeof(string),
-				typeof(DateTime), typeof(TimeSpan)
-			};
-			if (finalTypes.Contains(obj.GetType()))
-				return obj + Environment.NewLine;
-
+			
+			var objType = obj.GetType();
+			var stringRepresentation = ApplyPrintingBehavior(obj, objType, propertyInfo) + Environment.NewLine;
+			if (_finalTypes.Contains(objType))
+				return stringRepresentation;
+			
 			var ident = new string('\t', nestingLevel + 1);
 			var sb = new StringBuilder();
-			var type = obj.GetType();
-			sb.Append(ApplyPrintingBehavior(obj, type) + Environment.NewLine);
-			foreach (var propertyInfo in type.GetProperties())
-			{
-				if (CheckExcluding(propertyInfo))
-					continue;
-				sb.Append(ident + propertyInfo.Name + " = " +
-				          PrintToString(propertyInfo.GetValue(obj),
-					          nestingLevel + 1));
-			}
+			sb.Append(stringRepresentation);
+			PrintProperties(obj, nestingLevel, objType, sb, ident);
+			if (!(obj is IEnumerable enumerable)) return sb.ToString();
+			
+			sb.Append(ident + "Items:" + Environment.NewLine);
+			PrintCollection(nestingLevel + 1, sb, enumerable);
 			return sb.ToString();
 		}
 
-		private string ApplyPrintingBehavior(object obj, Type objType)
+		private void PrintProperties(object obj, int nestingLevel, Type objType, StringBuilder sb, string ident)
+		{
+			foreach (var property in objType.GetProperties())
+			{
+				if (CheckExcluding(property))
+					continue;
+				sb.Append(ident + property.Name + " = " +
+				          PrintToString(property.GetValue(obj),
+					          nestingLevel + 1, property));
+			}
+		}
+
+		private void PrintCollection(int nestingLevel, StringBuilder sb, IEnumerable enumerable)
+		{
+			var ident = new string('\t', nestingLevel + 1);
+			var index = 0;
+			foreach (var item in enumerable)
+				sb.Append($"{ident}[{index++}] {PrintToString(item, nestingLevel + 1)}");
+		}
+
+		private string ApplyPrintingBehavior(object obj, Type objType, PropertyInfo propertyInfo)
 		{
 			var result = objType.Name;
-			if (_propertiesPrintingBehaviors.TryGetValue(objType.FullName, out var printingBehavior))
+			var propertyName = $"{propertyInfo?.DeclaringType?.FullName}.{propertyInfo?.Name}";
+			if (propertyInfo != null && 
+			    _propertiesPrintingBehaviors.TryGetValue(propertyName, out var printingBehavior))
 				result = printingBehavior(obj);
 			else if (_typesPrintingBehaviors.TryGetValue(objType, out printingBehavior))
 				result = printingBehavior(obj);
+			else if (_finalTypes.Contains(objType))
+				return obj.ToString();
 			return result;
 		}
 
 		private bool CheckExcluding(PropertyInfo propertyInfo)
 		{
 			return _excludedTypes.Contains(propertyInfo.PropertyType) ||
-			       _excludedProperties.Contains(propertyInfo.ReflectedType?.FullName + propertyInfo.Name);
+			       _excludedProperties.Contains($"{propertyInfo.DeclaringType?.FullName}.{propertyInfo.Name}");
 		}
 	}
 

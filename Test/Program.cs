@@ -9,19 +9,19 @@ namespace Test
 	{
 		public static void Main(string[] args)
 		{
-			Console.WriteLine(60.1.ToString(CultureInfo.CurrentCulture));
+			new Person().Printing(p => p.Name.Firstname);
 		}
 	}
 
 	class Person
 	{
-		public Name Name;
+		public Name Name { get; }
 	}
 
 	internal class Name
 	{
-		public string Firstname;
-		public string Surname;
+		public string Firstname { get; }
+		public string Surname { get; }
 	}
 
 	internal static class Ex
