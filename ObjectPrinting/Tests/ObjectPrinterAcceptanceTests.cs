@@ -92,5 +92,16 @@ namespace ObjectPrinting.Tests
 
             Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Ale\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shm", s1);
         }
+
+        [Test]
+        public void Excluding_Property()
+        {
+            var person = new Person { Name = "Alex", Age = 19, SecondName = "Shmalex" };
+            var printer = ObjectPrinter.For<Person>().Excluding(p => p.SecondName);
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", s1);
+        }
     }
 }

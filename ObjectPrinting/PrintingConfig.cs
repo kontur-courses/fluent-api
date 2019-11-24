@@ -63,6 +63,8 @@ namespace ObjectPrinting
                         customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
                     continue;
                 }
+                if (excludingPropertys.Contains(propertyInfo.Name))
+                    continue;
                 if (customPropertysPrints.ContainsKey(propertyInfo.Name))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
@@ -94,6 +96,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
+            excludingPropertys.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
             return this;
         }
     }
