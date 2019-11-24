@@ -6,8 +6,9 @@ namespace ObjectPrinting.Configs.ConfigInterfaces
 {
     internal interface IPrintingConfig<TOwner>
     {
-        HashSet<Type> ExcludedTypes { get; }
-        Dictionary<Type, Func<object, string>> AlternativeSerializations { get;}
-        HashSet<PropertyInfo> ExcludedProperties { get;}
+        PrintingConfig<TOwner> AddExcludedType(Type type);
+        PrintingConfig<TOwner> AddTypeSerialization(Type type, Func<object, string> serialization);
+        PrintingConfig<TOwner> AddPropertySerialization(PropertyInfo propertyInfo, Func<object, string> serialization);
+        PrintingConfig<TOwner> AddExcludedProperty(PropertyInfo propertyInfo);
     }
 }
