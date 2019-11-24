@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -9,6 +10,14 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> notSerialisedTypeOfProperty = new HashSet<Type>();
+
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        
+        private readonly Dictionary<Type, Func<object, string>> serialised = new Dictionary<Type, Func<object, string>>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -43,15 +52,14 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            if (notSerialisedTypeOfProperty.Contains(obj.GetType()))
+                return null;
+            if (serialised.ContainsKey(obj.GetType()))
+                return serialised[obj.GetType()](obj) + Environment.NewLine;
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -59,7 +67,7 @@ namespace ObjectPrinting
             {
                 if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType))
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " +
+                sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }

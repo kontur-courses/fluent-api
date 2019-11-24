@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -14,6 +16,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            var fieldInfo = typeof (PrintingConfig<TOwner>).GetField("serialised", BindingFlags.Instance | BindingFlags.NonPublic);
+            var result = (Dictionary<Type, Func<object, string>>) fieldInfo.GetValue(printingConfig);
+            result[typeof(TPropType)] = x => print((TPropType)x);
             return printingConfig;
         }
 
