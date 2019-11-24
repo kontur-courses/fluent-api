@@ -105,6 +105,7 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> config, CultureInfo currentCulture)
         {
+            ((config as IPropertyPrintingConfig<TOwner>).ParentConfig as IPrintingConfig).CustomTypesPrints.Add(typeof(int), value => currentCulture.ToString());
             return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }
 

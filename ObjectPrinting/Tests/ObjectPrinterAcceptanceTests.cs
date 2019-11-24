@@ -56,5 +56,17 @@ namespace ObjectPrinting.Tests
 
             Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900", s1);
         }
+
+        [Test]
+        public void ChangePrintFor_Int_Using_CultureInfo()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>()
+                .ChangePrintFor<int>().Using(CultureInfo.CurrentCulture);
+
+            string s1 = printer.PrintToString(person);
+
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU", s1);
+        }
     }
 }
