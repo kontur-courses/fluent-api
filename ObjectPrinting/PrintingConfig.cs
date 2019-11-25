@@ -10,15 +10,19 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<Type> ExcludedTypes;
-        private HashSet<string> ExcludedProperties;
-        private Dictionary<Type, Func<object, string>> SerializeFunctions;
+        private readonly HashSet<Type> ExcludedTypes;
+        private readonly HashSet<string> ExcludedProperties;
+        private readonly Dictionary<Type, Func<object, string>> SerializeFunctionsForTypes;
+        private readonly Dictionary<string, Func<object, string>> SerializeFunctionsForProperties;
+        private readonly HashSet<object> AlreadySerialized;
 
         public PrintingConfig()
         {
             ExcludedTypes = new HashSet<Type>();
-            SerializeFunctions = new Dictionary<Type, Func<object, string>>();
+            SerializeFunctionsForTypes = new Dictionary<Type, Func<object, string>>();
+            SerializeFunctionsForProperties = new Dictionary<string, Func<object, string>>();
             ExcludedProperties = new HashSet<string>();
+            AlreadySerialized = new HashSet<object>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -28,7 +32,7 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -47,8 +51,15 @@ namespace ObjectPrinting
 
         public void SetSerialization<TPropType>(Func<TPropType, string> print)
         {
+            SerializeFunctionsForTypes.Add(typeof(TPropType), x => print((TPropType)x));
+        }
+
+        public void SetSerialization<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector, Func<TPropType, string> print)
+        {
+            var a = memberSelector.Body as MemberExpression;
+            var b = a.Member.Name;
             Func<object, string> func = x => print((TPropType)x);
-            SerializeFunctions.Add(typeof(TPropType), func);
+            SerializeFunctionsForProperties.Add(b, func);
         }
 
 
@@ -71,6 +82,7 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            AlreadySerialized.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -79,11 +91,20 @@ namespace ObjectPrinting
             {
                 if (ExcludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
+
                 if (ExcludedProperties.Contains(propertyInfo.Name))
                     continue;
-                if (SerializeFunctions.ContainsKey(propertyInfo.PropertyType))
+
+                if(AlreadySerialized.Contains(propertyInfo.GetValue(obj)))
+                    continue;
+
+                if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              SerializeFunctions[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj))
+                              SerializeFunctionsForProperties[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))
+                              + Environment.NewLine);
+                else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              SerializeFunctionsForTypes[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj))
                               + Environment.NewLine);
                 else
                     sb.Append(identation + propertyInfo.Name + " = " +

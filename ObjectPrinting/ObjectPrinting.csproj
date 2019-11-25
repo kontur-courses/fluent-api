@@ -57,6 +57,8 @@
   <ItemGroup>
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="ObjectPrinter.cs" />
+    <Compile Include="Tests\Tzar.cs" />
+    <Compile Include="Tests\ObjectPrinterCycleReferencesTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
