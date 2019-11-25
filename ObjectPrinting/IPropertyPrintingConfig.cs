@@ -1,7 +1,12 @@
-﻿namespace ObjectPrinting
+﻿using System;
+using System.Reflection;
+
+namespace ObjectPrinting
 {
-    public interface IPropertyPrintingConfig<TOwner>
+    public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        PrintingConfig<TOwner> PrintingConfig { get; }
+        Type Type { get; }
+        PropertyInfo Property { get; }
     }
 }
