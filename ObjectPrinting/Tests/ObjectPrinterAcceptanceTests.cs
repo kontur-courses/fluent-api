@@ -2,7 +2,7 @@
 using System.Globalization;
 using NUnit.Framework;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrinting.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -18,7 +18,7 @@ namespace ObjectPrinting.Solved.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => i.ToString("X"))
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<int>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)

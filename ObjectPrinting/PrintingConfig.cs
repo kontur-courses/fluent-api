@@ -19,6 +19,7 @@ namespace ObjectPrinting
         };
         
         private readonly Dictionary<Type, Func<object, string>> serialised = new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<string, Func<object, string>> serialisedProperty = new Dictionary<string, Func<object, string>>();
         private readonly Dictionary<Type, Func<object, string>> cultureTypes = new Dictionary<Type, Func<object, string>>();
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -28,7 +29,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -70,6 +71,12 @@ namespace ObjectPrinting
             {
                 if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType))
                     continue;
+                if (serialisedProperty.ContainsKey(propertyInfo.Name))
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    continue;
+                }
                 sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
