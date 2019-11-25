@@ -12,7 +12,14 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private  HashSet<Type> excludedTypes = new HashSet<Type>();
-        
+        private Dictionary<Type, Delegate> typeFuncs = new Dictionary<Type, Delegate>();
+
+        public void SetFuncFor(Type type, Delegate pr)
+        {
+            typeFuncs[type] = pr;
+        }
+
+
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
@@ -27,9 +34,17 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                string str = "";
+                if (typeFuncs.ContainsKey(propertyInfo.PropertyType))
+                {
+                    str = typeFuncs[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)).ToString() + Environment.NewLine;
+                }
+
+                if (str == "")
+                    str = PrintToString(propertyInfo.GetValue(obj),
+                        nestingLevel + 1);
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                          str);
             }
             return sb.ToString();
         }

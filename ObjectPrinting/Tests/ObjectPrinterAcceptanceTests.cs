@@ -8,12 +8,13 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void WorksWithoutAnyChain()
+        public void ObjPrinter_ExcludingType_ShouldWork()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter.For<Person>();
-                //.Printing<string>().Using(x => String.Format("{0} : {1}", x, x.Length));
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<string>()
+                .Printing<double>().Using(x => String.Format("{0} : {1}", x, x));
 //                .WithSerilizing<int>().Using(CultureInfo.CurrentCulture)
 //                .WithSerilizing(x => x.Name).Using<string>(x => String.Format("{0} : {1}", x, x.Length))
 //                .WithSerilizing(x => x.Name).Trim(5)

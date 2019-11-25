@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace ObjectPrinting
@@ -14,6 +15,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingConfig.SetFuncFor(typeof(TPropType),print);
             return printingConfig;
         }
 
