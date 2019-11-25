@@ -17,10 +17,21 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
-        private readonly Dictionary<Type, Func<object, string>> serialised = new Dictionary<Type, Func<object, string>>();
-        private readonly Dictionary<string, Func<object, string>> serialisedProperty = new Dictionary<string, Func<object, string>>();
-        private readonly Dictionary<Type, Func<object, string>> cultureTypes = new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> serialised =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<string, Func<object, string>> serialisedProperty =
+            new Dictionary<string, Func<object, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> cultureTypes =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<string, Func<string, string>> trimer =
+            new Dictionary<string, Func<string, string>>();
+
+        private readonly List<Func<string, string>> trim = new List<Func<string, string>> {s => s};
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -53,12 +64,23 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
+
             var type = obj.GetType();
             if (notSerialisedTypeOfProperty.Contains(type))
                 return null;
+
+            if (type == typeof(string))
+            {
+                if (serialised.ContainsKey(type))
+                    return trim[0](serialised[type](obj)) + Environment.NewLine;
+                return trim[0]((string) obj) + Environment.NewLine;
+            }
+
             if (serialised.ContainsKey(type))
+            {
                 return serialised[type](obj) + Environment.NewLine;
+            }
+
             if (cultureTypes.ContainsKey(type))
                 return cultureTypes[type](obj) + Environment.NewLine;
             if (finalTypes.Contains(type))
@@ -71,12 +93,28 @@ namespace ObjectPrinting
             {
                 if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType))
                     continue;
+                if (trimer.ContainsKey(propertyInfo.Name))
+                {
+                    if (serialisedProperty.ContainsKey(propertyInfo.Name))
+                        sb.Append(indentation + propertyInfo.Name + " = " +
+                                  trimer[propertyInfo.Name](
+                                      serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj))) +
+                                  Environment.NewLine);
+                    else
+                        sb.Append(indentation + propertyInfo.Name + " = " +
+                                  trimer[propertyInfo.Name](
+                                      (string) propertyInfo.GetValue(obj)) +
+                                  Environment.NewLine);
+                    continue;
+                }
+
                 if (serialisedProperty.ContainsKey(propertyInfo.Name))
                 {
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine);
                     continue;
                 }
+
                 sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));

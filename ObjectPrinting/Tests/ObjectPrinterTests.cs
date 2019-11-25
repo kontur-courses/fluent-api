@@ -103,5 +103,31 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zip\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
+        
+        [Test]
+        public void ObjectPrinter_PrintingTrimToLength_String()
+        {
+            var person = new Person {Name = "Vasa", SecondName = "Zip", Id = new Guid(), Age = 19, Height = 170.1};
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>().TrimmedToLength(2);
+            var actual = printer.PrintToString(person);
+            
+            Console.WriteLine(actual);
+            actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zi\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
+        }
+        
+        [Test]
+        public void ObjectPrinter_PrintingUsingTrimToLength_Name()
+        {
+            var person = new Person {Name = "Vasa", SecondName = "Zip", Id = new Guid(), Age = 19, Height = 170.1};
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Name).TrimmedToLength(2);
+            var actual = printer.PrintToString(person);
+            
+            Console.WriteLine(actual);
+            actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zip\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
+        }
     }
 }

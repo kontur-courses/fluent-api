@@ -10,7 +10,6 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Expression<Func<TOwner, TPropType>> member;
-        private readonly HashSet<Type> numberTypes = new HashSet<Type>{typeof(double), typeof(int), typeof(float)};
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
             this.printingConfig = printingConfig;
