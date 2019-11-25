@@ -8,8 +8,8 @@ namespace ObjectPrintingHomeTask.PropertyConfig
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private PropertyInfo property;
-        private int deep;
+        private readonly PropertyInfo property;
+        private readonly int deep;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, int deep = 0, PropertyInfo property = null)
         {

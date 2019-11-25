@@ -11,11 +11,18 @@ namespace ObjectPrintingHomeTask.Config
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        private List<Type> excludedTypes = new List<Type>();
-        private List<(int deep, PropertyInfo propertyInfo)> excludedProperties = new List<(int deep, PropertyInfo propertyInfo)>();
-        private Dictionary<Type, List<Delegate>> typesRules = new Dictionary<Type, List<Delegate>>();
-        private Dictionary<(int deep, PropertyInfo property), List<Delegate>> properties = new Dictionary<(int deep, PropertyInfo property), List<Delegate>>();
+        private static readonly List<object> alreadySerialized = new List<object>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<(int deep, PropertyInfo propertyInfo)> excludedProperties = new List<(int deep, PropertyInfo propertyInfo)>();
+        private readonly Dictionary<Type, List<Delegate>> typesRules = new Dictionary<Type, List<Delegate>>();
+        private readonly Dictionary<(int deep, PropertyInfo property), List<Delegate>> properties = new Dictionary<(int deep, PropertyInfo property), List<Delegate>>();
         private CultureInfo culture = CultureInfo.CurrentCulture;
+
+        readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() 
             => new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -39,20 +46,21 @@ namespace ObjectPrintingHomeTask.Config
             return this;
         }
 
-        public string PrintToString(TOwner obj) 
-            => PrintToString(obj, 0);
-
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+            
         private string PrintToString(object obj, int nestingLevel, PropertyInfo property = default)
         {
+            ClearAlreadySerializedItems(nestingLevel);
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
+            if (alreadySerialized.Contains(obj))
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+                var index = alreadySerialized.IndexOf(obj);
+                return obj.GetType().Name + " " + index + Environment.NewLine;
+            }
+
             if (finalTypes.Contains(obj.GetType()))
             {
                 var toPrint = GetSerializedObject(obj, nestingLevel, property);
@@ -62,8 +70,8 @@ namespace ObjectPrintingHomeTask.Config
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-
+            sb.AppendLine(type.Name +" " + alreadySerialized.Count);
+            alreadySerialized.Add(obj);
             foreach (var propertyInfo in type.GetProperties()
                 .Where(p => !(excludedTypes.Contains(p.PropertyType) || excludedProperties.Contains((nestingLevel, p)))))
             {
@@ -86,6 +94,12 @@ namespace ObjectPrintingHomeTask.Config
                     .ForEach(function => objectToPrint = function.DynamicInvoke(obj));
 
             return objectToPrint;
+        }
+
+        private void ClearAlreadySerializedItems(int nestingLevel)
+        {
+            if (nestingLevel == 0)
+                alreadySerialized.Clear();
         }
 
         void IPrintingConfig.AddChangedType(Type type, Delegate del)
