@@ -56,7 +56,9 @@
   <ItemGroup>
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
+    <Compile Include="PrintingConfigExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertySerializationConfig.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
