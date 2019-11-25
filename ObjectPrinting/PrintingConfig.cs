@@ -96,13 +96,13 @@ namespace ObjectPrinting
             return true;
         }
 
-        public PrintingConfig<TOwner> Excluding<T>()
+        public PrintingConfig<TOwner> Exclude<T>()
         {
             typesExcluding.Add(typeof(T));
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
+        public PrintingConfig<TOwner> Exclude<T>(Expression<Func<TOwner, T>> func)
         {
             if (func.Body is MemberExpression memberAccessOperation)
             {
@@ -114,14 +114,14 @@ namespace ObjectPrinting
                 throw new ArgumentException("Func must be a member access lambda expression.");
         }
 
-        public PropertySerializingConfig<TOwner, T> Serializing<T>()
+        public PropertySerializingConfig<TOwner, T> Serialize<T>()
         {
             var propSerializerConfig = new PropertySerializingConfig<TOwner, T>(this);
             typesSerializers.Add(typeof(T), propSerializerConfig);
             return propSerializerConfig;
         }
 
-        public PropertySerializingConfig<TOwner, T> Serializing<T>(Expression<Func<TOwner, T>> func)
+        public PropertySerializingConfig<TOwner, T> Serialize<T>(Expression<Func<TOwner, T>> func)
         {
             if (func.Body.NodeType == ExpressionType.MemberAccess)
             {
@@ -133,19 +133,6 @@ namespace ObjectPrinting
             }
             else
                 throw new ArgumentException("Func must be a member access lambda expression.");
-        }
-    }
-    
-    public static class ObjectExtensions
-    {
-        public static PrintingConfig<T> GetObjectPrinter<T>(this T _)
-        {
-            return ObjectPrinter.For<T>();
-        }
-
-        public static string PrintToString<T>(this T obj)
-        {
-            return ObjectPrinter.For<T>().PrintToString(obj);
         }
     }
 }

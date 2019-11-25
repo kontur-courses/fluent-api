@@ -19,27 +19,27 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
+                .Exclude<Guid>()
 
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serializing<DateTime>().Using(d => d.ToString())
+                .Serialize<DateTime>().Using(d => d.ToString())
 
                 //3. Для числовых типов указать культуру
-                .Serializing<byte>().Using(CultureInfo.CurrentCulture)
-                .Serializing<short>().Using(CultureInfo.CurrentCulture)
-                .Serializing<int>().Using(CultureInfo.CurrentCulture)
-                .Serializing<long>().Using(CultureInfo.CurrentCulture)
-                .Serializing<float>().Using(CultureInfo.CurrentCulture)
-                .Serializing<double>().Using(CultureInfo.CurrentCulture)
+                .Serialize<byte>().Using(CultureInfo.CurrentCulture)
+                .Serialize<short>().Using(CultureInfo.CurrentCulture)
+                .Serialize<int>().Using(CultureInfo.CurrentCulture)
+                .Serialize<long>().Using(CultureInfo.CurrentCulture)
+                .Serialize<float>().Using(CultureInfo.CurrentCulture)
+                .Serialize<double>().Using(CultureInfo.CurrentCulture)
 
                 //4. Настроить сериализацию конкретного свойства
-                .Serializing(p => p.Height).Using(a => a.ToString())
+                .Serialize(p => p.Height).Using(a => a.ToString())
 
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serializing(p => p.Name).WithMaxLength(10)
+                .Serialize(p => p.Name).WithMaxLength(10)
 
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
+                .Exclude(p => p.Age);
 
             string s1 = printer.PrintToString(person1);
 
@@ -51,8 +51,8 @@ namespace ObjectPrinting.Tests
             Person person3 = new Person { Name = "Clara", Age = 21 };
             string s3 = person3
                 .GetObjectPrinter()
-                .Excluding<Guid>()
-                .Excluding(p => p.Age)
+                .Exclude<Guid>()
+                .Exclude(p => p.Age)
                 .PrintToString();
         }
     }
@@ -70,13 +70,13 @@ namespace ObjectPrinting.Tests
             switch (typeName)
             {
                 case "Guid":
-                    return ObjectPrinter.For<Person>().Excluding<Guid>().PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude<Guid>().PrintToString(person);
                 case "string":
-                    return ObjectPrinter.For<Person>().Excluding<string>().PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude<string>().PrintToString(person);
                 case "int":
-                    return ObjectPrinter.For<Person>().Excluding<int>().PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude<int>().PrintToString(person);
                 case "double":
-                    return ObjectPrinter.For<Person>().Excluding<double>().PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude<double>().PrintToString(person);
                 default:
                     throw new NotImplementedException();
             }
@@ -91,11 +91,11 @@ namespace ObjectPrinting.Tests
             switch (propName)
             {
                 case "Name":
-                    return ObjectPrinter.For<Person>().Excluding(p => p.Name).PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude(p => p.Name).PrintToString(person);
                 case "Height":
-                    return ObjectPrinter.For<Person>().Excluding(p => p.Height).PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude(p => p.Height).PrintToString(person);
                 case "Age":
-                    return ObjectPrinter.For<Person>().Excluding(p => p.Age).PrintToString(person);
+                    return ObjectPrinter.For<Person>().Exclude(p => p.Age).PrintToString(person);
                 default:
                     throw new NotImplementedException();
             }
@@ -107,7 +107,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
 
             ObjectPrinter.For<Person>()
-                .Serializing<Guid>()
+                .Serialize<Guid>()
                 .Using(guid => $"{guid.ToString().Substring(0, 3)}...")
                 .PrintToString(person)
                 .Should().Be("Person\r\n\tId = 000...\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge = 19\r\n");
@@ -119,7 +119,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
 
             ObjectPrinter.For<Person>()
-                .Serializing(p => p.Id)
+                .Serialize(p => p.Id)
                 .Using(id => $"{id.ToString().Substring(0, 3)}...")
                 .PrintToString(person)
                 .Should().Be("Person\r\n\tId = 000...\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge = 19\r\n");
@@ -138,12 +138,12 @@ namespace ObjectPrinting.Tests
 
             switch (typeName)
             {
-                case "byte": return ObjectPrinter.For<byte>().Serializing<byte>().Using(culture).PrintToString(value);
-                case "short": return ObjectPrinter.For<short>().Serializing<short>().Using(culture).PrintToString(value);
-                case "int": return ObjectPrinter.For<int>().Serializing<int>().Using(culture).PrintToString(value);
-                case "long": return ObjectPrinter.For<long>().Serializing<long>().Using(culture).PrintToString(value);
-                case "float": return ObjectPrinter.For<float>().Serializing<float>().Using(culture).PrintToString(value);
-                case "double": return ObjectPrinter.For<double>().Serializing<double>().Using(culture).PrintToString(value);
+                case "byte": return ObjectPrinter.For<byte>().Serialize<byte>().Using(culture).PrintToString(value);
+                case "short": return ObjectPrinter.For<short>().Serialize<short>().Using(culture).PrintToString(value);
+                case "int": return ObjectPrinter.For<int>().Serialize<int>().Using(culture).PrintToString(value);
+                case "long": return ObjectPrinter.For<long>().Serialize<long>().Using(culture).PrintToString(value);
+                case "float": return ObjectPrinter.For<float>().Serialize<float>().Using(culture).PrintToString(value);
+                case "double": return ObjectPrinter.For<double>().Serialize<double>().Using(culture).PrintToString(value);
                 default:
                     throw new NotImplementedException();
             }
@@ -152,14 +152,14 @@ namespace ObjectPrinting.Tests
         [TestCase("1234567890", (ushort)5, ExpectedResult = "12345\r\n")]
         [TestCase("123", (ushort)5, ExpectedResult = "123\r\n")]
         public string Can_TrancateStringProperties(string value, ushort maxLength) =>
-            ObjectPrinter.For<string>().Serializing<string>().WithMaxLength(maxLength).PrintToString(value);
+            ObjectPrinter.For<string>().Serialize<string>().WithMaxLength(maxLength).PrintToString(value);
 
         [Test]
         public void Can_TrancateAnyStringProperty()
         {
             var classWithStrings = new ClassWithStrings() { s1 = "1234567890", s2 = "1234567890" };
             ObjectPrinter.For<ClassWithStrings>()
-                .Serializing(obj => obj.s2).WithMaxLength(3)
+                .Serialize(obj => obj.s2).WithMaxLength(3)
                 .PrintToString(classWithStrings)
                 .Should().Be("ClassWithStrings\r\n\ts1 = 1234567890\r\n\ts2 = 123\r\n");
         }
