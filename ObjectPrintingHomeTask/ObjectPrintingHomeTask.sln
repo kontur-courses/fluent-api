@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29215.179
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrintingHomeTask", "ObjectPrintingHomeTask\ObjectPrintingHomeTask.csproj", "{03D9A31A-0D55-454F-95CC-D00305CE4171}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03D9A31A-0D55-454F-95CC-D00305CE4171}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03D9A31A-0D55-454F-95CC-D00305CE4171}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03D9A31A-0D55-454F-95CC-D00305CE4171}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03D9A31A-0D55-454F-95CC-D00305CE4171}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3359A3D4-D7C9-4A66-A511-E3ED4EC86FEB}
+	EndGlobalSection
+EndGlobal
