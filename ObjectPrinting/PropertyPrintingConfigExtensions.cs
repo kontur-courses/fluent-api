@@ -1,18 +1,15 @@
-﻿using System;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
-        }
+            var parent = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            var property = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ConfigProperty;
+            ((IPrintingConfig<TOwner>) parent).TrimLengthDictionary.Add(property, maxLen);
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
-        {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
         }
-
     }
 }
