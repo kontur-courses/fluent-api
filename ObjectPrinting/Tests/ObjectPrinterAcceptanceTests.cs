@@ -127,10 +127,18 @@ namespace ObjectPrinting.Tests
 
             string s1 = printer.PrintToString(list);
 
-            Assert.AreEqual("Dictionary`2\r\n\t" +
-                "KeyValuePair`2\r\n\t\t\tKey = 1\r\n\t\t\tValue = a\r\n\t" +
-                "KeyValuePair`2\r\n\t\t\tKey = 2\r\n\t\t\tValue = b\r\n\t" +
-                "KeyValuePair`2\r\n\t\t\tKey = 3\r\n\t\t\tValue = c\r\n", s1);
+            Assert.AreEqual(
+                "Dictionary`2" +
+                "\r\n\tKeyValuePair`2" +
+                "\r\n\t\tKey = 1" +
+                "\r\n\t\tValue = a" +
+                "\r\n\tKeyValuePair`2" +
+                "\r\n\t\tKey = 2" +
+                "\r\n\t\tValue = b" +
+                "\r\n\tKeyValuePair`2" +
+                "\r\n\t\tKey = 3" +
+                "\r\n\t\tValue = c" +
+                "\r\n", s1);
         }
 
         [Test]
@@ -142,6 +150,30 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(list);
 
             Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n", s1);
+        }
+
+        [Test]
+        public void PrintToString_CircularLinks()
+        {
+            var person1 = new CyclicalPerson { Number = 1 };
+            var person2 = new CyclicalPerson { Number = 2, Next = person1 };
+            var person3 = new CyclicalPerson { Number = 3, Next = person2 };
+            person1.Next = person3;
+            var printer = ObjectPrinter.For<CyclicalPerson>().SetMaxNumberListItems(2);
+
+            string s1 = printer.PrintToString(person1);
+
+            Console.WriteLine(s1);
+
+            Assert.AreEqual(
+                "CyclicalPerson" +
+                "\r\n\tNext = CyclicalPerson" +
+                "\r\n\t\tNext = CyclicalPerson" +
+                "\r\n\t\t\tNext = Is higher in the hierarchy by 2 steps" +
+                "\r\n\t\t\tNumber = 2" +
+                "\r\n\t\tNumber = 3" +
+                "\r\n\tNumber = 1" +
+                "\r\n", s1);
         }
     }
 }

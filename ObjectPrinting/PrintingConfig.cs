@@ -24,6 +24,8 @@ namespace ObjectPrinting
 
         private int maxNumberListItems;
 
+        private List<object> referenceObjects;
+
         public PrintingConfig()
         {
             excludingTypes = new List<Type>();
@@ -33,6 +35,8 @@ namespace ObjectPrinting
             customPropertysPrints = new Dictionary<string, Func<object, string>>();
 
             maxNumberListItems = -1;
+
+            referenceObjects = new List<object>();
         }
 
         public string PrintToString(TOwner obj)
@@ -64,6 +68,13 @@ namespace ObjectPrinting
         private string PrintToStringForProperty(object obj, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel);
+
+            if (referenceObjects.Contains(obj))
+                return string.Format(
+                    "Is higher in the hierarchy by {0} steps" + Environment.NewLine,
+                    referenceObjects.Count - referenceObjects.IndexOf(obj) - 1);
+
+            referenceObjects.Add(obj);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -83,10 +94,11 @@ namespace ObjectPrinting
                 }
                 else
                 {
-                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel);
                 }
                 sb.Append(identation + propertyInfo.Name + " = " + str);
             }
+            referenceObjects.RemoveAt(referenceObjects.Count - 1);
             return sb.ToString();
         }
 
@@ -99,7 +111,7 @@ namespace ObjectPrinting
             var count = 0;
             foreach (var item in enumerable)
             {
-                sb.Append(identation + PrintToString(item, nestingLevel + 1));
+                sb.Append(identation + PrintToString(item, nestingLevel));
                 count++;
                 if (count >= maxNumberListItems && maxNumberListItems >= 0)
                     break;
