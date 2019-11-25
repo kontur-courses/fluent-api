@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping", "FluentMapper\FluentMapping.csproj", "{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping", "FluentMapper/FluentMapping.csproj", "{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "FluentMapper.Tests\FluentMapping.Tests.csproj", "{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "FluentMapper.Tests/FluentMapping.Tests.csproj", "{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
