@@ -11,6 +11,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> notSerialisedTypeOfProperty = new HashSet<Type>();
+        private readonly HashSet<string> notSerialisedProperty = new HashSet<string>();
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -45,6 +46,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var propInfo =
+                ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
+            notSerialisedProperty.Add(propInfo.Name);
             return this;
         }
 
@@ -91,7 +95,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType))
+                if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType) ||
+                    notSerialisedProperty.Contains(propertyInfo.Name))
                     continue;
                 if (trimer.ContainsKey(propertyInfo.Name))
                 {
