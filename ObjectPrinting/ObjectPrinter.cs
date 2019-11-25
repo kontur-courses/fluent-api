@@ -8,5 +8,10 @@ namespace ObjectPrinting
         {
             return new PrintingConfig<T>();
         }
+        
+        public static PrintingConfig<T> For<T>(object serializedObject)
+        {
+            return new PrintingConfig<T>(serializedObject);
+        }
     }
 }
