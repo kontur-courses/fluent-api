@@ -193,9 +193,9 @@ namespace ObjectPrinting.Tests
             var obj1 = new ClassWithCircularReference { ObjectName = "obj1" };
             var obj2 = new ClassWithCircularReference { ObjectName = "obj2" };
             var obj3 = new ClassWithCircularReference { ObjectName = "obj3" };
-            obj1.OtherObject = obj2;
-            obj2.OtherObject = obj3;
-            obj3.OtherObject = obj1;
+            obj1.NestedObject = obj2;
+            obj2.NestedObject = obj3;
+            obj3.NestedObject = obj1;
 
             var asmLocation = Assembly.GetAssembly(typeof(ObjectPrinter_Should)).Location;
             var path = Path.GetDirectoryName(asmLocation);

@@ -3,11 +3,11 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertySerializerConfig<TOwner, T> : IPropertySerializingConfig<TOwner>
+    public class PropertySerializingConfig<TOwner, T> : IPropertySerializingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
 
-        public PropertySerializerConfig(PrintingConfig<TOwner> parentConfig)
+        public PropertySerializingConfig(PrintingConfig<TOwner> parentConfig)
         {
             this.parentConfig = parentConfig;
         }
@@ -30,45 +30,45 @@ namespace ObjectPrinting
         }
     }
 
-    public static class PropertySerializingConfigExcentions
+    public static class PropertySerializingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, byte> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, byte> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, short> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, short> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, int> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, int> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, long> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, long> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, float> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, float> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializerConfig<TOwner, double> config, CultureInfo cultureInfo)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertySerializingConfig<TOwner, double> config, CultureInfo cultureInfo)
         {
             config.Serializer = (v) => v.ToString("N", cultureInfo.NumberFormat);
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> WithMaxLength<TOwner>(this PropertySerializerConfig<TOwner, string> config, ushort maxLength)
+        public static PrintingConfig<TOwner> WithMaxLength<TOwner>(this PropertySerializingConfig<TOwner, string> config, ushort maxLength)
         {
             config.Serializer = (v) => maxLength <= v.Length ? v.Substring(0, maxLength) : v;
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;

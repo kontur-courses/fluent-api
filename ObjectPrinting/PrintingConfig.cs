@@ -18,7 +18,7 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             printedObjects.Clear();
-            TryPrintToString(obj, 0, out string objString);
+            TryPrintToString(obj, 0, out var objString);
             return objString;
         }
 
@@ -36,7 +36,7 @@ namespace ObjectPrinting
                 return false;
             }
 
-            if (typesSerializers.TryGetValue(obj.GetType(), out IPropertySerializingConfig<TOwner> propertySerializingConfig))
+            if (typesSerializers.TryGetValue(obj.GetType(), out var propertySerializingConfig))
             {
                 objString = propertySerializingConfig.Serialize(obj);
                 return true;
@@ -66,7 +66,7 @@ namespace ObjectPrinting
                 {
                     foreach (var item in collection)
                     {
-                        if (TryPrintToString(item, nestingLevel + 1, out string itemString))
+                        if (TryPrintToString(item, nestingLevel + 1, out var itemString))
                             sb.Append($"{identation}Item = {itemString}");
                     }
                 }
@@ -79,14 +79,14 @@ namespace ObjectPrinting
                             if (propsExcluding.Contains(propertyInfo.Name))
                                 continue;
 
-                            if (propsSerializers.TryGetValue(propertyInfo.Name, out IPropertySerializingConfig<TOwner> propSerializer))
+                            if (propsSerializers.TryGetValue(propertyInfo.Name, out var propSerializer))
                             {
                                 sb.Append($"{identation}{propertyInfo.Name} = {propSerializer.Serialize(propertyInfo.GetValue(obj))}");
                                 continue;
                             }
                         }
 
-                        if (TryPrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, out string propString))
+                        if (TryPrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, out var propString))
                             sb.Append($"{identation}{propertyInfo.Name} = {propString}");
                     }
                 }
@@ -104,9 +104,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
-            if (func.Body.NodeType == ExpressionType.MemberAccess)
+            if (func.Body is MemberExpression memberAccessOperation)
             {
-                var memberAccessOperation = func.Body as MemberExpression;
                 var memberInfo = memberAccessOperation.Member;
                 propsExcluding.Add(memberInfo.Name);
                 return this;
@@ -115,20 +114,20 @@ namespace ObjectPrinting
                 throw new ArgumentException("Func must be a member access lambda expression.");
         }
 
-        public PropertySerializerConfig<TOwner, T> Serializing<T>()
+        public PropertySerializingConfig<TOwner, T> Serializing<T>()
         {
-            var propSerializerConfig = new PropertySerializerConfig<TOwner, T>(this);
+            var propSerializerConfig = new PropertySerializingConfig<TOwner, T>(this);
             typesSerializers.Add(typeof(T), propSerializerConfig);
             return propSerializerConfig;
         }
 
-        public PropertySerializerConfig<TOwner, T> Serializing<T>(Expression<Func<TOwner, T>> func)
+        public PropertySerializingConfig<TOwner, T> Serializing<T>(Expression<Func<TOwner, T>> func)
         {
             if (func.Body.NodeType == ExpressionType.MemberAccess)
             {
                 var memberAccessOperation = func.Body as MemberExpression;
                 var memberInfo = memberAccessOperation.Member;
-                var propSerializerConfig = new PropertySerializerConfig<TOwner, T>(this);
+                var propSerializerConfig = new PropertySerializingConfig<TOwner, T>(this);
                 propsSerializers.Add(memberInfo.Name, propSerializerConfig);
                 return propSerializerConfig;
             }
@@ -137,7 +136,7 @@ namespace ObjectPrinting
         }
     }
     
-    public static class ObjectExtentions
+    public static class ObjectExtensions
     {
         public static PrintingConfig<T> GetObjectPrinter<T>(this T _)
         {
