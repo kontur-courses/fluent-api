@@ -67,5 +67,12 @@ namespace ObjectPrinting.Tests
             person.PrintToString(config => config.Excluding(p => p.Name))
                 .Should().NotContain("Alex");
         }
+        
+        [Test]
+        public void PrintToStringShouldNotPrintPrivateMembers()
+        {
+            person.PrintToString()
+                .Should().NotContain("budget");
+        }
     }
 }
