@@ -37,9 +37,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var a = memberSelector.Body as MemberExpression;
-            var b = a.Member.Name;
-            ExcludedProperties.Add(b);
+            if (memberSelector.Body is MemberExpression)
+            {
+                var memberExpr = memberSelector.Body as MemberExpression;
+                var propertyName = memberExpr.Member.Name;
+                ExcludedProperties.Add(propertyName);
+            }
             return this;
         }
 
@@ -56,10 +59,13 @@ namespace ObjectPrinting
 
         public void SetSerialization<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector, Func<TPropType, string> print)
         {
-            var a = memberSelector.Body as MemberExpression;
-            var b = a.Member.Name;
-            Func<object, string> func = x => print((TPropType)x);
-            SerializeFunctionsForProperties.Add(b, func);
+            if (memberSelector.Body is MemberExpression)
+            {
+                var memberExpr = memberSelector.Body as MemberExpression;
+                var propertyName = memberExpr.Member.Name;
+                Func<object, string> func = x => print((TPropType) x);
+                SerializeFunctionsForProperties.Add(propertyName, func);
+            }
         }
 
 
