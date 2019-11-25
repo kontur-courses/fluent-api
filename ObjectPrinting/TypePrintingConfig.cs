@@ -6,6 +6,8 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
+        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TType>.ParentConfig => printingConfig;
+
         public TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
@@ -16,7 +18,5 @@ namespace ObjectPrinting
             ((IPrintingConfig<TOwner>) printingConfig).TypeSerializers.Add(typeof(TType), print);
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> ITypePrintingConfig<TOwner, TType>.ParentConfig => printingConfig;
     }
 }

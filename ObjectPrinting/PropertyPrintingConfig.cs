@@ -8,6 +8,9 @@ namespace ObjectPrinting
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly PropertyInfo propertyInfo;
 
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.ConfigProperty => propertyInfo;
+
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
         {
             this.propertyInfo = propertyInfo;
@@ -19,8 +22,5 @@ namespace ObjectPrinting
             ((IPrintingConfig<TOwner>)printingConfig).PropertySerializers.Add(propertyInfo, serializer);
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.ConfigProperty => propertyInfo;
     }
 }
