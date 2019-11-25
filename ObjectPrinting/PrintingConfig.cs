@@ -11,10 +11,15 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<Type> exludingList { get; set; }
+        private HashSet<Type> ExludingList { get; set; }
+        private Dictionary<Type,Func<object,string>> SpecialSerialize { get; set; }
+        public PrintingConfig()
+        {
+            SpecialSerialize= new Dictionary<Type, Func<object, string>>();
+            ExludingList=new HashSet<Type>();
+        }
         public string PrintToString(TOwner obj)
         {
-            exludingList = new HashSet<Type>();
             return PrintToString(obj, 0);
         }
 
@@ -31,7 +36,7 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-            if (exludingList.Contains(obj.GetType()))
+            if (ExludingList.Contains(obj.GetType()))
                 return string.Empty;
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -39,6 +44,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if(ExludingList.Contains(propertyInfo.PropertyType))
+                    continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
@@ -48,7 +55,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exluding<T>()
         {
-            exludingList.Add(typeof(T));
+            ExludingList.Add(typeof(T));
             return this;
         }
 
