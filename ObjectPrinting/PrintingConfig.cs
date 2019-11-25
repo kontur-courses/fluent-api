@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -93,30 +94,44 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (ExcludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
 
-                if (ExcludedProperties.Contains(propertyInfo.Name))
-                    continue;
-
-                if(AlreadySerialized.Contains(propertyInfo.GetValue(obj)))
-                    continue;
-
-                if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              SerializeFunctionsForProperties[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))
-                              + Environment.NewLine);
-                else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              SerializeFunctionsForTypes[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj))
-                              + Environment.NewLine);
-                else
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
+            if (obj is IEnumerable)
+                foreach (var element in obj as IEnumerable)
+                {
+                    sb.Append(identation +
+                              PrintToString(element,
                                   nestingLevel + 1));
+                }
+            else
+            {
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    if (ExcludedTypes.Contains(propertyInfo.PropertyType))
+                        continue;
+
+                    if (ExcludedProperties.Contains(propertyInfo.Name))
+                        continue;
+
+
+                    if (AlreadySerialized.Contains(propertyInfo.GetValue(obj)))
+                        continue;
+
+                    if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
+                        sb.Append(identation + propertyInfo.Name + " = " +
+                                  SerializeFunctionsForProperties[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))
+                                  + Environment.NewLine);
+                    else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
+                        sb.Append(identation + propertyInfo.Name + " = " +
+                                  SerializeFunctionsForTypes[propertyInfo.PropertyType]
+                                      .Invoke(propertyInfo.GetValue(obj))
+                                  + Environment.NewLine);
+                    else
+                        sb.Append(identation + propertyInfo.Name + " = " +
+                                  PrintToString(propertyInfo.GetValue(obj),
+                                      nestingLevel + 1));
+                }
             }
+
             return sb.ToString();
         }
     }
