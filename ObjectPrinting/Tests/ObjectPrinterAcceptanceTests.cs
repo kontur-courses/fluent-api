@@ -132,5 +132,16 @@ namespace ObjectPrinting.Tests
                 "KeyValuePair`2\r\n\t\t\tKey = 2\r\n\t\t\tValue = b\r\n\t" +
                 "KeyValuePair`2\r\n\t\t\tKey = 3\r\n\t\t\tValue = c\r\n", s1);
         }
+
+        [Test]
+        public void SetMaxNumberItems()
+        {
+            var list = new List<int>() { 1, 2, 3 };
+            var printer = ObjectPrinter.For<List<int>>().SetMaxNumberListItems(2);
+
+            string s1 = printer.PrintToString(list);
+
+            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n", s1);
+        }
     }
 }

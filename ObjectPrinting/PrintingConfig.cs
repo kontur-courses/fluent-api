@@ -24,8 +24,6 @@ namespace ObjectPrinting
 
         private int maxNumberListItems;
 
-        int IPrintingConfig.MaxNumberListItems { set { maxNumberListItems = value; } }
-
         public PrintingConfig()
         {
             excludingTypes = new List<Type>();
@@ -98,9 +96,13 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = enumerable.GetType();
             sb.AppendLine(type.Name);
+            var count = 0;
             foreach (var item in enumerable)
             {
                 sb.Append(identation + PrintToString(item, nestingLevel + 1));
+                count++;
+                if (count >= maxNumberListItems && maxNumberListItems >= 0)
+                    break;
             }
             return sb.ToString();
         }
@@ -124,6 +126,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
             excludingPropertys.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetMaxNumberListItems(int maxNumberListItems)
+        {
+            this.maxNumberListItems = maxNumberListItems;
             return this;
         }
     }
