@@ -163,8 +163,6 @@ namespace ObjectPrinting.Tests
 
             string s1 = printer.PrintToString(person1);
 
-            Console.WriteLine(s1);
-
             Assert.AreEqual(
                 "CyclicalPerson" +
                 "\r\n\tNext = CyclicalPerson" +
