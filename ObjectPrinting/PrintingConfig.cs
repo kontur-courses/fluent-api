@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -21,6 +22,10 @@ namespace ObjectPrinting
 
         Dictionary<string, Func<object, string>> IPrintingConfig.CustomPropertysPrints => customPropertysPrints;
 
+        private int maxNumberListItems;
+
+        int IPrintingConfig.MaxNumberListItems { set { maxNumberListItems = value; } }
+
         public PrintingConfig()
         {
             excludingTypes = new List<Type>();
@@ -28,6 +33,8 @@ namespace ObjectPrinting
 
             excludingPropertys = new List<string>();
             customPropertysPrints = new Dictionary<string, Func<object, string>>();
+
+            maxNumberListItems = -1;
         }
 
         public string PrintToString(TOwner obj)
@@ -48,32 +55,52 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+            if (obj is IEnumerable)
+            {
+                return PrintToStringForIEnumerable((IEnumerable)obj, nestingLevel + 1);
+            }
 
-            var identation = new string('\t', nestingLevel + 1);
+            return PrintToStringForProperty(obj, nestingLevel + 1);
+        }
+
+        private string PrintToStringForProperty(object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludingTypes.Contains(propertyInfo.PropertyType))
+                if (excludingTypes.Contains(propertyInfo.PropertyType) ||
+                    excludingPropertys.Contains(propertyInfo.Name))
                     continue;
+                var str = "";
                 if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                        customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
-                    continue;
+                    str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
                 }
-                if (excludingPropertys.Contains(propertyInfo.Name))
-                    continue;
-                if (customPropertysPrints.ContainsKey(propertyInfo.Name))
+                else if (customPropertysPrints.ContainsKey(propertyInfo.Name))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                        customPropertysPrints[propertyInfo.Name](propertyInfo.GetValue(obj)));
-                    continue;
+                    str = customPropertysPrints[propertyInfo.Name](propertyInfo.GetValue(obj));
                 }
-                sb.Append(identation + propertyInfo.Name + " = " +
-                    PrintToString(propertyInfo.GetValue(obj),
-                    nestingLevel + 1));
+                else
+                {
+                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                }
+                sb.Append(identation + propertyInfo.Name + " = " + str);
+            }
+            return sb.ToString();
+        }
+
+        private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel);
+            var sb = new StringBuilder();
+            var type = enumerable.GetType();
+            sb.AppendLine(type.Name);
+            foreach (var item in enumerable)
+            {
+                sb.Append(identation + PrintToString(item, nestingLevel + 1));
             }
             return sb.ToString();
         }
@@ -98,56 +125,6 @@ namespace ObjectPrinting
         {
             excludingPropertys.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
             return this;
-        }
-    }
-
-    public class PropertyPrintingConfig<TOwner, TProperty> : IPropertyPrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> parentConfig;
-        private readonly PropertyInfo propertyInfo;
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
-        {
-            this.parentConfig = parentConfig;
-        }
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo)
-        {
-            this.parentConfig = parentConfig;
-            this.propertyInfo = propertyInfo;
-        }
-
-        public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
-        {
-            if (propertyInfo == null)
-                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
-            else
-                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
-            return parentConfig;
-        }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
-        PropertyInfo IPropertyPrintingConfig<TOwner>.PropertyInfo => propertyInfo;
-    }
-
-    public static class PropertyPrintingConfigExtensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> config, CultureInfo currentCulture)
-        {
-            ((config as IPropertyPrintingConfig<TOwner>).ParentConfig as IPrintingConfig).CustomTypesPrints.Add(typeof(int), value => currentCulture.ToString());
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
-        }
-
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config, int length)
-        {
-            var propertyInfo = (config as IPropertyPrintingConfig<TOwner>).PropertyInfo;
-            var parentConfig = (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
-
-            if (propertyInfo == null)
-                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
-            else
-                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }
     }
 }

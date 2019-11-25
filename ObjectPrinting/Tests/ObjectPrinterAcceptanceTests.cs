@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -102,6 +103,34 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
 
             Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", s1);
+        }
+
+        [Test]
+        public void PrintToString_List()
+        {
+            var list = new List<int>() { 1, 2, 3 };
+            var printer = ObjectPrinter.For<List<int>>();
+
+            string s1 = printer.PrintToString(list);
+
+            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n\t3\r\n", s1);
+        }
+
+        [Test]
+        public void PrintToString_Dictionary()
+        {
+            var list = new Dictionary<int, string>() {
+                { 1 , "a" },
+                { 2 , "b" },
+                { 3 , "c" }};
+            var printer = ObjectPrinter.For<Dictionary<int, string>>();
+
+            string s1 = printer.PrintToString(list);
+
+            Assert.AreEqual("Dictionary`2\r\n\t" +
+                "KeyValuePair`2\r\n\t\t\tKey = 1\r\n\t\t\tValue = a\r\n\t" +
+                "KeyValuePair`2\r\n\t\t\tKey = 2\r\n\t\t\tValue = b\r\n\t" +
+                "KeyValuePair`2\r\n\t\t\tKey = 3\r\n\t\t\tValue = c\r\n", s1);
         }
     }
 }
