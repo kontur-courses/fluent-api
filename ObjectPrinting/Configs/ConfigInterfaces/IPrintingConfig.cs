@@ -10,5 +10,6 @@ namespace ObjectPrinting.Configs.ConfigInterfaces
         PrintingConfig<TOwner> AddTypeSerialization(Type type, Func<object, string> serialization);
         PrintingConfig<TOwner> AddPropertySerialization(PropertyInfo propertyInfo, Func<object, string> serialization);
         PrintingConfig<TOwner> AddExcludedProperty(PropertyInfo propertyInfo);
+        PrintingConfig<TOwner> SetNestingLevel(int nestingLevel);
     }
 }
