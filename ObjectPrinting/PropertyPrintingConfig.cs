@@ -26,12 +26,6 @@ namespace ObjectPrinting
 			return _printingConfig;
 		}
 
-		public PrintingConfig<TOwner> Using(CultureInfo culture)
-		{
-			_typesPrintingBehaviors.Add(typeof(TPropType), obj => ((double) obj).ToString(culture));
-			return _printingConfig;
-		}
-
 		PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;
 		Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.Member => _member;
 	}

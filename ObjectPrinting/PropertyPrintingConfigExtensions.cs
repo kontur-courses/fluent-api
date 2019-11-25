@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 
 namespace ObjectPrinting
@@ -20,6 +21,15 @@ namespace ObjectPrinting
 			printingConfig.PropertiesPrintingBehaviors.Add(propName,
 				obj => string.Join("", ((string) obj).Take(maxLength)));
 			return propConfig.ParentConfig;
+		}
+		
+		public static PrintingConfig<TOwner> Using<TOwner>(
+			this PropertyPrintingConfig<TOwner, double> propertyConfig, CultureInfo culture)
+		{
+			var printingConfig = ((IPropertyPrintingConfig<TOwner, double>) propertyConfig).ParentConfig;
+			var printingBehaviors = ((IPrintingConfig<TOwner>) printingConfig).TypesPrintingBehaviors;
+			printingBehaviors.Add(typeof(double), obj => ((double) obj).ToString(culture));
+			return printingConfig;
 		}
 	}
 }

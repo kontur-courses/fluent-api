@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using FluentAssertions;
@@ -114,20 +115,46 @@ namespace ObjectPrinting.Tests
 		{
 			var array = new[] {1, 2};
 			var expectedString = @"Int32[]
-	Length = 2
-	LongLength = Int64
-	Rank = 1
-	IsReadOnly = False
-	IsFixedSize = True
-	IsSynchronized = False
-	Items:
-		[0] 1
-		[1] 2
+	[0] 1
+	[1] 2
 ";
 
 			var actualString = ObjectPrinter.For<int[]>()
-				.Excluding(a => a.SyncRoot)
 				.PrintToString(array);
+			actualString.Should().Be(expectedString);
+		}
+
+		[Test]
+		public void PrintsDictionaryCorrectly()
+		{
+			var dictionary = new Dictionary<string, int>
+			{
+				{"One", 1},
+				{"Two", 2},
+			};
+			var expectedString = @"System.Collections.Generic.Dictionary`2[System.String,System.Int32]
+	One: 1
+	Two: 2
+";
+
+			var actualString = ObjectPrinter.For<Dictionary<string, int>>()
+				.PrintToString(dictionary);
+			actualString.Should().Be(expectedString);
+		}
+
+		[Test]
+		public void PreventsCircularReferences()
+		{
+			var father1 = new Father();
+			var father2 = new Father{San = father1};
+			father1.San = father2;
+			var expectedString = @"Father
+	San = Father
+		San = Circular reference
+";
+			
+			var actualString = ObjectPrinter.For<Father>()
+				.PrintToString(father1);
 			actualString.Should().Be(expectedString);
 		}
 	}

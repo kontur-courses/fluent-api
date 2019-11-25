@@ -68,55 +68,71 @@ namespace ObjectPrinting
 
 		public string PrintToString(TOwner obj)
 		{
-			return PrintToString(obj, 0);
+			return PrintToString(obj, 0, new HashSet<object>());
 		}
 
-		private string PrintToString(object obj, int nestingLevel, PropertyInfo propertyInfo=null)
+		private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects,
+			PropertyInfo propertyInfo=null)
 		{
 			if (nestingLevel > MaxNestingLevel)
 				return "Max nesting level exceeded" + Environment.NewLine;
+			if (visitedObjects.Contains(obj))
+				return "Circular reference" + Environment.NewLine;
 			if (obj == null)
 				return "null" + Environment.NewLine;
 			
 			var objType = obj.GetType();
-			var stringRepresentation = ApplyPrintingBehavior(obj, objType, propertyInfo) + Environment.NewLine;
+			var stringRepresentation = ApplyPrintingBehavior(obj, objType, propertyInfo);
+			if (objType.IsClass)
+				visitedObjects.Add(obj);
 			if (_finalTypes.Contains(objType))
-				return stringRepresentation;
+				return stringRepresentation + Environment.NewLine;
 			
-			var ident = new string('\t', nestingLevel + 1);
 			var sb = new StringBuilder();
-			sb.Append(stringRepresentation);
-			PrintProperties(obj, nestingLevel, objType, sb, ident);
-			if (!(obj is IEnumerable enumerable)) return sb.ToString();
-			
-			sb.Append(ident + "Items:" + Environment.NewLine);
-			PrintCollection(nestingLevel + 1, sb, enumerable);
+			sb.AppendLine(stringRepresentation);
+			if (obj is IEnumerable enumerable)
+				PrintCollection(nestingLevel, sb, enumerable, visitedObjects);
+			else
+				PrintProperties(obj, nestingLevel, sb, visitedObjects);
 			return sb.ToString();
 		}
 
-		private void PrintProperties(object obj, int nestingLevel, Type objType, StringBuilder sb, string ident)
+		private void PrintProperties(object obj, int nestingLevel, StringBuilder sb, HashSet<object> visitedObjects)
 		{
+			var objType = obj.GetType();
+			var ident = new string('\t', nestingLevel + 1);
+			
 			foreach (var property in objType.GetProperties())
 			{
 				if (CheckExcluding(property))
 					continue;
-				sb.Append(ident + property.Name + " = " +
-				          PrintToString(property.GetValue(obj),
-					          nestingLevel + 1, property));
+				var propertyString = PrintToString(property.GetValue(obj), nestingLevel + 1, visitedObjects, property);
+				sb.Append(ident + property.Name + " = " + propertyString);
 			}
 		}
 
-		private void PrintCollection(int nestingLevel, StringBuilder sb, IEnumerable enumerable)
+		private void PrintCollection(int nestingLevel, StringBuilder sb, IEnumerable enumerable, 
+									HashSet<object> visitedObjects)
 		{
 			var ident = new string('\t', nestingLevel + 1);
-			var index = 0;
-			foreach (var item in enumerable)
-				sb.Append($"{ident}[{index++}] {PrintToString(item, nestingLevel + 1)}");
+			if (enumerable is IDictionary dictionary)
+				foreach (DictionaryEntry pair in dictionary)
+					sb.Append($"{ident}{pair.Key}: {PrintToString(pair.Value, nestingLevel + 1, Clone(visitedObjects))}");
+			else
+			{
+				var index = 0;
+				foreach (var item in enumerable)
+					sb.Append($"{ident}[{index++}] {PrintToString(item, nestingLevel + 1, Clone(visitedObjects))}");
+			}
 		}
+
+		private static HashSet<object> Clone(HashSet<object> oldHashSet) => new HashSet<object>(oldHashSet);
 
 		private string ApplyPrintingBehavior(object obj, Type objType, PropertyInfo propertyInfo)
 		{
 			var result = objType.Name;
+			if (objType.IsGenericType)
+				result = objType.ToString();
 			var propertyName = $"{propertyInfo?.DeclaringType?.FullName}.{propertyInfo?.Name}";
 			if (propertyInfo != null && 
 			    _propertiesPrintingBehaviors.TryGetValue(propertyName, out var printingBehavior))
