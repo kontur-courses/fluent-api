@@ -11,7 +11,7 @@ namespace ObjectPrinting.Extensions
         
         public static PrintingConfig<TOwner> Serialize<TOwner>(this TOwner obj)
         {
-            return ObjectPrinter.For<TOwner>();
+            return ObjectPrinter.For<TOwner>(obj);
         }
     }
 }
