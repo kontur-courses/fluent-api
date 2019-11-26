@@ -62,6 +62,7 @@
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Person.cs" />
+    <Compile Include="Tests\PrinterTestContainer.cs" />
     <Compile Include="TypeSerializationConfig.cs" />
     <Compile Include="TypeSerializer.cs" />
   </ItemGroup>
