@@ -26,7 +26,7 @@ namespace ObjectPrinting
             this.propertyInfo = propertyInfo;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
+        public PrintingConfig<TOwner> Use(Func<TPropType, string> func)
         {
             var iParentConfig = parentConfig as IPrintingConfig<TOwner>;
             return propertyInfo == null
