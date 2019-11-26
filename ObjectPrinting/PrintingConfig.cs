@@ -22,7 +22,7 @@ namespace ObjectPrinting
 
         private int maxNumberListItems;
 
-        private List<object> referenceObjects;
+        private readonly List<object> referenceObjects;
 
         public PrintingConfig()
         {
@@ -52,7 +52,8 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+            if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
                 return obj + Environment.NewLine;
             if (obj is IEnumerable)
             {
