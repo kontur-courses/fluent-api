@@ -12,32 +12,32 @@ namespace ObjectPrinting
     {
         public PrintingConfig(PrintingConfig<TOwner> parent)
         {
-            parent.excludedTypes.ForEach(t => excludedTypes.Add(t));
-            parent.excludedProperties.ForEach(t => excludedProperties.Add(t));
-            parent.typeSerializators.ForEach(t => typeSerializators.Add(t.Key, t.Value));
+            excludedTypes = new HashSet<Type>(parent.excludedTypes);
+            excludedProperties = new HashSet<PropertyInfo>(parent.excludedProperties);
+            TypeSerializators = new Dictionary<Type, TypeSerializer>(parent.TypeSerializators);
+            PropertySerializators = new Dictionary<PropertyInfo, PropertySerializer>(parent.PropertySerializators);
         }
 
         public PrintingConfig()
         {
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintWithConfig(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintWithConfig(obj, 0);
         }
 
-        protected HashSet<Type> excludedTypes = new HashSet<Type>();
-        protected HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
-        public Dictionary<Type, Func<Object, string>> typeSerializators =
-            new Dictionary<Type, Func<Object, string>>();
+        public readonly Dictionary<Type, TypeSerializer> TypeSerializators =
+            new Dictionary<Type, TypeSerializer>();
 
-        public Dictionary<PropertyInfo, Func<Object, string>> propertySerializators =
-            new Dictionary<PropertyInfo, Func<Object, string>>();
+        public readonly Dictionary<PropertyInfo, PropertySerializer> PropertySerializators =
+            new Dictionary<PropertyInfo, PropertySerializer>();
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintWithConfig(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -58,19 +58,19 @@ namespace ObjectPrinting
                 if (!excludedTypes.Contains(propertyInfo.PropertyType))
                     if (!excludedProperties.Contains(propertyInfo))
                     {
-                        string serializedProperty = null;
-                        if (propertySerializators.ContainsKey(propertyInfo))
+                        string serializedProperty;
+                        if (PropertySerializators.ContainsKey(propertyInfo))
                         {
-                            serializedProperty = propertySerializators[propertyInfo](propertyInfo.GetValue(obj));
+                            serializedProperty = PropertySerializators[propertyInfo].Serialize(propertyInfo.GetValue(obj));
                         }
-                        else if (typeSerializators.ContainsKey(propertyInfo.PropertyType))
+                        else if (TypeSerializators.ContainsKey(propertyInfo.PropertyType))
                         {
                             serializedProperty =
-                                typeSerializators[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+                                TypeSerializators[propertyInfo.PropertyType].Serialize(propertyInfo.GetValue(obj));
                         }
                         else
                         {
-                            serializedProperty = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                            serializedProperty = PrintWithConfig(propertyInfo.GetValue(obj), nestingLevel + 1);
                         }
 
                         sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
@@ -115,68 +115,6 @@ namespace ObjectPrinting
         public PropertySerializationConfig<TOwner, int> Serializing(Expression<Func<TOwner, int>> propertyProvider)
         {
             return new PropertySerializationConfig<TOwner, int>(this, propertyProvider);
-        }
-    }
-
-    public class PropertySerializationConfig<TOwner, TTarget> : IPropertyPrintingConfig<TOwner>
-    {
-        protected PrintingConfig<TOwner> config;
-        protected PropertyInfo propertyInfo;
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.Config => config;
-
-        public PropertySerializationConfig(PrintingConfig<TOwner> config,
-            Expression<Func<TOwner, TTarget>> propertyProvider)
-        {
-            this.config = config;
-            this.propertyInfo = ((MemberExpression) propertyProvider.Body).Member as PropertyInfo;
-        }
-
-        public PrintingConfig<TOwner> Using(Func<TTarget, string> serializer)
-        {
-            config.propertySerializators.Add(propertyInfo, t => serializer((TTarget) t));
-            return config;
-        }
-    }
-
-    public class TypeSerializationConfig<TOwner, TTarget> : IPropertyPrintingConfig<TOwner>
-    {
-        protected PrintingConfig<TOwner> config;
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.Config => config;
-
-        public TypeSerializationConfig(PrintingConfig<TOwner> config)
-        {
-            this.config = config;
-        }
-
-        public PrintingConfig<TOwner> Using(Func<TTarget, string> serializer)
-        {
-            config.typeSerializators.Add(typeof(TTarget), t => serializer((TTarget) t));
-            return config;
-        }
-    }
-
-    public interface IPropertyPrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> Config { get; }
-    }
-
-    public static class PrintingExtensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this TypeSerializationConfig<TOwner, int> config,
-            CultureInfo info)
-        {
-            var cfg = (config as IPropertyPrintingConfig<TOwner>).Config;
-            cfg.typeSerializators.Add(typeof(int), t => ((int) t).ToString(info));
-            return cfg;
-        }
-
-        public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
-        {
-            using (var enumerator = enumerable.GetEnumerator())
-                do
-                {
-                    action.Invoke(enumerator.Current);
-                } while (enumerator.MoveNext());
         }
     }
 }
