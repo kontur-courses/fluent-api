@@ -98,8 +98,9 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine(collection.GetType().Name);
             foreach(var element in collection){
+                if (!viewedObjects.Add(element) && !finalTypes.Contains(element.GetType()))
+                    continue;
                 sb.Append(identation + PrintToString(element, nestingLevel + 1, viewedObjects));
-                viewedObjects.Add(element);
             }
             return sb.ToString();
         }
