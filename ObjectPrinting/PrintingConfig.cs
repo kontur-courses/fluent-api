@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.Serialization;
 using System.Text;
-using NUnit.Framework;
 using System.Collections;
 
 namespace ObjectPrinting
@@ -17,7 +15,6 @@ namespace ObjectPrinting
         private readonly ImmutableDictionary<Type, Func<object, string>> specificPrintForType;
         private readonly ImmutableDictionary<PropertyInfo, Func<object, string>> specificPrintForProperty;
         private readonly ImmutableHashSet<PropertyInfo> excludingProperty;
-        private readonly int maxNestingLevel = 10;
         private readonly object[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
@@ -32,13 +29,12 @@ namespace ObjectPrinting
         }
 
         private PrintingConfig(ImmutableHashSet<Type> excludingTypes, ImmutableDictionary<Type, Func<object, string>> specificPrintForType,
-            ImmutableHashSet<PropertyInfo> excludingProperty, ImmutableDictionary<PropertyInfo, Func<object, string>> specificPrintForProperty, int maxNestingLevel)
+            ImmutableHashSet<PropertyInfo> excludingProperty, ImmutableDictionary<PropertyInfo, Func<object, string>> specificPrintForProperty)
         {
             this.excludingTypes = excludingTypes;
             this.specificPrintForType = specificPrintForType;
             this.excludingProperty = excludingProperty;
             this.specificPrintForProperty = specificPrintForProperty;
-            this.maxNestingLevel = maxNestingLevel;
         }
 
         public string PrintToString(TOwner obj)
@@ -48,56 +44,59 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, HashSet<object> viewedObjects)
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-            var type = obj.GetType();
-            if (specificPrintForType.ContainsKey(type))
+            if (TryGetString(obj, nestingLevel, viewedObjects, out var resultString))
             {
-                return specificPrintForType[type].DynamicInvoke(obj) + Environment.NewLine;
+                return resultString;
             }
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
-            if (obj is ICollection){
-                return  PrintCollectionsToString(obj, nestingLevel, viewedObjects);
-            }
+            var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            var nextNestingLevel = nestingLevel + 1;
-            if (nextNestingLevel > maxNestingLevel)
-            {
-                sb.AppendLine(identation + "Out of range max nesting level.");
-                return sb.ToString();
-            }
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (!viewedObjects.Add(propertyInfo.GetValue(obj)) && !finalTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperty.Contains(propertyInfo))
                     continue;
-                viewedObjects.Add(propertyInfo.GetValue(obj));
-                if (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint))
-                {
-                    sb.AppendLine(identation + propertyInfo.Name + " = " +
-                              specificPrint(propertyInfo.GetValue(obj)));
-                }
-                else
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1, viewedObjects));
-                }
+                sb.Append(identation + propertyInfo.Name + " = " + (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint)
+                    ? specificPrint(propertyInfo.GetValue(obj)) + Environment.NewLine : PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1, viewedObjects)));
             }
             return sb.ToString();
         }
 
-        private string PrintCollectionsToString(object obj, int nestingLevel, HashSet<object> viewedObjects){
+        private bool TryGetString(object obj, int nestingLevel, HashSet<object> viewedObjects, out string resultString)
+        {
+            if (obj == null)
+            {
+                resultString = "null" + Environment.NewLine;
+                return true;
+            }
             var type = obj.GetType();
+            if (specificPrintForType.ContainsKey(type))
+            {
+                resultString = specificPrintForType[type].DynamicInvoke(obj) + Environment.NewLine;
+                return true;
+            }
+            if (finalTypes.Contains(type))
+            {
+                resultString = obj + Environment.NewLine;
+                return true;
+            }
+            if (obj is ICollection collection)
+            {
+                resultString = PrintCollectionsToString(collection, nestingLevel, viewedObjects);
+                return true;
+            }
+            resultString = null;
+            return false;
+        }
+
+        private string PrintCollectionsToString(ICollection collection, int nestingLevel, HashSet<object> viewedObjects)
+        {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            var collection = (IEnumerable)obj;
+            sb.AppendLine(collection.GetType().Name);
             foreach(var element in collection){
                 sb.Append(identation + PrintToString(element, nestingLevel + 1, viewedObjects));
                 viewedObjects.Add(element);
@@ -108,30 +107,30 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForType<TProperty>(Func<TProperty, string> specificSerialize)
         {
             var newCustomPrintForType = specificPrintForType.SetItem(typeof(TProperty), obj => specificSerialize((TProperty)obj));
-            return new PrintingConfig<TOwner>(excludingTypes, newCustomPrintForType, excludingProperty, specificPrintForProperty, maxNestingLevel);
+            return new PrintingConfig<TOwner>(excludingTypes, newCustomPrintForType, excludingProperty, specificPrintForProperty);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddCustomPrintForProperty<TProperty>(Func<TProperty, string> specificSerialize, PropertyInfo property)
         {
             var newCustomPrintForProperty = specificPrintForProperty.SetItem(property, obj => specificSerialize((TProperty)obj));
-            return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, excludingProperty, newCustomPrintForProperty, maxNestingLevel);
+            return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, excludingProperty, newCustomPrintForProperty);
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
             var newExcludingTypes = excludingTypes.Add(typeof(T));
-            return new PrintingConfig<TOwner>(newExcludingTypes, specificPrintForType, excludingProperty, specificPrintForProperty, maxNestingLevel);
+            return new PrintingConfig<TOwner>(newExcludingTypes, specificPrintForType, excludingProperty, specificPrintForProperty);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
             if (!(func.Body is MemberExpression expression && expression.Member is PropertyInfo))
             {
-                throw new ArgumentException("Function must return property.");
+                throw new ArgumentException("Function must be MemberExpression and return Property.");
             }
             var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
             var newExcludingProperty = excludingProperty.Add(propInfo);
-            return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, newExcludingProperty, specificPrintForProperty, maxNestingLevel);
+            return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, newExcludingProperty, specificPrintForProperty);
         }
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
@@ -143,19 +142,10 @@ namespace ObjectPrinting
         {
             if (!(func.Body is MemberExpression expression && expression.Member is PropertyInfo))
             {
-                throw new ArgumentException("Function must return property.");
+                throw new ArgumentException("Function must be MemberExpression and return Property.");
             }
             var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, T>(this, propInfo);
-        }
-
-        public PrintingConfig<TOwner> SetMaxNestingLevel(int maxLevel)
-        {
-            if (maxLevel < 0)
-            {
-                throw new ArgumentException("Nesting level must be positive number.");
-            }
-            return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, excludingProperty, specificPrintForProperty, maxLevel);
         }
     }
 }
