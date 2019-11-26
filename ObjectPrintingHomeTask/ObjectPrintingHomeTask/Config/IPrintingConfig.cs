@@ -7,7 +7,7 @@ namespace ObjectPrintingHomeTask.Config
     public interface IPrintingConfig
     {
         void AddChangedType(Type type, Delegate del);
-        void AddChangedProperty((int deep, PropertyInfo propertyInfo) key, Delegate del);
+        void AddChangedProperty(PropertyInfo propertyInfo, Delegate del);
         void ChangeCulture(CultureInfo culture);
     }
 }

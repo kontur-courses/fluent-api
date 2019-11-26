@@ -5,9 +5,10 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrintingHomeTask.ObjectPrinting;
 using ObjectPrintingHomeTask.PropertyConfig;
-using ObjectPrintingHomeTask.Tests.TestClass;
+using ObjectPrintingTests.TestClass;
 
-namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
+
+namespace ObjectPrintingTests.ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -15,7 +16,7 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19, Parent = new Person() {Name = "jewe"}};
+            var person = new Person { Name = "Alex", Age = 19, Parent = new Person { Name = "jewe" } };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -32,11 +33,10 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                 .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();
             //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age).Excluding(p => p.Parent.Name).Printing<double>().Using(x => "f32ew"));
+            string s3 = person.PrintToString(s => s.Excluding(p => p.Age).Printing<double>().Using(x => "f32ew"));
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
@@ -46,8 +46,8 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_ReturnSameObject_When_NoConfiguration()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
@@ -69,7 +69,7 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         public void Should_ReturnObject_Without_ExcludedType()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
@@ -78,7 +78,7 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                                  "\t\tId = Guid 1" + Environment.NewLine +
                                  "\t\tName = Jack" + Environment.NewLine +
                                  "\t\tHeight = 0" + Environment.NewLine +
-                                 "\t\tParent = null" + Environment.NewLine;
+                                 "\t\tParent = null" + Environment.NewLine; 
             person
                 .PrintToString(p => p.Excluding<int>())
                 .Should()
@@ -89,14 +89,13 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         public void Should_ReturnObject_Without_ExcludedField()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tHeight = 1,8" + Environment.NewLine +
                                  "\tAge = 19" + Environment.NewLine +
                                  "\tParent = Person 2" + Environment.NewLine +
                                  "\t\tId = Guid 1" + Environment.NewLine +
-                                 "\t\tName = Jack" + Environment.NewLine +
                                  "\t\tHeight = 0" + Environment.NewLine +
                                  "\t\tAge = 0" + Environment.NewLine +
                                  "\t\tParent = null" + Environment.NewLine;
@@ -107,21 +106,20 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         }
 
         [Test]
-        public void Should_Work_With_ExcludingInNestedTypes()
+        public void Should_Work_With_ExcludingMoreThanOneProperty()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
-                                 "\tName = Alex" + Environment.NewLine +
                                  "\tHeight = 1,8" + Environment.NewLine +
                                  "\tParent = Person 2" + Environment.NewLine +
                                  "\t\tId = Guid 1" + Environment.NewLine +
                                  "\t\tHeight = 0" + Environment.NewLine +
-                                 "\t\tAge = 0" + Environment.NewLine +
                                  "\t\tParent = null" + Environment.NewLine;
+
             person
-                .PrintToString(p => p.Excluding(f => f.Age).Excluding(f => f.Parent.Name))
+                .PrintToString(p => p.Excluding(f => f.Age).Excluding(f => f.Name))
                 .Should()
                 .BeEquivalentTo(expectedString);
         }
@@ -129,8 +127,8 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_SerializedTypes()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
@@ -151,8 +149,8 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_SerializeProperties()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
@@ -162,7 +160,7 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                                  "\t\tId = Guid 1" + Environment.NewLine +
                                  "\t\tName = Jack" + Environment.NewLine +
                                  "\t\tHeight = 0" + Environment.NewLine +
-                                 "\t\tAge = 0" + Environment.NewLine +
+                                 "\t\tAge = someString" + Environment.NewLine +
                                  "\t\tParent = null" + Environment.NewLine;
             person
                 .PrintToString(p => p.Printing(per => per.Age).Using(i => "someString"))
@@ -171,23 +169,24 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         }
 
         [Test]
-        public void Should_SerializeNestedProperties()
+        public void Should_SerializeItems_With_CircleReferences()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person1 = new Person { Name = "Alex", Age = 19, Height = 1.8};
+            var person2 = new Person {Name = "Jack", Parent = person1};
+            person1.Parent = person2;
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
-                                 "\tHeight = 1,8" + Environment.NewLine +
+                                 "\tHeight = someString" + Environment.NewLine +
                                  "\tAge = 19" + Environment.NewLine +
                                  "\tParent = Person 2" + Environment.NewLine +
                                  "\t\tId = Guid 1" + Environment.NewLine +
                                  "\t\tName = Jack" + Environment.NewLine +
                                  "\t\tHeight = someString" + Environment.NewLine +
                                  "\t\tAge = 0" + Environment.NewLine +
-                                 "\t\tParent = null" + Environment.NewLine;
-            person
-                .PrintToString(p => p.Printing(per => per.Parent.Height).Using(i => "someString"))
+                                 "\t\tParent = Person 0" + Environment.NewLine;
+            person1
+                .PrintToString(p => p.Printing(per => per.Height).Using(i => "someString"))
                 .Should()
                 .BeEquivalentTo(expectedString);
         }
@@ -195,8 +194,8 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_SetCulture_For_Double()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
@@ -213,12 +212,13 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                 .Should()
                 .BeEquivalentTo(expectedString);
         }
-
+        
         [Test]
+
         public void Should_TrimmedToLengthAllStringType()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = A" + Environment.NewLine +
@@ -239,11 +239,11 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_TrimmedToLengthAllStringProperty()
         {
-            var person = new Person() { Name = "Alex", Age = 19, Height = 1.8,
-                                        Parent = new Person() { Name = "Jack" } };
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.8,
+                                        Parent = new Person { Name = "Jack" } };
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
-                                 "\tName = Alex" + Environment.NewLine +
+                                 "\tName = A" + Environment.NewLine +
                                  "\tHeight = 1,8" + Environment.NewLine +
                                  "\tAge = 19" + Environment.NewLine +
                                  "\tParent = Person 2" + Environment.NewLine +
@@ -253,7 +253,7 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                                  "\t\tAge = 0" + Environment.NewLine +
                                  "\t\tParent = null" + Environment.NewLine;
             person
-                .PrintToString(p => p.Printing(s => s.Parent.Name).TrimmedToLength(1))
+                .PrintToString(p => p.Printing(s => s.Name).TrimmedToLength(1))
                 .Should()
                 .BeEquivalentTo(expectedString);
         }
@@ -261,13 +261,13 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
         [Test]
         public void Should_Work_WithCyclicReferences()
         {
-            var person1 = new Person()
+            var person1 = new Person
             {
                 Name = "Alex",
                 Age = 19,
                 Height = 1.8,
             };
-            var person2 = new Person()
+            var person2 = new Person
             {
                 Name = "Jack",
                 Parent = person1
@@ -285,6 +285,35 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                                  "\t\tAge = 0" + Environment.NewLine +
                                  "\t\tParent = Person 0" + Environment.NewLine;
             person1.PrintToString().Should().BeEquivalentTo(expectedString);
+        }
+
+        [Test]
+        public void Should_UseLastRuleForType()
+        {
+            var person = new Person
+            {
+                Name = "Alex",
+                Age = 19,
+                Height = 1.8,
+                Parent = new Person { Name = "Jack" }
+            };
+            var expectedString = "Person 0" + Environment.NewLine +
+                                 "\tId = Guid 1" + Environment.NewLine +
+                                 "\tName = fw" + Environment.NewLine +
+                                 "\tHeight = 1,8" + Environment.NewLine +
+                                 "\tAge = 19" + Environment.NewLine +
+                                 "\tParent = Person 2" + Environment.NewLine +
+                                 "\t\tId = Guid 1" + Environment.NewLine +
+                                 "\t\tName = fw" + Environment.NewLine +
+                                 "\t\tHeight = 0" + Environment.NewLine +
+                                 "\t\tAge = 0" + Environment.NewLine +
+                                 "\t\tParent = null" + Environment.NewLine;
+            person
+                .PrintToString(p => p.Printing(pers => pers.Name)
+                                            .Using(s => "fewfwef")
+                                            .Printing(pers => pers.Name).Using(s => "fw"))
+                .Should()
+                .BeEquivalentTo(expectedString);
         }
 
         [Test]
@@ -366,6 +395,24 @@ namespace ObjectPrintingHomeTask.Tests.ObjectPrintingTests
                                  "\tAge = 0" + Environment.NewLine +
                                  "\tParent = null" + Environment.NewLine;
             persons.PrintToString().Should().BeEquivalentTo(expectedString);
+        }
+
+        [Test]
+        public void Should_Work_WithAnonymousObjects()
+        {
+            var anonymousObject = new {Person = new Person {Name = "Jack"}, SomeString = "string", SomeDigit = 22};
+            var expectedString = "<>f__AnonymousType0`3 0" + Environment.NewLine +
+                                 "\tPerson = Person 1" + Environment.NewLine +
+                                 "\t\tId = Guid 2" + Environment.NewLine +
+                                 "\t\tName = Jack" + Environment.NewLine +
+                                 "\t\tHeight = 0" + Environment.NewLine +
+                                 "\t\tAge = 0" + Environment.NewLine +
+                                 "\t\tParent = null" + Environment.NewLine +
+                                 "\tSomeString = newString" + Environment.NewLine;
+            anonymousObject.PrintToString(anonymous => anonymous
+                .Excluding(a => a.SomeDigit)
+                .Printing(a => a.SomeString)
+                .Using(s => "newString")).Should().BeEquivalentTo(expectedString);
         }
     }
 }

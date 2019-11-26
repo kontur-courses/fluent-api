@@ -9,19 +9,17 @@ namespace ObjectPrintingHomeTask.PropertyConfig
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly PropertyInfo property;
-        private readonly int deep;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, int deep = 0, PropertyInfo property = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo property = null)
         {
             this.printingConfig = printingConfig;
             this.property = property;
-            this.deep = deep;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (property != null)
-                ((IPrintingConfig)printingConfig)?.AddChangedProperty((deep, property), print);
+                ((IPrintingConfig)printingConfig)?.AddChangedProperty(property, print);
             else
                 ((IPrintingConfig)printingConfig)?.AddChangedType(typeof(TPropType), print);
             return printingConfig;
