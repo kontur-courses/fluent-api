@@ -145,10 +145,18 @@ namespace ObjectPrinting
 
         private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = enumerable.GetType();
             sb.AppendLine(type.Name);
+            var identation = new string('\t', nestingLevel);
+            if (excludingTypes.Contains(type))
+                return "";
+            if (customTypesPrints.ContainsKey(type))
+            {
+                sb.Append(identation + customTypesPrints[type](enumerable) + Environment.NewLine);
+                return sb.ToString();
+            }
+
             var count = 0;
             foreach (var item in enumerable)
             {

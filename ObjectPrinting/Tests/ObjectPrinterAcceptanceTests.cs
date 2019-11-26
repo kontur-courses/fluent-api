@@ -286,8 +286,39 @@ namespace ObjectPrinting.Tests
 
             result.Should().Be(
                 "List`1" +
-                "\r\n\t1" +
-                "\r\n\t2" +
+                "\r\n\tThisIsList" +
+                "\r\n");
+        }
+
+        [Test]
+        public void ChangePrintFor_ArrayInClass()
+        {
+            var personWithArray = new PersonWithArray { Number = 1, PeopleWithArray = new PersonWithArray[1] };
+            var printer = ObjectPrinter.For<PersonWithArray>()
+                .ChangePrintFor<PersonWithArray[]>().Using(l => "ThisIsList");
+
+            var result = printer.PrintToString(personWithArray);
+
+            result.Should().Be(
+                "PersonWithArray" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithArray = ThisIsList" +
+                "\r\n");
+        }
+
+        [Test]
+        public void ChangePrintFor_ListOfList()
+        {
+            var list = new List<List<int>>() { new List<int>() { 1, 2 } };
+            var printer = ObjectPrinter.For<List<List<int>>>()
+                .ChangePrintFor<List<int>>().Using(l => "ThisIsList");
+
+            var result = printer.PrintToString(list);
+
+            result.Should().Be(
+                "List`1" +
+                "\r\n\tList`1" +
+                "\r\n\t\tThisIsList" +
                 "\r\n");
         }
     }
