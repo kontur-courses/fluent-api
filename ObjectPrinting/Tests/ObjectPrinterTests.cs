@@ -109,7 +109,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_Should_SerializeCyclicReferencesAccordingToNesting()
+        public void ObjectPrinter_Should_SerializeCyclicReferences()
         {
             var person1 = new Person {Name = "person 1"};
             var person2 = new Person {Name = "person 2"};
@@ -121,6 +121,18 @@ namespace ObjectPrinting.Tests
     
             var result = person1.Serialize().PrintToString();
             result.Should().Contain("Person...");
+        }
+        
+        [Test]
+        public void ObjectPrinter_Should_SerializeCyclicReferencesUsingReferences()
+        {
+            var jack = new PersonWithSimpleHashCode {Name = "Jack"};
+            var alsoJack = new PersonWithSimpleHashCode {Name = "Jack"};
+
+            jack.Friend = alsoJack;
+
+            var result = jack.Serialize().PrintToString();
+            result.Should().NotContain("PersonWithSimpleHashCode...");
         }
     }
 }
