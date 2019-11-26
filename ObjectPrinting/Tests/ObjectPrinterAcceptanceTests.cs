@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Collections.Generic;
 using NUnit.Framework;
+using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
@@ -43,12 +44,13 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person" +
+            result.Should().Be(
+                "Person" +
                 "\r\n\tName = Alex" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = 19" +
                 "\r\n\tSecondName = null" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -60,13 +62,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person" +
+            result.Should().Be(
+                "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = Alex" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = 1900" +
                 "\r\n\tSecondName = null" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -78,14 +81,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("" +
+            result.Should().Be(
                 "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = Alex" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = ru-RU" +
                 "\r\n\tSecondName = null" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -97,14 +100,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = ALEX" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = 19" +
                 "\r\n\tSecondName = Shmalex" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -116,14 +119,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual(
-                "Person" +
+            result.Should().Be(
+                 "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = Ale" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = 19" +
                 "\r\n\tSecondName = Shm" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -134,13 +137,13 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = Alex" +
                 "\r\n\tHeight = 0" +
                 "\r\n\tAge = 19" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -151,12 +154,12 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(list);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "List`1" +
                 "\r\n\t1" +
                 "\r\n\t2" +
                 "\r\n\t3" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -170,7 +173,7 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(list);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "Dictionary`2" +
                 "\r\n\tKeyValuePair`2" +
                 "\r\n\t\tKey = 1" +
@@ -181,7 +184,7 @@ namespace ObjectPrinting.Tests
                 "\r\n\tKeyValuePair`2" +
                 "\r\n\t\tKey = 3" +
                 "\r\n\t\tValue = c" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -192,11 +195,11 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(list);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "List`1" +
                 "\r\n\t1" +
                 "\r\n\t2" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -210,15 +213,15 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person1);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "CyclicalPerson" +
-                "\r\n\tNext = CyclicalPerson" +
-                "\r\n\t\tNext = CyclicalPerson" +
-                "\r\n\t\t\tNext = Is higher in the hierarchy by 2 steps" +
+                "\r\n\tNextPerson = CyclicalPerson" +
+                "\r\n\t\tNextPerson = CyclicalPerson" +
+                "\r\n\t\t\tNextPerson = Is higher in the hierarchy by 2 steps" +
                 "\r\n\t\t\tNumber = 2" +
                 "\r\n\t\tNumber = 3" +
                 "\r\n\tNumber = 1" +
-                "\r\n", result);
+                "\r\n");
         }
 
         [Test]
@@ -236,12 +239,12 @@ namespace ObjectPrinting.Tests
 
             Console.WriteLine(result);
 
-            Assert.AreEqual(
+            result.Should().Be(
                 "Object[]" +
                 "\r\n\tObject[]" +
                 "\r\n\t\tIs higher in the hierarchy by 1 steps" +
                 "\r\n\t\tIs higher in the hierarchy by 0 steps" +
-                "\r\n", result);
+                "\r\n");
         }
     }
 }
