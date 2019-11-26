@@ -24,7 +24,7 @@ namespace ObjectPrinting
             if (propertyInfo == null)
                 (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
             else
-                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
+                (parentConfig as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
             return parentConfig;
         }
 

@@ -15,10 +15,10 @@ namespace ObjectPrinting
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.CustomTypesPrints => customTypesPrints;
 
-        private readonly List<string> excludingPropertys;
-        private readonly Dictionary<string, Func<object, string>> customPropertysPrints;
+        private readonly List<string> excludingProperties;
+        private readonly Dictionary<string, Func<object, string>> customPropertiesPrints;
 
-        Dictionary<string, Func<object, string>> IPrintingConfig.CustomPropertysPrints => customPropertysPrints;
+        Dictionary<string, Func<object, string>> IPrintingConfig.CustomPropertiesPrints => customPropertiesPrints;
 
         private int maxNumberListItems;
 
@@ -29,8 +29,8 @@ namespace ObjectPrinting
             excludingTypes = new List<Type>();
             customTypesPrints = new Dictionary<Type, Func<object, string>>();
 
-            excludingPropertys = new List<string>();
-            customPropertysPrints = new Dictionary<string, Func<object, string>>();
+            excludingProperties = new List<string>();
+            customPropertiesPrints = new Dictionary<string, Func<object, string>>();
 
             maxNumberListItems = -1;
 
@@ -79,16 +79,16 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludingTypes.Contains(propertyInfo.PropertyType) ||
-                    excludingPropertys.Contains(propertyInfo.Name))
+                    excludingProperties.Contains(propertyInfo.Name))
                     continue;
                 var str = "";
                 if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
                 {
                     str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
                 }
-                else if (customPropertysPrints.ContainsKey(propertyInfo.Name))
+                else if (customPropertiesPrints.ContainsKey(propertyInfo.Name))
                 {
-                    str = customPropertysPrints[propertyInfo.Name](propertyInfo.GetValue(obj));
+                    str = customPropertiesPrints[propertyInfo.Name](propertyInfo.GetValue(obj));
                 }
                 else
                 {
@@ -135,7 +135,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
-            excludingPropertys.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
+            excludingProperties.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
             return this;
         }
 

@@ -18,7 +18,7 @@ namespace ObjectPrinting
             if (propertyInfo == null)
                 (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
             else
-                (parentConfig as IPrintingConfig).CustomPropertysPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
+                (parentConfig as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
             return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }
     }
