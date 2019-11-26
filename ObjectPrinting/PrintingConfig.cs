@@ -56,9 +56,11 @@ namespace ObjectPrinting
 			if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
 				throw new ArgumentException("member selector type must be member access");
 			var selectedMember = ((MemberExpression) memberSelector.Body).Member;
-			var propertyName = $"{selectedMember.DeclaringType?.FullName}.{selectedMember.Name}";
+			var propertyName = ExtractName(selectedMember);
 			return propertyName;
 		}
+
+		private static string ExtractName(MemberInfo member) => $"{member.DeclaringType?.FullName}.{member.Name}";
 
 		internal PrintingConfig<TOwner> Excluding<TPropType>()
 		{
@@ -133,7 +135,7 @@ namespace ObjectPrinting
 			var result = objType.Name;
 			if (objType.IsGenericType)
 				result = objType.ToString();
-			var propertyName = $"{propertyInfo?.DeclaringType?.FullName}.{propertyInfo?.Name}";
+			var propertyName = ExtractName(propertyInfo);
 			if (propertyInfo != null && 
 			    _propertiesPrintingBehaviors.TryGetValue(propertyName, out var printingBehavior))
 				result = printingBehavior(obj);
