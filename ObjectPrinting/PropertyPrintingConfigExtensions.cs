@@ -13,13 +13,13 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int length)
         {
-            var propertyInfo = (propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).PropertyInfo;
+            var propertyFullName = (propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).PropertyFullName;
             var config = new PrintingConfig<TOwner>((propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).ParentConfig);
 
-            if (propertyInfo == null)
+            if (propertyFullName == null)
                 (config as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
             else
-                (config as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
+                (config as IPrintingConfig).CustomPropertiesPrints[propertyFullName] = value => ((string)value).Substring(0, length);
             return config;
         }
     }

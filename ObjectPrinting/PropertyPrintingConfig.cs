@@ -6,30 +6,30 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TProperty> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly string propertyFullName;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
         {
             this.parentConfig = parentConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, string propertyFullName)
         {
             this.parentConfig = parentConfig;
-            this.propertyInfo = propertyInfo;
+            this.propertyFullName = propertyFullName;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
             var config = new PrintingConfig<TOwner>(parentConfig);
-            if (propertyInfo == null)
+            if (propertyFullName == null)
                 (config as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
             else
-                (config as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
+                (config as IPrintingConfig).CustomPropertiesPrints[propertyFullName] = value => serializationFunc((TProperty)value);
             return config;
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
-        PropertyInfo IPropertyPrintingConfig<TOwner>.PropertyInfo => propertyInfo;
+        string IPropertyPrintingConfig<TOwner>.PropertyFullName => propertyFullName;
     }
 }

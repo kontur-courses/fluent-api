@@ -5,6 +5,6 @@ namespace ObjectPrinting
     interface IPropertyPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
-        PropertyInfo PropertyInfo { get; }
+        string PropertyFullName { get; }
     }
 }

@@ -52,7 +52,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, "");
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
@@ -68,12 +68,16 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
-            return new PropertyPrintingConfig<TOwner, T>(this, ((MemberExpression)func.Body).Member as PropertyInfo);
+            var propertyFullName = func.Body.ToString();
+            propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
+            return new PropertyPrintingConfig<TOwner, T>(this, propertyFullName);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
-            excludingProperties.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
+            var propertyFullName = func.Body.ToString();
+            propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
+            excludingProperties.Add(propertyFullName);
             return this;
         }
 
@@ -83,7 +87,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, string propertyFullName)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -105,16 +109,16 @@ namespace ObjectPrinting
 
             string str;
             if (obj is IEnumerable enumerable)
-                str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
+                str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1, propertyFullName);
             else
-                str = PrintToStringForProperty(obj, nestingLevel + 1);
+                str = PrintToStringForProperty(obj, nestingLevel + 1, propertyFullName);
 
             referenceObjects.RemoveAt(referenceObjects.Count - 1);
 
             return str;
         }
 
-        private string PrintToStringForProperty(object obj, int nestingLevel)
+        private string PrintToStringForProperty(object obj, int nestingLevel, string propertyFullName)
         {
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
@@ -122,28 +126,29 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                var currentPropertyFullName = propertyFullName + '.' + propertyInfo.Name;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) ||
-                    excludingProperties.Contains(propertyInfo.Name))
+                    excludingProperties.Contains(currentPropertyFullName))
                     continue;
                 var str = "";
                 if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
                 {
                     str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
-                else if (customPropertiesPrints.ContainsKey(propertyInfo.Name))
+                else if (customPropertiesPrints.ContainsKey(currentPropertyFullName))
                 {
-                    str = customPropertiesPrints[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine;
+                    str = customPropertiesPrints[currentPropertyFullName](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
                 else
                 {
-                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel);
+                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel, currentPropertyFullName);
                 }
                 sb.Append(identation + propertyInfo.Name + " = " + str);
             }
             return sb.ToString();
         }
 
-        private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
+        private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel, string propertyFullName)
         {
             var sb = new StringBuilder();
             var type = enumerable.GetType();
@@ -160,7 +165,7 @@ namespace ObjectPrinting
             var count = 0;
             foreach (var item in enumerable)
             {
-                sb.Append(identation + PrintToString(item, nestingLevel));
+                sb.Append(identation + PrintToString(item, nestingLevel, propertyFullName));
                 count++;
                 if (count >= maxNumberListItems && maxNumberListItems >= 0)
                     break;
