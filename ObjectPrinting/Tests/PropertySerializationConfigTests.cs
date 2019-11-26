@@ -9,15 +9,12 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class PropertySerializationConfigTests
     {
-        private Person person = new Person();
+        private Person person;
 
         [SetUp]
         public void SetUp()
         {
-            person.Id = Guid.NewGuid();
-            person.Name = "Gordon";
-            person.Height = 178;
-            person.Age = 27;
+            person = new Person {Id = Guid.NewGuid(), Name = "Gordon", Height = 178, Age = 27};
         }
 
         [Test]
