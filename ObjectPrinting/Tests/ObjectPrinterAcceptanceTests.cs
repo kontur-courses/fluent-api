@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -11,13 +12,15 @@ namespace ObjectPrinting.Tests
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-
             var printer = ObjectPrinter.For<Person>();
 
             //1. Исключить из сериализации свойства определенного типа
             printer.Excluding<Guid>();
             //2. Указать альтернативный способ сериализации для определенного типа
             printer.For<string>().WithSerialization(p => p.ToString() + "changed");
+
+            printer.For<int>().WithSerialization(x => (x + 1).ToString("0.##") + "Changed").For<int>().WithCulture(CultureInfo.InvariantCulture);
+
             //3. Для числовых типов указать культуру
             printer.For<int>().WithCulture(CultureInfo.CurrentCulture);
             //4. Настроить сериализацию конкретного свойства
@@ -34,6 +37,7 @@ namespace ObjectPrinting.Tests
             person.PrintToString();
             //8. ...с конфигурированием
             person.PrintToString(settings => settings.For<string>().WithSerialization(p => p.ToString() + "changed"));
+
 
         }
     }

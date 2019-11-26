@@ -1,6 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,36 +11,89 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private Dictionary<PropertyInfo, Func<object, string>> propertyRules = new Dictionary<PropertyInfo, Func<object, string>>();
-        private Dictionary<Type, Func<Type, string>> typeRules = new Dictionary<Type, Func<Type, string>>();
-        private Dictionary<Type, Func<Type, string>> cultureRules = new Dictionary<Type, Func<Type, string>>();
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> customPropertyRules; // I'm not sure how to force function to be given type
+        private ImmutableDictionary<Type, Func<object, string>> customTypeRules; 
+        private ImmutableDictionary<Type, Func<object, string>> defaultTypeRules; 
 
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-        private HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private ImmutableHashSet<Type> excludedTypes;
+        private ImmutableHashSet<PropertyInfo> excludedProperties;
 
-        protected void addPropertyRule(Func<object, string> rule)
+        private HashSet<object> serializedObjects;
+
+        public PrintingConfig()
         {
-
+            customPropertyRules = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+            customTypeRules = ImmutableDictionary<Type, Func<object, string>>.Empty;
+            defaultTypeRules = ImmutableDictionary<Type, Func<object, string>>.Empty;
+            excludedTypes = ImmutableHashSet<Type>.Empty;
+            excludedProperties = ImmutableHashSet<PropertyInfo>.Empty;
         }
-        protected void addTypeRule(Func<object, string> rule)
+
+        internal PrintingConfig(PrintingConfig<TOwner> currentConfig)
         {
-
+            customPropertyRules = currentConfig.customPropertyRules;
+            customTypeRules = currentConfig.customTypeRules;
+            defaultTypeRules = currentConfig.defaultTypeRules;
+            excludedTypes = currentConfig.excludedTypes;
+            excludedProperties = currentConfig.excludedProperties;
         }
+
+        internal PrintingConfig<TOwner> Minus(PropertyInfo propertyToExclude)
+        {
+            excludedProperties = excludedProperties.Add(propertyToExclude);
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> Minus(Type typeToExclude)
+        {
+            excludedTypes = excludedTypes.Add(typeToExclude);
+
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> WithDefaultTypeRule(Type type,
+            Func<object, string> serialization)
+        {
+            defaultTypeRules = defaultTypeRules.Add(type, serialization);
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> WithCustomTypeRule(Type type,
+            Func<object, string> serialization)
+        {
+            customTypeRules = customTypeRules.Add(type, serialization);
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> WithCustomPropertyRule(PropertyInfo propertyToUseCustomSerialization,
+            Func<object, string> serialization)
+        {
+            customPropertyRules = customPropertyRules.Add(propertyToUseCustomSerialization, serialization);
+            return this;
+        }
+
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            serializedObjects = new HashSet<object>();
+            var objAsString = PrintToString(obj, 0);
+            serializedObjects.Clear();
+            return objAsString;
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if(serializedObjects.Contains(obj))
+                throw new FormatException("Found circular reference. Please specify custom serialization for circular reference types." +
+                                          $"Found object: {obj}, with type {obj.GetType()}");
+
+            serializedObjects.Add(obj);
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -48,79 +102,72 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            if (IsEnumerableType(type))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var objAsEnumerable = (IEnumerable) obj;
+                var elementNumber = 0;
+                foreach (var enumerable in objAsEnumerable)
+                {
+                    sb.Append(identation + '\t' + elementNumber + " = " +
+                              PrintToString(enumerable, nestingLevel + 1));
+                    elementNumber++;
+                }
+            }
+            else
+            {
+                foreach (var propertyInfo in type.GetProperties())
+                {
+                    if (!excludedProperties.Contains(propertyInfo) &&
+                        !excludedTypes.Contains(propertyInfo.PropertyType))
+                    {
+                        sb.Append(identation + propertyInfo.Name + " = " +
+                                  GetStringRepresentation(propertyInfo, obj, nestingLevel));
+                    }
+                }
             }
             return sb.ToString();
         }
 
-        public PrintingConfig<TOwner> Excluding<T>()
+        private string GetStringRepresentation(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
-            excludedTypes.Add(typeof(T));
-            return this;
+            if (customPropertyRules.ContainsKey(propertyInfo))
+                return customPropertyRules[propertyInfo](propertyInfo.GetValue(obj));
+
+            if (customTypeRules.ContainsKey(propertyInfo.PropertyType))
+                return customTypeRules[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+
+            if (defaultTypeRules.ContainsKey(propertyInfo.PropertyType))
+                return defaultTypeRules[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+
+            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
 
-        public PropertySerializationConfig<TOwner, TPropType> For<TPropType>(Expression<Func<TOwner, TPropType>> propType)
+        private bool IsEnumerableType(Type type)
         {
-            return new PropertySerializationConfig<TOwner, TPropType>();
+            return type.GetInterface(nameof(IEnumerable)) != null;
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            return new PrintingConfig<TOwner>(this).Minus(typeof(T));
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> property)
+        {
+            var propInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
+            return new PrintingConfig<TOwner>(this).Minus(propInfo);
         }
 
         public PropertySerializationConfig<TOwner, TPropType> For<TPropType>()
         {
-            return new PropertySerializationConfig<TOwner, TPropType>();
+            return new PropertySerializationConfig<TOwner, TPropType>(this, typeof(TPropType));
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> func)
+        public PropertySerializationConfig<TOwner, TPropType> For<TPropType>(Expression<Func<TOwner, TPropType>> property)
         {
-            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
-            return this;
-        }
-    }
-
-    public class PropertySerializationConfig<TOwner, TPropType> : IPropertySerializingConfig<TOwner>
-    {
-        private PrintingConfig<TOwner> parentConfig;
-        PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
-
-        public PrintingConfig<TOwner> WithSerialization(Func<TPropType, string> serializationFunc)
-        {
-            return parentConfig;
-        }
-    }
-
-    public interface IPropertySerializingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
-    }
-    public static class PropertySerializingConfigExtensions
-    {
-
-        public static PrintingConfig<TOwner> WithCulture<TOwner>
-            (this PropertySerializationConfig<TOwner, int> config, CultureInfo culture)
-        {
-            return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
-        }
-
-
-        public static PrintingConfig<TOwner> Trim<TOwner>(this PropertySerializationConfig<TOwner, string> config, int length)
-        {
-            return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
-        }
-    }
-
-    public static class PrintingConfigExtensions
-    {
-        public static string PrintToString<T>(this T obj)
-        {
-            return ObjectPrinter.For<T>().PrintToString(obj);
-        }
-
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> func)
-        {
-            return func(ObjectPrinter.For<T>()).PrintToString(obj);
+            var propInfo = ((MemberExpression) property.Body).Member as PropertyInfo;
+            return new PropertySerializationConfig<TOwner, TPropType>(this, propInfo);
         }
     }
 }
