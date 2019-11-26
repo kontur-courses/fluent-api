@@ -124,16 +124,6 @@ namespace ObjectPrinting
             return (PrintValue(nestingLevel, objType.Name, propertyName), false);
         }
 
-        //private string PrintEnumerable(IEnumerable enumerable, int nestingLevel, int depthCount, HashSet<object> printedObjects, string propertyName)
-        //{
-        //    var newPrintedObjects = new HashSet<object>(printedObjects) { enumerable };
-        //    var sb = new StringBuilder();
-        //    sb.Append(PrintValue(nestingLevel, enumerable.GetType().Name, propertyName));
-        //    foreach (var e in enumerable)
-        //        sb.Append(PrintToString(e, nestingLevel + 1, depthCount - 1, newPrintedObjects));
-        //    return sb.ToString();
-        //}
-
         protected string PrintValue(int nestingLevel, string propertyValue, string propertyName = default) =>
             propertyName == default ?
                 $"{new string('\t', nestingLevel)}{propertyValue}{Environment.NewLine}" :
