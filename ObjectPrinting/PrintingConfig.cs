@@ -14,11 +14,18 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, IPropertySerializingConfig<TOwner>> typesSerializers = new Dictionary<Type, IPropertySerializingConfig<TOwner>>();
         private readonly Dictionary<string, IPropertySerializingConfig<TOwner>> propsSerializers = new Dictionary<string, IPropertySerializingConfig<TOwner>>();
         private readonly Dictionary<object, int> printedObjects = new Dictionary<object, int>();
+        private int maxNestingLevel = 1000;
+        private readonly object ownerObject = null;
 
-        public string PrintToString(TOwner obj)
+        public PrintingConfig(TOwner obj)
+        {
+            ownerObject = obj;
+        }
+
+        public string PrintToString()
         {
             printedObjects.Clear();
-            TryPrintToString(obj, 0, out var objString);
+            TryPrintToString(ownerObject, 0, out var objString);
             return objString;
         }
 
@@ -65,33 +72,40 @@ namespace ObjectPrinting
                 if (!alreadyPrinted)
                     printedObjects.Add(obj, nestingLevel);
 
-                if (obj is IEnumerable enumerable)
+                if (nestingLevel == maxNestingLevel)
                 {
-                    foreach (var item in enumerable)
-                    {
-                        if (TryPrintToString(item, nestingLevel + 1, out var itemString))
-                            sb.Append($"{identation}Item = {itemString}");
-                    }
+                    sb.Append($"{identation}The maximum nesting level ({maxNestingLevel}) has been reached...");
                 }
                 else
                 {
-                    foreach (var propertyInfo in type.GetProperties())
+                    if (obj is IEnumerable enumerable)
                     {
-                        if (obj is TOwner owner)
+                        foreach (var item in enumerable)
                         {
-                            if (propsExcluding.Contains(propertyInfo.Name))
-                                continue;
-
-                            if (propsSerializers.TryGetValue(propertyInfo.Name, out var propSerializer))
-                            {
-                                sb.Append($"{identation}{propertyInfo.Name} = {propSerializer.Serialize(propertyInfo.GetValue(obj))}");
-                                continue;
-                            }
+                            if (TryPrintToString(item, nestingLevel + 1, out var itemString))
+                                sb.Append($"{identation}Item = {itemString}");
                         }
-
-                        if (TryPrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, out var propString))
-                            sb.Append($"{identation}{propertyInfo.Name} = {propString}");
                     }
+                    else
+                    {
+                        foreach (var propertyInfo in type.GetProperties())
+                        {
+                            if (obj is TOwner owner)
+                            {
+                                if (propsExcluding.Contains(propertyInfo.Name))
+                                    continue;
+
+                                if (propsSerializers.TryGetValue(propertyInfo.Name, out var propSerializer))
+                                {
+                                    sb.Append($"{identation}{propertyInfo.Name} = {propSerializer.Serialize(propertyInfo.GetValue(obj))}");
+                                    continue;
+                                }
+                            }
+
+                            if (TryPrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, out var propString))
+                                sb.Append($"{identation}{propertyInfo.Name} = {propString}");
+                        }
+                    } 
                 }
             }
 
@@ -102,6 +116,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<T>()
         {
             typesExcluding.Add(typeof(T));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetMaxNestingLevel(int level)
+        {
+            maxNestingLevel = level;
             return this;
         }
 

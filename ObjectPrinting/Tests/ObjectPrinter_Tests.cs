@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
         {
             var person1 = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter.For<Person>()
+            var printer = ObjectPrinter.For(person1)
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<Guid>()
 
@@ -42,11 +42,11 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(p => p.Age);
 
-            string s1 = printer.PrintToString(person1);
+            string s1 = printer.PrintToString();
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             Person person2 = new Person { Name = "Bob", Age = 20 };
-            string s2 = person2.PrintToString();
+            string s2 = person2.GetObjectPrinter().PrintToString();
 
             //8. ...с конфигурированием
             Person person3 = new Person { Name = "Clara", Age = 21 };
@@ -61,108 +61,106 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinter_Should
     {
-        [TestCase("Guid", ExpectedResult = "Person\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge = 19\r\n")]
-        [TestCase("string", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tHeight = 170\r\n\tAge = 19\r\n")]
-        [TestCase("int", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 170\r\n")]
-        [TestCase("double", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 19\r\n")]
-        public string Exclude_PropsOfAnyType(string typeName)
+        [Test]
+        public void Exclude_PropsOfAnyType()
         {
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
-            switch (typeName)
-            {
-                case "Guid":
-                    return ObjectPrinter.For<Person>().Exclude<Guid>().PrintToString(person);
-                case "string":
-                    return ObjectPrinter.For<Person>().Exclude<string>().PrintToString(person);
-                case "int":
-                    return ObjectPrinter.For<Person>().Exclude<int>().PrintToString(person);
-                case "double":
-                    return ObjectPrinter.For<Person>().Exclude<double>().PrintToString(person);
-                default:
-                    throw new NotImplementedException();
-            }
+            var typeString = "Person" + Environment.NewLine;
+            var idString = "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine;
+            var nameString = "\tName = Alex" + Environment.NewLine;
+            var ageString = "\tAge = 19" + Environment.NewLine;
+            var heightString = "\tHeight = 170" + Environment.NewLine;
+
+            ObjectPrinter.For(person).Exclude<Guid>().PrintToString().Should().Be(typeString + nameString + heightString + ageString);
+            ObjectPrinter.For(person).Exclude<string>().PrintToString().Should().Be(typeString + idString + heightString + ageString);
+            ObjectPrinter.For(person).Exclude<int>().PrintToString().Should().Be(typeString + idString + nameString + heightString);
+            ObjectPrinter.For(person).Exclude<double>().PrintToString().Should().Be(typeString + idString + nameString + ageString);
         }
 
-        [TestCase("Name", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tHeight = 170\r\n\tAge = 19\r\n")]
-        [TestCase("Height", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 19\r\n")]
-        [TestCase("Age", ExpectedResult = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 170\r\n")]
-        public string Exclude_AnyProperty(string propName)
+        [Test]
+        public void Exclude_AnyProperty()
         {
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
-            switch (propName)
-            {
-                case "Name":
-                    return ObjectPrinter.For<Person>().Exclude(p => p.Name).PrintToString(person);
-                case "Height":
-                    return ObjectPrinter.For<Person>().Exclude(p => p.Height).PrintToString(person);
-                case "Age":
-                    return ObjectPrinter.For<Person>().Exclude(p => p.Age).PrintToString(person);
-                default:
-                    throw new NotImplementedException();
-            }
+            var typeString = "Person" + Environment.NewLine;
+            var idString = "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine;
+            var nameString = "\tName = Alex" + Environment.NewLine;
+            var ageString = "\tAge = 19" + Environment.NewLine;
+            var heightString = "\tHeight = 170" + Environment.NewLine;
+
+            ObjectPrinter.For(person).Exclude(p => p.Id).PrintToString().Should().Be(typeString + nameString + heightString + ageString);
+            ObjectPrinter.For(person).Exclude(p => p.Name).PrintToString().Should().Be(typeString + idString + heightString + ageString);
+            ObjectPrinter.For(person).Exclude(p => p.Height).PrintToString().Should().Be(typeString + idString + nameString + ageString);
+            ObjectPrinter.For(person).Exclude(p => p.Age).PrintToString().Should().Be(typeString + idString + nameString + heightString);
         }
 
         [Test]
         public void Use_UserSerializerForAnyType()
         {
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
+            var typeString = "Person" + Environment.NewLine;
+            var idString = "\tId = 000..." + Environment.NewLine;
+            var nameString = "\tName = Alex" + Environment.NewLine;
+            var ageString = "\tAge = 19" + Environment.NewLine;
+            var heightString = "\tHeight = 170" + Environment.NewLine;
 
-            ObjectPrinter.For<Person>()
+            ObjectPrinter.For(person)
                 .Serialize<Guid>()
                 .Using(guid => $"{guid.ToString().Substring(0, 3)}...")
-                .PrintToString(person)
-                .Should().Be("Person\r\n\tId = 000...\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge = 19\r\n");
+                .PrintToString()
+                .Should().Be(typeString + idString + nameString + heightString + ageString);
         }
 
         [Test]
         public void Use_UserSerializerForAnyProperty()
         {
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };
+            var typeString = "Person" + Environment.NewLine;
+            var idString = "\tId = 000..." + Environment.NewLine;
+            var nameString = "\tName = Alex" + Environment.NewLine;
+            var ageString = "\tAge = 19" + Environment.NewLine;
+            var heightString = "\tHeight = 170" + Environment.NewLine;
 
-            ObjectPrinter.For<Person>()
+            ObjectPrinter.For(person)
                 .Serialize(p => p.Id)
                 .Using(id => $"{id.ToString().Substring(0, 3)}...")
-                .PrintToString(person)
-                .Should().Be("Person\r\n\tId = 000...\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge = 19\r\n");
+                .PrintToString()
+                .Should().Be(typeString + idString + nameString + heightString + ageString);
         }
 
-        [TestCase("byte", 33, ExpectedResult = "33,000\r\n")]
-        [TestCase("short", 33, ExpectedResult = "33,000\r\n")]
-        [TestCase("int", 33, ExpectedResult = "33,000\r\n")]
-        [TestCase("long", 33, ExpectedResult = "33,000\r\n")]
-        [TestCase("float", 33, ExpectedResult = "33,000\r\n")]
-        [TestCase("double", 33, ExpectedResult = "33,000\r\n")]
-        public string Use_UserCultureForAnyNumberType(string typeName, byte value)
+        [Test, TestCaseSource(nameof(GetNumberStringsWithUserCulture))]
+        public void Use_UserCultureForAnyNumberType(string printResult)
+        {
+            printResult.Should().Be("33,000" + Environment.NewLine);
+        }
+
+        private static IEnumerable<TestCaseData> GetNumberStringsWithUserCulture()
         {
             var culture = new CultureInfo("ru-ru", false);
             culture.NumberFormat.NumberDecimalDigits = 3;
 
-            switch (typeName)
-            {
-                case "byte": return ObjectPrinter.For<byte>().Serialize<byte>().Using(culture).PrintToString(value);
-                case "short": return ObjectPrinter.For<short>().Serialize<short>().Using(culture).PrintToString(value);
-                case "int": return ObjectPrinter.For<int>().Serialize<int>().Using(culture).PrintToString(value);
-                case "long": return ObjectPrinter.For<long>().Serialize<long>().Using(culture).PrintToString(value);
-                case "float": return ObjectPrinter.For<float>().Serialize<float>().Using(culture).PrintToString(value);
-                case "double": return ObjectPrinter.For<double>().Serialize<double>().Using(culture).PrintToString(value);
-                default:
-                    throw new NotImplementedException();
-            }
+            yield return new TestCaseData(ObjectPrinter.For<byte>(33).Serialize<byte>().Using(culture).PrintToString());
+            yield return new TestCaseData(ObjectPrinter.For<short>(33).Serialize<short>().Using(culture).PrintToString());
+            yield return new TestCaseData(ObjectPrinter.For<int>(33).Serialize<int>().Using(culture).PrintToString());
+            yield return new TestCaseData(ObjectPrinter.For<long>(33).Serialize<long>().Using(culture).PrintToString());
+            yield return new TestCaseData(ObjectPrinter.For<float>(33).Serialize<float>().Using(culture).PrintToString());
+            yield return new TestCaseData(ObjectPrinter.For<double>(33).Serialize<double>().Using(culture).PrintToString());
         }
 
-        [TestCase("1234567890", (ushort)5, ExpectedResult = "12345\r\n")]
-        [TestCase("123", (ushort)5, ExpectedResult = "123\r\n")]
-        public string Can_TrancateStringProperties(string value, ushort maxLength) =>
-            ObjectPrinter.For<string>().Serialize<string>().WithMaxLength(maxLength).PrintToString(value);
+        [Test]
+        public void Can_TrancateStringProperties()
+        {
+            ObjectPrinter.For("1234567890").Serialize<string>().WithMaxLength(5).PrintToString().Should().Be("12345" + Environment.NewLine);
+            ObjectPrinter.For("123").Serialize<string>().WithMaxLength(5).PrintToString().Should().Be("123" + Environment.NewLine);
+        }
 
         [Test]
         public void Can_TrancateAnyStringProperty()
         {
             var classWithStrings = new ClassWithStrings() { s1 = "1234567890", s2 = "1234567890" };
-            ObjectPrinter.For<ClassWithStrings>()
+            ObjectPrinter.For(classWithStrings)
                 .Serialize(obj => obj.s2).WithMaxLength(3)
-                .PrintToString(classWithStrings)
-                .Should().Be("ClassWithStrings\r\n\ts1 = 1234567890\r\n\ts2 = 123\r\n");
+                .PrintToString()
+                .Should().Be($"ClassWithStrings{Environment.NewLine}\ts1 = 1234567890{Environment.NewLine}\ts2 = 123{Environment.NewLine}");
         }
 
         [Test]
@@ -173,16 +171,16 @@ namespace ObjectPrinting.Tests
             var sb = new StringBuilder();
 
             var arr = new ClassWithStrings[] { obj1, obj2 };
-            sb.Append(arr.PrintToString());
+            sb.Append(arr.GetObjectPrinter().PrintToString());
 
             var dictionary = new Dictionary<int, ClassWithStrings> { { 0, obj1 }, { 1, obj2 } };
-            sb.Append(dictionary.PrintToString());
+            sb.Append(dictionary.GetObjectPrinter().PrintToString());
 
             var list = new List<ClassWithStrings> { obj1, obj2 };
-            sb.Append(list.PrintToString());
+            sb.Append(list.GetObjectPrinter().PrintToString());
 
             var en = Enumerable.Repeat(new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 }, 3);
-            sb.Append(en.PrintToString());
+            sb.Append(en.GetObjectPrinter().PrintToString());
 
             var asmLocation = Assembly.GetAssembly(typeof(ObjectPrinter_Should)).Location;
             var path = Path.GetDirectoryName(asmLocation);
@@ -207,7 +205,7 @@ namespace ObjectPrinting.Tests
             if (File.Exists(filename)) File.Delete(filename);
 
             string output = string.Empty;
-            Assert.DoesNotThrow(() => output = obj1.PrintToString());
+            Assert.DoesNotThrow(() => output = obj1.GetObjectPrinter().PrintToString());
 
             File.WriteAllText(filename, output);
         }

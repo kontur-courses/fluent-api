@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -24,7 +23,7 @@ namespace ObjectPrinting
         public string Serialize(object property)
         {
             if (property is T typedProperty && Serializer != null)
-                    return Serializer(typedProperty) + Environment.NewLine;
+                return Serializer(typedProperty) + Environment.NewLine;
             else
                 throw new ArgumentException();
         }
