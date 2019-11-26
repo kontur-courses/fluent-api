@@ -11,9 +11,11 @@ namespace ObjectPrinting
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> WithMaxLength<TOwner>(this PropertySerializingConfig<TOwner, string> config, ushort maxLength)
+        public static PrintingConfig<TOwner> WithMaxLength<TOwner>(this PropertySerializingConfig<TOwner, string> config, int maxLength)
         {
-            config.Serializer = (v) => maxLength <= v.Length ? v.Substring(0, maxLength) : v;
+            if (maxLength < 0)
+                throw new ArgumentOutOfRangeException("maxLength must be a positive number.");
+            config.Serializer = (v) => maxLength < v.Length ? v.Substring(0, maxLength) : v;
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
         }
     }
