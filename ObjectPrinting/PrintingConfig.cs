@@ -37,6 +37,19 @@ namespace ObjectPrinting
             referenceObjects = new List<object>();
         }
 
+        public PrintingConfig(PrintingConfig<TOwner> printingConfig)
+        {
+            excludingTypes = new List<Type>(printingConfig.excludingTypes);
+            customTypesPrints = new Dictionary<Type, Func<object, string>>(printingConfig.customTypesPrints);
+
+            excludingProperties =new List<string>(printingConfig.excludingProperties);
+            customPropertiesPrints = new Dictionary<string, Func<object, string>>(printingConfig.customPropertiesPrints);
+
+            maxNumberListItems = printingConfig.maxNumberListItems;
+
+            referenceObjects = new List<object>(printingConfig.referenceObjects);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);

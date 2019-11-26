@@ -21,11 +21,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TProperty, string> serializationFunc)
         {
+            var config = new PrintingConfig<TOwner>(parentConfig);
             if (propertyInfo == null)
-                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
+                (config as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
             else
-                (parentConfig as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
-            return parentConfig;
+                (config as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => serializationFunc((TProperty)value);
+            return config;
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;

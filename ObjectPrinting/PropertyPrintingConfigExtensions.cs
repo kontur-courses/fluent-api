@@ -4,22 +4,23 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> config, CultureInfo currentCulture)
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propertyPrintingConfig, CultureInfo currentCulture)
         {
-            ((config as IPropertyPrintingConfig<TOwner>).ParentConfig as IPrintingConfig).CustomTypesPrints.Add(typeof(int), value => currentCulture.ToString());
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+            var config = new PrintingConfig<TOwner>((propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).ParentConfig);
+            (config as IPrintingConfig).CustomTypesPrints.Add(typeof(int), value => currentCulture.ToString());
+            return config;
         }
 
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config, int length)
+        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int length)
         {
-            var propertyInfo = (config as IPropertyPrintingConfig<TOwner>).PropertyInfo;
-            var parentConfig = (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+            var propertyInfo = (propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).PropertyInfo;
+            var config = new PrintingConfig<TOwner>((propertyPrintingConfig as IPropertyPrintingConfig<TOwner>).ParentConfig);
 
             if (propertyInfo == null)
-                (parentConfig as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
+                (config as IPrintingConfig).CustomTypesPrints[typeof(string)] = value => ((string)value).Substring(0, length);
             else
-                (parentConfig as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+                (config as IPrintingConfig).CustomPropertiesPrints[propertyInfo.Name] = value => ((string)value).Substring(0, length);
+            return config;
         }
     }
 }
