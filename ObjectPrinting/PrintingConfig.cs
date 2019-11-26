@@ -1,11 +1,32 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public PropertyPrintingConfig<TOwner, T> Printing<T>()
+        {
+            return new PropertyPrintingConfig<TOwner, T>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> memberSelector)
+        {
+            return new PropertyPrintingConfig<TOwner, T>(this);
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> memberSelector)
+        {
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> Excluding<T>()
+        {
+            return this;
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -35,6 +56,7 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }
