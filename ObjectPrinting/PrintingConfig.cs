@@ -44,8 +44,6 @@ namespace ObjectPrinting
 
         protected string PrintToString(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel);
-
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -103,6 +101,12 @@ namespace ObjectPrinting
 
         private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
         {
+            if (referenceObjects.Contains(enumerable))
+                return string.Format(
+                    "Is higher in the hierarchy by {0} steps" + Environment.NewLine,
+                    referenceObjects.Count - referenceObjects.IndexOf(enumerable) - 1);
+
+            referenceObjects.Add(enumerable);
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = enumerable.GetType();
@@ -115,6 +119,7 @@ namespace ObjectPrinting
                 if (count >= maxNumberListItems && maxNumberListItems >= 0)
                     break;
             }
+            referenceObjects.RemoveAt(referenceObjects.Count - 1);
             return sb.ToString();
         }
 

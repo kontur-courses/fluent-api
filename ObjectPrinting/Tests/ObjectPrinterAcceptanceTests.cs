@@ -220,5 +220,28 @@ namespace ObjectPrinting.Tests
                 "\r\n\tNumber = 1" +
                 "\r\n", result);
         }
+
+        [Test]
+        public void PrintToString_CircularLinkArray()
+        {
+            var array1 = new object[1];
+            var array2 = new object[2];
+            array1[0] = array2;
+            array2[0] = array1;
+            array2[1] = array2;
+
+            var printer = ObjectPrinter.For<object[]>();
+
+            var result = printer.PrintToString(array1);
+
+            Console.WriteLine(result);
+
+            Assert.AreEqual(
+                "Object[]" +
+                "\r\n\tObject[]" +
+                "\r\n\t\tIs higher in the hierarchy by 1 steps" +
+                "\r\n\t\tIs higher in the hierarchy by 0 steps" +
+                "\r\n", result);
+        }
     }
 }
