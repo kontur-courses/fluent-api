@@ -95,7 +95,7 @@ namespace ObjectPrinting.Tests
         {
             42.PrintToString()
                 .Should()
-                .BeEquivalentTo("42");
+                .BeEquivalentTo($"42{Environment.NewLine}");
         }
 
         [Test]
