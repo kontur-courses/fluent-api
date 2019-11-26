@@ -35,7 +35,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
-                .Excluding<Guid>()
+                .Exclude<Guid>()
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -51,8 +51,8 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
-                .Excluding<Guid>()
-                .Excluding<string>()
+                .Exclude<Guid>()
+                .Exclude<string>()
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -69,8 +69,8 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
-                .Excluding<Guid>()
-                .Excluding<Guid>()
+                .Exclude<Guid>()
+                .Exclude<Guid>()
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -230,7 +230,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
-                .Excluding(p => p.Age)
+                .Exclude(p => p.Age)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -246,8 +246,8 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Vasiliy", Age = 19};
 
             var serialized = person.Printing()
-                .Excluding(p => p.Age)
-                .Excluding(p => p.Id)
+                .Exclude(p => p.Age)
+                .Exclude(p => p.Id)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);

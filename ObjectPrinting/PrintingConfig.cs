@@ -58,7 +58,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        public PrintingConfig<TOwner> Excluding<T>()
+        public PrintingConfig<TOwner> Exclude<T>()
         {
             if (!excludedTypes.Contains(typeof(T)))
                 excludedTypes.Add(typeof(T));
@@ -76,7 +76,7 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, T>(this);
         }
 
-        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> expression)
+        public PrintingConfig<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression)
         {
             var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
             excludedProperties.Add(propertyInfo?.Name);

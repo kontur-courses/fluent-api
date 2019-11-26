@@ -17,7 +17,7 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 // ✔ 1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
+                .Exclude<Guid>()
                 // ✔ 2. Указать альтернативный способ сериализации для определенного типа
                 .For<string>().Use(s => s.Trim())
                 // ✔ 3. Для числовых типов указать культуру
@@ -37,14 +37,14 @@ namespace ObjectPrinting.Tests
                 .For(p => p.Name).Trim(4)
                 .For<string>().Trim(4)
                 // ✔ 6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
+                .Exclude(p => p.Age);
 
             var s1 = printer.PrintToString(person);
 
             // ✔ 7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию     
             var s2 = person.PrintToString();
             // ✔ 8. ...с конфигурированием
-            var s3 = person.Printing().Excluding<Guid>().PrintToString();
+            var s3 = person.Printing().Exclude<Guid>().PrintToString();
         }
     }
 }
