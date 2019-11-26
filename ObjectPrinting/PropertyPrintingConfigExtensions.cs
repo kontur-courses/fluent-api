@@ -2,14 +2,19 @@
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        public static PrintingConfig<TOwner> TrimToLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var parent = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            var configInterface = propConfig as IPropertyPrintingConfig<TOwner, string>;
+            var parentInterface = configInterface.ParentConfig as IPrintingConfig<TOwner>;
             var property = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ConfigProperty;
-            ((IPrintingConfig<TOwner>) parent).TrimLengthDictionary.Add(property, maxLen);
 
-            return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            if (parentInterface.LengthsOfStringProperties.ContainsKey(property))
+                parentInterface.LengthsOfStringProperties[property] = maxLen;
+            else
+                parentInterface.LengthsOfStringProperties.Add(property, maxLen);
+
+            return configInterface.ParentConfig;
         }
     }
 }

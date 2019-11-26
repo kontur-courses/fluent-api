@@ -17,9 +17,15 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializer)
+        public PrintingConfig<TOwner> Use(Func<TPropType, string> serializer)
         {
-            ((IPrintingConfig<TOwner>)printingConfig).PropertySerializers.Add(propertyInfo, serializer);
+            var configInterface = printingConfig as IPrintingConfig<TOwner>;
+
+            if (configInterface.PropertySerializers.ContainsKey(propertyInfo))
+                configInterface.PropertySerializers[propertyInfo] = serializer;
+            else
+                configInterface.PropertySerializers.Add(propertyInfo, serializer);
+
             return printingConfig;
         }
     }

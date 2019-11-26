@@ -14,6 +14,6 @@ namespace ObjectPrinting
 
         Dictionary<Type, CultureInfo> TypeCultures { get; }
 
-        Dictionary<PropertyInfo, int> TrimLengthDictionary { get; }
+        Dictionary<PropertyInfo, int> LengthsOfStringProperties { get; }
     }
 }

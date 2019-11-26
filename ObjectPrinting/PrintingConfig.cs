@@ -12,7 +12,14 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private static readonly Type[] FinalTypes =
-            {typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)};
+        {
+            typeof(int),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan)
+        };
 
         private readonly HashSet<Type> excludedTypes;
 
@@ -24,7 +31,7 @@ namespace ObjectPrinting
 
         private readonly Dictionary<Type, CultureInfo> typeCultures;
 
-        private readonly  Dictionary<PropertyInfo, int> trimLengthDictionary;
+        private readonly Dictionary<PropertyInfo, int> lengthsOfStringProperties;
 
         public PrintingConfig()
         {
@@ -33,37 +40,46 @@ namespace ObjectPrinting
             propertySerializers = new Dictionary<PropertyInfo, Delegate>();
             typeCultures = new Dictionary<Type, CultureInfo>();
             excludedProperties = new HashSet<PropertyInfo>();
-            trimLengthDictionary = new Dictionary<PropertyInfo, int>();
+            lengthsOfStringProperties = new Dictionary<PropertyInfo, int>();
         }
 
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypeSerializers => typeSerializers;
 
         Dictionary<PropertyInfo, Delegate> IPrintingConfig<TOwner>.PropertySerializers => propertySerializers;
 
-        Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.TrimLengthDictionary => trimLengthDictionary;
+        Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.LengthsOfStringProperties => lengthsOfStringProperties;
 
         Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.TypeCultures => typeCultures;
 
 
-        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public TypePrintingConfig<TOwner, TPropType> For<TPropType>()
         {
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public PropertyPrintingConfig<TOwner, TPropType> For<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyFromExpression(memberSelector));
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var property = GetPropertyFromExpression(memberSelector);
+
+            if (excludedProperties.Contains(property))
+                throw new ArgumentException("Property is already excluded");
+
             excludedProperties.Add(GetPropertyFromExpression(memberSelector));
+
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Exclude<TPropType>()
         {
+            if (excludedTypes.Contains(typeof(TPropType)))
+                throw new ArgumentException("Type is already excluded");
+
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
@@ -73,7 +89,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private PropertyInfo GetPropertyFromExpression<TPropType>(Expression<Func<TOwner, TPropType>> expression)
+        private static PropertyInfo GetPropertyFromExpression<TPropType>(Expression<Func<TOwner, TPropType>> expression)
         {
             if (!(expression.Body is MemberExpression memberExpression))
                 throw new ArgumentException();
@@ -104,7 +120,7 @@ namespace ObjectPrinting
 
             printedObjects = new HashSet<object>(printedObjects) {obj};
 
-            if (obj is IEnumerable collection) 
+            if (obj is IEnumerable collection)
                 return PrintEnumerableToString(collection, nestingLevel, printedObjects);
 
             var sb = new StringBuilder();
@@ -131,15 +147,15 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
-        private void AppendFromNestedTypes(StringBuilder stringBuilder, object obj, int nestingLevel,
-            HashSet<object> printedObjects)
+
+        private void AppendFromNestedTypes(
+            StringBuilder stringBuilder, object obj, int nestingLevel, HashSet<object> printedObjects)
         {
             var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
 
             foreach (var propertyInfo in type.GetProperties())
                 if (!excludedTypes.Contains(propertyInfo.PropertyType) && !excludedProperties.Contains(propertyInfo))
-                {
                     stringBuilder.Append(indentation
                                          + propertyInfo.Name + " = "
                                          + SerializeFromProperty(
@@ -147,9 +163,8 @@ namespace ObjectPrinting
                                              propertyInfo.GetValue(obj),
                                              nestingLevel + 1,
                                              printedObjects
-                                             )
-                                         );
-                }
+                                         )
+                    );
         }
 
         private string SerializeFromProperty(PropertyInfo propertyInfo, object obj, int nestingLevel,
@@ -165,12 +180,19 @@ namespace ObjectPrinting
             if (propertySerializers.ContainsKey(propertyInfo))
                 result = propertySerializers[propertyInfo].DynamicInvoke(obj) as string;
 
-            if (trimLengthDictionary.ContainsKey(propertyInfo))
+            if (lengthsOfStringProperties.ContainsKey(propertyInfo))
             {
                 if (result == null)
                     result = obj as string;
 
-                result = result?.Substring(0, Math.Min(result.Length, trimLengthDictionary[propertyInfo]));
+                result = result?
+                    .Substring(
+                        0,
+                        Math.Min(
+                            result.Length,
+                            lengthsOfStringProperties[propertyInfo]
+                        )
+                    );
             }
 
             return result == null ? PrintToString(obj, nestingLevel, printedObjects) : result + Environment.NewLine;

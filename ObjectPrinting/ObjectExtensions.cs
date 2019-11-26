@@ -4,7 +4,7 @@
     {
         public static string PrintToString<T>(this T obj)
         {
-            return ObjectPrinter.For<T>().PrintToString(obj);
+            return ObjectPrinter.SetUp<T>().PrintToString(obj);
         }
     }
 }

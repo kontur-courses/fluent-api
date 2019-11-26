@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using ObjectPrinting.Tests.TestClasses;
 
 namespace ObjectPrinting.Tests
@@ -27,14 +28,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintingToString_ReturnsCorrectString_WithExcludedType()
         {
-            var expected = "Person" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {person.Height}" + Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine + 
+                           $"\tName = {person.Name}" + Environment.NewLine +
+                           $"\tHeight = {person.Height}" + Environment.NewLine + 
+                           $"\tAge = {person.Age}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Excluding<Guid>()
+                .SetUp<Person>()
+                .Exclude<Guid>()
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -43,14 +44,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintingToString_ReturnsCorrectString_WithExcludedProperty()
         {
-            var expected = "Person" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {person.Height}" + Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    $"\tName = {person.Name}" + Environment.NewLine +
+                                    $"\tHeight = {person.Height}" + Environment.NewLine +
+                                    $"\tAge = {person.Age}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Excluding(p => p.Id)
+                .SetUp<Person>()
+                .Exclude(p => p.Id)
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -59,16 +60,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintingToString_ReturnsCorrectString_WithCustomSerializationOfType()
         {
-            var expected = "Person" + Environment.NewLine
-                                    + "\tId = Guid" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {person.Height}" + Environment.NewLine
-                                    + $"\tAge = {person.Age:X}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    "\tId = Guid" + Environment.NewLine +
+                                    $"\tName = {person.Name}" + Environment.NewLine +
+                                    $"\tHeight = {person.Height}" + Environment.NewLine +
+                                    $"\tAge = {person.Age:X}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Printing<int>()
-                .Using(i => i.ToString("X"))
+                .SetUp<Person>()
+                .For<int>()
+                .Use(i => i.ToString("X"))
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -79,16 +80,16 @@ namespace ObjectPrinting.Tests
         {
             Func<double, string> serializer = height => $"{(int)(height * 100)} cm";
 
-            var expected = "Person" + Environment.NewLine
-                                    + "\tId = Guid" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {serializer(person.Height)}" + Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    "\tId = Guid" + Environment.NewLine +
+                                    $"\tName = {person.Name}" + Environment.NewLine +
+                                    $"\tHeight = {serializer(person.Height)}" + Environment.NewLine +
+                                    $"\tAge = {person.Age}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Printing(person => person.Height)
-                .Using(serializer)
+                .SetUp<Person>()
+                .For(person => person.Height)
+                .Use(serializer)
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -100,18 +101,18 @@ namespace ObjectPrinting.Tests
             Func<double, string> typeSerializer = d => $"(double){d}";
             Func<double, string> propertySerializer = height => $"{(int)(height * 100)} cm";
 
-            var expected = "Person" + Environment.NewLine
-                                    + "\tId = Guid" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {propertySerializer(person.Height)}" + Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    "\tId = Guid" + Environment.NewLine +
+                                    $"\tName = {person.Name}" + Environment.NewLine +
+                                    $"\tHeight = {propertySerializer(person.Height)}" + Environment.NewLine +
+                                    $"\tAge = {person.Age}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Printing<double>()
-                .Using(typeSerializer)
-                .Printing(person => person.Height)
-                .Using(propertySerializer)
+                .SetUp<Person>()
+                .For<double>()
+                .Use(typeSerializer)
+                .For(person => person.Height)
+                .Use(propertySerializer)
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -120,17 +121,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintingToString_ReturnsCorrectString_WithCustomCultureInfoOfType()
         {
-            var expected = "Person" + Environment.NewLine
-                                    + "\tId = Guid" + Environment.NewLine
-                                    + $"\tName = {person.Name}" + Environment.NewLine
-                                    + $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}" +
-                                    Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    "\tId = Guid" + Environment.NewLine +
+                                    $"\tName = {person.Name}" + Environment.NewLine +
+                                    $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}" + Environment.NewLine +
+                                    $"\tAge = {person.Age}" + Environment.NewLine;
 
             ObjectPrinter
-                .For<Person>()
-                .Printing<double>()
-                .Using(CultureInfo.InvariantCulture)
+                .SetUp<Person>()
+                .For<double>()
+                .Use(CultureInfo.InvariantCulture)
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -139,15 +139,15 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintingToString_ReturnsCorrectString_WithTrimmedStringProperty()
         {
-            var expected = "Person" + Environment.NewLine
-                                    + "\tId = Guid" + Environment.NewLine
-                                    + $"\tName = {person.Name.Substring(0, 3)}" + Environment.NewLine
-                                    + $"\tHeight = {person.Height}" + Environment.NewLine
-                                    + $"\tAge = {person.Age}" + Environment.NewLine;
+            var expected = "Person" + Environment.NewLine +
+                                    "\tId = Guid" + Environment.NewLine +
+                                    $"\tName = {person.Name.Substring(0, 3)}" + Environment.NewLine +
+                                    $"\tHeight = {person.Height}" + Environment.NewLine +
+                                    $"\tAge = {person.Age}" + Environment.NewLine;
             ObjectPrinter
-                .For<Person>()
-                .Printing(p => p.Name)
-                .TrimmedToLength(3)
+                .SetUp<Person>()
+                .For(p => p.Name)
+                .TrimToLength(3)
                 .PrintToString(person)
                 .Should()
                 .Be(expected);
@@ -158,13 +158,13 @@ namespace ObjectPrinting.Tests
         public void PrintingToString_ReturnsCorrectString_WithArray()
         {
             var nameSet = new NameSet {Names = new[] {"Beebop", "Valentine", "Jet Black"}};
-            var expected = "NameSet" + Environment.NewLine
-                                     + "\tNames = " + Environment.NewLine
-                                     + "\t\tBeebop" + Environment.NewLine
-                                     + "\t\tValentine" + Environment.NewLine
-                                     + "\t\tJet Black" + Environment.NewLine;
+            var expected = "NameSet" + Environment.NewLine +
+                                     "\tNames = " + Environment.NewLine +
+                                     "\t\tBeebop" + Environment.NewLine +
+                                     "\t\tValentine" + Environment.NewLine +
+                                     "\t\tJet Black" + Environment.NewLine;
 
-            ObjectPrinter.For<NameSet>().PrintToString(nameSet).Should().Be(expected);
+            ObjectPrinter.SetUp<NameSet>().PrintToString(nameSet).Should().Be(expected);
         }
 
         [Test]
@@ -173,13 +173,13 @@ namespace ObjectPrinting.Tests
             var nameSet = new NameSet {Names = new[] {"Beebop", "Valentine", "Jet Black"}};
             Func<string[], string> serializer = names => string.Join("/", names);
 
-            var expected = "NameSet" + Environment.NewLine
-                                     + "\tNames = Beebop/Valentine/Jet Black" + Environment.NewLine;
+            var expected = "NameSet" + Environment.NewLine +
+                                     "\tNames = Beebop/Valentine/Jet Black" + Environment.NewLine;
 
             ObjectPrinter
-                .For<NameSet>()
-                .Printing<string[]>()
-                .Using(serializer)
+                .SetUp<NameSet>()
+                .For<string[]>()
+                .Use(serializer)
                 .PrintToString(nameSet)
                 .Should()
                 .Be(expected);
@@ -189,13 +189,13 @@ namespace ObjectPrinting.Tests
         public void PrintingToString_ReturnsCorrectString_WithList()
         {
             var results = new RaceResults {Racers = new List<string> {"McLaren", "Ferrari", "Ford"}};
-            var expected = "RaceResults" + Environment.NewLine
-                                         + "\tRacers = " + Environment.NewLine
-                                         + $"\t\t{results.Racers[0]}" + Environment.NewLine
-                                         + $"\t\t{results.Racers[1]}" + Environment.NewLine
-                                         + $"\t\t{results.Racers[2]}" + Environment.NewLine;
+            var expected = "RaceResults" + Environment.NewLine +
+                                         "\tRacers = " + Environment.NewLine + 
+                                         $"\t\t{results.Racers[0]}" + Environment.NewLine +
+                                         $"\t\t{results.Racers[1]}" + Environment.NewLine +
+                                         $"\t\t{results.Racers[2]}" + Environment.NewLine;
 
-            ObjectPrinter.For<RaceResults>().PrintToString(results).Should().Be(expected);
+            ObjectPrinter.SetUp<RaceResults>().PrintToString(results).Should().Be(expected);
         }
 
         [Test]
@@ -211,23 +211,23 @@ namespace ObjectPrinting.Tests
                 }
             };
 
-            var expected = "StudentMarks" + Environment.NewLine
-                                          + "\tMarks = " + Environment.NewLine
-                                          + "\t\tAnton = 3" + Environment.NewLine
-                                          + "\t\tAndrey = 4" + Environment.NewLine
-                                          + "\t\tTamara = 5" + Environment.NewLine;
+            var expected = "StudentMarks" + Environment.NewLine +
+                                          "\tMarks = " + Environment.NewLine +
+                                          "\t\tAnton = 3" + Environment.NewLine +
+                                          "\t\tAndrey = 4" + Environment.NewLine +
+                                          "\t\tTamara = 5" + Environment.NewLine;
 
-            ObjectPrinter.For<StudentMarks>().PrintToString(studentMarks).Should().Be(expected);
+            ObjectPrinter.SetUp<StudentMarks>().PrintToString(studentMarks).Should().Be(expected);
         }
 
         [Test]
         public void PrintingToString_ReturnsCorrectString_WhenEnumerableIsEmpty()
         {
             var nameSet = new NameSet { Names = new string[0]};
-            var expected = "NameSet" + Environment.NewLine
-                                     + $"\tNames = Empty {nameSet.Names.GetType().Name}" + Environment.NewLine;
+            var expected = "NameSet" + Environment.NewLine +
+                                     $"\tNames = Empty {nameSet.Names.GetType().Name}" + Environment.NewLine;
 
-            ObjectPrinter.For<NameSet>().PrintToString(nameSet).Should().Be(expected);
+            ObjectPrinter.SetUp<NameSet>().PrintToString(nameSet).Should().Be(expected);
         }
 
         [Test]
@@ -237,16 +237,16 @@ namespace ObjectPrinting.Tests
             college.StudentList.Add(new Student("Vasiliy", college));
             college.StudentList.Add(new Student("Svetlana", college));
 
-            var expected = "College" + Environment.NewLine
-                                     + "\tStudentList = " + Environment.NewLine
-                                     + "\t\tStudent" + Environment.NewLine
-                                     + $"\t\t\tName = {college.StudentList[0].Name}" + Environment.NewLine
-                                     + "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine
-                                     + "\t\tStudent" + Environment.NewLine
-                                     + $"\t\t\tName = {college.StudentList[1].Name}" + Environment.NewLine
-                                     + "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine;
+            var expected = "College" + Environment.NewLine +
+                                     "\tStudentList = " + Environment.NewLine +
+                                     "\t\tStudent" + Environment.NewLine +
+                                     $"\t\t\tName = {college.StudentList[0].Name}" + Environment.NewLine +
+                                     "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine +
+                                     "\t\tStudent" + Environment.NewLine +
+                                     $"\t\t\tName = {college.StudentList[1].Name}" + Environment.NewLine +
+                                     "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine;
 
-            ObjectPrinter.For<College>().PrintToString(college).Should().Be(expected);
+            ObjectPrinter.SetUp<College>().PrintToString(college).Should().Be(expected);
         }
 
         [Test]
@@ -257,17 +257,68 @@ namespace ObjectPrinting.Tests
             college.StudentList.Add(student);
             college.StudentList.Add(student);
 
-            var expected = "College" + Environment.NewLine
-                                     + "\tStudentList = " + Environment.NewLine
-                                     + "\t\tStudent" + Environment.NewLine
-                                     + $"\t\t\tName = {college.StudentList[0].Name}" + Environment.NewLine
-                                     + "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine
-                                     + "\t\tStudent" + Environment.NewLine
-                                     + $"\t\t\tName = {college.StudentList[1].Name}" + Environment.NewLine
-                                     + "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine;
+            var expected = "College" + Environment.NewLine +
+                                     "\tStudentList = " + Environment.NewLine +
+                                     "\t\tStudent" + Environment.NewLine +
+                                     $"\t\t\tName = {college.StudentList[0].Name}" + Environment.NewLine +
+                                     "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine +
+                                     "\t\tStudent" + Environment.NewLine +
+                                     $"\t\t\tName = {college.StudentList[1].Name}" + Environment.NewLine +
+                                     "\t\t\tPlaceOfStudy = (this) College" + Environment.NewLine;
 
-            ObjectPrinter.For<College>().PrintToString(college).Should().Be(expected);
+            ObjectPrinter.SetUp<College>().PrintToString(college).Should().Be(expected);
+        }
 
+        [Test] public void PrintingToString_ThrowsArgumentException_WhenTypeIsExcludedTwice()
+        {
+
+            Action action = () => ObjectPrinter.SetUp<Person>().Exclude<int>().Exclude<int>();
+            action.ShouldThrow<ArgumentException>();
+        }
+
+        [Test]
+        public void PrintingToString_ThrowsArgumentException_WhenPropertyIsExcludedTwice()
+        {
+
+            Action action = () => ObjectPrinter.SetUp<Person>().Exclude(person => person.Age).Exclude(person => person.Age);
+            action.ShouldThrow<ArgumentException>();
+        }
+
+
+        [Test]
+        public void PrintingToString_ReturnsCorrectString_WhenPropertyIsTrimmedToLengthTwice()
+        {
+            var expected = "Person" + Environment.NewLine +
+                           "\tId = Guid" + Environment.NewLine +
+                           $"\tName = {person.Name.Substring(0, 3)}" + Environment.NewLine +
+                           $"\tHeight = {person.Height}" + Environment.NewLine +
+                           $"\tAge = {person.Age}" + Environment.NewLine;
+
+            ObjectPrinter.SetUp<Person>()
+                .For(person => person.Name)
+                .TrimToLength(5).
+                For(person => person.Name)
+                .TrimToLength(3)
+                .PrintToString(person)
+                .Should()
+                .Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_ReturnsCorrectString_WhenTrimmingLengthIsBiggerThanActualStringLength()
+        {
+            var expected = "Person" + Environment.NewLine +
+                           "\tId = Guid" + Environment.NewLine +
+                           $"\tName = {person.Name}" + Environment.NewLine +
+                           $"\tHeight = {person.Height}" + Environment.NewLine +
+                           $"\tAge = {person.Age}" + Environment.NewLine;
+
+            ObjectPrinter.SetUp<Person>()
+                .For(person => person.Name)
+                .TrimToLength(42)
+                .PrintToString(person)
+                .Should()
+                .Be(expected);
         }
     }
 }
