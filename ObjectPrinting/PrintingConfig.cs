@@ -44,11 +44,17 @@ namespace ObjectPrinting
 
         protected string PrintToString(object obj, int nestingLevel)
         {
+            var identation = new string('\t', nestingLevel);
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            var finalTypes = new[]
+            {
+                typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(decimal), typeof(Guid)
+            };
             var type = obj.GetType();
-            if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
+            if (type.IsPrimitive || finalTypes.Contains(type))
                 return obj + Environment.NewLine;
             if (obj is IEnumerable enumerable)
             {
@@ -79,11 +85,11 @@ namespace ObjectPrinting
                 var str = "";
                 if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
                 {
-                    str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+                    str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
                 else if (customPropertiesPrints.ContainsKey(propertyInfo.Name))
                 {
-                    str = customPropertiesPrints[propertyInfo.Name](propertyInfo.GetValue(obj));
+                    str = customPropertiesPrints[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
                 else
                 {

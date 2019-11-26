@@ -43,7 +43,12 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = null\r\n", result);
+            Assert.AreEqual("Person" +
+                "\r\n\tName = Alex" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = 19" +
+                "\r\n\tSecondName = null" +
+                "\r\n", result);
         }
 
         [Test]
@@ -55,7 +60,13 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900\tSecondName = null\r\n", result);
+            Assert.AreEqual("Person" +
+                "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
+                "\r\n\tName = Alex" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = 1900" +
+                "\r\n\tSecondName = null" +
+                "\r\n", result);
         }
 
         [Test]
@@ -67,7 +78,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU\tSecondName = null\r\n", result);
+            Assert.AreEqual("" +
+                "Person" +
+                "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
+                "\r\n\tName = Alex" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = ru-RU" +
+                "\r\n\tSecondName = null" +
+                "\r\n", result);
         }
 
         [Test]
@@ -79,7 +97,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = ALEX\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shmalex\r\n", result);
+            Assert.AreEqual(
+                "Person" +
+                "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
+                "\r\n\tName = ALEX" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = 19" +
+                "\r\n\tSecondName = Shmalex" +
+                "\r\n", result);
         }
 
         [Test]
@@ -91,7 +116,14 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Ale\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shm", result);
+            Assert.AreEqual(
+                "Person" +
+                "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
+                "\r\n\tName = Ale" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = 19" +
+                "\r\n\tSecondName = Shm" +
+                "\r\n", result);
         }
 
         [Test]
@@ -102,7 +134,13 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", result);
+            Assert.AreEqual(
+                "Person" +
+                "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
+                "\r\n\tName = Alex" +
+                "\r\n\tHeight = 0" +
+                "\r\n\tAge = 19" +
+                "\r\n", result);
         }
 
         [Test]
@@ -113,7 +151,12 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(list);
 
-            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n\t3\r\n", result);
+            Assert.AreEqual(
+                "List`1" +
+                "\r\n\t1" +
+                "\r\n\t2" +
+                "\r\n\t3" +
+                "\r\n", result);
         }
 
         [Test]
@@ -149,7 +192,11 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(list);
 
-            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n", result);
+            Assert.AreEqual(
+                "List`1" +
+                "\r\n\t1" +
+                "\r\n\t2" +
+                "\r\n", result);
         }
 
         [Test]
