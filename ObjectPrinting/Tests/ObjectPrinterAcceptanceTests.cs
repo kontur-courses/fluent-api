@@ -27,8 +27,8 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Name);
 
-            string s1 = printer.PrintToString(person);
-            Console.Write(s1);
+            var result = printer.PrintToString(person);
+            Console.Write(result);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию    
             //8. ...с конфигурированием
@@ -41,9 +41,9 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<Guid>();
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = null\r\n", s1);
+            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = null\r\n", result);
         }
 
         [Test]
@@ -53,9 +53,9 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .ChangePrintFor<int>().Using(s => (s * 100).ToString());
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900\tSecondName = null\r\n", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 1900\tSecondName = null\r\n", result);
         }
 
         [Test]
@@ -65,21 +65,21 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .ChangePrintFor<int>().Using(CultureInfo.CurrentCulture);
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU\tSecondName = null\r\n", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = ru-RU\tSecondName = null\r\n", result);
         }
 
         [Test]
-        public void ChangePrintFor_Function_Using_Function()
+        public void ChangePrintFor_Property_Using_Function()
         {
             var person = new Person { Name = "Alex", Age = 19 , SecondName = "Shmalex"};
             var printer = ObjectPrinter.For<Person>()
                 .ChangePrintFor(p => p.Name).Using(value => value.ToUpper());
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = ALEX\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shmalex\r\n", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = ALEX\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shmalex\r\n", result);
         }
 
         [Test]
@@ -89,9 +89,9 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .ChangePrintFor<string>().TrimToLength(3);
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Ale\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shm", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Ale\tHeight = 0\r\n\tAge = 19\r\n\tSecondName = Shm", result);
         }
 
         [Test]
@@ -100,9 +100,9 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19, SecondName = "Shmalex" };
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.SecondName);
 
-            string s1 = printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", s1);
+            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", result);
         }
 
         [Test]
@@ -111,9 +111,9 @@ namespace ObjectPrinting.Tests
             var list = new List<int>() { 1, 2, 3 };
             var printer = ObjectPrinter.For<List<int>>();
 
-            string s1 = printer.PrintToString(list);
+            var result = printer.PrintToString(list);
 
-            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n\t3\r\n", s1);
+            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n\t3\r\n", result);
         }
 
         [Test]
@@ -125,7 +125,7 @@ namespace ObjectPrinting.Tests
                 { 3 , "c" }};
             var printer = ObjectPrinter.For<Dictionary<int, string>>();
 
-            string s1 = printer.PrintToString(list);
+            var result = printer.PrintToString(list);
 
             Assert.AreEqual(
                 "Dictionary`2" +
@@ -138,7 +138,7 @@ namespace ObjectPrinting.Tests
                 "\r\n\tKeyValuePair`2" +
                 "\r\n\t\tKey = 3" +
                 "\r\n\t\tValue = c" +
-                "\r\n", s1);
+                "\r\n", result);
         }
 
         [Test]
@@ -147,9 +147,9 @@ namespace ObjectPrinting.Tests
             var list = new List<int>() { 1, 2, 3 };
             var printer = ObjectPrinter.For<List<int>>().SetMaxNumberListItems(2);
 
-            string s1 = printer.PrintToString(list);
+            var result = printer.PrintToString(list);
 
-            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n", s1);
+            Assert.AreEqual("List`1\r\n\t1\r\n\t2\r\n", result);
         }
 
         [Test]
@@ -161,7 +161,7 @@ namespace ObjectPrinting.Tests
             person1.Next = person3;
             var printer = ObjectPrinter.For<CyclicalPerson>().SetMaxNumberListItems(2);
 
-            string s1 = printer.PrintToString(person1);
+            var result = printer.PrintToString(person1);
 
             Assert.AreEqual(
                 "CyclicalPerson" +
@@ -171,7 +171,7 @@ namespace ObjectPrinting.Tests
                 "\r\n\t\t\tNumber = 2" +
                 "\r\n\t\tNumber = 3" +
                 "\r\n\tNumber = 1" +
-                "\r\n", s1);
+                "\r\n", result);
         }
     }
 }
