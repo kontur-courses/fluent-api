@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -179,6 +180,9 @@ namespace ObjectPrinting.Tests
 
             var list = new List<ClassWithStrings> { obj1, obj2 };
             sb.Append(list.PrintToString());
+
+            var en = Enumerable.Repeat(new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 }, 3);
+            sb.Append(en.PrintToString());
 
             var asmLocation = Assembly.GetAssembly(typeof(ObjectPrinter_Should)).Location;
             var path = Path.GetDirectoryName(asmLocation);

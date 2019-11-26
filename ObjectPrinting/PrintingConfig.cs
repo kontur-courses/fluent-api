@@ -13,7 +13,7 @@ namespace ObjectPrinting
         private readonly HashSet<string> propsExcluding = new HashSet<string>();
         private readonly Dictionary<Type, IPropertySerializingConfig<TOwner>> typesSerializers = new Dictionary<Type, IPropertySerializingConfig<TOwner>>();
         private readonly Dictionary<string, IPropertySerializingConfig<TOwner>> propsSerializers = new Dictionary<string, IPropertySerializingConfig<TOwner>>();
-        private readonly HashSet<object> printedObjects = new HashSet<object>();
+        private readonly Dictionary<object, int> printedObjects = new Dictionary<object, int>();
 
         public string PrintToString(TOwner obj)
         {
@@ -58,13 +58,16 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
-            if (!printedObjects.Contains(obj))
+            var alreadyPrinted = printedObjects.Keys.Contains(obj);
+            var printedLevel = alreadyPrinted ? printedObjects[obj] : int.MaxValue;
+            if (printedLevel >= nestingLevel)
             {
-                printedObjects.Add(obj);
+                if (!alreadyPrinted)
+                    printedObjects.Add(obj, nestingLevel);
 
-                if (obj is ICollection collection)
+                if (obj is IEnumerable enumerable)
                 {
-                    foreach (var item in collection)
+                    foreach (var item in enumerable)
                     {
                         if (TryPrintToString(item, nestingLevel + 1, out var itemString))
                             sb.Append($"{identation}Item = {itemString}");
