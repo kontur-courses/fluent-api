@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
@@ -21,6 +22,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            printingConfig.SetCultureInfoFor(typeof(TPropType), culture);
             return printingConfig;
         }
 

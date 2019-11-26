@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -7,15 +8,58 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
-        public void ObjPrinter_ExcludingType_ShouldWork()
+        private Person person;
+        [SetUp]
+        public void SetUp()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
-
+            person = new Person { Name = "Alex", Age = 199999, Height =  1.228 };
+        }
+        
+        [Test]
+        public void ObjPrinter_ExcludingType_ShouldNotThrowExceptions()
+        {
             var printer = ObjectPrinter.For<Person>()
-                .Excluding<string>()
-                .Printing<double>().Using(x => String.Format("{0} : {1}", x, x));
-//                .WithSerilizing<int>().Using(CultureInfo.CurrentCulture)
+                .Excluding<string>();
+            string s1 = printer.PrintToString(person);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void StandartObjectPrinter_ShouldNotWorkExceptions()
+        {
+            var printer = ObjectPrinter.For<Person>();
+            string s1 = printer.PrintToString(person);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void ObjPrinter_UsingFormatType_ShouldNotThrowExceptions()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>().Using(x => String.Format("{0} : {1}", x, x.Length));
+            string s1 = printer.PrintToString(person);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void ObjPrinter_UsingCultureInfoForType_ShouldNotThrowExceptions()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(CultureInfo.GetCultureInfo("de-DE"))
+                .Printing<int>().Using(CultureInfo.GetCultureInfo("de-DE"));
+            string s1 = printer.PrintToString(person);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void AcceptanceTests()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<string>();
+//                .Printing<double>().Using(x => String.Format("{0} : {1}", x, x))
+//                .Printing<double>().Using(CultureInfo.GetCultureInfo("de-DE"))
+//                .Printing<int>().Using(CultureInfo.GetCultureInfo("de-DE"));
+            
 //                .WithSerilizing(x => x.Name).Using<string>(x => String.Format("{0} : {1}", x, x.Length))
 //                .WithSerilizing(x => x.Name).Trim(5)
 //                .Excluding(x => x.Name);

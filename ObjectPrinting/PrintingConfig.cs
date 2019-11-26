@@ -13,10 +13,16 @@ namespace ObjectPrinting
     {
         private  HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> typeFuncs = new Dictionary<Type, Delegate>();
-
+        private Dictionary<Type, CultureInfo> cultureInfos = new Dictionary<Type, CultureInfo>();
+        
         public void SetFuncFor(Type type, Delegate pr)
         {
             typeFuncs[type] = pr;
+        }
+        
+        public void SetCultureInfoFor(Type type, CultureInfo ci)
+        {
+            cultureInfos[type] = ci;
         }
 
 
@@ -27,7 +33,15 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
             if (excludedTypes.Count != 0 && excludedTypes.Contains(obj.GetType()))
                 return string.Empty + Environment.NewLine;
-
+            
+            var finalTypes = new[]
+            {
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan)
+            };
+            if (finalTypes.Contains(obj.GetType()))
+                return obj.ToString() + Environment.NewLine;
+            
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -38,6 +52,11 @@ namespace ObjectPrinting
                 if (typeFuncs.ContainsKey(propertyInfo.PropertyType))
                 {
                     str = typeFuncs[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)).ToString() + Environment.NewLine;
+                }
+                if (cultureInfos.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var ci = cultureInfos[propertyInfo.PropertyType];
+                    str = ((IFormattable)propertyInfo.GetValue(obj)).ToString( null, ci) + Environment.NewLine;
                 }
 
                 if (str == "")
