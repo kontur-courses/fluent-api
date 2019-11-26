@@ -1,0 +1,7 @@
+﻿ClassWithCircularReference
+	ObjectName = obj1
+	NestedObject = ClassWithCircularReference
+		ObjectName = obj2
+		NestedObject = ClassWithCircularReference
+			ObjectName = obj3
+			NestedObject = ClassWithCircularReference

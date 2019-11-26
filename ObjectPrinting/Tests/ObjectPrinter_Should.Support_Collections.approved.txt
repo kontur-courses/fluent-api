@@ -1,0 +1,41 @@
+﻿ClassWithStrings[]
+	Item = ClassWithStrings
+		s1 = 12345
+		s2 = 67890
+	Item = ClassWithStrings
+		s1 = 09876
+		s2 = 54321
+Dictionary`2
+	Item = KeyValuePair`2
+		Key = 0
+		Value = ClassWithStrings
+			s1 = 12345
+			s2 = 67890
+	Item = KeyValuePair`2
+		Key = 1
+		Value = ClassWithStrings
+			s1 = 09876
+			s2 = 54321
+List`1
+	Item = ClassWithStrings
+		s1 = 12345
+		s2 = 67890
+	Item = ClassWithStrings
+		s1 = 09876
+		s2 = 54321
+<RepeatIterator>d__115`1
+	Item = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Alex
+		Height = 170
+		Age = 19
+	Item = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Alex
+		Height = 170
+		Age = 19
+	Item = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Alex
+		Height = 170
+		Age = 19

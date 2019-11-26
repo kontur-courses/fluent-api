@@ -1,11 +1,11 @@
-﻿using FluentAssertions;
+﻿using ApprovalTests;
+using ApprovalTests.Reporters;
+using FluentAssertions;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting.Tests
@@ -164,6 +164,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        [UseReporter(typeof(DiffReporter))]
         public void Support_Collections()
         {
             var obj1 = new ClassWithStrings { s1 = "12345", s2 = "67890" };
@@ -182,14 +183,11 @@ namespace ObjectPrinting.Tests
             var en = Enumerable.Repeat(new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 }, 3);
             sb.Append(en.GetObjectPrinter().PrintToString());
 
-            var asmLocation = Assembly.GetAssembly(typeof(ObjectPrinter_Should)).Location;
-            var path = Path.GetDirectoryName(asmLocation);
-            var filename = path + @"\..\..\CollectionsPrintingOutput.txt";
-            File.WriteAllText(filename, sb.ToString());
+            Approvals.Verify(sb.ToString());
         }
 
         [Test]
-        [Description("This test never fails, because StackOverflowException can't be catched!!! See output file!")]
+        [UseReporter(typeof(DiffReporter))]
         public void Support_CircularReferences()
         {
             var obj1 = new ClassWithCircularReference { ObjectName = "obj1" };
@@ -199,15 +197,7 @@ namespace ObjectPrinting.Tests
             obj2.NestedObject = obj3;
             obj3.NestedObject = obj1;
 
-            var asmLocation = Assembly.GetAssembly(typeof(ObjectPrinter_Should)).Location;
-            var path = Path.GetDirectoryName(asmLocation);
-            var filename = path + @"\..\..\ObjectsWithCircularReferencesOutput.txt";
-            if (File.Exists(filename)) File.Delete(filename);
-
-            string output = string.Empty;
-            Assert.DoesNotThrow(() => output = obj1.GetObjectPrinter().PrintToString());
-
-            File.WriteAllText(filename, output);
+            Approvals.Verify(obj1.GetObjectPrinter().PrintToString());
         }
     }
 }
