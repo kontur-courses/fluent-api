@@ -260,11 +260,8 @@ namespace ObjectPrinting.Configs
         private string ApplySerializationChain(object obj, LinkedList<Func<object, string>> serializationChain)
         {
             var result = serializationChain.First()(obj);
-            serializationChain.RemoveFirst();
-            foreach (var serialization in serializationChain)
-            {
+            foreach (var serialization in serializationChain.Skip(1))
                 result = serialization(result);
-            }
             return result + Environment.NewLine;
         }
     }
