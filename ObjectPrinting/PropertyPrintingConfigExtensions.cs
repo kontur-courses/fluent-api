@@ -16,9 +16,8 @@ namespace ObjectPrinting
 		{
 			var propConfig = (IPropertyPrintingConfig<TOwner, string>) propertyConfig;
 			var printingConfig = (IPrintingConfig<TOwner>) propConfig.ParentConfig;
-			var propName = printingConfig.GetPropertyName(propConfig.Member);
-			
-			printingConfig.PropertiesPrintingBehaviors.Add(propName,
+
+			printingConfig.PropertiesPrintingBehaviors.Add(propConfig.MemberName,
 				obj => string.Join("", ((string) obj).Take(maxLength)));
 			return propConfig.ParentConfig;
 		}

@@ -9,7 +9,9 @@ namespace Test
 	{
 		public static void Main(string[] args)
 		{
-			new Person().Printing(p => p.Name.Firstname);
+			var s1 = new string("John".ToCharArray());
+			var s2 = new string("John".ToCharArray());
+			Console.WriteLine(ReferenceEquals(s1, s2));
 		}
 	}
 

@@ -75,6 +75,25 @@ namespace ObjectPrinting.Tests
 		}
 
 		[Test]
+		public void PrintsCorrectly_WhenPrintingByPropertyNameWithUsing()
+		{
+			var expectedString = @"Person
+	Id = Guid
+	Name = Name
+		Firstname = hello John
+		Surname = Cool
+	Height = 600
+	Age = 19
+";
+			
+			var actualString = _objPrinter
+				.Printing(p => p.Name.Firstname).Using(x => $"hello {x}")
+				.PrintToString(_person);
+
+			actualString.Should().Be(expectedString);
+		}
+
+		[Test]
 		public void Printing_AllowsChangingTypePrintingCultureWithUsing()
 		{
 			_person.Height = 6.1;
@@ -89,6 +108,25 @@ namespace ObjectPrinting.Tests
 
 			var actualString = _objPrinter
 				.Printing<double>().Using(CultureInfo.CurrentCulture)
+				.PrintToString(_person);
+			actualString.Should().Be(expectedString);
+		}
+
+		[Test]
+		public void PrintsCorrectly_WhenChangingNumberCultureByPropertyName()
+		{
+			_person.Height = 6.1;
+			var expectedString = @"Person
+	Id = Guid
+	Name = Name
+		Firstname = John
+		Surname = Cool
+	Height = 6,1
+	Age = 19
+";
+
+			var actualString = _objPrinter
+				.Printing(p => p.Height).Using(CultureInfo.CurrentCulture)
 				.PrintToString(_person);
 			actualString.Should().Be(expectedString);
 		}
@@ -156,6 +194,28 @@ namespace ObjectPrinting.Tests
 			var actualString = ObjectPrinter.For<Father>()
 				.PrintToString(father1);
 			actualString.Should().Be(expectedString);
+		}
+		
+		[Test]
+		public void HasNoCircularReferences_WhenObjectWithCustomComparing()
+		{
+			var person1 = new Person2 {Name = "John"};
+			var person2 = new Person2 {Name = "John"};
+			person1.Friend = person2;
+
+			var result = ObjectPrinter.For<Person2>().PrintToString(person1);
+			result.Should().NotContain("Circular reference");
+		}
+
+		[Test]
+		public void HasNoCircularReferences_WhenObjectFieldsContainsSameReference()
+		{
+			var name = "Name";
+			var fullName = new Name(name, name);
+
+			var result = ObjectPrinter.For<Name>()
+				.PrintToString(fullName);
+			result.Should().NotContain("Circular reference");
 		}
 	}
 }

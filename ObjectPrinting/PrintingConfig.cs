@@ -18,12 +18,14 @@ namespace ObjectPrinting
 			new Dictionary<Type, Func<object, string>>();
 		private readonly Dictionary<string, Func<object, string>> _propertiesPrintingBehaviors =
 			new Dictionary<string, Func<object, string>>();
+		private static readonly ObjectReferenceComparer _objectReferenceComparer = new ObjectReferenceComparer();
 
 		private readonly HashSet<Type> _finalTypes = new HashSet<Type>
 		{
 			typeof(int), typeof(double), typeof(float), typeof(string),
 			typeof(DateTime), typeof(TimeSpan), typeof(bool)
 		};
+
 
 		public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
 		{
@@ -33,12 +35,13 @@ namespace ObjectPrinting
 		public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
 			Expression<Func<TOwner, TPropType>> memberSelector)
 		{
-			return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
+			var memberName = GetMemberName(memberSelector);
+			return new PropertyPrintingConfig<TOwner, TPropType>(this, memberName);
 		}
 
 		public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
 		{
-			var propertyName = GetPropertyName(memberSelector);
+			var propertyName = GetMemberName(memberSelector);
 			_excludedProperties.Add(propertyName);
 			return this;
 		}
@@ -48,10 +51,7 @@ namespace ObjectPrinting
 		Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.TypesPrintingBehaviors =>
 			_typesPrintingBehaviors;
 
-		string IPrintingConfig<TOwner>.GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
-			GetPropertyName(memberSelector);
-
-		private static string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+		private static string GetMemberName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
 		{
 			if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
 				throw new ArgumentException("member selector type must be member access");
@@ -60,7 +60,7 @@ namespace ObjectPrinting
 			return propertyName;
 		}
 
-		private static string ExtractName(MemberInfo member) => $"{member.DeclaringType?.FullName}.{member.Name}";
+		private static string ExtractName(MemberInfo member) => $"{member?.DeclaringType?.FullName}.{member?.Name}";
 
 		internal PrintingConfig<TOwner> Excluding<TPropType>()
 		{
@@ -68,10 +68,8 @@ namespace ObjectPrinting
 			return this;
 		}
 
-		public string PrintToString(TOwner obj)
-		{
-			return PrintToString(obj, 0, new HashSet<object>());
-		}
+		public string PrintToString(TOwner obj) => 
+			PrintToString(obj, 0, new HashSet<object>(_objectReferenceComparer));
 
 		private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects,
 			PropertyInfo propertyInfo=null)
@@ -108,7 +106,8 @@ namespace ObjectPrinting
 			{
 				if (CheckExcluding(property))
 					continue;
-				var propertyString = PrintToString(property.GetValue(obj), nestingLevel + 1, visitedObjects, property);
+				var propertyString = PrintToString(property.GetValue(obj), nestingLevel + 1, 
+													Clone(visitedObjects), property);
 				sb.Append(ident + property.Name + " = " + propertyString);
 			}
 		}
@@ -128,7 +127,8 @@ namespace ObjectPrinting
 			}
 		}
 
-		private static HashSet<object> Clone(HashSet<object> oldHashSet) => new HashSet<object>(oldHashSet);
+		private static HashSet<object> Clone(HashSet<object> oldHashSet) => 
+			new HashSet<object>(oldHashSet, _objectReferenceComparer);
 
 		private string ApplyPrintingBehavior(object obj, Type objType, PropertyInfo propertyInfo)
 		{
@@ -149,7 +149,7 @@ namespace ObjectPrinting
 		private bool CheckExcluding(PropertyInfo propertyInfo)
 		{
 			return _excludedTypes.Contains(propertyInfo.PropertyType) ||
-			       _excludedProperties.Contains($"{propertyInfo.DeclaringType?.FullName}.{propertyInfo.Name}");
+			       _excludedProperties.Contains(ExtractName(propertyInfo));
 		}
 	}
 
@@ -157,6 +157,5 @@ namespace ObjectPrinting
 	{
 		Dictionary<string, Func<object, string>> PropertiesPrintingBehaviors { get; }
 		Dictionary<Type, Func<object, string>> TypesPrintingBehaviors { get; }
-		string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector);
 	}
 }

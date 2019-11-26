@@ -7,32 +7,36 @@ namespace ObjectPrinting
 {
 	public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
 	{
-		private readonly PrintingConfig<TOwner> _printingConfig;
+		private readonly PrintingConfig<TOwner> _parentConfig;
 		private readonly Dictionary<Type, Func<object, string>> _typesPrintingBehaviors;
-		private readonly Expression<Func<TOwner, TPropType>> _member;
-		private IPropertyPrintingConfig<TOwner, TPropType> propertyPrintingConfigImplementation;
+		private readonly Dictionary<string, Func<object, string>> _propertiesPrintingBehaviors;
+		private readonly string _memberName;
 
-		public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
-			Expression<Func<TOwner, TPropType>> member = null)
+		public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, string memberName = null)
 		{
-			_printingConfig = printingConfig;
-			_typesPrintingBehaviors = ((IPrintingConfig<TOwner>) _printingConfig).TypesPrintingBehaviors;
-			_member = member;
+			_parentConfig = parentConfig;
+			var printingConfig = (IPrintingConfig<TOwner>) parentConfig;
+			_typesPrintingBehaviors = printingConfig.TypesPrintingBehaviors;
+			_propertiesPrintingBehaviors = printingConfig.PropertiesPrintingBehaviors;
+			_memberName = memberName;
 		}
 
 		public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
 		{
-			_typesPrintingBehaviors.Add(typeof(TPropType), obj => print((TPropType)obj));
-			return _printingConfig;
+			if (_memberName == null)
+				_typesPrintingBehaviors.Add(typeof(TPropType), obj => print((TPropType) obj));
+			else
+				_propertiesPrintingBehaviors.Add(_memberName, obj => print((TPropType) obj));
+			return _parentConfig;
 		}
 
-		PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;
-		Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.Member => _member;
+		PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _parentConfig;
+		string IPropertyPrintingConfig<TOwner, TPropType>.MemberName => _memberName;
 	}
 
 	public interface IPropertyPrintingConfig<TOwner, TPropType>
 	{
 		PrintingConfig<TOwner> ParentConfig { get; }
-		Expression<Func<TOwner, TPropType>> Member { get; }
+		string MemberName { get; }
 	}
 }
