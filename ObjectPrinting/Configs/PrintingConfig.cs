@@ -189,9 +189,7 @@ namespace ObjectPrinting.Configs
             var identation = new string('\t', nestingLevel + 1);
             
             if (obj is IDictionary asDict)
-            {
                 return PrintDictionaryToString(nestingLevel, asDict);
-            }
 
             foreach (var item in (IEnumerable) obj)
             {
@@ -206,16 +204,14 @@ namespace ObjectPrinting.Configs
         {
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
-            var enumerator = asDict.GetEnumerator();
-            enumerator.MoveNext();
-            do
+            var type = asDict.GetType();
+            sb.AppendLine(type.Name);
+            foreach (DictionaryEntry entry in asDict)
             {
-                var entry = enumerator.Entry;
                 var keyPrinted = entry.Key.ToString();
                 var valuePrinted = PrintToString(entry.Value, nestingLevel + 1);
                 sb.Append(identation + keyPrinted + ": " + valuePrinted);
-            } while (enumerator.MoveNext());
-
+            }
             return sb.ToString();
         }
 
