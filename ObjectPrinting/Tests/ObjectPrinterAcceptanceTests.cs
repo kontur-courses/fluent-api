@@ -320,5 +320,65 @@ namespace ObjectPrinting.Tests
                 .Should()
                 .Be(expected);
         }
+
+        [Test]
+        public void PrintingToString_ReturnsCorrectString_WithLastDeclaredSerializationOfType()
+        {
+            var expected = "Person" + Environment.NewLine +
+                           "\tId = Guid" + Environment.NewLine +
+                           $"\tName = {person.Name}" + Environment.NewLine +
+                           $"\tHeight = {person.Height}" + Environment.NewLine +
+                           $"\tAge = {person.Age} years" + Environment.NewLine;
+
+            ObjectPrinter
+                .SetUp<Person>()
+                .For<int>()
+                .Use(i => i.ToString("X"))
+                .For<int>()
+                .Use(i => $"{i} years")
+                .PrintToString(person)
+                .Should()
+                .Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_ReturnsCorrectString_WithLastDeclaredSerializationOfProperty()
+        {
+            var expected = "Person" + Environment.NewLine +
+                           "\tId = Guid" + Environment.NewLine +
+                           $"\tName = _{person.Name}_" + Environment.NewLine +
+                           $"\tHeight = {person.Height}" + Environment.NewLine +
+                           $"\tAge = {person.Age}" + Environment.NewLine;
+
+            ObjectPrinter
+                .SetUp<Person>()
+                .For(person => person.Name)
+                .Use(name => $"xxx_!{name}!_xxx")
+                .For(person => person.Name)
+                .Use(name => $"_{name}_")
+                .PrintToString(person)
+                .Should()
+                .Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_ReturnsCorrectString_WithLastDeclaredCultureOfType()
+        {
+            var expected = "Person" + Environment.NewLine +
+                           "\tId = Guid" + Environment.NewLine +
+                           $"\tName = {person.Name}" + Environment.NewLine +
+                           $"\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}" + Environment.NewLine +
+                           $"\tAge = {person.Age}" + Environment.NewLine;
+
+            ObjectPrinter
+                .SetUp<Person>()
+                .For<double>()
+                .Use(CultureInfo.GetCultureInfo("ru-RU"))
+                .For<double>()
+                .Use(CultureInfo.InvariantCulture)
+                .PrintToString(person)
+                .Should()
+                .Be(expected);
+        }
     }
 }
