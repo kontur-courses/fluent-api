@@ -4,21 +4,23 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    class EnumerablePrinter
+    class EnumerablePrinter : Printer
     {
-        private readonly Config config;
+        public EnumerablePrinter(Config config) : base(config)
+        {}
 
-        public EnumerablePrinter(Config config) => this.config = config;
-
-        public string PrintToString(object obj, int nestingLvl, int depthCount, HashSet<object> usedObjs)
+        public string PrintToString(
+            IEnumerable enumerable,
+            int nestingLevel,
+            int depthCount,
+            HashSet<object> printedObjects,
+            string propertyName)
         {
-            var enumerable = (IEnumerable)obj;
-            var identation = new string('\t', nestingLvl);
+            var newPrintedObjects = new HashSet<object>(printedObjects) { enumerable };
             var sb = new StringBuilder();
-            sb.AppendLine(obj.GetType().Name);
-            foreach (var el in enumerable)
-                sb.Append(identation + new Printer(config).PrintToString(el, nestingLvl, depthCount, usedObjs));
-            sb.AppendLine();
+            sb.Append(PrintValue(nestingLevel, enumerable.GetType().Name, propertyName));
+            foreach (var e in enumerable)
+                sb.Append(PrintToString(e, nestingLevel + 1, depthCount - 1, newPrintedObjects));
             return sb.ToString();
         }
     }

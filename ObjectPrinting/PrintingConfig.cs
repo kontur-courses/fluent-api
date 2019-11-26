@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace ObjectPrinting
@@ -35,7 +34,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return new Printer(config).PrintToString(obj, 0, 15, new HashSet<object>());
+            return new Printer(config).PrintToString(obj);
         }
     }
 }
