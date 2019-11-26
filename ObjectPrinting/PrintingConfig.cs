@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using NUnit.Framework;
+using System.Collections;
 
 namespace ObjectPrinting
 {
@@ -57,6 +58,9 @@ namespace ObjectPrinting
             }
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
+            if (obj is ICollection){
+                return  PrintCollectionsToString(obj, nestingLevel, viewedObjects);
+            }
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -68,7 +72,7 @@ namespace ObjectPrinting
             }
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (viewedObjects.Contains(propertyInfo.GetValue(obj)) && !finalTypes.Contains(propertyInfo.PropertyType))
+                if (!viewedObjects.Add(propertyInfo.GetValue(obj)) && !finalTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperty.Contains(propertyInfo))
                     continue;
@@ -84,6 +88,19 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1, viewedObjects));
                 }
+            }
+            return sb.ToString();
+        }
+
+        private string PrintCollectionsToString(object obj, int nestingLevel, HashSet<object> viewedObjects){
+            var type = obj.GetType();
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine(type.Name);
+            var collection = (IEnumerable)obj;
+            foreach(var element in collection){
+                sb.Append(identation + PrintToString(element, nestingLevel + 1, viewedObjects));
+                viewedObjects.Add(element);
             }
             return sb.ToString();
         }
