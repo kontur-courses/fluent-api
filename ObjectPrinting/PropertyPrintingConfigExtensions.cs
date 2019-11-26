@@ -75,10 +75,10 @@ namespace ObjectPrinting
 
         #endregion
         
-        public static PrintingConfig<TOwner> TrimmingToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
+        public static PrintingConfig<TOwner> Trim<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
             int maxLen)
         {
-            return (config as IPropertyPrintingConfig<TOwner>).TrimmingToLength(maxLen);
+            return (config as IPropertyPrintingConfig<TOwner>).Trim(maxLen);
         }
     }
 }

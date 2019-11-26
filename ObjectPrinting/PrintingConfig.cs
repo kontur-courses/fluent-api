@@ -14,8 +14,8 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> AddCustomSerialization(Type type, Delegate func);
         PrintingConfig<TOwner> AddCustomPropertySerialization(string propertyName, Delegate func);
         PrintingConfig<TOwner> SetTypeCulture(Type type, CultureInfo culture);
-        PrintingConfig<TOwner> SetStringTrimming(int maxLen);
-        PrintingConfig<TOwner> SetPropertyTrimming(string propertyName, int maxLen);
+        PrintingConfig<TOwner> Trim(int maxLen);
+        PrintingConfig<TOwner> Trim(string propertyName, int maxLen);
     }
 
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
@@ -217,14 +217,14 @@ namespace ObjectPrinting
             return this;
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetStringTrimming(int maxLen)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.Trim(int maxLen)
         {
             trimEnabled = true;
             this.maxLen = maxLen;
             return this;
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetPropertyTrimming(string propertyName, int maxLen)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.Trim(string propertyName, int maxLen)
         {
             stringPropertiesToTrim[propertyName] = maxLen;
             return this;

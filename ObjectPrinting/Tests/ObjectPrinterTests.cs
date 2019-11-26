@@ -195,7 +195,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .PrintingType<string>().TrimmingToLength(4)
+                .PrintingType<string>().Trim(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -213,7 +213,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .PrintingProperty(p => p.Name).TrimmingToLength(4)
+                .PrintingProperty(p => p.Name).Trim(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);

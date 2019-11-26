@@ -7,7 +7,7 @@ namespace ObjectPrinting
     public interface IPropertyPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo culture);
-        PrintingConfig<TOwner> TrimmingToLength(int maxLen);
+        PrintingConfig<TOwner> Trim(int maxLen);
     }
 
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
@@ -39,12 +39,12 @@ namespace ObjectPrinting
             return (parentConfig as IPrintingConfig<TOwner>).SetTypeCulture(typeof(T), culture);
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.TrimmingToLength(int maxLen)
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.Trim(int maxLen)
         {
             var iParentConfig = parentConfig as IPrintingConfig<TOwner>;
             return propertyInfo == null
-                ? iParentConfig.SetStringTrimming(maxLen)
-                : iParentConfig.SetPropertyTrimming(propertyInfo.Name, maxLen);
+                ? iParentConfig.Trim(maxLen)
+                : iParentConfig.Trim(propertyInfo.Name, maxLen);
         }
     }
 }

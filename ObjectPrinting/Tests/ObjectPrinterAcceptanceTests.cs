@@ -34,8 +34,8 @@ namespace ObjectPrinting.Tests
                 // ✔ 4. Настроить сериализацию конкретного свойства
                 .PrintingProperty(p => p.Name).Using(s => s.Trim())
                 // ✔ 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .PrintingProperty(p => p.Name).TrimmingToLength(4)
-                .PrintingType<string>().TrimmingToLength(4)
+                .PrintingProperty(p => p.Name).Trim(4)
+                .PrintingType<string>().Trim(4)
                 // ✔ 6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
