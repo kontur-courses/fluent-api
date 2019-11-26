@@ -47,17 +47,12 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             var type = obj.GetType();
             if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
                 return obj + Environment.NewLine;
-            if (obj is IEnumerable)
+            if (obj is IEnumerable enumerable)
             {
-                return PrintToStringForIEnumerable((IEnumerable)obj, nestingLevel + 1);
+                return PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
             }
 
             return PrintToStringForProperty(obj, nestingLevel + 1);
