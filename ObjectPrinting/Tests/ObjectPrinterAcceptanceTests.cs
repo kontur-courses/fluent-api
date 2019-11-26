@@ -13,11 +13,11 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
+                //1. Исключить из сериализации свойства определенного типа +
                 .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
+                //2. Указать альтернативный способ сериализации для определенного типа + 
                 .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
+                //3. Для числовых типов указать культуру +3
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(p => p.Name).Using(s => s + " 111")
