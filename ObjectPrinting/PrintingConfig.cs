@@ -8,42 +8,102 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private HashSet<Type> excludedTypes;
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<PropertyInfo> excludedProperties;
+        private readonly Dictionary<Type, Delegate> typeToFormatter;
+        private readonly Dictionary<PropertyInfo, Delegate> propertyToFormatter;
+        private readonly Dictionary<PropertyInfo, int> stringPropertyToLength;
+        private readonly Dictionary<Type, CultureInfo> numberTypeToCulture;
+        private readonly Type[] finalTypes;
 
-        public string PrintToString(TOwner obj)
+        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypeToFormatter => typeToFormatter;
+        Dictionary<PropertyInfo, Delegate> 
+            IPrintingConfig<TOwner>.PropertyToFormatter => propertyToFormatter;
+        Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.PropertyToLength => stringPropertyToLength;
+        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.DigitTypeToCulture => numberTypeToCulture;
+
+        private readonly TOwner owner;
+
+        public PrintingConfig(TOwner obj)
         {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
+            excludedTypes = new HashSet<Type>();
+            excludedProperties = new HashSet<PropertyInfo>();
+            typeToFormatter = new Dictionary<Type, Delegate>();
+            propertyToFormatter = new Dictionary<PropertyInfo, Delegate>();
+            stringPropertyToLength = new Dictionary<PropertyInfo, int>();
+            numberTypeToCulture = new Dictionary<Type, CultureInfo>();
+            finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
+            owner = obj;
+        }
+
+        public string Print()
+        {
+            return PrintToString(owner, 0);
+        }
+
+        private string PrintToString(object obj, int nestingLevel)
+        {
+            if (obj == null)
+                return "null" + Environment.NewLine;
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
 
+            return PrintProperties(obj, nestingLevel);
+        }
+
+        private string PrintProperties(object obj, int nestingLevel)
+        {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var formattedProperty = FormatProperty(obj, propertyInfo, nestingLevel);
+                if (formattedProperty == null)
+                    continue;
+                sb.Append(identation + propertyInfo.Name + " = " + formattedProperty);
             }
             return sb.ToString();
+        }
+
+        private string FormatProperty(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            if (excludedProperties.Contains(propertyInfo) ||
+                excludedTypes.Contains(propertyInfo.PropertyType))
+                return null;
+
+            var value = propertyInfo.GetValue(obj);
+            var type = propertyInfo.PropertyType;
+
+            if (numberTypeToCulture.ContainsKey(type))
+                return String.Format(numberTypeToCulture[type], "{0}", value) + Environment.NewLine;
+
+            var formattedProperty = value as string;
+            if (typeToFormatter.ContainsKey(type))
+                formattedProperty = typeToFormatter[type].DynamicInvoke(value) as string;
+            else if (propertyToFormatter.ContainsKey(propertyInfo))
+                formattedProperty = 
+                    propertyToFormatter[propertyInfo].DynamicInvoke(value) as string;
+            if (stringPropertyToLength.ContainsKey(propertyInfo) && formattedProperty != null)
+                formattedProperty = formattedProperty.Substring(0,
+                    Math.Min(formattedProperty.Length, stringPropertyToLength[propertyInfo]));
+
+            if (formattedProperty != null)
+                return formattedProperty + Environment.NewLine;
+
+            return PrintToString(value, nestingLevel + 1);
+
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
@@ -54,6 +114,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> expression)
         {
+            var memberExpr = expression.Body as MemberExpression;
+            excludedProperties.Add(memberExpr.Member as PropertyInfo);
             return this;
         }
 
@@ -65,57 +127,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, T> ForProperty<T>(Expression<Func<TOwner, T>> expression)
         {
             var memberExpr = expression.Body as MemberExpression;
-            return new PropertyPrintingConfig<TOwner, T>(this, memberExpr.Member);
-        }
-    }
-
-    public interface IPropertyPrintingConfig<TOwner>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
-    }
-
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
-    {
-        private readonly PrintingConfig<TOwner> parentConfig;
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
-        private readonly MemberInfo memberInfo;
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig)
-        {
-            this.parentConfig = parentConfig;
-            memberInfo = null;
-        }
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, MemberInfo memberInfo)
-        {
-            this.parentConfig = parentConfig;
-            this.memberInfo = memberInfo;
-        }
-
-        public PrintingConfig<TOwner> SetFormat(Func<TPropType, string> serializationFunc)
-        {
-            return parentConfig;
-        }
-    }
-
-    public static class PrintingConfigExtensions
-    {
-        public static PrintingConfig<TOwner> SetFormat<TOwner>(
-            this PropertyPrintingConfig<TOwner, int> config, CultureInfo cultureInfo)
-        {
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
-        }
-
-        public static PrintingConfig<TOwner> Cut<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> config, int amount)
-        {
-            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
-        }
-
-        public static string ToFormatString<TOwner>(
-            this TOwner formattedObject)
-        {
-            return ObjectPrinter.For<TOwner>().PrintToString(formattedObject);
+            return new PropertyPrintingConfig<TOwner, T>(this, memberExpr.Member as PropertyInfo);
         }
     }
 }
