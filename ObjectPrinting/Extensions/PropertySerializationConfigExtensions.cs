@@ -31,8 +31,7 @@ namespace ObjectPrinting.Extensions
             Func<object, string> serialization = o =>
             {
                 var parsedObj = o.ToString();
-                if(parsedObj.Length < count) throw new ArgumentException("Property length was less than take count");
-                return o.ToString().Substring(0, count);
+                return parsedObj.Length < count ? o.ToString() : o.ToString().Substring(0, count);
             };
             if (propertyInfo != null) return casted.AddPropertySerialization(propertyInfo, serialization);
             return casted.AddTypeSerialization(typeof(double), serialization);
