@@ -146,9 +146,8 @@ namespace ObjectPrinting
 
         public PropertySerializingConfig<TOwner, T> Serialize<T>(Expression<Func<TOwner, T>> func)
         {
-            if (func.Body.NodeType == ExpressionType.MemberAccess)
+            if (func.Body is MemberExpression memberAccessOperation)
             {
-                var memberAccessOperation = func.Body as MemberExpression;
                 var memberInfo = memberAccessOperation.Member;
                 var propSerializerConfig = new PropertySerializingConfig<TOwner, T>(this);
                 propsSerializers.Add(memberInfo.Name, propSerializerConfig);
