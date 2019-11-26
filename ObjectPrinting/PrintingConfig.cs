@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -88,22 +89,23 @@ namespace ObjectPrinting
                     }
                     else
                     {
-                        foreach (var propertyInfo in type.GetProperties())
+                        var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
+                        foreach (dynamic member in members)
                         {
                             if (obj is TOwner owner)
                             {
-                                if (propsExcluding.Contains(propertyInfo.Name))
+                                if (propsExcluding.Contains(member.Name))
                                     continue;
 
-                                if (propsSerializers.TryGetValue(propertyInfo.Name, out var propSerializer))
+                                if (propsSerializers.TryGetValue(member.Name, out IPropertySerializingConfig<TOwner> propSerializer))
                                 {
-                                    sb.Append($"{identation}{propertyInfo.Name} = {propSerializer.Serialize(propertyInfo.GetValue(obj))}");
+                                    sb.Append($"{identation}{member.Name} = {propSerializer.Serialize(member.GetValue(obj))}");
                                     continue;
                                 }
                             }
 
-                            if (TryPrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, out var propString))
-                                sb.Append($"{identation}{propertyInfo.Name} = {propString}");
+                            if (TryPrintToString(member.GetValue(obj), nestingLevel + 1, out string propString))
+                                sb.Append($"{identation}{member.Name} = {propString}");
                         }
                     } 
                 }
