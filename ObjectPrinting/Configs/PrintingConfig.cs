@@ -13,9 +13,16 @@ namespace ObjectPrinting.Configs
     {
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<PropertyInfo> excludedProperties;
-        private readonly Dictionary<Type, Queue<Func<object, string>>> typesSerializations;
-        private readonly Dictionary<PropertyInfo, Queue<Func<object, string>>> propertiesSerializations;
+        private readonly Dictionary<Type, LinkedList<Func<object, string>>> typesSerializations;
+        private readonly Dictionary<PropertyInfo, LinkedList<Func<object, string>>> propertiesSerializations;
         private readonly object serializedObject;
+        private readonly HashSet<Type> finalTypes = new HashSet<Type> 
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+            
+        };
+        private readonly HashSet<object> serializedObjects = new HashSet<object>();
 
         private int nestingLevelMax = 10;
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddExcludedType(Type type)
@@ -30,12 +37,14 @@ namespace ObjectPrinting.Configs
                 serializedObject);
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddTypeSerialization(Type type, Func<object, string> serialization)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddTypeSerialization(
+            Type type, 
+            Func<object, string> serialization)
         {
             var newSerializations = CopySerializations(typesSerializations);
             if(!newSerializations.ContainsKey(type))
-                newSerializations[type] = new Queue<Func<object, string>>();
-            newSerializations[type].Enqueue(obj => serialization(obj));
+                newSerializations[type] = new LinkedList<Func<object, string>>();
+            newSerializations[type].AddLast(obj => serialization(obj));
             return new PrintingConfig<TOwner>(
                 excludedTypes,
                 excludedProperties,
@@ -45,12 +54,14 @@ namespace ObjectPrinting.Configs
                 serializedObject);
         }
 
-        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddPropertySerialization(PropertyInfo propertyInfo, Func<object, string> serialization)
+        PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddPropertySerialization(
+            PropertyInfo propertyInfo, 
+            Func<object, string> serialization)
         {
             var newSerializations = CopySerializations(propertiesSerializations);
             if(!newSerializations.ContainsKey(propertyInfo))
-                newSerializations[propertyInfo] = new Queue<Func<object, string>>();
-            newSerializations[propertyInfo].Enqueue(obj => serialization(obj));
+                newSerializations[propertyInfo] = new LinkedList<Func<object, string>>();
+            newSerializations[propertyInfo].AddLast(obj => serialization(obj));
             return new PrintingConfig<TOwner>(
                 excludedTypes,
                 excludedProperties,
@@ -89,11 +100,11 @@ namespace ObjectPrinting.Configs
         {
             excludedTypes = new HashSet<Type>();
             excludedProperties = new HashSet<PropertyInfo>();
-            typesSerializations = new Dictionary<Type, Queue<Func<object, string>>>();
-            propertiesSerializations = new Dictionary<PropertyInfo, Queue<Func<object, string>>>();
+            typesSerializations = new Dictionary<Type, LinkedList<Func<object, string>>>();
+            propertiesSerializations = new Dictionary<PropertyInfo, LinkedList<Func<object, string>>>();
         }
 
-        public PrintingConfig(object serializedObject) : this()
+        public PrintingConfig(TOwner serializedObject) : this()
         {
             this.serializedObject = serializedObject;
         }
@@ -101,8 +112,8 @@ namespace ObjectPrinting.Configs
         private PrintingConfig(
             HashSet<Type> excludedTypes,
             HashSet<PropertyInfo> excludedProperties,
-            Dictionary<Type, Queue<Func<object, string>>> typesSerializations,
-            Dictionary<PropertyInfo, Queue<Func<object, string>>> propertiesSerializations,
+            Dictionary<Type, LinkedList<Func<object, string>>> typesSerializations,
+            Dictionary<PropertyInfo, LinkedList<Func<object, string>>> propertiesSerializations,
             int nestingLevelMax,
             object serializedObject)
         {
@@ -128,25 +139,20 @@ namespace ObjectPrinting.Configs
         private string PrintToString(object obj, int nestingLevel)
         {
             if (nestingLevel == nestingLevelMax)
-                return "";
+                return string.Empty;
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (obj == serializedObject && nestingLevel > 0)
+            if (serializedObjects.Contains(obj) && nestingLevel > 0)
                 return obj.GetType().Name + "..." + Environment.NewLine;
-            
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
             if (typesSerializations.ContainsKey(obj.GetType()) &&
                 typesSerializations[obj.GetType()].Count != 0)
                 return ApplySerializationChain(obj, typesSerializations[obj.GetType()]);
-
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
+            serializedObjects.Add(obj);
             
             if (obj is IEnumerable)
                 return PrintEnumerableToString(obj, nestingLevel);
@@ -241,27 +247,26 @@ namespace ObjectPrinting.Configs
 
         public PrintingConfig<TOwner> NestingLevel(int levelMax)
         {
-            if(levelMax < 0) throw new ArgumentException();
-            nestingLevelMax = levelMax;
+            if(levelMax < 0) throw new ArgumentException("Nesting level is less than zero");
             var casted = (IPrintingConfig<TOwner>) this;
             return casted.SetNestingLevel(levelMax);
         }
 
-        private Dictionary<T, Queue<Func<object, string>>> CopySerializations<T>(
-            Dictionary<T, Queue<Func<object, string>>> serializations)
+        private Dictionary<T, LinkedList<Func<object, string>>> CopySerializations<T>(
+            Dictionary<T, LinkedList<Func<object, string>>> serializations)
         {
-            var newDict = new Dictionary<T, Queue<Func<object, string>>>();
+            var newDict = new Dictionary<T, LinkedList<Func<object, string>>>();
             foreach (var pair in serializations)
-                newDict[pair.Key] = new Queue<Func<object, string>>(serializations[pair.Key]);
+                newDict[pair.Key] = new LinkedList<Func<object, string>>(serializations[pair.Key]);
             return newDict;
         }
 
-        private string ApplySerializationChain(object obj, Queue<Func<object, string>> serializationChain)
+        private string ApplySerializationChain(object obj, LinkedList<Func<object, string>> serializationChain)
         {
-            var result = serializationChain.Dequeue()(obj);
-            while (serializationChain.Count != 0)
+            var result = serializationChain.First()(obj);
+            serializationChain.RemoveFirst();
+            foreach (var serialization in serializationChain)
             {
-                var serialization = serializationChain.Dequeue();
                 result = serialization(result);
             }
             return result + Environment.NewLine;
