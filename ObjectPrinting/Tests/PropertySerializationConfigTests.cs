@@ -66,5 +66,39 @@ namespace ObjectPrinting.Tests
             result.Should().Contain("Gor");
             result.Should().NotContain("Gordon");
         }
+        
+        [Test]
+        public void Using_Should_ExcludePropertiesProperties()
+        {
+            person.Bag = new Bag(10);
+
+            var result = person.Serialize().Excluding(p => p.Bag.MaxWeight).PrintToString();
+            
+            result.Should().NotContain("MaxWeight");
+        }
+        
+        [Test]
+        public void Using_Should_SerializePropertiesProperties()
+        {
+            person.Bag = new Bag(10);
+
+            var result = person
+                .Serialize()
+                .Serialize(p => p.Bag.MaxWeight)
+                .Using(str => str + " kg")
+                .PrintToString();
+            
+            result.Should().Contain("10 kg");
+        }
+    }
+
+    public class Bag
+    {
+        public int MaxWeight { get;}
+
+        public Bag(int maxWeight)
+        {
+            MaxWeight = maxWeight;
+        }
     }
 }
