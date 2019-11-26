@@ -15,14 +15,14 @@ namespace ObjectPrinting.Configs
         private readonly HashSet<PropertyInfo> excludedProperties;
         private readonly Dictionary<Type, LinkedList<Func<object, string>>> typesSerializations;
         private readonly Dictionary<PropertyInfo, LinkedList<Func<object, string>>> propertiesSerializations;
-        private readonly object serializedObject;
+        private readonly object initialObject;
         private readonly HashSet<Type> finalTypes = new HashSet<Type> 
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
             
         };
-        private readonly HashSet<object> serializedObjects = new HashSet<object>();
+        private readonly List<object> serializedObjects = new List<object>();
 
         private int nestingLevelMax = 10;
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddExcludedType(Type type)
@@ -34,7 +34,7 @@ namespace ObjectPrinting.Configs
                 typesSerializations, 
                 propertiesSerializations,
                 nestingLevelMax,
-                serializedObject);
+                initialObject);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddTypeSerialization(
@@ -51,7 +51,7 @@ namespace ObjectPrinting.Configs
                 newSerializations,
                 propertiesSerializations,
                 nestingLevelMax,
-                serializedObject);
+                initialObject);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddPropertySerialization(
@@ -68,7 +68,7 @@ namespace ObjectPrinting.Configs
                 typesSerializations,
                 newSerializations,
                 nestingLevelMax,
-                serializedObject);
+                initialObject);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddExcludedProperty(PropertyInfo propertyInfo)
@@ -80,7 +80,7 @@ namespace ObjectPrinting.Configs
                 typesSerializations, 
                 propertiesSerializations,
                 nestingLevelMax,
-                serializedObject);
+                initialObject);
         }
 
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.SetNestingLevel(int levelMax)
@@ -93,7 +93,7 @@ namespace ObjectPrinting.Configs
                 typesSerializations, 
                 propertiesSerializations,
                 levelMax,
-                serializedObject);
+                initialObject);
         }
 
         public PrintingConfig()
@@ -104,9 +104,9 @@ namespace ObjectPrinting.Configs
             propertiesSerializations = new Dictionary<PropertyInfo, LinkedList<Func<object, string>>>();
         }
 
-        public PrintingConfig(TOwner serializedObject) : this()
+        public PrintingConfig(TOwner initialObject) : this()
         {
-            this.serializedObject = serializedObject;
+            this.initialObject = initialObject;
         }
 
         private PrintingConfig(
@@ -115,14 +115,14 @@ namespace ObjectPrinting.Configs
             Dictionary<Type, LinkedList<Func<object, string>>> typesSerializations,
             Dictionary<PropertyInfo, LinkedList<Func<object, string>>> propertiesSerializations,
             int nestingLevelMax,
-            object serializedObject)
+            object initialObject)
         {
             this.excludedTypes = new HashSet<Type>(excludedTypes);
             this.excludedProperties = new HashSet<PropertyInfo>(excludedProperties);
             this.typesSerializations = CopySerializations(typesSerializations);
             this.propertiesSerializations = propertiesSerializations;
             this.nestingLevelMax = nestingLevelMax;
-            this.serializedObject = serializedObject;
+            this.initialObject = initialObject;
         }
 
         public string PrintToString(TOwner obj)
@@ -132,8 +132,8 @@ namespace ObjectPrinting.Configs
         
         public string PrintToString()
         {
-            if(serializedObject == null) throw new InvalidOperationException("No object is set - use PrintToString(obj)");
-            return PrintToString(serializedObject, 0);
+            if(initialObject == null) throw new InvalidOperationException("No object is set - use PrintToString(obj)");
+            return PrintToString(initialObject, 0);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -142,7 +142,7 @@ namespace ObjectPrinting.Configs
                 return string.Empty;
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (serializedObjects.Contains(obj) && nestingLevel > 0)
+            if (serializedObjects.Any(o => o == obj) && nestingLevel > 0)
                 return obj.GetType().Name + "..." + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
