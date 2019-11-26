@@ -67,17 +67,6 @@ namespace ObjectPrinting
             var type = obj.GetType();
             if (type.IsPrimitive || finalTypes.Contains(type))
                 return obj + Environment.NewLine;
-            if (obj is IEnumerable enumerable)
-            {
-                return PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
-            }
-
-            return PrintToStringForProperty(obj, nestingLevel + 1);
-        }
-
-        private string PrintToStringForProperty(object obj, int nestingLevel)
-        {
-            var identation = new string('\t', nestingLevel);
 
             if (referenceObjects.Contains(obj))
                 return string.Format(
@@ -85,6 +74,21 @@ namespace ObjectPrinting
                     referenceObjects.Count - referenceObjects.IndexOf(obj) - 1);
 
             referenceObjects.Add(obj);
+
+            var str = "";
+            if (obj is IEnumerable enumerable)
+                str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
+            else
+                str = PrintToStringForProperty(obj, nestingLevel + 1);
+
+            referenceObjects.RemoveAt(referenceObjects.Count - 1);
+
+            return str;
+        }
+
+        private string PrintToStringForProperty(object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -108,18 +112,11 @@ namespace ObjectPrinting
                 }
                 sb.Append(identation + propertyInfo.Name + " = " + str);
             }
-            referenceObjects.RemoveAt(referenceObjects.Count - 1);
             return sb.ToString();
         }
 
         private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
         {
-            if (referenceObjects.Contains(enumerable))
-                return string.Format(
-                    "Is higher in the hierarchy by {0} steps" + Environment.NewLine,
-                    referenceObjects.Count - referenceObjects.IndexOf(enumerable) - 1);
-
-            referenceObjects.Add(enumerable);
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = enumerable.GetType();
@@ -132,7 +129,6 @@ namespace ObjectPrinting
                 if (count >= maxNumberListItems && maxNumberListItems >= 0)
                     break;
             }
-            referenceObjects.RemoveAt(referenceObjects.Count - 1);
             return sb.ToString();
         }
 
