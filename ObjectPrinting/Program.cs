@@ -10,7 +10,7 @@ namespace ObjectPrinting
     {
         private static void Main()
         {
-            var personTester = new Person { Name = "Man", Age = -45 };
+            /*var personTester = new Person { Name = "Man", Age = -45 };
             var person3 = new Person { Name = "Man", Age = 45 };
             var person2 = new Person { Name = "Dan", Age = 23, Parent = person3 };
             var person1 = new Person { Name = "Alex", Age = 19, Parent = person2 };
@@ -25,6 +25,7 @@ namespace ObjectPrinting
 
             var printer2 = ObjectPrinter.For<Person>()
                 .Excluding<Guid>()
+                .Excluding(x => x.Age)
                 //.Printing<int>().Using(x => "abcd")
                 //.Printing(x => x.Name).Using(x => "Name")
                 .Excluding<double>();
@@ -43,7 +44,7 @@ namespace ObjectPrinting
             Console.WriteLine(printer2.PrintToString(loooper));
             Console.WriteLine("========================");
             Console.WriteLine(printer3.PrintToString(personTester));
-            Console.WriteLine("========================");
+            Console.WriteLine("========================");*/
             
             var temp = new List<Person>
             {
@@ -53,6 +54,8 @@ namespace ObjectPrinting
                 new Person { Name = "Alex", Age = 19 },
             };
             var convr = temp.Serialize().Excluding<int>();
+            
+            Console.WriteLine(ObjectPrinter.For<Person>().Excluding(x => x.Age).PrintToString(temp));
             
             Console.WriteLine(convr.PrintToString(temp));
 

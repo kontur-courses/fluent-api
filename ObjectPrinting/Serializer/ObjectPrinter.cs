@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Formatting;
+using ObjectPrinting.PrintingConfigs;
+using ObjectPrinting.Serializer;
 
 namespace ObjectPrinting
 {
@@ -14,55 +16,42 @@ namespace ObjectPrinting
             return new PrintingConfig<T>();
         }
 
-        public static string PrintToString<TOwner>(TOwner obj, PrintingConfig<TOwner> config)
+        public static string PrintToString<TOwner>(object obj, PrintingConfig<TOwner> config)
         {
             var interConfig = config as IPrintingConfig;
-            return PrintToString(obj, 0, interConfig.SerializationRules, new HashSet<object>());
+
+            var rules = new SerializationConfiguration(interConfig.SerializationRules,
+                interConfig.InstalledFormatting ?? FormatConfiguration.DefaultFormatting());
+            
+            return PrintToString(obj, 0, rules);
         }
 
-        private static readonly IReadOnlyList<Type> FinalTypes = 
-            new List<Type>()
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
-        private const int MaximumRecursionDepth = 20;
-
-        private static string GetPropertyPrintingStart(string indent, PropertyInfo property) =>
-            indent + property.Name + " = ";
-
-        private static string GetIndent(int level) => 
-            '\n' + new string('\t', level);
-
-        private static string PrintToString(object obj, int nestingLevel, 
-            IReadOnlyList<SerializationRule> serializationRules, HashSet<object> printedObjects)
+        private static string PrintToString(object obj, int nestingLevel, SerializationConfiguration config)
         {
             if (obj == null)
                 return "null";
 
             var type = obj.GetType();
-            if (FinalTypes.Contains(type))
+            if (config.Formatting.FinalTypes.Contains(type))
                 return obj.ToString();
 
-            if (printedObjects.Contains(obj) || nestingLevel >= MaximumRecursionDepth)
+            if (config.CanPrintIfRecursion(obj, nestingLevel)) //TODO: Rename
                 return "...";
 
-            printedObjects.Add(obj);
+            config.PrintedObjects.Add(obj);
 
             var buildingString = new StringBuilder();
             buildingString.Append(type.Name);
 
             if (type.IsArray || obj is IEnumerable)
-                buildingString.Append(PrintEnumerable(obj, type, nestingLevel, serializationRules, printedObjects));
+                buildingString.Append(PrintEnumerable(obj, type, nestingLevel, config));
             else
-                buildingString.Append(PrintProperties(obj, nestingLevel, serializationRules, printedObjects));
+                buildingString.Append(PrintProperties(obj, nestingLevel, config));
 
             return buildingString.ToString();
         }
 
-        private static string PrintProperties(object obj, int nestingLevel,
-            IReadOnlyList<SerializationRule> serializationRules, HashSet<object> printedObjects)
+        private static string PrintProperties(object obj, int nestingLevel, SerializationConfiguration config)
         {
             var properties = obj.GetType().GetProperties();
             if (properties.Length == 0)
@@ -73,7 +62,7 @@ namespace ObjectPrinting
             foreach (var propertyInfo in properties)
             {
                 var propertyResultStr = 
-                    ApplyRulesToProperty(obj, propertyInfo, nestingLevel, serializationRules, printedObjects);
+                    ApplyRulesToProperty(obj, propertyInfo, nestingLevel, config);
 
                 if(propertyResultStr == null)
                     continue;
@@ -81,65 +70,65 @@ namespace ObjectPrinting
                 buildingString.Append(propertyResultStr);
             }
 
-            buildingString.Insert(0, GetIndent(nestingLevel) + '{');
-            buildingString.Insert(buildingString.Length, GetIndent(nestingLevel) + '}');
+            buildingString.Insert(0, config.Formatting.GetBorder(nestingLevel, true));
+            buildingString.Insert(buildingString.Length, config.Formatting.GetBorder(nestingLevel, false));
+            
             return buildingString.ToString();
         }
 
-        private static string ApplyRulesToProperty(object obj, PropertyInfo propertyInfo, int nestingLevel, 
-            IReadOnlyList<SerializationRule> serializationRules, HashSet<object> printedObjects)
+        private static string ApplyRulesToProperty(object obj, PropertyInfo propertyInfo, int nestingLevel,
+            SerializationConfiguration config)
         {
             string propertyResultStr = null;
 
-            var indent = GetIndent(nestingLevel + 1);
-            var start = GetPropertyPrintingStart(indent, propertyInfo);
+            var start = config.Formatting.GetPropertyPrintingStart(nestingLevel + 1, propertyInfo);
 
-            foreach (var serializationRule in serializationRules
+            foreach (var serializationRule in config.SerializationRules
                 .Where(rule => rule.FilterHandler.Invoke(obj, propertyInfo))
                 .Select(x => x.ResultHandler))
             {
                 if (serializationRule == null)
                     return null;
 
-                propertyResultStr = start + serializationRule.Invoke(obj, propertyInfo, indent, nestingLevel + 1);
+                propertyResultStr = start + serializationRule.Invoke(obj, propertyInfo);
             }
-
             
             return propertyResultStr ?? start + 
-                   PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, serializationRules, printedObjects);
+                   PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, config);
         }
 
         private static string PrintEnumerable(object obj, Type type, int nestingLevel,
-            IReadOnlyList<SerializationRule> serializationRules, HashSet<object> printedObjects)
+            SerializationConfiguration config)
         {
             if (!(obj is IEnumerable collection))
                 return "null";
 
             if (obj is IDictionary)
-                return PrintKeyValuePairs(obj, type, nestingLevel, serializationRules, printedObjects);
+                return PrintKeyValuePairs(obj, type, nestingLevel, config);
 
             var buildingString = new StringBuilder();
 
             var elementType = type.IsArray ? type.GetElementType() : type.GetGenericArguments()[0];
             if (elementType != null)
                 buildingString.Append($"<{elementType.Name}>");
-            buildingString.Append(GetIndent(nestingLevel) + "{");
-
+            
+            
+            buildingString.Append(config.Formatting.GetBorder(nestingLevel, true));
+            
             var index = 0;
             foreach (var element in collection)
             {
-                buildingString.Append(GetIndent(nestingLevel + 1) +
-                                      $"#{index} = " + PrintToString(element, nestingLevel + 1, 
-                                                                serializationRules, printedObjects));
+                buildingString.Append(config.Formatting.GetEnumerableIndent(nestingLevel + 1, index) + 
+                                      PrintToString(element, nestingLevel + 1, config));
                 index++;
             }
 
-            buildingString.Append(GetIndent(nestingLevel) + '}');
+            buildingString.Append(config.Formatting.GetBorder(nestingLevel, false));
             return buildingString.ToString();
         }
 
         private static string PrintKeyValuePairs(object obj, Type type, int nestingLevel,
-            IReadOnlyList<SerializationRule> serializationRules, HashSet<object> printedObjects)
+            SerializationConfiguration config)
         {
             return "\n#-#-#-#-NOT IMPLEMENTED-#-#-#-#\n";
         }

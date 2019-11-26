@@ -56,9 +56,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrintingConfigs\IPrintingConfig.cs" />
-    <Compile Include="PrintingConfigs\Property\IPropertyPrintingConfig.cs" />
+    <Compile Include="Formatting\DefaultFormatting.cs" />
+    <Compile Include="PrintingConfigs\Interfaces\IPrintingConfig.cs" />
     <Compile Include="Formatting\FormatConfiguration.cs" />
+    <Compile Include="PrintingConfigs\Interfaces\IPropertyPrintingConfig.cs" />
     <Compile Include="Serializer\ObjectPrinter.cs" />
     <Compile Include="Serializer\ObjectSerializeExtension.cs" />
     <Compile Include="PrintingConfigs\PrintingConfig.cs" />
@@ -66,14 +67,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PrintingConfigs\Property\PropertyPrintingConfig.cs" />
     <Compile Include="PrintingConfigs\Property\PropertyPrintingExtension.cs" />
-    <Compile Include="Serializer\SerializationRule.cs" />
+    <Compile Include="Serializer\SerializationConfiguration.cs" />
+    <Compile Include="Serializer\PropertySerializationRule.cs" />
     <Compile Include="Person.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

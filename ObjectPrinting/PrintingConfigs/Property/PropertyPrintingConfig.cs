@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using ObjectPrinting.Serializer;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfigs
 {
     public class PropertyPrintingConfig<TOwner, T> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> config;
-        private readonly Action<SerializationRule> applyNewRuleToConfig;
+        private readonly Action<PropertySerializationRule> applyNewRuleToConfig;
         private readonly SerializationFilter propFilter;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> owner)
@@ -29,8 +30,8 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<T, string> func)
         {
             applyNewRuleToConfig(
-                new SerializationRule(propFilter,
-                (obj, propertyInfo, _, __) => func((T) propertyInfo.GetValue(obj))));
+                new PropertySerializationRule(propFilter,
+                (obj, propertyInfo) => func((T) propertyInfo.GetValue(obj))));
             return config;
         }
 

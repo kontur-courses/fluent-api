@@ -1,17 +1,16 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Serializer
 {
     public delegate bool SerializationFilter(object obj, PropertyInfo excludedProperty);
-    public delegate string SerializationFormer(object obj, PropertyInfo currentProperty, string indent, int nestingLevel);
+    public delegate string SerializationFormer(object obj, PropertyInfo currentProperty);
 
-    public struct SerializationRule
+    public struct PropertySerializationRule
     {
         public readonly SerializationFilter FilterHandler;
         public readonly SerializationFormer ResultHandler;
 
-        public SerializationRule(SerializationFilter filterHandler, SerializationFormer resultHandler)
+        public PropertySerializationRule(SerializationFilter filterHandler, SerializationFormer resultHandler)
         {
             this.FilterHandler = filterHandler;
             this.ResultHandler = resultHandler;

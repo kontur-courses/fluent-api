@@ -1,4 +1,6 @@
-﻿namespace ObjectPrinting
+﻿using ObjectPrinting.Serializer;
+
+namespace ObjectPrinting.PrintingConfigs
 {
     internal interface IPropertyPrintingConfig<TOwner>
     {

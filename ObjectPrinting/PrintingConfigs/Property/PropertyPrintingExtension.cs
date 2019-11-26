@@ -1,6 +1,6 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
+using ObjectPrinting.PrintingConfigs;
+using ObjectPrinting.Serializer;
 
 namespace ObjectPrinting
 {
@@ -11,8 +11,8 @@ namespace ObjectPrinting
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 
             (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new SerializationRule(propConfig.Filter, 
-                (obj, propertyInfo, _, __) => 
+                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter, 
+                (obj, propertyInfo) => 
                     (propertyInfo.GetValue(obj) as string)?.Substring(0, length)));
 
             return propConfig.Config;
@@ -24,8 +24,8 @@ namespace ObjectPrinting
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 
             (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new SerializationRule(propConfig.Filter,
-                    (obj, propertyInfo, _, __) =>
+                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
+                    (obj, propertyInfo) =>
                         ((int) propertyInfo.GetValue(obj)).ToString(info)));
 
             return propConfig.Config;
@@ -37,8 +37,8 @@ namespace ObjectPrinting
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 
             (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new SerializationRule(propConfig.Filter,
-                    (obj, propertyInfo, _, __) =>
+                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
+                    (obj, propertyInfo) =>
                         ((double) propertyInfo.GetValue(obj)).ToString(info)));
 
             return propConfig.Config;
@@ -50,8 +50,8 @@ namespace ObjectPrinting
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 
             (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new SerializationRule(propConfig.Filter,
-                    (obj, propertyInfo, _, __) =>
+                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
+                    (obj, propertyInfo) =>
                         ((byte) propertyInfo.GetValue(obj)).ToString(info)));
 
             return propConfig.Config;
@@ -63,8 +63,8 @@ namespace ObjectPrinting
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 
             (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new SerializationRule(propConfig.Filter,
-                    (obj, propertyInfo, _, __) =>
+                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
+                    (obj, propertyInfo) =>
                         ((byte) propertyInfo.GetValue(obj)).ToString(info)));
 
             return propConfig.Config;

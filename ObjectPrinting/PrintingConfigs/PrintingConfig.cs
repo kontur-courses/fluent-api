@@ -1,41 +1,47 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
+using ObjectPrinting.Formatting;
+using ObjectPrinting.Serializer;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfigs
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        private readonly List<SerializationRule> serializationRules;
+        private readonly List<PropertySerializationRule> serializationRules;
+        private FormatConfiguration installedFormatting = null;
 
-         public PrintingConfig()
+        public PrintingConfig()
         {
-            serializationRules = new List<SerializationRule>();
+            serializationRules = new List<PropertySerializationRule>();
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(object obj)
         {
             return ObjectPrinter.PrintToString(obj, this);
+        }
+
+        public PrintingConfig<TOwner> SetFormatting(FormatConfiguration configuration)
+        {
+            installedFormatting = configuration;
+            return this;
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
             serializationRules.Add(
-                new SerializationRule((obj, propertyInfo) => propertyInfo.PropertyType == typeof(T),
+                new PropertySerializationRule((obj, propertyInfo) => propertyInfo.PropertyType == typeof(T),
                 null));
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding(Expression<Func<TOwner, string>> func)
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
             var propInfo = ((MemberExpression) func.Body).Member as PropertyInfo;
 
             serializationRules.Add(
-                new SerializationRule((obj, propertyInfo) => propertyInfo.Name == propInfo?.Name,
+                new PropertySerializationRule((obj, propertyInfo) => propertyInfo.Name == propInfo?.Name,
                 null));
             return this;
         }
@@ -50,8 +56,8 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, T>(this, func);
         }
 
-        IReadOnlyList<SerializationRule> IPrintingConfig.SerializationRules => serializationRules;
-
-        void IPrintingConfig.ApplyNewSerializationRule(SerializationRule rule) => serializationRules.Add(rule);
+        IReadOnlyList<PropertySerializationRule> IPrintingConfig.SerializationRules => serializationRules;
+        FormatConfiguration IPrintingConfig.InstalledFormatting => installedFormatting;
+        void IPrintingConfig.ApplyNewSerializationRule(PropertySerializationRule rule) => serializationRules.Add(rule);
     }
 }
