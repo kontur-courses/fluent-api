@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -62,6 +63,7 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, PropertyInfo property)
         {
+            if (nestingLevel > 10) return "Max nesting level";
             var sb = new StringBuilder();
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -85,7 +87,7 @@ namespace ObjectPrinting
         private bool TryPrintingFunctionByName(object obj, PropertyInfo property,
             out string specialPrintingFunctionsResult)
         {
-            specialPrintingFunctionsResult = String.Empty;
+            specialPrintingFunctionsResult = string.Empty;
             if (property == null) return false;
             if (!PrintingFunctionsByName.ContainsKey(property.DeclaringType.FullName + "." + property.Name))
                 return false;
@@ -110,12 +112,27 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (propertyInfo.Name.Equals("SyncRoot")) continue;
                 if (!typeBlackList.Contains(propertyInfo.PropertyType) &&
                     !nameBlackList.Contains(propertyInfo.DeclaringType.FullName + "." + propertyInfo.Name))
                     sb.Append(identation + propertyInfo.Name + " = " +
                               PrintToString(propertyInfo.GetValue(obj),
                                   nestingLevel + 1, propertyInfo));
             }
+
+            sb.Append(PrintInnerElementsIfEnumerable(obj, nestingLevel));
+
+            return sb.ToString();
+        }
+
+        private string PrintInnerElementsIfEnumerable(object obj, int nestingLevel)
+        {
+            if (!(obj is ICollection enumerable)) return string.Empty;
+            StringBuilder sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            sb.Append(identation + "Children: ");
+            foreach (var element in enumerable)
+                sb.Append(identation + PrintToString(element, nestingLevel, null));
 
             return sb.ToString();
         }
