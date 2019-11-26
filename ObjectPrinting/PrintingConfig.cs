@@ -65,13 +65,13 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, T> PrintingProperty<T>(Expression<Func<TOwner, T>> expression)
+        public PropertyPrintingConfig<TOwner, T> For<T>(Expression<Func<TOwner, T>> expression)
         {
             var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, T>(this, propertyInfo);
         }
 
-        public PropertyPrintingConfig<TOwner, T> PrintingType<T>()
+        public PropertyPrintingConfig<TOwner, T> For<T>()
         {
             return new PropertyPrintingConfig<TOwner, T>(this);
         }

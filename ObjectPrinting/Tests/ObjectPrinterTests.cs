@@ -89,7 +89,7 @@ namespace ObjectPrinting.Tests
                 '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .PrintingType<Guid>().Using(s => s.ToString())
+                .For<Guid>().Using(s => s.ToString())
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -106,7 +106,7 @@ namespace ObjectPrinting.Tests
                                                  + '\t' + "Age = NO" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .PrintingType<int>().Using(s => "NO")
+                .For<int>().Using(s => "NO")
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -122,8 +122,8 @@ namespace ObjectPrinting.Tests
                                                  + '\t' + "Height = 0" + Environment.NewLine
                                                  + '\t' + "Age = 19" + Environment.NewLine;
             var serialized = person.Printing()
-                .PrintingType<Guid>().Using(s => s.ToString())
-                .PrintingType<Guid>().Using(s => s.GetType().Name)
+                .For<Guid>().Using(s => s.ToString())
+                .For<Guid>().Using(s => s.GetType().Name)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -141,7 +141,7 @@ namespace ObjectPrinting.Tests
                 '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .PrintingType<double>().Using(CultureInfo.CreateSpecificCulture("ru-ru"))
+                .For<double>().Using(CultureInfo.CreateSpecificCulture("ru-ru"))
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -159,7 +159,7 @@ namespace ObjectPrinting.Tests
                 '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .PrintingType<double>().Using(CultureInfo.InvariantCulture)
+                .For<double>().Using(CultureInfo.InvariantCulture)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -177,7 +177,7 @@ namespace ObjectPrinting.Tests
                 '\t' + "Age = 19" + Environment.NewLine;
 
             var serialized = person.Printing()
-                .PrintingProperty(p => p.Height).Using(h => h < 1 ? "N/A" : h.ToString(CultureInfo.InvariantCulture))
+                .For(p => p.Height).Using(h => h < 1 ? "N/A" : h.ToString(CultureInfo.InvariantCulture))
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -195,7 +195,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .PrintingType<string>().Trim(4)
+                .For<string>().Trim(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
@@ -213,7 +213,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
 
             var serialized = person.Printing()
-                .PrintingProperty(p => p.Name).Trim(4)
+                .For(p => p.Name).Trim(4)
                 .PrintToString();
 
             serialized.Should().Be(expectedSerialization);
