@@ -199,6 +199,19 @@ namespace ObjectPrinting.Tests
 
             actual.Should().Be(expected);
         }
+
+        [Test]
+        public void ShouldUseUserPrinting_WhenPrintingUsedForTypeOfObjectTypePrinting()
+        {
+            var number = 5;
+            var expected = "asdqwe\r\n";
+
+            var actual = number.PrintToString(
+                cfg => cfg
+                .Printing<int>().Using(n => "asdqwe"));
+
+            actual.Should().Be(expected);
+        }
         #endregion
 
         #region Culture Tests

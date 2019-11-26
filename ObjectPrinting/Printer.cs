@@ -10,8 +10,17 @@ namespace ObjectPrinting
     class Printer
     {
         private readonly Config config;
+        private readonly Dictionary<MemberInfo, Func<object, string>>[] printingPriority;
 
-        public Printer(Config config) => this.config = config;
+        public Printer(Config config)
+        {
+            this.config = config;
+            printingPriority = new Dictionary<MemberInfo, Func<object, string>>[]
+            {
+                this.config.Printing,
+                this.config.PrintingWithCulture
+            };
+        }
 
         public string PrintToString(object obj)
         {
@@ -56,18 +65,13 @@ namespace ObjectPrinting
         private bool IsPropertyExcluded(PropertyInfo propertyInfo) =>
             config.Excluding.Contains(propertyInfo.PropertyType) || config.Excluding.Contains(propertyInfo);
 
-        private bool TryGetPrinter(PropertyInfo propertyInfo, out Func<object, string> printer)
+        private bool TryGetPropertyPrinter(PropertyInfo propertyInfo, out Func<object, string> printer)
         {
             if (propertyInfo == null)
             {
                 printer = null;
                 return false;
             }
-            var printingPriority = new[]
-            {
-                config.Printing,
-                config.PrintingWithCulture
-            };
             var memberPriority = new MemberInfo[]
             {
                 propertyInfo,
@@ -89,6 +93,18 @@ namespace ObjectPrinting
             return found;
         }
 
+        private bool TryGetPrinter(MemberInfo memberInfo, out Func<object, string> printer)
+        {
+            foreach (var p in printingPriority)
+                if (p.ContainsKey(memberInfo))
+                {
+                    printer = p[memberInfo];
+                    return true;
+                }
+            printer = null;
+            return false;
+        }
+
         private (string value, bool isObjFinal) PrintObj(
             object obj,
             int nestingLevel,
@@ -108,7 +124,9 @@ namespace ObjectPrinting
                 return (PrintValue(nestingLevel, "null", propertyName), true);
             if (config.Excluding.Contains(objType))
                 return (string.Empty, true);
-            if (TryGetPrinter(propertyInfo, out var printer))
+            if (TryGetPropertyPrinter(propertyInfo, out var propertyPrinter))
+                return (PrintValue(nestingLevel, propertyPrinter(obj), propertyName), true);
+            if (TryGetPrinter(objType, out var printer))
                 return (PrintValue(nestingLevel, printer(obj), propertyName), true);
             if (config.FinalTypes.Contains(objType))
                 return (PrintValue(nestingLevel, obj.ToString(), propertyName), true);
