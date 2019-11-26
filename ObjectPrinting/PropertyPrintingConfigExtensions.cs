@@ -12,6 +12,8 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
+            Func<string, string> func = x => x.Substring(0, maxLen);
+            ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig.SetFuncFor(typeof(string), func );
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
     }

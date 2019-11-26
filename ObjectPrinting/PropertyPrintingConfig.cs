@@ -16,7 +16,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingConfig.SetFuncFor(typeof(TPropType),print);
+            if (printingConfig.lastProperty != null)
+            {
+                printingConfig.SetFuncForProperty(printingConfig.lastProperty, print);
+            }
+            else
+            {
+                printingConfig.SetFuncFor(typeof(TPropType), print);
+            }
+
             return printingConfig;
         }
 

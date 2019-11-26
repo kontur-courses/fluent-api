@@ -11,9 +11,13 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private  HashSet<Type> excludedTypes = new HashSet<Type>();
+        public string lastProperty;
+        private HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> typeFuncs = new Dictionary<Type, Delegate>();
         private Dictionary<Type, CultureInfo> cultureInfos = new Dictionary<Type, CultureInfo>();
+        private Dictionary<string, Delegate> propertyFuncs = new Dictionary<string, Delegate>();
+        private HashSet<string> excludedProperties = new HashSet<string>();
+        
         
         public void SetFuncFor(Type type, Delegate pr)
         {
@@ -31,8 +35,8 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (excludedTypes.Count != 0 && excludedTypes.Contains(obj.GetType()))
-                return string.Empty + Environment.NewLine;
+            if (excludedTypes.Contains(obj.GetType()))
+                return string.Empty;
             
             var finalTypes = new[]
             {
@@ -51,12 +55,24 @@ namespace ObjectPrinting
                 string str = "";
                 if (typeFuncs.ContainsKey(propertyInfo.PropertyType))
                 {
-                    str = typeFuncs[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)).ToString() + Environment.NewLine;
+                    str = typeFuncs[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine;
+                }
+                if (propertyFuncs.ContainsKey(propertyInfo.Name))
+                {
+                    var ci = propertyFuncs[propertyInfo.Name];
+                    str = ci.DynamicInvoke(propertyInfo.GetValue(obj)).ToString() + Environment.NewLine;
                 }
                 if (cultureInfos.ContainsKey(propertyInfo.PropertyType))
                 {
                     var ci = cultureInfos[propertyInfo.PropertyType];
                     str = ((IFormattable)propertyInfo.GetValue(obj)).ToString( null, ci) + Environment.NewLine;
+                }
+
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo.Name))
+                {
+                    str = string.Empty;
+                    sb.Append(str);
+                    continue;
                 }
 
                 if (str == "")
@@ -75,11 +91,23 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var expression = (MemberExpression)memberSelector.Body;
+            string name = expression.Member.Name;
+            this.lastProperty = name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public void SetFuncForProperty<TPropType>(string name, Func<TPropType, string> compile)
+        {
+            propertyFuncs[name] = compile;
+            this.lastProperty = null;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var expression = (MemberExpression)memberSelector.Body;
+            string name = expression.Member.Name;
+            excludedProperties.Add(name);
             return this;
         }
 
