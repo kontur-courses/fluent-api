@@ -203,9 +203,9 @@ namespace ObjectPrinting.Tests
         public void PrintToString_CircularLinks()
         {
             var person1 = new CyclicalPerson { Number = 1 };
-            var person2 = new CyclicalPerson { Number = 2, Next = person1 };
-            var person3 = new CyclicalPerson { Number = 3, Next = person2 };
-            person1.Next = person3;
+            var person2 = new CyclicalPerson { Number = 2, NextPerson = person1 };
+            var person3 = new CyclicalPerson { Number = 3, NextPerson = person2 };
+            person1.NextPerson = person3;
             var printer = ObjectPrinter.For<CyclicalPerson>().SetMaxNumberListItems(2);
 
             var result = printer.PrintToString(person1);

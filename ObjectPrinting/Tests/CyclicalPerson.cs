@@ -2,7 +2,7 @@
 {
     class CyclicalPerson
     {
-        public CyclicalPerson Next { get; set; }
+        public CyclicalPerson NextPerson { get; set; }
         public int Number { get; set; }
     }
 }
