@@ -55,7 +55,35 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        protected string PrintToString(object obj, int nestingLevel)
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            excludingTypes.Add(typeof(T));
+            return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
+        {
+            return new PropertyPrintingConfig<TOwner, T>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
+        {
+            return new PropertyPrintingConfig<TOwner, T>(this, ((MemberExpression)func.Body).Member as PropertyInfo);
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
+        {
+            excludingProperties.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetMaxNumberListItems(int maxNumberListItems)
+        {
+            this.maxNumberListItems = maxNumberListItems;
+            return this;
+        }
+
+        private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -75,7 +103,7 @@ namespace ObjectPrinting
 
             referenceObjects.Add(obj);
 
-            var str = "";
+            string str;
             if (obj is IEnumerable enumerable)
                 str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
             else
@@ -130,34 +158,6 @@ namespace ObjectPrinting
                     break;
             }
             return sb.ToString();
-        }
-
-        public PrintingConfig<TOwner> Excluding<T>()
-        {
-            excludingTypes.Add(typeof(T));
-            return this;
-        }
-
-        public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
-        {
-            return new PropertyPrintingConfig<TOwner, T>(this);
-        }
-
-        public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
-        {
-            return new PropertyPrintingConfig<TOwner, T>(this, ((MemberExpression)func.Body).Member as PropertyInfo);
-        }
-
-        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
-        {
-            excludingProperties.Add((((MemberExpression)func.Body).Member as PropertyInfo).Name);
-            return this;
-        }
-
-        public PrintingConfig<TOwner> SetMaxNumberListItems(int maxNumberListItems)
-        {
-            this.maxNumberListItems = maxNumberListItems;
-            return this;
         }
     }
 }

@@ -274,5 +274,21 @@ namespace ObjectPrinting.Tests
                 "\r\n\t\t\tPeopleWithArray = null" +
                 "\r\n");
         }
+
+        [Test]
+        public void ChangePrintFor_List()
+        {
+            var list = new List<int>() { 1, 2, 3 };
+            var printer = ObjectPrinter.For<List<int>>()
+                .ChangePrintFor<List<int>>().Using(l => "ThisIsList");
+
+            var result = printer.PrintToString(list);
+
+            result.Should().Be(
+                "List`1" +
+                "\r\n\t1" +
+                "\r\n\t2" +
+                "\r\n");
+        }
     }
 }
