@@ -205,21 +205,27 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_CircularLinks()
         {
-            var person1 = new CyclicalPerson { Number = 1 };
-            var person2 = new CyclicalPerson { Number = 2, NextPerson = person1 };
-            var person3 = new CyclicalPerson { Number = 3, NextPerson = person2 };
-            person1.NextPerson = person3;
+            var person = new CyclicalPerson {
+                Number = 1,
+                NextPerson = new CyclicalPerson {
+                    Number = 2,
+                    NextPerson = new CyclicalPerson {
+                        Number = 3
+                    }
+                }
+            };
+            person.NextPerson.NextPerson.NextPerson = person;
             var printer = ObjectPrinter.For<CyclicalPerson>().SetMaxNumberListItems(2);
 
-            var result = printer.PrintToString(person1);
+            var result = printer.PrintToString(person);
 
             result.Should().Be(
                 "CyclicalPerson" +
                 "\r\n\tNextPerson = CyclicalPerson" +
                 "\r\n\t\tNextPerson = CyclicalPerson" +
                 "\r\n\t\t\tNextPerson = Is higher in the hierarchy by 2 steps" +
-                "\r\n\t\t\tNumber = 2" +
-                "\r\n\t\tNumber = 3" +
+                "\r\n\t\t\tNumber = 3" +
+                "\r\n\t\tNumber = 2" +
                 "\r\n\tNumber = 1" +
                 "\r\n");
         }
@@ -227,23 +233,45 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_CircularLinkArray()
         {
-            var array1 = new object[1];
-            var array2 = new object[2];
-            array1[0] = array2;
-            array2[0] = array1;
-            array2[1] = array2;
+            var array = new object[1];
+            array[0] = array;
 
             var printer = ObjectPrinter.For<object[]>();
 
-            var result = printer.PrintToString(array1);
+            var result = printer.PrintToString(array);
 
             Console.WriteLine(result);
 
             result.Should().Be(
                 "Object[]" +
-                "\r\n\tObject[]" +
-                "\r\n\t\tIs higher in the hierarchy by 1 steps" +
-                "\r\n\t\tIs higher in the hierarchy by 0 steps" +
+                "\r\n\tIs higher in the hierarchy by 0 steps" +
+                "\r\n");
+        }
+
+        [Test]
+        public void PrintToString_ClassWithArrayOfClasses()
+        {
+            var person = new PersonWithArray {
+                Number = 1,
+                PeopleWithArray = new PersonWithArray[] {
+                    new PersonWithArray {
+                        Number = 2,
+                        PeopleWithArray = null
+                    }
+                }
+            };
+
+            var printer = ObjectPrinter.For<PersonWithArray>().SetMaxNumberListItems(2);
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                "PersonWithArray" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithArray = PersonWithArray[]" +
+                "\r\n\t\tPersonWithArray" +
+                "\r\n\t\t\tNumber = 2" +
+                "\r\n\t\t\tPeopleWithArray = null" +
                 "\r\n");
         }
     }

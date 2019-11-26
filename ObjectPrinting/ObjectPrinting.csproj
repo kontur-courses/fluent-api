@@ -64,6 +64,7 @@
     <Compile Include="Tests\CyclicalPerson.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\Person.cs" />
+    <Compile Include="Tests\PersonWithArray.cs" />
     <Compile Include="TypePrintingConfig.cs" />
   </ItemGroup>
   <ItemGroup>
