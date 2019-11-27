@@ -7,22 +7,24 @@ namespace ObjectPrinting
     {
         internal readonly Func<object, object> GetValue;
         internal readonly MemberInfo MemberInfo;
+        internal readonly string Name;
         internal readonly Type Type;
 
-        internal ElementInfo(FieldInfo fieldInfo) : this(fieldInfo as MemberInfo)
+        internal ElementInfo(FieldInfo fieldInfo) :
+            this(fieldInfo.Name, fieldInfo.FieldType, fieldInfo.GetValue, fieldInfo)
         {
-            Type = fieldInfo.FieldType;
-            GetValue = fieldInfo.GetValue;
         }
 
-        internal ElementInfo(PropertyInfo propertyInfo) : this(propertyInfo as MemberInfo)
+        internal ElementInfo(PropertyInfo propertyInfo) :
+            this(propertyInfo.Name, propertyInfo.PropertyType, propertyInfo.GetValue, propertyInfo)
         {
-            Type = propertyInfo.PropertyType;
-            GetValue = propertyInfo.GetValue;
         }
 
-        private ElementInfo(MemberInfo memberInfo)
+        internal ElementInfo(string name, Type type, Func<object, object> getValue, MemberInfo memberInfo = null)
         {
+            Name = name;
+            Type = type;
+            GetValue = getValue;
             MemberInfo = memberInfo;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -17,6 +18,17 @@ namespace ObjectPrinting
         }
 
         internal static IEnumerable<ElementInfo> GetElements(this object obj)
+        {
+            switch (obj)
+            {
+                case IList list:
+                    return list.GetListItems();
+                default:
+                    return obj.GetFieldsAndProperties();
+            }
+        }
+
+        private static IEnumerable<ElementInfo> GetFieldsAndProperties(this object obj)
         {
             const BindingFlags flag = BindingFlags.Public | BindingFlags.Instance;
             var type = obj.GetType();

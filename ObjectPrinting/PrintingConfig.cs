@@ -102,9 +102,10 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             foreach (var elementInfo in obj.GetElements().Where(IsPropertyIncluded))
             {
-                sb.Append(indentation).Append(elementInfo.MemberInfo.Name).Append(" = ");
+                sb.Append(indentation).Append(elementInfo.Name).Append(" = ");
                 var value = elementInfo.GetValue(obj);
-                if (propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
+                if (elementInfo.MemberInfo != null &&
+                    propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
                     sb.Append(printingFunction.DynamicInvoke(value));
                 else
                     sb.Append(PrintToString(value, printed, nestingLevel + 1));
@@ -113,7 +114,7 @@ namespace ObjectPrinting
 
         private bool IsPropertyIncluded(ElementInfo element)
         {
-            return !excludedTypes.Contains(element.MemberInfo.DeclaringType) &&
+            return !excludedTypes.Contains(element.Type) &&
                    !excludedProperties.Contains(element.MemberInfo);
         }
     }

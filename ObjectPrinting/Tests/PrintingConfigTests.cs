@@ -163,5 +163,24 @@ namespace ObjectPrinting.Tests
                     .Contain(property.MemberInfo.Name).And
                     .Contain(property.GetValue(person).PrintToString());
         }
+
+        private static IList<string>[] _indexedCollectionTestCases =
+        {
+            new[] {"one", "two", "three", "four", "five"},
+            new List<string> {"six", "seven", "eight", "nine", "ten"}
+        };
+
+        [TestCaseSource(nameof(_indexedCollectionTestCases))]
+        public void PrintToString_PrintsCollection_WhenCollectionIsIndexed(IList<string> collection)
+        {
+            var config = new PrintingConfig<IList<string>>();
+
+            var result = config.PrintToString(collection);
+
+            for (var i = 0; i < collection.Count; i++)
+                result.Should()
+                    .Contain(i.ToString()).And
+                    .Contain(collection[i]);
+        }
     }
 }
