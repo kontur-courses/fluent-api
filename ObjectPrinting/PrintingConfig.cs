@@ -16,6 +16,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> typeToPrintingMethod;
         private readonly Dictionary<PropertyInfo, Delegate> propertyToPrintingMethod;
         private readonly Dictionary<Type, CultureInfo> cultureForNumber;
+        private readonly HashSet<object> processedObjects;
 
         private readonly Type[] finalTypes =
         {
@@ -39,6 +40,7 @@ namespace ObjectPrinting
             typeToPrintingMethod = new Dictionary<Type, Delegate>();
             propertyToPrintingMethod = new Dictionary<PropertyInfo, Delegate>();
             cultureForNumber = new Dictionary<Type, CultureInfo>();
+            processedObjects = new HashSet<object>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -74,6 +76,10 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return PrintLine("null");
+
+            if (processedObjects.Contains(obj))
+                return PrintLine("!cycle!");
+            processedObjects.Add(obj);
 
             var type = obj.GetType();
 

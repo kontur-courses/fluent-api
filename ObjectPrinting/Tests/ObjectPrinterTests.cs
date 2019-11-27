@@ -112,11 +112,23 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShoulFormatCorrectly_WhenIEnumerable()
+        public void PrintToString_ShouldFormatCorrectly_WhenIEnumerable()
         {
             new[] {1, 2, 3, 4}.PrintToString()
                 .Should()
                 .BeEquivalentTo("1, 2, 3, 4");
+        }
+
+        [Test]
+        public void PrintToString_ShouldFormatCorrectly_WhenCycle()
+        {
+            var cyclicObject = new CyclicObject();
+            cyclicObject.Other = cyclicObject;
+            cyclicObject.PrintToString()
+                .Should().BeEquivalentTo(
+                    $"CyclicObject{Environment.NewLine}\t" +
+                    $"Id = 0{Environment.NewLine}\t" +
+                    $"Other = !cycle!{Environment.NewLine}");
         }
     }
 }
