@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -25,14 +26,14 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Func<object, string>> serialisedProperty =
             new Dictionary<string, Func<object, string>>();
 
-        private Dictionary<Type, CultureInfo> cultureTypes = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, CultureInfo> cultureTypes = new Dictionary<Type, CultureInfo>();
 
         private readonly Dictionary<string, Func<string, string>> trimmer =
             new Dictionary<string, Func<string, string>>();
 
         private Func<string, string> trim = s => s;
 
-        private HashSet<object> alreadyBe = new HashSet<object>();
+        private readonly HashSet<object> alreadyBe = new HashSet<object>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -61,7 +62,14 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            if (!(obj is IEnumerable collection))
+                return PrintToString(obj, 0);
+
+            var sb = new StringBuilder();
+            sb.AppendLine(obj.GetType().GetWholeTypeName());
+            foreach (var element in collection)
+                sb.AppendFormat("{0}{1}", "\t", PrintToString(element, 1));
+            return sb.ToString();
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -78,11 +86,12 @@ namespace ObjectPrinting
             }
 
             if (serialised.ContainsKey(type))
-            {
                 return serialised[type](obj) + Environment.NewLine;
-            }
 
+            if (cultureTypes.ContainsKey(type))
+                return ((IConvertible) obj).ToString(cultureTypes[type]) + Environment.NewLine;
             if (finalTypes.Contains(type))
+                
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
@@ -97,8 +106,8 @@ namespace ObjectPrinting
                     continue;
                 if (trimmer.ContainsKey(propertyInfo.Name) || serialisedProperty.ContainsKey(propertyInfo.Name))
                 {
-                    var serialised = SerialiseProperty(propertyInfo.Name, propertyInfo.GetValue(obj));
-                    sb.Append($"{indentation}{propertyInfo.Name} = {serialised}{Environment.NewLine}");
+                    var serialiseProperty = SerialiseProperty(propertyInfo.Name, propertyInfo.GetValue(obj));
+                    sb.Append($"{indentation}{propertyInfo.Name} = {serialiseProperty}{Environment.NewLine}");
                     continue;
                 }
 
@@ -118,8 +127,8 @@ namespace ObjectPrinting
         {
             if (trimmer.ContainsKey(propertyName) && serialisedProperty.ContainsKey(propertyName))
                 return trimmer[propertyName](serialisedProperty[propertyName](propertyValue));
-            return trimmer.ContainsKey(propertyName) 
-                ? trimmer[propertyName]((string) propertyValue) 
+            return trimmer.ContainsKey(propertyName)
+                ? trimmer[propertyName]((string) propertyValue)
                 : serialisedProperty[propertyName](propertyValue);
         }
 

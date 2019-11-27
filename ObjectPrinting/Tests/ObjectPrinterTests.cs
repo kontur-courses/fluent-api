@@ -147,5 +147,37 @@ namespace ObjectPrinting.Tests
 
             actual.Should().Be("Circle\r\n\tRadius = 12\r\n\tSelf = Circle\r\n");
         }
+
+        [Test]
+        public void Collection_WithAllMethod()
+        {
+            var personList = new List<Person>
+            {
+                person,
+                new Person
+                {
+                    Name = "Bill",
+                    SecondName = "Vil",
+                    Id = new Guid(),
+                    Age = 18,
+                    Height = 123
+                }
+            };
+
+            var printer = ObjectPrinter.For<List<Person>>()
+                .Excluding<string>()
+                .Excluding(list => list[0].Id)
+                .Printing<int>().Using(x => "XX")
+                .Printing(list => list[0].Height).Using(x => "AAA");
+            var actual = printer.PrintToString(personList);
+
+            actual.Should().Be("List<Person>" +
+                               "\r\n\tPerson" +
+                               "\r\n\t\tHeight = AAA" +
+                               "\r\n\t\tAge = XX" +
+                               "\r\n\tPerson" +
+                               "\r\n\t\tHeight = AAA" +
+                               "\r\n\t\tAge = XX\r\n");
+        }
     }
 }
