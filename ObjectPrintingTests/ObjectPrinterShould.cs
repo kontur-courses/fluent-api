@@ -47,6 +47,25 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void FormatWithChangedFormattedPropertyPrinting_Correctly()
+        {
+            var expectedFormat =
+                $"Person" + Environment.NewLine +
+                $"\tId : Guid" + Environment.NewLine +
+                $"\tName : {person.Name}" + Environment.NewLine +
+                $"\tHeight : {person.Height}" + Environment.NewLine +
+                $"\tAge : {person.Age}" + Environment.NewLine;
+
+            var resultFormat = person.ConfigureFormat()
+                .ChangeFormattedPropertyPrinting(
+                    (nestingLevel, propertyName, formattedProperty) => 
+                    $"{ new string('\t', nestingLevel + 1) }{propertyName} : {formattedProperty}")
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
         public void ExcludeType_Correctly()
         {
             var expectedFormat = 

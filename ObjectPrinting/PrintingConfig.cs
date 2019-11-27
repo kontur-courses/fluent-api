@@ -17,6 +17,7 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, int> stringPropertyToLength;
         private readonly Dictionary<Type, CultureInfo> numberTypeToCulture;
         private readonly Type[] finalTypes;
+        private Func<int, string, string, string> printFormattedProperty;
 
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypeToFormatter => typeToFormatter;
         Dictionary<PropertyInfo, Delegate> 
@@ -39,6 +40,9 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
+            printFormattedProperty = (nestingLevel, propertyName, formattedProperty) => 
+            $"{ new string('\t', nestingLevel + 1) }{propertyName} = {formattedProperty}";
 
             owner = obj;
         }
@@ -63,7 +67,6 @@ namespace ObjectPrinting
 
         private string PrintProperties(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -72,7 +75,7 @@ namespace ObjectPrinting
                 var formattedProperty = FormatProperty(obj, propertyInfo, nestingLevel);
                 if (formattedProperty == null)
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " + formattedProperty);
+                sb.Append(printFormattedProperty(nestingLevel, propertyInfo.Name, formattedProperty));
             }
             return sb.ToString();
         }
@@ -116,6 +119,13 @@ namespace ObjectPrinting
         {
             var memberExpr = expression.Body as MemberExpression;
             excludedProperties.Add(memberExpr.Member as PropertyInfo);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> ChangeFormattedPropertyPrinting(
+            Func<int, string, string, string> newPrint)
+        {
+            printFormattedProperty = newPrint;
             return this;
         }
 
