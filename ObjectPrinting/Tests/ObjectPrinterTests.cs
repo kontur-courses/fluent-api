@@ -19,44 +19,44 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ExcludePropertiesOfTheSameType()
         {
-            Printer.Excluding<int>().PrintWithConfig(Container).Should().NotContain("I");
+            Printer.Excluding<int>().PrintObject(Container).Should().NotContain("I");
         }
 
         [Test]
         public void ExcludeGivenProperty()
         {
-            Printer.Excluding(c => c.I1).PrintWithConfig(Container).Should().NotContain("I1");
+            Printer.Excluding(c => c.I1).PrintObject(Container).Should().NotContain("I1");
         }
 
         [Test]
         public void ExcludeOnlyGivenProperty()
         {
-            Printer.Excluding(c => c.I1).PrintWithConfig(Container).Should().Contain("I2").And.Contain("I3");
+            Printer.Excluding(c => c.I1).PrintObject(Container).Should().Contain("I2").And.Contain("I3");
         }
 
         [Test]
         public void UsesGivenSerializerForType()
         {
-            Printer.Serializing<double>().Using(d => d + "d").PrintWithConfig(Container).Should().Contain("d");
+            Printer.Serializing<double>().Using(d => d + "d").PrintObject(Container).Should().Contain("d");
         }
 
         [Test]
         public void UsesGivenSerializerForGivenProperty()
         {
-            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintWithConfig(Container).Should().Contain("0.0d");
+            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintObject(Container).Should().Contain("0.0d");
         }
 
         [Test]
         public void UsesGivenSerializerOnlyForGivenProperty()
         {
-            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintWithConfig(Container)
+            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintObject(Container)
                 .Should().NotContain("1.0d").And.NotContain("2.0d");
         }
-        
+
         [Test]
         public void EnableToSpecifyDoubleCulture()
         {
-            Printer.Serializing<double>().Using(CultureInfo.InvariantCulture).PrintWithConfig(Container).Should()
+            Printer.Serializing<double>().Using(CultureInfo.InvariantCulture).PrintObject(Container).Should()
                 .Contain("0.0d");
         }
 

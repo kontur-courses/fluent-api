@@ -25,7 +25,7 @@ namespace ObjectPrinting.Tests
                 .Serializing(p => p.Name).Using(s => s.Trim())
                 //6. Исключить из сериализации конкретного свойства v
                 .Excluding(p => p.Id);
-            string s1 = printer.PrintWithConfig(person);
+            string s1 = person.PrintWithConfig(printer);
             Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием

@@ -22,7 +22,7 @@ namespace ObjectPrinting
         {
         }
 
-        public string PrintWithConfig(TOwner obj)
+        public string PrintObject(TOwner obj)
         {
             return PrintWithConfig(obj, 0);
         }
@@ -49,6 +49,11 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            if (nestingLevel > MaxNestingLevel)
+            {
+                return "...";
+            }
+
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -61,7 +66,8 @@ namespace ObjectPrinting
                         string serializedProperty;
                         if (PropertySerializators.ContainsKey(propertyInfo))
                         {
-                            serializedProperty = PropertySerializators[propertyInfo].Serialize(propertyInfo.GetValue(obj));
+                            serializedProperty = PropertySerializators[propertyInfo]
+                                .Serialize(propertyInfo.GetValue(obj));
                         }
                         else if (TypeSerializators.ContainsKey(propertyInfo.PropertyType))
                         {
@@ -73,7 +79,18 @@ namespace ObjectPrinting
                             serializedProperty = PrintWithConfig(propertyInfo.GetValue(obj), nestingLevel + 1);
                         }
 
-                        sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
+                        if (TypeFormatters.ContainsKey(propertyInfo.PropertyType))
+                        {
+                            var formatter = TypeFormatters[propertyInfo.PropertyType];
+                            sb.Append(formatter(indentation,propertyInfo.Name,serializedProperty));
+                        }
+                        else if (PropertyFormatters.ContainsKey(propertyInfo))
+                        {
+                            var formatter = PropertyFormatters[propertyInfo];
+                            sb.Append(formatter(indentation,propertyInfo.Name,serializedProperty));
+                        }
+                        else
+                            sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
                     }
             }
 
@@ -115,6 +132,13 @@ namespace ObjectPrinting
         public PropertySerializationConfig<TOwner, int> Serializing(Expression<Func<TOwner, int>> propertyProvider)
         {
             return new PropertySerializationConfig<TOwner, int>(this, propertyProvider);
+        }
+
+        public PrintingConfig<TOwner> UsingMaxRecursionLevel(int maxLevel)
+        {
+            var childConfig = new PrintingConfig<TOwner>(this);
+            childConfig.MaxNestingLevel = maxLevel;
+            return childConfig;
         }
     }
 }

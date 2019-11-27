@@ -9,10 +9,15 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Using<TOwner>(this TypeSerializationConfig<TOwner, double> config,
             CultureInfo info)
         {
-            var cfg = (config as IPropertyPrintingConfig<TOwner>).Config;
-            cfg.TypeSerializators.Add(typeof(double),
+            var configuration = (config as IPropertyPrintingConfig<TOwner>).Config;
+            configuration.TypeSerializators.Add(typeof(double),
                 TypeSerializer.CreateSerializer<double>(typeof(double), t => t.ToString(info)));
-            return cfg;
+            return configuration;
+        }
+
+        public static string PrintWithConfig<TOwner>(this TOwner target, PrintingConfig<TOwner> printer)
+        {
+            return printer.PrintObject(target);
         }
     }
 }
