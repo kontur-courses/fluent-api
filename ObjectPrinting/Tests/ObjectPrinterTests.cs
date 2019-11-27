@@ -15,12 +15,12 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Age = 20, Height = 170.5, Id = new Guid(), Name = "Alex", Surname = "Johnson"};
+            person = new Person {Age = 20, Height = 170.5, Name = "Alex", Surname = "Johnson"};
         }
 
 
         [Test]
-        public void Excluding_ShouldExcludeCertainTypeFromSerialization()
+        public void Excluding_ShouldExcludeCertainTypeFromSerialization_WhenArgumentIsType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>();
@@ -33,7 +33,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Excluding_ShouldNotExcludePropertiesWithOtherTypes()
+        public void Excluding_ShouldNotExcludePropertiesWithOtherTypes_WhenArgumentIsType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>();
@@ -117,9 +117,69 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person)
                 .Should()
-                .Contain($"{person.Name}!")
-                .And
                 .NotContain($"{person.Surname}!");
+        }
+
+        [Test]
+        public void PrintingAndTrimmedToLength_ShouldTrimSelectedProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Surname)
+                .TrimmedToLength(5);
+
+            printer.PrintToString(person)
+                .Should()
+                .Contain(person.Surname.Substring(0, 5))
+                .And
+                .NotContain(person.Surname);
+        }
+
+        [Test]
+        public void PrintingAndTrimmedToLength_ShouldTrimOnlySelectedProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .TrimmedToLength(2);
+
+            printer.PrintToString(person)
+                .Should()
+                .Contain(person.Surname);
+        }
+
+        [Test]
+        public void TrimmedToLength_ShouldThrow_OnNegativeMaxLength()
+        {
+            Action createPrinter = () => ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .TrimmedToLength(-1);
+
+            createPrinter.Should().ThrowExactly<ArgumentOutOfRangeException>();
+        }
+
+        [Test]
+        public void Excluding_ShouldExcludeCertainProperty_WhenArgumentIsPropertyGetter()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Age);
+
+            printer.PrintToString(person)
+                .Should()
+                .NotContain(person.Age.ToString());
+        }
+
+        [Test]
+        public void Excluding_ShouldExcludeOnlyCertainProperty_WhenArgumentIsPropertyGetter()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Age)
+                .Excluding(p => p.Id)
+                .Excluding(p => p.Surname);
+
+            printer.PrintToString(person)
+                .Should()
+                .Contain(person.Height.ToString(CultureInfo.CurrentCulture))
+                .And
+                .Contain(person.Name);
         }
     }
 }
