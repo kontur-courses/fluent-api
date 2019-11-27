@@ -4,6 +4,7 @@
     {
         public string Name { get; set; }
         public PersonWithSimpleHashCode Friend { get; set; }
+        public PersonWithSimpleHashCode BestFriend { get; set; }
 
         public override int GetHashCode() => Name?.GetHashCode() ?? 0;
 
