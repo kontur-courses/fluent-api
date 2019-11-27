@@ -18,6 +18,7 @@ namespace ObjectPrinting
             new Dictionary<string, Delegate>();
 
         private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
+        private readonly HashSet<object> processedObjects = new HashSet<object>();
 
         private readonly Type[] finalTypes = new[]
         {
@@ -83,19 +84,46 @@ namespace ObjectPrinting
                 return objectToPrint + Environment.NewLine;
             }
 
-            var indentation = new string('\t', nestingLevel + 1);
             var builder = new StringBuilder();
+            var indentation = new string('\t', nestingLevel);
+            AppendType(objectType, builder, indentation);
+            var childIndentation = new string('\t', nestingLevel + 1);
 
-            builder.AppendLine(objectType.Name);
-            foreach (var itemInfo in objectToPrint.GetItems())
+            foreach (var itemInfo in objectToPrint.GetItems().Where(obj => !processedObjects.Contains(obj)))
             {
-                AppendItem(nestingLevel, itemInfo, builder, indentation);
+                if (itemInfo.Name == null)
+                {
+                    builder.Append(PrintToString(itemInfo.Item, nestingLevel + 1));
+                }
+                else
+                {
+                    AppendItem(itemInfo, builder, nestingLevel, childIndentation);
+                }
             }
+
+            processedObjects.Add(objectToPrint);
 
             return builder.ToString();
         }
 
-        private void AppendItem(int nestingLevel, ItemInfo itemInfo, StringBuilder builder, string indentation)
+        private void AppendType(Type objectType, StringBuilder builder, string indentation)
+        {
+            builder.Append(indentation);
+            if (objectType.IsGenericType)
+            {
+                builder.Append(objectType.Name.Split('`')[0]);
+                var genericArgumentTypes = objectType.GetGenericArguments().Select(type => type.Name);
+                builder.Append($"<{string.Join(", ", genericArgumentTypes)}>");
+            }
+            else
+            {
+                builder.Append(objectType.Name);
+            }
+
+            builder.Append("\n");
+        }
+
+        private void AppendItem(ItemInfo itemInfo, StringBuilder builder, int nestingLevel, string indentation)
         {
             if (excludedTypes.Contains(itemInfo.Type) || excludedProperties.Contains(itemInfo.Name))
             {

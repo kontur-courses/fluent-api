@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using FluentAssertions;
@@ -73,6 +75,40 @@ namespace ObjectPrinting.Tests
         {
             person.PrintToString()
                 .Should().NotContain("budget");
+        }
+
+        [Test]
+        public void PrintToStringWithConfigShouldWorkCorrectOnArray()
+        {
+            var arr = new[] {1, 2, 3};
+            arr.PrintToString().Should().Contain("Int32[]")
+                .And.Contain("1\r\n2\r\n3\r\n");
+        }
+        
+        [Test]
+        public void PrintToStringWithConfigShouldWorkCorrectOnList()
+        {
+            var list = new List<string> {"a", "b", "c"};
+            list.PrintToString().Should().Contain("List<String>")
+                .And.Contain("a\r\nb\r\nc\r\n");
+        }
+        
+                
+        [Test]
+        public void PrintToStringWithConfigShouldWorkCorrectOnDictionary()
+        {
+            var dictionary = new Dictionary<string, int>()
+            {
+                ["a"]= 1,
+                ["b"]= 2
+            };
+            Console.WriteLine(dictionary.PrintToString());
+            dictionary.PrintToString().Should().Contain("Dictionary<String, Int32>")
+                .And.Contain("KeyValuePair<String, Int32>")
+                .And.Contain("Key = a")
+                .And.Contain("Value = 1")
+                .And.Contain("Key = b")
+                .And.Contain("Value = 2");
         }
     }
 }
