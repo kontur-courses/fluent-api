@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -61,8 +62,21 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
+            if (obj as ICollection != null)
+                return PrintCollection(obj as ICollection, nestingLevel);
 
             return PrintProperties(obj, nestingLevel);
+        }
+
+        private string PrintCollection(ICollection collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            lock (collection.SyncRoot)
+            {
+                foreach (var obj in collection)
+                    sb.Append(PrintToString(obj, nestingLevel));
+            }
+            return sb.ToString();
         }
 
         private string PrintProperties(object obj, int nestingLevel)

@@ -45,7 +45,9 @@
   <ItemGroup>
     <Compile Include="ObjectPrinterShould.cs" />
     <Compile Include="TestClasses\Material.cs" />
+    <Compile Include="TestClasses\Numbers.cs" />
     <Compile Include="TestClasses\Person.cs" />
+    <Compile Include="TestClasses\Roster.cs" />
     <Compile Include="TestClasses\Sphere.cs" />
   </ItemGroup>
   <ItemGroup>

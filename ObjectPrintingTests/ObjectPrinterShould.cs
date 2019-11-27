@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Globalization;
+using System.Collections.Generic;
 using ObjectPrintingTests.TestClasses;
 using ObjectPrinting;
 using FluentAssertions;
@@ -262,6 +263,42 @@ namespace ObjectPrintingTests
                 .ForProperty(s => s.Material.Name)
                     .SetFormat(n => secondMaterialFormatter(n))
                 .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void FormatArray_Properly()
+        {
+            var numbers = new Numbers { Values = new int[] { 1, 2, 3, 4 } };
+            var expectedFormat = 
+                $"Numbers"                          + Environment.NewLine +
+                $"\tValues = {numbers.Values[0]}"   + Environment.NewLine +
+                $"{numbers.Values[1]}"              + Environment.NewLine + 
+                $"{numbers.Values[2]}"              + Environment.NewLine +
+                $"{numbers.Values[3]}"              + Environment.NewLine;
+
+            var resultFormat = numbers.Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void FormatDictionary_Properly()
+        {
+            var roster = new Roster { Entries = new Dictionary<string, int>() };
+            roster.Entries.Add("Andrew", 19);
+            roster.Entries.Add("Andrew Jr", 13);
+            var expectedFormat = 
+                $"Roster\r\n" + 
+                $"\tEntries = KeyValuePair`2"   + Environment.NewLine +
+                $"\t\tKey = Andrew"             + Environment.NewLine +
+                $"\t\tValue = 19"               + Environment.NewLine +
+                "KeyValuePair`2"                + Environment.NewLine +
+                "\t\tKey = Andrew Jr"           + Environment.NewLine +
+                "\t\tValue = 13"                + Environment.NewLine;
+
+            var resultFormat = roster.Print();
 
             resultFormat.Should().BeEquivalentTo(expectedFormat);
         }
