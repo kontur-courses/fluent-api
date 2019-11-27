@@ -270,6 +270,22 @@ namespace ObjectPrintingTests
         [Test]
         public void FormatArray_Properly()
         {
+            var numbers = new int[] { 1, 2, 3, 4 };
+
+            var expectedFormat =
+                $"{numbers[0]}" + Environment.NewLine +
+                $"{numbers[1]}" + Environment.NewLine +
+                $"{numbers[2]}" + Environment.NewLine +
+                $"{numbers[3]}" + Environment.NewLine;
+
+            var resultFormat = numbers.Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void FormatArrayProperty_Properly()
+        {
             var numbers = new Numbers { Values = new int[] { 1, 2, 3, 4 } };
             var expectedFormat = 
                 $"Numbers"                          + Environment.NewLine +
@@ -285,6 +301,25 @@ namespace ObjectPrintingTests
 
         [Test]
         public void FormatDictionary_Properly()
+        {
+            var entries = new Dictionary<string, int>();
+            entries.Add("Andrew", 19);
+            entries.Add("Andrew Jr", 13);
+            var expectedFormat = 
+                "KeyValuePair`2"    + Environment.NewLine +
+                "\tKey = Andrew"    + Environment.NewLine +
+                "\tValue = 19"      + Environment.NewLine +
+                "KeyValuePair`2"    + Environment.NewLine +
+                "\tKey = Andrew Jr" + Environment.NewLine +
+                "\tValue = 13"      + Environment.NewLine;
+
+            var resultFormat = entries.Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void FormatDictionaryProperty_Properly()
         {
             var roster = new Roster { Entries = new Dictionary<string, int>() };
             roster.Entries.Add("Andrew", 19);
