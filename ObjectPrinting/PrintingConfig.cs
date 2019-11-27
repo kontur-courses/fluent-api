@@ -161,7 +161,7 @@ namespace ObjectPrinting
         }
     }
 
-    public static class Extensions
+    public static class ObjectPrinterExtensions
     {
         public static string PrintToString<TOwner>(this TOwner obj)
         {
