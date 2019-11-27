@@ -63,7 +63,7 @@
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\ObjectPrinter_should.cs" />
     <Compile Include="Tests\Person.cs" />
-    <Compile Include="Tests\Зкщые.cs" />
+    <Compile Include="Tests\ObjectPrinter_OtherObj_should.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

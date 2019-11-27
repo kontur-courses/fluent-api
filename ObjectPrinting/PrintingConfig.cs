@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -46,10 +47,25 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-            else
+            if (obj is IEnumerable enumerable)
             {
-                return PrintClass(obj, nestingLevel);
+                return PrintIEnum(enumerable, nestingLevel);
             }
+
+            return PrintClass(obj, nestingLevel);
+        }
+        
+        private string PrintIEnum(IEnumerable enumerable, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var type = enumerable.GetType();
+            sb.AppendLine(type.Name);
+            foreach (var el in enumerable)
+            {
+                sb.Append(identation + PrintToString(el, nestingLevel+1));
+            }
+            return sb.ToString();
         }
 
         private string PrintClass(object obj, int nestingLevel)
@@ -59,8 +75,10 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties().SkipWhile(prop => excludingTypes.Contains(prop.PropertyType) || excludingProperty.Contains(prop)))
+            foreach (var propertyInfo in type.GetProperties().Where(prop => !excludingTypes.Contains(prop.PropertyType) && !excludingProperty.Contains(prop)))
             {
+                if (propertyInfo.Name == "")
+                {}
                 sb.Append(identation + propertyInfo.Name + " = " + PrintToString(PrintProperty(propertyInfo,obj), nestingLevel + 1));
             }
 
