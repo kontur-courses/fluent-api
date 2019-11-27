@@ -79,14 +79,8 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float)
             };
 
-            if (SpecialSerialize.ContainsKey(obj.GetType()))
-                return PrintToString(SpecialSerialize[obj.GetType()](obj), nestingLevel,null);
-
-            if (lastPropertyInfo!=null &&  SpecialPropertySerrialize.ContainsKey(lastPropertyInfo))
-                return PrintToString(SpecialPropertySerrialize[lastPropertyInfo](obj),nestingLevel,null);
-
-            if (lastPropertyInfo != null && ToTrim.ContainsKey(lastPropertyInfo))
-                return obj.ToString().Substring(0, ToTrim[lastPropertyInfo]) + Environment.NewLine;
+            if (TrySetSettings(obj, lastPropertyInfo, out var result))
+                return PrintToString(result, nestingLevel, null);
 
             if (obj is string && !(lenghtToTrim is null))
                 return obj.ToString().Substring(0, (int)lenghtToTrim) + Environment.NewLine;
@@ -117,7 +111,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TrySetSettings (object obj, PropertyInfo lastPropertyInfo, int nestingLevel, out string result)
+        private bool TrySetSettings (object obj, PropertyInfo lastPropertyInfo,out string result)
         {
 
             if (SpecialSerialize.ContainsKey(obj.GetType()))
