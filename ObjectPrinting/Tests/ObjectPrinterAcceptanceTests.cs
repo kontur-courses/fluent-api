@@ -75,7 +75,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ChangePrintFor_Int_Using_CultureInfo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alex", Height = 1.9 };
             var printer = ObjectPrinter.For<Person>()
                 .ChangePrintFor<int>().Using(CultureInfo.CurrentCulture);
 
@@ -85,8 +85,8 @@ namespace ObjectPrinting.Tests
                 "Person" +
                 "\r\n\tId = 00000000-0000-0000-0000-000000000000" +
                 "\r\n\tName = Alex" +
-                "\r\n\tHeight = 0" +
-                "\r\n\tAge = ru-RU" +
+                "\r\n\tHeight = 1,9" +
+                "\r\n\tAge = 0" +
                 "\r\n\tSecondName = null" +
                 "\r\n");
         }
@@ -383,7 +383,7 @@ namespace ObjectPrinting.Tests
 
             var printerConfig = ObjectPrinter.For<PersonWithList>().ChangePrintFor(p => p.Number);
             var printerWithCastom = printerConfig.Using(l => (l * 100).ToString());
-            var printerWithCultureInfo = printerConfig.Using(CultureInfo.CurrentCulture);
+            var printerWithCultureInfo = printerConfig.Using(l => CultureInfo.CurrentCulture.ToString());
 
             var resultWithCastom = printerWithCastom.PrintToString(person);
             var resultWithCultureInfo = printerWithCultureInfo.PrintToString(person);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -26,6 +27,13 @@ namespace ObjectPrinting
                 (config as IPrintingConfig).CustomTypesPrints[typeof(TProperty)] = value => serializationFunc((TProperty)value);
             else
                 (config as IPrintingConfig).CustomPropertiesPrints[propertyInfo] = value => serializationFunc((TProperty)value);
+            return config;
+        }
+
+        public PrintingConfig<TOwner> SetCulture<T>(CultureInfo culture)
+        {
+            var config = new PrintingConfig<TOwner>(parentConfig);
+            (config as IPrintingConfig).CultureInfo.Add(typeof(T), culture);
             return config;
         }
 

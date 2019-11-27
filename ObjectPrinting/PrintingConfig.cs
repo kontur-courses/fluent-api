@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Reflection;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -24,6 +25,10 @@ namespace ObjectPrinting
 
         private readonly List<object> referenceObjects;
 
+        private Dictionary<Type, CultureInfo> cultureInfo;
+
+        Dictionary<Type, CultureInfo> IPrintingConfig.CultureInfo => cultureInfo;
+
         public PrintingConfig()
         {
             excludingTypes = new List<Type>();
@@ -35,6 +40,8 @@ namespace ObjectPrinting
             maxNumberListItems = -1;
 
             referenceObjects = new List<object>();
+
+            cultureInfo = new Dictionary<Type, CultureInfo>();
         }
 
         public PrintingConfig(PrintingConfig<TOwner> printingConfig)
@@ -48,6 +55,8 @@ namespace ObjectPrinting
             maxNumberListItems = printingConfig.maxNumberListItems;
 
             referenceObjects = new List<object>(printingConfig.referenceObjects);
+
+            cultureInfo = new Dictionary<Type, CultureInfo>(printingConfig.cultureInfo);
         }
 
         public string PrintToString(TOwner obj)
@@ -90,7 +99,7 @@ namespace ObjectPrinting
         private bool Final—heck(Type type)
         {
             var finalTypes = new[]
-{
+            {
                 typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(decimal), typeof(Guid)
             };
             return type.IsPrimitive || finalTypes.Contains(type);
@@ -103,7 +112,14 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
             if (Final—heck(type))
-                return obj + Environment.NewLine;
+            {
+                if (!cultureInfo.ContainsKey(type))
+                    return obj + Environment.NewLine;
+                var culture = cultureInfo[type];
+                dynamic number = Convert.ChangeType(obj, type);
+                return number.ToString(culture) + Environment.NewLine;
+
+            }
 
             if (referenceObjects.Contains(obj))
                 return string.Format(
