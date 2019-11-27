@@ -9,10 +9,10 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        private readonly int maxNestingLevel = 10;
-        private readonly int maxCollectionSize = 1000;
+        private const int MaxNestingLevel = 10;
+        private const int MaxCollectionSize = 1000;
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> typePrinting = new Dictionary<Type, Delegate>();
@@ -51,7 +51,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            if (nestingLevel == maxNestingLevel)
+            if (nestingLevel == MaxNestingLevel)
                 return "maximum nesting depth" + Environment.NewLine;
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -69,23 +69,22 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
                 
             }
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in GetMembers(obj))
             {
-                AppendFormatedProperty(sb, propertyInfo, nestingLevel, obj);
+                AppendFormatedProperty(sb, propertyInfo, nestingLevel);
             }
 
             return sb.ToString();
         }
 
         private void AppendFormatedProperty(StringBuilder builder,PrintInfo info,
-            int nestingLevel, object obj)
+            int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
-            var start = identation + info.Definition;
+            var indentation = new string('\t', nestingLevel + 1);
+            var start = indentation + info.Definition;
             if (excludedTypes.Contains(info.Type))
                 return;
             if (excludedProperties.Contains(info.Name) && nestingLevel == 0)
@@ -108,7 +107,7 @@ namespace ObjectPrinting
                 {
                     count++;
                     yield return new PrintInfo(item, item.GetType());
-                    if (count == maxCollectionSize)
+                    if (count == MaxCollectionSize)
                         yield break;
                 }
             }
@@ -125,20 +124,20 @@ namespace ObjectPrinting
             }
         }
 
-        private string GetMemberName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private static string GetMemberName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propertyInfo = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
             return propertyInfo.Name;
         }
 
-        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypePrinting => typePrinting;
+        Dictionary<Type, Delegate> IPrintingConfig.TypePrinting => typePrinting;
 
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CulturesForPrinting => culturesForPrinting;
+        Dictionary<Type, CultureInfo> IPrintingConfig.CulturesForPrinting => culturesForPrinting;
 
-        Dictionary<string, Delegate> IPrintingConfig<TOwner>.MemberPrinting => memberPrinting;
+        Dictionary<string, Delegate> IPrintingConfig.MemberPrinting => memberPrinting;
     }
 
-    public interface IPrintingConfig<TOwner>
+    public interface IPrintingConfig
     {
         Dictionary<Type, Delegate> TypePrinting { get; }
 
