@@ -46,6 +46,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        [UseReporter(typeof(DiffReporter))]
+        public void Exclude_AnyDeepNestedProperty()
+        {
+            var obj1 = new ClassWithCircularReference { ObjectName = "obj1" };
+            var obj2 = new ClassWithCircularReference { ObjectName = "obj2" };
+            var obj3 = new ClassWithCircularReference { ObjectName = "obj3" };
+            obj1.NestedObject = obj2;
+            obj2.NestedObject = obj3;
+
+            Approvals.Verify(obj1.GetObjectPrinter().Exclude(o => o.NestedObject.ObjectName).PrintToString());
+        }
+
+        [Test]
         public void Use_UserSerializerForAnyType()
         {
             var person = new Person { Id = new Guid(), Name = "Alex", Age = 19, Height = 170 };

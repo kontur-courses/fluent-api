@@ -11,12 +11,13 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> typesExcluding = new HashSet<Type>();
-        private readonly HashSet<string> propsExcluding = new HashSet<string>();
         private readonly Dictionary<Type, IPropertySerializingConfig<TOwner>> typesSerializers = new Dictionary<Type, IPropertySerializingConfig<TOwner>>();
-        private readonly Dictionary<string, IPropertySerializingConfig<TOwner>> propsSerializers = new Dictionary<string, IPropertySerializingConfig<TOwner>>();
+        private readonly List<Stack<MemberInfo>> propsExcluding = new List<Stack<MemberInfo>>();
+        private readonly List<(Stack<MemberInfo> MemberPath, IPropertySerializingConfig<TOwner> Serializer)> propsSerializers = new List<(Stack<MemberInfo>, IPropertySerializingConfig<TOwner>)>();
         private readonly Dictionary<object, int> printedObjects = new Dictionary<object, int>();
         private int maxNestingLevel = 1000;
         private readonly object ownerObject = null;
+        private readonly Stack<MemberInfo> currentMemberPath = new Stack<MemberInfo>();
 
         public PrintingConfig(TOwner obj)
         {
@@ -26,6 +27,7 @@ namespace ObjectPrinting
         public string PrintToString()
         {
             printedObjects.Clear();
+            currentMemberPath.Clear();
             TryPrintToString(ownerObject, 0, out var objString);
             return objString;
         }
@@ -89,23 +91,29 @@ namespace ObjectPrinting
                     }
                     else
                     {
-                        var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
-                        foreach (dynamic member in members)
+                        var members = type.GetProperties().Concat<MemberInfo>(type.GetFields()).ToArray();
+                        foreach (var member in members)
                         {
-                            if (obj is TOwner owner)
-                            {
-                                if (propsExcluding.Contains(member.Name))
-                                    continue;
+                            currentMemberPath.Push(member);
 
-                                if (propsSerializers.TryGetValue(member.Name, out IPropertySerializingConfig<TOwner> propSerializer))
-                                {
-                                    sb.Append($"{identation}{member.Name} = {propSerializer.Serialize(member.GetValue(obj))}");
-                                    continue;
-                                }
+                            if (propsExcluding.Any(item => IsObjectsBranchMatchesMembersChain(item)))
+                            {
+                                currentMemberPath.Pop();
+                                continue;
                             }
 
-                            if (TryPrintToString(member.GetValue(obj), nestingLevel + 1, out string propString))
+                            int propSerializerInd = propsSerializers.FindIndex(funcs => IsObjectsBranchMatchesMembersChain(funcs.MemberPath));
+                            if (propSerializerInd >= 0)
+                            {
+                                sb.Append($"{identation}{member.Name} = {propsSerializers[propSerializerInd].Serializer.Serialize(GetMemberObject(obj, member))}");
+                                currentMemberPath.Pop();
+                                continue;
+                            }
+
+                            if (TryPrintToString(GetMemberObject(obj, member), nestingLevel + 1, out string propString))
                                 sb.Append($"{identation}{member.Name} = {propString}");
+
+                            currentMemberPath.Pop();
                         }
                     } 
                 }
@@ -113,6 +121,33 @@ namespace ObjectPrinting
 
             objString = sb.ToString();
             return true;
+        }
+
+        private object GetMemberObject(object owner, MemberInfo memberInfo)
+        {
+            return memberInfo is PropertyInfo property ? property.GetValue(owner)
+                : memberInfo is FieldInfo field ? field.GetValue(owner)
+                : throw new ArgumentException("Nested member must be field or property.");
+        }
+
+        private bool IsObjectsBranchMatchesMembersChain(Stack<MemberInfo> membersChain)
+        {
+            if (currentMemberPath.Count < membersChain.Count) return false;
+
+            var path_it = currentMemberPath.GetEnumerator(); 
+            var member_it = membersChain.GetEnumerator();
+
+            MemberInfo pathItem = null;
+            MemberInfo memberChainItem = null;
+            while (path_it.MoveNext() && member_it.MoveNext())
+            {
+                pathItem = path_it.Current;
+                memberChainItem = member_it.Current;
+                if (pathItem.Name != memberChainItem.Name)
+                    return false;
+            }           
+
+            return pathItem.ReflectedType == memberChainItem.ReflectedType;
         }
 
         public PrintingConfig<TOwner> Exclude<T>()
@@ -129,14 +164,22 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<T>(Expression<Func<TOwner, T>> func)
         {
-            if (func.Body is MemberExpression memberAccessOperation)
+            var membersChain = new Stack<MemberInfo>();
+
+            Expression expression = func.Body;
+            while (expression is MemberExpression memberAccessOperation)
             {
-                var memberInfo = memberAccessOperation.Member;
-                propsExcluding.Add(memberInfo.Name);
+                membersChain.Push(memberAccessOperation.Member);
+                expression = memberAccessOperation.Expression;
+            }
+
+            if (membersChain.Count == 0)
+                throw new ArgumentException("Func must be a member access expression.");
+            else
+            {
+                propsExcluding.Add(new Stack<MemberInfo>(membersChain)/*stack is reversing here*/);
                 return this;
             }
-            else
-                throw new ArgumentException("Func must be a member access lambda expression.");
         }
 
         public PropertySerializingConfig<TOwner, T> Serialize<T>()
@@ -148,15 +191,23 @@ namespace ObjectPrinting
 
         public PropertySerializingConfig<TOwner, T> Serialize<T>(Expression<Func<TOwner, T>> func)
         {
-            if (func.Body is MemberExpression memberAccessOperation)
+            var membersChain = new Stack<MemberInfo>();
+
+            Expression expression = func.Body;
+            while (expression is MemberExpression memberAccessOperation)
             {
-                var memberInfo = memberAccessOperation.Member;
+                membersChain.Push(memberAccessOperation.Member);
+                expression = memberAccessOperation.Expression;
+            }
+
+            if (membersChain.Count == 0)
+                throw new ArgumentException("Func must be a member access expression.");
+            else
+            {
                 var propSerializerConfig = new PropertySerializingConfig<TOwner, T>(this);
-                propsSerializers.Add(memberInfo.Name, propSerializerConfig);
+                propsSerializers.Add((new Stack<MemberInfo>(membersChain)/*stack is reversing here*/, propSerializerConfig));
                 return propSerializerConfig;
             }
-            else
-                throw new ArgumentException("Func must be a member access lambda expression.");
         }
     }
 }
