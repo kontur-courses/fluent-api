@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
-using FluentAssertions.Common;
-using NUnit.Framework;
 
 namespace ObjectPrinting
 {
@@ -16,6 +15,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<object, string>> SerializeFunctionsForTypes;
         private readonly Dictionary<string, Func<object, string>> SerializeFunctionsForProperties;
         private readonly HashSet<object> AlreadySerialized;
+        private readonly HashSet<Type> FinalTypes;
 
         public PrintingConfig()
         {
@@ -24,6 +24,11 @@ namespace ObjectPrinting
             SerializeFunctionsForProperties = new Dictionary<string, Func<object, string>>();
             ExcludedProperties = new HashSet<string>();
             AlreadySerialized = new HashSet<object>();
+            FinalTypes = new HashSet<Type>
+            {
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan)
+            };
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -77,62 +82,62 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             AlreadySerialized.Add(obj);
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-
             if (obj is IEnumerable)
-                foreach (var element in obj as IEnumerable)
-                {
-                    sb.Append(identation +
-                              PrintToString(element,
-                                  nestingLevel + 1));
-                }
+                sb.Append(PrintIEnumerableToString((IEnumerable)obj, nestingLevel));
             else
-            {
-                foreach (var propertyInfo in type.GetProperties())
-                {
-                    if (ExcludedTypes.Contains(propertyInfo.PropertyType))
-                        continue;
-
-                    if (ExcludedProperties.Contains(propertyInfo.Name))
-                        continue;
-
-
-                    if (AlreadySerialized.Contains(propertyInfo.GetValue(obj)))
-                        continue;
-
-                    if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
-                        sb.Append(identation + propertyInfo.Name + " = " +
-                                  SerializeFunctionsForProperties[propertyInfo.Name].Invoke(propertyInfo.GetValue(obj))
-                                  + Environment.NewLine);
-                    else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
-                        sb.Append(identation + propertyInfo.Name + " = " +
-                                  SerializeFunctionsForTypes[propertyInfo.PropertyType]
-                                      .Invoke(propertyInfo.GetValue(obj))
-                                  + Environment.NewLine);
-                    else
-                        sb.Append(identation + propertyInfo.Name + " = " +
-                                  PrintToString(propertyInfo.GetValue(obj),
-                                      nestingLevel + 1));
-                }
-            }
-
+                type
+                    .GetProperties()
+                    .Where(x=> !ExcludedTypes.Contains(x.PropertyType))
+                    .Where(x=> !ExcludedProperties.Contains(x.Name))
+                    .Where(x=> !AlreadySerialized.Contains(x.GetValue(obj)))
+                    .ToList()
+                    .ForEach(x => sb.Append(PrintPropertyToString(x, obj, nestingLevel)));
             return sb.ToString();
+        }
+
+        private string PrintIEnumerableToString(IEnumerable obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            obj
+                .Cast<object>()
+                .ToList()
+                .ForEach(x=>sb.Append(identation + PrintToString(x, nestingLevel + 1)));
+            return sb.ToString();
+        }
+
+        private string PrintPropertyToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
+                sb.Append(PrintPropertyWithCustomSerializator(propertyInfo, obj, identation, 
+                    SerializeFunctionsForProperties[propertyInfo.Name]));
+            else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
+                sb.Append(PrintPropertyWithCustomSerializator(propertyInfo, obj, identation,
+                    SerializeFunctionsForTypes[propertyInfo.PropertyType]));
+            else
+                sb.Append(identation + propertyInfo.Name + " = " +
+                          PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1));
+            return sb.ToString();
+        }
+
+        private string PrintPropertyWithCustomSerializator(PropertyInfo propertyInfo, object obj, string identation, Func<object, string> serializator)
+        {
+            return identation + propertyInfo.Name + " = " +
+                   serializator.Invoke(propertyInfo.GetValue(obj))
+                   + Environment.NewLine;
         }
     }
 }
