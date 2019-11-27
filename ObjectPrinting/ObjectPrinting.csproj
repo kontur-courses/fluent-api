@@ -67,7 +67,6 @@
     <Compile Include="Tests\PersonWithArray.cs" />
     <Compile Include="Tests\PersonWithList.cs" />
     <Compile Include="Tests\SomeClass.cs" />
-    <Compile Include="TypePrintingConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
     interface IPropertyPrintingConfig<TOwner>
     {
