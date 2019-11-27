@@ -25,13 +25,14 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Func<object, string>> serialisedProperty =
             new Dictionary<string, Func<object, string>>();
 
-        private readonly Dictionary<Type, Func<object, string>> cultureTypes =
-            new Dictionary<Type, Func<object, string>>();
+        private CultureInfo cultureType = CultureInfo.CurrentCulture;
 
         private readonly Dictionary<string, Func<string, string>> trimmer =
             new Dictionary<string, Func<string, string>>();
 
-        private readonly List<Func<string, string>> trim = new List<Func<string, string>> {s => s};
+        private Func<string, string> trim = s => s;
+
+        private HashSet<object> alreadyBe = new HashSet<object>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -65,19 +66,15 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (notSerialisedTypeOfProperty.Contains(type))
-                return null;
-
             if (type == typeof(string))
             {
                 if (serialised.ContainsKey(type))
-                    return trim[0](serialised[type](obj)) + Environment.NewLine;
-                return trim[0]((string) obj) + Environment.NewLine;
+                    return trim(serialised[type](obj)) + Environment.NewLine;
+                return trim((string) obj) + Environment.NewLine;
             }
 
             if (serialised.ContainsKey(type))
@@ -85,8 +82,6 @@ namespace ObjectPrinting
                 return serialised[type](obj) + Environment.NewLine;
             }
 
-            if (cultureTypes.ContainsKey(type))
-                return cultureTypes[type](obj) + Environment.NewLine;
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
@@ -95,28 +90,12 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType) ||
-                    notSerialisedProperty.Contains(propertyInfo.Name))
+                if (IsNotSerializableProperty(propertyInfo.Name, propertyInfo.PropertyType))
                     continue;
-                if (trimmer.ContainsKey(propertyInfo.Name))
+                if (trimmer.ContainsKey(propertyInfo.Name) || serialisedProperty.ContainsKey(propertyInfo.Name))
                 {
-                    if (serialisedProperty.ContainsKey(propertyInfo.Name))
-                        sb.Append(indentation + propertyInfo.Name + " = " +
-                                  trimmer[propertyInfo.Name](
-                                      serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj))) +
-                                  Environment.NewLine);
-                    else
-                        sb.Append(indentation + propertyInfo.Name + " = " +
-                                  trimmer[propertyInfo.Name](
-                                      (string) propertyInfo.GetValue(obj)) +
-                                  Environment.NewLine);
-                    continue;
-                }
-
-                if (serialisedProperty.ContainsKey(propertyInfo.Name))
-                {
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    var serialised = SerialiseProperty(propertyInfo.Name, propertyInfo.GetValue(obj));
+                    sb.Append($"{indentation}{propertyInfo.Name} = {serialised}{Environment.NewLine}");
                     continue;
                 }
 
@@ -128,9 +107,34 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private bool IsNotSerializableProperty(string propertyName, Type propertyType) =>
+            notSerialisedTypeOfProperty.Contains(propertyType) ||
+            notSerialisedProperty.Contains(propertyName);
+
+        private string SerialiseProperty(string propertyName, object propertyValue)
+        {
+            if (trimmer.ContainsKey(propertyName) && serialisedProperty.ContainsKey(propertyName))
+                return trimmer[propertyName](serialisedProperty[propertyName](propertyValue));
+            return trimmer.ContainsKey(propertyName) 
+                ? trimmer[propertyName]((string) propertyValue) 
+                : serialisedProperty[propertyName](propertyValue);
+        }
+
         Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.Serialised => serialised;
         Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.SerialisedProperty => serialisedProperty;
-        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.CultureTypes => cultureTypes;
+
+        CultureInfo IPrintingConfig<TOwner>.CultureType
+        {
+            get => cultureType;
+            set => cultureType = value;
+        }
+
         Dictionary<string, Func<string, string>> IPrintingConfig<TOwner>.Trimmer => trimmer;
+
+        Func<string, string> IPrintingConfig<TOwner>.Trim
+        {
+            get => trim;
+            set => trim = value;
+        }
     }
 }

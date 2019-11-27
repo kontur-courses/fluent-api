@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
     {
         private Person person = new Person {Name = "Vasa", Id = new Guid(), Age = 19, Height = 170.1};
         [Test]
-        public void ObjectPrinter_ExcludingCertainTypeOfProperty_Int()
+        public void ExcludingCertainTypeOfProperty_Int()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
             var actual = printer.PrintToString(person);
@@ -19,7 +19,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_ExcludingCertainTypeOfProperty_String()
+        public void ExcludingCertainTypeOfProperty_String()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<string>();
             var actual = printer.PrintToString(person);
@@ -28,7 +28,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_ExcludingCertainTypeOfProperty_SeveralTypes()
+        public void ExcludingCertainTypeOfProperty_SeveralTypes()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<string>()
                 .Excluding<int>()
@@ -40,7 +40,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingAnotherSerialize_String()
+        public void PrintingUsingAnotherSerialize_String()
         {
             var printer = ObjectPrinter.For<Person>().Printing<string>().Using(x => x.Substring(0, 2));
             var actual = printer.PrintToString(person);
@@ -49,7 +49,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingAnotherSerialize_int()
+        public void PrintingUsingAnotherSerialize_int()
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(x => "X");
             var actual = printer.PrintToString(person);
@@ -58,7 +58,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingAnotherSerialize_SeveralTypes()
+        public void PrintingUsingAnotherSerialize_SeveralTypes()
         {
             var person = new Person {Name = "Vasa", SecondName = "As", Id = new Guid(), Age = 19, Height = 170.0};
 
@@ -71,7 +71,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingAnotherCultureInfo_Double()
+        public void PrintingUsingAnotherCultureInfo_Double()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
@@ -81,7 +81,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingSerializedOfProperty_Name()
+        public void PrintingUsingSerializedOfProperty_Name()
         {
             var person = new Person {Name = "Vasa", SecondName = "Zip", Id = new Guid(), Age = 19, Height = 170.1};
 
@@ -89,12 +89,11 @@ namespace ObjectPrinting.Tests
                 .Printing(x => x.Name).Using(x => x.Substring(0, 2));
             var actual = printer.PrintToString(person);
             
-            Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zip\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
         
         [Test]
-        public void ObjectPrinter_PrintingTrimToLength_String()
+        public void PrintingTrimToLength_String()
         {
             var person = new Person {Name = "Vasa", SecondName = "Zip", Id = new Guid(), Age = 19, Height = 170.1};
 
@@ -102,12 +101,11 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().TrimmedToLength(2);
             var actual = printer.PrintToString(person);
             
-            Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zi\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
         
         [Test]
-        public void ObjectPrinter_PrintingUsingTrimToLength_Name()
+        public void PrintingUsingTrimToLength_Name()
         {
             var person = new Person {Name = "Vasa", SecondName = "Zip", Id = new Guid(), Age = 19, Height = 170.1};
 
@@ -115,29 +113,38 @@ namespace ObjectPrinting.Tests
                 .Printing(x => x.Name).TrimmedToLength(2);
             var actual = printer.PrintToString(person);
             
-            Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tName = Va\r\n\tSecondName = Zip\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
 
         [Test]
-        public void ObjectPrinter_ExcludingProperty_Name()
+        public void ExcludingProperty_Name()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(x => x.Name);
             var actual = printer.PrintToString(person);
             
-            Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tSecondName = null\r\n\tHeight = 170,1\r\n\tAge = 19\r\n");
         }
         
         [Test]
-        public void ObjectPrinter_ExcludingProperty_Name_Age()
+        public void ExcludingProperty_Name_Age()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(x => x.Name)
                 .Excluding(x => x.Age);
             var actual = printer.PrintToString(person);
             
-            Console.WriteLine(actual);
             actual.Should().Be("Person\r\n\tId = Guid\r\n\tSecondName = null\r\n\tHeight = 170,1\r\n");
+        }
+
+        [Test]
+        public void NoStackOverfull_IfObjectContainsThemSelf()
+        {
+            var circle = new Circle {Radius = 12};
+            circle.Self = circle;
+
+            var printer = ObjectPrinter.For<Circle>();
+            var actual = printer.PrintToString(circle);
+            
+            Console.WriteLine(actual);
         }
     }
 }

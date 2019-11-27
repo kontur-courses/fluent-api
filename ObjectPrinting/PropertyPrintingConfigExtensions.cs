@@ -16,50 +16,20 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
+            if(maxLen <= 0)
+                throw new ArgumentException("maxLen must be positive");
             var printingConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            var memberInfo =
-                typeof(PropertyPrintingConfig<TOwner, string>).GetField("member",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-            var member = (Expression<Func<TOwner, string>>) memberInfo.GetValue(propConfig);
+            var member = ((IPropertyPrintingConfig<TOwner, string>) propConfig).Member;
             if (member is null)
-            {
-                var fieldInfo =
-                    typeof(PrintingConfig<TOwner>).GetField("trim", BindingFlags.Instance | BindingFlags.NonPublic);
-                var result = (List<Func<string, string>>) fieldInfo.GetValue(printingConfig);
-                result[0] = x => x.Length > maxLen ? x.Substring(0, maxLen) : x;
-            }
+                ((IPrintingConfig<TOwner>) printingConfig).Trim = x => x.Length > maxLen ? x.Substring(0, maxLen) : x;
             else
             {
-                var fieldInfo =
-                    typeof(PrintingConfig<TOwner>).GetField("trimer", BindingFlags.Instance | BindingFlags.NonPublic);
-                var result = (Dictionary<string,Func<string, string>>) fieldInfo.GetValue(printingConfig);
+                var trimmer = ((IPrintingConfig<TOwner>) printingConfig).Trimmer;
                 var propInfo =
                     ((MemberExpression) member.Body).Member as PropertyInfo;
-                result[propInfo.Name] = x => x.Length > maxLen ? x.Substring(0, maxLen) : x;
+                trimmer[propInfo.Name] = x => x.Length > maxLen ? x.Substring(0, maxLen) : x;
             }
 
-            return printingConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig,
-            CultureInfo culture)
-        {
-            var printingConfig = ((IPropertyPrintingConfig<TOwner, int>) propConfig).ParentConfig;
-            var fieldInfo =
-                typeof(PrintingConfig<TOwner>).GetField("cultureTypes", BindingFlags.Instance | BindingFlags.NonPublic);
-            var result = (Dictionary<Type, Func<object, string>>) fieldInfo.GetValue(printingConfig);
-            result[typeof(int)] = x => ((int) x).ToString(culture);
-            return printingConfig;
-        }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig,
-            CultureInfo culture)
-        {
-            var printingConfig = ((IPropertyPrintingConfig<TOwner, double>) propConfig).ParentConfig;
-            var fieldInfo =
-                typeof(PrintingConfig<TOwner>).GetField("cultureTypes", BindingFlags.Instance | BindingFlags.NonPublic);
-            var result = (Dictionary<Type, Func<object, string>>) fieldInfo.GetValue(printingConfig);
-            result[typeof(double)] = x => ((double) x).ToString(culture);
             return printingConfig;
         }
     }
