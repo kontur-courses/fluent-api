@@ -1,6 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Security.Cryptography.X509Certificates;
+using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
@@ -27,9 +30,6 @@ namespace ObjectPrinting.Tests
 
 
             string s1 = printer.PrintToString(person);
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            person.Serialize();
-            //8. ...с конфигурированием
         }
     }
 }

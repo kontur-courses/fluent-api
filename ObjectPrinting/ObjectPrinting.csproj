@@ -54,10 +54,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPrintingConfig.cs" />
+    <Compile Include="IPropertySerializingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertySerializingConfig.cs" />
+    <Compile Include="PropertySerializingConfigExtensions.cs" />
+    <Compile Include="Tests\ClassForTests.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\ObjectPrintTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
   <ItemGroup>
