@@ -59,5 +59,32 @@ namespace ObjectPrinting.Tests
             Printer.Serializing<double>().Using(CultureInfo.InvariantCulture).PrintWithConfig(Container).Should()
                 .Contain("0.0d");
         }
+
+        [Test]
+        public void ChangeFormatForType()
+        {
+            Printer.Serializing<double>()
+                .UsingFormat((indent, propertyName, serializedProperty) =>
+                    indent + propertyName + "&" + serializedProperty)
+                .PrintObject(Container).Should().Contain("D1&0.0");
+        }
+
+        [Test]
+        public void ChangeFormatForProperty()
+        {
+            Printer.Serializing(t => t.D2)
+                .UsingFormat((indent, propertyName, serializedProperty) =>
+                    indent + propertyName + "&" + serializedProperty)
+                .PrintObject(Container).Should().Contain("D2&1.0");
+        }
+
+        [Test]
+        public void ChangeFormatOnlyForGivenProperty()
+        {
+            Printer.Serializing(t => t.D2)
+                .UsingFormat((indent, propertyName, serializedProperty) =>
+                    indent + propertyName + "&" + serializedProperty)
+                .PrintObject(Container).Should().NotContain("D1&0.0").And.NotContain("D3&2.0");
+        }
     }
 }
