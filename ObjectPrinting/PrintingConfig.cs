@@ -87,17 +87,22 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(this);
         }
 
+        private bool Final—heck(Type type)
+        {
+            var finalTypes = new[]
+{
+                typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(decimal), typeof(Guid)
+            };
+            return type.IsPrimitive || finalTypes.Contains(type);
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(decimal), typeof(Guid)
-            };
             var type = obj.GetType();
-            if (type.IsPrimitive || finalTypes.Contains(type))
+            if (Final—heck(type))
                 return obj + Environment.NewLine;
 
             if (referenceObjects.Contains(obj))
