@@ -36,6 +36,14 @@ namespace ObjectPrinting
         public readonly Dictionary<PropertyInfo, PropertySerializer> PropertySerializators =
             new Dictionary<PropertyInfo, PropertySerializer>();
 
+        public readonly Dictionary<Type, Func<string, string, string, string>> TypeFormatters =
+            new Dictionary<Type, Func<string, string, string, string>>();
+
+        public readonly Dictionary<PropertyInfo, Func<string, string, string, string>> PropertyFormatters =
+            new Dictionary<PropertyInfo, Func<string, string, string, string>>();
+
+        public int MaxNestingLevel = 10;
+
         private string PrintWithConfig(object obj, int nestingLevel)
         {
             if (obj == null)
