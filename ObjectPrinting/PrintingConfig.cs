@@ -61,21 +61,24 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, new HashSet<object>());
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, ISet<object> printed, int nestingLevel = 0)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
 
+            if (printed.Contains(obj))
+                return type.Name + " ↰" + Environment.NewLine;
+
             if (typePrinters.TryGetValue(type, out var print))
                 return print.DynamicInvoke(obj) + Environment.NewLine;
 
             if (!FinalTypes.Contains(type))
-                return PrintObject(obj, nestingLevel);
+                return PrintObject(obj, nestingLevel, printed);
 
             if (cultureLookup.TryGetValue(type, out var cultureInfo))
                 return Convert.ToString(obj, cultureInfo) + Environment.NewLine;
@@ -83,24 +86,29 @@ namespace ObjectPrinting
             return obj + Environment.NewLine;
         }
 
-        private string PrintObject(object obj, int nestingLevel)
+        private string PrintObject(object obj, int nestingLevel, ISet<object> printed)
         {
-            var indentation = new string('\t', nestingLevel + 1);
+            if (obj.GetElements().Any(IsPropertyIncluded))
+                printed.Add(obj);
+
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
+            PrintElements(obj, printed, nestingLevel, sb);
+            return sb.ToString();
+        }
+
+        private void PrintElements(object obj, ISet<object> printed, int nestingLevel, StringBuilder sb)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
             foreach (var elementInfo in obj.GetElements().Where(IsPropertyIncluded))
             {
-                sb.Append(indentation)
-                    .Append(elementInfo.MemberInfo.Name)
-                    .Append(" = ");
+                sb.Append(indentation).Append(elementInfo.MemberInfo.Name).Append(" = ");
                 var value = elementInfo.GetValue(obj);
                 if (propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
                     sb.Append(printingFunction.DynamicInvoke(value));
                 else
-                    sb.Append(PrintToString(value, nestingLevel + 1));
+                    sb.Append(PrintToString(value, printed, nestingLevel + 1));
             }
-
-            return sb.ToString();
         }
 
         private bool IsPropertyIncluded(ElementInfo element)

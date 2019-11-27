@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -130,6 +130,38 @@ namespace ObjectPrinting.Tests
                 .Contain("Phone").And
                 .Contain(Person.Phone).And
                 .NotContain(Print(Person.Phone));
+        }
+
+        [Test]
+        [Timeout(1000)]
+        public void PrintToString_HandlesCircularReferences_ObjectRefersToItself()
+        {
+            var person = new Person();
+            person.BestFriend = person;
+            var config = new PrintingConfig<Person>();
+
+            var result = config.PrintToString(person);
+
+            foreach (var property in Person.GetElements().Where(p => p.Type != typeof(Person)))
+                result.Should()
+                    .Contain(property.MemberInfo.Name).And
+                    .Contain(property.GetValue(person).PrintToString());
+        }
+
+        [Test]
+        [Timeout(1000)]
+        public void PrintToString_HandlesCircularReferences_TwoLinkedObjects()
+        {
+            var person = new Person();
+            person.BestFriend = new Person {BestFriend = person};
+            var config = new PrintingConfig<Person>();
+
+            var result = config.PrintToString(person);
+
+            foreach (var property in Person.GetElements().Where(p => p.Type != typeof(Person)))
+                result.Should()
+                    .Contain(property.MemberInfo.Name).And
+                    .Contain(property.GetValue(person).PrintToString());
         }
     }
 }
