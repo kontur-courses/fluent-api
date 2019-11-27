@@ -322,5 +322,55 @@ namespace ObjectPrinting.Tests
                 "\r\n\t\tThisIsList" +
                 "\r\n");
         }
+
+        [Test]
+        public void ChangePrintFor_PropertyArray()
+        {
+            var person = new PersonWithArray
+            {
+                Number = 1,
+                PeopleWithArray = new PersonWithArray[] {
+                    new PersonWithArray {
+                        Number = 2,
+                        PeopleWithArray = null
+                    }
+                }
+            };
+
+            var printer = ObjectPrinter.For<PersonWithArray>().ChangePrintFor(p => p.PeopleWithArray).Using(l => "This is array");
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                "PersonWithArray" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithArray = This is array" +
+                "\r\n");
+        }
+
+        [Test]
+        public void ChangePrintFor_PropertyList()
+        {
+            var person = new PersonWithList
+            {
+                Number = 1,
+                PeopleWithList = new List<PersonWithList> {
+                    new PersonWithList {
+                        Number = 2,
+                        PeopleWithList = null
+                    }
+                }
+            };
+
+            var printer = ObjectPrinter.For<PersonWithList>().ChangePrintFor(p => p.PeopleWithList).Using(l => "This is list");
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithList = This is list" +
+                "\r\n");
+        }
     }
 }
