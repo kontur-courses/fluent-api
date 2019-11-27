@@ -25,7 +25,7 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Func<object, string>> serialisedProperty =
             new Dictionary<string, Func<object, string>>();
 
-        private CultureInfo cultureType = CultureInfo.CurrentCulture;
+        private Dictionary<Type, CultureInfo> cultureTypes = new Dictionary<Type, CultureInfo>();
 
         private readonly Dictionary<string, Func<string, string>> trimmer =
             new Dictionary<string, Func<string, string>>();
@@ -88,6 +88,9 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
+            if (alreadyBe.Contains(obj))
+                return sb.ToString();
+            alreadyBe.Add(obj);
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (IsNotSerializableProperty(propertyInfo.Name, propertyInfo.PropertyType))
@@ -123,11 +126,7 @@ namespace ObjectPrinting
         Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.Serialised => serialised;
         Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.SerialisedProperty => serialisedProperty;
 
-        CultureInfo IPrintingConfig<TOwner>.CultureType
-        {
-            get => cultureType;
-            set => cultureType = value;
-        }
+        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.CultureTypes => cultureTypes;
 
         Dictionary<string, Func<string, string>> IPrintingConfig<TOwner>.Trimmer => trimmer;
 

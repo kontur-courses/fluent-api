@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -143,8 +144,8 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Circle>();
             var actual = printer.PrintToString(circle);
-            
-            Console.WriteLine(actual);
+
+            actual.Should().Be("Circle\r\n\tRadius = 12\r\n\tSelf = Circle\r\n");
         }
     }
 }

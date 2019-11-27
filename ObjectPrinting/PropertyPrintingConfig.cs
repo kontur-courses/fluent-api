@@ -34,8 +34,10 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            ((IPrintingConfig<TOwner>) printingConfig).CultureType = culture;
-
+            var cultureTypes = ((IPrintingConfig<TOwner>) printingConfig).CultureTypes;
+            var typeOfTPropType = this.GetType().GetGenericArguments()[1];
+            cultureTypes[typeOfTPropType] = culture;
+            
             return printingConfig;
         }
         
