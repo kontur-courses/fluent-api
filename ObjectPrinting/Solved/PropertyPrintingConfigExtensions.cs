@@ -13,6 +13,5 @@ namespace ObjectPrinting.Solved
         {
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
-
     }
 }
