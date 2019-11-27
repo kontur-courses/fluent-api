@@ -13,11 +13,9 @@ namespace ObjectPrintingHomeTask.Config
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-        private readonly Dictionary<object, int> serializedItemsIndexes = new Dictionary<object, int>();
         private readonly Dictionary<Type, Delegate> typesRules = new Dictionary<Type, Delegate>();
         private readonly Dictionary<PropertyInfo, Delegate> propertiesRules = new Dictionary<PropertyInfo, Delegate>();
         private CultureInfo culture = CultureInfo.CurrentCulture;
-
         readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -49,36 +47,34 @@ namespace ObjectPrintingHomeTask.Config
             return this;
         }
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0, new Dictionary<object, int>());
 
-        private string PrintToString(object obj, int nestingLevel, PropertyInfo property = default)
+        private string PrintToString(object obj, int nestingLevel, Dictionary<object, int> serializedItemsIndexes, PropertyInfo property = default)
         {
             //TODO apply configurations
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
             if (serializedItemsIndexes.TryGetValue(obj, out var index))
-                return $"{obj.GetType().Name} {index}{Environment.NewLine}";
+                return $"{obj.GetType().Name} {index}";
 
             if (finalTypes.Contains(obj.GetType()))
             {
                 var toPrint = GetSerializedObject(obj, property);
-                return (double.TryParse(toPrint.ToString(), out var value) ? value.ToString(culture) : toPrint) +
-                       Environment.NewLine;
+                return (double.TryParse(toPrint.ToString(), out var value) ? value.ToString(culture) : toPrint.ToString());
             }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine($"{type.Name} {serializedItemsIndexes.Count}");
-            lock (serializedItemsIndexes)
-                serializedItemsIndexes.Add(obj, serializedItemsIndexes.Count);
+            serializedItemsIndexes.Add(obj, serializedItemsIndexes.Count);
             foreach (var propertyInfo in type.GetProperties()
                 .Where(p => !(excludedTypes.Contains(p.PropertyType) || excludedProperties.Contains(p) ||
                               p.GetMethod == null)))
             {
-                var propertyString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, propertyInfo);
-                sb.Append($"{identation}{propertyInfo.Name} = {propertyString}");
+                var propertyString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, serializedItemsIndexes, propertyInfo);
+                sb.Append($"{identation}{propertyInfo.Name} = {propertyString.Trim()}{Environment.NewLine}");
             }
 
             return sb.ToString();
@@ -86,26 +82,25 @@ namespace ObjectPrintingHomeTask.Config
 
         private object GetSerializedObject(object obj, PropertyInfo property)
         {
-            var objectToPrint = typesRules.TryGetValue(property.PropertyType, out var typeRule)
-                ? typeRule.DynamicInvoke(obj)
-                : obj;
+            var objectToPrint = obj;
+            if (obj.GetType().GetInterfaces().Contains(typeof(IConvertible)))
+                objectToPrint = ((IConvertible) obj).ToString(culture);
 
-            return propertiesRules.TryGetValue(property, out var propertyRule)
-                ? propertyRule.DynamicInvoke(objectToPrint)
+            objectToPrint = property != null && typesRules.TryGetValue(property.PropertyType, out var typeRule)
+                ? typeRule.DynamicInvoke(obj).ToString()
+                : objectToPrint;
+
+            return property != null && propertiesRules.TryGetValue(property, out var propertyRule)
+                ? propertyRule.DynamicInvoke(obj)
                 : objectToPrint;
         }
 
-        void IPrintingConfig.AddChangedType(Type type, Delegate del)
-        {
-            lock (typesRules)
-                typesRules[type] = del;
-        }
+        void IPrintingConfig.AddChangedType(Type type, Delegate del) => typesRules[type] = del;
+        
 
-        void IPrintingConfig.AddChangedProperty(PropertyInfo propertyInfo, Delegate del)
-        {
-            lock (propertiesRules)
-                propertiesRules[propertyInfo] = del;
-        }
+        void IPrintingConfig.AddChangedProperty(PropertyInfo propertyInfo, Delegate del) 
+            => propertiesRules[propertyInfo] = del;
+
 
         void IPrintingConfig.ChangeCulture(CultureInfo culture) => this.culture = culture;
     }

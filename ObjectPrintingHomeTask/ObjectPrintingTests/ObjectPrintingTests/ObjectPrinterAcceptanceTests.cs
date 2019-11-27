@@ -199,7 +199,7 @@ namespace ObjectPrintingTests.ObjectPrintingTests
             var expectedString = "Person 0" + Environment.NewLine +
                                  "\tId = Guid 1" + Environment.NewLine +
                                  "\tName = Alex" + Environment.NewLine +
-                                 "\tHeight = 1.8" + Environment.NewLine +
+                                 "\tHeight = 1,8" + Environment.NewLine +
                                  "\tAge = 19" + Environment.NewLine +
                                  "\tParent = Person 2" + Environment.NewLine +
                                  "\t\tId = Guid 1" + Environment.NewLine +
@@ -208,7 +208,7 @@ namespace ObjectPrintingTests.ObjectPrintingTests
                                  "\t\tAge = 0" + Environment.NewLine +
                                  "\t\tParent = null" + Environment.NewLine;
             person
-                .PrintToString(p => p.Printing<double>().Using(CultureInfo.GetCultureInfo("en-US")))
+                .PrintToString(p => p.Printing<double>().Using(CultureInfo.GetCultureInfo("fr-FR")))
                 .Should()
                 .BeEquivalentTo(expectedString);
         }
