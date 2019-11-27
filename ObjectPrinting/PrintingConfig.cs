@@ -78,13 +78,13 @@ namespace ObjectPrinting
             var propertyFullName = func.Body.ToString();
             propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
             excludingProperties.Add(propertyFullName);
-            return this;
+            return new PrintingConfig<TOwner>(this);
         }
 
         public PrintingConfig<TOwner> SetMaxNumberListItems(int maxNumberListItems)
         {
             this.maxNumberListItems = maxNumberListItems;
-            return this;
+            return new PrintingConfig<TOwner>(this);
         }
 
         private string PrintToString(object obj, int nestingLevel, string propertyFullName)

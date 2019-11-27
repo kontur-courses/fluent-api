@@ -403,7 +403,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Immutable_ChangePrintFor()
+        public void Immutable_ChangePrintFor_Property()
         {
             var person = new PersonWithList
             {
@@ -414,6 +414,35 @@ namespace ObjectPrinting.Tests
             var printerConfig = ObjectPrinter.For<PersonWithList>();
             var printerForNumber = printerConfig.ChangePrintFor(p => p.Number).Using(n => (n * 100).ToString());
             var printerForList = printerConfig.ChangePrintFor(p => p.PeopleWithList).Using(l => "This is list");
+
+            var resultWithCastom = printerForNumber.PrintToString(person);
+            var resultWithCultureInfo = printerForList.PrintToString(person);
+
+            resultWithCastom.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 100" +
+                "\r\n\tPeopleWithList = null" +
+                "\r\n");
+
+            resultWithCultureInfo.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithList = This is list" +
+                "\r\n");
+        }
+
+        [Test]
+        public void Immutable_ChangePrintFor_Type()
+        {
+            var person = new PersonWithList
+            {
+                Number = 1,
+                PeopleWithList = null
+            };
+
+            var printerConfig = ObjectPrinter.For<PersonWithList>();
+            var printerForNumber = printerConfig.ChangePrintFor<int>().Using(n => (n * 100).ToString());
+            var printerForList = printerConfig.ChangePrintFor<List<PersonWithList>>().Using(l => "This is list");
 
             var resultWithCastom = printerForNumber.PrintToString(person);
             var resultWithCultureInfo = printerForList.PrintToString(person);
