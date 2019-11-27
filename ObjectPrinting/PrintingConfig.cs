@@ -76,7 +76,7 @@ namespace ObjectPrinting
             
             if (finalTypes.Contains(obj.GetType()))
                 if (typeCultures.TryGetValue(obj.GetType(), out  var cultureInfo))
-                    return string.Format(cultureInfo, obj.ToString());
+                    return Convert.ToString(obj, cultureInfo);
                 else
                     return obj.ToString();
 
