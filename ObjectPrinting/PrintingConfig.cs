@@ -134,15 +134,15 @@ namespace ObjectPrinting
         {
             if (currentMemberPath.Count < membersChain.Count) return false;
 
-            var path_it = currentMemberPath.GetEnumerator(); 
-            var member_it = membersChain.GetEnumerator();
+            var pathIterator = currentMemberPath.GetEnumerator(); 
+            var memberIterator = membersChain.GetEnumerator();
 
             MemberInfo pathItem = null;
             MemberInfo memberChainItem = null;
-            while (path_it.MoveNext() && member_it.MoveNext())
+            while (pathIterator.MoveNext() && memberIterator.MoveNext())
             {
-                pathItem = path_it.Current;
-                memberChainItem = member_it.Current;
+                pathItem = pathIterator.Current;
+                memberChainItem = memberIterator.Current;
                 if (pathItem.Name != memberChainItem.Name)
                     return false;
             }           
