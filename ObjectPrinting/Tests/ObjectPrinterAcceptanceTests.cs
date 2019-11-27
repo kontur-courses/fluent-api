@@ -372,5 +372,63 @@ namespace ObjectPrinting.Tests
                 "\r\n\tPeopleWithList = This is list" +
                 "\r\n");
         }
+
+        [Test]
+        public void Immutable_Using()
+        {
+            var person = new PersonWithList
+            {
+                Number = 1,
+                PeopleWithList = null
+            };
+
+            var printerConfig = ObjectPrinter.For<PersonWithList>().ChangePrintFor(p => p.Number);
+            var printerWithCastom = printerConfig.Using(l => (l * 100).ToString());
+            var printerWithCultureInfo = printerConfig.Using(CultureInfo.CurrentCulture);
+
+            var resultWithCastom = printerWithCastom.PrintToString(person);
+            var resultWithCultureInfo = printerWithCultureInfo.PrintToString(person);
+
+            resultWithCastom.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 100" +
+                "\r\n\tPeopleWithList = null" +
+                "\r\n");
+
+            resultWithCultureInfo.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = ru-RU" +
+                "\r\n\tPeopleWithList = null" +
+                "\r\n");
+        }
+
+        [Test]
+        public void Immutable_ChangePrintFor()
+        {
+            var person = new PersonWithList
+            {
+                Number = 1,
+                PeopleWithList = null
+            };
+
+            var printerConfig = ObjectPrinter.For<PersonWithList>();
+            var printerForNumber = printerConfig.ChangePrintFor(p => p.Number).Using(n => (n * 100).ToString());
+            var printerForList = printerConfig.ChangePrintFor(p => p.PeopleWithList).Using(l => "This is list");
+
+            var resultWithCastom = printerForNumber.PrintToString(person);
+            var resultWithCultureInfo = printerForList.PrintToString(person);
+
+            resultWithCastom.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 100" +
+                "\r\n\tPeopleWithList = null" +
+                "\r\n");
+
+            resultWithCultureInfo.Should().Be(
+                "PersonWithList" +
+                "\r\n\tNumber = 1" +
+                "\r\n\tPeopleWithList = This is list" +
+                "\r\n");
+        }
     }
 }

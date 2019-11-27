@@ -58,19 +58,19 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<T>()
         {
             excludingTypes.Add(typeof(T));
-            return this;
+            return new PrintingConfig<TOwner>(this);
         }
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>()
         {
-            return new PropertyPrintingConfig<TOwner, T>(this);
+            return new PropertyPrintingConfig<TOwner, T>(new PrintingConfig<TOwner>(this));
         }
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
             var propertyFullName = func.Body.ToString();
             propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
-            return new PropertyPrintingConfig<TOwner, T>(this, propertyFullName);
+            return new PropertyPrintingConfig<TOwner, T>(new PrintingConfig<TOwner>(this), propertyFullName);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
