@@ -4,6 +4,7 @@ using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -14,10 +15,10 @@ namespace ObjectPrinting
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.CustomTypesPrints => customTypesPrints;
 
-        private readonly List<string> excludingProperties;
-        private readonly Dictionary<string, Func<object, string>> customPropertiesPrints;
+        private readonly List<PropertyInfo> excludingProperties;
+        private readonly Dictionary<PropertyInfo, Func<object, string>> customPropertiesPrints;
 
-        Dictionary<string, Func<object, string>> IPrintingConfig.CustomPropertiesPrints => customPropertiesPrints;
+        Dictionary<PropertyInfo, Func<object, string>> IPrintingConfig.CustomPropertiesPrints => customPropertiesPrints;
 
         private int maxNumberListItems;
 
@@ -28,8 +29,8 @@ namespace ObjectPrinting
             excludingTypes = new List<Type>();
             customTypesPrints = new Dictionary<Type, Func<object, string>>();
 
-            excludingProperties = new List<string>();
-            customPropertiesPrints = new Dictionary<string, Func<object, string>>();
+            excludingProperties = new List<PropertyInfo>();
+            customPropertiesPrints = new Dictionary<PropertyInfo, Func<object, string>>();
 
             maxNumberListItems = -1;
 
@@ -41,8 +42,8 @@ namespace ObjectPrinting
             excludingTypes = new List<Type>(printingConfig.excludingTypes);
             customTypesPrints = new Dictionary<Type, Func<object, string>>(printingConfig.customTypesPrints);
 
-            excludingProperties =new List<string>(printingConfig.excludingProperties);
-            customPropertiesPrints = new Dictionary<string, Func<object, string>>(printingConfig.customPropertiesPrints);
+            excludingProperties =new List<PropertyInfo>(printingConfig.excludingProperties);
+            customPropertiesPrints = new Dictionary<PropertyInfo, Func<object, string>>(printingConfig.customPropertiesPrints);
 
             maxNumberListItems = printingConfig.maxNumberListItems;
 
@@ -51,7 +52,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, "");
+            return PrintToString(obj, 0);
         }
 
         public PrintingConfig<TOwner> Excluding<T>()
@@ -67,16 +68,16 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
-            var propertyFullName = func.Body.ToString();
-            propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
-            return new PropertyPrintingConfig<TOwner, T>(new PrintingConfig<TOwner>(this), propertyFullName);
+            return new PropertyPrintingConfig<TOwner, T>(
+                new PrintingConfig<TOwner>(this),
+                ((MemberExpression)func.Body).Member as PropertyInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
             var propertyFullName = func.Body.ToString();
             propertyFullName = propertyFullName.Substring(propertyFullName.IndexOf('.'));
-            excludingProperties.Add(propertyFullName);
+            excludingProperties.Add(((MemberExpression)func.Body).Member as PropertyInfo);
             return new PrintingConfig<TOwner>(this);
         }
 
@@ -86,7 +87,7 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(this);
         }
 
-        private string PrintToString(object obj, int nestingLevel, string propertyFullName)
+        private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -108,16 +109,16 @@ namespace ObjectPrinting
 
             string str;
             if (obj is IEnumerable enumerable)
-                str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1, propertyFullName);
+                str = PrintToStringForIEnumerable(enumerable, nestingLevel + 1);
             else
-                str = PrintToStringForProperty(obj, nestingLevel + 1, propertyFullName);
+                str = PrintToStringForProperty(obj, nestingLevel + 1);
 
             referenceObjects.RemoveAt(referenceObjects.Count - 1);
 
             return str;
         }
 
-        private string PrintToStringForProperty(object obj, int nestingLevel, string propertyFullName)
+        private string PrintToStringForProperty(object obj, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
@@ -125,29 +126,28 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                var currentPropertyFullName = propertyFullName + '.' + propertyInfo.Name;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) ||
-                    excludingProperties.Contains(currentPropertyFullName))
+                    excludingProperties.Contains(propertyInfo))
                     continue;
                 var str = "";
                 if (customTypesPrints.ContainsKey(propertyInfo.PropertyType))
                 {
                     str = customTypesPrints[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
-                else if (customPropertiesPrints.ContainsKey(currentPropertyFullName))
+                else if (customPropertiesPrints.ContainsKey(propertyInfo))
                 {
-                    str = customPropertiesPrints[currentPropertyFullName](propertyInfo.GetValue(obj)) + Environment.NewLine;
+                    str = customPropertiesPrints[propertyInfo](propertyInfo.GetValue(obj)) + Environment.NewLine;
                 }
                 else
                 {
-                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel, currentPropertyFullName);
+                    str = PrintToString(propertyInfo.GetValue(obj), nestingLevel);
                 }
                 sb.Append(identation + propertyInfo.Name + " = " + str);
             }
             return sb.ToString();
         }
 
-        private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel, string propertyFullName)
+        private string PrintToStringForIEnumerable(IEnumerable enumerable, int nestingLevel)
         {
             var sb = new StringBuilder();
             var type = enumerable.GetType();
@@ -164,7 +164,7 @@ namespace ObjectPrinting
             var count = 0;
             foreach (var item in enumerable)
             {
-                sb.Append(identation + PrintToString(item, nestingLevel, propertyFullName));
+                sb.Append(identation + PrintToString(item, nestingLevel));
                 count++;
                 if (count >= maxNumberListItems && maxNumberListItems >= 0)
                     break;
