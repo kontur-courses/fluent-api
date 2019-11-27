@@ -1,41 +1,130 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        private static readonly Type[] FinalTypes =
         {
-            return PrintToString(obj, 0);
-        }
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
 
-        private string PrintToString(object obj, int nestingLevel)
+        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+
+        private readonly HashSet<string> excludingProperties = new HashSet<string>();
+
+        private readonly Dictionary<Type, ISerializerConfig<TOwner>> typeSerializerConfigs 
+            = new Dictionary<Type, ISerializerConfig<TOwner>>();
+
+        private readonly Dictionary<string, ISerializerConfig<TOwner>> propertySerializerConfigs 
+            = new Dictionary<string, ISerializerConfig<TOwner>>();
+
+        private string Print(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+            if (excludingTypes.Contains(obj.GetType()))
+                return "";
+            if (typeSerializerConfigs.ContainsKey(obj.GetType()))
+                return typeSerializerConfigs[obj.GetType()].SerializeFunc(obj);
+            
+            if (FinalTypes.Contains(obj.GetType()))
+                return PrintFinalObj(obj);
+            
+            return obj is IEnumerable enumerable 
+            ? PrintEnumerableObj(enumerable, nestingLevel) 
+            : PrintNonFinalObj(obj, nestingLevel);
+        }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+        private string PrintFinalObj(object obj)
+        {
+            return obj + Environment.NewLine;
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
+        private string PrintEnumerableObj(IEnumerable obj, int nestingLevel)
+        {
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
+            var indentation = new string('\t', nestingLevel + 1);
+            
+            if (nestingLevel == 15) return "..." + Environment.NewLine;
+            
+            sb.AppendLine(obj.GetType().Name);
+            
+            foreach (var element in obj)
+                sb.Append(indentation + Print(element, nestingLevel + 1));
+
             return sb.ToString();
+        }
+
+        private string PrintNonFinalObj(object obj, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            
+            if (nestingLevel == 15) return "..." + Environment.NewLine;
+            
+            sb.AppendLine(obj.GetType().Name);
+
+            foreach (var propertyInfo in obj.GetType().GetProperties())
+            {
+                if(excludingTypes.Contains(propertyInfo.PropertyType) 
+                   || excludingProperties.Contains(propertyInfo.Name)) 
+                    continue;
+                sb.Append(indentation
+                          + PrintProperty(propertyInfo, obj, nestingLevel));
+            }
+
+            return sb.ToString();
+        }
+
+        private string PrintProperty(PropertyInfo info, object obj, int nestingLevel)
+        {
+            if (propertySerializerConfigs.ContainsKey(info.Name))
+                return Print(
+                    propertySerializerConfigs[info.Name].SerializeFunc(info.GetValue(obj)), 
+                    nestingLevel);
+            return info.Name 
+                   + " = " 
+                   + Print(info.GetValue(obj), nestingLevel + 1);
+        }
+        
+        public string PrintToString(TOwner obj)
+        {
+            return Print(obj, 0);
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            excludingTypes.Add(typeof(T));
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
+        {
+            excludingProperties.Add((func.Body as MemberExpression)?.Member.Name);
+            return this;
+        }
+
+        public SerializerConfig<TOwner,T> Serialize<T>()
+        {
+            var config = new SerializerConfig<TOwner, T>(this);
+            typeSerializerConfigs[typeof(T)] = config;
+            return config;
+        }
+
+        public SerializerConfig<TOwner,T> Serialize<T>(Expression<Func<TOwner, T>> func)
+        {
+            var argName = (func.Body as MemberExpression)?.Member.Name;
+            var config = new SerializerConfig<TOwner, T>(this);
+            propertySerializerConfigs[argName ?? throw new ArgumentException()] = config;
+            return config;
         }
     }
 }
