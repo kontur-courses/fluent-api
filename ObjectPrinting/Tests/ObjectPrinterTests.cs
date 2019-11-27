@@ -134,5 +134,36 @@ namespace ObjectPrinting.Tests
             var result = jack.Serialize().PrintToString();
             result.Should().NotContain("PersonWithSimpleHashCode...");
         }
+        
+        [Test]
+        public void ObjectPrinter_Should_NotDetectCyclicReferencesWhenSameObjectIsRepeated()
+        {
+            var jack1 = new PersonWithSimpleHashCode {Name = "Jack"};
+            var jack2 = new PersonWithSimpleHashCode {Name = "Jack"};
+            var jack3 = new PersonWithSimpleHashCode {Name = "Jack"};
+
+            jack1.Friend = jack2;
+            jack1.BestFriend = jack3;
+            jack2.BestFriend = jack3;
+
+            var result = jack1.Serialize().PrintToString();
+            result.Should().NotContain("PersonWithSimpleHashCode...");
+        }
+
+        [Test]
+        public void ObjectPrinter_Should_BeReusable()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Serialize(p => p.Name)
+                .Using(name => "Hello, im " + name);
+            var jack = new Person {Name = "Jack"};
+            var jill = new Person {Name = "Jill"};
+
+            var jackResult = printer.PrintToString(jack);
+            var jillResult = printer.PrintToString(jill);
+            jackResult.Should().Contain("Hello, im Jack");
+            jillResult.Should().Contain("Hello, im Jill");
+        }
     }
 }
