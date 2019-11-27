@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -13,16 +15,23 @@ namespace ObjectPrinting
     {
         private HashSet<Type> ExludingList { get; set; }
         private Dictionary<Type,Func<object,string>> SpecialSerialize { get; set; }
+        private HashSet<PropertyInfo> ExludingPropertyList { get; }
         public PrintingConfig()
         {
             SpecialSerialize= new Dictionary<Type, Func<object, string>>();
             ExludingList=new HashSet<Type>();
+            ExludingPropertyList = new HashSet<PropertyInfo>();
         }
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
+        public void AddSpecialSerialize<T>(Type type, Func<T, string> value)
+        {
+            Func<object, string> f = o => value((T) o);
+            SpecialSerialize[type] = f;
+        }
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
@@ -34,6 +43,8 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+            if (SpecialSerialize.ContainsKey(obj.GetType()))
+                return SpecialSerialize[obj.GetType()](obj);
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
             if (ExludingList.Contains(obj.GetType()))
@@ -44,7 +55,7 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(ExludingList.Contains(propertyInfo.PropertyType))
+                if(ExludingList.Contains(propertyInfo.PropertyType) || ExludingPropertyList.Contains(propertyInfo))
                     continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
@@ -62,6 +73,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exluding<T>(Expression<Func<TOwner, T>> getProperty)
         {
             var propInfo = ((MemberExpression)getProperty.Body).Member as PropertyInfo;
+            ExludingPropertyList.Add(propInfo);
             return this;
         }
         public PrintingConfig<TOwner> Serialize<T>(Func<T, string> f)
@@ -97,8 +109,9 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => parentConfig;
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
+        public PrintingConfig<TOwner> Using(Expression<Func<TPropType, string>> func)
         {
+            parentConfig.AddSpecialSerialize<TPropType>(typeof(TPropType), func.Compile());
             return parentConfig;
         }
     }

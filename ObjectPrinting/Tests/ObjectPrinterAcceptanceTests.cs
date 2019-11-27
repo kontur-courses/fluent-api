@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
                 //1. Исключить из сериализации свойства определенного типа
                 .Exluding<Guid>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(k => k.ToString()+" special serrialize")
+                .Printing<int>().Using(k => k.ToString())
                 //3. Для числовых типов указать культуру
                 .Printing<int>().Using(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
@@ -28,7 +28,11 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exluding(p => p.Name);
 
-            printer = ObjectPrinter.For<Person>().Exluding<Guid>().Printing<int>().Using(k => k.ToString() + " special serrialize");
+            printer = ObjectPrinter.For<Person>()
+                .Exluding<Guid>()
+                .Printing<int>()
+                .Using(k => k.ToString() + " special serrialize")
+                .Exluding(p=>p.Name);
             string s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
             var path = Path.Combine(Path.GetTempPath(), "test.txt");
