@@ -1,41 +1,181 @@
 using System;
+using System.CodeDom;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Net.NetworkInformation;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using NUnit.Framework;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public interface IPrintingConfig<TOwner>
     {
+        Dictionary<Type, Expression<Func<object, string>>> SerializingMethods { get; }
+        Dictionary<PropertyInfo, Expression<Func<object, string>>> PropertySerializingMethods { get; }
+    }
+
+
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    {
+        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> excludingProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<object> usedFields = new HashSet<object>();
+
+        private readonly Dictionary<Type, Expression<Func<object, string>>> typeSerializingMethods =
+            new Dictionary<Type, Expression<Func<object, string>>>();
+
+        private readonly Dictionary<PropertyInfo, Expression<Func<object, string>>> propertySerializingMethods =
+            new Dictionary<PropertyInfo, Expression<Func<object, string>>>();
+        private CultureInfo numbersCulture = CultureInfo.CurrentCulture;
+
+        Dictionary<Type, Expression<Func<object, string>>> IPrintingConfig<TOwner>.SerializingMethods =>
+            typeSerializingMethods;
+
+        Dictionary<PropertyInfo, Expression<Func<object, string>>> IPrintingConfig<TOwner>.PropertySerializingMethods =>
+            propertySerializingMethods;
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            excludingTypes.Add(typeof(T));
+            return this;
+        }
+
+        public PropertySerializingConfig<TOwner, T> Serializing<T>()
+        {
+            return new PropertySerializingConfig<TOwner, T>(this);
+        }
+
+        public PropertySerializingConfig<TOwner, T> Serializing<T>(Expression<Func<TOwner, T>> expression)
+        {
+            var propertyInfo = ((MemberExpression) expression.Body).Member as PropertyInfo;
+            return new PropertySerializingConfig<TOwner, T>(this, propertyInfo);
+        }
+
+        public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> expression)
+        {
+            excludingProperties.Add(((MemberExpression) expression.Body).Member as PropertyInfo);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> UsingNumbersCulture(CultureInfo cultureInfo)
+        {
+            numbersCulture = cultureInfo;
+            return this;
+        }
+
+        private string GetStringFromProperty(object currentObject, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            if (propertyInfo.GetValue(currentObject) is null)
+                return "null";
+            var value = propertyInfo.GetValue(currentObject);
+            if (propertySerializingMethods.ContainsKey(propertyInfo))
+                return propertySerializingMethods[propertyInfo].Compile()
+                    .Invoke(value) + $" (Hash: {value.GetHashCode()})";
+
+            if (typeSerializingMethods.ContainsKey(propertyInfo.PropertyType))
+                return typeSerializingMethods[propertyInfo.PropertyType].Compile()
+                    .Invoke(value) + $" (Hash: {value.GetHashCode()})";
+            
+            return PrintToString(value, nestingLevel);
+
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
-            var finalTypes = new[]
+            var numberTypes = new[]
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(int), typeof(double), typeof(float),
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            if (numberTypes.Contains(obj.GetType()))
+            {
+                return $"{NumberToStringUsingCulture(obj)} (Hash: {obj.GetHashCode()})";
+            }
+
+            if (obj is DateTime || obj is TimeSpan || obj is string)
+                return $"{obj} (Hash: {obj.GetHashCode()})";
+
+            if (usedFields.Contains(obj))
+                return $"<was above> (Hash: {obj.GetHashCode()})";
+            usedFields.Add(obj);
+
+            if (obj is IEnumerable enumerable)
+            {
+                return GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
+            }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            sb.AppendLine($"{type.Name} (Hash: {obj.GetHashCode()})");
+            
+            foreach (var propertyInfo in type.GetProperties().Where(p =>
+                !excludingTypes.Contains(p.PropertyType) && !excludingProperties.Contains(p)))
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                          GetStringFromProperty(obj, propertyInfo, nestingLevel + 1) + Environment.NewLine);
             }
+
             return sb.ToString();
+        }
+
+        private string GetIEnumerableString(IEnumerable obj, int nestingLevel)
+        {
+            var builder = new StringBuilder("{").Append(Environment.NewLine);
+            var counter = 0;
+            foreach (var elem in obj)
+            {
+                builder.Append($"{new string('\t', nestingLevel)}{counter}: {PrintToString(elem, nestingLevel + 1)}{Environment.NewLine}");
+                counter++;
+            }
+
+            return builder.Append("}").ToString();
+        }
+
+        private string NumberToStringUsingCulture(object obj)
+        {
+            switch (obj)
+            {
+                case int intObj:
+                    return intObj.ToString(numbersCulture);
+                case double objDouble:
+                    return objDouble.ToString(numbersCulture);
+                case float objFloat:
+                    return objFloat.ToString(numbersCulture);
+            }
+
+            return obj.ToString();
+        }
+    }
+
+    public static class Extensions
+    {
+        public static string PrintToString<TOwner>(this TOwner obj)
+        {
+            if (obj is IConfigForObject confObj)
+            {
+                return confObj.PrintToString();
+            }
+
+            return ObjectPrinter.For<object>().PrintToString(obj);
+        }
+
+        public static PrintingConfig<TOwner> Serialize<TOwner>(this TOwner obj)
+        {
+            return new ConfigForObject<TOwner>(obj);
         }
     }
 }
