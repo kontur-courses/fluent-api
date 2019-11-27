@@ -5,7 +5,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using NUnit.Framework;
 using ObjectPrinting.Configs.ConfigInterfaces;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Configs
 {
@@ -22,7 +24,6 @@ namespace ObjectPrinting.Configs
             typeof(DateTime), typeof(TimeSpan)
             
         };
-        private readonly List<object> serializedObjects = new List<object>();
 
         private int nestingLevelMax = 10;
         PrintingConfig<TOwner> IPrintingConfig<TOwner>.AddExcludedType(Type type)
@@ -127,16 +128,16 @@ namespace ObjectPrinting.Configs
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new HashSet<object>(new ReferenceComparer()));
         }
         
         public string PrintToString()
         {
             if(initialObject == null) throw new InvalidOperationException("No object is set - use PrintToString(obj)");
-            return PrintToString(initialObject, 0);
+            return PrintToString(initialObject, 0, new HashSet<object>(new ReferenceComparer()));
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> serializedObjects)
         {
             if (nestingLevel == nestingLevelMax)
                 return string.Empty;
@@ -155,7 +156,7 @@ namespace ObjectPrinting.Configs
             serializedObjects.Add(obj);
             
             if (obj is IEnumerable)
-                return PrintEnumerableToString(obj, nestingLevel);
+                return PrintEnumerableToString(obj, nestingLevel, CopySerializedObjects(serializedObjects));
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -174,14 +175,17 @@ namespace ObjectPrinting.Configs
                     sb.Append(identation + propertyInfo.Name + " = " + serialized);
                     continue;
                 }
-                var serializedProperty = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                var serializedProperty = PrintToString(
+                    propertyInfo.GetValue(obj), 
+                    nestingLevel + 1,
+                    CopySerializedObjects(serializedObjects));
                 if(serializedProperty != "")
                     sb.Append(identation + propertyInfo.Name + " = " + serializedProperty);
             }
             return sb.ToString();
         }
 
-        private string PrintEnumerableToString(object obj, int nestingLevel)
+        private string PrintEnumerableToString(object obj, int nestingLevel, HashSet<object> serializedObjects)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -189,18 +193,21 @@ namespace ObjectPrinting.Configs
             var identation = new string('\t', nestingLevel + 1);
             
             if (obj is IDictionary asDict)
-                return PrintDictionaryToString(nestingLevel, asDict);
+                return PrintDictionaryToString(nestingLevel, asDict, CopySerializedObjects(serializedObjects));
 
             foreach (var item in (IEnumerable) obj)
             {
-                var serialized = PrintToString(item, nestingLevel + 1);
+                var serialized = PrintToString(
+                    item, 
+                    nestingLevel + 1,
+                    CopySerializedObjects(serializedObjects));
                 if(serialized != "")
                     sb.Append(identation + serialized);
             }
             return sb.ToString();
         }
 
-        private string PrintDictionaryToString(int nestingLevel, IDictionary asDict)
+        private string PrintDictionaryToString(int nestingLevel, IDictionary asDict, HashSet<object> serializedObjects)
         {
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
@@ -209,7 +216,10 @@ namespace ObjectPrinting.Configs
             foreach (DictionaryEntry entry in asDict)
             {
                 var keyPrinted = entry.Key.ToString();
-                var valuePrinted = PrintToString(entry.Value, nestingLevel + 1);
+                var valuePrinted = PrintToString(
+                    entry.Value, 
+                    nestingLevel + 1,
+                    CopySerializedObjects(serializedObjects));
                 sb.Append(identation + keyPrinted + ": " + valuePrinted);
             }
             return sb.ToString();
@@ -247,6 +257,9 @@ namespace ObjectPrinting.Configs
             var casted = (IPrintingConfig<TOwner>) this;
             return casted.SetNestingLevel(levelMax);
         }
+        
+        private HashSet<object> CopySerializedObjects(HashSet<object> serializedObjects) => 
+            new HashSet<object>(serializedObjects, new ReferenceComparer());
 
         private Dictionary<T, LinkedList<Func<object, string>>> CopySerializations<T>(
             Dictionary<T, LinkedList<Func<object, string>>> serializations)
