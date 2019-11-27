@@ -110,5 +110,13 @@ namespace ObjectPrinting.Tests
                     $"Height = 1,2{Environment.NewLine}\t" +
                     $"Age = 19{Environment.NewLine}");
         }
+
+        [Test]
+        public void PrintToString_ShoulFormatCorrectly_WhenIEnumerable()
+        {
+            new[] {1, 2, 3, 4}.PrintToString()
+                .Should()
+                .BeEquivalentTo("1, 2, 3, 4");
+        }
     }
 }

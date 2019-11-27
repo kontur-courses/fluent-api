@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -72,21 +73,37 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return $"null{Environment.NewLine}";
+                return PrintLine("null");
 
             var type = obj.GetType();
+
             if (typeToPrintingMethod.TryGetValue(type, out var @delegate))
-                return $"{@delegate.DynamicInvoke(obj)}{Environment.NewLine}";
+                return PrintLine(@delegate.DynamicInvoke(obj).ToString());
 
             if (numbersTypes.Contains(type))
             {
                 cultureForNumber.TryGetValue(type, out var culture);
-                return $"{((IFormattable) obj).ToString(null, culture)}{Environment.NewLine}";
+                return PrintLine(((IFormattable) obj).ToString(null, culture));
             }
 
-            return finalTypes.Contains(type)
-                ? $"{obj}{Environment.NewLine}"
-                : PrintProperties(obj, nestingLevel);
+            if (finalTypes.Contains(type))
+                return PrintLine(obj.ToString());
+
+            if (obj is IEnumerable enumerable)
+                return PrintIEnumerable(enumerable, nestingLevel);
+
+            return PrintProperties(obj, nestingLevel);
+        }
+
+        private string PrintLine(string data) => $"{data}{Environment.NewLine}";
+
+        private string PrintIEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var result = new StringBuilder();
+            foreach (var e in enumerable)
+                result.Append($"{e}, ");
+            result.Remove(result.Length - 2, 2);
+            return result.ToString();
         }
 
         private string PrintProperties(object obj, int nestingLevel)
@@ -110,7 +127,7 @@ namespace ObjectPrinting
         {
             var propertyValue = propertyInfo.GetValue(obj);
             return propertyToPrintingMethod.TryGetValue(propertyInfo, out var @delegate)
-                ? $"{@delegate.DynamicInvoke(propertyValue)}{Environment.NewLine}"
+                ? PrintLine(@delegate.DynamicInvoke(propertyValue).ToString())
                 : PrintToString(propertyValue, nestingLevel + 1);
         }
 
