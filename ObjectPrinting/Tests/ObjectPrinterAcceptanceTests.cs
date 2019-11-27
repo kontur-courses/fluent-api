@@ -5,10 +5,34 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
+    public class A
+    {
+        public string X { get; set; }
+        public B B { get; set; }
+    }
+
+    public class B
+    {
+        public string Y { get; set; }
+        public string Z { get; set; }
+    }
+    
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         private Person person = new Person { Name = "Alex", Age = 19, Height = 1.85};
+        [Test]
+        public void TuneSubobject()
+        {
+            var config = ObjectPrinter.For<A>()
+                .Excluding(a => a.B.Y); // should work
+            var obj = new A {X = "xxx", B = new B {Y = "yyy", Z = "zzz"}};
+
+            var str = config.PrintToString(obj);
+
+            Console.WriteLine(str);
+        }
+        
         [Test]
         public void Demo()
         {
