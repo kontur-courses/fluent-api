@@ -10,7 +10,9 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Expression<Func<TOwner, TPropType>> member;
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> memberSelector = null)
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
+            Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
             this.printingConfig = printingConfig;
             member = memberSelector;
@@ -19,31 +21,18 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (member is null)
-            {
-                var fieldInfo =
-                    typeof(PrintingConfig<TOwner>).GetField("serialised", BindingFlags.Instance | BindingFlags.NonPublic);
-                var result = (Dictionary<Type, Func<object, string>>) fieldInfo.GetValue(printingConfig);
-                result[typeof(TPropType)] = x => print((TPropType) x);
-            }
+                ((IPrintingConfig<TOwner>) printingConfig).Serialised[typeof(TPropType)] = x => print((TPropType) x);
             else
             {
-                var fieldInfo =
-                    typeof(PrintingConfig<TOwner>).GetField("serialisedProperty", BindingFlags.Instance | BindingFlags.NonPublic);
-                var result = (Dictionary<string, Func<object, string>>) fieldInfo.GetValue(printingConfig);
-                var propInfo =
-                    ((MemberExpression) member.Body).Member as PropertyInfo;
-                result[propInfo.Name] = x => print((TPropType) x);
+                var serialisedProperty = ((IPrintingConfig<TOwner>) printingConfig).SerialisedProperty;
+                var propInfo = ((MemberExpression) member.Body).Member as PropertyInfo;
+                serialisedProperty[propInfo.Name] = x => print((TPropType) x);
             }
-            
+
             return printingConfig;
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-    
-    
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        Expression<Func<TOwner, TPropType>> IPropertyPrintingConfig<TOwner, TPropType>.Member => member;
     }
 }

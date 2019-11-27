@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<Type> notSerialisedTypeOfProperty = new HashSet<Type>();
         private readonly HashSet<string> notSerialisedProperty = new HashSet<string>();
@@ -28,7 +28,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<object, string>> cultureTypes =
             new Dictionary<Type, Func<object, string>>();
 
-        private readonly Dictionary<string, Func<string, string>> trimer =
+        private readonly Dictionary<string, Func<string, string>> trimmer =
             new Dictionary<string, Func<string, string>>();
 
         private readonly List<Func<string, string>> trim = new List<Func<string, string>> {s => s};
@@ -98,16 +98,16 @@ namespace ObjectPrinting
                 if (notSerialisedTypeOfProperty.Contains(propertyInfo.PropertyType) ||
                     notSerialisedProperty.Contains(propertyInfo.Name))
                     continue;
-                if (trimer.ContainsKey(propertyInfo.Name))
+                if (trimmer.ContainsKey(propertyInfo.Name))
                 {
                     if (serialisedProperty.ContainsKey(propertyInfo.Name))
                         sb.Append(indentation + propertyInfo.Name + " = " +
-                                  trimer[propertyInfo.Name](
+                                  trimmer[propertyInfo.Name](
                                       serialisedProperty[propertyInfo.Name](propertyInfo.GetValue(obj))) +
                                   Environment.NewLine);
                     else
                         sb.Append(indentation + propertyInfo.Name + " = " +
-                                  trimer[propertyInfo.Name](
+                                  trimmer[propertyInfo.Name](
                                       (string) propertyInfo.GetValue(obj)) +
                                   Environment.NewLine);
                     continue;
@@ -127,5 +127,10 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+
+        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.Serialised => serialised;
+        Dictionary<string, Func<object, string>> IPrintingConfig<TOwner>.SerialisedProperty => serialisedProperty;
+        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.CultureTypes => cultureTypes;
+        Dictionary<string, Func<string, string>> IPrintingConfig<TOwner>.Trimmer => trimmer;
     }
 }
