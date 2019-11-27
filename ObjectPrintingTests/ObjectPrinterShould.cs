@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Globalization;
-using System.Reflection;
 using ObjectPrintingTests.TestClasses;
 using ObjectPrinting;
 using FluentAssertions;
@@ -12,11 +11,13 @@ namespace ObjectPrintingTests
     public class ObjectPrinterShould
     {
         private Person person;
+        private Sphere sphere;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
             person = new Person { Id = Guid.Empty, Name = "Peter", Height = 204.4, Age = 52 };
+            sphere = new Sphere { Radius = 3, Material = new Material { Name = "Diffuse" } };
         }
 
         [Test]
@@ -166,6 +167,84 @@ namespace ObjectPrintingTests
             var formatConfig = person.ConfigureFormat().ForProperty(p => p.Age);
 
             formatConfig.GetType().GetMethod("Cut").Should().BeNull();
+        }
+
+        [Test]
+        public void PrintNestedProperty_Correctly()
+        {
+            var expectedFormat =
+                $"Sphere"                               + Environment.NewLine +
+                $"\tRadius = {sphere.Radius}"           + Environment.NewLine +
+                $"\tMaterial = Material"                + Environment.NewLine +
+                $"\t\tName = {sphere.Material.Name}"    + Environment.NewLine;
+
+            var resultFormat = sphere.Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void SetFormatForNestedProperty_Correctly()
+        {
+            Func<string, string> materialFormatter = (n) => $"Semi-{n}";
+            var expectedFormat =
+                $"Sphere"                                               + Environment.NewLine +
+                $"\tRadius = {sphere.Radius}"                           + Environment.NewLine +
+                $"\tMaterial = Material"                                + Environment.NewLine +
+                $"\t\tName = {materialFormatter(sphere.Material.Name)}" + Environment.NewLine;
+
+            var resultFormat = sphere.ConfigureFormat()
+                .ForProperty(s => s.Material.Name)
+                    .SetFormat(n => materialFormatter(n))
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void UseLastDefinedFormat_ForNestedProperty()
+        {
+            Func<string, string> firstMaterialFormatter = (n) => $"Semi-{n}";
+            Func<string, string> secondMaterialFormatter = (n) => $"Non-{n}";
+            var expectedFormat =
+                $"Sphere"                                                       + Environment.NewLine +
+                $"\tRadius = {sphere.Radius}"                                   + Environment.NewLine +
+                $"\tMaterial = Material"                                        + Environment.NewLine +
+                $"\t\tName = {secondMaterialFormatter(sphere.Material.Name)}"   + Environment.NewLine;
+
+            var resultFormat = sphere.ConfigureFormat()
+                .ForProperty(s => s.Material.Name)
+                    .SetFormat(n => firstMaterialFormatter(n))
+                .ForProperty(s => s.Material.Name)
+                    .SetFormat(n => secondMaterialFormatter(n))
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void UseHighestPropertyFormatter_IfDefined()
+        {
+            Func<string, string> firstMaterialFormatter = (n) => $"Semi-{n}";
+            Func<string, string> secondMaterialFormatter = (n) => $"Non-{n}";
+            Func<Material, string> materialFormatter = material =>
+                        material.ConfigureFormat()
+                        .ForProperty(m => m.Name)
+                            .SetFormat(n => firstMaterialFormatter(n))
+                        .Print();
+            var expectedFormat =
+                $"Sphere"                                               + Environment.NewLine +
+                $"\tRadius = {sphere.Radius}"                           + Environment.NewLine +
+                $"\tMaterial = {materialFormatter(sphere.Material)}"    + Environment.NewLine;
+
+            var resultFormat = sphere.ConfigureFormat()
+                .ForProperty(s => s.Material)
+                    .SetFormat(materialFormatter)
+                .ForProperty(s => s.Material.Name)
+                    .SetFormat(n => secondMaterialFormatter(n))
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
         }
     }
 }
