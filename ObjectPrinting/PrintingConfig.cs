@@ -83,13 +83,15 @@ namespace ObjectPrinting
 
                 return objectToPrint + Environment.NewLine;
             }
+            
+            processedObjects.Add(objectToPrint);
 
             var builder = new StringBuilder();
             var indentation = new string('\t', nestingLevel);
             AppendType(objectType, builder, indentation);
             var childIndentation = new string('\t', nestingLevel + 1);
 
-            foreach (var itemInfo in objectToPrint.GetItems().Where(obj => !processedObjects.Contains(obj)))
+            foreach (var itemInfo in objectToPrint.GetItems().Where(obj => !processedObjects.Contains(obj.Item)))
             {
                 if (itemInfo.Name == null)
                 {
@@ -100,8 +102,6 @@ namespace ObjectPrinting
                     AppendItem(itemInfo, builder, nestingLevel, childIndentation);
                 }
             }
-
-            processedObjects.Add(objectToPrint);
 
             return builder.ToString();
         }
