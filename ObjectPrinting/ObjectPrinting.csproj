@@ -60,6 +60,7 @@
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="Extensions\PropertyPrintingConfigExtensions.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
   <ItemGroup>
