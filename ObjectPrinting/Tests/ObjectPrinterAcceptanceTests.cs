@@ -26,13 +26,15 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimToLength(5)
                 //6. Исключить из сериализации конкретного свойства
-                .Exluding(p => p.Name);
+                .Exluding(p => p.Height);
 
             printer = ObjectPrinter.For<Person>()
                 .Exluding<Guid>()
                 .Printing<int>()
                 .Using(k => k.ToString() + " special serrialize")
-                .Exluding(p=>p.Name);
+                .Printing(p=>p.Name).Using(s=> s.Length.ToString() + "aaaaaaaaaa")
+                .Printing(p=>p.Name).TrimToLength(4)
+                .Exluding(p=>p.Height);
             string s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
             var path = Path.Combine(Path.GetTempPath(), "test.txt");
