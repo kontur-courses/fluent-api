@@ -62,8 +62,8 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
                 return string.Empty;
-            if (obj as ICollection != null)
-                return PrintCollection(obj as ICollection, nestingLevel);
+            if (obj is ICollection collection)
+                return PrintCollection(collection, nestingLevel);
 
             return PrintProperties(obj, nestingLevel);
         }
