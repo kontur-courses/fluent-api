@@ -15,16 +15,19 @@ namespace ObjectPrinting.Formatting
                 ? DefaultFinalTypes
                 : DefaultFinalTypes.Concat(CustomFinalTypes).ToArray();
         }
-        
+
         public abstract int MaximumRecursionDepth { get; }
         public abstract string GetPropertyPrintingStart(int nestingLevel, PropertyInfo property);
         public abstract string GetIndent(int nestingLevel);
         public abstract string GetEnumerableIndent(int nestingLevel, int index);
+        public abstract string GetDictionaryElementVisualisation(int nestingLevel, string key, string value);
         public abstract string GetBorder(int nestingLevel, bool isStart);
+        public abstract string GetGenericVisualisation(params Type[] types);
 
+        
         protected abstract Type[] CustomFinalTypes { get; }
 
-        public static FormatConfiguration DefaultFormatting() =>
+        public static FormatConfiguration Default() =>
             new DefaultFormatting();
         
         private static readonly Type[] DefaultFinalTypes =

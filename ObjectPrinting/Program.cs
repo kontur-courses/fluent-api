@@ -1,11 +1,16 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
+    public class Person
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Name { get; set; }
+        public double Height { get; set; }
+        public int Age { get; set; }
+        public Person Parent { get; set; }
+    }
     public class Program
     {
         private static void Main()
@@ -73,12 +78,14 @@ namespace ObjectPrinting
             Console.WriteLine("========================");
             Console.WriteLine(convr2.PrintToString(temp2));
 
-            var returner = new Dictionary<string, int>()
+            var returner = new Dictionary<string, List<int>>()
             {
-                ["a"] = 5,
+                ["a"] = new List<int>() {5, 6, 7},
             };
             
             Console.WriteLine(returner.Serialize().PrintToString(returner));
+            
+            
         }
     }
 }

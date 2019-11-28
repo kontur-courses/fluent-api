@@ -69,7 +69,6 @@
     <Compile Include="PrintingConfigs\Property\PropertyPrintingExtension.cs" />
     <Compile Include="Serializer\SerializationConfiguration.cs" />
     <Compile Include="Serializer\PropertySerializationRule.cs" />
-    <Compile Include="Person.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -21,7 +21,7 @@ namespace ObjectPrinting
             var interConfig = config as IPrintingConfig;
 
             var rules = new SerializationConfiguration(interConfig.SerializationRules,
-                interConfig.InstalledFormatting ?? FormatConfiguration.DefaultFormatting());
+                interConfig.InstalledFormatting ?? FormatConfiguration.Default());
             
             return PrintToString(obj, 0, rules);
         }
@@ -110,7 +110,7 @@ namespace ObjectPrinting
 
             var elementType = type.IsArray ? type.GetElementType() : type.GetGenericArguments()[0];
             if (elementType != null)
-                buildingString.Append($"<{elementType.Name}>");
+                buildingString.Append(config.Formatting.GetGenericVisualisation(elementType));
             
             
             buildingString.Append(config.Formatting.GetBorder(nestingLevel, true));
@@ -130,7 +130,22 @@ namespace ObjectPrinting
         private static string PrintKeyValuePairs(object obj, Type type, int nestingLevel,
             SerializationConfiguration config)
         {
-            return "\n#-#-#-#-NOT IMPLEMENTED-#-#-#-#\n";
+            //return "\n#-#-#-#-NOT IMPLEMENTED-#-#-#-#\n";
+            
+            var buildingString = new StringBuilder();
+
+            buildingString.Append(config.Formatting.GetGenericVisualisation(type.GetGenericArguments()));
+            buildingString.Append(config.Formatting.GetBorder(nestingLevel, true));
+
+            var dict = obj as IDictionary;
+            foreach (var key in dict.Keys)
+            {
+                buildingString.Append(config.Formatting.GetDictionaryElementVisualisation(nestingLevel + 1,
+                    key.ToString(), PrintToString(dict[key], nestingLevel + 1, config)));
+            }
+
+            buildingString.Append(config.Formatting.GetBorder(nestingLevel, false));
+            return buildingString.ToString();
         }
     }
 }
