@@ -108,7 +108,7 @@ namespace ObjectPrinting.Configs
         {
             Func<object, string> serializer = null;
 
-            if (FinalTypes.Contains(propertyInfo.PropertyType) || TryGetSerializer(propertyInfo, out serializer))
+            if (TryGetSerializer(propertyInfo, out serializer) || FinalTypes.Contains(propertyInfo.PropertyType))
                 PrintElementaryProperty(propertyInfo, value, serializer ?? (x => x.ToString()), nestingLevel);
             else
                 PrintComplexObject(propertyInfo, value, nestingLevel);

@@ -332,5 +332,18 @@ Person2
 
             actual.Should().BeEquivalentTo(expected);
         }
+
+        [Test]
+        public void Serializing_BySubstringGivingProperty_ShouldReturnRightValue()
+        {
+            var printer = ObjectPrinter.For<Person>().Serializing(x => x.Surname).Take(4);
+            var expected = $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}Surname = " +
+                           $"{person.Surname.Substring(0, 4)}{newLine}Height = {person.Height}{newLine}" +
+                           $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}";
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
     }
 }
