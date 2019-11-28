@@ -14,6 +14,8 @@ namespace ObjectPrinting
         {
             propConfig.Using(s =>
             {
+                if (maxLen < 0)
+                    throw new ArgumentException("Max length should be positive or zero");
                 var length = Math.Min(s.Length, maxLen);
                 return s.Substring(0, length);
             });

@@ -5,14 +5,12 @@ namespace ObjectPrinting
 {
     public class Member
     {
-        public string Name;
-        public Type Type;
-        public object Value;
+        public readonly string Name;
+        public readonly Type Type;
+        public readonly object Value;
 
         public Member(MemberInfo memberInfo, object obj)
         {
-            if (!(memberInfo is PropertyInfo || memberInfo is FieldInfo))
-                throw new ArgumentException("MemberInfo is not FieldInfo or PropertyInfo");
             Name = memberInfo.Name;
             switch (memberInfo)
             {
@@ -24,6 +22,8 @@ namespace ObjectPrinting
                     Type = fieldInfo.FieldType;
                     Value = fieldInfo.GetValue(obj);
                     break;
+                default:
+                    throw new ArgumentException("MemberInfo is not FieldInfo or PropertyInfo");
             }
         }
     }

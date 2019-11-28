@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
-    class PrintingConfigTests
+    class PrintingConfigPrintToStringTests
     {
         private Person person;
         private PersonForTests personForTests;
@@ -19,7 +19,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfNoConfiguration()
+        public void ShouldReturnCorrectResult_IfNoConfiguration()
         {
             var printingResult = person.PrintToString();
 
@@ -27,7 +27,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnResultWithoutType_IfExcludingType()
+        public void ShouldReturnResultWithoutType_IfExcludingType()
         {
             var printingResult = person.PrintToString(c => c.Excluding<Guid>());
 
@@ -35,7 +35,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnResultWithoutProperty_IfExcludingProperty()
+        public void ShouldReturnResultWithoutProperty_IfExcludingProperty()
         {
             var printingResult = person.PrintToString(c => c.Excluding(p => p.Age));
 
@@ -43,7 +43,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfAlternativeSerializationForType()
+        public void ShouldReturnCorrectResult_IfAlternativeSerializationForType()
         {
             var printingResult = person.PrintToString(c => c.Printing<int>().Using(n => (n * 10).ToString()));
 
@@ -51,7 +51,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfAlternativeSerializationForProperty()
+        public void ShouldReturnCorrectResult_IfAlternativeSerializationForProperty()
         {
             var printingResult = person.PrintToString(c => c.Printing(p => p.Name).Using(n => "Alexander Bell"));
 
@@ -59,7 +59,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfTrimStringProperty()
+        public void ShouldReturnCorrectResult_IfTrimStringProperty()
         {
             var printingResult = person.PrintToString(c => c.Printing(p => p.Name).TrimmedToLength(2));
 
@@ -67,16 +67,16 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldAddCommaSeparatorInDouble_IfCurrentCulture()
+        public void ShouldAddCommaSeparatorInDouble_IfCurrentCulture()
         {
             person.Height = 175.5;
-            var printingResult = person.PrintToString(c => c.Printing<double>().Using(CultureInfo.CurrentCulture));
+            var printingResult = person.PrintToString(c => c.Printing<double>().Using(new CultureInfo("ru-RU")));
 
             printingResult.Should().Be("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 175,5\r\n\tAge = 19\r\n");
         }
 
         [Test]
-        public void PrintToString_ShouldAddPointSeparatorInDouble_IfInvariantCulture()
+        public void ShouldAddPointSeparatorInDouble_IfInvariantCulture()
         {
             person.Height = 175.5;
             var printingResult = person.PrintToString(c => c.Printing<double>().Using(CultureInfo.InvariantCulture));
@@ -85,7 +85,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfCollection()
+        public void ShouldReturnCorrectResult_IfCollection()
         {
             var collection = new [] { 1, 2 };
             var printingResult = collection.PrintToString();
@@ -94,7 +94,20 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnCorrectResult_IfDictionary()
+        public void ShouldReturnCorrectResult_IfCollectionHaveReferenceTypeElements()
+        {
+            var collection = new List<PersonForTests> { personForTests, new PersonForTests { Name = "Albert", Age = 25, Height = 185 } };
+            var printingResult = collection.PrintToString();
+
+            printingResult.Should().Contain("List")
+                .And.Contain("\tElement 0: PersonForTests\r\n")
+                .And.Contain("\t\tName = Alex\r\n\t\tHeight = 175\r\n\t\tParent = null\r\n\t\tAge = 19\r\n")
+                .And.Contain("\tElement 1: PersonForTests\r\n")
+                .And.Contain("\t\tName = Albert\r\n\t\tHeight = 185\r\n\t\tParent = null\r\n\t\tAge = 25\r\n");
+        }
+
+        [Test]
+        public void ShouldReturnCorrectResult_IfDictionary()
         {
             var collection = new Dictionary<string, int>
             {
@@ -107,7 +120,29 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldNotAddPrivateField_IfObjHavePrivateField()
+        public void ShouldReturnCorrectResult_IfDictionaryHaveReferenceTypeKeysAndValues()
+        {
+            var secondPersonForTests = new PersonForTests {Name = "Albert", Age = 25, Height = 185};
+            var collection = new Dictionary<PersonForTests, PersonForTests>
+            {
+                {personForTests, secondPersonForTests},
+                {secondPersonForTests, personForTests}
+            };
+            var printingResult = collection.PrintToString();
+
+            printingResult.Should().Contain("Dictionary")
+                .And.Contain(
+                    "\tKey 0: PersonForTests\r\n\t\tName = Alex\r\n\t\tHeight = 175\r\n\t\tParent = null\r\n\t\tAge = 19\r\n")
+                .And.Contain(
+                    "\tValue 0: PersonForTests\r\n\t\tName = Albert\r\n\t\tHeight = 185\r\n\t\tParent = null\r\n\t\tAge = 25\r\n")
+                .And.Contain(
+                    "\tKey 1: PersonForTests\r\n\t\tName = Albert\r\n\t\tHeight = 185\r\n\t\tParent = null\r\n\t\tAge = 25\r\n")
+                .And.Contain(
+                    "\tValue 1: PersonForTests\r\n\t\tName = Alex\r\n\t\tHeight = 175\r\n\t\tParent = null\r\n\t\tAge = 19\r\n");
+        }
+
+        [Test]
+        public void ShouldNotAddPrivateField_IfObjHavePrivateField()
         {
             var printingResult = personForTests.PrintToString();
 
@@ -115,7 +150,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldAddPublicField_IfObjHavePublicField()
+        public void ShouldAddPublicField_IfObjHavePublicField()
         {
             var printingResult = personForTests.PrintToString();
 
@@ -123,7 +158,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldСonsiderCycleReference_IfObjHaveCycleReference()
+        public void ShouldСonsiderCyclicReference_IfObjHaveCyclicReference()
         {
             personForTests.Parent = personForTests;
             var printingResult = personForTests.PrintToString();
@@ -132,10 +167,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldСonsiderNestingLevel_IfNestingLevelMoreThanFive()
+        public void ShouldСonsiderCyclicReference_IfObjHaveCyclicReferenceThroughOneField()
+        {
+            personForTests.Parent = new PersonForTests { Name = "Albert", Parent = personForTests };
+            var printingResult = personForTests.PrintToString();
+
+            printingResult.Should().Contain("Cycle reference");
+        }
+
+        [Test]
+        public void ShouldСonsiderNestingLevel_IfNestingLevelMoreThanFive()
         {
             var currentParent = personForTests;
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < 6; i++)
             {
                 var newPerson = new PersonForTests { Name = "Alex", Height = 175 + i + 1, Age = 19 };
                 newPerson.Parent = currentParent;
@@ -147,7 +191,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldСonsiderNull_IfPropertyIsNull()
+        public void ShouldСonsiderNull_IfPropertyIsNull()
         {
             personForTests.Name = null;
             var printingResult = personForTests.PrintToString();

@@ -25,9 +25,4 @@ namespace ObjectPrinting
             return printingConfig;
         }
     }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
-    }
 }

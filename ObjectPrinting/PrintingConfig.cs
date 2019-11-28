@@ -9,6 +9,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
+        private const int MaxNestingLevel = 5;
         private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -73,7 +74,7 @@ namespace ObjectPrinting
             if (parents.Contains(obj))
                 return "Cycle reference" + Environment.NewLine;
 
-            if (nestingLevel >= 5)
+            if (nestingLevel > MaxNestingLevel)
                 return "Nesting level is exceeded" + Environment.NewLine;
 
             return GetObjectSerialization(obj, nestingLevel, parents);
@@ -90,12 +91,8 @@ namespace ObjectPrinting
             else if (obj is ICollection iCollection)
                 sb.Append(GetCollectionSerialization(iCollection, nestingLevel, parents));
             else
-            {
                 sb.Append(GetMembersSerialization(
-                    obj, nestingLevel, type.GetProperties(BindingFlags.Public | BindingFlags.Instance), parents));
-                sb.Append(GetMembersSerialization(
-                    obj, nestingLevel, type.GetFields(BindingFlags.Public | BindingFlags.Instance), parents));
-            }
+                    obj, nestingLevel, type.GetMembers(BindingFlags.Public | BindingFlags.Instance), parents));
             parents.Remove(obj);
             return sb.ToString();
         }
@@ -107,8 +104,10 @@ namespace ObjectPrinting
             var i = 0;
             foreach (var key in dictionary.Keys)
             {
-                AddLineAndValue(sb, indentation, "Key ", i, ": ", key, nestingLevel, parents);
-                AddLineAndValue(sb, indentation, "Value ", i, ": ", dictionary[key], nestingLevel, parents);
+                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Key ", i, ": ",
+                    PrintToString(key, nestingLevel + 1, parents));
+                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Value ", i, ": ",
+                    PrintToString(dictionary[key], nestingLevel + 1, parents));
                 i++;
             }
 
@@ -122,52 +121,52 @@ namespace ObjectPrinting
             var i = 0;
             foreach (var element in collection)
             {
-                AddLineAndValue(sb, indentation, "Element ", i, ": ", element, nestingLevel, parents);
+                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Element ", i, ": ", 
+                    PrintToString(element, nestingLevel + 1, parents));
                 i++;
             }
 
             return sb.ToString();
         }
 
-        private void AddLineAndValue(
-            StringBuilder sb, string indentation, string line, int index, string separator, object value, int nestingLevel, HashSet<object> parents)
-        {
-            sb.Append(indentation);
-            sb.Append(line);
-            sb.Append(index);
-            sb.Append(separator);
-            sb.Append(PrintToString(value, nestingLevel + 1, parents));
-        }
-
         private string GetMembersSerialization(object obj, int nestingLevel, MemberInfo[] memberInfos, HashSet<object> parents)
         {
-            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             foreach (var memberInfo in memberInfos)
             {
+                if (!(memberInfo is PropertyInfo || memberInfo is FieldInfo))
+                    continue;
                 var member = new Member(memberInfo, obj);
-                if (excludingProperties.Contains(member.Name))
+                if (IsExcludedMember(member))
                     continue;
-                if (excludingTypes.Contains(member.Type))
-                    continue;
-                sb.Append(indentation);
-                sb.Append(GetMemberSerialization(member, nestingLevel, parents));
+                var serialization = GetMemberSerialization(member, nestingLevel, parents);
+                sb.Append(serialization.PadLeft(nestingLevel + 1 + serialization.Length, '\t'));
             }
 
             return sb.ToString();
         }
 
+        private bool IsExcludedMember(Member member)
+        {
+            return excludingProperties.Contains(member.Name) || excludingTypes.Contains(member.Type);
+        }
+
         private string GetMemberSerialization(Member member, int nestingLevel, HashSet<object> parents)
         {
             var memberValue = member.Value;
-            Delegate alternativeSerializer = null;
+            if (TryGetAlternativeSerializer(member, out var alternativeSerializer))
+                memberValue = (string)alternativeSerializer.DynamicInvoke(member.Value);
+            return $"{member.Name} = {PrintToString(memberValue, nestingLevel + 1, parents)}";
+        }
+
+        private bool TryGetAlternativeSerializer(Member member, out Delegate alternativeSerializer)
+        {
+            alternativeSerializer = null;
             if (alternativeSerializersForProperties.ContainsKey(member.Name))
                 alternativeSerializer = alternativeSerializersForProperties[member.Name];
             else if (alternativeSerializersForTypes.ContainsKey(member.Type))
                 alternativeSerializer = alternativeSerializersForTypes[member.Type];
-            if (alternativeSerializer != null)
-                memberValue = (string)alternativeSerializer.DynamicInvoke(member.Value);
-            return member.Name + " = " + PrintToString(memberValue, nestingLevel + 1, parents);
+            return alternativeSerializer != null;
         }
     }
 }
