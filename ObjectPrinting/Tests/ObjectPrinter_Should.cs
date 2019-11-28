@@ -112,7 +112,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void TrimStringProperty()
         {
-            var result = testedInstance.PrintToString(p => p.Printing(person=>person.Name).TrimmedToLength(3));
+            var result = testedInstance.PrintToString(p => p.Printing(person => person.Name).TrimmedToLength(3));
 
             result.Should().Contain("Name = Vas").And.NotContain("Name = Vasya");
         }

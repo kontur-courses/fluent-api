@@ -15,8 +15,10 @@ namespace ObjectPrinting
         private readonly HashSet<string> excludedPropertiesFullNames = new HashSet<string>();
         private readonly List<object> serializedObjects = new List<object>();
         private readonly Dictionary<Type, Delegate> customTypeSerializationMethods = new Dictionary<Type, Delegate>();
+
         private readonly Dictionary<string, Delegate> customPropertySerializationMethods =
             new Dictionary<string, Delegate>();
+
         private readonly Dictionary<Type, CultureInfo> customCultures = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<string, int> propertyMaxLength = new Dictionary<string, int>();
 
@@ -26,25 +28,28 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        public void AddCustomSerializationMethod<TPropType>(Func<TPropType, string> customMethod)
-        {
-            customTypeSerializationMethods[typeof(TPropType)] = customMethod;
-        }
 
-        public void AddCustomSerializationMethod<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector,
-            Func<TPropType, string> customMethod)
+        public void SetCustomSerializationMethod<TPropType>(Func<TPropType, string> customMethod,
+            Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
+            if (memberSelector == null)
+            {
+                customTypeSerializationMethods[typeof(TPropType)] = customMethod;
+                return;
+            }
+
             var memberExpression = memberSelector.Body as MemberExpression;
             var fullPropertyName = GetFullPropertyName(memberExpression);
             customPropertySerializationMethods[fullPropertyName] = customMethod;
         }
 
-        public void AddCustomCulture<TPropType>(CultureInfo cultureInfo)
+        public void SetCustomCulture<TPropType>(CultureInfo cultureInfo)
         {
             customCultures[typeof(TPropType)] = cultureInfo;
         }
 
-        public void AddMaxLengthRestriction<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector, int maxLength)
+        public void SetMaxLengthRestriction<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector,
+            int maxLength)
         {
             var memberExpression = memberSelector.Body as MemberExpression;
             var fullPropertyName = GetFullPropertyName(memberExpression);
@@ -75,9 +80,7 @@ namespace ObjectPrinting
                 return null;
 
             var prevName = GetFullPropertyName(memberExpression.Expression);
-            return prevName == null
-                ? memberExpression.Member.Name
-                : prevName + "." + memberExpression.Member.Name;
+            return GetNextPropertyName(prevName, memberExpression.Member.Name);
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
@@ -111,7 +114,7 @@ namespace ObjectPrinting
                 : SerializeComplexType(obj, nestingLevel, propertyName);
         }
 
-        private string SerializeComplexType(object obj, int nestingLevel, string propertyName)
+        private string SerializeComplexType(object obj, int nestingLevel, string currentPropertyName)
         {
             var objType = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
@@ -120,40 +123,50 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in objType.GetProperties())
             {
-                var nextPropertyName = propertyName == ""
-                    ? propertyName + propertyInfo.Name
-                    : propertyName + "." + propertyInfo.Name;
+                var nextPropertyName = GetNextPropertyName(currentPropertyName, propertyInfo.Name);
 
                 var propertyType = propertyInfo.PropertyType;
 
-                if (excludedTypes.Contains(propertyType) || IsExcludedProperty(nextPropertyName))
+                if (IsExcludedProperty(propertyType, nextPropertyName))
                     continue;
-
-                var customMethod = TryGetCustomSerializationMethod(propertyType, propertyName);
-
-                if (customMethod != null)
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              SerializeWithCustomMethod(obj, propertyInfo, customMethod) + Environment.NewLine);
-
-                if (propertyInfo.GetValue(obj) is ICollection collection)
-                {
-                    var elementsStrings = new List<string>();
-                    foreach (var element in collection)
-                    {
-                        elementsStrings.Add(PrintToString(element, nestingLevel + 1, propertyName).TrimEnd());
-                    }
-
-                    sb.Append(
-                        $"{indentation}{propertyInfo.Name} = [{string.Join(", ", elementsStrings)}]{Environment.NewLine}");
-                }
-                else
-                {
-                    sb.Append(indentation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1, nextPropertyName));
-                }
+                sb.Append($"{indentation}{propertyInfo.Name} = ");
+                sb.Append(GetComplexTypeSerialization(propertyInfo, propertyType, currentPropertyName, nextPropertyName,
+                    nestingLevel, obj));
             }
 
             return sb.ToString();
+        }
+
+        private static string GetNextPropertyName(string currentPropertyName, string nextPropertyName)
+        {
+            return string.IsNullOrEmpty(currentPropertyName)
+                ? nextPropertyName
+                : $"{currentPropertyName}.{nextPropertyName}";
+        }
+
+
+        private string GetComplexTypeSerialization(PropertyInfo propertyInfo, Type propertyType,
+            string currentPropertyName,
+            string nextPropertyName,
+            int nestingLevel, object obj)
+        {
+            var customMethod = TryGetCustomSerializationMethod(propertyType, currentPropertyName);
+
+            if (customMethod != null)
+                return $"{SerializeWithCustomMethod(obj, propertyInfo, customMethod)}{Environment.NewLine}";
+
+            if (!(propertyInfo.GetValue(obj) is ICollection collection))
+                return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, nextPropertyName);
+
+            var elementsStrings = (from object element in collection
+                select PrintToString(element, nestingLevel + 1, currentPropertyName).TrimEnd()).ToList();
+
+            return $"[{string.Join(", ", elementsStrings)}]{Environment.NewLine}";
+        }
+
+        private bool IsExcludedProperty(Type propertyType, string nextPropertyName)
+        {
+            return excludedTypes.Contains(propertyType) || IsExcludedProperty(nextPropertyName);
         }
 
         private Delegate TryGetCustomSerializationMethod(Type propertyType, string propertyName)
@@ -183,6 +196,7 @@ namespace ObjectPrinting
             {
                 serialization = serialization.Substring(0, propertyMaxLength[propertyName]);
             }
+
             return serialization + Environment.NewLine;
         }
 
@@ -190,7 +204,7 @@ namespace ObjectPrinting
         {
             var objType = obj.GetType();
             if (customPropertySerializationMethods.ContainsKey(propertyName))
-                return (string)customPropertySerializationMethods[propertyName].DynamicInvoke(obj);
+                return (string) customPropertySerializationMethods[propertyName].DynamicInvoke(obj);
 
             if (customTypeSerializationMethods.ContainsKey(objType))
                 return (string) customTypeSerializationMethods[objType].DynamicInvoke(obj);

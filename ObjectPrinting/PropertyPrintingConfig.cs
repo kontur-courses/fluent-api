@@ -23,18 +23,18 @@ namespace ObjectPrinting
 
         public void SetMaxLength(int maxLength)
         {
-            printingConfig.AddMaxLengthRestriction(memberSelector, maxLength);
+            printingConfig.SetMaxLengthRestriction(memberSelector, maxLength);
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> printMethod)
         {
             if (memberSelector == null)
             {
-                printingConfig.AddCustomSerializationMethod(printMethod);
+                printingConfig.SetCustomSerializationMethod(printMethod);
             }
             else
             {
-                printingConfig.AddCustomSerializationMethod(memberSelector, printMethod);
+                printingConfig.SetCustomSerializationMethod(printMethod, memberSelector);
             }
 
             return printingConfig;
@@ -42,15 +42,10 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            printingConfig.AddCustomCulture<TPropType>(culture);
+            printingConfig.SetCustomCulture<TPropType>(culture);
             return printingConfig;
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }
