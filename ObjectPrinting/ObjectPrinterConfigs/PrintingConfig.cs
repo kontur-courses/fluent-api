@@ -12,8 +12,13 @@ namespace ObjectPrinting
     {
         private static readonly Type[] FinalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(int),
+            typeof(double),
+            typeof(float), 
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Guid),
         };
 
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
@@ -74,9 +79,12 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in obj.GetType().GetProperties())
             {
-                if(excludingTypes.Contains(propertyInfo.PropertyType) 
-                   || excludingProperties.Contains(propertyInfo.Name)) 
+                if (excludingTypes.Contains(propertyInfo.PropertyType)
+                    || excludingProperties.Contains(propertyInfo.Name))
+                {
                     continue;
+                } 
+                    
                 sb.Append(indentation
                           + PrintProperty(propertyInfo, obj, nestingLevel));
             }
