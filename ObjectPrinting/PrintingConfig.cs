@@ -64,21 +64,21 @@ namespace ObjectPrinting
             return PrintToString(obj, new HashSet<object>());
         }
 
-        private string PrintToString(object obj, ISet<object> printed, int nestingLevel = 0)
+        private string PrintToString(object obj, ISet<object> externalObjects, int nestingLevel = 0)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
 
-            if (printed.Contains(obj))
+            if (externalObjects.Contains(obj))
                 return type.Name + " ↰" + Environment.NewLine;
 
             if (typePrinters.TryGetValue(type, out var print))
                 return print.DynamicInvoke(obj) + Environment.NewLine;
 
             if (!FinalTypes.Contains(type))
-                return PrintObject(obj, nestingLevel, printed);
+                return PrintObject(obj, nestingLevel, externalObjects);
 
             if (cultureLookup.TryGetValue(type, out var cultureInfo))
                 return Convert.ToString(obj, cultureInfo) + Environment.NewLine;
@@ -86,18 +86,17 @@ namespace ObjectPrinting
             return obj + Environment.NewLine;
         }
 
-        private string PrintObject(object obj, int nestingLevel, ISet<object> printed)
+        private string PrintObject(object obj, int nestingLevel, ISet<object> externalObjects)
         {
-            if (obj.GetElements().Any(IsPropertyIncluded))
-                printed.Add(obj);
-
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
-            PrintElements(obj, printed, nestingLevel, sb);
+            externalObjects.Add(obj);
+            PrintElements(obj, externalObjects, nestingLevel, sb);
+            externalObjects.Remove(obj);
             return sb.ToString();
         }
 
-        private void PrintElements(object obj, ISet<object> printed, int nestingLevel, StringBuilder sb)
+        private void PrintElements(object obj, ISet<object> externalObjects, int nestingLevel, StringBuilder sb)
         {
             var indentation = new string('\t', nestingLevel + 1);
             foreach (var elementInfo in obj.GetElements().Where(IsPropertyIncluded))
@@ -108,7 +107,7 @@ namespace ObjectPrinting
                     propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
                     sb.Append(printingFunction.DynamicInvoke(value));
                 else
-                    sb.Append(PrintToString(value, printed, nestingLevel + 1));
+                    sb.Append(PrintToString(value, externalObjects, nestingLevel + 1));
             }
         }
 

@@ -182,6 +182,19 @@ namespace ObjectPrinting.Tests
                     .Contain(property.GetValue(person).PrintToString());
         }
 
+        [Test]
+        public void PrintToString_DoesNotCutDuplicateObjects_IfThereAreNoCircularReferences()
+        {
+            var boss = new Person();
+            var person = new Person {Boss = boss, BestFriend = new Person {Boss = boss}};
+            var config = new PrintingConfig<Person>();
+
+            var result = config.PrintToString(person);
+            Console.WriteLine(result);
+
+            result.Should().NotContain("↰");
+        }
+
         private static IList<string>[] _indexedCollectionTestCases =
         {
             new[] {"one", "two", "three", "four", "five"},
