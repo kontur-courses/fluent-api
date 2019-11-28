@@ -59,8 +59,9 @@ namespace ObjectPrintingTests
 
             var resultFormat = person.ConfigureFormat()
                 .ChangeFormattedPropertyPrinting(
-                    (nestingLevel, propertyName, formattedProperty) => 
-                    $"{ new string('\t', nestingLevel + 1) }{propertyName} : {formattedProperty}")
+                    (args) => 
+                    $"{ new string('\t', args.nestingLevel + 1) }{args.propertyName} : " +
+                    $"{args.formattedProperty}")
                 .Print();
 
             resultFormat.Should().BeEquivalentTo(expectedFormat);

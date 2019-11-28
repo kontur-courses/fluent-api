@@ -18,7 +18,8 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, int> stringPropertyToLength;
         private readonly Dictionary<Type, CultureInfo> numberTypeToCulture;
         private readonly Type[] finalTypes;
-        private Func<int, string, string, string> printFormattedProperty;
+        private Func<(int nestingLevel, string propertyName, string formattedProperty), string > 
+            printFormattedProperty;
 
         Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypeToFormatter => typeToFormatter;
         Dictionary<PropertyInfo, Delegate> 
@@ -42,8 +43,8 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
 
-            printFormattedProperty = (nestingLevel, propertyName, formattedProperty) => 
-            $"{ new string('\t', nestingLevel + 1) }{propertyName} = {formattedProperty}";
+            printFormattedProperty = (args) => 
+            $"{ new string('\t', args.nestingLevel + 1) }{args.propertyName} = {args.formattedProperty}";
 
             owner = obj;
         }
@@ -89,7 +90,7 @@ namespace ObjectPrinting
                 var formattedProperty = FormatProperty(obj, propertyInfo, nestingLevel);
                 if (formattedProperty == null)
                     continue;
-                sb.Append(printFormattedProperty(nestingLevel, propertyInfo.Name, formattedProperty));
+                sb.Append(printFormattedProperty((nestingLevel, propertyInfo.Name, formattedProperty)));
             }
             return sb.ToString();
         }
@@ -137,7 +138,7 @@ namespace ObjectPrinting
         }
 
         public PrintingConfig<TOwner> ChangeFormattedPropertyPrinting(
-            Func<int, string, string, string> newPrint)
+            Func<(int nestingLevel, string propertyName, string formattedProperty), string> newPrint)
         {
             printFormattedProperty = newPrint;
             return this;
