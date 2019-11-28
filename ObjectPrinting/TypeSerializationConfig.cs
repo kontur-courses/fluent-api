@@ -15,8 +15,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TTarget, string> serializer)
         {
             var childConfig = new PrintingConfig<TOwner>(config);
-            childConfig.TypeSerializators.Add(typeof(TTarget),
-                TypeSerializer.CreateSerializer(typeof(TTarget), serializer));
+            childConfig.TypeSerializators.Add(TypeSerializer.Create(serializer));
             return childConfig;
         }
 

@@ -5,7 +5,7 @@ namespace ObjectPrinting
 {
     public class PropertySerializer
     {
-        private PropertyInfo property;
+        public PropertyInfo property;
         private Func<object, string> serializer;
 
         public PropertySerializer(PropertyInfo property, Func<object, string> serializer)
@@ -13,7 +13,8 @@ namespace ObjectPrinting
             this.property = property;
             this.serializer = serializer;
         }
-        public static PropertySerializer CreateSerializer<T>(PropertyInfo property, Func<T, string> serializer)
+
+        public static PropertySerializer Create<T>(PropertyInfo property, Func<T, string> serializer)
         {
             return new PropertySerializer(property, o => serializer((T) o));
         }
@@ -22,7 +23,7 @@ namespace ObjectPrinting
         {
             if (property.PropertyType.IsInstanceOfType(objectToSerialize))
                 return serializer(objectToSerialize);
-            throw new ArgumentException();
+            throw new ArgumentException($"{objectToSerialize} is not instance of {property.PropertyType}");
         }
     }
 }

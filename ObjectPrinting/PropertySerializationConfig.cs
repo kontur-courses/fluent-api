@@ -20,12 +20,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TTarget, string> serializer)
         {
             var childConfig = new PrintingConfig<TOwner>(config);
-            childConfig.PropertySerializators.Add(propertyInfo,
-                PropertySerializer.CreateSerializer(propertyInfo, serializer));
+            childConfig.PropertySerializators.Add(PropertySerializer.Create(propertyInfo, serializer));
             return childConfig;
         }
 
-        public PrintingConfig<TOwner> UsingFormat(Func<string, string, string, string> formatter)
+        public PrintingConfig<TOwner> UsingFormat(Func<(string indent, string propertyName, string serializedProperty),
+            string> formatter)
         {
             var childConfig = new PrintingConfig<TOwner>(config);
             childConfig.PropertyFormatters.Add(propertyInfo, formatter);

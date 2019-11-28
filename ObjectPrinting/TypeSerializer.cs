@@ -4,23 +4,23 @@ namespace ObjectPrinting
 {
     public class TypeSerializer
     {
-        private Type type;
+        public readonly Type Type;
         private Func<object, string> serializer;
 
         private TypeSerializer(Type type, Func<object, string> serializer)
         {
-            this.type = type;
+            this.Type = type;
             this.serializer = serializer;
         }
 
-        public static TypeSerializer CreateSerializer<T>(Type type, Func<T, string> serializer)
+        public static TypeSerializer Create<T>(Func<T, string> serializer)
         {
-            return new TypeSerializer(type, o => serializer((T) o));
+            return new TypeSerializer(typeof(T), o => serializer((T) o));
         }
 
         public string Serialize(object objectToSerialize)
         {
-            if (type.IsInstanceOfType(objectToSerialize))
+            if (Type.IsInstanceOfType(objectToSerialize))
                 return serializer(objectToSerialize);
             throw new ArgumentException();
         }

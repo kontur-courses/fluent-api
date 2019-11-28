@@ -14,12 +14,16 @@ namespace ObjectPrinting
         {
             excludedTypes = new HashSet<Type>(parent.excludedTypes);
             excludedProperties = new HashSet<PropertyInfo>(parent.excludedProperties);
-            TypeSerializators = new Dictionary<Type, TypeSerializer>(parent.TypeSerializators);
-            PropertySerializators = new Dictionary<PropertyInfo, PropertySerializer>(parent.PropertySerializators);
+            TypeSerializators = new TypeSerializerCollection(parent.TypeSerializators);
+            PropertySerializators = new PropertySerializerCollection(parent.PropertySerializators);
         }
 
         public PrintingConfig()
         {
+            TypeSerializators = new TypeSerializerCollection();
+            PropertySerializators = new PropertySerializerCollection();
+            excludedTypes = new HashSet<Type>();
+            excludedProperties = new HashSet<PropertyInfo>();
         }
 
         public string PrintObject(TOwner obj)
@@ -27,20 +31,19 @@ namespace ObjectPrinting
             return PrintWithConfig(obj, 0);
         }
 
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<PropertyInfo> excludedProperties;
 
-        public readonly Dictionary<Type, TypeSerializer> TypeSerializators =
-            new Dictionary<Type, TypeSerializer>();
+        public readonly TypeSerializerCollection TypeSerializators;
 
-        public readonly Dictionary<PropertyInfo, PropertySerializer> PropertySerializators =
-            new Dictionary<PropertyInfo, PropertySerializer>();
+        public readonly PropertySerializerCollection PropertySerializators;
 
         public readonly Dictionary<Type, Func<string, string, string, string>> TypeFormatters =
             new Dictionary<Type, Func<string, string, string, string>>();
 
-        public readonly Dictionary<PropertyInfo, Func<string, string, string, string>> PropertyFormatters =
-            new Dictionary<PropertyInfo, Func<string, string, string, string>>();
+        public readonly Dictionary<PropertyInfo, Func<(string indent, string propertyName, string serializedProperty),
+            string>> PropertyFormatters = new Dictionary<PropertyInfo, Func<(string indent, string propertyName,
+            string serializedProperty), string>>();
 
         public int MaxNestingLevel = 10;
 
@@ -68,34 +71,35 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (!excludedTypes.Contains(propertyInfo.PropertyType))
+                var propertyType = propertyInfo.PropertyType;
+                if (!excludedTypes.Contains(propertyType))
                     if (!excludedProperties.Contains(propertyInfo))
                     {
                         string serializedProperty;
-                        if (PropertySerializators.ContainsKey(propertyInfo))
+                        if (PropertySerializators.ContainsSerializerFor(propertyInfo))
                         {
-                            serializedProperty = PropertySerializators[propertyInfo]
+                            serializedProperty = PropertySerializators.GetSerializerFor(propertyInfo)
                                 .Serialize(propertyInfo.GetValue(obj));
                         }
-                        else if (TypeSerializators.ContainsKey(propertyInfo.PropertyType))
+                        else if (TypeSerializators.ContainsSerializerFor(propertyType))
                         {
                             serializedProperty =
-                                TypeSerializators[propertyInfo.PropertyType].Serialize(propertyInfo.GetValue(obj));
+                                TypeSerializators.GetSerializerFor(propertyType).Serialize(propertyInfo.GetValue(obj));
                         }
                         else
                         {
                             serializedProperty = PrintWithConfig(propertyInfo.GetValue(obj), nestingLevel + 1);
                         }
 
-                        if (TypeFormatters.ContainsKey(propertyInfo.PropertyType))
+                        if (TypeFormatters.ContainsKey(propertyType))
                         {
-                            var formatter = TypeFormatters[propertyInfo.PropertyType];
-                            sb.Append(formatter(indentation,propertyInfo.Name,serializedProperty));
+                            var formatter = TypeFormatters[propertyType];
+                            sb.Append(formatter(indentation, propertyInfo.Name, serializedProperty));
                         }
                         else if (PropertyFormatters.ContainsKey(propertyInfo))
                         {
                             var formatter = PropertyFormatters[propertyInfo];
-                            sb.Append(formatter(indentation,propertyInfo.Name,serializedProperty));
+                            sb.Append(formatter((indentation, propertyInfo.Name, serializedProperty)));
                         }
                         else
                             sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
