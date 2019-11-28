@@ -1,19 +1,23 @@
-﻿namespace ObjectPrinting.Tests
+﻿using System.Runtime.InteropServices;
+
+namespace ObjectPrinting.Tests
 {
     public class ClassForTests
     {
+        public double Height = 0;
         public ClassForTests Friend { get; set; }
-        public string Name { get; set; }
-        public string SurName { get; set; }
+        public string FirstName { get; set; }
+        public string Surname { get; set; }
         public int Age { get; set; }
 
 
-        public ClassForTests(string name = "", string surName = "", int age = 0, ClassForTests cc = null)
+        public ClassForTests(string firstName = "", string surname = "", int age = 0, ClassForTests cc = null, double height = 0)
         {
             Friend = cc;
-            Name = name;
-            SurName = surName;
+            FirstName = firstName;
+            Surname = surname;
             Age = age;
+            Height = height;
         }
     }
 }

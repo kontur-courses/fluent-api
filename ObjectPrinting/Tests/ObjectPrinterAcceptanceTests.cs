@@ -20,7 +20,7 @@ namespace ObjectPrinting.Tests
                 //2. DONE Указать альтернативный способ сериализации для определенного типа
                 .Serializing<int>().Using(x => x.ToString())
                 //3. SCARCELY DONE Для числовых типов указать культуру
-                .Serializing<int>().Using(CultureInfo.CurrentCulture)
+                .HavingCulture(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
                 .Serializing(p => p.Name).Using(x => x.ToString())
                 //5. SCARCELY DONE Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)

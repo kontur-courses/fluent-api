@@ -9,7 +9,6 @@ namespace ObjectPrinting
     {
         Dictionary<Type, Func<object, string>> SerializationForType { get; }
         Dictionary<PropertyInfo, Func<object, string>> SerializationForProperty { get; }
-        Dictionary<Type, CultureInfo> NumberTypesCultures { get; }
         Dictionary<PropertyInfo, int> MaxLengthOfStringProperty { get; }
     }
 }

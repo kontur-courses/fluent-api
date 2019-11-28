@@ -26,84 +26,94 @@ namespace ObjectPrinting
             new Dictionary<Type, Func<object, string>>();
         private readonly Dictionary<PropertyInfo, Func<object, string>> exactSerializationForProperty =
             new Dictionary<PropertyInfo, Func<object, string>>();
-        private readonly Dictionary<Type, CultureInfo> numberTypesCultures =
-            new Dictionary<Type, CultureInfo>();
+        private CultureInfo culture = CultureInfo.CurrentCulture;
 
         //Это все сделано через интерфейс, чтобы скрыть от пользователя
         Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.SerializationForType =>
             exactSerializationForType;
         Dictionary<PropertyInfo, Func<object, string>> IPrintingConfig<TOwner>.SerializationForProperty =>
             exactSerializationForProperty;
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.NumberTypesCultures => numberTypesCultures;
-        Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.MaxLengthOfStringProperty
-        {
-            get => maxLengthOfStringProperty;
-        }
+
+        Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.MaxLengthOfStringProperty => maxLengthOfStringProperty;
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return GetSerializationOfObject(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string GetSerializationOfObject(object obj, int nestingLevel)
         {
             if (obj == null)   
                 return "null" + Environment.NewLine;
+
             propertiesInRecursion.Add(obj);
+
             var type = obj.GetType();
             if (excludedTypes.Contains(type))
-                return FinishWorkWithObjectAndReturnResult(obj, string.Empty);
+                return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj, string.Empty);
+
             if (finalTypes.Contains(type))
-                return FinishWorkWithObjectAndReturnResult(obj,
-                    ReturnSerializationOFFinalTypeObject(obj));
-            var identation = new string('\t', nestingLevel + 1);
+                return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj,
+                    ReturnSerializationOfObjectOfFinalType(obj));
+
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            if (IsEnumerable(obj))
+            if (obj is IEnumerable)
             {
-                foreach (var element in (IEnumerable) obj)
-                    sb.Append(identation + PrintToString(element, nestingLevel + 1));
+                foreach (var element in (IEnumerable)obj)
+                    sb.Append(indentation + GetSerializationOfObject(element, nestingLevel + 1));
             }
             else
-            {
-                foreach (var propertyInfo in type.GetProperties())
-                {
-                    if (excludedProperties.Contains(propertyInfo))
-                        continue;
-                    if (excludedTypes.Contains(propertyInfo.PropertyType))
-                        continue;
-                    var objPropertyValue = new object();
-                    objPropertyValue = propertyInfo.GetValue(obj);
-                    if (propertiesInRecursion.Contains(objPropertyValue))
-                        continue;
-                    sb.Append(HandleOneProperty(propertyInfo, objPropertyValue, identation, nestingLevel));
-                }
-            }
-            return FinishWorkWithObjectAndReturnResult(obj, sb.ToString());
+                sb.Append(GetSerializationOfPropertiesAndFieldsOfObject(obj, indentation, nestingLevel));
+            return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj, sb.ToString());
         }
 
-        private bool IsEnumerable(object obj) => obj is IEnumerable;
+        private string GetSerializationOfPropertiesAndFieldsOfObject(object obj, string indentation, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                if (excludedProperties.Contains(propertyInfo))
+                    continue;
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                var objPropertyValue = propertyInfo.GetValue(obj);
+                if (propertiesInRecursion.Contains(objPropertyValue))
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " + "<cyclic link is detected>" + Environment.NewLine);
+                    continue;
+                }
+                sb.Append(HandleOneProperty(propertyInfo, objPropertyValue, indentation, nestingLevel));
+            }
 
-        private string FinishWorkWithObjectAndReturnResult(object obj, string result)
+            foreach (var fieldInfo in type.GetFields())
+                sb.Append(indentation + fieldInfo.Name + " = " +
+                          GetSerializationOfObject(fieldInfo.GetValue(obj), nestingLevel + 1));
+
+            return sb.ToString();
+        }
+
+        private string RemoveObjectFromPropertiesInRecursionAndReturnResult(object obj, string result)
         {
             propertiesInRecursion.Remove(obj);
             return result;
         }
 
-        private string HandleOneProperty(PropertyInfo propertyInfo, object objPropertyValue,
-            string identation, int nestingLevel)
+        private string HandleOneProperty(PropertyInfo propertyInfo, object objPropertyValue, string indentation, int nestingLevel)
         {
             if (propertyInfo.PropertyType == typeof(string))
                 objPropertyValue = GetShortenedStringFromObject(propertyInfo, objPropertyValue);
+
             if (exactSerializationForProperty.ContainsKey(propertyInfo))
-                return exactSerializationForProperty[propertyInfo](
-                    objPropertyValue);
-            else if (exactSerializationForType.ContainsKey(propertyInfo.PropertyType))
-                return exactSerializationForType[propertyInfo.PropertyType]
-                    (objPropertyValue);
-            else
-                return identation + propertyInfo.Name + " = " +
-                       PrintToString(objPropertyValue, nestingLevel + 1);
+                return exactSerializationForProperty[propertyInfo](objPropertyValue);
+
+            if (exactSerializationForType.ContainsKey(propertyInfo.PropertyType))
+                return exactSerializationForType[propertyInfo.PropertyType](objPropertyValue);
+
+            return indentation + propertyInfo.Name + " = " +
+                   GetSerializationOfObject(objPropertyValue, nestingLevel + 1);
         }
 
         private string GetShortenedStringFromObject(PropertyInfo propertyInfo, object obj)
@@ -115,16 +125,17 @@ namespace ObjectPrinting
         } 
 
 
-        private string ReturnSerializationOFFinalTypeObject(object obj)
+        private string ReturnSerializationOfObjectOfFinalType(object obj)
         {
             var objToSerialize = obj;
             var objType = objToSerialize.GetType();
+
             if (exactSerializationForType.ContainsKey(objType))
-                return exactSerializationForType[objType](objToSerialize)
-                       + Environment.NewLine;
-            if (numberTypesCultures.ContainsKey(objType)) //Now it's only for int
-                return int.Parse(objToSerialize.ToString(),
-                           numberTypesCultures[objType]) + Environment.NewLine;
+                return exactSerializationForType[objType](objToSerialize) + Environment.NewLine;
+
+            if (objToSerialize is IFormattable)
+                return (objToSerialize as IFormattable).ToString(null, culture) + Environment.NewLine;
+
             return objToSerialize + Environment.NewLine;
         }
 
@@ -137,6 +148,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
             excludedProperties.Add(((MemberExpression)func.Body).Member as PropertyInfo);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> HavingCulture(CultureInfo culture)
+        {
+            this.culture = culture;
             return this;
         }
 

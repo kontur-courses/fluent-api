@@ -8,7 +8,7 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterTests
     {
         [Test]
-        public void ExcludingProperty_IfExcluding()
+        public void ExcludingProperty_WhenExcluding()
         {
             var person = new ClassForTests("Ivan", age: 123);
             var printer = ObjectPrinter.For<ClassForTests>()
@@ -20,7 +20,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ExcludingAllPropertiesOfType_IfExcluding()
+        public void SerializingFields_IfObjectHasIt()
+        {
+            var person = new ClassForTests("Ivan", age: 123);
+            var printer = ObjectPrinter.For<ClassForTests>();
+
+            var s = printer.PrintToString(person);
+
+            s.Should().Contain("Height");
+        }
+
+
+        [Test]
+        public void ExcludingAllPropertiesOfType_WhenExcluding()
         {
             var person = new ClassForTests("Ivan", "Kogut", 19);
             var printer = ObjectPrinter.For<ClassForTests>()
@@ -28,17 +40,17 @@ namespace ObjectPrinting.Tests
 
             var s = printer.PrintToString(person);
 
-            s.Should().NotContain("Name").And.NotContain("SurName");
+            s.Should().NotContain("FirstName").And.NotContain("Surname");
         }
 
         [Test]
-        public void CutStringProperties_IfCutPrefix()
+        public void CutStringProperties_WhenCutPrefix()
         {
             var person1 = new ClassForTests("Ivan", "Kogut", 19);
             var person2 = new ClassForTests("Alex", "Smelov", 19);
             var printer = ObjectPrinter.For<ClassForTests>()
-                .Serializing(p => p.Name).CutPrefix(2)
-                .Serializing(p => p.SurName).CutPrefix(3);
+                .Serializing(p => p.FirstName).CutPrefix(2)
+                .Serializing(p => p.Surname).CutPrefix(3);
 
             var sIvan = printer.PrintToString(person1);
             var sAlex = printer.PrintToString(person2);
@@ -50,7 +62,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void SerializeTypeInOwnWay_IfSerializing()
+        public void SerializeTypeInOwnWay_WhenSerializing()
         {
             var person1 = new ClassForTests("Ivan", "Kogut", 19);
             var person2 = new ClassForTests("Alex", "Smelov", 19);
@@ -65,7 +77,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void SerializePropertyInOwnWay_IfSerializing()
+        public void SerializingFieldsInWayOfType_WhenSerializingItsType()
+        {
+            var person = new ClassForTests("Ivan", age: 123);
+            var printer = ObjectPrinter.For<ClassForTests>()
+                .Serializing<double>().Using(x => "Long");
+
+            var s = printer.PrintToString(person);
+
+            s.Should().Contain("Long");
+        }
+
+        [Test]
+        public void SerializePropertyInOwnWay_WhenSerializing()
         {
             var person1 = new ClassForTests("Ivan", "Kogut", 19);
             var person2 = new ClassForTests("Alex", "Smelov", 19);
@@ -79,7 +103,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void SerializeInPropertyWayDespiteTypeWay_IfSerializingForPropertyAndType()
+        public void SerializeInPropertyWayDespiteTypeWay_WhenSerializingForPropertyAndType()
         {
             var person1 = new ClassForTests("Ivan", "Kogut", 19);
             var person2 = new ClassForTests("Alex", "Smelov", 19);
@@ -95,7 +119,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void NoRecursion_IfRecursionLinks()
+        public void NotFall_IfObjectHasRecursionLinks()
         {
             var person1 = new ClassForTests("Ivan", "Kogut", 19);
             var person2 = new ClassForTests("Alex", "Smelov", 19);
@@ -106,6 +130,7 @@ namespace ObjectPrinting.Tests
             var s = printer.PrintToString(person1);
 
             s.IndexOf("Ivan").Should().Be(s.LastIndexOf("Ivan"));
+            s.Should().Contain("<cyclic link is detected>");
         }
 
         [Test]
