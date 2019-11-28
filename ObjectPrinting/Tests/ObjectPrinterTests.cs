@@ -12,7 +12,7 @@ namespace ObjectPrinting.Tests
     {
         [TestCase(1, TestName = "OnOneElement")]
         [TestCase(1, 2, 3, 4, 5, TestName = "OnManyElements")]
-        public void PrintToObject_ReturnsCorrectAnswer_OnCollections(params int[] elements)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnCollections(params int[] elements)
         {
             var printedLine = elements.PrintToString();
             foreach (var element in elements)
@@ -23,7 +23,7 @@ namespace ObjectPrinting.Tests
 
         [TestCase("string", 1, "string2", 2)]
         [TestCase("TEST", 2, "TEST2", 3)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnDictionaries(string firstKey, int firstValue, string secondKey, int secondValue)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnDictionaries(string firstKey, int firstValue, string secondKey, int secondValue)
         {
             var dict = new Dictionary<string, int>();
             dict[firstKey] = firstValue;
@@ -36,7 +36,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToObject_ReturnsCorrectAnswer_WhenNoCustomConfiguration()
+        public void GetStringRepresentation_ReturnsCorrectAnswer_WhenNoCustomConfiguration()
         {
             var amountOfTries = 5;
             var nameLength = 5;
@@ -65,7 +65,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToObject_ThrowsFormatException_OnCircularReference()
+        public void GetStringRepresentation_ThrowsFormatException_OnCircularReference()
         {
             var firstObject = new CircularReferenceExampleClass();
             var secondObject = new CircularReferenceExampleClass();
@@ -78,7 +78,7 @@ namespace ObjectPrinting.Tests
         [TestCase(1, 7, 8)]
         [TestCase(0, 0, 0)]
         [TestCase(0, -5, -5)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnCustomSerializationByProperty(int value, int offset, int expectedAnswer)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnCustomSerializationByProperty(int value, int offset, int expectedAnswer)
         {
             var person = new Person();
             person.Age = value;
@@ -90,7 +90,7 @@ namespace ObjectPrinting.Tests
         [TestCase(1, 7, 8)]
         [TestCase(0, 0, 0)]
         [TestCase(0, -5, -5)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnCustomSerializationByType(int value, int offset, int expectedAnswer)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnCustomSerializationByType(int value, int offset, int expectedAnswer)
         {
             var person = new Person();
             person.Age = value;
@@ -101,7 +101,7 @@ namespace ObjectPrinting.Tests
 
         [TestCase(1)]
         [TestCase(-5)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnExcludingByProperty(int value)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnExcludingByProperty(int value)
         {
             var person = new Person();
             person.Age = value;
@@ -112,7 +112,7 @@ namespace ObjectPrinting.Tests
 
         [TestCase(1)]
         [TestCase(-5)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnExcludingByType(int value)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnExcludingByType(int value)
         {
             var person = new Person();
             person.Age = value;
@@ -123,7 +123,7 @@ namespace ObjectPrinting.Tests
 
         [TestCase("TestValue", 5)]
         [TestCase("12", 1)]
-        public void PrintToObject_ReturnsCorrectAnswer_OnTrim(string valueToTrim, int length)
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnTrim(string valueToTrim, int length)
         {
             var person = new Person();
             person.Name = valueToTrim;
@@ -134,7 +134,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToObject_ReturnsCorrectAnswer_OnTrimValueLongerThanString()
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnTrimValueLongerThanString()
         {
             var person = new Person();
             person.Name = "TEST";
@@ -144,7 +144,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToObject_ThrowsArgumentOutOfRangeException_OnWrongTrimValue()
+        public void GetStringRepresentation_ThrowsArgumentOutOfRangeException_OnWrongTrimValue()
         {
             var person = new Person();
             person.Name = "TEST";
@@ -154,7 +154,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToObject_ReturnsCorrectAnswer_OnCultureChange()
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnCultureChange()
         {
             var value = 16325.62901;
             var person = new Person();

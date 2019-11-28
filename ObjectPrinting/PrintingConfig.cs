@@ -6,19 +6,27 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Utils;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private ImmutableDictionary<PropertyInfo, Func<object, string>> customPropertyRules; // I'm not sure how to force function to be given type
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> customPropertyRules;
         private ImmutableDictionary<Type, Func<object, string>> customTypeRules; 
         private ImmutableDictionary<Type, Func<object, string>> defaultTypeRules; 
 
         private ImmutableHashSet<Type> excludedTypes;
         private ImmutableHashSet<PropertyInfo> excludedProperties;
 
-        private HashSet<object> serializedObjects;
+        private HashStack<object> serializingObjects;  
+
+        private static readonly Type[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
+
+        private static readonly string NullRepresentation = "null" + Environment.NewLine;
 
         public PrintingConfig()
         {
@@ -47,7 +55,6 @@ namespace ObjectPrinting
         internal PrintingConfig<TOwner> Minus(Type typeToExclude)
         {
             excludedTypes = excludedTypes.Add(typeToExclude);
-
             return this;
         }
 
@@ -72,75 +79,104 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj)
+        internal string GetStringRepresentation(TOwner obj)
         {
-            serializedObjects = new HashSet<object>();
-            var objAsString = PrintToString(obj, 0);
-            serializedObjects.Clear();
+            serializingObjects = new HashStack<object>();
+            var objAsString = GetStringRepresentation(obj, 0);
+            serializingObjects.Clear();
             return objAsString;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string GetStringRepresentation(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return NullRepresentation;
 
-            if(serializedObjects.Contains(obj))
+            if (serializingObjects.Contains(obj))
                 throw new FormatException("Found circular reference. Please specify custom serialization for circular reference types." +
                                           $"Found object: {obj}, with type {obj.GetType()}");
+            serializingObjects.Push(obj);
 
-            serializedObjects.Add(obj);
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            if (TryGetPrimitiveTypesAsString(obj, out var primitiveAsString))
+                return primitiveAsString;
 
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
 
-            if (IsEnumerableType(type))
+            sb.Append(IsEnumerableType(type)
+                ? GetCollectionAsString(obj as IEnumerable, nestingLevel)
+                : GetClassAsString(type, obj, nestingLevel));
+
+            serializingObjects.Pop();
+            return sb.ToString();
+        }
+
+        private string GetCollectionAsString(IEnumerable collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var elementNumber = 0;
+            foreach (var enumerable in collection)
             {
-                var objAsEnumerable = (IEnumerable) obj;
-                var elementNumber = 0;
-                foreach (var enumerable in objAsEnumerable)
-                {
-                    sb.Append(identation + '\t' + elementNumber + " = " +
-                              PrintToString(enumerable, nestingLevel + 1));
-                    elementNumber++;
-                }
+                sb.Append(identation + '\t' + elementNumber + " = " +
+                          GetStringRepresentation(enumerable, nestingLevel + 1));
+                elementNumber++;
             }
-            else
+            return sb.ToString();
+        }
+
+        private string GetClassAsString(Type type, object obj, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            foreach (var propertyInfo in type.GetProperties())
             {
-                foreach (var propertyInfo in type.GetProperties())
+                if (!excludedProperties.Contains(propertyInfo) &&
+                    !excludedTypes.Contains(propertyInfo.PropertyType))
                 {
-                    if (!excludedProperties.Contains(propertyInfo) &&
-                        !excludedTypes.Contains(propertyInfo.PropertyType))
-                    {
-                        sb.Append(identation + propertyInfo.Name + " = " +
-                                  GetStringRepresentation(propertyInfo, obj, nestingLevel));
-                    }
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              GetPropertyAsString(propertyInfo, obj, nestingLevel));
                 }
             }
             return sb.ToString();
         }
 
-        private string GetStringRepresentation(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        private bool TryGetPrimitiveTypesAsString(object obj, out string valueAsString)
         {
+            var type = obj.GetType();
+            if (finalTypes.Contains(type))
+            {
+                if (customTypeRules.ContainsKey(type))
+                    valueAsString = customTypeRules[type](obj) + Environment.NewLine;
+                else if (defaultTypeRules.ContainsKey(type))
+                    valueAsString = defaultTypeRules[type](obj) + Environment.NewLine;
+                else
+                    valueAsString = obj + Environment.NewLine;
+                return true;
+            }
+            valueAsString = null;
+            return false;
+        }
+
+        private string GetPropertyAsString(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            var value = propertyInfo.GetValue(obj);
+
+            if (value == null)
+                return NullRepresentation;
+
             if (customPropertyRules.ContainsKey(propertyInfo))
-                return customPropertyRules[propertyInfo](propertyInfo.GetValue(obj));
+                return customPropertyRules[propertyInfo](value);
 
             if (customTypeRules.ContainsKey(propertyInfo.PropertyType))
-                return customTypeRules[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+                return customTypeRules[propertyInfo.PropertyType](value);
 
             if (defaultTypeRules.ContainsKey(propertyInfo.PropertyType))
-                return defaultTypeRules[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+                return defaultTypeRules[propertyInfo.PropertyType](value);
 
-            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return GetStringRepresentation(value, nestingLevel + 1);
         }
 
         private bool IsEnumerableType(Type type)
