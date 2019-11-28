@@ -1,127 +1,129 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
+    [TestFixture]
     public class ObjectPrinter_should
     {
         private static Person person;
+
         [SetUp]
         public void SetUp()
         {
             person = new Person();
         }
 
-
         [Test]
         public void PrintToString_WhenPersonWithoutArgument()
         {
             var result = person.PrintToString();
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = 0\r\n");
+            result.Should().Contain(person.GetType().Name).And.Contain(nameof(person.Id)).And
+                .Contain(nameof(person.Name)).And.Contain(nameof(person.Height)).And.Contain(nameof(person.Age));
         }
 
-        [TestCase("Name", 180, 60)]
+        [TestCase("NAME", 180, 60)]
         public void PrintToString_WhenPersonWithArgument(string name, int height, int age)
         {
             var guid = new Guid();
-            var person = new Person() { Id = guid, Name = name, Height = height, Age = age };
+            var person = new Person {Id = guid, Name = name, Height = height, Age = age};
             var result = person.PrintToString();
-            result.Should().Be($"Person\r\n	Id = Guid\r\n	Name = {name}\r\n	Height = {height}\r\n	Age = {age}\r\n");
+            result.Should().Contain(name).And.Contain(height.ToString()).And.Contain(age.ToString());
         }
 
         [Test]
         public void ObjectPrinter_For_WhenExcludingType()
         {
             var result = ObjectPrinter.For<Person>().Excluding<int>().PrintToString(person);
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n");
+            result.Should().NotContain("Age");
         }
 
         [Test]
         public void PrintToString_WhenExcludingType()
         {
-            var result = person.PrintToString(p => p.Excluding<int>());
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n");
+            var result = person.PrintToString(config => config.Excluding<int>());
+            result.Should().NotContain("Age");
         }
 
         [Test]
         public void ObjectPrinter_For_WhenExcludingProperty()
         {
             var result = ObjectPrinter.For<Person>().Excluding(p => p.Age).PrintToString(person);
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n");
+            result.Should().NotContain("Age");
         }
 
         [Test]
         public void PrintToString_WhenExcludingProperty()
         {
             var result = person.PrintToString(ser => ser.Excluding(p => p.Age));
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n");
+            result.Should().NotContain("Age");
         }
 
         [Test]
         public void ObjectPrinter_For_WhenAlternativePropertySerial()
         {
-            var result = ObjectPrinter.For<Person>().AlternativeFor(p => p.Age).Using(a => "{" + a + "}").PrintToString(person);
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = {0}\r\n");
+            var result = ObjectPrinter.For<Person>().AlternativeFor(p => p.Age).Using(prop => $"({prop})")
+                .PrintToString(person);
+            result.Should().Contain($"{nameof(person.Age)} = ({person.Age})");
         }
 
         [Test]
         public void PrintToString_WhenAlternativePropertySerial()
         {
-            var result = person.PrintToString(ser => ser.AlternativeFor(p => p.Age).Using(a => "{" + a + "}"));
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = {0}\r\n");
+            var result = person.PrintToString(ser => ser.AlternativeFor(p => p.Age).Using(prop => $"({prop})"));
+            result.Should().Contain($"{nameof(person.Age)} = ({person.Age})");
         }
 
         [Test]
         public void ObjectPrinter_For_WhenAlternativeTypeSerial()
         {
-            var result = ObjectPrinter.For<Person>().AlternativeFor<int>().Using(a => "{" + a + "}").PrintToString(person);
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = {0}\r\n");
+            var result = ObjectPrinter.For<Person>().AlternativeFor<int>().Using(prop => $"({prop})")
+                .PrintToString(person);
+            result.Should().Contain($"{nameof(person.Age)} = ({person.Age})");
         }
 
         [Test]
         public void PrintToString_WhenAlternativeTypeSerial()
         {
-            var result = person.PrintToString(ser => ser.AlternativeFor<int>().Using(a => "{" + a + "}"));
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = {0}\r\n");
+            var result = person.PrintToString(ser => ser.AlternativeFor<int>().Using(prop => $"({prop})"));
+            result.Should().Contain($"{nameof(person.Age)} = ({person.Age})");
         }
 
         [Test]
         public void ObjectPrinter_For_WhenTakeOnlySerial()
         {
-            person = new Person(){Name = "Name"};
+            person = new Person {Name = "Ivan"};
             var result = ObjectPrinter.For<Person>().AlternativeFor<string>().TakeOnly(1).PrintToString(person);
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = N\r\n	Height = 0\r\n	Age = 0\r\n");
+            result.Should().NotContain(person.Name).And.Contain($"{nameof(person.Name)} = {person.Name[0].ToString()}");
         }
 
         [Test]
         public void PrintToString_WhenTakeOnlySerial()
         {
-            person = new Person(){Name = "Name"};
+            person = new Person {Name = "Ivan"};
             var result = person.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1));
-            result.Should().Be("Person\r\n	Id = Guid\r\n	Name = N\r\n	Height = 0\r\n	Age = 0\r\n");
+            result.Should().NotContain(person.Name).And.Contain($"{nameof(person.Name)} = {person.Name[0].ToString()}");
         }
 
         [TestCase("en-GB", 50.5, "50.5")]
         [TestCase("ru-RU", 50.5, "50,5")]
         public void ObjectPrinter_For_WhenAlternativeCultureSerial(string culture, double height, string expectHeight)
         {
-            person = new Person { Height = height };
-            var result = ObjectPrinter.For<Person>().AlternativeFor<double>().Using(new CultureInfo(culture)).PrintToString(person);
-            result.Should().Be($"Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = {expectHeight}\r\n	Age = 0\r\n");
+            person = new Person {Height = height};
+            var result = ObjectPrinter.For<Person>().AlternativeFor<double>().Using(new CultureInfo(culture))
+                .PrintToString(person);
+            result.Should().Contain($"{nameof(person.Height)} = {expectHeight}");
         }
 
-        [TestCase("en-GB",50.5,"50.5")]
+        [TestCase("en-GB", 50.5, "50.5")]
         [TestCase("ru-RU", 50.5, "50,5")]
         public void PrintToString_WhenAlternativeCultureSerial(string culture, double height, string expectHeight)
         {
-            person = new Person { Height = height };
+            person = new Person {Height = height};
             var result = person.PrintToString(ser => ser.AlternativeFor<double>().Using(new CultureInfo(culture)));
-            result.Should().Be($"Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = {expectHeight}\r\n	Age = 0\r\n");
+            result.Should().Contain($"{nameof(person.Height)} = {expectHeight}");
         }
-
     }
 }
