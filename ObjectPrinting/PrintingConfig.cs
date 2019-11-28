@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Security.Policy;
 using System.Text;
 
@@ -19,7 +21,7 @@ namespace ObjectPrinting
             propertyPrintingFunctions = new Dictionary<string, Delegate>();
             propertyStringsLength = new Dictionary<string, int>();
         }
-        
+
         private readonly HashSet<Type> typeExclusions;
         private readonly HashSet<string> propertyExclusions;
         private readonly Dictionary<Type, Delegate> typePrintingFunctions;
@@ -31,6 +33,13 @@ namespace ObjectPrinting
         Dictionary<Type, CultureInfo> IPrintingConfig.TypeCultures => typeCultures;
         Dictionary<string, Delegate> IPrintingConfig.PropertyPrintingFunctions => propertyPrintingFunctions;
         Dictionary<string, int> IPrintingConfig.PropertyStringsLength => propertyStringsLength;
+        
+        private readonly Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(byte), typeof(short),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -60,51 +69,57 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private readonly Type[] finalTypes = new[]
+        private string MemberToString(object value, MemberInfo memberInfo, int nestingLevel, List<object> serializeObjects)
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
+            string valueString;
+            if (propertyPrintingFunctions.TryGetValue(memberInfo.Name, out var printingFunc)) 
+                valueString = (string) printingFunc.DynamicInvoke(value);
+            else
+                valueString = PrintToString(value, nestingLevel + 1, serializeObjects);
+            if (propertyStringsLength.TryGetValue(memberInfo.Name, out var length))
+                valueString = valueString.Substring(0, length);
+            return  new string('\t', nestingLevel + 1) + memberInfo.Name + " = " + valueString;
+        }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, List<object> serializeObjects = null)
         {
             if (obj == null)
                 return "null";
+            serializeObjects = serializeObjects ?? new List<object>();
 
             if (typePrintingFunctions.TryGetValue(obj.GetType(), out var printingFunc))
                 return (string) printingFunc.DynamicInvoke(obj);
+
+            if (typeCultures.TryGetValue(obj.GetType(), out  var cultureInfo) && obj is IFormattable formattable)
+                return formattable.ToString((string) null, cultureInfo);
             
             if (finalTypes.Contains(obj.GetType()))
-                if (typeCultures.TryGetValue(obj.GetType(), out  var cultureInfo))
-                    return Convert.ToString(obj, cultureInfo);
-                else
-                    return obj.ToString();
+                return obj.ToString();
 
-            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+            
+            if (serializeObjects.Any(obj1 => object.ReferenceEquals(obj, obj1)))
+                return type.Name;
+            serializeObjects.Add(obj);
+            
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            if (obj is IEnumerable iEnumerable)
             {
-                if (typeExclusions.Contains(propertyInfo.PropertyType) || propertyExclusions.Contains(propertyInfo.Name)) continue;
-                string valueString;
-                if (propertyPrintingFunctions.TryGetValue(propertyInfo.Name, out printingFunc))
-                    valueString = (string) printingFunc.DynamicInvoke(propertyInfo.GetValue(obj));
-                else
-                    valueString = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                if (propertyStringsLength.TryGetValue(propertyInfo.Name, out var length))
-                    valueString = valueString.Substring(0, length);
-                sb.AppendLine(indentation + propertyInfo.Name + " = " + valueString);
+                foreach (var i in iEnumerable)
+                    sb.AppendLine( new string('\t', nestingLevel + 1) + PrintToString(i, nestingLevel + 1, serializeObjects));
+                return sb.ToString();
             }
+
+            foreach (var propertyInfo in type.GetProperties())
+               if (!typeExclusions.Contains(propertyInfo.PropertyType) && !propertyExclusions.Contains(propertyInfo.Name))
+                    sb.AppendLine(MemberToString(propertyInfo.GetValue(obj), propertyInfo, nestingLevel, serializeObjects));
+            foreach (var fieldInfo in type.GetFields())
+                if ((obj.GetType().IsClass || !fieldInfo.IsStatic) && !typeExclusions.Contains(fieldInfo.FieldType) &&
+                    fieldInfo.IsPublic)
+                    sb.AppendLine(MemberToString(fieldInfo.GetValue(obj), fieldInfo, nestingLevel, serializeObjects));
             return sb.ToString();
         }
-    }
-
-    interface IPrintingConfig
-    {
-        Dictionary<Type, Delegate> TypePrintingFunctions { get; }
-        Dictionary<string, Delegate> PropertyPrintingFunctions { get; }
-        Dictionary<string, int> PropertyStringsLength { get; }
-        Dictionary<Type, CultureInfo> TypeCultures { get; }
     }
 }

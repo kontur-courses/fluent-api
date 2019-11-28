@@ -1,37 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-    public class A
-    {
-        public string X { get; set; }
-        public B B { get; set; }
-    }
-
-    public class B
-    {
-        public string Y { get; set; }
-        public string Z { get; set; }
-    }
-    
     [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    public class ObjectPrinterTests
     {
-        private Person person = new Person { Name = "Alex", Age = 19, Height = 1.85};
+        private Person person;
+        private A a;
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            person = new Person {Name = "Alex", Age = 19, Height = 1.85, Score = new List<int> {1, 2, 3, 4, 5}, Dictionary = new Dictionary<Person, string>()};
+            person.Dictionary.Add(new Person{Name = "Pasha"}, "123");
+            person.Dictionary.Add(new Person{Name = "Misha"}, "456");
+            person.Dictionary.Add(new Person {Name = "Dasha"}, "789");
+            person.Dictionary.Add(person, "09876");
+            a = new A {X = "xxx"};
+            var b = new B {Y = "yyy", A = a};
+            a.B = b;
+        }
+        
         [Test]
-        public void TuneSubobject()
+        public void TuneSubobjectExcluding()
         {
             var config = ObjectPrinter.For<A>()
-                .Excluding(a => a.B.Y); // should work
-            var obj = new A {X = "xxx", B = new B {Y = "yyy", Z = "zzz"}};
-
-            var str = config.PrintToString(obj);
-
-            Console.WriteLine(str);
+                .Excluding(a => a.B.Y);
+           
+            var str = config.PrintToString(a);
+            str.Should().NotContain("yyy");
+            str.Should().NotContain("Y");
         }
+        
+        [Test]
+        public void PrintingIEnumerable()
+        {
+            var str = person.PrintToString();
+            str.Should().Contain("1");
+            str.Should().Contain("2");
+            str.Should().Contain("3");
+            str.Should().Contain("4");
+            str.Should().Contain("5");
+        }
+        
+        
+        
         
         [Test]
         public void Demo()

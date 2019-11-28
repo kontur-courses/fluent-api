@@ -34,10 +34,4 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
         Expression<Func<TOwner, TPropType>>  IPropertyPrintingConfig<TOwner, TPropType>.MemberSelector => memberSelector;
     }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
-        Expression<Func<TOwner, TPropType>> MemberSelector { get; }
-    }
 }
