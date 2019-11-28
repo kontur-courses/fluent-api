@@ -78,8 +78,15 @@ namespace ObjectPrinting
             {
                 objString = obj + Environment.NewLine;
                 return true;
-            }
+            }          
 
+            objString = SerializeObjectContent(obj, nestingLevel);
+            return true;
+        }
+
+        private string SerializeObjectContent(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -107,36 +114,42 @@ namespace ObjectPrinting
                     }
                     else
                     {
-                        var members = type.GetProperties().Concat<MemberInfo>(type.GetFields()).ToArray();
-                        foreach (var member in members)
-                        {
-                            currentMemberPath.Push(member);
-
-                            if (propsExcluding.Any(item => IsObjectsBranchMatchesMembersChain(item)))
-                            {
-                                currentMemberPath.Pop();
-                                continue;
-                            }
-
-                            int propSerializerInd = propsSerializers.FindIndex(funcs => IsObjectsBranchMatchesMembersChain(funcs.MemberPath));
-                            if (propSerializerInd >= 0)
-                            {
-                                sb.Append($"{identation}{member.Name} = {propsSerializers[propSerializerInd].Serializer.Serialize(GetMemberObject(obj, member))}");
-                                currentMemberPath.Pop();
-                                continue;
-                            }
-
-                            if (TryPrintToString(GetMemberObject(obj, member), nestingLevel + 1, out string propString))
-                                sb.Append($"{identation}{member.Name} = {propString}");
-
-                            currentMemberPath.Pop();
-                        }
-                    } 
+                        SerializeObjectMembers(obj, nestingLevel, sb);
+                    }
                 }
             }
 
-            objString = sb.ToString();
-            return true;
+            return sb.ToString();
+        }
+
+        private void SerializeObjectMembers(object obj, int nestingLevel, StringBuilder sb)
+        {
+            var type = obj.GetType();
+            var identation = new string('\t', nestingLevel + 1);
+            var members = type.GetProperties().Concat<MemberInfo>(type.GetFields()).ToArray();
+            foreach (var member in members)
+            {
+                currentMemberPath.Push(member);
+
+                if (propsExcluding.Any(item => IsObjectsBranchMatchesMembersChain(item)))
+                {
+                    currentMemberPath.Pop();
+                    continue;
+                }
+
+                int propSerializerInd = propsSerializers.FindIndex(funcs => IsObjectsBranchMatchesMembersChain(funcs.MemberPath));
+                if (propSerializerInd >= 0)
+                {
+                    sb.Append($"{identation}{member.Name} = {propsSerializers[propSerializerInd].Serializer.Serialize(GetMemberObject(obj, member))}");
+                    currentMemberPath.Pop();
+                    continue;
+                }
+
+                if (TryPrintToString(GetMemberObject(obj, member), nestingLevel + 1, out string propString))
+                    sb.Append($"{identation}{member.Name} = {propString}");
+
+                currentMemberPath.Pop();
+            }
         }
 
         private object GetMemberObject(object owner, MemberInfo memberInfo)
