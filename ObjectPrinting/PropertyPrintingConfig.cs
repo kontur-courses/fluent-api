@@ -16,9 +16,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (printingConfig.lastProperty != null)
+            if (printingConfig.LastProperty != null)
             {
-                printingConfig.SetFuncForProperty(printingConfig.lastProperty, print);
+                printingConfig.SetFuncForProperty(printingConfig.LastProperty, print);
             }
             else
             {
@@ -30,7 +30,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            printingConfig.SetCultureInfoFor(typeof(TPropType), culture);
+            if (printingConfig.LastProperty != null)
+            {
+                printingConfig.SetCultureInfoForProperty(printingConfig.LastProperty, culture);
+            }
+            else 
+                printingConfig.SetCultureInfoFor(typeof(TPropType), culture);
             return printingConfig;
         }
 
