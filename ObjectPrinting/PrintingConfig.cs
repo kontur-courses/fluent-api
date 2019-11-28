@@ -27,7 +27,7 @@ namespace ObjectPrinting
 
         public ConcretePropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
+            var propertyInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
             return new ConcretePropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
         }
 
@@ -37,9 +37,17 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(settings.AddPropertyToIgnore(propertyInfo));
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             return new PrintingConfig<TOwner>(settings.AddTypeToIgnore(typeof(TPropType)));
+        }
+
+        public PrintingConfig<TOwner> SetNestingLevel(int nestingLevel)
+        {
+            if (nestingLevel < 0)
+                throw new ArgumentOutOfRangeException($"{nameof(nestingLevel)} {nestingLevel} was negative");
+
+            return new PrintingConfig<TOwner>(settings.SetNestingLevel(nestingLevel));
         }
 
         public string PrintToString(TOwner obj)
@@ -49,6 +57,7 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            CheckNestingLevel(nestingLevel);
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -67,7 +76,7 @@ namespace ObjectPrinting
                        Environment.NewLine;
             }
 
-            return PrintProperties(obj, nestingLevel);
+            return PrintMembers(obj, nestingLevel);
         }
 
         private bool IsFinalType(Type type)
@@ -80,18 +89,26 @@ namespace ObjectPrinting
             return finalTypes.Contains(type);
         }
 
-        private string PrintProperties(object obj, int nestingLevel)
+        private string PrintMembers(object obj, int nestingLevel)
         {
             var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
             var builder = new StringBuilder();
             builder.AppendLine(type.Name);
-            foreach (var propertyInfo in GetAllowedPropertiesForType(type))
-            {
-                var propertyValue = PrintProperty(obj, nestingLevel, propertyInfo);
-                builder.Append($"{indentation}{propertyInfo.Name} = {propertyValue}");
-            }
+
+            AddMembersToStringBuilder(GetAllowedPropertiesForType(type), info => PrintProperty(obj, nestingLevel, info),
+                indentation, builder);
+
+            AddMembersToStringBuilder(GetAllowedFieldForType(type),
+                info => PrintToString(info.GetValue(obj), nestingLevel + 1), indentation, builder);
+
             return builder.ToString();
+        }
+
+        private IEnumerable<FieldInfo> GetAllowedFieldForType(Type type)
+        {
+            return type.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                .Where(f => !settings.TypesToIgnore.Contains(f.GetType()));
         }
 
         private IEnumerable<PropertyInfo> GetAllowedPropertiesForType(Type type)
@@ -113,6 +130,17 @@ namespace ObjectPrinting
             return propertyValue;
         }
 
+        private void AddMembersToStringBuilder<TMember>(IEnumerable<TMember> members,
+            Func<TMember, string> print, string indentation, StringBuilder builder)
+        where TMember : MemberInfo
+        {
+            foreach (var member in members)
+            {
+                var memberValue = print(member);
+                builder.Append($"{indentation}{member.Name} = {memberValue}");
+            }
+        }
+
         private string PrintCollection(ICollection collection, int nestingLevel)
         {
             var builder = new StringBuilder();
@@ -124,6 +152,16 @@ namespace ObjectPrinting
 
             builder.Append("]");
             return builder.ToString();
+        }
+
+        private void CheckNestingLevel(int nestingLevel)
+        {
+            if (nestingLevel > settings.NestingLevel)
+            {
+                throw new InvalidOperationException(
+                    $@"{nameof(nestingLevel)} {nestingLevel} was more than configured {nameof(nestingLevel)} {settings.NestingLevel}
+                          possible due to cyclic reference, you can configure {nameof(nestingLevel)} by using {nameof(SetNestingLevel)}");
+            }
         }
     }
 }

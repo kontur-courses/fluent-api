@@ -16,7 +16,7 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Age = 20, Height = 170.5, Name = "Alex", Surname = "Johnson"};
+            person = new Person {Age = 20, Height = 170.5, Name = "Alex", Surname = "Johnson", University = "UrFU"};
         }
 
 
@@ -231,7 +231,6 @@ namespace ObjectPrinting.Tests
                 Friends = new[] {"Alex", "Bob"},
                 Age = 22
             };
-
             var printer = ObjectPrinter.For<object>();
 
             var result = printer.PrintToString(obj);
@@ -240,6 +239,42 @@ namespace ObjectPrinting.Tests
             {
                 result.Should().Contain(friend);
             }
+        }
+
+        [Test]
+        public void PrintToString_ShouldThrow_OnObjectWithCyclicReference()
+        {
+            var newPerson = new Person {Age = 20, Name = "Bob"};
+            newPerson.Child = newPerson;
+            var printer = ObjectPrinter.For<Person>();
+
+            Action printToString = () => printer.PrintToString(newPerson);
+
+            printToString.Should().ThrowExactly<InvalidOperationException>();
+        }
+
+        [Test]
+        public void PrintToString_ShouldThrow_WhenObjectNestingLevelIsMoreThanConfigured()
+        {
+            var newPerson = new Person {Age = 20, Name = "Bob", Child = person};
+            var printer = ObjectPrinter.For<Person>()
+                .SetNestingLevel(1);
+
+            Action printToString = () => printer.PrintToString(newPerson);
+
+            printToString.Should().ThrowExactly<InvalidOperationException>();
+        }
+
+        [Test]
+        public void PrintToString_ShouldSerializeFields()
+        {
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.PrintToString(person)
+                .Should()
+                .Contain(person.University)
+                .And
+                .Contain(nameof(person.University));
         }
     }
 }

@@ -13,6 +13,7 @@ namespace ObjectPrinting
         public ImmutableDictionary<PropertyInfo, Func<object, string>> WaysToSerializeProperties { get; }
         public ImmutableDictionary<PropertyInfo, int> MaxLengthsOfProperties { get; }
         public ImmutableHashSet<PropertyInfo> PropertiesToIgnore { get; }
+        public int NestingLevel { get; }
 
         public PrintingConfigSettings()
         {
@@ -22,6 +23,7 @@ namespace ObjectPrinting
             WaysToSerializeProperties = ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
             MaxLengthsOfProperties = ImmutableDictionary<PropertyInfo, int>.Empty;
             PropertiesToIgnore = ImmutableHashSet<PropertyInfo>.Empty;
+            NestingLevel = 10;
         }
 
         public PrintingConfigSettings(ImmutableHashSet<Type> typesToIgnore,
@@ -29,7 +31,8 @@ namespace ObjectPrinting
             ImmutableDictionary<Type, CultureInfo> typesCultures,
             ImmutableDictionary<PropertyInfo, Func<object, string>> waysToSerializeProperties,
             ImmutableDictionary<PropertyInfo, int> maxLengthsOfProperties,
-            ImmutableHashSet<PropertyInfo> propertiesToIgnore)
+            ImmutableHashSet<PropertyInfo> propertiesToIgnore,
+            int nestingLevel)
         {
             TypesToIgnore = typesToIgnore;
             WaysToSerializeTypes = waysToSerializeTypes;
@@ -37,12 +40,13 @@ namespace ObjectPrinting
             WaysToSerializeProperties = waysToSerializeProperties;
             MaxLengthsOfProperties = maxLengthsOfProperties;
             PropertiesToIgnore = propertiesToIgnore;
+            NestingLevel = nestingLevel;
         }
 
         public PrintingConfigSettings AddTypeToIgnore(Type type)
         {
             return new PrintingConfigSettings(TypesToIgnore.Add(type), WaysToSerializeTypes, TypesCultures,
-                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore);
+                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore, NestingLevel);
         }
 
         public PrintingConfigSettings AddWayToSerializeType(Type type, Func<object, string> print)
@@ -50,31 +54,39 @@ namespace ObjectPrinting
             return new PrintingConfigSettings(TypesToIgnore,
                 WaysToSerializeTypes.Add(type, print), TypesCultures,
                 WaysToSerializeProperties,
-                MaxLengthsOfProperties, PropertiesToIgnore);
+                MaxLengthsOfProperties, PropertiesToIgnore, NestingLevel);
         }
 
         public PrintingConfigSettings AddTypeCulture(Type type, CultureInfo cultureInfo)
         {
             return new PrintingConfigSettings(TypesToIgnore, WaysToSerializeTypes, TypesCultures.Add(type, cultureInfo),
-                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore);
+                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore, NestingLevel);
         }
 
         public PrintingConfigSettings AddWayToSerializeProperty(PropertyInfo propertyInfo, Func<object, string> print)
         {
             return new PrintingConfigSettings(TypesToIgnore, WaysToSerializeTypes, TypesCultures,
-                WaysToSerializeProperties.Add(propertyInfo, print), MaxLengthsOfProperties, PropertiesToIgnore);
+                WaysToSerializeProperties.Add(propertyInfo, print), MaxLengthsOfProperties, PropertiesToIgnore,
+                NestingLevel);
         }
 
         public PrintingConfigSettings AddMaxLengthOfProperty(PropertyInfo propertyInfo, int maxLength)
         {
             return new PrintingConfigSettings(TypesToIgnore, WaysToSerializeTypes, TypesCultures,
-                WaysToSerializeProperties, MaxLengthsOfProperties.Add(propertyInfo, maxLength), PropertiesToIgnore);
+                WaysToSerializeProperties, MaxLengthsOfProperties.Add(propertyInfo, maxLength), PropertiesToIgnore,
+                NestingLevel);
         }
 
         public PrintingConfigSettings AddPropertyToIgnore(PropertyInfo propertyInfo)
         {
             return new PrintingConfigSettings(TypesToIgnore, WaysToSerializeTypes, TypesCultures,
-                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore.Add(propertyInfo));
+                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore.Add(propertyInfo), NestingLevel);
+        }
+
+        public PrintingConfigSettings SetNestingLevel(int nestingLevel)
+        {
+            return new PrintingConfigSettings(TypesToIgnore, WaysToSerializeTypes, TypesCultures,
+                WaysToSerializeProperties, MaxLengthsOfProperties, PropertiesToIgnore, nestingLevel);
         }
     }
 }
