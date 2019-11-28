@@ -13,17 +13,18 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string lastProperty;
+        public string LastProperty { get; private set;  }
         private HashSet<Type> excludedTypes = new HashSet<Type>();
         private Dictionary<Type, Delegate> typeFuncs = new Dictionary<Type, Delegate>();
         private Dictionary<Type, CultureInfo> cultureInfos = new Dictionary<Type, CultureInfo>();
         private Dictionary<string, Delegate> propertyFuncs = new Dictionary<string, Delegate>();
         private HashSet<string> excludedProperties = new HashSet<string>();
+        private Dictionary<string, CultureInfo> propertyCultures = new Dictionary<string, CultureInfo>();
         private Stack<object> nestingStack = new Stack<object>();
-        
-        public void SetFuncFor(Type type, Delegate pr)
+
+        public void SetFuncFor(Type type, Delegate func)
         {
-            typeFuncs[type] = pr;
+            typeFuncs[type] = func;
         }
         
         public void SetCultureInfoFor(Type type, CultureInfo ci)
@@ -34,7 +35,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
@@ -52,31 +52,27 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            if(nestingLevel==0)
-                nestingStack.Push(obj);
+            nestingStack.Push(obj);
+            if (obj is IEnumerable)
+            {
+                foreach (var item in (IEnumerable)obj)
+                {
+                    sb.Append(PrintToString(item, nestingLevel + 1));
+                }
+                return sb.ToString();
+            }
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo.Name))
                     continue;
                 string str;
-
                 if (nestingStack.Contains(propertyInfo.GetValue(obj)))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              "circle reference");
+                              "circle reference"+Environment.NewLine);
                     continue; 
                 }
-
-                if (obj is IEnumerable)
-                {
-                    var sbList = new StringBuilder();
-                    foreach (var item in (IEnumerable)obj)
-                    {
-                        sbList.Append(PrintToString(item, nestingLevel + 1));
-                    }
-                    sb.Append(sbList);
-                    break;
-                }
+                
 
                 if (!TryGetString(propertyInfo, out str, obj))
                 {
@@ -85,7 +81,6 @@ namespace ObjectPrinting
                 }
                 sb.Append(identation + propertyInfo.Name + " = " +
                           str);
-                nestingStack.Push(propertyInfo.GetValue(obj));
             }
             
             if(nestingStack.Count != 0)
@@ -107,6 +102,12 @@ namespace ObjectPrinting
                 str = typeFuncs[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine;
                 return true;
             }
+            if (propertyCultures.ContainsKey(propertyInfo.Name))
+            {
+                var pc = propertyCultures[propertyInfo.Name];
+                str = ((IFormattable)propertyInfo.GetValue(obj)).ToString( null, pc) + Environment.NewLine;
+                return true;
+            }
             if (cultureInfos.ContainsKey(propertyInfo.PropertyType))
             {
                 var ci = cultureInfos[propertyInfo.PropertyType];
@@ -126,14 +127,20 @@ namespace ObjectPrinting
         {
             var expression = (MemberExpression)memberSelector.Body;
             string name = expression.Member.Name;
-            this.lastProperty = name;
+            this.LastProperty = name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public void SetFuncForProperty<TPropType>(string name, Func<TPropType, string> compile)
+        public void SetFuncForProperty<TPropType>(string name, Func<TPropType, string> func)
         {
-            propertyFuncs[name] = compile;
-            lastProperty = null;
+            propertyFuncs[name] = func;
+            LastProperty = null;
+        }
+        
+        public void SetCultureInfoForProperty(string name, CultureInfo ci)
+        {
+            propertyCultures[name] = ci;
+            LastProperty = null;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)

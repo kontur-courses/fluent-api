@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -26,26 +27,34 @@ namespace ObjectPrinting.Tests
         public void ObjPrinter_ExcludingType_ShouldNotThrowExceptions()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Excluding<string>();
-            string s1 = printer.PrintToString(person);
-            Console.WriteLine(s1);
+                .Excluding<Guid>();
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().NotContain("Guid");
+            Console.WriteLine(res);
         }
         
         [Test]
-        public void StandartObjectPrinter_ShouldNotWorkExceptions()
+        public void StandartObjectPrinter_ShouldNotThrowExceptions()
         {
             var printer = ObjectPrinter.For<Person>();
-            string s1 = printer.PrintToString(person);
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            Console.WriteLine(res);
         }
         
         [Test]
-        public void ObjPrinter_UsingFormatType_ShouldNotThrowExceptions()
+        public void ObjPrinter_UsingFormatType_ShouldNotThrowExceptions_And_WorkCorrect()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>().Using(x => String.Format("{0} : {1}", x, x.Length));
-            string s1 = printer.PrintToString(person);
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().Contain($"{person.Name} : {person.Name.Length}");
+            Console.WriteLine(res);
         }
         
         [Test]
@@ -55,10 +64,14 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(CultureInfo.GetCultureInfo("en-US"));
             var printer2 = ObjectPrinter.For<Person>()
                     .Printing<double>().Using(CultureInfo.GetCultureInfo("de-DE"));
-            string s1 = printer1.PrintToString(person);
-            string s2 = printer2.PrintToString(person);
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
+            var res1 = "";
+            var res2 = "";
+            Action act1 =  () => res1= printer1.PrintToString(person);
+            Action  act2 = () => res2 = printer2.PrintToString(person);
+            act1.Should().NotThrow();
+            act2.Should().NotThrow();
+            Console.WriteLine(res1);
+            Console.WriteLine(res2);
         }
         
         [Test]
@@ -66,31 +79,50 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                     .Printing(x => x.Name).Using(x => String.Format("{0} : {1}", x, x.Length+"ababa"));
-            string s1 = printer.PrintToString(person);
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = ()  => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().Contain($" {person.Name} : {person.Name.Length}ababa");
+            Console.WriteLine(res);
         }
         
         [Test]
-        public void ObjPrinter_Excluding_WorksCorrect()
+        public void ObjPrinter_UsingCultureInfoForProperty_ShouldNotThrowExceptions_And_WorkCorrect()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Height).Using(CultureInfo.GetCultureInfo("en-US"));
+            person.Money = 1.228;
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().Contain($"Height = {person.Height.ToString(null, CultureInfo.GetCultureInfo("en-US"))}")
+                .And.Contain($"Money = {person.Money}");
+            Console.WriteLine(res);
+        }
+        
+        [Test]
+        public void ObjPrinter_ExcludingChain_WorksCorrect()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<string>()
                 .Printing(x => x.Name).TrimmedToLength(3);
 
             string s1 = printer.PrintToString(person);
-            
+            s1.Should().NotContain("Name");
             Console.WriteLine(s1);
         }
         
         [Test]
-        public void ObjPrinter_Trim_ShouldNotThrowExceptions()
+        public void ObjPrinter_Trim_ShouldNotThrowExceptions_And_WorksCorrect()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(x => x.Name).TrimmedToLength(3);
-
-            string s1 = printer.PrintToString(person);
-            
-            Console.WriteLine(s1);
+                .Printing(x => x.Name).TrimmedToLength(person.Name.Length-1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().Contain($"{person.Name.Substring(0,person.Name.Length-1)}")
+                .And.NotContain($"{person.Name}");
+            Console.WriteLine(res);
         }
         
         [Test]
@@ -99,9 +131,11 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(x => x.Name);
 
-            string s1 = printer.PrintToString(person);
-            
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().NotContain("Name");
+            Console.WriteLine(res);
         }
         
         [Test]
@@ -109,9 +143,10 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<List<Person>>();
             var lp = new List<Person> {person, person};
-            string s1 = printer.PrintToString(lp);
-            
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(lp);
+            act.Should().NotThrow();
+            Console.WriteLine(res);
         }
         
         [Test]
@@ -121,10 +156,26 @@ namespace ObjectPrinting.Tests
             var first = new TestClass(){ number = 1, Parent = null };
             var second = new TestClass(){ number = 2, Parent = first };
             first.Parent = second;
-            
-            string s1 = printer.PrintToString(first);
-            
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(first);
+            act.Should().NotThrow();
+            Console.WriteLine(res);
+        }
+        
+        [Test]
+        public void ObjPrinter_CircleReferenceList_ShouldNotThrowExceptions()
+        {
+            var printer = ObjectPrinter.For<List<TestClass>>();
+            var first = new TestClass(){ number = 1, Parent = null };
+            var second = new TestClass(){ number = 2, Parent = first };
+            first.Parent = second;
+
+            var res = new List<TestClass>() {first, second};
+            string print = "";
+            Action act = () =>  print = printer.PrintToString(res);
+
+            act.Should().NotThrow();
+            Console.WriteLine(print);
         }
         
         [Test]
