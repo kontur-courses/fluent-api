@@ -58,7 +58,7 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> SetElementFormat<TOwner, TKey, TValue>(
             this PropertyPrintingConfig<TOwner, Dictionary<TKey, TValue>> config,
-            Func<(TKey, TValue), string> serializationFunc)
+            Func<KeyValuePair<TKey, TValue>, string> serializationFunc)
         {
             return SetElementFormat(config, typeof(Dictionary<TKey, TValue>), serializationFunc);
         }

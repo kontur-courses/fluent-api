@@ -301,7 +301,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void SetElementFormat_ForPropertyArray()
+        public void SetElementFormat_ForArrayProperty()
         {
             var numbers = new Numbers { Values = new int[] { 1, 2, 3, 4 } };
             var expectedFormat =
@@ -314,6 +314,25 @@ namespace ObjectPrintingTests
             var resultFormat = numbers.ConfigureFormat()
                 .ForProperty(n => n.Values)
                     .SetElementFormat(val => $"{-1*val} ")
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void SetElementFormat_ForArray()
+        {
+            var numbers = new Numbers { Values = new int[] { 1, 2, 3, 4 } };
+            var expectedFormat =
+                $"Numbers"                          + Environment.NewLine +
+                $"\tValues = {-numbers.Values[0]} " +
+                $"{-numbers.Values[1]} "            +
+                $"{-numbers.Values[2]} "            +
+                $"{-numbers.Values[3]} ";
+
+            var resultFormat = numbers.ConfigureFormat()
+                .ForProperty<int[]>()
+                    .SetElementFormat(val => $"{-1 * val} ")
                 .Print();
 
             resultFormat.Should().BeEquivalentTo(expectedFormat);
@@ -354,6 +373,22 @@ namespace ObjectPrintingTests
                 "\t\tValue = 13"                + Environment.NewLine;
 
             var resultFormat = roster.Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
+        public void SetElementFormat_ForDictionary()
+        {
+            var entries = new Dictionary<string, int>();
+            entries.Add("Andrew", 19);
+            entries.Add("Andrew Jr", 13);
+            var expectedFormat = "Andrew: 19 Andrew Jr: 13 ";
+
+            var resultFormat = entries.ConfigureFormat()
+                .ForProperty<Dictionary<string, int>>()
+                    .SetElementFormat((pair) => $"{pair.Key}: {pair.Value} ")
+                 .Print();
 
             resultFormat.Should().BeEquivalentTo(expectedFormat);
         }
