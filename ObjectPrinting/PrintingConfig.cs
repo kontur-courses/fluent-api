@@ -16,8 +16,12 @@ namespace ObjectPrinting
         private readonly List<(Stack<MemberInfo> MemberPath, IPropertySerializingConfig<TOwner> Serializer)> propsSerializers = new List<(Stack<MemberInfo>, IPropertySerializingConfig<TOwner>)>();
         private readonly Dictionary<object, int> printedObjects = new Dictionary<object, int>();
         private int maxNestingLevel = 1000;
-        private readonly object ownerObject = null;
+        private object ownerObject = null;
         private readonly Stack<MemberInfo> currentMemberPath = new Stack<MemberInfo>();
+
+        public PrintingConfig()
+        {
+        }
 
         public PrintingConfig(TOwner obj)
         {
@@ -30,6 +34,12 @@ namespace ObjectPrinting
             currentMemberPath.Clear();
             TryPrintToString(ownerObject, 0, out var objString);
             return objString;
+        }
+
+        public string PrintToString(TOwner obj)
+        {
+            ownerObject = obj;
+            return PrintToString();
         }
 
         private bool TryPrintToString(object obj, int nestingLevel, out string objString)
