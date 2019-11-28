@@ -17,6 +17,7 @@ namespace ObjectPrinting
             new Dictionary<Type, Func<object, string>>();
         private readonly Dictionary<PropertyInfo, Func<object, string>> specialPrintingFunctionsForProperties =
             new Dictionary<PropertyInfo, Func<object, string>>();
+        private readonly Dictionary<object, int> objectsLevels = new Dictionary<object, int>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -51,6 +52,7 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+            objectsLevels[obj] = nestingLevel;
             return TryToPrintType(obj) ?? PrintProperties(obj, nestingLevel);
         }
 
@@ -81,16 +83,19 @@ namespace ObjectPrinting
             {
                 if (excludedProperties.Contains(propertyInfo))
                     continue;
-                if (specialPrintingFunctionsForProperties.ContainsKey(propertyInfo))
+                var name = propertyInfo.Name;
+                var value = propertyInfo.GetValue(obj);
+                if (objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
+                    sb.Append(indentation + name + " contains cyclic reference");
+                else if (specialPrintingFunctionsForProperties.ContainsKey(propertyInfo))
                 {
                     sb.Append(indentation +
-                              specialPrintingFunctionsForProperties[propertyInfo](propertyInfo.GetValue(obj)));
+                              specialPrintingFunctionsForProperties[propertyInfo](value));
                 }
                 else
                 {
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
+                    sb.Append(indentation + name + " = " +
+                              PrintToString(value, nestingLevel + 1));
                 }
             }
             return sb.ToString();

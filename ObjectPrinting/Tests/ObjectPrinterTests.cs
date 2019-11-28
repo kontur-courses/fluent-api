@@ -104,5 +104,17 @@ namespace ObjectPrinting.Tests
 
             result.Should().Be(expectedResult);
         }
+
+        [Test]
+        public void PrintToString_ShouldCorrectlyProcessCyclicReferences()
+        {
+            var person1 = new Person {Name = "Alice"};
+            var person2 = new Person { Name = "Bob", Partner = person1};
+            person1.Partner = person2;
+
+            var result = person1.PrintToString();
+
+            result.Should().Contain("Partner contains cyclic reference");
+        }
     }
 }
