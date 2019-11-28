@@ -5,7 +5,7 @@ namespace ObjectPrinting
 {
     public interface IPrintingConfig
     {
-        Dictionary<Type, Func<object, string>> PrintingFunctionsByType { get; }
-        Dictionary<string, Func<object, string>> PrintingFunctionsByName { get; }
+        Dictionary<Type, Delegate> PrintingFunctionsByType { get; }
+        Dictionary<string, Delegate> PrintingFunctionsByName { get; }
     }
 }

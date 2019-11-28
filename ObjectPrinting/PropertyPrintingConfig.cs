@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using ObjectPrinting.Solved;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -28,7 +28,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             ((IPrintingConfig) printingConfig).PrintingFunctionsByType.Add(typeof(TPropType),
-                obj => ((double) obj).ToString(culture));
+                new Func<TPropType, string>(obj => Convert.ToString(obj, culture)));
             return printingConfig;
         }
     }

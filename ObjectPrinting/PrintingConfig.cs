@@ -13,11 +13,11 @@ namespace ObjectPrinting
         private readonly HashSet<Type> typeBlackList = new HashSet<Type>();
         private readonly HashSet<string> nameBlackList = new HashSet<string>();
 
-        private readonly Dictionary<Type, Func<object, string>> PrintingFunctionsByType =
-            new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<Type, Delegate> printingFunctionsByType =
+            new Dictionary<Type, Delegate>();
 
-        private readonly Dictionary<string, Func<object, string>> PrintingFunctionsByName =
-            new Dictionary<string, Func<object, string>>();
+        private readonly Dictionary<string, Delegate> printingFunctionsByName =
+            new Dictionary<string, Delegate>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -30,7 +30,7 @@ namespace ObjectPrinting
             if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
                 throw new Exception();
             var expr = memberSelector.Body as MemberExpression;
-            var name = expr.Member.DeclaringType.FullName + "." + expr.Member.Name;
+            var name = expr?.Member.DeclaringType?.FullName + "." + expr?.Member.Name;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, name);
         }
 
@@ -39,12 +39,12 @@ namespace ObjectPrinting
             if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
                 throw new Exception();
             var expr = memberSelector.Body as MemberExpression;
-            var name = expr.Member.DeclaringType.FullName + "." + expr.Member.Name;
+            var name = expr?.Member.DeclaringType?.FullName + "." + expr?.Member.Name;
             nameBlackList.Add(name);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             foreach (var property in typeof(TOwner).GetProperties())
             {
@@ -63,37 +63,69 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, PropertyInfo property)
         {
-            if (nestingLevel > 10) return "Max nesting level";
+            var indentation = new string('\t', nestingLevel + 1);
+            if (nestingLevel > 10) return indentation + "Max nesting level";
             var sb = new StringBuilder();
             if (obj == null)
                 return "null" + Environment.NewLine;
-            sb.Append(TryPrintingFunctionByType(obj, out var specialPrintingFunctionsResult)
-                ? specialPrintingFunctionsResult
-                : TryPrintingFunctionByName(obj, property, out specialPrintingFunctionsResult)
-                    ? specialPrintingFunctionsResult
-                    : PrintAsUsual(obj,
-                        nestingLevel));
+
+            if (IsElementInBlackList(obj))
+                return sb.ToString();
+            if (obj is ICollection collection)
+                return PrintCollection(obj, collection, nestingLevel, property);
+
+            var stringToAppend = string.Empty;
+            if (NeedToPrintWithNameFunction(property))
+                stringToAppend = PrintUsingNameFunction(obj, property);
+            if (NeedToPrintWithTypeFunction(obj))
+                stringToAppend = PrintUsingTypeFunction(obj);
+            if (!NeedToPrintWithNameFunction(property) && !NeedToPrintWithTypeFunction(obj))
+                stringToAppend = PrintAsUsual(obj, nestingLevel);
+            sb.Append(stringToAppend);
             return sb.ToString();
         }
 
-        private bool TryPrintingFunctionByType(object obj, out string specialPrintingFunctionsResult)
+        private string PrintCollection(object obj, IEnumerable collection, int nestingLevel, PropertyInfo property)
         {
-            specialPrintingFunctionsResult = string.Empty;
-            if (!PrintingFunctionsByType.ContainsKey(obj.GetType())) return false;
-            specialPrintingFunctionsResult = PrintingFunctionsByType[obj.GetType()](obj);
-            return true;
+            var sb = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            sb.Append(obj.GetType().Name + "\r\n");
+            foreach (var element in collection)
+                sb.Append(indentation + PrintToString(element, nestingLevel + 1, property));
+            return sb.ToString();
         }
 
-        private bool TryPrintingFunctionByName(object obj, PropertyInfo property,
-            out string specialPrintingFunctionsResult)
+        private bool IsElementInBlackList(object obj)
         {
-            specialPrintingFunctionsResult = string.Empty;
-            if (property == null) return false;
-            if (!PrintingFunctionsByName.ContainsKey(property.DeclaringType.FullName + "." + property.Name))
-                return false;
-            specialPrintingFunctionsResult =
-                PrintingFunctionsByName[property.DeclaringType.FullName + "." + property.Name](obj);
-            return true;
+            var property = obj as PropertyInfo;
+            return
+                typeBlackList.Contains(property?.PropertyType) ||
+                nameBlackList.Contains(property?.DeclaringType?.FullName + "." + property?.Name);
+        }
+
+        private bool NeedToPrintWithTypeFunction(object obj)
+        {
+            return printingFunctionsByType.ContainsKey(obj.GetType());
+        }
+
+        private bool NeedToPrintWithNameFunction(PropertyInfo property)
+        {
+            return property != null &&
+                   printingFunctionsByName.ContainsKey(property.DeclaringType?.FullName + "." + property.Name);
+        }
+
+        private string PrintUsingTypeFunction(object obj)
+        {
+            return printingFunctionsByType[obj.GetType()]
+                .DynamicInvoke(obj)
+                .ToString();
+        }
+
+        private string PrintUsingNameFunction(object obj, PropertyInfo property)
+        {
+            return printingFunctionsByName[property.DeclaringType?.FullName + "." + property.Name]
+                .DynamicInvoke(obj)
+                .ToString();
         }
 
         private string PrintAsUsual(object obj, int nestingLevel)
@@ -107,40 +139,25 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (propertyInfo.Name.Equals("SyncRoot")) continue;
-                if (!typeBlackList.Contains(propertyInfo.PropertyType) &&
-                    !nameBlackList.Contains(propertyInfo.DeclaringType.FullName + "." + propertyInfo.Name))
-                    sb.Append(identation + propertyInfo.Name + " = " +
+                if (!IsElementInBlackList(propertyInfo))
+                    sb.Append(indentation + propertyInfo.Name + " = " +
                               PrintToString(propertyInfo.GetValue(obj),
                                   nestingLevel + 1, propertyInfo));
             }
 
-            sb.Append(PrintInnerElementsIfEnumerable(obj, nestingLevel));
-
             return sb.ToString();
         }
 
-        private string PrintInnerElementsIfEnumerable(object obj, int nestingLevel)
-        {
-            if (!(obj is ICollection enumerable)) return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
-            sb.Append(identation + "Children: ");
-            foreach (var element in enumerable)
-                sb.Append(identation + PrintToString(element, nestingLevel, null));
+        Dictionary<Type, Delegate> IPrintingConfig.PrintingFunctionsByType =>
+            printingFunctionsByType;
 
-            return sb.ToString();
-        }
-
-        Dictionary<Type, Func<object, string>> IPrintingConfig.PrintingFunctionsByType =>
-            PrintingFunctionsByType;
-
-        Dictionary<string, Func<object, string>> IPrintingConfig.PrintingFunctionsByName =>
-            PrintingFunctionsByName;
+        Dictionary<string, Delegate> IPrintingConfig.PrintingFunctionsByName =>
+            printingFunctionsByName;
     }
 }

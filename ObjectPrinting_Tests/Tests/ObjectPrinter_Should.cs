@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
 using ObjectPrinting.Solved;
-using ObjectPrinting.Solved.Tests;
+using ObjectPrinting.Tests;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting_Tests.Tests
 {
     public class ObjectPrinter_Should
     {
@@ -131,10 +130,9 @@ namespace ObjectPrinting.Tests
                 .PrintToString(persons)
                 .Should()
                 .Be(
-                    "Person[]\r\n	Length = 2\r\n	LongLength = Int64\r\n	Rank = 1\r\n	" +
-                    "IsReadOnly = Boolean\r\n	IsFixedSize = Boolean\r\n	IsSynchronized = Boolean\r\n	Children: 	" +
-                    "Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 7\r\n	Age = 19\r\n	Person\r\n	Id = Guid\r\n	" +
-                    "Name = Alexandr\r\n	Height = 7,1\r\n	Age = 20\r\n");
+                    "Person[]\r\n	Person\r\n		Id = Guid\r\n		Name = Alex\r\n		" +
+                    "Height = 7\r\n		Age = 19\r\n	Person\r\n		Id = Guid\r\n		Name = Alexandr\r\n" +
+                    "		Height = 7,1\r\n		Age = 20\r\n");
         }
 
         [Test]
@@ -145,9 +143,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(array)
                 .Should()
                 .Be(
-                    "String[]\r\n	Length = 5\r\n	LongLength = Int64\r\n	Rank = 1\r\n	IsReadOnly = Boolean\r\n	" +
-                    "IsFixedSize = Boolean\r\n	IsSynchronized = Boolean\r\n	" +
-                    "Children: 	Child1\r\n	Child2\r\n	Child3\r\n	Child4\r\n	Child5\r\n");
+                    "String[]\r\n	Child1\r\n	Child2\r\n	Child3\r\n	Child4\r\n	Child5\r\n");
         }
 
         [Test]
@@ -166,10 +162,63 @@ namespace ObjectPrinting.Tests
                 .Using(a => Convert.ToString(a, 2))
                 .PrintToString(persons)
                 .Should()
-                .Be("Person[]\r\n	Length = 10	LongLength = Int64\r\n	Rank = 1	" +
-                    "IsReadOnly = Boolean\r\n	IsFixedSize = Boolean\r\n	IsSynchronized = Boolean\r\n	" +
-                    "Children: 	Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 7	Age = 10011	Person\r\n	" +
-                    "Id = Guid\r\n	Name = Alexandr\r\n	Height = 7,1	Age = 10100");
+                .Be(
+                    "Person[]\r\n	Person\r\n		Id = Guid\r\n		Name = Alex\r\n		" +
+                    "Height = 7		Age = 10011	Person\r\n		Id = Guid\r\n		" +
+                    "Name = Alexandr\r\n		Height = 7,1		Age = 10100");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintLists()
+        {
+            var list = new List<Person>
+            {
+                new Person {Name = "Alex", Age = 19, Height = 7.0},
+                new Person {Name = "Alexandr", Age = 20, Height = 7.1}
+            };
+            ObjectPrinter
+                .For<List<Person>>()
+                .PrintToString(list)
+                .Should()
+                .Be("List`1\r\n	Person\r\n		Id = Guid\r\n		Name = Alex\r\n" +
+                    "		Height = 7\r\n		Age = 19\r\n	Person\r\n		Id = Guid\r\n" +
+                    "		Name = Alexandr\r\n		Height = 7,1\r\n		Age = 20\r\n");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintTypeAndNameFunctions()
+        {
+            var person = new Person {Name = "Alex", Age = 19, Height = 7.1};
+            ObjectPrinter
+                .For<Person>()
+                .Printing(a => a.Age)
+                .Using(a => "integer1")
+                .Printing<int>()
+                .Using(a => "integer2")
+                .PrintToString(person).Should()
+                .Be("Person\r\n	Id = Guid\r\n	Name = Alex\r\n	Height = 7,1\r\n	Age = integer2");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldWorkOnCyclicReferences()
+        {
+            var obj1 = new CyclicReferenceClass
+            {
+                Name = "first",
+                Number = 1
+            };
+            obj1.AnotherClass = new CyclicReferenceClass
+            {
+                AnotherClass = obj1,
+                Name = "second",
+                Number = 2
+            };
+            Action action = () => ObjectPrinter
+                .For<CyclicReferenceClass>()
+                .Printing<int>()
+                .Using(a => (a + 123).ToString())
+                .PrintToString(obj1);
+            action.Should().NotThrow<StackOverflowException>();
         }
     }
 }

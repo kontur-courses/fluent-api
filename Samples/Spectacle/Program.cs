@@ -12,7 +12,7 @@ namespace SpectacleSample
                 .Delay(TimeSpan.FromSeconds(1))
                 .UntilKeyPressed(s =>
                     s.TypeText("тра-ля-ля")
-                    .TypeText("тру-лю-лю")
+                        .TypeText("тру-лю-лю")
                 )
                 .Say("Пока-пока!");
 
