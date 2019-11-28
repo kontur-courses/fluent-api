@@ -44,52 +44,47 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, HashSet<object> viewedObjects)
         {
+            if (obj == null)
+            {
+                return "null" + Environment.NewLine;
+            }
             if (TryGetString(obj, nestingLevel, viewedObjects, out var resultString))
             {
                 return resultString;
             }
-            var type = obj.GetType();
+            var typeCurrentObject = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            sb.AppendLine(typeCurrentObject.Name);
+            foreach (var propertyInfo in typeCurrentObject.GetProperties())
             {
                 if (!viewedObjects.Add(propertyInfo.GetValue(obj)) && !finalTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperty.Contains(propertyInfo))
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " + (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint)
-                    ? specificPrint(propertyInfo.GetValue(obj)) + Environment.NewLine : PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1, viewedObjects)));
+                if (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint))
+                    sb.AppendLine(identation + propertyInfo.Name + " = " + specificPrint(propertyInfo.GetValue(obj)));
+                else
+                    sb.Append(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1, viewedObjects));
             }
             return sb.ToString();
         }
 
         private bool TryGetString(object obj, int nestingLevel, HashSet<object> viewedObjects, out string resultString)
         {
-            if (obj == null)
-            {
-                resultString = "null" + Environment.NewLine;
-                return true;
-            }
-            var type = obj.GetType();
-            if (specificPrintForType.ContainsKey(type))
-            {
-                resultString = specificPrintForType[type].DynamicInvoke(obj) + Environment.NewLine;
-                return true;
-            }
-            if (finalTypes.Contains(type))
-            {
-                resultString = obj + Environment.NewLine;
-                return true;
-            }
-            if (obj is ICollection collection)
-            {
-                resultString = PrintCollectionsToString(collection, nestingLevel, viewedObjects);
-                return true;
-            }
-            resultString = null;
-            return false;
+            resultString = string.Empty;
+            var typeCurrentObject = obj.GetType();
+            var haveSpecificPrintForCurrentType = specificPrintForType.TryGetValue(typeCurrentObject, out var printBySpecificRule);
+            var currentObjectIsCollection = obj is ICollection;
+            var currentTypeIsFinal = finalTypes.Contains(typeCurrentObject);
+            if (!currentObjectIsCollection && !haveSpecificPrintForCurrentType && !currentTypeIsFinal)
+                return false;
+            if (haveSpecificPrintForCurrentType)
+                resultString = printBySpecificRule(obj);
+            else
+                resultString = currentObjectIsCollection ? PrintCollectionsToString((ICollection)obj, nestingLevel, viewedObjects) : obj.ToString() + Environment.NewLine;
+            return true;
         }
 
         private string PrintCollectionsToString(ICollection collection, int nestingLevel, HashSet<object> viewedObjects)
