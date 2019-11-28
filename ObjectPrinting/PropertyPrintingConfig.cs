@@ -21,6 +21,11 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
+        public void SetMaxLength(int maxLength)
+        {
+            printingConfig.AddMaxLengthRestriction(memberSelector, maxLength);
+        }
+
         public PrintingConfig<TOwner> Using(Func<TPropType, string> printMethod)
         {
             if (memberSelector == null)

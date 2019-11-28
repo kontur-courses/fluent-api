@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using NUnit.Framework;
 using FluentAssertions;
 
@@ -23,8 +22,8 @@ namespace ObjectPrinting.Tests
                 Id = Guid.Empty,
                 Name = "Vasya",
                 Parent = personWithCyclicReference,
-                FavoriteMovies = new[] {"The Shawshank Redemption", "The Godfather"},
-                BestFriends = new List<Person>() {new Person(), personWithCyclicReference, null}
+                FavoriteMovies = new[] {"The Shawshank Redemption", "The Godfather", null},
+                BestFriends = new List<Person> {new Person(), personWithCyclicReference, null}
             };
             personWithCyclicReference.Parent = testedInstance;
         }
@@ -108,6 +107,14 @@ namespace ObjectPrinting.Tests
             var result = testedInstance.PrintToString(p => p.Excluding(person => person.Age));
 
             result.Should().NotContain("Age = 30\r\n").And.Contain("Age = 0\r\n");
+        }
+
+        [Test]
+        public void TrimStringProperty()
+        {
+            var result = testedInstance.PrintToString(p => p.Printing(person=>person.Name).TrimmedToLength(3));
+
+            result.Should().Contain("Name = Vas").And.NotContain("Name = Vasya");
         }
     }
 }

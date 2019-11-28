@@ -15,11 +15,10 @@ namespace ObjectPrinting
         private readonly HashSet<string> excludedPropertiesFullNames = new HashSet<string>();
         private readonly List<object> serializedObjects = new List<object>();
         private readonly Dictionary<Type, Delegate> customTypeSerializationMethods = new Dictionary<Type, Delegate>();
-
         private readonly Dictionary<string, Delegate> customPropertySerializationMethods =
             new Dictionary<string, Delegate>();
-
         private readonly Dictionary<Type, CultureInfo> customCultures = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<string, int> propertyMaxLength = new Dictionary<string, int>();
 
         private readonly Type[] finalTypes =
         {
@@ -43,6 +42,13 @@ namespace ObjectPrinting
         public void AddCustomCulture<TPropType>(CultureInfo cultureInfo)
         {
             customCultures[typeof(TPropType)] = cultureInfo;
+        }
+
+        public void AddMaxLengthRestriction<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector, int maxLength)
+        {
+            var memberExpression = memberSelector.Body as MemberExpression;
+            var fullPropertyName = GetFullPropertyName(memberExpression);
+            propertyMaxLength[fullPropertyName] = maxLength;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -172,19 +178,28 @@ namespace ObjectPrinting
 
         private string SerializeFinalType(object obj, string propertyName)
         {
-            var objType = obj.GetType();
+            var serialization = GetFinalTypeSerialization(obj, propertyName);
+            if (propertyMaxLength.ContainsKey(propertyName))
+            {
+                serialization = serialization.Substring(0, propertyMaxLength[propertyName]);
+            }
+            return serialization + Environment.NewLine;
+        }
 
+        private string GetFinalTypeSerialization(object obj, string propertyName)
+        {
+            var objType = obj.GetType();
             if (customPropertySerializationMethods.ContainsKey(propertyName))
-                return customPropertySerializationMethods[propertyName].DynamicInvoke(obj) + Environment.NewLine;
+                return (string)customPropertySerializationMethods[propertyName].DynamicInvoke(obj);
 
             if (customTypeSerializationMethods.ContainsKey(objType))
-                return customTypeSerializationMethods[objType].DynamicInvoke(obj) + Environment.NewLine;
+                return (string) customTypeSerializationMethods[objType].DynamicInvoke(obj);
 
             var culture = TryGetCultureInfo(objType);
             if (culture != null)
-                return Convert.ToString(obj, culture) + Environment.NewLine;
+                return Convert.ToString(obj, culture);
 
-            return obj + Environment.NewLine;
+            return obj.ToString();
         }
 
         private CultureInfo TryGetCultureInfo(Type type)
