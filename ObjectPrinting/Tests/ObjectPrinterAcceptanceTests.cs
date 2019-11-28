@@ -53,7 +53,7 @@ namespace ObjectPrinting.Tests
             var res = "";
             Action act = () => res = printer.PrintToString(person);
             act.Should().NotThrow();
-            res.Should().Contain("Alex : 4");
+            res.Should().Contain($"{person.Name} : {person.Name.Length}");
             Console.WriteLine(res);
         }
         
@@ -82,7 +82,7 @@ namespace ObjectPrinting.Tests
             var res = "";
             Action act = ()  => res = printer.PrintToString(person);
             act.Should().NotThrow();
-            res.Should().Contain("Alex : 4ababa");
+            res.Should().Contain($" {person.Name} : {person.Name.Length}ababa");
             Console.WriteLine(res);
         }
         
@@ -95,7 +95,8 @@ namespace ObjectPrinting.Tests
             var res = "";
             Action act = () => res = printer.PrintToString(person);
             act.Should().NotThrow();
-            res.Should().Contain("Height = 1.228").And.Contain("Money = 1,228");
+            res.Should().Contain($"Height = {person.Height.ToString(null, CultureInfo.GetCultureInfo("en-US"))}")
+                .And.Contain($"Money = {person.Money}");
             Console.WriteLine(res);
         }
         
@@ -115,11 +116,12 @@ namespace ObjectPrinting.Tests
         public void ObjPrinter_Trim_ShouldNotThrowExceptions_And_WorksCorrect()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(x => x.Name).TrimmedToLength(3);
+                .Printing(x => x.Name).TrimmedToLength(person.Name.Length-1);
             var res = "";
             Action act = () => res = printer.PrintToString(person);
             act.Should().NotThrow();
-            res.Should().Contain("Ale").And.NotContain("Alex");
+            res.Should().Contain($"{person.Name.Substring(0,person.Name.Length-1)}")
+                .And.NotContain($"{person.Name}");
             Console.WriteLine(res);
         }
         
@@ -129,10 +131,11 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(x => x.Name);
 
-            string s1 = printer.PrintToString(person);
-
-            s1.Should().NotContain("Name");
-            Console.WriteLine(s1);
+            var res = "";
+            Action act = () => res = printer.PrintToString(person);
+            act.Should().NotThrow();
+            res.Should().NotContain("Name");
+            Console.WriteLine(res);
         }
         
         [Test]
