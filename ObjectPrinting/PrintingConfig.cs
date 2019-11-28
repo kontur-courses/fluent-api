@@ -47,7 +47,7 @@ namespace ObjectPrinting
 
         public int MaxNestingLevel = 10;
 
-        private string PrintWithConfig(object obj, int nestingLevel)
+        private string PrintWithConfig(object? obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;

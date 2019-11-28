@@ -18,11 +18,11 @@ namespace ObjectPrinting
             return new TypeSerializer(typeof(T), o => serializer((T) o));
         }
 
-        public string Serialize(object objectToSerialize)
+        public string Serialize(object? objectToSerialize)
         {
             if (Type.IsInstanceOfType(objectToSerialize))
                 return serializer(objectToSerialize);
-            throw new ArgumentException();
+            throw new ArgumentException($"{objectToSerialize} is not instance of {Type}");
         }
     }
 }
