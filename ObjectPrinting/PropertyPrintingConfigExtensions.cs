@@ -10,6 +10,8 @@ namespace ObjectPrinting
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
+        #region ExtensionsUsingWithCultureForNumbers
+
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig,
             CultureInfo culture) => AddCulture(propConfig, culture);
 
@@ -18,6 +20,32 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig,
             CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, short> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, sbyte> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, byte> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, ushort> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, uint> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, ulong> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, decimal> propConfig,
+            CultureInfo culture) => AddCulture(propConfig, culture);
+
+        #endregion
 
         private static PrintingConfig<TOwner> AddCulture<TOwner, TNumber>(
             PropertyPrintingConfig<TOwner, TNumber> propConfig,
