@@ -37,28 +37,28 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_For_WhenExcludingType()
         {
             var result = ObjectPrinter.For<Person>().Excluding<int>().PrintToString(person);
-            result.Should().NotContain("Age");
+            result.Should().NotContain(nameof(person.Age));
         }
 
         [Test]
         public void PrintToString_WhenExcludingType()
         {
             var result = person.PrintToString(config => config.Excluding<int>());
-            result.Should().NotContain("Age");
+            result.Should().NotContain(nameof(person.Age));
         }
 
         [Test]
         public void ObjectPrinter_For_WhenExcludingProperty()
         {
             var result = ObjectPrinter.For<Person>().Excluding(p => p.Age).PrintToString(person);
-            result.Should().NotContain("Age");
+            result.Should().NotContain(nameof(person.Age));
         }
 
         [Test]
         public void PrintToString_WhenExcludingProperty()
         {
             var result = person.PrintToString(ser => ser.Excluding(p => p.Age));
-            result.Should().NotContain("Age");
+            result.Should().NotContain(nameof(person.Age));
         }
 
         [Test]
@@ -105,6 +105,15 @@ namespace ObjectPrinting.Tests
             person = new Person {Name = "Ivan"};
             var result = person.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1));
             result.Should().NotContain(person.Name).And.Contain($"{nameof(person.Name)} = {person.Name[0].ToString()}");
+        }
+        
+        [TestCase(null)]
+        [TestCase("")]
+        public void PrintToString_WhenTakeOnlySerialWithNullOrEmpty(string str)
+        {
+            person = new Person {Name = str};
+            var result = person.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1));
+            result.Should().Contain($"{nameof(person.Name)} = ");
         }
 
         [TestCase("en-GB", 50.5, "50.5")]

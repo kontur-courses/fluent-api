@@ -61,10 +61,10 @@
     <Compile Include="PropertySerializingConfig.cs" />
     <Compile Include="PropertySerializingConfigExtension.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\ObjectPrinter_Field_should.cs" />
     <Compile Include="Tests\ObjectPrinter_should.cs" />
     <Compile Include="Tests\Person.cs" />
     <Compile Include="Tests\ObjectPrinter_OtherObj_should.cs" />
-    <Compile Include="Tests\ObjectPrinter_Field_should.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

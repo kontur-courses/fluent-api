@@ -18,7 +18,8 @@ namespace ObjectPrinting
             int numberChar)
         {
             var printingConfig = (config as IPropertySerializingConfig<TOwner>).ParentConfig;
-            (printingConfig as IPrintingConfig).typeSerialisation.Add(typeof(string), new Func<string, string>(v => v.Substring(0, numberChar)));
+            (printingConfig as IPrintingConfig).typeSerialisation.Add(typeof(string), 
+                new Func<string, string>(v => string.IsNullOrEmpty(v) ? "" : v.Substring(0, numberChar)));
             return printingConfig;
         }
     }
