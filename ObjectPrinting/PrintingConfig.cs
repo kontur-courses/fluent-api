@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,22 +11,30 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly int nestingLimit = 15;
+        private readonly string newLine = Environment.NewLine;
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-
-        private readonly Dictionary<Type, Func<object, string>> typePrintingMethods =
-            new Dictionary<Type, Func<object, string>>();
-        
-        private readonly Dictionary<PropertyInfo, Func<object, string>> propertyPrintingMethods =
-            new Dictionary<PropertyInfo, Func<object, string>>();
-
-        private readonly Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
         private readonly Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(int),
+            typeof(long),
+            typeof(byte),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan)
         };
+
+        private readonly Dictionary<Type, CultureInfo> numberCultures = new Dictionary<Type, CultureInfo>();
+
+        private readonly Dictionary<PropertyInfo, Func<object, string>> propertyPrintingMethods =
+            new Dictionary<PropertyInfo, Func<object, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> typePrintingMethods =
+            new Dictionary<Type, Func<object, string>>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -35,7 +44,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var property = (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
+            var property = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, property);
         }
 
@@ -47,8 +56,8 @@ namespace ObjectPrinting
             else
                 typePrintingMethods[type] = printing;
         }
-        
-        private void SetPropertyPrintingFormat(PropertyInfo property,Func<object, string> printing)
+
+        private void SetPropertyPrintingFormat(PropertyInfo property, Func<object, string> printing)
         {
             if (propertyPrintingMethods.ContainsKey(property))
                 propertyPrintingMethods.Add(property, printing);
@@ -79,56 +88,76 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj,"");
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, string indentation)
         {
-            //TODO apply configurations
+            if (indentation.Length >= nestingLimit)
+                return "Warning! Nesting limit was reached!"; 
+            
             if (obj == null)
-                return "null" + Environment.NewLine;
-            
-            var type = obj.GetType();
-            
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
+                return $"null{newLine}";
 
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-           
-            sb.AppendLine(type.Name);
+            var type = obj.GetType();
+
+            if (finalTypes.Contains(type))
+                return $"{obj}{newLine}";
+            
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"{indentation}{type.Name}");
+            
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyValue = propertyInfo.GetValue(obj);
                 var propertyType = propertyInfo.PropertyType;
-
                 if (IsExcluded(propertyInfo, propertyType))
                     continue;
-                
-                var print = PropertyToString(nestingLevel, propertyType, propertyInfo, propertyValue);
-                sb.Append($"{indentation}{propertyInfo.Name} = {print}");
+                stringBuilder.Append(ConvertPropertyValueToString(
+                    $"{indentation}\t",
+                    propertyType,
+                    propertyInfo, 
+                    propertyValue));
             }
 
-            return sb.ToString();
+            return stringBuilder.ToString();
         }
 
-        private string PropertyToString(int nestingLevel, Type propertyType, PropertyInfo propertyInfo, object propertyValue)
+        private string ConvertPropertyValueToString(string indentation, Type propertyType, PropertyInfo propertyInfo,
+            object propertyValue)
         {
-            string print;
-            if (typePrintingMethods.ContainsKey(propertyType))
+            var stringBuilder = new StringBuilder();
+            string stringData;
+            if (numberCultures.ContainsKey(propertyType))
+                stringData = string.Format(numberCultures[propertyType], "{0}", propertyValue);
+            else if (typePrintingMethods.ContainsKey(propertyType))
             {
                 var typePrintingMethod = typePrintingMethods[propertyType];
-                print = $"{typePrintingMethod.Invoke(propertyValue)}{Environment.NewLine}";
+                stringData= $"{typePrintingMethod.DynamicInvoke(propertyValue)}{newLine}";
             }
             else if (propertyPrintingMethods.ContainsKey(propertyInfo))
             {
                 var propertyPrintingMethod = propertyPrintingMethods[propertyInfo];
-                print = $"{propertyPrintingMethod.Invoke(propertyValue)}{Environment.NewLine}";
+                stringData= $"{propertyPrintingMethod.DynamicInvoke(propertyValue)}{newLine}";
             }
+            else if (propertyValue is IEnumerable collection && !(propertyValue is string))
+                stringData = CollectionToString($"{indentation}\t", collection);
             else
-                print = PrintToString(propertyValue, nestingLevel + 1);
+                stringData = PrintToString(propertyValue, $"{indentation}\t");
 
-            return print;
+            stringBuilder.Append($"{indentation}{propertyInfo.Name} = {stringData}");
+            return stringBuilder.ToString();
+        }
+        
+        private string CollectionToString(string indentation, IEnumerable collection)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append($"{collection.GetType().Name}{newLine}");
+            stringBuilder.Append($"{indentation}[{newLine}");
+            foreach (var element in collection)
+                stringBuilder.Append($"{PrintToString(element, $"{indentation}\t")}");
+            stringBuilder.Append($"{indentation}]{newLine}");
+            return stringBuilder.ToString();
         }
 
         private bool IsExcluded(PropertyInfo propertyInfo, Type propertyType)
@@ -136,40 +165,40 @@ namespace ObjectPrinting
             return excludedTypes.Contains(propertyType) || excludedProperties.Contains(propertyInfo);
         }
 
-        public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+        public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
         {
             private readonly PrintingConfig<TOwner> printingConfig;
             private readonly PropertyInfo property;
 
-            public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,  PropertyInfo property = null)
+            public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo property = null)
             {
                 this.printingConfig = printingConfig;
                 this.property = property;
             }
 
-            public PrintingConfig<TOwner> Using(Func<TPropType, string> prining)
+            PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
+
+            void IPropertyPrintingConfig<TOwner>.SetCulture<TType>(CultureInfo cultureInfo)
             {
-                string printingObject(object o) => prining((TPropType) o);
-                
+                printingConfig.SetCulture<TType>(cultureInfo);
+            }
+
+            public PrintingConfig<TOwner> Using(Func<TPropType, string> printing)
+            {
+                string PrintingObject(object o) => printing((TPropType) o);
+
                 if (property != null)
-                    printingConfig.SetPropertyPrintingFormat(property, printingObject);
+                    printingConfig.SetPropertyPrintingFormat(property, PrintingObject);
                 else
-                    printingConfig.SetTypePrintingFormat<TPropType>(printingObject);
+                    printingConfig.SetTypePrintingFormat<TPropType>(PrintingObject);
                 return printingConfig;
             }
-
-            public PrintingConfig<TOwner> Using(CultureInfo culture)
-            {
-                printingConfig.SetCulture<TPropType>(culture);
-                return printingConfig;
-            }
-
-            PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
         }
 
-        public interface IPropertyPrintingConfig<TOwner, TPropType>
+        public interface IPropertyPrintingConfig<TOwner>
         {
             PrintingConfig<TOwner> ParentConfig { get; }
+            void SetCulture<TType>(CultureInfo cultureInfo) where TType : IFormattable;
         }
     }
 }
