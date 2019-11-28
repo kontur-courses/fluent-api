@@ -97,12 +97,12 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel, string propertyName)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return $"null{Environment.NewLine}";
 
             var objType = obj.GetType();
 
             if (IsSerialized(obj))
-                return "Cyclic Reference to " + objType + Environment.NewLine;
+                return $"Cyclic Reference to {objType}{Environment.NewLine}";
 
             serializedObjects.Add(obj);
 
