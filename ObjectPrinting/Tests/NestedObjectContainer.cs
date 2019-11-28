@@ -5,17 +5,12 @@ namespace ObjectPrinting.Tests
 {
     public class NestedObjectContainer
     {
-        public List<object> Container = new List<object>();
+        public NestedObjectContainer SubContainer { get; set; }
 
-        public NestedObjectContainer()
+        public NestedObjectContainer(int nestedness = 0)
         {
-            List<object> currentList = Container;
-            for (int i = 0; i < 30; i++)
-            {
-                var internalList = new List<object>();
-                currentList.Add(internalList);
-                currentList = internalList;
-            }
+            if (nestedness < 20)
+                SubContainer = new NestedObjectContainer(nestedness + 1);
         }
     }
 }
