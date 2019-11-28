@@ -20,6 +20,11 @@ namespace ObjectPrinting
         Dictionary<Type, Delegate> IPrintingConfig.typeSerialisation => typeSerialisation;
 
         Dictionary<PropertyInfo, Delegate> IPrintingConfig.propertySerialisation => propertySerialisation;
+        private static readonly Type[] FinalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
 
         public PrintingConfig()
         {
@@ -46,7 +51,9 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
             if (obj is IEnumerable enumerable)
             {
                 return PrintIEnum(enumerable, nestingLevel);
