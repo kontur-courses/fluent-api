@@ -10,17 +10,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly Type[] FinalTypes =
-        {
-            typeof(int),
-            typeof(double),
-            typeof(float), 
-            typeof(string),
-            typeof(DateTime),
-            typeof(TimeSpan),
-            typeof(Guid),
-        };
-
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
 
         private readonly HashSet<string> excludingProperties = new HashSet<string>();
@@ -40,7 +29,7 @@ namespace ObjectPrinting
             if (typeSerializerConfigs.ContainsKey(obj.GetType()))
                 return typeSerializerConfigs[obj.GetType()].SerializeFunc(obj);
             
-            if (FinalTypes.Contains(obj.GetType()))
+            if (ObjectPrinter.FinalTypes.Contains(obj.GetType()))
                 return PrintFinalObj(obj);
             
             return obj is IEnumerable enumerable 
@@ -55,11 +44,10 @@ namespace ObjectPrinting
 
         private string PrintEnumerableObj(IEnumerable obj, int nestingLevel)
         {
-            var sb = new StringBuilder();
+            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return "..." + Environment.NewLine;
+            
             var indentation = new string('\t', nestingLevel + 1);
-            
-            if (nestingLevel == 15) return "..." + Environment.NewLine;
-            
+            var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
             
             foreach (var element in obj)
@@ -70,11 +58,10 @@ namespace ObjectPrinting
 
         private string PrintNonFinalObj(object obj, int nestingLevel)
         {
-            var sb = new StringBuilder();
+            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return ObjectPrinter.MaxDepthSerializeString;
+            
             var indentation = new string('\t', nestingLevel + 1);
-            
-            if (nestingLevel == 15) return "..." + Environment.NewLine;
-            
+            var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
 
             foreach (var propertyInfo in obj.GetType().GetProperties())
