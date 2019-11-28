@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    public class PrintingConfigTests
+    public class ObjectPrinterTests
     {
         private static readonly Person Person = new Person {Name = "Alex", Age = 19, Height = 170, Phone = "123456789"};
 
@@ -17,7 +17,7 @@ namespace ObjectPrinting.Tests
         [TestCase(typeof(Guid), Description = "Exclude Guid")]
         public void PrintToString_DoesNotPrintProperties_WhenTheirTypeIsExcluded(Type type)
         {
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = (typeof(PrintingConfig<Person>)
                     .GetMethod("Excluding", new Type[] { })
@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
         [TestCaseSource(nameof(GetGuidPrintingTestCases))]
         public void PrintToString_UsesAlternativeSerialization_ForIndicatedType<T>(Func<T, string> print)
         {
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.Printing<T>().Using(print).PrintToString(Person);
 
@@ -60,7 +60,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_TruncatesStrings_LongerThanMaxLen(string name, int maxLen)
         {
             var person = new Person {Name = name};
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.Printing<string>().TrimmedToLength(maxLen).PrintToString(person);
 
@@ -73,7 +73,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_DoesNotPrintProperties_WhenTheyAreExcluded()
         {
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.Excluding(p => p.Name).PrintToString(Person);
 
@@ -86,7 +86,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_PrintsNumbers_UsingTheSpecifiedCultureInfo()
         {
             var culture = CultureInfo.CurrentCulture;
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.Printing<int>().Using(culture).PrintToString(Person);
 
@@ -99,7 +99,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintsPublicElements_WithoutConfiguration()
         {
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.PrintToString(Person);
 
@@ -112,7 +112,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_UsesPrintingFunction_ForTheSpecifiedProperty()
         {
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             string Print(string name)
             {
@@ -136,7 +136,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_PrintsNull_IfPropertyIsNull()
         {
             var person = new Person {Name = null, Phone = ""};
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config
                 .Printing(p => p.Name)
@@ -156,7 +156,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person();
             person.BestFriend = person;
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.PrintToString(person);
 
@@ -172,7 +172,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person();
             person.BestFriend = new Person {BestFriend = person};
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.PrintToString(person);
 
@@ -187,7 +187,7 @@ namespace ObjectPrinting.Tests
         {
             var boss = new Person();
             var person = new Person {Boss = boss, BestFriend = new Person {Boss = boss}};
-            var config = new PrintingConfig<Person>();
+            var config = ObjectPrinter.For<Person>();
 
             var result = config.PrintToString(person);
             Console.WriteLine(result);
@@ -204,7 +204,7 @@ namespace ObjectPrinting.Tests
         [TestCaseSource(nameof(_indexedCollectionTestCases))]
         public void PrintToString_PrintsCollection_WhenCollectionIsIndexed(IList<string> collection)
         {
-            var config = new PrintingConfig<IList<string>>();
+            var config = ObjectPrinter.For<IList<string>>();
 
             var result = config.PrintToString(collection);
 

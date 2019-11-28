@@ -1,21 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        // ReSharper disable once StaticMemberInGenericType
-        private static readonly Type[] FinalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)
-        };
-
         private readonly IDictionary<Type, CultureInfo> cultureLookup;
         private readonly ISet<MemberInfo> excludedProperties;
         private readonly ISet<Type> excludedTypes;
@@ -31,6 +23,8 @@ namespace ObjectPrinting
             cultureLookup = new Dictionary<Type, CultureInfo>();
         }
 
+        ISet<MemberInfo> IPrintingConfig.ExcludedProperties => excludedProperties;
+        ISet<Type> IPrintingConfig.ExcludedTypes => excludedTypes;
         IDictionary<Type, Delegate> IPrintingConfig.TypePrinters => typePrinters;
         IDictionary<MemberInfo, Delegate> IPrintingConfig.PropertyPrinters => propertyPrinters;
         IDictionary<Type, CultureInfo> IPrintingConfig.CultureLookup => cultureLookup;
@@ -61,65 +55,14 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, new HashSet<object>());
-        }
-
-        private string PrintToString(object obj, ISet<object> externalObjects, int nestingLevel = 0)
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var type = obj.GetType();
-
-            if (externalObjects.Contains(obj))
-                return type.Name + " ↰" + Environment.NewLine;
-
-            if (typePrinters.TryGetValue(type, out var print))
-                return print.DynamicInvoke(obj) + Environment.NewLine;
-
-            if (!FinalTypes.Contains(type))
-                return PrintObject(obj, nestingLevel, externalObjects);
-
-            if (cultureLookup.TryGetValue(type, out var cultureInfo))
-                return Convert.ToString(obj, cultureInfo) + Environment.NewLine;
-
-            return obj + Environment.NewLine;
-        }
-
-        private string PrintObject(object obj, int nestingLevel, ISet<object> externalObjects)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(obj.GetType().Name);
-            externalObjects.Add(obj);
-            PrintElements(obj, externalObjects, nestingLevel, sb);
-            externalObjects.Remove(obj);
-            return sb.ToString();
-        }
-
-        private void PrintElements(object obj, ISet<object> externalObjects, int nestingLevel, StringBuilder sb)
-        {
-            var indentation = new string('\t', nestingLevel + 1);
-            foreach (var elementInfo in obj.GetElements().Where(IsPropertyIncluded))
-            {
-                sb.Append(indentation).Append(elementInfo.Name).Append(" = ");
-                var value = elementInfo.GetValue(obj);
-                if (value != null && elementInfo.MemberInfo != null &&
-                    propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
-                    sb.Append(printingFunction.DynamicInvoke(value));
-                else
-                    sb.Append(PrintToString(value, externalObjects, nestingLevel + 1));
-            }
-        }
-
-        private bool IsPropertyIncluded(ElementInfo element)
-        {
-            return !excludedTypes.Contains(element.Type) &&
-                   !excludedProperties.Contains(element.MemberInfo);
+            return new ObjectPrinter(this).PrintToString(obj);
         }
     }
 
     internal interface IPrintingConfig
     {
+        ISet<MemberInfo> ExcludedProperties { get; }
+        ISet<Type> ExcludedTypes { get; }
         IDictionary<Type, Delegate> TypePrinters { get; }
         IDictionary<MemberInfo, Delegate> PropertyPrinters { get; }
         IDictionary<Type, CultureInfo> CultureLookup { get; }
