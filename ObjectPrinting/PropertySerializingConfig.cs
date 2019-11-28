@@ -6,27 +6,28 @@ namespace ObjectPrinting
     public class PropertySerializingConfig<TOwner, TPropType> : IPropertySerializingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly MemberInfo propertyInfo;
         PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
 
         public PropertySerializingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.parentConfig = printingConfig;
         }
-        
-        public PropertySerializingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
+
+        public PropertySerializingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo propertyInfo)
         {
             this.parentConfig = printingConfig;
             this.propertyInfo = propertyInfo;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializationMethod)
+        public PrintingConfig<TOwner> Using(Func<object, string> serializationMethod)
         {
             if (propertyInfo == null)
             {
                 (parentConfig as IPrintingConfig).typeSerialisation[typeof(TPropType)] = serializationMethod;
                 return parentConfig;
             }
+
             (parentConfig as IPrintingConfig).propertySerialisation[propertyInfo] = serializationMethod;
             return parentConfig;
         }
