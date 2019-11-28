@@ -1,4 +1,7 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -35,6 +38,42 @@ namespace ObjectPrinting
             var propertyInfo = (config as IPropertyPrintingConfig<TOwner>).ConfiguredProperty;
 
             parent.PropertyToLength[propertyInfo] = amount;
+
+            return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
+        }
+
+        public static PrintingConfig<TOwner> SetElementFormat<TOwner, TElement>(
+            this PropertyPrintingConfig<TOwner, TElement[]> config, 
+            Func<TElement, string> serializationFunc)
+        {
+            return SetElementFormat(config, typeof(TElement[]), serializationFunc);
+        }
+
+        public static PrintingConfig<TOwner> SetElementFormat<TOwner, TElement>(
+            this PropertyPrintingConfig<TOwner, List<TElement>> config, 
+            Func<TElement, string> serializationFunc)
+        {
+            return SetElementFormat(config, typeof(List<TElement>), serializationFunc);
+        }
+
+        public static PrintingConfig<TOwner> SetElementFormat<TOwner, TKey, TValue>(
+            this PropertyPrintingConfig<TOwner, Dictionary<TKey, TValue>> config,
+            Func<(TKey, TValue), string> serializationFunc)
+        {
+            return SetElementFormat(config, typeof(Dictionary<TKey, TValue>), serializationFunc);
+        }
+
+        private static PrintingConfig<TOwner> SetElementFormat<TOwner, TCollection, TElement>(
+            this PropertyPrintingConfig<TOwner, TCollection> config, Type collectionType,
+            Func<TElement, string> serializationFunc)
+        {
+            var parent = (config as IPropertyPrintingConfig<TOwner>).ParentConfig as IPrintingConfig<TOwner>;
+            var propertyInfo = (config as IPropertyPrintingConfig<TOwner>).ConfiguredProperty;
+
+            if (propertyInfo is null)
+                parent.CollectionTypeToElementFormatter[collectionType] = serializationFunc;
+            else
+                parent.CollectionPropertyToElementFormatter[propertyInfo] = serializationFunc;
 
             return (config as IPropertyPrintingConfig<TOwner>).ParentConfig;
         }

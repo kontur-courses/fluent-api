@@ -301,6 +301,25 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void SetElementFormat_ForPropertyArray()
+        {
+            var numbers = new Numbers { Values = new int[] { 1, 2, 3, 4 } };
+            var expectedFormat =
+                $"Numbers"                          + Environment.NewLine +
+                $"\tValues = {-numbers.Values[0]} " +
+                $"{-numbers.Values[1]} "            +
+                $"{-numbers.Values[2]} "            +
+                $"{-numbers.Values[3]} "            + Environment.NewLine;
+
+            var resultFormat = numbers.ConfigureFormat()
+                .ForProperty(n => n.Values)
+                    .SetElementFormat(val => $"{-1*val} ")
+                .Print();
+
+            resultFormat.Should().BeEquivalentTo(expectedFormat);
+        }
+
+        [Test]
         public void FormatDictionary_Properly()
         {
             var entries = new Dictionary<string, int>();

@@ -11,5 +11,7 @@ namespace ObjectPrinting
         Dictionary<PropertyInfo, Delegate> PropertyToFormatter { get; }
         Dictionary<PropertyInfo, int> PropertyToLength { get; }
         Dictionary<Type, CultureInfo> DigitTypeToCulture { get; }
+        Dictionary<Type, Delegate> CollectionTypeToElementFormatter { get; }
+        Dictionary<PropertyInfo, Delegate> CollectionPropertyToElementFormatter { get; }
     }
 }

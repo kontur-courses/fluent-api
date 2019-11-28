@@ -17,6 +17,9 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, Delegate> propertyToFormatter;
         private readonly Dictionary<PropertyInfo, int> stringPropertyToLength;
         private readonly Dictionary<Type, CultureInfo> numberTypeToCulture;
+        private readonly Dictionary<Type, Delegate> collectionTypeToElementFormatter;
+        private readonly Dictionary<PropertyInfo, Delegate> collectionPropertyToElementFormatter;
+
         private readonly Type[] finalTypes;
         private Func<(int nestingLevel, string propertyName, string formattedProperty), string > 
             printFormattedProperty;
@@ -26,6 +29,10 @@ namespace ObjectPrinting
             IPrintingConfig<TOwner>.PropertyToFormatter => propertyToFormatter;
         Dictionary<PropertyInfo, int> IPrintingConfig<TOwner>.PropertyToLength => stringPropertyToLength;
         Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.DigitTypeToCulture => numberTypeToCulture;
+        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.CollectionTypeToElementFormatter => 
+            collectionTypeToElementFormatter;
+        Dictionary<PropertyInfo, Delegate> IPrintingConfig<TOwner>.CollectionPropertyToElementFormatter =>
+            collectionPropertyToElementFormatter;
 
         private readonly TOwner owner;
 
@@ -37,6 +44,8 @@ namespace ObjectPrinting
             propertyToFormatter = new Dictionary<PropertyInfo, Delegate>();
             stringPropertyToLength = new Dictionary<PropertyInfo, int>();
             numberTypeToCulture = new Dictionary<Type, CultureInfo>();
+            collectionTypeToElementFormatter = new Dictionary<Type, Delegate>();
+            collectionPropertyToElementFormatter = new Dictionary<PropertyInfo, Delegate>();
             finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -71,11 +80,22 @@ namespace ObjectPrinting
 
         private string PrintCollection(ICollection collection, int nestingLevel)
         {
+            if (collectionTypeToElementFormatter.ContainsKey(collection.GetType()))
+                return PrintCollection(
+                    collection, 
+                    collectionTypeToElementFormatter[collection.GetType()]);
+
+            Func<object, string> defaultFormatter = (obj) => PrintToString(obj, nestingLevel);
+            return PrintCollection(collection, defaultFormatter);
+        }
+
+        private string PrintCollection(ICollection collection, Delegate elementFormatter)
+        {
             var sb = new StringBuilder();
             lock (collection.SyncRoot)
             {
                 foreach (var obj in collection)
-                    sb.Append(PrintToString(obj, nestingLevel));
+                    sb.Append(elementFormatter.DynamicInvoke(obj));
             }
             return sb.ToString();
         }
@@ -113,6 +133,9 @@ namespace ObjectPrinting
             else if (propertyToFormatter.ContainsKey(propertyInfo))
                 formattedProperty = 
                     propertyToFormatter[propertyInfo].DynamicInvoke(value) as string;
+            else if (collectionPropertyToElementFormatter.ContainsKey(propertyInfo))
+                formattedProperty = PrintCollection(value as ICollection,
+                    collectionPropertyToElementFormatter[propertyInfo]);
             if (stringPropertyToLength.ContainsKey(propertyInfo) && formattedProperty != null)
                 formattedProperty = formattedProperty.Substring(0,
                     Math.Min(formattedProperty.Length, stringPropertyToLength[propertyInfo]));
