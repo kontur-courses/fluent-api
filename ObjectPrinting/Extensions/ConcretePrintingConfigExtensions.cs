@@ -10,9 +10,10 @@ namespace ObjectPrinting.Extensions
                 throw new ArgumentOutOfRangeException($"{nameof(maxLen)} {maxLen} was negative");
 
             var parentConfig = (IPrintingConfig) ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            parentConfig.MaxLengthsOfProperties[((IConcretePropertyPrintingConfig) (propConfig)).PropertyInfo] = maxLen;
+            var propertyInfo = ((IConcretePropertyPrintingConfig<TOwner, string>) propConfig).PropertyInfo;
+            var settings = parentConfig.Settings;
 
-            return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            return new PrintingConfig<TOwner>(settings.AddMaxLengthOfProperty(propertyInfo, maxLen));
         }
     }
 }

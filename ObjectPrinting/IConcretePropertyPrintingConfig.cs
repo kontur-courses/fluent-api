@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public interface IConcretePropertyPrintingConfig
+    public interface IConcretePropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         PropertyInfo PropertyInfo { get; }
     }

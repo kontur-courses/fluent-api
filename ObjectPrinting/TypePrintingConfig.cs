@@ -13,8 +13,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            ((IPrintingConfig)printingConfig).WaysToSerializeTypes[typeof(TPropType)] = obj => print((TPropType)obj);
-            return printingConfig;
+            var settings = ((IPrintingConfig) printingConfig).Settings;
+            return new PrintingConfig<TOwner>(settings.AddWayToSerializeType(typeof(TPropType),
+                obj => print((TPropType) obj)));
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;

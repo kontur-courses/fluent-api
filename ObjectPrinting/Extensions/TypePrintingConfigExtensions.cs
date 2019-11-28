@@ -14,8 +14,8 @@ namespace ObjectPrinting.Extensions
             CultureInfo cultureInfo)
         {
             var parentConfig = (IPrintingConfig)((IPropertyPrintingConfig<TOwner, double>) propConfig).ParentConfig;
-            parentConfig.TypesCultures[typeof(TProperty)] = cultureInfo;
-            return ((IPropertyPrintingConfig<TOwner, double>) propConfig).ParentConfig;
+            var settings = parentConfig.Settings;
+            return new PrintingConfig<TOwner>(settings.AddTypeCulture(typeof(TProperty), cultureInfo));
         }
 
         public static PrintingConfig<TOwner> Using<TOwner>(this TypePrintingConfig<TOwner, double> propConfig,

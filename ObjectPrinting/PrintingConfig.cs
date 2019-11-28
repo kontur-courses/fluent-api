@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,27 +10,13 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        Dictionary<Type, Func<object, string>> IPrintingConfig.WaysToSerializeTypes => waysToSerializeTypes; 
-        Dictionary<Type, CultureInfo> IPrintingConfig.TypesCultures => typesCultures;
-        Dictionary<PropertyInfo, Func<object, string>> IPrintingConfig.WaysToSerializeProperties =>
-            waysToSerializeProperties; 
-        Dictionary<PropertyInfo, int> IPrintingConfig.MaxLengthsOfProperties => maxLengthsOfProperties;
+        private readonly PrintingConfigSettings settings;
 
-        private readonly HashSet<Type> typesToIgnore;
-        private readonly Dictionary<Type, Func<object, string>> waysToSerializeTypes;
-        private readonly Dictionary<Type, CultureInfo> typesCultures;
-        private readonly Dictionary<PropertyInfo, Func<object, string>> waysToSerializeProperties;
-        private readonly Dictionary<PropertyInfo, int> maxLengthsOfProperties;
-        private readonly HashSet<PropertyInfo> propertiesToIgnore;
+        PrintingConfigSettings IPrintingConfig.Settings => settings;
 
-        public PrintingConfig()
+        public PrintingConfig(PrintingConfigSettings settings)
         {
-            typesToIgnore = new HashSet<Type>();
-            waysToSerializeTypes = new Dictionary<Type, Func<object, string>>();
-            typesCultures = new Dictionary<Type, CultureInfo>();
-            waysToSerializeProperties = new Dictionary<PropertyInfo, Func<object, string>>();
-            maxLengthsOfProperties = new Dictionary<PropertyInfo, int>();
-            propertiesToIgnore = new HashSet<PropertyInfo>();
+            this.settings = settings;
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -48,14 +33,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propertyInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            propertiesToIgnore.Add(propertyInfo);
-            return this;
+            return new PrintingConfig<TOwner>(settings.AddPropertyToIgnore(propertyInfo));
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            typesToIgnore.Add(typeof(TPropType));
-            return this;
+            return new PrintingConfig<TOwner>(settings.AddTypeToIgnore(typeof(TPropType)));
         }
 
         public string PrintToString(TOwner obj)
@@ -65,41 +48,65 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (waysToSerializeTypes.ContainsKey(type))
-                return waysToSerializeTypes[type](obj) + Environment.NewLine;
+            if (settings.WaysToSerializeTypes.ContainsKey(type))
+                return settings.WaysToSerializeTypes[type](obj) + Environment.NewLine;
 
-            if (typesCultures.ContainsKey(type))
-                return string.Format(typesCultures[type], "{0}", obj) + Environment.NewLine;
+            if (IsFinalType(type))
+            {
+                return (settings.TypesCultures.ContainsKey(type)
+                           ? string.Format(settings.TypesCultures[type], "{0}", obj)
+                           : obj) +
+                       Environment.NewLine;
+            }
 
+            return PrintProperties(obj, nestingLevel);
+        }
+
+        private bool IsFinalType(Type type)
+        {
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            return finalTypes.Contains(type);
+        }
 
+        private string PrintProperties(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties()
-                .Where(p => !typesToIgnore.Contains(p.PropertyType) && !propertiesToIgnore.Contains(p)))
+            foreach (var propertyInfo in GetAllowedPropertiesForType(type))
             {
-                var propertyValue = waysToSerializeProperties.ContainsKey(propertyInfo)
-                    ? waysToSerializeProperties[propertyInfo](propertyInfo.GetValue(obj))
-                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-
-                if (maxLengthsOfProperties.ContainsKey(propertyInfo))
-                    propertyValue = propertyValue.Truncate(maxLengthsOfProperties[propertyInfo]);
-
-                sb.Append(indentation + propertyInfo.Name + " = " + propertyValue);
+                var propertyValue = PrintProperty(obj, nestingLevel, propertyInfo);
+                sb.Append($"{indentation}{propertyInfo.Name} = {propertyValue}");
             }
             return sb.ToString();
+        }
+
+        private IEnumerable<PropertyInfo> GetAllowedPropertiesForType(Type type)
+        {
+            return type.GetProperties()
+                .Where(p => !settings.TypesToIgnore.Contains(p.PropertyType) &&
+                            !settings.PropertiesToIgnore.Contains(p));
+        }
+
+        private string PrintProperty(object obj, int nestingLevel, PropertyInfo propertyInfo)
+        {
+            var propertyValue = settings.WaysToSerializeProperties.ContainsKey(propertyInfo)
+                ? settings.WaysToSerializeProperties[propertyInfo](propertyInfo.GetValue(obj))
+                : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+
+            if (settings.MaxLengthsOfProperties.ContainsKey(propertyInfo))
+                propertyValue = propertyValue.Truncate(settings.MaxLengthsOfProperties[propertyInfo]);
+
+            return propertyValue;
         }
     }
 }

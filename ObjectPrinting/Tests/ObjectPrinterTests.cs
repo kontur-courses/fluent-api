@@ -93,6 +93,7 @@ namespace ObjectPrinting.Tests
             {
                 yield return new TestCaseData(CultureInfo.InvariantCulture).SetName("invariant culture");
                 yield return new TestCaseData(new CultureInfo("en-GB")).SetName("en-GB culture");
+                yield return new TestCaseData(new CultureInfo("ru-RU")).SetName("ru-RU culture");
             }
         }
 
