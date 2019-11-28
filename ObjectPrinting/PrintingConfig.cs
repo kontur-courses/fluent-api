@@ -20,13 +20,15 @@ namespace ObjectPrinting
 
         private readonly Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(int), typeof(double), typeof(float), typeof(short), typeof(sbyte), typeof(long), typeof(byte),
+            typeof(ushort), typeof(uint), typeof(ulong), typeof(decimal), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
         private readonly Type[] numbersTypes =
         {
-            typeof(int), typeof(double), typeof(float)
+            typeof(int), typeof(double), typeof(float), typeof(short), typeof(sbyte), typeof(long), typeof(byte),
+            typeof(ushort), typeof(uint), typeof(ulong), typeof(decimal)
         };
 
         Dictionary<Type, Delegate> IPrintingConfig.TypePrintingMethod => typeToPrintingMethod;
@@ -84,16 +86,16 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             if (typeToPrintingMethod.TryGetValue(type, out var @delegate))
-                return PrintLine(@delegate.DynamicInvoke(obj).ToString());
+                return PrintLine(@delegate.DynamicInvoke(obj));
 
             if (numbersTypes.Contains(type))
             {
                 cultureForNumber.TryGetValue(type, out var culture);
-                return PrintLine(((IFormattable) obj).ToString(null, culture));
+                return PrintLine(obj, culture);
             }
 
             if (finalTypes.Contains(type))
-                return PrintLine(obj.ToString());
+                return PrintLine(obj);
 
             if (obj is IEnumerable enumerable)
                 return PrintIEnumerable(enumerable, nestingLevel);
@@ -101,7 +103,10 @@ namespace ObjectPrinting
             return PrintProperties(obj, nestingLevel);
         }
 
-        private string PrintLine(string data) => $"{data}{Environment.NewLine}";
+        private string PrintLine(object data, CultureInfo cultureInfo) =>
+            $"{((IFormattable) data).ToString(null, cultureInfo)}{Environment.NewLine}";
+
+        private string PrintLine(object data) => $"{(data)}{Environment.NewLine}";
 
         private string PrintIEnumerable(IEnumerable enumerable, int nestingLevel)
         {
@@ -133,7 +138,7 @@ namespace ObjectPrinting
         {
             var propertyValue = propertyInfo.GetValue(obj);
             return propertyToPrintingMethod.TryGetValue(propertyInfo, out var @delegate)
-                ? PrintLine(@delegate.DynamicInvoke(propertyValue).ToString())
+                ? PrintLine(@delegate.DynamicInvoke(propertyValue))
                 : PrintToString(propertyValue, nestingLevel + 1);
         }
 
