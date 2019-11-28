@@ -2,8 +2,9 @@
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrintingTests.TestsElements;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting
 {
     [TestFixture]
     public class ObjectPrinterTests
