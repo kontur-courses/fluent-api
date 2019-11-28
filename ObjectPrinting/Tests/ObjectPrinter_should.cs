@@ -27,8 +27,7 @@ namespace ObjectPrinting.Tests
         [TestCase("NAME", 180, 60)]
         public void PrintToString_WhenPersonWithArgument(string name, int height, int age)
         {
-            var guid = new Guid();
-            var person = new Person {Id = guid, Name = name, Height = height, Age = age};
+            var person = new Person { Name = name, Height = height, Age = age};
             var result = person.PrintToString();
             result.Should().Contain(name).And.Contain(height.ToString()).And.Contain(age.ToString());
         }

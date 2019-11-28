@@ -51,18 +51,18 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_WhenTakeOnlySerial()
         {
-            var person = new ClassWithField(){StrField = "String"};
-            person.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1)).
-                Should().NotContain(person.StrField).And.Contain($"{nameof(person.StrField)} = {person.StrField[0].ToString()}");
+            var _class = new ClassWithField {StrField = "String"};
+            _class.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1)).
+                Should().NotContain(_class.StrField).And.Contain($"{nameof(_class.StrField)} = {_class.StrField[0].ToString()}");
         }
 
         [TestCase("en-GB", 50.5, "50.5")]
         [TestCase("ru-RU", 50.5, "50,5")]
         public void PrintToString_WhenAlternativeCultureSerial(string culture, double height, string expectHeight)
         {
-            var person = new ClassWithField(){DoublField = height};
-            var result = person.PrintToString(ser => ser.AlternativeFor<double>().Using(new CultureInfo(culture)));
-            result.Should().Contain($"{nameof(person.DoublField)} = {expectHeight}");
+            var _class = new ClassWithField {DoublField = height};
+            var result = _class.PrintToString(ser => ser.AlternativeFor<double>().Using(new CultureInfo(culture)));
+            result.Should().Contain($"{nameof(_class.DoublField)} = {expectHeight}");
         }
     }
 
