@@ -59,6 +59,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\Person.cs" />
+    <Compile Include="Tests\PersonWithCollection.cs" />
+    <Compile Include="Tests\PersonWithComplexName.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
