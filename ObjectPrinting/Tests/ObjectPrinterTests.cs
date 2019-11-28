@@ -102,7 +102,11 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<Person>();
             var result = printer.PrintToString(_person);
-            result.Should().Be((_result.Substring(0, result.Length)));
+            result.Should().Be((string.Format("Person{0}" +
+                                              "\tId = 00000000-0000-0000-0000-000000000000{0}" +
+                                              "\tName = Luke{0}" +
+                                              "\tHeight = 150,5{0}" +
+                                              "\tAge = 20{0}", Environment.NewLine)));
         }
 
         [Test]
@@ -187,7 +191,8 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Age).Using(i => "Well, " + i);
             var result = printer.PrintToString(_person);
             result.Should().Be(_result
-                .Replace("20", "Well, 20"));
+                .Replace("20", "Well, 20")
+                .Replace("1000", "Well, 1000"));
         }
 
         [Test]
@@ -197,7 +202,8 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Name).TrimmedToLength(2);
             var result = printer.PrintToString(_person);
             result.Should().Be(_result
-                .Replace("Luke", "Lu"));
+                .Replace("Luke", "Lu")
+                .Replace("Darth", "Da"));
         }
 
         [Test]
@@ -212,7 +218,8 @@ namespace ObjectPrinting.Tests
         {
             var result = _person.PrintToString(s => s.Excluding(p => p.Age));
             result.Should().Be(_result
-                .Replace($"\tAge = 20{Environment.NewLine}", ""));
+                .Replace($"\tAge = 20{Environment.NewLine}", "")
+                .Replace($"\t\tAge = 1000{Environment.NewLine}", ""));
         }
 
         [Test]

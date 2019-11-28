@@ -67,8 +67,8 @@ namespace ObjectPrinting
                 if (culturesForPrinting.ContainsKey(type))
                     return Convert.ToString(obj, culturesForPrinting[type]) + Environment.NewLine;
                 return obj + Environment.NewLine;
-                
             }
+
             var sb = new StringBuilder();
 
             sb.AppendLine(type.Name);
@@ -80,22 +80,23 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private void AppendFormatedProperty(StringBuilder builder,PrintInfo info,
+        private void AppendFormatedProperty(StringBuilder builder, PrintInfo info,
             int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
             var start = indentation + info.Definition;
             if (excludedTypes.Contains(info.Type))
                 return;
-            if (excludedProperties.Contains(info.Name) && nestingLevel == 0)
+            if (excludedProperties.Contains(info.Name))
                 return;
-            if (memberPrinting.ContainsKey(info.Name) && nestingLevel == 0)
-                builder.Append(start + PrintToString(memberPrinting[info.Name].DynamicInvoke(info.Item), nestingLevel + 1));
+            if (memberPrinting.ContainsKey(info.Name))
+                builder.Append(start + PrintToString(memberPrinting[info.Name].DynamicInvoke(info.Item),
+                                   nestingLevel + 1));
             else if (typePrinting.ContainsKey(info.Type))
-                builder.Append(start + PrintToString(typePrinting[info.Type].DynamicInvoke(info.Item), nestingLevel + 1));
+                builder.Append(
+                    start + PrintToString(typePrinting[info.Type].DynamicInvoke(info.Item), nestingLevel + 1));
             else
                 builder.Append(start + PrintToString(info.Item, nestingLevel + 1));
-
         }
 
         private IEnumerable<PrintInfo> GetMembers(object obj)
