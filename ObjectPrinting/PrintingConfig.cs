@@ -104,7 +104,7 @@ namespace ObjectPrinting
             {
                 sb.Append(indentation).Append(elementInfo.Name).Append(" = ");
                 var value = elementInfo.GetValue(obj);
-                if (elementInfo.MemberInfo != null &&
+                if (value != null && elementInfo.MemberInfo != null &&
                     propertyPrinters.TryGetValue(elementInfo.MemberInfo, out var printingFunction))
                     sb.Append(printingFunction.DynamicInvoke(value));
                 else

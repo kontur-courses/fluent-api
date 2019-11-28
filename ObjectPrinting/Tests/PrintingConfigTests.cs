@@ -133,6 +133,24 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_PrintsNull_IfPropertyIsNull()
+        {
+            var person = new Person {Name = null, Phone = ""};
+            var config = new PrintingConfig<Person>();
+
+            var result = config
+                .Printing(p => p.Name)
+                .TrimmedToLength(5)
+                .Excluding(p => p.Id)
+                .Excluding(p => p.BestFriend)
+                .PrintToString(person);
+
+            result.Should()
+                .Contain("Name").And
+                .Contain("null");
+        }
+
+        [Test]
         [Timeout(1000)]
         public void PrintToString_HandlesCircularReferences_ObjectRefersToItself()
         {
