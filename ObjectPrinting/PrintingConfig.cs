@@ -12,6 +12,7 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> typesExcluding = new HashSet<Type>();
         private readonly Dictionary<Type, IPropertySerializingConfig<TOwner>> typesSerializers = new Dictionary<Type, IPropertySerializingConfig<TOwner>>();
+        private readonly HashSet<Type> typesSerializingAsPrimitive = new HashSet<Type>();
         private readonly List<Stack<MemberInfo>> propsExcluding = new List<Stack<MemberInfo>>();
         private readonly List<(Stack<MemberInfo> MemberPath, IPropertySerializingConfig<TOwner> Serializer)> propsSerializers = new List<(Stack<MemberInfo>, IPropertySerializingConfig<TOwner>)>();
         private readonly Dictionary<object, int> printedObjects = new Dictionary<object, int>();
@@ -21,11 +22,21 @@ namespace ObjectPrinting
 
         public PrintingConfig()
         {
+            SetDefaultPrimitiveTypes();
         }
 
         public PrintingConfig(TOwner obj)
         {
             ownerObject = obj;
+            SetDefaultPrimitiveTypes();
+        }
+
+        private void SetDefaultPrimitiveTypes()
+        {
+            SerializeAsPrimitiveType<string>();
+            SerializeAsPrimitiveType<DateTime>();
+            SerializeAsPrimitiveType<TimeSpan>();
+            SerializeAsPrimitiveType<Guid>();
         }
 
         public string PrintToString()
@@ -62,12 +73,8 @@ namespace ObjectPrinting
                 return true;
             }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+            if (type.IsPrimitive || typesSerializingAsPrimitive.Contains(type))
             {
                 objString = obj + Environment.NewLine;
                 return true;
@@ -75,7 +82,6 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
 
             var alreadyPrinted = printedObjects.Keys.Contains(obj);
@@ -218,6 +224,12 @@ namespace ObjectPrinting
                 propsSerializers.Add((new Stack<MemberInfo>(membersChain)/*stack is reversing here*/, propSerializerConfig));
                 return propSerializerConfig;
             }
+        }
+
+        public PrintingConfig<TOwner> SerializeAsPrimitiveType<T>()
+        {
+            typesSerializingAsPrimitive.Add(typeof(T));
+            return this;
         }
     }
 }

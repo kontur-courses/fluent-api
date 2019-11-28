@@ -129,6 +129,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void Can_SerializeAnyTypeOrPropertyAsPrimitiveType()
+        {
+            var obj = new ClassWithStrings { s1 = "12345", s2 = "67890" };
+            obj.GetObjectPrinter().SerializeAsPrimitiveType<ClassWithStrings>().PrintToString().Should().Be("ObjectPrinting.Tests.ClassWithStrings" + Environment.NewLine);
+        }
+
+        [Test]
         [UseReporter(typeof(DiffReporter))]
         public void Support_Collections()
         {
