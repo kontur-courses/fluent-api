@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -27,7 +28,7 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
             var result = printer.PrintToString(person);
-            result.Should().Contain("185,5").And.Contain("Alex").And.NotContain("20");
+            result.Should().Contain("185,5").And.Contain("Alex").And.NotContain("20").And.NotContain("Age");
         }
 
         [Test]
@@ -115,6 +116,36 @@ namespace ObjectPrinting.Tests
             var result = person1.PrintToString();
 
             result.Should().Contain("Partner contains cyclic reference");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintCollections_OnArray()
+        {
+            person.Marks = new[] {1, 2, 3};
+            var result = person.PrintToString();
+            result.Should().Contain("1").And.Contain("2").And.Contain("3");
+
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintCollections_OnList()
+        {
+            person.VisitedCountries = new List<string>{"a", "b", "c"};
+            var result = person.PrintToString();
+            result.Should().Contain("a").And.Contain("b").And.Contain("c");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintCollections_OnDictionary()
+        {
+            person.YearsPerJob = new Dictionary<string, int>
+            {
+                {"a", 1 },
+                {"b", 2 },
+                {"c", 3 },
+            };
+            var result = person.PrintToString();
+            result.Should().Contain("a = 1").And.Contain("b = 2").And.Contain("c = 3");
         }
     }
 }
