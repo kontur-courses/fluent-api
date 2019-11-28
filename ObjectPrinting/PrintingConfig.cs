@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,15 +13,21 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private readonly Dictionary<Type, Func<object, string>> specialPrintingFunctionsForTypes =
+            new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<PropertyInfo, Func<object, string>> specialPrintingFunctionsForProperties =
+            new Dictionary<PropertyInfo, Func<object, string>>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, specialPrintingFunctionsForTypes);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(
+                this, specialPrintingFunctionsForProperties, memberSelector.GetPropertyInfo());
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -52,6 +59,8 @@ namespace ObjectPrinting
             var type = obj.GetType();
             if (excludedTypes.Contains(type))
                 return "";
+            if (specialPrintingFunctionsForTypes.ContainsKey(type))
+                return specialPrintingFunctionsForTypes[type](obj);
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -64,7 +73,7 @@ namespace ObjectPrinting
 
         private string PrintProperties(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -72,9 +81,17 @@ namespace ObjectPrinting
             {
                 if (excludedProperties.Contains(propertyInfo))
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (specialPrintingFunctionsForProperties.ContainsKey(propertyInfo))
+                {
+                    sb.Append(indentation +
+                              specialPrintingFunctionsForProperties[propertyInfo](propertyInfo.GetValue(obj)));
+                }
+                else
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                }
             }
             return sb.ToString();
         }
