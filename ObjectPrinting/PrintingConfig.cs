@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -51,6 +52,9 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (obj is ICollection collection)
+                return PrintCollection(collection, nestingLevel);
+
             var type = obj.GetType();
             if (settings.WaysToSerializeTypes.ContainsKey(type))
                 return settings.WaysToSerializeTypes[type](obj) + Environment.NewLine;
@@ -80,14 +84,14 @@ namespace ObjectPrinting
         {
             var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            var builder = new StringBuilder();
+            builder.AppendLine(type.Name);
             foreach (var propertyInfo in GetAllowedPropertiesForType(type))
             {
                 var propertyValue = PrintProperty(obj, nestingLevel, propertyInfo);
-                sb.Append($"{indentation}{propertyInfo.Name} = {propertyValue}");
+                builder.Append($"{indentation}{propertyInfo.Name} = {propertyValue}");
             }
-            return sb.ToString();
+            return builder.ToString();
         }
 
         private IEnumerable<PropertyInfo> GetAllowedPropertiesForType(Type type)
@@ -107,6 +111,19 @@ namespace ObjectPrinting
                 propertyValue = propertyValue.Truncate(settings.MaxLengthsOfProperties[propertyInfo]);
 
             return propertyValue;
+        }
+
+        private string PrintCollection(ICollection collection, int nestingLevel)
+        {
+            var builder = new StringBuilder();
+            builder.Append("[");
+            foreach (var element in collection)
+            {
+                builder.Append(PrintToString(element, nestingLevel));
+            }
+
+            builder.Append("]");
+            return builder.ToString();
         }
     }
 }

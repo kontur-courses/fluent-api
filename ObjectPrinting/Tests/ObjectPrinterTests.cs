@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -178,9 +179,67 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person)
                 .Should()
-                .Contain(person.Height.ToString(CultureInfo.CurrentCulture))
+                .Contain(person.Height.ToString())
                 .And
                 .Contain(person.Name);
+        }
+
+        [TestCaseSource(nameof(PrintToStringShouldReturnStringThatContainAllElementsOfCollectionWhenInputIsCollectionTestCases))]
+        public void PrintToString_ShouldReturnStringThatContainAllElementsOfCollection_WhenInputIsCollection(ICollection collection)
+        {
+            var printer = ObjectPrinter.For<ICollection>();
+
+            var result = printer.PrintToString(collection);
+
+            foreach (var element in collection)
+            {
+                result.Should().Contain(element.ToString());
+            }
+        }
+
+        private static IEnumerable
+            PrintToStringShouldReturnStringThatContainAllElementsOfCollectionWhenInputIsCollectionTestCases
+        {
+            get
+            {
+                yield return new TestCaseData(new[] {new string[] {"string1", "string2", "string3"}});
+                yield return new TestCaseData(new List<int> {100, 200, 300, 400});
+            }
+        }
+
+        [Test]
+        public void PrintToString_ShouldReturnStringThatContainKeysAndValues_WhenInputIsDictionary()
+        {
+            var dictionary = new Dictionary<string, int> {{"Alex", 10}, {"Mike", 12}, {"Bob", 40}};
+            var printer = ObjectPrinter.For<Dictionary<string, int>>();
+
+            var result = printer.PrintToString(dictionary);
+
+            foreach (var keyValuePair in dictionary)
+            {
+                result.Should().Contain(keyValuePair.Key)
+                    .And.Contain(keyValuePair.Value.ToString());
+            }
+        }
+
+        [Test]
+        public void PrintToString_ShouldReturnCorrect_WhenCollectionIsObjectProperty()
+        {
+            var obj = new
+            {
+                Name = "Mike",
+                Friends = new[] {"Alex", "Bob"},
+                Age = 22
+            };
+
+            var printer = ObjectPrinter.For<object>();
+
+            var result = printer.PrintToString(obj);
+
+            foreach (var friend in obj.Friends)
+            {
+                result.Should().Contain(friend);
+            }
         }
     }
 }
