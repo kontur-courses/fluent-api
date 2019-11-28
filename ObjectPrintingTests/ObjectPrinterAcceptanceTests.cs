@@ -26,7 +26,7 @@ namespace ObjectPrintingTests
                 // 1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
                 // 2. Указать альтернативный способ сериализации для определенного типа
-//                .Serializing<string>().Using(d => "Tom")
+                .Serializing<string>().Using(d => "Tom")
                 // 3. Для числовых типов указать культуру
                 .Serializing<double>().Using(CultureInfo.InvariantCulture)
                 // 4. Настроить сериализацию конкретного свойства

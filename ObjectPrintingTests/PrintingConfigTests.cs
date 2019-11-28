@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -11,6 +13,19 @@ namespace ObjectPrintingTests
     [TestFixture]
     public class PrintingConfigTests
     {
+        private static string newLine = Environment.NewLine;
+
+        private static readonly Person person = new Person
+        {
+            Id = new Guid(),
+            Name = "Alex",
+            Surname = "Suvorov",
+            Age = 45,
+            Height = 172.6,
+            Citizenship = "Russian"
+        };
+
+
         [TestCase('b')]
         [TestCase(false)]
         [TestCase(true)]
@@ -47,7 +62,7 @@ namespace ObjectPrintingTests
         }
 
         [TestCaseSource(nameof(GeneratePrimitiveTypeObjectAndSerializer))]
-        public void PrintToString_PrimitiveTypeObjectBySerializer_ShouldReturnResultOfSerializer<T>(
+        public void Serializing_PrimitiveTypeObjectBySerializer_ShouldReturnResultOfSerializer<T>(
             T obj, Func<T, string> serializer)
         {
             var printer = ObjectPrinter.For<T>().Serializing<T>().Using(serializer);
@@ -59,77 +74,62 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Exclude_TypeWhichObjectPropertiesHaveNotContains_ShouldNotThrowException()
+        public void Excluding_TypeWhichObjectPropertiesHaveNotContains_ShouldNotThrowException()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<float>();
-            var guid = Guid.NewGuid();
-            var person = new Person
-            {
-                Id = guid,
-                Name = "Alex",
-                Surname = "Suvorov",
-                Age = 45,
-                Height = 172.6,
-                Citizenship = "Russian"
-            };
+
             var newLine = Environment.NewLine;
             var expected =
-                $"Id = {guid}{newLine}" +
-                $"Name = Alex{newLine}" +
-                $"Surname = Suvorov{newLine}" +
-                $"Height = 172.6{newLine}" +
-                $"Age = 45{newLine}" +
-                "Citizenship = Russian";
+                $"Id = {person.Id}{newLine}" +
+                $"Name = {person.Name}{newLine}" +
+                $"Surname = {person.Surname}{newLine}" +
+                $"Height = {person.Height}{newLine}" +
+                $"Age = {person.Age}{newLine}" +
+                $"Citizenship = {person.Citizenship}";
 
             var actual = printer.PrintToString(person);
 
             actual.Should().BeEquivalentTo(expected);
         }
 
-        private static IEnumerable<TestCaseData> GenerateExcludedTypesAndSerializingResult()
+        private static IEnumerable<TestCaseData> GenerateObjectAndExcludedTypesAndSerializingResult()
         {
             yield return new TestCaseData(
+                    person,
                     string.Empty,
-                    "Id = Guid\r\n\tHeight = 172,6\r\n\tAge = 45\r\n")
+                    $"Id = {person.Id}{newLine}Height = {person.Height}{newLine}Age = {person.Age}")
                 .SetName("excluding all property with string type");
 
             yield return new TestCaseData(
+                    person,
                     0.0,
-                    "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\t" +
-                    "Surname = Suvorov\r\n\tAge = 45\r\n\tCitizenship = Russian\r\n")
+                    $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}Surname = {person.Surname}" +
+                    $"{newLine}Age = {person.Age}{newLine}Citizenship = {person.Citizenship}")
                 .SetName("excluding property with double type");
 
             yield return new TestCaseData(
+                    person,
                     new Guid(),
-                    "Person\r\n\tName = Alex\r\n\t" +
-                    "Surname = Suvorov\r\n\tHeight = 172,6\r\n\t" +
-                    "Age = 45\r\n\tCitizenship = Russian\r\n")
+                    $"Name = {person.Name}{newLine}" +
+                    $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                    $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}")
                 .SetName("excluding property with Guid type");
 
             yield return new TestCaseData(
+                    person,
                     42,
-                    "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\t" +
-                    "Surname = Suvorov\r\n\tHeight = 172,6\r\n\t" +
-                    "Citizenship = Russian\r\n")
+                    $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
+                    $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                    $"Citizenship = {person.Citizenship}")
                 .SetName("excluding property with int type");
         }
 
-        [TestCaseSource(nameof(GenerateExcludedTypesAndSerializingResult))]
-        [Ignore("Not finished")]
-        public void Exclude_Type_ShouldNotThrowException<T>(T _, string expected)
+        [TestCaseSource(nameof(GenerateObjectAndExcludedTypesAndSerializingResult))]
+        public void Exclude_Type_ShouldReturnRightString<T>(Person p, T _, string expected)
         {
             var printer = ObjectPrinter.For<Person>().Excluding<T>();
-            var person = new Person
-            {
-                Id = new Guid(),
-                Name = "Alex",
-                Surname = "Suvorov",
-                Age = 45,
-                Height = 172.6,
-                Citizenship = "Russian"
-            };
 
-            var actual = printer.PrintToString(person);
+            var actual = printer.PrintToString(p);
 
             actual.Should().BeEquivalentTo(expected);
         }
@@ -158,19 +158,64 @@ namespace ObjectPrintingTests
             actual.Should().BeOfType(expected.GetType());
         }
 
-        [Test]
-        public void PrintToString_WithExcludedProperty_ShouldNotPrintExcluded()
+        private static IEnumerable<TestCaseData> GenerateObjAndObjToExcludedPropertyFuncAndSerializingResult()
         {
-            var person = new Person {Name = "Bob", Age = 42};
-            var expected = $"Name = Bob{Environment.NewLine}Age = 42";
+            Expression<Func<Person, string>> personToName = s => s.Name;
+            Expression<Func<Person, string>> personToSurname = s => s.Surname;
+            Expression<Func<Person, int>> personToAge = s => s.Age;
+            Expression<Func<Person, double>> personToHeight = s => s.Height;
+            Expression<Func<Person, Guid>> personToId = s => s.Id;
+            Expression<Func<Person, string>> personToCitizenship = s => s.Citizenship;
 
-            var actual = ObjectPrinter
-                .For<Person>()
-                .Excluding(p => p.Citizenship)
-                .Excluding(p => p.Surname)
-                .Excluding(p => p.Id)
-                .Excluding(p => p.Height)
-                .PrintToString(person);
+            yield return new TestCaseData(
+                person,
+                personToId,
+                $"Name = {person.Name}{newLine}" +
+                $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}");
+
+            yield return new TestCaseData(
+                person,
+                personToName,
+                $"Id = {person.Id}{newLine}" +
+                $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}");
+
+            yield return new TestCaseData(
+                person,
+                personToSurname,
+                $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
+                $"Height = {person.Height}{newLine}" +
+                $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}");
+
+            yield return new TestCaseData(
+                person,
+                personToHeight,
+                $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
+                $"Surname = {person.Surname}{newLine}" +
+                $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}");
+
+            yield return new TestCaseData(
+                person,
+                personToAge,
+                $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
+                $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                $"Citizenship = {person.Citizenship}");
+
+            yield return new TestCaseData(
+                person,
+                personToCitizenship,
+                $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
+                $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
+                $"Age = {person.Age}");
+        }
+
+        [TestCaseSource(nameof(GenerateObjAndObjToExcludedPropertyFuncAndSerializingResult))]
+        public void Excluding_PropertyByFunc_ShouldNotPrintExcludedProperty<T>(Person obj,
+            Expression<Func<Person, T>> objToExcludedProperty, string expected)
+        {
+            var printer = ObjectPrinter.For<Person>().Excluding<T>(objToExcludedProperty);
+            var actual = printer.PrintToString(obj);
 
             actual.Should().BeEquivalentTo(expected);
         }
@@ -214,8 +259,6 @@ Person2
 
         private static IEnumerable<TestCaseData> GenerateCollectionAndSerializingResult()
         {
-            var newLine = Environment.NewLine;
-
             yield return new TestCaseData(new List<int> {3, 1, 4}, $"[3,{newLine}1,{newLine}4]{newLine}");
 
             yield return new TestCaseData(new HashSet<string> {"first", "second"}, $"[first,{newLine}second]{newLine}");
@@ -245,6 +288,45 @@ Person2
             var expected = $"students = [Name = Tom{newLine}Surname = null{newLine}Age = 14{newLine}" +
                            $"Citizenship = null,{newLine}Name = Bob{newLine}Surname = null" +
                            $"{newLine}Age = 13{newLine}Citizenship = null]{newLine + newLine}classNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_ComplexObjectBySerializer_ShouldReturnResultOfSerializer()
+        {
+            string Serializer(Person s) => "person serialized by personSerializer";
+
+            var printer = ObjectPrinter.For<Person>().Serializing<Person>().Using(Serializer);
+            var expected = Serializer(person);
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+
+        [Test]
+        public void Serializing_WithCulture_ShouldReturnRightString()
+        {
+            var obj = 0.42;
+            var printer = ObjectPrinter.For<double>().Serializing<double>().Using(CultureInfo.CurrentCulture);
+            var expected = "0.42";
+
+            var actual = printer.PrintToString(obj);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_PropertyBySerializer_ShouldReturnRightString()
+        {
+            var @class = new Class() {ClassNumber = 15, Students = new List<Person> {person}};
+            string Serializer(List<Person> s) => "students serialized by studentsSerializer";
+            var printer = ObjectPrinter.For<Class>().Serializing(x => x.Students).Using(Serializer);
+            var expected = $"Students = students serialized by studentsSerializer{newLine}ClassNumber = 15";
 
             var actual = printer.PrintToString(@class);
 
