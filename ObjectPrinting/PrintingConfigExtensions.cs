@@ -1,34 +1,11 @@
 ﻿using System;
-using System.Globalization;
+using System.Linq;
+using System.Text;
 
 namespace ObjectPrinting
 {
     public static class PrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> config,
-            CultureInfo culture)
-        {
-            var printingConfig = (config as IPropertyPrintingConfig<TOwner, int>).PrintingConfig;
-            printingConfig.Cultures.Add(typeof(int), culture);
-            return printingConfig;
-        }
-        
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> config,
-            CultureInfo culture)
-        {
-            var printingConfig = (config as IPropertyPrintingConfig<TOwner, float>).PrintingConfig;
-            printingConfig.Cultures.Add(typeof(float), culture);
-            return printingConfig;
-        }
-        
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> config,
-            CultureInfo culture)
-        {
-            var printingConfig = (config as IPropertyPrintingConfig<TOwner, double>).PrintingConfig;
-            printingConfig.Cultures.Add(typeof(double), culture);
-            return printingConfig;
-        }
-
         public static PrintingConfig<TOwner> CutToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> config,
             int length)
         {
@@ -47,6 +24,37 @@ namespace ObjectPrinting
         public static string PrintToString<T>(this T printedObject, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
             return config(ObjectPrinter.For<T>()).PrintToString(printedObject);
+        }
+
+        public static string GetFullTypeName(this Type type)
+        {
+            return type.IsGenericType ? GetGenericTypeName(type) : type.Name;
+        }
+
+        private static string GetGenericTypeName(this Type type)
+        {
+            return new StringBuilder()
+                .Append(type.GetTypeName())
+                .Append("<")
+                .Append(type.GetArguments())
+                .Append(">")
+                .ToString();
+        }
+
+        private static string GetTypeName(this Type type)
+        {
+            var name = type.Name;
+            var symbolIndex = name.IndexOf('`');
+            if (symbolIndex > 0)
+                name = name.Substring(0, symbolIndex);
+            return name;
+        }
+
+        private static string GetArguments(this Type type)
+        {
+            var genericArguments = type.GetGenericArguments();
+            var arguments = genericArguments.Select(t => t.GetFullTypeName()).ToList();
+            return string.Join(", ", arguments);
         }
     }
 }

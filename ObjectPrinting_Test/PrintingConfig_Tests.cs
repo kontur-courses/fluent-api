@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
@@ -138,6 +139,44 @@ namespace ObjectPrinting_Test
                 .Append("\tName = Phil\r\n")
                 .Append("\tHeight = 190\r\n")
                 .Append("\tAge = 22\r\n")
+                .ToString();
+            result.Should().BeEquivalentTo(expectedResult);
+        }
+        
+        [Test]
+        public void ObjectPrinter_CollectionPrinting_ReturnRightResult()
+        {
+            var testDictionary = new Dictionary<string, string>{{"a", "a1"}, {"b", "b1"}, {"c", "c1"}};
+            var result = testDictionary.PrintToString();
+            var expectedResult = new StringBuilder()
+                .Append("Dictionary<String, String>\r\n")
+                .Append("\tKeyValuePair<String, String>\r\n")
+                .Append("\t\tKey = a\r\n")
+                .Append("\t\tValue = a1\r\n")
+                .Append("\tKeyValuePair<String, String>\r\n")
+                .Append("\t\tKey = b\r\n")
+                .Append("\t\tValue = b1\r\n")
+                .Append("\tKeyValuePair<String, String>\r\n")
+                .Append("\t\tKey = c\r\n")
+                .Append("\t\tValue = c1\r\n")
+                .ToString();
+            result.Should().BeEquivalentTo(expectedResult);
+        }
+        
+        [Test]
+        public void ObjectPrinter_CyclingLinks_ReturnRightResult()
+        {
+            var firstPerson = new Child(){Name = "Pit"};
+            var secondPerson = new Child(){Name = "Rik"};
+            firstPerson.Brother = secondPerson;
+            secondPerson.Brother = firstPerson;
+            var result = firstPerson.PrintToString();
+            var expectedResult = new StringBuilder()
+                .Append("Child\r\n")
+                .Append("\tName = Pit\r\n")
+                .Append("\tBrother = Child\r\n")
+                .Append("\t\tName = Rik\r\n")
+                .Append("\t\tBrother = Child\r\n")
                 .ToString();
             result.Should().BeEquivalentTo(expectedResult);
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -6,8 +7,8 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private Type type { get; }
-        private PropertyInfo property { get; }
+        private readonly Type type;
+        private readonly PropertyInfo property;
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.PrintingConfig => printingConfig;
         PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.Property => property;
         Type IPropertyPrintingConfig<TOwner, TPropType>.Type => type;
@@ -27,6 +28,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
         {
             printingConfig.TypePrintingConfig[typeof(TPropType)] = func;
+            return printingConfig;
+        }
+        
+        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        {
+            (printingConfig as IPrintingConfig<TOwner>).Cultures.Add(typeof(TPropType), culture);
             return printingConfig;
         }
     }
