@@ -112,32 +112,43 @@ namespace ObjectPrinting
             obj
                 .Cast<object>()
                 .ToList()
-                .ForEach(x=>sb.Append(identation + PrintToString(x, nestingLevel + 1)));
+                .ForEach(x=>
+                {
+                    sb.Append(identation);
+                    sb.Append(PrintToString(x, nestingLevel + 1));
+                });
             return sb.ToString();
         }
 
         private string PrintPropertyToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
-                sb.Append(PrintPropertyWithCustomSerializator(propertyInfo, obj, identation, 
+                return (PrintPropertyWithCustomSerializator(propertyInfo, obj, identation, 
                     SerializeFunctionsForProperties[propertyInfo.Name]));
-            else if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
-                sb.Append(PrintPropertyWithCustomSerializator(propertyInfo, obj, identation,
+
+            if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
+                return (PrintPropertyWithCustomSerializator(propertyInfo, obj, identation,
                     SerializeFunctionsForTypes[propertyInfo.PropertyType]));
-            else
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            return sb.ToString();
+
+            return String.Join(
+                ""
+                , identation
+                , propertyInfo.Name
+                , " = "
+                , PrintToString(propertyInfo.GetValue(obj),
+                    nestingLevel + 1));
         }
 
         private string PrintPropertyWithCustomSerializator(PropertyInfo propertyInfo, object obj, string identation, Func<object, string> serializator)
         {
-            return identation + propertyInfo.Name + " = " +
-                   serializator.Invoke(propertyInfo.GetValue(obj))
-                   + Environment.NewLine;
+            return String.Join(
+                ""
+                , identation
+                , propertyInfo.Name
+                , " = "
+                , serializator.Invoke(propertyInfo.GetValue(obj))
+                , Environment.NewLine);
         }
     }
 }
