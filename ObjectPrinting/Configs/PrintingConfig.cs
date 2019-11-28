@@ -23,7 +23,7 @@ namespace ObjectPrinting.Configs
         {
             var printer = new Printer<TOwner>(excludedTypes, excludedMembers, typesConfigs, membersConfig);
 
-            return printer.Print(obj);
+            return printer.PrintToString(obj);
         }
 
         public PrintingConfig<TOwner> Excluding<T>()

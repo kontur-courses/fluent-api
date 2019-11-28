@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace ObjectPrinting.Configs
         private readonly HashSet<object> printed;
         private readonly StringBuilder output;
 
-        private static readonly List<Type> FinalTypes = new List<Type> 
+        private static readonly List<Type> FinalTypes = new List<Type>
         {
             typeof(char),
             typeof(bool),
@@ -34,7 +34,9 @@ namespace ObjectPrinting.Configs
             typeof(TimeSpan)
         };
 
-        public Printer(HashSet<Type> excludedTypes, HashSet<MemberInfo> excludedMembers, Dictionary<Type, IPropertySerializingConfig<TOwner>> typesConfigs, Dictionary<MemberInfo, IPropertySerializingConfig<TOwner>> membersConfig)
+        public Printer(HashSet<Type> excludedTypes, HashSet<MemberInfo> excludedMembers,
+            Dictionary<Type, IPropertySerializingConfig<TOwner>> typesConfigs,
+            Dictionary<MemberInfo, IPropertySerializingConfig<TOwner>> membersConfig)
         {
             this.excludedTypes = excludedTypes;
             this.excludedMembers = excludedMembers;
@@ -45,9 +47,16 @@ namespace ObjectPrinting.Configs
             output = new StringBuilder();
         }
 
-        public string Print(TOwner objectToPrint)
+        public string PrintToString(TOwner objectToPrint)
         {
-            var type = typeof(TOwner);
+            Print(objectToPrint);
+
+            return output.ToString();
+        }
+
+        private void Print(object objectToPrint)
+        {
+            var type = objectToPrint.GetType();
 
             if (typesConfigs.TryGetValue(type, out var config))
             {
@@ -55,17 +64,20 @@ namespace ObjectPrinting.Configs
 
                 output.Append(serializer(objectToPrint));
             }
-            else if (FinalTypes.Contains(typeof(TOwner)))
+            else if (FinalTypes.Contains(type))
             {
                 output.Append(objectToPrint);
+            }
+            else if (objectToPrint is IEnumerable enumerable)
+            {
+                printed.Add(objectToPrint);
+                PrintCollectionValue(enumerable, -1);
             }
             else
             {
                 printed.Add(objectToPrint);
                 PrintRegularObjectValue(objectToPrint, -1);
             }
-
-            return output.ToString();
         }
 
         private void Print(PropertyInfo propertyInfo, object value, int nestingLevel)
@@ -102,7 +114,8 @@ namespace ObjectPrinting.Configs
                 PrintComplexObject(propertyInfo, value, nestingLevel);
         }
 
-        private void PrintElementaryProperty(PropertyInfo propertyInfo, object value, Func<object, string> serializer, int nestingLevel)
+        private void PrintElementaryProperty(PropertyInfo propertyInfo, object value, Func<object, string> serializer,
+            int nestingLevel)
         {
             var indent = new string('\t', nestingLevel);
             var name = propertyInfo.Name;
@@ -134,6 +147,27 @@ namespace ObjectPrinting.Configs
             PrintRegularObjectValue(value, nestingLevel);
         }
 
+
+        private void PrintCollectionValue(IEnumerable enumerable, int nestingLevel)
+        {
+            output.Append("[");
+
+            var i = 0;
+
+            foreach (var obj in enumerable)
+            {
+                if (i != 0)
+                {
+                    output.Append(",").Append(Environment.NewLine);
+                }
+
+                Print(obj);
+                i++;
+            }
+
+            output.Append("]").Append(Environment.NewLine);
+        }
+
         private void PrintRegularObjectValue(object value, int nestingLevel)
         {
             var properties = value.GetType().GetProperties().Where(p => !IsExcluded(p)).ToList();
@@ -153,12 +187,9 @@ namespace ObjectPrinting.Configs
         {
             var indent = new string('\t', nestingLevel);
 
-            output.Append(indent).Append("[");
+            output.Append(indent).Append(propertyInfo.Name).Append(" = ");
 
-            foreach (var obj in value)
-            {
-                throw new NotImplementedException("");
-            }
+            PrintCollectionValue(value, nestingLevel);
         }
 
         private bool IsExcluded(PropertyInfo propertyInfo)

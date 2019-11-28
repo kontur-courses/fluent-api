@@ -79,7 +79,7 @@ namespace ObjectPrintingTests
                 $"Id = {guid}{newLine}" +
                 $"Name = Alex{newLine}" +
                 $"Surname = Suvorov{newLine}" +
-                $"Height = 172,6{newLine}" +
+                $"Height = 172.6{newLine}" +
                 $"Age = 45{newLine}" +
                 "Citizenship = Russian";
 
@@ -210,6 +210,45 @@ Person2
             var actual = ObjectPrinter
                 .For<PersonWithParentContainer>()
                 .PrintToString(container);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        private static IEnumerable<TestCaseData> GenerateCollectionAndSerializingResult()
+        {
+            var newLine = Environment.NewLine;
+
+            yield return new TestCaseData(new List<int> {3, 1, 4}, $"[3,{newLine}1,{newLine}4]{newLine}");
+
+            yield return new TestCaseData(new HashSet<string> { "first", "second" }, $"[first,{newLine}second]{newLine}");
+
+            yield return new TestCaseData(new Dictionary<double, bool>{[0.0] = true, [-3.14] = false}, 
+                $"[Key = 0{newLine}Value = True,{newLine}Key = -3.14{newLine}Value = False]{newLine}");
+        }
+
+        [TestCaseSource(nameof(GenerateCollectionAndSerializingResult))]
+        public void PrintToString_WithCollection_ShouldReturnRightString(IEnumerable enumerable, string expected)
+        {
+            var printer = ObjectPrinter.For<IEnumerable>();
+
+            var actual = printer.PrintToString(enumerable);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void PrintToString_ObjectWithCollectionProperty_ShouldReturnRightString()
+        {
+            var person1 = new Person() {Name = "Tom", Age = 14};
+            var person2 = new Person() {Name = "Bob", Age = 13};
+            var @class = new Class() {students = new List<Person>() {person1, person2}, classNumber = 7};
+            var printer = ObjectPrinter.For<Class>().Excluding<double>().Excluding<Guid>();
+            var newLine = Environment.NewLine;
+            var expected = $"students = [Name = Tom{newLine}Surname = null{newLine}Age = 14{newLine}" +
+                           $"Citizenship = null,{newLine}Name = Bob{newLine}Surname = null" +
+                           $"{newLine}Age = 13{newLine}Citizenship = null]{newLine + newLine}classNumber = 7";
+
+            var actual = printer.PrintToString(@class);
 
             actual.Should().BeEquivalentTo(expected);
         }

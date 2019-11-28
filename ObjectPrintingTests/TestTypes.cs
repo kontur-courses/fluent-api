@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using NUnit.Framework;
 
 namespace ObjectPrintingTests
 {
@@ -23,5 +25,11 @@ namespace ObjectPrintingTests
     {
         public PersonWithParent Person1 { get; set; }
         public PersonWithParent Person2 { get; set; }
+    }
+
+    public class Class
+    {
+        public List<Person> students { get; set; }
+        public int classNumber { get; set; }
     }
 }
