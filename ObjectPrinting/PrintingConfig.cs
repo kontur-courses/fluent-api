@@ -1,48 +1,41 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
-        private Dictionary<Type, Func<Type, string>> cultureRules = new Dictionary<Type, Func<Type, string>>();
-        private HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private static readonly int MaxNestingLevel = 5;
+        private readonly SerializationInfo serializationInfo;
 
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-
-        private Dictionary<PropertyInfo, Func<object, string>> propertyRules =
-            new Dictionary<PropertyInfo, Func<object, string>>();
-
-        private Dictionary<Type, Func<Type, string>> typeRules = new Dictionary<Type, Func<Type, string>>();
-
-        //protected void addPropertyRule(Func<object, string> rule)
-        //{
-        //}
-
-        //protected void addTypeRule(Func<object, string> rule)
-        //{
-        //}
-
-        public string PrintToString(TOwner obj)
+        public PrintingConfig()
         {
-            return PrintToString(obj, 0);
+            serializationInfo = new SerializationInfo();
         }
 
+        SerializationInfo IPrintingConfig.SerializationInfo => serializationInfo;
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            excludedTypes.Add(typeof(T));
+            serializationInfo.ExcludeType(typeof(T));
             return this;
         }
 
-        public PropertySerializationConfig<TOwner, TPropType> For<TPropType>(Expression<Func<TOwner, TPropType>> propType)
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> func)
         {
-            return new PropertySerializationConfig<TOwner, TPropType>(this);
+            var propInfo = ((MemberExpression) func.Body).Member as PropertyInfo;
+            serializationInfo.ExcludeProperty(propInfo);
+            return this;
+        }
+
+        public PropertySerializationConfig<TOwner, TPropType> For<TPropType>(
+            Expression<Func<TOwner, TPropType>> func)
+        {
+            var propInfo = ((MemberExpression) func.Body).Member as PropertyInfo;
+            return new PropertySerializationConfig<TOwner, TPropType>(this, propInfo);
         }
 
         public PropertySerializationConfig<TOwner, TPropType> For<TPropType>()
@@ -50,16 +43,16 @@ namespace ObjectPrinting
             return new PropertySerializationConfig<TOwner, TPropType>(this);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> func)
+        public string PrintToString(TOwner obj)
         {
-            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
-
-            return this;
+            return PrintToString(obj, 0);
         }
+
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
+            if (nestingLevel >= MaxNestingLevel)
+                return "Max nestingLevel reached";
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -76,9 +69,21 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+            {
+                sb.Append(identation);
+                if (!serializationInfo.Excluded(propertyInfo))
+                {
+                    if (serializationInfo.TryGetSerialization(propertyInfo, out var serializedProperty, obj))
+                        sb.Append(serializedProperty);
+                    else
+                        sb.Append(propertyInfo.Name + " = " +
+                                  PrintToString(propertyInfo.GetValue(obj),
+                                      nestingLevel + 1));
+                }
+            }
+
+            sb.Append(Environment.NewLine);
+
             return sb.ToString();
         }
     }
