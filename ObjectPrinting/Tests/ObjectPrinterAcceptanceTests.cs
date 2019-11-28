@@ -77,14 +77,7 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Name).TrimToLength(2)
                 .Excluding(p => p.Surname)
                 .Printing(p => p.Email).TrimToLength(4);
-            var printer1 = ObjectPrinter.For<Person>()
-                .Excluding<Guid>()
-                .Printing<int>().Using(k => k.ToString())
-                .Printing<int>().Using(CultureInfo.CurrentCulture)
-                .Printing(p => p.Name).Using(s => s.Trim())
-                .Printing(p => p.Name).TrimToLength(2);
             var result = printer.PrintToString(person);
-            Console.WriteLine(printer1.PrintToString(person));
             result.Should().Be
             ("Person\r\n" +
              "\tName = Al\r\n" +
