@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configs;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrintingTests
 {
@@ -220,9 +218,9 @@ Person2
 
             yield return new TestCaseData(new List<int> {3, 1, 4}, $"[3,{newLine}1,{newLine}4]{newLine}");
 
-            yield return new TestCaseData(new HashSet<string> { "first", "second" }, $"[first,{newLine}second]{newLine}");
+            yield return new TestCaseData(new HashSet<string> {"first", "second"}, $"[first,{newLine}second]{newLine}");
 
-            yield return new TestCaseData(new Dictionary<double, bool>{[0.0] = true, [-3.14] = false}, 
+            yield return new TestCaseData(new Dictionary<double, bool> {[0.0] = true, [-3.14] = false},
                 $"[Key = 0{newLine}Value = True,{newLine}Key = -3.14{newLine}Value = False]{newLine}");
         }
 
@@ -241,7 +239,7 @@ Person2
         {
             var person1 = new Person() {Name = "Tom", Age = 14};
             var person2 = new Person() {Name = "Bob", Age = 13};
-            var @class = new Class() {students = new List<Person>() {person1, person2}, classNumber = 7};
+            var @class = new Class() {Students = new List<Person>() {person1, person2}, ClassNumber = 7};
             var printer = ObjectPrinter.For<Class>().Excluding<double>().Excluding<Guid>();
             var newLine = Environment.NewLine;
             var expected = $"students = [Name = Tom{newLine}Surname = null{newLine}Age = 14{newLine}" +

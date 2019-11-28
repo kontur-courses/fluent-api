@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 
 namespace ObjectPrintingTests
 {
@@ -29,7 +28,7 @@ namespace ObjectPrintingTests
 
     public class Class
     {
-        public List<Person> students { get; set; }
-        public int classNumber { get; set; }
+        public List<Person> Students { get; set; }
+        public int ClassNumber { get; set; }
     }
 }

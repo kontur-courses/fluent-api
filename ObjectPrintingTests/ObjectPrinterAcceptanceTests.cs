@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting;
 using ObjectPrinting.Configs;
-using ObjectPrintingTests;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -35,14 +35,10 @@ namespace ObjectPrinting.Tests
                 .Serializing(p => p.Surname).Take(3)
                 //6. Исключить из сериализации конкретноe свойство
                 .Excluding(p => p.Citizenship);
+
             Console.WriteLine(printer.PrintToString(person));
 
-//            var col = new List<int> {1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-//            var enumerablePrinter = ObjectPrinter.For<List<int>>();
-//            var res = enumerablePrinter.PrintToString(col);
-//            Console.WriteLine(res);
-
-            var pr = ObjectPrinter.For<int>().Serializing<int>().Using(x=> "100");
+            var pr = ObjectPrinter.For<int>().Serializing<int>().Using(x => "100");
             var i = 89;
             Console.WriteLine(pr.PrintToString(i));
         }
