@@ -9,11 +9,11 @@ namespace ObjectPrinting
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            propConfig.Using(x => x.Substring(0, 3));
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            propConfig.Using(x => x.Substring(0, Math.Min(maxLen, x.Length)));
+            return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
         }
-
     }
 }

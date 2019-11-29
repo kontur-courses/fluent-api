@@ -5,16 +5,19 @@ using NUnit.Framework;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    class ObjectPrinterTests
+    public class ObjectPrinterTests
     {
-        [Test]
-        public void ObjectPrinter_PrintingWithoutChanges()
+        [TestCase(4.2, "de-DE", "Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 4,2\r\n	Age = 0\r\n")]
+        [TestCase(4.2, "en-GB", "Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 4.2\r\n	Age = 0\r\n")]
+        public void ObjectPrinter_PrintingDoubleWithCustomCulture(double height, string culture, string expected)
         {
-            var printer = ObjectPrinter.For<Person>();
+            var testingPerson = new Person {Height = height};
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(new CultureInfo(culture));
 
-            var outString = printer.PrintToString(new Person());
+            var outString = printer.PrintToString(testingPerson);
 
-            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = 0\r\n");
+            outString.Should().Be(expected);
         }
 
         [Test]
@@ -48,28 +51,37 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ObjectPrinter_PrintingWithCustomSerializationForAge()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Age).Using(x => "age");
+
+            var outString = printer.PrintToString(new Person());
+
+            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = age\r\n");
+        }
+
+        [Test]
         public void ObjectPrinter_PrintingWithCustomSerializer()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing<int>().Using(a=>"int");
+                .Printing<int>().Using(a => "int");
 
             var outString = printer.PrintToString(new Person());
 
             outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = int\r\n");
         }
 
-        [TestCase(4.2, "de-DE", "Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 4,2\r\n	Age = 0\r\n")]
-        [TestCase(4.2, "en-GB", "Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 4.2\r\n	Age = 0\r\n")]
-        public void ObjectPrinter_PrintingDoubleWithCustomCulture(double height, string culture, string expected)
+        [Test]
+        public void ObjectPrinter_PrintingWithCustomStringCut()
         {
-            var testingPerson = new Person();
-            testingPerson.Height = height;
+            var testingPerson = new Person {Name = "abcdefghi"};
             var printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(new CultureInfo(culture));
+                .Printing(x => x.Name).TrimmedToLength(4);
 
             var outString = printer.PrintToString(testingPerson);
 
-            outString.Should().Be(expected);
+            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = abcd\r\n	Height = 0\r\n	Age = 0\r\n");
         }
 
 
@@ -85,27 +97,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_PrintingWithCustomSerializationForAge()
+        public void ObjectPrinter_PrintingWithoutChanges()
         {
-            var printer = ObjectPrinter.For<Person>()
-                .Printing(x=>x.Age).Using(x=>"age");
+            var printer = ObjectPrinter.For<Person>();
 
             var outString = printer.PrintToString(new Person());
 
-            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = age\r\n");
-        }
-
-        [Test]
-        public void ObjectPrinter_PrintingWithCustomStringCut()
-        {
-            var testingPerson = new Person();
-            testingPerson.Name = "abcdefghi";
-            var printer = ObjectPrinter.For<Person>()
-                .Printing(x=>x.Name).TrimmedToLength(3);
-
-            var outString = printer.PrintToString(testingPerson);
-
-            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = abc\r\n	Height = 0\r\n	Age = 0\r\n");
+            outString.Should().Be("Person\r\n	Id = Guid\r\n	Name = null\r\n	Height = 0\r\n	Age = 0\r\n");
         }
     }
 }

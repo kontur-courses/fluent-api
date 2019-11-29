@@ -10,21 +10,21 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> ExcludedTypes;
-        private readonly HashSet<string> ExcludedProperties;
-        private readonly Dictionary<Type, Func<object, string>> SerializeFunctionsForTypes;
-        private readonly Dictionary<string, Func<object, string>> SerializeFunctionsForProperties;
-        private readonly HashSet<object> AlreadySerialized;
-        private readonly HashSet<Type> FinalTypes;
+        private readonly HashSet<object> alreadySerialized;
+        private readonly HashSet<string> excludedProperties;
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<Type> finalTypes;
+        private readonly Dictionary<string, Func<object, string>> serializeFunctionsForProperties;
+        private readonly Dictionary<Type, Func<object, string>> serializeFunctionsForTypes;
 
         public PrintingConfig()
         {
-            ExcludedTypes = new HashSet<Type>();
-            SerializeFunctionsForTypes = new Dictionary<Type, Func<object, string>>();
-            SerializeFunctionsForProperties = new Dictionary<string, Func<object, string>>();
-            ExcludedProperties = new HashSet<string>();
-            AlreadySerialized = new HashSet<object>();
-            FinalTypes = new HashSet<Type>
+            excludedTypes = new HashSet<Type>();
+            serializeFunctionsForTypes = new Dictionary<Type, Func<object, string>>();
+            serializeFunctionsForProperties = new Dictionary<string, Func<object, string>>();
+            excludedProperties = new HashSet<string>();
+            alreadySerialized = new HashSet<object>();
+            finalTypes = new HashSet<Type>
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
@@ -36,42 +36,48 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            if (memberSelector.Body is MemberExpression)
+            if (memberSelector.Body is MemberExpression memberExpr)
             {
-                var memberExpr = memberSelector.Body as MemberExpression;
                 var propertyName = memberExpr.Member.Name;
-                ExcludedProperties.Add(propertyName);
+                excludedProperties.Add(propertyName);
             }
+
             return this;
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            ExcludedTypes.Add(typeof(TPropType));
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
         public void SetSerialization<TPropType>(Func<TPropType, string> print)
         {
-            SerializeFunctionsForTypes.Add(typeof(TPropType), x => print((TPropType)x));
+            serializeFunctionsForTypes.Add(typeof(TPropType), x => print((TPropType) x));
         }
 
-        public void SetSerialization<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector, Func<TPropType, string> print)
+        public void SetSerialization<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector,
+            Func<TPropType, string> print)
         {
-            if (memberSelector.Body is MemberExpression)
+            if (!(memberSelector.Body is MemberExpression memberExpr))
+                return;
+
+            var propertyName = memberExpr.Member.Name;
+
+            string Func(object x)
             {
-                var memberExpr = memberSelector.Body as MemberExpression;
-                var propertyName = memberExpr.Member.Name;
-                Func<object, string> func = x => print((TPropType) x);
-                SerializeFunctionsForProperties.Add(propertyName, func);
+                return print((TPropType) x);
             }
+
+            serializeFunctionsForProperties.Add(propertyName, Func);
         }
 
 
@@ -85,21 +91,21 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (FinalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            AlreadySerialized.Add(obj);
+            alreadySerialized.Add(obj);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            if (obj is IEnumerable)
-                sb.Append(PrintIEnumerableToString((IEnumerable)obj, nestingLevel));
+            if (obj is IEnumerable enumerable)
+                sb.Append(PrintIEnumerableToString(enumerable, nestingLevel));
             else
                 type
                     .GetProperties()
-                    .Where(x=> !ExcludedTypes.Contains(x.PropertyType))
-                    .Where(x=> !ExcludedProperties.Contains(x.Name))
-                    .Where(x=> !AlreadySerialized.Contains(x.GetValue(obj)))
+                    .Where(x => !excludedTypes.Contains(x.PropertyType))
+                    .Where(x => !excludedProperties.Contains(x.Name))
+                    .Where(x => !alreadySerialized.Contains(x.GetValue(obj)))
                     .ToList()
                     .ForEach(x => sb.Append(PrintPropertyToString(x, obj, nestingLevel)));
             return sb.ToString();
@@ -107,14 +113,14 @@ namespace ObjectPrinting
 
         private string PrintIEnumerableToString(IEnumerable obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             obj
                 .Cast<object>()
                 .ToList()
-                .ForEach(x=>
+                .ForEach(x =>
                 {
-                    sb.Append(identation);
+                    sb.Append(indentation);
                     sb.Append(PrintToString(x, nestingLevel + 1));
                 });
             return sb.ToString();
@@ -122,33 +128,24 @@ namespace ObjectPrinting
 
         private string PrintPropertyToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
-            if (SerializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
-                return (PrintPropertyWithCustomSerializator(propertyInfo, obj, identation, 
-                    SerializeFunctionsForProperties[propertyInfo.Name]));
+            var indentation = new string('\t', nestingLevel + 1);
+            if (serializeFunctionsForProperties.ContainsKey(propertyInfo.Name))
+                return PrintPropertyWithCustomSerializator(propertyInfo, obj, indentation,
+                    serializeFunctionsForProperties[propertyInfo.Name]);
 
-            if (SerializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
-                return (PrintPropertyWithCustomSerializator(propertyInfo, obj, identation,
-                    SerializeFunctionsForTypes[propertyInfo.PropertyType]));
+            if (serializeFunctionsForTypes.ContainsKey(propertyInfo.PropertyType))
+                return PrintPropertyWithCustomSerializator(propertyInfo, obj, indentation,
+                    serializeFunctionsForTypes[propertyInfo.PropertyType]);
 
-            return String.Join(
-                ""
-                , identation
-                , propertyInfo.Name
-                , " = "
-                , PrintToString(propertyInfo.GetValue(obj),
-                    nestingLevel + 1));
+            return string.Join("", indentation, propertyInfo.Name, " = ",
+                PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
         }
 
-        private string PrintPropertyWithCustomSerializator(PropertyInfo propertyInfo, object obj, string identation, Func<object, string> serializator)
+        private string PrintPropertyWithCustomSerializator(PropertyInfo propertyInfo, object obj, string indentation,
+            Func<object, string> serializator)
         {
-            return String.Join(
-                ""
-                , identation
-                , propertyInfo.Name
-                , " = "
-                , serializator.Invoke(propertyInfo.GetValue(obj))
-                , Environment.NewLine);
+            return string.Join("", indentation, propertyInfo.Name, " = ",
+                serializator.Invoke(propertyInfo.GetValue(obj)), Environment.NewLine);
         }
     }
 }
