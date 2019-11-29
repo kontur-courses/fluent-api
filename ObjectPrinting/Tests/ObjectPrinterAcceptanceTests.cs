@@ -20,8 +20,8 @@ namespace ObjectPrinting.Tests
             person.Dictionary.Add(new Person{Name = "Misha"}, "456");
             person.Dictionary.Add(new Person {Name = "Dasha"}, "789");
             person.Dictionary.Add(person, "09876");
-            a = new A {X = "xxx"};
-            var b = new B {Y = "yyy", A = a};
+            a = new A {X = "xxx", Y = "ay"};
+            var b = new B {Y = "by", A = a};
             a.B = b;
         }
         
@@ -32,8 +32,8 @@ namespace ObjectPrinting.Tests
                 .Excluding(a => a.B.Y);
            
             var str = config.PrintToString(a);
-            str.Should().NotContain("yyy");
-            str.Should().NotContain("Y");
+            str.Should().Contain("ay");
+            str.Should().NotContain("by");
         }
         
         [Test]
@@ -46,12 +46,18 @@ namespace ObjectPrinting.Tests
             str.Should().Contain("4");
             str.Should().Contain("5");
         }
-        
-        
-        
-        
+
         [Test]
-        public void Demo()
+        public void PrintingDictionary()
+        {
+            var str = person.PrintToString();
+            str.Should().Contain("Pasha");
+            str.Should().Contain("Misha");
+            str.Should().Contain("Dasha");
+        }
+
+        [Test]
+        public void CompilingMethods()
         {
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа +

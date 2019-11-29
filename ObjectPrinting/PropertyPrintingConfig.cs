@@ -21,7 +21,7 @@ namespace ObjectPrinting
             if (memberSelector == null)
                 ((IPrintingConfig) printingConfig).TypePrintingFunctions[typeof(TPropType)] = print;
             else if (memberSelector.Body is MemberExpression memberExpression)
-                ((IPrintingConfig) printingConfig).PropertyPrintingFunctions[memberExpression.Member.Name] = print;
+                ((IPrintingConfig) printingConfig).PropertyPrintingFunctions[memberExpression.Member] = print;
             return printingConfig;
         }
 

@@ -15,24 +15,24 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
             typeExclusions = new HashSet<Type>();
-            propertyExclusions = new HashSet<string>();
+            propertyExclusions = new HashSet<MemberInfo>();
             typePrintingFunctions = new Dictionary<Type, Delegate>();
             typeCultures = new Dictionary<Type, CultureInfo>();
-            propertyPrintingFunctions = new Dictionary<string, Delegate>();
-            propertyStringsLength = new Dictionary<string, int>();
+            propertyPrintingFunctions = new Dictionary<MemberInfo, Delegate>();
+            propertyStringsLength = new Dictionary<MemberInfo, int>();
         }
 
         private readonly HashSet<Type> typeExclusions;
-        private readonly HashSet<string> propertyExclusions;
+        private readonly HashSet<MemberInfo> propertyExclusions;
         private readonly Dictionary<Type, Delegate> typePrintingFunctions;
         private readonly Dictionary<Type, CultureInfo> typeCultures;
-        private readonly Dictionary<string, Delegate> propertyPrintingFunctions;
-        private readonly Dictionary<string, int> propertyStringsLength;
+        private readonly Dictionary<MemberInfo, Delegate> propertyPrintingFunctions;
+        private readonly Dictionary<MemberInfo, int> propertyStringsLength;
         
         Dictionary<Type, Delegate> IPrintingConfig.TypePrintingFunctions => typePrintingFunctions;
         Dictionary<Type, CultureInfo> IPrintingConfig.TypeCultures => typeCultures;
-        Dictionary<string, Delegate> IPrintingConfig.PropertyPrintingFunctions => propertyPrintingFunctions;
-        Dictionary<string, int> IPrintingConfig.PropertyStringsLength => propertyStringsLength;
+        Dictionary<MemberInfo, Delegate> IPrintingConfig.PropertyPrintingFunctions => propertyPrintingFunctions;
+        Dictionary<MemberInfo, int> IPrintingConfig.PropertyStringsLength => propertyStringsLength;
         
         private readonly Type[] finalTypes = new[]
         {
@@ -54,7 +54,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is MemberExpression memberExpression)
-                propertyExclusions.Add(memberExpression.Member.Name);
+                propertyExclusions.Add(memberExpression.Member);
             return this;
         }
 
@@ -71,12 +71,13 @@ namespace ObjectPrinting
 
         private string MemberToString(object value, MemberInfo memberInfo, int nestingLevel, List<object> serializeObjects)
         {
+            var test =  memberInfo.Module;
             string valueString;
-            if (propertyPrintingFunctions.TryGetValue(memberInfo.Name, out var printingFunc)) 
+            if (propertyPrintingFunctions.TryGetValue(memberInfo, out var printingFunc)) 
                 valueString = (string) printingFunc.DynamicInvoke(value);
             else
                 valueString = PrintToString(value, nestingLevel + 1, serializeObjects);
-            if (propertyStringsLength.TryGetValue(memberInfo.Name, out var length))
+            if (propertyStringsLength.TryGetValue(memberInfo, out var length))
                 valueString = valueString.Substring(0, length);
             return  new string('\t', nestingLevel + 1) + memberInfo.Name + " = " + valueString;
         }
@@ -113,7 +114,7 @@ namespace ObjectPrinting
             }
 
             foreach (var propertyInfo in type.GetProperties())
-               if (!typeExclusions.Contains(propertyInfo.PropertyType) && !propertyExclusions.Contains(propertyInfo.Name))
+               if (!typeExclusions.Contains(propertyInfo.PropertyType) && !propertyExclusions.Contains(propertyInfo))
                     sb.AppendLine(MemberToString(propertyInfo.GetValue(obj), propertyInfo, nestingLevel, serializeObjects));
             foreach (var fieldInfo in type.GetFields())
                 if ((obj.GetType().IsClass || !fieldInfo.IsStatic) && !typeExclusions.Contains(fieldInfo.FieldType) &&
