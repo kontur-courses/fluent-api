@@ -56,13 +56,5 @@ namespace ObjectPrinting.Tests
                 .PrintObject(new Dictionary<int, int>{{1,1},{2,2},{3,4}});
             dictSerialization.ShouldNotThrow();
         }
-        
-        [Test]
-        public void SerializeLists()
-        {
-            Console.Error.WriteLine(ObjectPrinter
-                .For<Dictionary<int,int>>()
-                .PrintObject(new Dictionary<int, int>{{1,1},{2,2},{3,4}}));
-        }
     }
 }
