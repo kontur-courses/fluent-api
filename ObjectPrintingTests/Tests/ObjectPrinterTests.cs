@@ -4,125 +4,168 @@ using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Core;
-using ObjectPrinting.Core.PropertyPrinting;
+using ObjectPrinting.Core.PropertyPrintingConfig;
 using ObjectPrinting.Infrastructure;
 using ObjectPrintingTests.Infrastructure;
 
 namespace ObjectPrintingTests.Tests
 {
-    [TestFixture]
     public class ObjectPrinterTests
     {
-        private readonly Person person = new Person {Name = "Alex", Age = 19, Height = 179.9};
+        private readonly Person person = new Person(
+            1f, "Alex", 179.9, 19, null);
 
         [Test]
-        public void ExcludingTypeShouldWorkCorrect()
+        public void ExcludingType_ShouldExcludePropertiesOfGivenType()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
 
-            printer.PrintToString(person).Should().NotContain("19").And.Contain("Alex");
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be("Person\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 179,9" +
+                               "\r\n\tFriends = null\r\n");
         }
 
         [Test]
-        public void ExcludingPropertyShouldWorkCorrect()
+        public void ExcludingProperty_ShouldExcludeGivenProperty()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Name);
 
-            printer.PrintToString(person).Should().NotContain("Alex").And.NotContain("Name");
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be("Person\n\tId = 1\r\n\tHeight = 179,9" +
+                               "\r\n\tAge = 19\r\n\tFriends = null\r\n");
         }
 
         [Test]
-        public void UsingWithAlternativeSerializationMethodShouldWorkCorrect()
+        public void Using_ShouldSerializePropertyByGivenMethod_WhenAlternativeSerializationMethodIsGiven()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => i.ToString("X"));
 
-            printer.PrintToString(person).Should().NotContain("19").And.Contain("13");
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be("Person\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 179,9" +
+                               "\r\n\tAge = 13\r\n\tFriends = null\r\n");
         }
 
-        [Test]
-        public void UsingWithCultureShouldWorkCorrect()
+        [TestCase("en", TestName = "EN culture",
+            ExpectedResult = "Person\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 179.9" +
+                             "\r\n\tAge = 19\r\n\tFriends = null\r\n")]
+        [TestCase("ru", TestName = "RU culture",
+            ExpectedResult = "Person\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 179,9" +
+                             "\r\n\tAge = 19\r\n\tFriends = null\r\n")]
+        public string Using_ShouldSerializePropertyWithGivenCulture_WhenCultureIsGiven(string culture)
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(CultureInfo.GetCultureInfo("en"));
+                .Printing<double>().Using(CultureInfo.GetCultureInfo(culture));
 
-            printer.PrintToString(person).Should().NotContain("179,9").And.Contain("179.9");
+            return printer.PrintToString(person);
         }
 
-        [Test]
-        public void TrimmedToLengthShouldWorkCorrect()
+        [TestCase(2, TestName = "When maxLen is positive",
+            ExpectedResult = "Person\n\tId = 1\r\n\tName = Al\r\n\tHeight = 179,9" +
+                             "\r\n\tAge = 19\r\n\tFriends = null\r\n")]
+        [TestCase(0, TestName = "When maxLen is zero",
+            ExpectedResult = "Person\n\tId = 1\r\n\tName = \r\n\tHeight = 179,9" +
+                             "\r\n\tAge = 19\r\n\tFriends = null\r\n")]
+        public string TrimmedToLength_ShouldReturnTrimmedStringProperty(int maxLen)
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(p => p.Name).TrimmedToLength(2);
+                .Printing(p => p.Name).TrimmedToLength(maxLen);
 
-            printer.PrintToString(person).Should().Contain("Al").And.NotContain("Alex");
+            return printer.PrintToString(person);
         }
 
         [Test]
-        public void PrintToStringShouldWorkCorrectOnObject()
+        public void TrimmedToLength_ShouldThrowArgumentException_WhenMaxLenIsNegative()
         {
-            person.PrintToString().Should().Contain("Name = Alex")
-                .And.Contain("Age = 19")
-                .And.Contain("Height = 179,9")
-                .And.Contain("Id");
+            Action act = () => ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(-1);
+
+            act.Should().Throw<ArgumentException>();
         }
 
         [Test]
-        public void PrintToStringWithConfigShouldWorkCorrectOnObject()
+        public void PrintToString_ShouldPrintAllProperties_WhenCalledOnObjectAndNoParametersIsGiven()
         {
-            person.PrintToString(config => config.Excluding(p => p.Name))
-                .Should().NotContain("Alex");
+            var actual = person.PrintToString();
+
+            actual.Should().Be("Person\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 179,9" +
+                               "\r\n\tAge = 19\r\n\tFriends = null\r\n");
         }
 
         [Test]
-        public void PrintToStringShouldNotPrintPrivateMembers()
+        public void PrintToString_ShouldPrintAllPropertiesByConfig_WhenCalledOnObjectAndConfigIsGiven()
         {
-            person.PrintToString()
-                .Should().NotContain("budget");
+            var actual = person.PrintToString(config => config.Excluding(p => p.Name));
+
+            actual.Should().Be("Person\n\tId = 1\r\n\tHeight = 179,9" +
+                               "\r\n\tAge = 19\r\n\tFriends = null\r\n");
         }
 
         [Test]
-        public void PrintToStringWithConfigShouldWorkCorrectOnArray()
+        public void PrintToString_ShouldNotPrintPrivateMembers_WhenCalledOnObject()
+        {
+            var actual = person.PrintToString();
+
+            actual.Should().NotContain("budget");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintElements_WhenCalledOnArray()
         {
             var arr = new[] {1, 2, 3};
-            arr.PrintToString().Should().Contain("Int32[]")
-                .And.Contain("1\r\n2\r\n3\r\n");
+
+            var actual = arr.PrintToString();
+
+            actual.Should().Be("Int32[]\n1\r\n2\r\n3\r\n");
         }
 
         [Test]
-        public void PrintToStringWithConfigShouldWorkCorrectOnList()
+        public void PrintToString_ShouldPrintElements_WhenCalledOnList()
         {
             var list = new List<string> {"a", "b", "c"};
-            list.PrintToString().Should().Contain("List<String>")
-                .And.Contain("a\r\nb\r\nc\r\n");
+
+            var actual = list.PrintToString();
+
+            actual.Should().Be("List<String>\na\r\nb\r\nc\r\n");
         }
 
 
         [Test]
-        public void PrintToStringWithConfigShouldWorkCorrectOnDictionary()
+        public void PrintToString_ShouldPrintKeyValuePairs_WhenCalledOnDictionary()
         {
             var dictionary = new Dictionary<string, int>()
             {
                 ["a"] = 1,
                 ["b"] = 2
             };
-            dictionary.PrintToString().Should().Contain("Dictionary<String, Int32>")
-                .And.Contain("KeyValuePair<String, Int32>")
-                .And.Contain("Key = a")
-                .And.Contain("Value = 1")
-                .And.Contain("Key = b")
-                .And.Contain("Value = 2");
+
+            var actual = dictionary.PrintToString();
+
+            actual.Should().Be("Dictionary<String, Int32>\n" +
+                               "\tKeyValuePair<String, Int32>\n" +
+                               "\t\tKey = a\r\n\t\tValue = 1\r\n" +
+                               "\tKeyValuePair<String, Int32>\n" +
+                               "\t\tKey = b\r\n\t\tValue = 2\r\n");
         }
 
         [Test]
-        public void PrintToStringShouldWorkCorrectWhenObjectHaveCyclicReferences()
+        public void PrintToString_ShouldPrintObjectOnce_WhenObjectHaveCyclicReferences()
         {
-            var firstPerson = new Person() {Age = 20, Height = 190, Name = "Bob"};
-            var secondPerson = new Person() {Age = 19, Height = 170, Name = "Alice"};
+            var firstPerson = new Person(2, "Bob", 190, 20, null);
+            var secondPerson = new Person(3, "Alice", 170, 19, null);
             firstPerson.Friends = new[] {secondPerson};
             secondPerson.Friends = new[] {firstPerson};
-            Action act = () => firstPerson.PrintToString();
-            act.Should().NotThrow<StackOverflowException>();
+
+            var actual = firstPerson.PrintToString();
+
+            actual.Should().Be("Person\n\tId = 2\r\n\tName = Bob" +
+                               "\r\n\tHeight = 190\r\n\tAge = 20\r\n\tFriends = \tPerson[]\n" +
+                               "\t\tPerson\n\t\t\tId = 3\r\n\t\t\tName = Alice" +
+                               "\r\n\t\t\tHeight = 170\r\n\t\t\tAge = 19" +
+                               "\r\n\t\t\tFriends = \t\t\tPerson[]\n\t\t\t\tCyclic reference \r\n");
         }
     }
 }

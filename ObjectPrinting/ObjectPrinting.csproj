@@ -55,9 +55,9 @@
     <Compile Include="Core\ObjectPrinter.cs" />
     <Compile Include="Core\PrintingConfig\IPrintingConfig.cs" />
     <Compile Include="Core\PrintingConfig\PrintingConfig.cs" />
-    <Compile Include="Core\PropertyPrinting\IPropertyPrintingConfig.cs" />
-    <Compile Include="Core\PropertyPrinting\PropertyPrintingConfig.cs" />
-    <Compile Include="Core\PropertyPrinting\PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="Core\PropertyPrintingConfig\IPropertyPrintingConfig.cs" />
+    <Compile Include="Core\PropertyPrintingConfig\PropertyPrintingConfig.cs" />
+    <Compile Include="Core\PropertyPrintingConfig\PropertyPrintingConfigExtensions.cs" />
     <Compile Include="Infrastructure\ItemInfo.cs" />
     <Compile Include="Infrastructure\ObjectExtensions.cs" />
     <Compile Include="Infrastructure\PrintingConfigUtils.cs" />

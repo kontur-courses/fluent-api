@@ -2,9 +2,9 @@
 using System.Globalization;
 using ObjectPrinting.Core.PrintingConfig;
 
-namespace ObjectPrinting.Core.PropertyPrinting
+namespace ObjectPrinting.Core.PropertyPrintingConfig
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly string propertyName;
@@ -19,11 +19,11 @@ namespace ObjectPrinting.Core.PropertyPrinting
         {
             if (propertyName == null)
             {
-                ((IPrintingConfig<TOwner>) printingConfig).TypePrintingFunctions[typeof(TPropType)] = printingFunction;
+                ((IPrintingConfig) printingConfig).TypePrintingFunctions[typeof(TPropType)] = printingFunction;
             }
             else
             {
-                ((IPrintingConfig<TOwner>) printingConfig).PropertyPrintingFunctions[propertyName] =
+                ((IPrintingConfig) printingConfig).PropertyPrintingFunctions[propertyName] =
                     printingFunction;
             }
 
@@ -32,10 +32,10 @@ namespace ObjectPrinting.Core.PropertyPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            ((IPrintingConfig<TOwner>) printingConfig).TypeCultures[typeof(TPropType)] = culture;
+            ((IPrintingConfig) printingConfig).TypeCultures[typeof(TPropType)] = culture;
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
     }
 }

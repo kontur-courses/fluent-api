@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace ObjectPrinting.Core.PrintingConfig
 {
-    public interface IPrintingConfig<TOwner>
+    public interface IPrintingConfig
     {
         Dictionary<Type, Delegate> TypePrintingFunctions { get; }
         Dictionary<string, Delegate> PropertyPrintingFunctions { get; }

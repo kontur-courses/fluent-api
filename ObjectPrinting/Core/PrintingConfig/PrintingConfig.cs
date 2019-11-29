@@ -4,12 +4,12 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using ObjectPrinting.Core.PropertyPrinting;
+using ObjectPrinting.Core.PropertyPrintingConfig;
 using ObjectPrinting.Infrastructure;
 
 namespace ObjectPrinting.Core.PrintingConfig
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
@@ -21,7 +21,7 @@ namespace ObjectPrinting.Core.PrintingConfig
         private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
         private readonly HashSet<object> processedObjects = new HashSet<object>();
 
-        private readonly Type[] finalTypes = new[]
+        private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
@@ -92,8 +92,13 @@ namespace ObjectPrinting.Core.PrintingConfig
             AppendType(objectType, builder, indentation);
             var childIndentation = new string('\t', nestingLevel + 1);
 
-            foreach (var itemInfo in objectToPrint.GetItems().Where(obj => !processedObjects.Contains(obj.Item)))
+            foreach (var itemInfo in objectToPrint.GetItems())
             {
+                if (processedObjects.Contains(itemInfo.Item))
+                {
+                    builder.AppendLine(childIndentation + $"Cyclic reference {itemInfo.Name}");
+                    continue;
+                }
                 if (itemInfo.Name == null)
                 {
                     builder.Append(PrintToString(itemInfo.Item, nestingLevel + 1));
@@ -107,7 +112,7 @@ namespace ObjectPrinting.Core.PrintingConfig
             return builder.ToString();
         }
 
-        private void AppendType(Type objectType, StringBuilder builder, string indentation)
+        private static void AppendType(Type objectType, StringBuilder builder, string indentation)
         {
             builder.Append(indentation);
             if (objectType.IsGenericType)
@@ -148,11 +153,11 @@ namespace ObjectPrinting.Core.PrintingConfig
             }
         }
 
-        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.TypePrintingFunctions => typePrintingFunctions;
+        Dictionary<Type, Delegate> IPrintingConfig.TypePrintingFunctions => typePrintingFunctions;
 
-        Dictionary<string, Delegate> IPrintingConfig<TOwner>.PropertyPrintingFunctions =>
+        Dictionary<string, Delegate> IPrintingConfig.PropertyPrintingFunctions =>
             propertyPrintingFunctions;
 
-        Dictionary<Type, CultureInfo> IPrintingConfig<TOwner>.TypeCultures => typeCultures;
+        Dictionary<Type, CultureInfo> IPrintingConfig.TypeCultures => typeCultures;
     }
 }

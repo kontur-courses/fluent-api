@@ -1,8 +1,8 @@
 using ObjectPrinting.Core.PrintingConfig;
 
-namespace ObjectPrinting.Core.PropertyPrinting
+namespace ObjectPrinting.Core.PropertyPrintingConfig
 {
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IPropertyPrintingConfig<TOwner>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
     }
