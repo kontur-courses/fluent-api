@@ -6,8 +6,8 @@ namespace ObjectPrinting
 {
     public class PropertySerializationConfig<TOwner, TTarget> : IPropertyPrintingConfig<TOwner>
     {
-        protected PrintingConfig<TOwner> config;
-        protected PropertyInfo propertyInfo;
+        private PrintingConfig<TOwner> config;
+        private PropertyInfo propertyInfo;
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.Config => config;
 
         public PropertySerializationConfig(PrintingConfig<TOwner> config,
@@ -20,7 +20,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TTarget, string> serializer)
         {
             var childConfig = new PrintingConfig<TOwner>(config);
-            childConfig.PropertySerializators.Add(PropertySerializer.Create(propertyInfo, serializer));
+            childConfig.PropertySerializers.Add(PropertySerializer.Create(propertyInfo, serializer));
             return childConfig;
         }
 

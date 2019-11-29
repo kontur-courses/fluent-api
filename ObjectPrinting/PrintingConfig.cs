@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -14,14 +15,14 @@ namespace ObjectPrinting
         {
             excludedTypes = new HashSet<Type>(parent.excludedTypes);
             excludedProperties = new HashSet<PropertyInfo>(parent.excludedProperties);
-            TypeSerializators = new TypeSerializerCollection(parent.TypeSerializators);
-            PropertySerializators = new PropertySerializerCollection(parent.PropertySerializators);
+            TypeSerializers = new TypeSerializerCollection(parent.TypeSerializers);
+            PropertySerializers = new PropertySerializerCollection(parent.PropertySerializers);
         }
 
         public PrintingConfig()
         {
-            TypeSerializators = new TypeSerializerCollection();
-            PropertySerializators = new PropertySerializerCollection();
+            TypeSerializers = new TypeSerializerCollection();
+            PropertySerializers = new PropertySerializerCollection();
             excludedTypes = new HashSet<Type>();
             excludedProperties = new HashSet<PropertyInfo>();
         }
@@ -34,9 +35,9 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<PropertyInfo> excludedProperties;
 
-        public readonly TypeSerializerCollection TypeSerializators;
+        public readonly TypeSerializerCollection TypeSerializers;
 
-        public readonly PropertySerializerCollection PropertySerializators;
+        public readonly PropertySerializerCollection PropertySerializers;
 
         public readonly Dictionary<Type, Func<string, string, string, string>> TypeFormatters =
             new Dictionary<Type, Func<string, string, string, string>>();
@@ -45,25 +46,18 @@ namespace ObjectPrinting
             string>> PropertyFormatters = new Dictionary<PropertyInfo, Func<(string indent, string propertyName,
             string serializedProperty), string>>();
 
-        public int MaxNestingLevel = 10;
+        private int maxNestingLevel = 10;
 
         private string PrintWithConfig(object? obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return $"null{Environment.NewLine}";
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            if (nestingLevel > MaxNestingLevel)
+            if (nestingLevel > maxNestingLevel)
             {
                 return "...";
             }
+
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -109,6 +103,66 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private void PrintProperties(object obj, int nestingLevel, StringBuilder stringBuilder,
+            string indentation)
+        {
+            foreach (var propertyInfo in obj.GetType().GetProperties())
+            {
+                if (propertyInfo.GetValue(obj) == obj)
+                {
+                    stringBuilder.AppendLine($"{indentation}{propertyInfo.Name} = this");
+                    continue;
+                }
+
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
+                    continue;
+
+                var serializedProperty = SerializeProperty(propertyInfo.GetValue(obj), nestingLevel, propertyInfo);
+
+                PrintProperty(stringBuilder, indentation, propertyInfo, serializedProperty);
+            }
+        }
+
+        private void PrintProperty(StringBuilder stringBuilder, string indentation, PropertyInfo propertyInfo,
+            string serializedProperty)
+        {
+            if (TypeFormatters.ContainsKey(propertyInfo.PropertyType))
+            {
+                var formatter = TypeFormatters[propertyInfo.PropertyType];
+                stringBuilder.AppendLine(formatter(indentation, propertyInfo.Name, serializedProperty));
+            }
+            else if (PropertyFormatters.ContainsKey(propertyInfo))
+            {
+                var formatter = PropertyFormatters[propertyInfo];
+                stringBuilder.AppendLine(formatter((indentation, propertyInfo.Name, serializedProperty)));
+            }
+            else
+                stringBuilder.AppendLine($"{indentation}{propertyInfo.Name} = {serializedProperty}");
+        }
+
+        private string SerializeProperty(object obj, int nestingLevel, PropertyInfo? propertyInfo = null)
+        {
+            if (!(propertyInfo is null))
+            {
+                if (PropertySerializers.ContainsSerializerFor(propertyInfo))
+                {
+                    return PropertySerializers.GetSerializerFor(propertyInfo).Serialize(obj);
+                }
+
+                if (TypeSerializers.ContainsSerializerFor(propertyInfo.PropertyType))
+                    return TypeSerializers.GetSerializerFor(propertyInfo.PropertyType).Serialize(obj);
+            }
+
+            return SerializeUsingDefaultSerializer(obj, nestingLevel);
+        }
+
+        private string SerializeUsingDefaultSerializer(object obj, int nestingLevel)
+        {
+            return obj.GetType().GetProperties().Length == 0
+                ? obj.ToString()
+                : PrintWithConfig(obj, nestingLevel + 1);
+        }
+
         public PrintingConfig<TOwner> Excluding<T>()
         {
             var childConfig = new PrintingConfig<TOwner>(this);
@@ -148,9 +202,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> UsingMaxRecursionLevel(int maxLevel)
         {
-            var childConfig = new PrintingConfig<TOwner>(this);
-            childConfig.MaxNestingLevel = maxLevel;
-            return childConfig;
+            return new PrintingConfig<TOwner>(this) {maxNestingLevel = maxLevel};
         }
     }
 }

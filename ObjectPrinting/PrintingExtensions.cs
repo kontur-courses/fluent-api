@@ -10,7 +10,7 @@ namespace ObjectPrinting
             CultureInfo info)
         {
             var configuration = (config as IPropertyPrintingConfig<TOwner>).Config;
-            configuration.TypeSerializators.Add(TypeSerializer.Create<double>(t => t.ToString(info)));
+            configuration.TypeSerializers.Add(TypeSerializer.Create<double>(t => t.ToString(info)));
             return configuration;
         }
 

@@ -6,32 +6,32 @@ namespace ObjectPrinting
 {
     public class PropertySerializerCollection
     {
-        public readonly Dictionary<PropertyInfo, PropertySerializer> PropertySerializators;
+        private readonly Dictionary<PropertyInfo, PropertySerializer> propertySerializators;
 
         public PropertySerializerCollection()
         {
-            PropertySerializators = new Dictionary<PropertyInfo, PropertySerializer>();
+            propertySerializators = new Dictionary<PropertyInfo, PropertySerializer>();
         }
 
         public PropertySerializerCollection(PropertySerializerCollection collection)
         {
-            PropertySerializators =
-                new Dictionary<PropertyInfo, PropertySerializer>(collection.PropertySerializators);
+            propertySerializators =
+                new Dictionary<PropertyInfo, PropertySerializer>(collection.propertySerializators);
         }
 
         public void Add(PropertySerializer serializer)
         {
-            PropertySerializators.Add(serializer.property, serializer);
+            propertySerializators.Add(serializer.Property, serializer);
         }
 
         public bool ContainsSerializerFor(PropertyInfo info)
         {
-            return PropertySerializators.ContainsKey(info);
+            return propertySerializators.ContainsKey(info);
         }
         
         public PropertySerializer GetSerializerFor(PropertyInfo info)
         {
-            return PropertySerializators[info];
+            return propertySerializators[info];
         }
     }
 }

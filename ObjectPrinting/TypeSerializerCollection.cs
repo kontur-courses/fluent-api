@@ -6,32 +6,32 @@ namespace ObjectPrinting
 {
     public class TypeSerializerCollection
     {
-        public readonly Dictionary<Type, TypeSerializer> TypeSerializators;
+        private readonly Dictionary<Type, TypeSerializer> typeSerializators;
 
         public TypeSerializerCollection()
         {
-            TypeSerializators = new Dictionary<Type, TypeSerializer>();
+            typeSerializators = new Dictionary<Type, TypeSerializer>();
         }
 
         public TypeSerializerCollection(TypeSerializerCollection collection)
         {
-            TypeSerializators =
-                new Dictionary<Type, TypeSerializer>(collection.TypeSerializators);
+            typeSerializators =
+                new Dictionary<Type, TypeSerializer>(collection.typeSerializators);
         }
 
         public void Add(TypeSerializer serializer)
         {
-            TypeSerializators.Add(serializer.Type, serializer);
+            typeSerializators.Add(serializer.Type, serializer);
         }
 
         public bool ContainsSerializerFor(Type info)
         {
-            return TypeSerializators.ContainsKey(info);
+            return typeSerializators.ContainsKey(info);
         }
         
         public TypeSerializer GetSerializerFor(Type type)
         {
-            return TypeSerializators[type];
+            return typeSerializators[type];
         }
     }
 }
