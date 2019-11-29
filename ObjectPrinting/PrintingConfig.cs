@@ -53,12 +53,12 @@ namespace ObjectPrinting
             return PrintClass(obj, nestingLevel);
         }
 
-        private static string Print<T>(Type type, IEnumerable<T> serObjs, Func<T, string> serFunc, int nestingLevel)
+        private static string PrintObjWithMembers<T>(string nameObj, IEnumerable<T> serMembers, Func<T, string> serFunc, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            foreach (var serObj in serObjs)
+            sb.AppendLine(nameObj);
+            foreach (var serObj in serMembers)
             {
                 sb.Append(identation);
                 sb.Append(serFunc(serObj));
@@ -69,7 +69,7 @@ namespace ObjectPrinting
 
         private string PrintCollection(IEnumerable enumerable, int nestingLevel)
         {
-            return Print(enumerable.GetType(), enumerable.Cast<object>(), (el) => PrintToString(el, nestingLevel + 1),
+            return PrintObjWithMembers(enumerable.GetType().Name, enumerable.Cast<object>(), (el) => PrintToString(el, nestingLevel + 1),
                 nestingLevel);
         }
 
@@ -83,7 +83,7 @@ namespace ObjectPrinting
 
             var serMembers = approvedProp.Cast<MemberInfo>().Concat(approvedField);
 
-            return Print(type, serMembers,
+            return PrintObjWithMembers(type.Name, serMembers,
                 info =>
                 {
                     switch (info)
