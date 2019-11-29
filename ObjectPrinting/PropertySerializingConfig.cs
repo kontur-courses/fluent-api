@@ -6,7 +6,7 @@ namespace ObjectPrinting
     public class PropertySerializingConfig<TOwner, TPropType>
         : IPropertySerializingConfig<TOwner>
     {
-        private PrintingConfig<TOwner> parentConfig;
+        private readonly PrintingConfig<TOwner> parentConfig;
         private PropertyInfo propertyInfo = null;
 
         PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;

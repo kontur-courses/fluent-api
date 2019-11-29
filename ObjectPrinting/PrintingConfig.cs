@@ -17,7 +17,7 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        private readonly HashSet<object> propertiesInRecursion = new HashSet<object>();
+        private readonly HashSet<object> objectsInCurrentGraph = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
         private readonly Dictionary<PropertyInfo, int> maxLengthOfStringProperty =
@@ -28,7 +28,7 @@ namespace ObjectPrinting
             new Dictionary<PropertyInfo, Func<object, string>>();
         private CultureInfo culture = CultureInfo.CurrentCulture;
 
-        //Это все сделано через интерфейс, чтобы скрыть от пользователя
+        //All of this is done with interfaces to hide this fields from user
         Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.SerializationForType =>
             exactSerializationForType;
         Dictionary<PropertyInfo, Func<object, string>> IPrintingConfig<TOwner>.SerializationForProperty =>
@@ -46,15 +46,20 @@ namespace ObjectPrinting
             if (obj == null)   
                 return "null" + Environment.NewLine;
 
-            propertiesInRecursion.Add(obj);
+            objectsInCurrentGraph.Add(obj);
 
             var type = obj.GetType();
             if (excludedTypes.Contains(type))
-                return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj, string.Empty);
+            {
+                objectsInCurrentGraph.Remove(obj);
+                return string.Empty;
+            }
 
             if (finalTypes.Contains(type))
-                return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj,
-                    ReturnSerializationOfObjectOfFinalType(obj));
+            {
+                objectsInCurrentGraph.Remove(obj);
+                return ReturnSerializationOfObjectOfFinalType(obj);
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -66,7 +71,8 @@ namespace ObjectPrinting
             }
             else
                 sb.Append(GetSerializationOfPropertiesAndFieldsOfObject(obj, indentation, nestingLevel));
-            return RemoveObjectFromPropertiesInRecursionAndReturnResult(obj, sb.ToString());
+            objectsInCurrentGraph.Remove(obj);
+            return sb.ToString();
         }
 
         private string GetSerializationOfPropertiesAndFieldsOfObject(object obj, string indentation, int nestingLevel)
@@ -80,11 +86,13 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 var objPropertyValue = propertyInfo.GetValue(obj);
-                if (propertiesInRecursion.Contains(objPropertyValue))
+                if (objectsInCurrentGraph.Contains(objPropertyValue))
                 {
-                    sb.Append(indentation + propertyInfo.Name + " = " + "<cyclic link is detected>" + Environment.NewLine);
+                    sb.Append(indentation + propertyInfo.Name + " = " + "<cyclic link is detected>" +
+                              Environment.NewLine);
                     continue;
                 }
+
                 sb.Append(HandleOneProperty(propertyInfo, objPropertyValue, indentation, nestingLevel));
             }
 
@@ -93,12 +101,6 @@ namespace ObjectPrinting
                           GetSerializationOfObject(fieldInfo.GetValue(obj), nestingLevel + 1));
 
             return sb.ToString();
-        }
-
-        private string RemoveObjectFromPropertiesInRecursionAndReturnResult(object obj, string result)
-        {
-            propertiesInRecursion.Remove(obj);
-            return result;
         }
 
         private string HandleOneProperty(PropertyInfo propertyInfo, object objPropertyValue, string indentation, int nestingLevel)
