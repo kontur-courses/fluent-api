@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace ObjectPrinting.Infrastructure
 {
-    public class PrintingConfigUtils
+    public static class PrintingConfigUtils
     {
         public static string GetPropertyNameFromMemberSelector<TOwner, TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
