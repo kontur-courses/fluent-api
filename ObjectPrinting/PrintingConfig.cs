@@ -60,47 +60,20 @@ namespace ObjectPrinting
 
 
             var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine(obj.GetType().Name);
+
+            if (obj is IEnumerable enumerable)
             {
-                var propertyType = propertyInfo.PropertyType;
-                if (!excludedTypes.Contains(propertyType))
-                    if (!excludedProperties.Contains(propertyInfo))
-                    {
-                        string serializedProperty;
-                        if (PropertySerializators.ContainsSerializerFor(propertyInfo))
-                        {
-                            serializedProperty = PropertySerializators.GetSerializerFor(propertyInfo)
-                                .Serialize(propertyInfo.GetValue(obj));
-                        }
-                        else if (TypeSerializators.ContainsSerializerFor(propertyType))
-                        {
-                            serializedProperty =
-                                TypeSerializators.GetSerializerFor(propertyType).Serialize(propertyInfo.GetValue(obj));
-                        }
-                        else
-                        {
-                            serializedProperty = PrintWithConfig(propertyInfo.GetValue(obj), nestingLevel + 1);
-                        }
-
-                        if (TypeFormatters.ContainsKey(propertyType))
-                        {
-                            var formatter = TypeFormatters[propertyType];
-                            sb.Append(formatter(indentation, propertyInfo.Name, serializedProperty));
-                        }
-                        else if (PropertyFormatters.ContainsKey(propertyInfo))
-                        {
-                            var formatter = PropertyFormatters[propertyInfo];
-                            sb.Append(formatter((indentation, propertyInfo.Name, serializedProperty)));
-                        }
-                        else
-                            sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
-                    }
+                foreach (var item in enumerable)
+                {
+                    stringBuilder.AppendLine(indentation + SerializeProperty(item, nestingLevel + 1));
+                }
             }
+            else
+                PrintProperties(obj, nestingLevel, stringBuilder, indentation);
 
-            return sb.ToString();
+            return stringBuilder.ToString();
         }
 
         private void PrintProperties(object obj, int nestingLevel, StringBuilder stringBuilder,
