@@ -37,20 +37,33 @@ namespace ObjectPrinting.Tests
         [Test]
         public void UsesGivenSerializerForType()
         {
-            Printer.Serializing<double>().Using(d => d + "d").PrintObject(Container).Should().Contain("d");
+            Printer.Serializing<double>()
+                .Using(d => d + "d")
+                .PrintObject(Container)
+                .Should()
+                .Contain("d");
         }
 
         [Test]
         public void UsesGivenSerializerForGivenProperty()
         {
-            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintObject(Container).Should().Contain("0.5d");
+            Printer.Serializing(c => c.D1)
+                .Using(d => d + "d")
+                .PrintObject(Container)
+                .Should()
+                .Contain("0.5d");
         }
 
         [Test]
         public void UsesGivenSerializerOnlyForGivenProperty()
         {
-            Printer.Serializing(c => c.D1).Using(d => d + "d").PrintObject(Container)
-                .Should().NotContain("1.5d").And.NotContain("2.5d");
+            Printer.Serializing(c => c.D1)
+                .Using(d => d + "d")
+                .PrintObject(Container)
+                .Should()
+                .NotContain("1.5d")
+                .And
+                .NotContain("2.5d");
         }
 
         [Test]
@@ -58,7 +71,10 @@ namespace ObjectPrinting.Tests
         {
             var culture = CultureInfo.CreateSpecificCulture("Rus");
             culture.NumberFormat = new NumberFormatInfo {NumberDecimalSeparator = ","};
-            Printer.Serializing<double>().Using(culture).PrintObject(Container).Should()
+            Printer.Serializing<double>()
+                .Using(culture)
+                .PrintObject(Container)
+                .Should()
                 .Contain("0,5");
         }
 
@@ -68,7 +84,9 @@ namespace ObjectPrinting.Tests
             Printer.Serializing<double>()
                 .UsingFormat((indent, propertyName, serializedProperty) =>
                     indent + propertyName + "&" + serializedProperty)
-                .PrintObject(Container).Should().Contain("D1&0.5");
+                .PrintObject(Container)
+                .Should()
+                .Contain("D1&0.5");
         }
 
         [Test]
@@ -77,7 +95,9 @@ namespace ObjectPrinting.Tests
             Printer.Serializing(t => t.D2)
                 .UsingFormat((context) =>
                     context.indent + context.propertyName + "&" + context.serializedProperty)
-                .PrintObject(Container).Should().Contain("D2&1.5");
+                .PrintObject(Container)
+                .Should()
+                .Contain("D2&1.5");
         }
 
         [Test]
@@ -86,7 +106,11 @@ namespace ObjectPrinting.Tests
             Printer.Serializing(t => t.D2)
                 .UsingFormat((context) =>
                     context.indent + context.propertyName + "&" + context.serializedProperty)
-                .PrintObject(Container).Should().NotContain("D1&0.5").And.NotContain("D3&2.5");
+                .PrintObject(Container)
+                .Should()
+                .NotContain("D1&0.5")
+                .And
+                .NotContain("D3&2.5");
         }
     }
 }
