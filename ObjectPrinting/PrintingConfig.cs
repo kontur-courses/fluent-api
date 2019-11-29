@@ -1,26 +1,14 @@
 using System;
-using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using NUnit.Framework;
 
 namespace ObjectPrinting
 {
-    public interface IPrintingConfig<TOwner>
-    {
-        Dictionary<Type, Expression<Func<object, string>>> SerializingMethods { get; }
-        Dictionary<PropertyInfo, Expression<Func<object, string>>> PropertySerializingMethods { get; }
-    }
-
-
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
@@ -117,19 +105,7 @@ namespace ObjectPrinting
                 return GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
             }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine($"{type.Name} (Hash: {obj.GetHashCode()})");
-            
-            foreach (var propertyInfo in type.GetProperties().Where(p =>
-                !excludingTypes.Contains(p.PropertyType) && !excludingProperties.Contains(p)))
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          GetStringFromProperty(obj, propertyInfo, nestingLevel + 1) + Environment.NewLine);
-            }
-
-            return sb.ToString();
+            return ComplexObjectToString(obj, nestingLevel);
         }
 
         private string GetIEnumerableString(IEnumerable obj, int nestingLevel)
@@ -159,23 +135,22 @@ namespace ObjectPrinting
 
             return obj.ToString();
         }
-    }
 
-    public static class ObjectPrinterExtensions
-    {
-        public static string PrintToString<TOwner>(this TOwner obj)
+        private string ComplexObjectToString(object obj, int nestingLevel)
         {
-            if (obj is IConfigForObject confObj)
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.AppendLine($"{type.Name} (Hash: {obj.GetHashCode()})");
+
+            foreach (var propertyInfo in type.GetProperties().Where(p =>
+                !excludingTypes.Contains(p.PropertyType) && !excludingProperties.Contains(p)))
             {
-                return confObj.PrintToString();
+                sb.Append(identation + propertyInfo.Name + " = " +
+                          GetStringFromProperty(obj, propertyInfo, nestingLevel + 1) + Environment.NewLine);
             }
 
-            return ObjectPrinter.For<object>().PrintToString(obj);
-        }
-
-        public static PrintingConfig<TOwner> Serialize<TOwner>(this TOwner obj)
-        {
-            return new ConfigForObject<TOwner>(obj);
+            return sb.ToString();
         }
     }
 }

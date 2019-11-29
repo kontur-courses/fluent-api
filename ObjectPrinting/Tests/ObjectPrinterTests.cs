@@ -18,16 +18,6 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_OnCyclingObject()
-        {
-            var node = new Node();
-            node.neighbor = node;
-            var expected = $"Node (Hash: {node.GetHashCode()})\r\n\tneighbor = <was above> (Hash: {node.GetHashCode()})\r\n";
-
-            node.PrintToString().Should().Be(expected);
-        }
-
-        [Test]
         public void PrintToString_OnIEnumerable()
         {
             var array = new[] {12, 15, 20};

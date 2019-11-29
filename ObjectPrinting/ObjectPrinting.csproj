@@ -53,7 +53,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ObjectPrinterExtensions.cs" />
     <Compile Include="ConfigForObject.cs" />
+    <Compile Include="IPrintingConfig.cs" />
     <Compile Include="PropertySerializingConfigExtensions.cs" />
     <Compile Include="IPropertySerializingConfig.cs" />
     <Compile Include="ObjectPrinter.cs" />
@@ -62,6 +64,7 @@
     <Compile Include="PropertySerializingConfig.cs" />
     <Compile Include="Tests\Node.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
+    <Compile Include="Tests\ObjectPrinterCyclingTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>
