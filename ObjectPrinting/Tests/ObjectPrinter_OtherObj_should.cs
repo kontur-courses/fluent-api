@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_WhenIEnum()
         {
-            IEnumerable result = new[] {1, 2, 3, 4};
+            var result = new[] {1, 2, 3, 4};
             foreach (var num in result)
             {
                 result.PrintToString().Should().Contain(num.ToString());

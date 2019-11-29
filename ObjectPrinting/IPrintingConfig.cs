@@ -6,7 +6,7 @@ namespace ObjectPrinting
 {
     public interface IPrintingConfig
     {
-        Dictionary<Type, Delegate> typeSerialisation { get; }
-        Dictionary<MemberInfo, Delegate> propertySerialisation { get; }
+        Dictionary<Type, Func<object, string>> typeSerialisation { get; }
+        Dictionary<MemberInfo, Func<object,string>> propertySerialisation { get; }
     }
 }

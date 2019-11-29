@@ -12,12 +12,11 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludingTypes;
         private readonly HashSet<MemberInfo> excludingProperty;
-        private readonly Dictionary<Type, Delegate> typeSerialisation;
-        private readonly Dictionary<MemberInfo, Delegate> propertySerialisation;
+        private readonly Dictionary<Type, Func<object, string>> typeSerialisation;
+        private readonly Dictionary<MemberInfo, Func<object, string>> propertySerialisation;
 
-        Dictionary<Type, Delegate> IPrintingConfig.typeSerialisation => typeSerialisation;
-
-        Dictionary<MemberInfo, Delegate> IPrintingConfig.propertySerialisation => propertySerialisation;
+        Dictionary<Type, Func<object, string>> IPrintingConfig.typeSerialisation => typeSerialisation;
+        Dictionary<MemberInfo, Func<object, string>> IPrintingConfig.propertySerialisation => propertySerialisation;
 
         private static readonly Type[] FinalTypes =
         {
@@ -29,8 +28,8 @@ namespace ObjectPrinting
         {
             excludingTypes = new HashSet<Type>();
             excludingProperty = new HashSet<MemberInfo>();
-            typeSerialisation = new Dictionary<Type, Delegate>();
-            propertySerialisation = new Dictionary<MemberInfo, Delegate>();
+            typeSerialisation = new Dictionary<Type, Func<object, string>>();
+            propertySerialisation = new Dictionary<MemberInfo, Func<object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -54,77 +53,83 @@ namespace ObjectPrinting
             return PrintClass(obj, nestingLevel);
         }
 
-        private string PrintCollection(IEnumerable enumerable, int nestingLevel)
+        private static string Print<T>(Type type, IEnumerable<T> serObjs, Func<T, string> serFunc, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = enumerable.GetType();
             sb.AppendLine(type.Name);
-            foreach (var el in enumerable)
+            foreach (var serObj in serObjs)
             {
-                sb.Append(identation + PrintToString(el, nestingLevel + 1));
+                sb.Append(identation);
+                sb.Append(serFunc(serObj));
             }
 
             return sb.ToString();
         }
 
+        private string PrintCollection(IEnumerable enumerable, int nestingLevel)
+        {
+            return Print(enumerable.GetType(), enumerable.Cast<object>(), (el) => PrintToString(el, nestingLevel + 1),
+                nestingLevel);
+        }
+
         private string PrintClass(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
             var approvedProp = type.GetProperties().Where(prop =>
                 !excludingTypes.Contains(prop.PropertyType) && !excludingProperty.Contains(prop));
             var approvedField = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
                 .Where(field => !excludingTypes.Contains(field.FieldType) && !excludingProperty.Contains(field));
 
-            foreach (var propertyInfo in approvedProp)
-            {
-                sb.Append(
-                    $"{identation}{propertyInfo.Name} = {PrintToString(PrintProperty(propertyInfo, obj), nestingLevel + 1)}");
-            }
+            var serMembers = approvedProp.Cast<MemberInfo>().Concat(approvedField);
 
-            foreach (var fieldInfo in approvedField)
-            {
-                sb.Append(
-                    $"{identation}{fieldInfo.Name} = {PrintToString(PrintField(fieldInfo, obj), nestingLevel + 1)}");
-            }
-
-            return sb.ToString();
+            return Print(type, serMembers,
+                info =>
+                {
+                    switch (info)
+                    {
+                        case PropertyInfo propertyInfo:
+                            return $"{propertyInfo.Name} = {PrintProperty(propertyInfo, obj, nestingLevel + 1)}";
+                        case FieldInfo fieldInfo:
+                            return $"{fieldInfo.Name} = {PrintField(fieldInfo, obj, nestingLevel + 1)}";
+                        default:
+                            throw new ArgumentException();
+                    }
+                },
+                nestingLevel);
         }
 
-        private object PrintProperty(PropertyInfo propertyInfo, object obj)
+        private string PrintProperty(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             var value = propertyInfo.GetValue(obj);
             if (propertySerialisation.ContainsKey(propertyInfo))
             {
-                return propertySerialisation[propertyInfo].DynamicInvoke(value);
+                return PrintToString(propertySerialisation[propertyInfo].DynamicInvoke(value), nestingLevel);
             }
 
             if (typeSerialisation.ContainsKey(propertyInfo.PropertyType))
             {
-                return typeSerialisation[propertyInfo.PropertyType].DynamicInvoke(value);
+                return PrintToString(typeSerialisation[propertyInfo.PropertyType].DynamicInvoke(value), nestingLevel);
             }
 
-            return value;
+            return PrintToString(value, nestingLevel);
         }
 
-        private object PrintField(FieldInfo fieldInfo, object obj)
+        private object PrintField(FieldInfo fieldInfo, object obj, int nestingLevel)
         {
             var value = fieldInfo.GetValue(obj);
 
             if (propertySerialisation.ContainsKey(fieldInfo))
             {
-                return propertySerialisation[fieldInfo].DynamicInvoke(value);
+                return PrintToString(propertySerialisation[fieldInfo].DynamicInvoke(value), nestingLevel);
             }
 
             if (typeSerialisation.ContainsKey(fieldInfo.FieldType))
             {
-                return typeSerialisation[fieldInfo.FieldType].DynamicInvoke(value);
+                return PrintToString(typeSerialisation[fieldInfo.FieldType].DynamicInvoke(value), nestingLevel);
             }
 
-            return value;
+            return PrintToString(value, nestingLevel);
         }
 
         public PropertySerializingConfig<TOwner, T> AlternativeFor<T>()

@@ -10,7 +10,11 @@ namespace ObjectPrinting
             this PropertySerializingConfig<TOwner, double> propertySerializingConfig, CultureInfo cultureInfo)
         {
             var printingConfig = (propertySerializingConfig as IPropertySerializingConfig<TOwner>).ParentConfig;
-            ((IPrintingConfig) printingConfig).typeSerialisation.Add(typeof(double), new Func<double, string>(x => x.ToString(cultureInfo)));
+            ((IPrintingConfig) printingConfig).typeSerialisation.Add(typeof(double), new Func<object, string>(x =>
+            {
+                var num = (double)x;
+                return num.ToString(cultureInfo);
+            }));
             return printingConfig;
         }
 
@@ -19,7 +23,11 @@ namespace ObjectPrinting
         {
             var printingConfig = (config as IPropertySerializingConfig<TOwner>).ParentConfig;
             (printingConfig as IPrintingConfig).typeSerialisation.Add(typeof(string), 
-                new Func<string, string>(v => string.IsNullOrEmpty(v) ? "" : v.Substring(0, numberChar)));
+                new Func<object, string>(v =>
+                {
+                    var str = (string) v;
+                    return string.IsNullOrEmpty(str) ? "" : str.Substring(0, numberChar);
+                }));
             return printingConfig;
         }
     }
