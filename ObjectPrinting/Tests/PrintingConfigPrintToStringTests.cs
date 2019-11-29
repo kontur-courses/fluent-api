@@ -120,6 +120,48 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ShouldReturnCorrectResult_IfDictionaryIsElementOfCollection()
+        {
+            var firstDictionary = new Dictionary<string, int>
+            {
+                {"hello", 1},
+                {"world", 2}
+            };
+            var secondDictionary = new Dictionary<string, int>
+            {
+                {"Earth", 3},
+                {"Mars", 4}
+            };
+            var collection = new [] { firstDictionary, secondDictionary };
+            var printingResult = collection.PrintToString();
+
+            printingResult.Should().Contain("Dictionary`2[]\r\n")
+                .And.Contain("\tElement 0: Dictionary`2")
+                .And.Contain("\t\tKey 0: hello\r\n\t\tValue 0: 1\r\n\t\tKey 1: world\r\n\t\tValue 1: 2\r\n")
+                .And.Contain("\tElement 1: Dictionary`2")
+                .And.Contain("\t\tKey 0: Earth\r\n\t\tValue 0: 3\r\n\t\tKey 1: Mars\r\n\t\tValue 1: 4\r\n");
+        }
+
+        [Test]
+        public void ShouldReturnCorrectResult_IfCollectionIsElementOfDictionary()
+        {
+            var firstCollection = new[] { 1, 2 };
+            var secondCollection = new[] { 3, 4 };
+            var dictionary = new Dictionary<int[], int[]>
+            {
+                { firstCollection, secondCollection },
+                { secondCollection, firstCollection }
+            };
+            var printingResult = dictionary.PrintToString();
+
+            printingResult.Should().Contain("Dictionary`2\r\n")
+                .And.Contain("\tKey 0: Int32[]\r\n\t\tElement 0: 1\r\n\t\tElement 1: 2\r\n")
+                .And.Contain("\tValue 0: Int32[]\r\n\t\tElement 0: 3\r\n\t\tElement 1: 4\r\n")
+                .And.Contain("\tKey 1: Int32[]\r\n\t\tElement 0: 3\r\n\t\tElement 1: 4\r\n")
+                .And.Contain("\tValue 1: Int32[]\r\n\t\tElement 0: 1\r\n\t\tElement 1: 2\r\n");
+        }
+
+        [Test]
         public void ShouldReturnCorrectResult_IfDictionaryHaveReferenceTypeKeysAndValues()
         {
             var secondPersonForTests = new PersonForTests {Name = "Albert", Age = 25, Height = 185};

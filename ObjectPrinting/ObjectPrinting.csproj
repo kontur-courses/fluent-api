@@ -61,8 +61,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPrintingConfig.cs" />
     <Compile Include="PropertyPrintingConfigExtensions.cs" />
+    <Compile Include="Tests\MemberTests.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
     <Compile Include="Tests\PersonForTests.cs" />
+    <Compile Include="Tests\PrintingConfigPrintingTests.cs" />
     <Compile Include="Tests\PrintingConfigPrintToStringTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>

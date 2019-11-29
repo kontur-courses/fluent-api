@@ -10,5 +10,10 @@ namespace ObjectPrinting.Tests
         public int Age;
 
         private Guid id;
+
+        public void Do()
+        {
+
+        }
     }
 }

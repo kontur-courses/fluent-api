@@ -86,13 +86,18 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+            string serialization;
             if (obj is IDictionary iDictionary)
-                sb.Append(GetDictionarySerialization(iDictionary, nestingLevel, parents));
+                serialization = GetDictionarySerialization(iDictionary, nestingLevel, parents);
             else if (obj is ICollection iCollection)
-                sb.Append(GetCollectionSerialization(iCollection, nestingLevel, parents));
+                serialization = GetCollectionSerialization(iCollection, nestingLevel, parents);
             else
-                sb.Append(GetMembersSerialization(
-                    obj, nestingLevel, type.GetMembers(BindingFlags.Public | BindingFlags.Instance), parents));
+            {
+                var memberInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance);
+                serialization = GetMembersSerialization(obj, nestingLevel, memberInfos, parents);
+            }
+
+            sb.Append(serialization);
             parents.Remove(obj);
             return sb.ToString();
         }
@@ -104,10 +109,10 @@ namespace ObjectPrinting
             var i = 0;
             foreach (var key in dictionary.Keys)
             {
-                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Key ", i, ": ",
-                    PrintToString(key, nestingLevel + 1, parents));
-                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Value ", i, ": ",
-                    PrintToString(dictionary[key], nestingLevel + 1, parents));
+                var printResult = PrintToString(key, nestingLevel + 1, parents);
+                sb.AppendFormat("{0}Key {1}: {2}", indentation, i, printResult);
+                printResult = PrintToString(dictionary[key], nestingLevel + 1, parents);
+                sb.AppendFormat("{0}Value {1}: {2}", indentation, i, printResult);
                 i++;
             }
 
@@ -121,8 +126,8 @@ namespace ObjectPrinting
             var i = 0;
             foreach (var element in collection)
             {
-                sb.AppendFormat("{0}{1}{2}{3}{4}", indentation, "Element ", i, ": ", 
-                    PrintToString(element, nestingLevel + 1, parents));
+                var printResult = PrintToString(element, nestingLevel + 1, parents);
+                sb.AppendFormat("{0}Element {1}: {2}", indentation, i, printResult);
                 i++;
             }
 
@@ -140,7 +145,8 @@ namespace ObjectPrinting
                 if (IsExcludedMember(member))
                     continue;
                 var serialization = GetMemberSerialization(member, nestingLevel, parents);
-                sb.Append(serialization.PadLeft(nestingLevel + 1 + serialization.Length, '\t'));
+                serialization = serialization.PadLeft(nestingLevel + 1 + serialization.Length, '\t');
+                sb.Append(serialization);
             }
 
             return sb.ToString();
