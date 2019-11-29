@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -11,18 +11,20 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> cultureRules;
         private readonly HashSet<string> excludedProperties;
         private readonly HashSet<Type> excludedTypes;
-        private readonly Dictionary<string, Func<object, string>> propertyRules;
+        private readonly HashSet<Type> finalTypes;
+        private readonly Dictionary<string, Func<object, string>> nameRules;
         private readonly Dictionary<string, Func<string, string>> trimRules;
         private readonly Dictionary<Type, Func<object, string>> typeRules;
 
-        public SerializationInfo()
+        public SerializationInfo(HashSet<Type> finalTypes)
         {
-            propertyRules = new Dictionary<string, Func<object, string>>();
+            nameRules = new Dictionary<string, Func<object, string>>();
             excludedProperties = new HashSet<string>();
             excludedTypes = new HashSet<Type>();
             cultureRules = new Dictionary<Type, CultureInfo>();
             typeRules = new Dictionary<Type, Func<object, string>>();
             trimRules = new Dictionary<string, Func<string, string>>();
+            this.finalTypes = finalTypes;
         }
 
 
@@ -31,19 +33,19 @@ namespace ObjectPrinting
             excludedTypes.Add(type);
         }
 
-        public void ExcludeProperty(PropertyInfo property)
+        public void ExcludeName(string excludingName)
         {
-            excludedProperties.Add(property.Name);
+            excludedProperties.Add(excludingName);
         }
 
-        public void AddTypeRule(Type type, Func<object, string> serialization)
+        public void AddTypeSerializationRule(Type type, Func<object, string> serialization)
         {
             typeRules[type] = serialization;
         }
 
-        public void AddPropertyRule(PropertyInfo property, Func<object, string> serialization)
+        public void AddSerializationRule(string ruleName, Func<object, string> serialization)
         {
-            propertyRules[property.Name] = serialization;
+            nameRules[ruleName] = serialization;
         }
 
         public void AddCultureRule(Type type, CultureInfo serialization)
@@ -51,50 +53,83 @@ namespace ObjectPrinting
             cultureRules[type] = serialization;
         }
 
-        public void AddTrimRule(PropertyInfo propInfo, int length)
+        public void AddTrimRule(string trimName, int length)
         {
-            trimRules[propInfo.Name] = x =>
+            trimRules[trimName] = x =>
             {
                 var str = x;
                 return str.Substring(0, length > str.Length ? str.Length : length);
             };
         }
 
-        public bool Excluded(PropertyInfo propertyInfo)
+        public bool Excluded(Type type, string name)
         {
-            return excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo.Name);
+            return excludedTypes.Contains(type) || excludedProperties.Contains(name);
         }
 
-        public bool TryGetSerialization(PropertyInfo propertyInfo, out StringBuilder stringBuilder, object obj)
+        public bool TryGetSerialization(object currentValue, Type currentType, string currentName,
+            string identation, out StringBuilder stringBuilder)
         {
             stringBuilder = new StringBuilder();
+            if (currentValue == null)
+                return false;
 
-            if (propertyRules.TryGetValue(propertyInfo.Name, out var propertyRule))
+            stringBuilder.Append(identation);
+
+            if (nameRules.TryGetValue(currentName, out var propertyRule))
             {
-                stringBuilder.Append(propertyRule(propertyInfo.GetValue(obj)));
+                stringBuilder.Append(propertyRule(currentValue));
                 return true;
             }
 
-            if (typeRules.TryGetValue(propertyInfo.PropertyType, out var typeRule))
+            if (typeRules.TryGetValue(currentType, out var typeRule))
             {
-                stringBuilder.Append(typeRule(propertyInfo.GetValue(obj)));
+                stringBuilder.Append(typeRule(currentValue));
                 return true;
             }
 
-            if (trimRules.TryGetValue(propertyInfo.Name, out var trimRule))
+            if (trimRules.TryGetValue(currentName, out var trimRule))
             {
-                stringBuilder.Append(trimRule(propertyInfo.GetValue(obj).ToString()));
+                stringBuilder.Append(trimRule(currentValue.ToString()));
                 return true;
             }
 
-            if (cultureRules.TryGetValue(propertyInfo.PropertyType, out var cultureInfo))
+            if (cultureRules.TryGetValue(currentType, out var cultureInfo))
             {
-                stringBuilder.Append(((double) propertyInfo.GetValue(obj)).ToString(cultureInfo));
+                stringBuilder.Append(currentName + " = ");
+                stringBuilder.Append(((double) currentValue).ToString(cultureInfo));
+                return true;
+            }
+
+            if (!finalTypes.Contains(currentType)
+                && currentType.GetInterface(nameof(IEnumerable)) != null)
+            {
+                stringBuilder.Append(GetIenumerableSerialization(currentName, identation, currentValue));
+
                 return true;
             }
 
             return false;
         }
+
+        private StringBuilder GetIenumerableSerialization(string currentName, string identation,
+            object currentValue)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append(currentName + "=");
+            stringBuilder.Append(Environment.NewLine);
+            identation += '\t';
+            var objIenumerable = (IEnumerable) currentValue;
+            var i = 0;
+            foreach (var element in objIenumerable)
+            {
+                stringBuilder.Append(identation + $"[{i}] = ");
+                stringBuilder.Append(element);
+                stringBuilder.Append(Environment.NewLine);
+                i++;
+            }
+
+            return stringBuilder;
+        }
     }
-    //TODO Add serialization for IEnumerable
 }

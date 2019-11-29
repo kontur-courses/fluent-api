@@ -4,6 +4,10 @@ namespace ObjectPrinting.Tests
 {
     public class Person
     {
+        public Person BestFriend;
+        public string NickName;
+        public double Width;
+
         public Person(string name, int age, double height, int[] classMarks)
         {
             Name = name;

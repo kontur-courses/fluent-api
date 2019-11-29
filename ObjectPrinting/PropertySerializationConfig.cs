@@ -1,26 +1,25 @@
 ﻿using System;
-using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertySerializationConfig<TOwner, TPropType> : IPropertySerializingConfig<TOwner>
     {
+        private readonly string currentName;
         private readonly PrintingConfig<TOwner> parentConfig;
-        private readonly PropertyInfo propInfo;
 
         public PropertySerializationConfig(PrintingConfig<TOwner> parentConfig)
         {
             this.parentConfig = parentConfig;
         }
 
-        public PropertySerializationConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propInfo)
+        public PropertySerializationConfig(PrintingConfig<TOwner> parentConfig, string currentName)
         {
             this.parentConfig = parentConfig;
-            this.propInfo = propInfo;
+            this.currentName = currentName;
         }
 
         PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
-        PropertyInfo IPropertySerializingConfig<TOwner>.PropInfo => propInfo;
+        string IPropertySerializingConfig<TOwner>.CurrentName => currentName;
 
 
         public PrintingConfig<TOwner> WithSerialization(Func<TPropType, string> serializationFunc)
@@ -30,11 +29,11 @@ namespace ObjectPrinting
                 return serializationFunc((TPropType) property);
             }
 
-            if (propInfo == null)
-                (parentConfig as IPrintingConfig).SerializationInfo.AddTypeRule(typeof(TPropType),
+            if (string.IsNullOrEmpty(currentName))
+                (parentConfig as IPrintingConfig).SerializationInfo.AddTypeSerializationRule(typeof(TPropType),
                     Serialization);
             else
-                (parentConfig as IPrintingConfig).SerializationInfo.AddPropertyRule(propInfo,
+                (parentConfig as IPrintingConfig).SerializationInfo.AddSerializationRule(currentName,
                     Serialization);
             return parentConfig;
         }
