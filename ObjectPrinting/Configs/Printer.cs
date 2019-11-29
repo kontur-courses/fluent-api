@@ -19,16 +19,6 @@ namespace ObjectPrinting.Configs
 
         private static readonly List<Type> FinalTypes = new List<Type>
         {
-            typeof(char),
-            typeof(bool),
-            typeof(ushort),
-            typeof(uint),
-            typeof(ulong),
-            typeof(short),
-            typeof(int),
-            typeof(long),
-            typeof(double),
-            typeof(float),
             typeof(string),
             typeof(DateTime),
             typeof(TimeSpan)
@@ -64,7 +54,7 @@ namespace ObjectPrinting.Configs
 
                 output.Append(serializer(objectToPrint));
             }
-            else if (FinalTypes.Contains(type))
+            else if (FinalTypes.Contains(type) || type.IsPrimitive)
             {
                 output.Append(objectToPrint);
             }
@@ -108,7 +98,8 @@ namespace ObjectPrinting.Configs
         {
             Func<object, string> serializer = null;
 
-            if (TryGetSerializer(propertyInfo, out serializer) || FinalTypes.Contains(propertyInfo.PropertyType))
+            if (TryGetSerializer(propertyInfo, out serializer) || FinalTypes.Contains(propertyInfo.PropertyType)
+                                                               || propertyInfo.PropertyType.IsPrimitive)
                 PrintElementaryProperty(propertyInfo, value, serializer ?? (x => x.ToString()), nestingLevel);
             else
                 PrintComplexObject(propertyInfo, value, nestingLevel);
@@ -146,7 +137,6 @@ namespace ObjectPrinting.Configs
 
             PrintRegularObjectValue(value, nestingLevel);
         }
-
 
         private void PrintCollectionValue(IEnumerable enumerable, int nestingLevel)
         {

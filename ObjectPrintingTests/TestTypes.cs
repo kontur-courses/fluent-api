@@ -31,4 +31,10 @@ namespace ObjectPrintingTests
         public List<Person> Students { get; set; }
         public int ClassNumber { get; set; }
     }
+
+    public class SimplePerson
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+    }
 }

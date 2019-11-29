@@ -26,7 +26,7 @@ namespace ObjectPrinting.Configs
             if (targetMember == null)
                 parentConfig.AddPropertySerializingConfig<TPropType>(this);
             else
-                parentConfig.AddPropertySerializingConfig<TPropType>(this, targetMember);
+                parentConfig.AddPropertySerializingConfig(this, targetMember);
 
             return parentConfig;
         }

@@ -345,5 +345,69 @@ Person2
 
             actual.Should().BeEquivalentTo(expected);
         }
+
+        [Test]
+        public void Excluding_DifferentTypes_ShouldReturnNewObjectPrinterForEachExcluding()
+        {
+            var obj = new SimplePerson() {Name = "Bob", Age = 42};
+            var printer = ObjectPrinter.For<SimplePerson>();
+            var printerWithoutString = printer.Excluding<string>();
+            var printerWithoutInt = printer.Excluding<int>();
+
+            var expectedForPrinterWithoutInt = "Name = Bob";
+
+            var actualForPrinterWithoutInt = printerWithoutInt.PrintToString(obj);
+
+            actualForPrinterWithoutInt.Should().BeEquivalentTo(expectedForPrinterWithoutInt);
+        }
+
+        [Test]
+        public void Excluding_DifferentProperties_ShouldReturnNewObjectPrinterForEachExcluding()
+        {
+            var obj = new SimplePerson {Name = "Bob", Age = 42};
+            var printer = ObjectPrinter.For<SimplePerson>();
+            var printerWithoutName = printer.Excluding(x => x.Name);
+            var printerWithoutAge = printer.Excluding(x => x.Age);
+
+            var expectedForPrinterWithoutAge = "Name = Bob";
+
+            var actualForPrinterWithoutInt = printerWithoutAge.PrintToString(obj);
+
+            actualForPrinterWithoutInt.Should().BeEquivalentTo(expectedForPrinterWithoutAge);
+        }
+
+        [Test]
+        public void Serializing_CreateDifferentSerializersForOneType_ShouldBeDifferentConfigs()
+        {
+            var obj = new SimplePerson {Name = "Bob", Age = 42};
+            var printer = ObjectPrinter.For<SimplePerson>();
+            var first = printer.Serializing<string>().Using(x => "First");
+            var second = printer.Serializing<string>().Using(x => "Second");
+            var firstExpected = $"Name = First{newLine}Age = 42";
+            var secondExpected = $"Name = Second{newLine}Age = 42";
+
+            var firstActual = first.PrintToString(obj);
+            var secondActual = second.PrintToString(obj);
+
+            firstActual.Should().BeEquivalentTo(firstExpected);
+            secondActual.Should().BeEquivalentTo(secondExpected);
+        }
+
+        [Test]
+        public void Serializing_CreateDifferentSerializersForOneProperty_ShouldBeDifferentConfigs()
+        {
+            var obj = new SimplePerson {Name = "Bob", Age = 42};
+            var printer = ObjectPrinter.For<SimplePerson>();
+            var first = printer.Serializing(x => x.Age).Using(y => "0");
+            var second = printer.Serializing(x => x.Age).Using(y => "100");
+            var firstExpected = $"Name = Bob{newLine}Age = 0";
+            var secondExpected = $"Name = Bob{newLine}Age = 100";
+
+            var firstActual = first.PrintToString(obj);
+            var secondActual = second.PrintToString(obj);
+
+            firstActual.Should().BeEquivalentTo(firstExpected);
+            secondActual.Should().BeEquivalentTo(secondExpected);
+        }
     }
 }
