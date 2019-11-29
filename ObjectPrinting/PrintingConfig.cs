@@ -27,7 +27,8 @@ namespace ObjectPrinting
             finalTypes = new HashSet<Type>
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(sbyte), typeof(ushort),
+                typeof(short), typeof(uint), typeof(long), typeof(ulong)
             };
         }
 
