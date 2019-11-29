@@ -65,7 +65,7 @@ namespace ObjectPrinting
                 if (specificPrintForProperty.TryGetValue(propertyInfo, out var specificPrint))
                     sb.AppendLine(identation + propertyInfo.Name + " = " + specificPrint(propertyInfo.GetValue(obj)));
                 else
-                    sb.Append(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj),
+                    sb.AppendLine(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1, viewedObjects));
             }
             return sb.ToString();
@@ -83,7 +83,7 @@ namespace ObjectPrinting
             if (haveSpecificPrintForCurrentType)
                 resultString = printBySpecificRule(obj);
             else
-                resultString = currentObjectIsCollection ? PrintCollectionsToString((ICollection)obj, nestingLevel, viewedObjects) : obj.ToString() + Environment.NewLine;
+                resultString = currentObjectIsCollection ? PrintCollectionsToString((ICollection)obj, nestingLevel, viewedObjects) : obj.ToString();
             return true;
         }
 
@@ -120,12 +120,13 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> func)
         {
-            if (!(func.Body is MemberExpression expression && expression.Member is PropertyInfo))
+            var memberExpression = func.Body as MemberExpression;
+            var propertyInfo = memberExpression?.Member as PropertyInfo;
+            if (propertyInfo == null)
             {
                 throw new ArgumentException("Function must be MemberExpression and return Property.");
             }
-            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
-            var newExcludingProperty = excludingProperty.Add(propInfo);
+            var newExcludingProperty = excludingProperty.Add(propertyInfo);
             return new PrintingConfig<TOwner>(excludingTypes, specificPrintForType, newExcludingProperty, specificPrintForProperty);
         }
 
@@ -136,12 +137,13 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, T> ChangePrintFor<T>(Expression<Func<TOwner, T>> func)
         {
-            if (!(func.Body is MemberExpression expression && expression.Member is PropertyInfo))
+            var memberExpression = func.Body as MemberExpression;
+            var propertyInfo = memberExpression?.Member as PropertyInfo;
+            if (propertyInfo == null)
             {
                 throw new ArgumentException("Function must be MemberExpression and return Property.");
             }
-            var propInfo = ((MemberExpression)func.Body).Member as PropertyInfo;
-            return new PropertyPrintingConfig<TOwner, T>(this, propInfo);
+            return new PropertyPrintingConfig<TOwner, T>(this, propertyInfo);
         }
     }
 }
