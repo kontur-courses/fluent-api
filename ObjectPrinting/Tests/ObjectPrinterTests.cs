@@ -165,5 +165,52 @@ namespace ObjectPrinting.Tests
             valueWithCustomCulture.Should().Contain("16325,62901");
             valueWithCustomCulture2.Should().Contain("16325.62901");
         }
+
+        [Test]
+        public void GetStringRepresentation_NotThrowsException_OnTrim()
+        {
+            var person = new Person();
+            Action action = () => person.PrintToString(settings => settings.For(x => x.Name).Trim(4));
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public void GetStringRepresentation_ReturnsCorrectAnswer_OnCultureChangeForValueType()
+        {
+            var value = 12.55;
+            var valueWithCustomCulture = value.PrintToString(settings =>
+                settings.For<double>().WithCulture(CultureInfo.CreateSpecificCulture("eu-ES")));
+            var valueWithCustomCulture2 = value.PrintToString(settings =>
+                settings.For<double>().WithCulture(CultureInfo.InvariantCulture));
+            valueWithCustomCulture.Should().Contain("12,55");
+            valueWithCustomCulture2.Should().Contain("12.55");
+        }
+
+        private class NoCircularReferenceExample
+        {
+            public NoCircularReferenceExample Object { get; set; }
+            public NoCircularReferenceExample OtherObject { get; set; }
+        }
+
+        [Test]
+        public void
+            GetStringRepresentation_NotThrowsFormatException_OnClassContainingTwoInstancesOfSameObjectInDifferentFields()
+        {
+            var example = new NoCircularReferenceExample();
+            var value = new NoCircularReferenceExample();
+            example.Object = value;
+            example.OtherObject = value;
+            Action action = () => example.PrintToString();
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public void GetStringRepresentation_ThrowsFormatException_OnClassNestedInItself()
+        {
+            var example = new CircularReferenceExampleClass();
+            example.otherObject = example;
+            Action action = () => example.PrintToString();
+            action.Should().Throw<FormatException>();
+        }
     }
 }

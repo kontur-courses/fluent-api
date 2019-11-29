@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
@@ -44,18 +43,6 @@ namespace ObjectPrinting
             defaultTypeRules = currentConfig.defaultTypeRules;
             excludedTypes = currentConfig.excludedTypes;
             excludedProperties = currentConfig.excludedProperties;
-        }
-
-        internal PrintingConfig<TOwner> Minus(PropertyInfo propertyToExclude)
-        {
-            excludedProperties = excludedProperties.Add(propertyToExclude);
-            return this;
-        }
-
-        internal PrintingConfig<TOwner> Minus(Type typeToExclude)
-        {
-            excludedTypes = excludedTypes.Add(typeToExclude);
-            return this;
         }
 
         internal PrintingConfig<TOwner> WithDefaultTypeRule(Type type,
@@ -186,13 +173,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            return new PrintingConfig<TOwner>(this).Minus(typeof(T));
+            excludedTypes = excludedTypes.Add(typeof(T));
+            return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> property)
         {
             var propInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
-            return new PrintingConfig<TOwner>(this).Minus(propInfo);
+            excludedProperties = excludedProperties.Add(propInfo);
+            return this;
         }
 
         public PropertySerializationConfig<TOwner, TPropType> For<TPropType>()

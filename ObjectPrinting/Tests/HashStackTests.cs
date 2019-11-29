@@ -76,5 +76,17 @@ namespace ObjectPrinting.Tests
                 stackAsList.Should().BeEquivalentTo(reversedElements);
             }
         }
+
+        [Test]
+        public void Clear_RemovesAllElements()
+        {
+            var stack = new HashStack<int>();
+            stack.Push(10);
+            stack.Push(20);
+            stack.Push(40);
+            stack.Clear();
+            Action action = () => stack.Pop();
+            action.Should().Throw<IndexOutOfRangeException>();
+        }
     }
 }
