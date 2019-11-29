@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting.Core;
+using ObjectPrinting.Core.PropertyPrinting;
+using ObjectPrinting.Infrastructure;
+using ObjectPrintingTests.Infrastructure;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests.AcceptanceTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests

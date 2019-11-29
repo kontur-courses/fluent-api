@@ -1,6 +1,7 @@
 using System;
+using ObjectPrinting.Core.PrintingConfig;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Core.PropertyPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Core.PrintingConfig
 {
     public interface IPrintingConfig<TOwner>
     {

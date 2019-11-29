@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using ObjectPrinting.Core.PrintingConfig;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Core.PropertyPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {

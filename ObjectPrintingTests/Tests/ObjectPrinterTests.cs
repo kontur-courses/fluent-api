@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using NUnit.Framework;
 using FluentAssertions;
+using NUnit.Framework;
+using ObjectPrinting.Core;
+using ObjectPrinting.Core.PropertyPrinting;
+using ObjectPrinting.Infrastructure;
+using ObjectPrintingTests.Infrastructure;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests.Tests
 {
     [TestFixture]
     public class ObjectPrinterTests
@@ -118,7 +122,7 @@ namespace ObjectPrinting.Tests
             firstPerson.Friends = new[] {secondPerson};
             secondPerson.Friends = new[] {firstPerson};
             Action act = () => firstPerson.PrintToString();
-            act.ShouldNotThrow<StackOverflowException>();
+            act.Should().NotThrow<StackOverflowException>();
         }
     }
 }

@@ -4,9 +4,10 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using ObjectPrinting.Core.PropertyPrinting;
 using ObjectPrinting.Infrastructure;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Core.PrintingConfig
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {

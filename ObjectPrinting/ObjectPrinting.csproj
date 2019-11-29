@@ -52,19 +52,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\ObjectPrinter.cs" />
+    <Compile Include="Core\PrintingConfig\IPrintingConfig.cs" />
+    <Compile Include="Core\PrintingConfig\PrintingConfig.cs" />
+    <Compile Include="Core\PropertyPrinting\IPropertyPrintingConfig.cs" />
+    <Compile Include="Core\PropertyPrinting\PropertyPrintingConfig.cs" />
+    <Compile Include="Core\PropertyPrinting\PropertyPrintingConfigExtensions.cs" />
     <Compile Include="Infrastructure\ItemInfo.cs" />
+    <Compile Include="Infrastructure\ObjectExtensions.cs" />
     <Compile Include="Infrastructure\PrintingConfigUtils.cs" />
-    <Compile Include="IPrintingConfig.cs" />
-    <Compile Include="IPropertyPrintingConfig.cs" />
-    <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="ObjectPrinter.cs" />
-    <Compile Include="PrintingConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyPrintingConfig.cs" />
-    <Compile Include="PropertyPrintingConfigExtensions.cs" />
-    <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Tests\ObjectPrinterTests.cs" />
-    <Compile Include="Tests\Person.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
