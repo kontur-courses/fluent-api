@@ -99,13 +99,15 @@ namespace ObjectPrinting
             if (usedFields.Contains(obj))
                 return $"<was above> (Hash: {obj.GetHashCode()})";
             usedFields.Add(obj);
-
+            var result = "";
             if (obj is IEnumerable enumerable)
-            {
-                return GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
-            }
+                result = GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
+            else
+                result = ComplexObjectToString(obj, nestingLevel);
 
-            return ComplexObjectToString(obj, nestingLevel);
+
+            usedFields.Remove(obj);
+            return result;
         }
 
         private string GetIEnumerableString(IEnumerable obj, int nestingLevel)
