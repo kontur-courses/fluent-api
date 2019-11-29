@@ -16,7 +16,8 @@ namespace ObjectPrinting
         {
             typeof(int), typeof(short), typeof(long), typeof(double), typeof(float),
             typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(bool),
-            typeof(byte), typeof(decimal)
+            typeof(byte), typeof(decimal), typeof(ushort), typeof(ulong),
+            typeof(uint), typeof(sbyte)
         };
         private readonly HashSet<object> objectsInCurrentGraph = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
