@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -7,14 +6,14 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly MemberInfo propertyInfo;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo propertyInfo)
         {
             this.printingConfig = printingConfig;
             this.propertyInfo = propertyInfo;
@@ -31,22 +30,6 @@ namespace ObjectPrinting
             {
                 printingConfig.AddPropAltPrinting(propertyInfo, objPrint);
             }
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            var cultureInfo = new CultureInfo(culture.Name);
-            var toStringMethod = typeof(TPropType).GetMethod(
-                "ToString",
-                BindingFlags.Public | BindingFlags.Instance,
-                null,
-                CallingConventions.Any,
-                new[] {typeof(CultureInfo)},
-                null);
-            var print = new Func<TPropType,string>(prop =>
-                (string) toStringMethod?.Invoke(prop, new object[]{ cultureInfo }));
-            printingConfig.AddTypeAltPrinting(typeof(TPropType), FuncСonverter.CastToObjectPrint(print));
             return printingConfig;
         }
 

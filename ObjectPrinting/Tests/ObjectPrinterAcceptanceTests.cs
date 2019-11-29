@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using FluentAssertions;
@@ -20,7 +21,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Can_ExcludeSpecificTypes()
+        public void Can_ExcludeSpecificType()
         {
             var serialized = printer.Excluding<Guid>().PrintToString(person);
             serialized.Should().NotContain("Guid");
@@ -28,23 +29,25 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Can_ExcludeSpecificProperties()
+        public void Can_ExcludeSpecificPropertyOrField()
         {
-            var serialized = printer.Excluding(p => p.Age).PrintToString(person);
+            var serialized = printer.Excluding(p => p.Age).Excluding(p => p.BoolField).PrintToString(person);
             serialized.Should().NotContain("Age = ");
+            serialized.Should().NotContain("BoolField = ");
             Console.WriteLine(serialized);
         }
+        
 
         [Test]
         public void Can_SpecifyAlternativeSterilizationForSpecificType()
         {
-            var serialized = printer.Printing<int>().Using(i => $"Int {i}").PrintToString(person);
-            serialized.Should().Contain("Int");
+            var serialized = printer.Printing<int>().Using(i => $"IntNum {i}").PrintToString(person);
+            serialized.Should().Contain("IntNum");
             Console.WriteLine(serialized);
         }
 
         [Test]
-        public void Can_TrimStringProperties()
+        public void Can_TrimStringPropertiesOrFields()
         {
             var serialized = printer.Printing(p => p.Name).TrimmedToLength(1)
                 .PrintToString(person);
@@ -62,11 +65,14 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Can_SpecifyAlternativeSterilizationForSpecificProperty()
+        public void Can_SpecifyAlternativeSterilizationForSpecificPropertyOrField()
         {
-            var serialized = printer.Printing(p => p.Height).Using(h => $"{h} cm")
+            var serialized = printer
+                .Printing(p => p.Height).Using(h => "ЫЫЫ")
+                .Printing(p => p.BoolField).Using(b => "SSS")
                 .PrintToString(person);
-            Regex.IsMatch(serialized, @"Height = \w+((\.|,)\w+)? cm").Should().Be(true);
+            serialized.Should().Contain("Height = ЫЫЫ");
+            serialized.Should().Contain("BoolField = SSS");
             Console.WriteLine(serialized);
         }
 
@@ -94,14 +100,13 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ShouldSerializeDifferently_WithTwoPropsSameType()
         {
-            var rect = new Rectangle {Height = 10, Width = 1};
-            var rectanglePrinter = ObjectPrinter.For<Rectangle>();
-            rectanglePrinter
-                .Printing(r => r.Height).Using(h => $"Height {h}")
-                .Printing(r => r.Width).Using(w => $"Width {w}");
-            var serialized = rectanglePrinter.PrintToString(rect);
-            serialized.Should().Contain("Height");
-            serialized.Should().Contain("Width");
+            printer
+                .Printing(r => r.Height).Using(h => $"{h} cm")
+                .Printing(r => r.Weight).Using(w => $"{w} kg");
+            var serialized = printer.PrintToString(person);
+            serialized.Should().Contain("cm");
+            serialized.Should().Contain("kg");
+            Console.WriteLine(serialized);
         }
 
         [Test]
@@ -109,20 +114,48 @@ namespace ObjectPrinting.Tests
         {
             printer
                 .Printing(p => p.Age).Using(age => $"{age} y.o.")
-                .Printing<int>().Using(d => $"Int {d}");
+                .Printing<int>().Using(d => $"IntNum {d}");
             var serialized = printer.PrintToString(person);
             serialized.Should().Contain("y.o.");
-            serialized.Should().NotContain("Int");
+            Console.WriteLine(serialized);
         }
 
         [Test]
         public void LastUsingIsDecisive_WhenPrintingSameType()
         {
             printer
-                .Printing<double>().Using(d => $"Double {d}")
+                .Printing<double>().Using(d => $"NUM {d}")
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
             var serialized = printer.PrintToString(person);
-            serialized.Should().NotContain("Double");
+            serialized.Should().NotContain("NUM");
+            Console.WriteLine(serialized);
+        }
+
+        [Test]
+        public void ShouldHandle_CyclicReferences()
+        {
+            person = Person.CreatePerson();
+            person.Friend = person;
+            
+            Action action = () =>  Console.Write(printer.PrintToString(person));
+            action.ShouldNotThrow<StackOverflowException>();
+        }
+
+        [Test]
+        public void ShouldHandle_Collections()
+        {
+            person = Person.CreatePerson();
+            person.Numbers = new[] {1.1, 2.2, 3.3};
+            person.Dict = new Dictionary<string, double>()
+            {
+                {"a", 1.1},
+                {"b", 2.0}
+            };
+            
+            var serialized = printer.PrintToString(person);
+            serialized.Should().Contain("Dictionary");
+            serialized.Should().Contain("[]");
+            Console.WriteLine(serialized);
         }
         
         public void Demo()

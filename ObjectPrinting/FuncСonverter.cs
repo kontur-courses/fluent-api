@@ -6,8 +6,7 @@ namespace ObjectPrinting
     {
         public static Func<object, string> CastToObjectPrint<TPropType>(Func<TPropType,string> print)
         {
-            string ObjPrint(object a) => print((TPropType) a);
-            return ObjPrint;
+            return o => print((TPropType) o);
         }
     }
 }
