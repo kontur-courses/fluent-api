@@ -13,6 +13,11 @@ namespace ObjectPrinting.Tests
         public TestClass Parent { get; set; }
     }
 
+    class StringContainer
+    {
+        public string StringInner { get; set; }
+    }
+
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
@@ -24,7 +29,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ObjPrinter_ExcludingType_ShouldNotThrowExceptions()
+        public void ObjPrinter_ExcludingType_ShouldNotThrowExceptions_AndWorksCorrect()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<Guid>();
@@ -36,7 +41,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void StandartObjectPrinter_ShouldNotThrowExceptions()
+        public void StandartObjectPrinter_ShouldNotThrowExceptions_AndWorksCorrect()
         {
             var printer = ObjectPrinter.For<Person>();
             var res = "";
@@ -44,6 +49,7 @@ namespace ObjectPrinting.Tests
             act.Should().NotThrow();
             Console.WriteLine(res);
         }
+        
         
         [Test]
         public void ObjPrinter_UsingFormatType_ShouldNotThrowExceptions_And_WorkCorrect()
@@ -139,6 +145,36 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        public void ObjPrinter_IEnumerableExcluding_WorksCorrect()
+        {
+            var printer = ObjectPrinter.For<List<Person>>().Excluding<Guid>();
+            var lp = new List<Person> {person, person};
+            var res = "";
+            Action act = () => res = printer.PrintToString(lp);
+            act.Should().NotThrow();
+
+            var expected = $"{lp.GetType().Name}\r\n";
+
+            for (var i = 0; i < 2; i++)
+            {
+                expected += $"{person.GetType().Name}\r\n\t\t";
+                var curPerson = lp[i];
+                foreach (var prop in curPerson.GetType().Properties())
+                {
+                    if(prop.PropertyType.Name == "Guid")
+                        continue;
+                    expected += $"{prop.Name} = {prop.GetValue(curPerson)}\r\n\t\t";
+                }
+
+                expected = expected.TrimEnd() + "\r\n";
+            }
+            expected = expected.TrimEnd();
+            res.TrimEnd().Should().Be(expected);
+            
+            Console.WriteLine(res);
+        }
+        
+        [Test]
         public void ObjPrinter_IEnumerable_ShouldNotThrowExceptions()
         {
             var printer = ObjectPrinter.For<List<Person>>();
@@ -159,6 +195,7 @@ namespace ObjectPrinting.Tests
             var res = "";
             Action act = () => res = printer.PrintToString(first);
             act.Should().NotThrow();
+            res.Should().Contain("Parent = circle reference");
             Console.WriteLine(res);
         }
         
@@ -175,6 +212,57 @@ namespace ObjectPrinting.Tests
             Action act = () =>  print = printer.PrintToString(res);
 
             act.Should().NotThrow();
+            Console.WriteLine(print);
+        }
+        
+        [Test]
+        public void ObjPrinter_NullRefrences_WorksCorrect()
+        {
+            var printer = ObjectPrinter.For<TestClass>();
+            var first = new TestClass(){ number = 1, Parent = null };
+
+            string print = "";
+            Action act = () =>  print = printer.PrintToString(first);
+
+            var expected = "TestClass\r\n\tnumber = 1\r\n\tParent = null";
+            act.Should().NotThrow();
+            print.TrimEnd().Should().Be(expected);
+            Console.WriteLine(print);
+        }
+        
+        [Test]
+        public void ObjPrinter_Trim_WorksCorrect()
+        {
+            var printer = ObjectPrinter.For<StringContainer>()
+                .Printing<string>().TrimmedToLength(3);
+            
+            var test = new StringContainer() { StringInner = "12345" };
+
+            string print = "";
+            Action act = () =>  print = printer.PrintToString(test);
+
+            var expected = $"{test.GetType().Name}\r\n\tStringInner = {test.StringInner.Substring(0,3)}";
+            act.Should().NotThrow();
+            print.TrimEnd().Should().Be(expected);
+            Console.WriteLine(print);
+        }
+        
+        [Test]
+        public void ObjPrinter_ChainMethods_WorksCorrect()
+        {
+            var printer = ObjectPrinter.For<TestClass>()
+                .Printing<int>().Using(x => String.Format("{0} : {1}", x, x))
+                .Excluding(x => x.Parent)
+                .Printing<int>().Using(CultureInfo.GetCultureInfo("ru-RU"));
+            
+            var first = new TestClass(){ number = 10000000, Parent = null };
+
+            string print = "";
+            Action act = () =>  print = printer.PrintToString(first);
+
+            var expected = $"TestClass\r\n\tnumber = {first.number} : {first.number}";
+            act.Should().NotThrow();
+            print.TrimEnd().Should().Be(expected);
             Console.WriteLine(print);
         }
         
