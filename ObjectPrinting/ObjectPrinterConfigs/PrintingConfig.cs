@@ -44,7 +44,7 @@ namespace ObjectPrinting
 
         private string PrintEnumerableObj(IEnumerable obj, int nestingLevel)
         {
-            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return "..." + Environment.NewLine;
+            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return ObjectPrinter.MaxDepthSerializeString;;
             
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();

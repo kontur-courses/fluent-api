@@ -15,7 +15,7 @@ namespace ObjectPrinting
             typeof(Guid),
         };
 
-        internal static readonly int MaxDepthSerialize = 15;
+        internal const int MaxDepthSerialize = 15;
         internal static readonly string MaxDepthSerializeString = "..." + Environment.NewLine;
         
         public static PrintingConfig<T> For<T>()
