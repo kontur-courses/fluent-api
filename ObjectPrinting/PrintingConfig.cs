@@ -120,12 +120,12 @@ namespace ObjectPrinting
             HashSet<object> typeParents)
         {
             var nestingLevel = typeParents.Count;
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             if (serializationInfo.Excluded(currentType, currentName))
                 return sb;
 
-            if (serializationInfo.TryGetSerialization(currentValue, currentType, currentName, identation,
+            if (serializationInfo.TryGetSerialization(currentValue, currentType, currentName, indentation,
                 out var serializedProperty))
             {
                 sb.Append(serializedProperty);
@@ -133,7 +133,7 @@ namespace ObjectPrinting
             }
             else
             {
-                sb.Append(identation + currentName + " = " +
+                sb.Append(indentation + currentName + " = " +
                           PrintToString(currentValue,
                               typeParents));
             }

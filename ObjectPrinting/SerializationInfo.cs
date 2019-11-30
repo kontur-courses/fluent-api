@@ -68,13 +68,13 @@ namespace ObjectPrinting
         }
 
         public bool TryGetSerialization(object currentValue, Type currentType, string currentName,
-            string identation, out StringBuilder stringBuilder)
+            string indentation, out StringBuilder stringBuilder)
         {
             stringBuilder = new StringBuilder();
             if (currentValue == null)
                 return false;
 
-            stringBuilder.Append(identation);
+            stringBuilder.Append(indentation);
 
             if (nameRules.TryGetValue(currentName, out var propertyRule))
             {
@@ -104,7 +104,7 @@ namespace ObjectPrinting
             if (!finalTypes.Contains(currentType)
                 && currentType.GetInterface(nameof(IEnumerable)) != null)
             {
-                stringBuilder.Append(GetIenumerableSerialization(currentName, identation, currentValue));
+                stringBuilder.Append(GetIenumerableSerialization(currentName, indentation, currentValue));
 
                 return true;
             }
@@ -112,18 +112,18 @@ namespace ObjectPrinting
             return false;
         }
 
-        private StringBuilder GetIenumerableSerialization(string currentName, string identation,
+        private StringBuilder GetIenumerableSerialization(string currentName, string indentation,
             object currentValue)
         {
             var stringBuilder = new StringBuilder();
             stringBuilder.Append(currentName + "=");
             stringBuilder.Append(Environment.NewLine);
-            identation += '\t';
+            indentation += '\t';
             var objIenumerable = (IEnumerable) currentValue;
             var i = 0;
             foreach (var element in objIenumerable)
             {
-                stringBuilder.Append(identation + $"[{i}] = ");
+                stringBuilder.Append(indentation + $"[{i}] = ");
                 stringBuilder.Append(element);
                 stringBuilder.Append(Environment.NewLine);
                 i++;
