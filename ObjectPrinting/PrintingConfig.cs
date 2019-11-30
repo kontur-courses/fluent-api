@@ -14,6 +14,7 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludingProperty;
         private readonly Dictionary<Type, Func<object, string>> typeSerialisation;
         private readonly Dictionary<MemberInfo, Func<object, string>> propertySerialisation;
+        private readonly Stack<object> nestingStack;
 
         Dictionary<Type, Func<object, string>> IPrintingConfig.typeSerialisation => typeSerialisation;
         Dictionary<MemberInfo, Func<object, string>> IPrintingConfig.propertySerialisation => propertySerialisation;
@@ -30,6 +31,7 @@ namespace ObjectPrinting
             excludingProperty = new HashSet<MemberInfo>();
             typeSerialisation = new Dictionary<Type, Func<object, string>>();
             propertySerialisation = new Dictionary<MemberInfo, Func<object, string>>();
+            nestingStack = new Stack<object>();
         }
 
         public string PrintToString(TOwner obj)
@@ -45,15 +47,25 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            if (nestingStack.Contains(obj))
+            {
+                return $"circle reference";
+            }
+            nestingStack.Push(obj);
+
             if (obj is IEnumerable enumerable)
             {
                 return PrintCollection(enumerable, nestingLevel);
             }
+            
+            var result = PrintClass(obj, nestingLevel);
 
-            return PrintClass(obj, nestingLevel);
+            if(nestingStack.Count != 0)
+                nestingStack.Pop();
+            return result;
         }
 
-        private static string PrintObjWithMembers<T>(string nameObj, IEnumerable<T> serMembers, Func<T, string> serFunc, int nestingLevel)
+        private string PrintObjWithMembers<T>(string nameObj, IEnumerable<T> serMembers, Func<T, string> serFunc, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -102,6 +114,7 @@ namespace ObjectPrinting
         private string PrintProperty(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             var value = propertyInfo.GetValue(obj);
+            
             if (propertySerialisation.ContainsKey(propertyInfo))
             {
                 return PrintToString(propertySerialisation[propertyInfo].DynamicInvoke(value), nestingLevel);
@@ -118,7 +131,7 @@ namespace ObjectPrinting
         private object PrintField(FieldInfo fieldInfo, object obj, int nestingLevel)
         {
             var value = fieldInfo.GetValue(obj);
-
+            
             if (propertySerialisation.ContainsKey(fieldInfo))
             {
                 return PrintToString(propertySerialisation[fieldInfo].DynamicInvoke(value), nestingLevel);

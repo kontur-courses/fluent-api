@@ -23,6 +23,15 @@ namespace ObjectPrinting.Tests
             var children = new PersonWithParent {Name = "Children", Parent = parent};
             children.PrintToString().Should().Contain(parent.Name).And.Contain(children.Name);
         }
+        
+        [Test]
+        public void PrintToString_WhenCircleRefClass()
+        {
+            var parent = new PersonWithParent {Name = "Parent"};
+            var children = new PersonWithParent {Name = "Children", Parent = parent};
+            parent.Parent = children;
+            children.PrintToString().Should().Contain("circle reference");
+        }
     }
 
     internal class PersonWithParent : Person
