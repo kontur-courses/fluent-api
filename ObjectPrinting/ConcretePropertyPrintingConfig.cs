@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class ConcretePropertyPrintingConfig<TOwner, TPropType> : IConcretePropertyPrintingConfig<TOwner, TPropType>
+    public class ConcretePropertyPrintingConfig<TOwner, TPropType> : IConcretePropertyPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly PropertyInfo propertyInfo;
@@ -21,7 +21,7 @@ namespace ObjectPrinting
                 settings.AddWayToSerializeProperty(propertyInfo, obj => print((TPropType) obj)));
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-        PropertyInfo IConcretePropertyPrintingConfig<TOwner, TPropType>.PropertyInfo => propertyInfo;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
+        PropertyInfo IConcretePropertyPrintingConfig<TOwner>.PropertyInfo => propertyInfo;
     }
 }

@@ -10,10 +10,10 @@ namespace ObjectPrinting.Extensions
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        private static PrintingConfig<TOwner> Using<TOwner, TProperty>(this TypePrintingConfig<TOwner, TProperty> propConfig,
+        private static PrintingConfig<TOwner> Using<TOwner, TProperty>(this IPropertyPrintingConfig<TOwner> propConfig,
             CultureInfo cultureInfo)
         {
-            var parentConfig = (IPrintingConfig)((IPropertyPrintingConfig<TOwner, double>) propConfig).ParentConfig;
+            var parentConfig = (IPrintingConfig)propConfig.ParentConfig;
             var settings = parentConfig.Settings;
             return new PrintingConfig<TOwner>(settings.AddTypeCulture(typeof(TProperty), cultureInfo));
         }

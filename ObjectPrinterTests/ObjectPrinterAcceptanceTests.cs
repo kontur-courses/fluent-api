@@ -1,17 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
 using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinterTests
 {
-    [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person(Guid.Empty, "Alex", "Johnson", 180.5, 19);
+            var serializingDictionary = person.GetDefaultPersonSerializingDictionary();
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -27,13 +30,26 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Age)
                 .SetNestingLevel(3);
 
-            string s1 = printer.PrintToString(person);
+            var s1 = printer.PrintToString(person);
+            var expected1 = TestHelper.GetExpectedResult(typeof(Person), new Dictionary<string, string>
+            {
+                {nameof(person.Name), person.Name},
+                {nameof(person.Surname), person.Surname},
+                {nameof(person.Height), person.Height.ToString(CultureInfo.InvariantCulture)}
+            });
+            s1.Should().BeEquivalentTo(expected1);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            string s2 = person.PrintToString();
+            var s2 = person.PrintToString();
+            var expected2 =
+                TestHelper.GetExpectedResult(typeof(Person), serializingDictionary);
+            s2.Should().BeEquivalentTo(expected2);
 
             //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            serializingDictionary.Remove(nameof(person.Age));
+            var expected3 = TestHelper.GetExpectedResult(typeof(Person), serializingDictionary);
+            s3.Should().BeEquivalentTo(expected3);
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);

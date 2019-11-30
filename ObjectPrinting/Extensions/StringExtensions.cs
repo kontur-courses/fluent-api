@@ -7,7 +7,7 @@ namespace ObjectPrinting.Extensions
         public static string Truncate(this string value, int maxLength)
         {
             if (maxLength < 0)
-                throw new ArgumentOutOfRangeException($"{nameof(maxLength)} {maxLength} was negative");
+                throw new ArgumentException($"{nameof(maxLength)} {maxLength} was negative");
 
             if (string.IsNullOrEmpty(value))
                 return value;

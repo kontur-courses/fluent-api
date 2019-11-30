@@ -26,7 +26,7 @@ namespace ObjectPrinting
             NestingLevel = 10;
         }
 
-        public PrintingConfigSettings(ImmutableHashSet<Type> typesToIgnore,
+        private PrintingConfigSettings(ImmutableHashSet<Type> typesToIgnore,
             ImmutableDictionary<Type, Func<object, string>> waysToSerializeTypes,
             ImmutableDictionary<Type, CultureInfo> typesCultures,
             ImmutableDictionary<PropertyInfo, Func<object, string>> waysToSerializeProperties,
