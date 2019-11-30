@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -13,7 +14,7 @@ namespace ObjectPrintingTests
     [TestFixture]
     public class PrintingConfigTests
     {
-        private static string newLine = Environment.NewLine;
+        private static readonly string newLine = Environment.NewLine;
 
         private static readonly Person person = new Person
         {
@@ -50,7 +51,7 @@ namespace ObjectPrintingTests
         }
 
 
-        private static IEnumerable<TestCaseData> GeneratePrimitiveTypeObjectAndSerializer()
+        private static IEnumerable<TestCaseData> GeneratePrimitiveTypeObjectAndSerialize()
         {
             yield return new TestCaseData("simple text", (Func<string, string>) (x => "other text"));
 
@@ -61,12 +62,12 @@ namespace ObjectPrintingTests
             yield return new TestCaseData(3.1415f, (Func<float, string>) (x => $"{x / 2}"));
         }
 
-        [TestCaseSource(nameof(GeneratePrimitiveTypeObjectAndSerializer))]
-        public void Serializing_PrimitiveTypeObjectBySerializer_ShouldReturnResultOfSerializer<T>(
-            T obj, Func<T, string> serializer)
+        [TestCaseSource(nameof(GeneratePrimitiveTypeObjectAndSerialize))]
+        public void Serializing_PrimitiveTypeObjectBySerialize_ShouldReturnResultOfSerialize<T>(
+            T obj, Func<T, string> serialize)
         {
-            var printer = ObjectPrinter.For<T>().Serializing<T>().Using(serializer);
-            var expected = serializer(obj);
+            var printer = ObjectPrinter.For<T>().Serializing<T>().Using(serialize);
+            var expected = serialize(obj);
 
             var actual = printer.PrintToString(obj);
 
@@ -78,7 +79,6 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>().Excluding<float>();
 
-            var newLine = Environment.NewLine;
             var expected =
                 $"Id = {person.Id}{newLine}" +
                 $"Name = {person.Name}{newLine}" +
@@ -102,14 +102,14 @@ namespace ObjectPrintingTests
 
             yield return new TestCaseData(
                     person,
-                    0.0,
+                    double.NaN,
                     $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}Surname = {person.Surname}" +
                     $"{newLine}Age = {person.Age}{newLine}Citizenship = {person.Citizenship}")
                 .SetName("excluding property with double type");
 
             yield return new TestCaseData(
                     person,
-                    new Guid(),
+                    Guid.Empty,
                     $"Name = {person.Name}{newLine}" +
                     $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
                     $"Age = {person.Age}{newLine}Citizenship = {person.Citizenship}")
@@ -117,7 +117,7 @@ namespace ObjectPrintingTests
 
             yield return new TestCaseData(
                     person,
-                    42,
+                    int.MinValue,
                     $"Id = {person.Id}{newLine}Name = {person.Name}{newLine}" +
                     $"Surname = {person.Surname}{newLine}Height = {person.Height}{newLine}" +
                     $"Citizenship = {person.Citizenship}")
@@ -125,7 +125,7 @@ namespace ObjectPrintingTests
         }
 
         [TestCaseSource(nameof(GenerateObjectAndExcludedTypesAndSerializingResult))]
-        public void Exclude_Type_ShouldReturnRightString<T>(Person p, T _, string expected)
+        public void Exclude_Type_ObjectsWithThisTypeShouldNotSerialize<T>(Person p, T _, string expected)
         {
             var printer = ObjectPrinter.For<Person>().Excluding<T>();
 
@@ -221,25 +221,27 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrintToString_WithCyclingReference_ShouldReturnRightString()
+        public void PrintToString_WithCyclingReference_ShouldNotThrowException()
         {
-            var person = new PersonWithParent {Name = "Bob", Age = 42};
-            person.Parent = person;
-            var newLine = Environment.NewLine;
+            var obj = new PersonWithParent {Name = "Bob", Age = 42};
+            obj.Parent = obj;
+            
             var expected = $"Name = Bob{newLine}Age = 42{newLine}Parent = [Cyclic reference detected]";
 
             var actual = ObjectPrinter
                 .For<PersonWithParent>()
-                .PrintToString(person);
+                .PrintToString(obj);
 
             actual.Should().BeEquivalentTo(expected);
         }
 
         [Test]
-        public void PrintToString_WithComplexType_ShouldReturnRightString()
+        public void PrintToString_WithComplexType()
         {
+            var parent = new PersonWithParent() { Name = "Mike", Age = 62 };
             var person1 = new PersonWithParent {Name = "Bob", Age = 42};
-            var person2 = new PersonWithParent {Name = "Alice", Age = 42};
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42,  Parent = parent};
+            
             var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
             var expected = @"Person1
 	Name = Bob
@@ -248,7 +250,10 @@ namespace ObjectPrintingTests
 Person2
 	Name = Alice
 	Age = 42
-	Parent = null";
+	Parent
+		Name = Mike
+		Age = 62
+		Parent = null";
 
             var actual = ObjectPrinter
                 .For<PersonWithParentContainer>()
@@ -268,7 +273,7 @@ Person2
         }
 
         [TestCaseSource(nameof(GenerateCollectionAndSerializingResult))]
-        public void PrintToString_WithCollection_ShouldReturnRightString(IEnumerable enumerable, string expected)
+        public void PrintToString_WithCollection_ShouldRightSerializeCollection(IEnumerable enumerable, string expected)
         {
             var printer = ObjectPrinter.For<IEnumerable>();
 
@@ -278,7 +283,7 @@ Person2
         }
 
         [Test]
-        public void PrintToString_ObjectWithCollectionProperty_ShouldReturnRightString()
+        public void PrintToString_ObjectWithCollectionTypeProperty_ShouldRightSerializeThisProperty()
         {
             var person1 = new Person() {Name = "Tom", Age = 14};
             var person2 = new Person() {Name = "Bob", Age = 13};
@@ -295,12 +300,12 @@ Person2
         }
 
         [Test]
-        public void Serializing_ComplexObjectBySerializer_ShouldReturnResultOfSerializer()
+        public void Serializing_ComplexObjectBySerialize_ShouldReturnResultOfSerialize()
         {
-            string Serializer(Person s) => "person serialized by personSerializer";
+            string Serialize(Person s) => "person serialized by personSerializer";
 
-            var printer = ObjectPrinter.For<Person>().Serializing<Person>().Using(Serializer);
-            var expected = Serializer(person);
+            var printer = ObjectPrinter.For<Person>().Serializing<Person>().Using(Serialize);
+            var expected = Serialize(person);
 
             var actual = printer.PrintToString(person);
 
@@ -309,10 +314,10 @@ Person2
 
 
         [Test]
-        public void Serializing_WithCulture_ShouldReturnRightString()
+        public void Serializing_WithCulture_ShouldReturnResultOfSerializationUsingCulture()
         {
             var obj = 0.42;
-            var printer = ObjectPrinter.For<double>().Serializing<double>().Using(CultureInfo.CurrentCulture);
+            var printer = ObjectPrinter.For<double>().Serializing<double>().Using(CultureInfo.InvariantCulture);
             var expected = "0.42";
 
             var actual = printer.PrintToString(obj);
@@ -321,12 +326,12 @@ Person2
         }
 
         [Test]
-        public void Serializing_PropertyBySerializer_ShouldReturnRightString()
+        public void Serializing_SpecifyPropertySerialization_ShouldReturnResultOfThisSerializationForThisProperty()
         {
             var @class = new Class() {ClassNumber = 15, Students = new List<Person> {person}};
-            string Serializer(List<Person> s) => "students serialized by studentsSerializer";
-            var printer = ObjectPrinter.For<Class>().Serializing(x => x.Students).Using(Serializer);
-            var expected = $"Students = students serialized by studentsSerializer{newLine}ClassNumber = 15";
+            string Serialize(List<Person> s) => "students serialized by studentsSerializer";
+            var printer = ObjectPrinter.For<Class>().Serializing(x => x.Students).Using(Serialize);
+            var expected = "Students = " + Serialize(@class.Students) + newLine + "ClassNumber = 15";
 
             var actual = printer.PrintToString(@class);
 
@@ -377,7 +382,7 @@ Person2
         }
 
         [Test]
-        public void Serializing_CreateDifferentSerializersForOneType_ShouldBeDifferentConfigs()
+        public void Serializing_CreateDifferentSerializeConfigsForOneType_ConfigsShouldBeDifferent()
         {
             var obj = new SimplePerson {Name = "Bob", Age = 42};
             var printer = ObjectPrinter.For<SimplePerson>();
@@ -394,7 +399,7 @@ Person2
         }
 
         [Test]
-        public void Serializing_CreateDifferentSerializersForOneProperty_ShouldBeDifferentConfigs()
+        public void Serializing_CreateDifferentSerializerConfigsForOneProperty_ConfigsShouldBeDifferent()
         {
             var obj = new SimplePerson {Name = "Bob", Age = 42};
             var printer = ObjectPrinter.For<SimplePerson>();

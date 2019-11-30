@@ -6,7 +6,7 @@ namespace ObjectPrinting.Configs
     public class PropertySerializingConfig<TOwner, TPropType> : IPropertySerializingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> parentConfig;
-        private Func<TPropType, string> serializer;
+        private Func<TPropType, string> serialize;
         private readonly MemberInfo targetMember;
 
         public PropertySerializingConfig(PrintingConfig<TOwner> parent) : this(parent, null)
@@ -19,9 +19,9 @@ namespace ObjectPrinting.Configs
             this.targetMember = targetMember;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializer)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> serialize)
         {
-            this.serializer = serializer;
+            this.serialize = serialize;
 
             if (targetMember == null)
                 parentConfig.AddPropertySerializingConfig<TPropType>(this);
@@ -33,7 +33,7 @@ namespace ObjectPrinting.Configs
 
         PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
 
-        Func<object, string> IPropertySerializingConfig<TOwner>.Serializer => BuildSerializer();
+        Func<object, string> IPropertySerializingConfig<TOwner>.Serialize => BuildSerializer();
 
         private Func<object, string> BuildSerializer()
         {
@@ -41,7 +41,7 @@ namespace ObjectPrinting.Configs
                 ob =>
                 {
                     if (ob is TPropType property)
-                        return serializer(property);
+                        return serialize(property);
 
                     throw new ArgumentException($"Expected type {typeof(TPropType)}, but got {ob.GetType()} instead");
                 };

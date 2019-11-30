@@ -17,7 +17,7 @@ namespace ObjectPrinting.Configs
         private readonly HashSet<object> printed;
         private readonly StringBuilder output;
 
-        private static readonly List<Type> FinalTypes = new List<Type>
+        private static readonly List<Type> finalTypes = new List<Type>
         {
             typeof(string),
             typeof(DateTime),
@@ -50,11 +50,11 @@ namespace ObjectPrinting.Configs
 
             if (typesConfigs.TryGetValue(type, out var config))
             {
-                var serializer = config.Serializer;
+                var serialize = config.Serialize;
 
-                output.Append(serializer(objectToPrint));
+                output.Append(serialize(objectToPrint));
             }
-            else if (FinalTypes.Contains(type) || type.IsPrimitive)
+            else if (finalTypes.Contains(type) || type.IsPrimitive)
             {
                 output.Append(objectToPrint);
             }
@@ -96,22 +96,22 @@ namespace ObjectPrinting.Configs
 
         private void PrintProperty(PropertyInfo propertyInfo, object value, int nestingLevel)
         {
-            Func<object, string> serializer = null;
+            Func<object, string> serialize = null;
 
-            if (TryGetSerializer(propertyInfo, out serializer) || FinalTypes.Contains(propertyInfo.PropertyType)
+            if (TryGetSerialize(propertyInfo, out serialize) || finalTypes.Contains(propertyInfo.PropertyType)
                                                                || propertyInfo.PropertyType.IsPrimitive)
-                PrintElementaryProperty(propertyInfo, value, serializer ?? (x => x.ToString()), nestingLevel);
+                PrintElementaryProperty(propertyInfo, value, serialize ?? (x => x.ToString()), nestingLevel);
             else
                 PrintComplexObject(propertyInfo, value, nestingLevel);
         }
 
-        private void PrintElementaryProperty(PropertyInfo propertyInfo, object value, Func<object, string> serializer,
+        private void PrintElementaryProperty(PropertyInfo propertyInfo, object value, Func<object, string> serialize,
             int nestingLevel)
         {
             var indent = new string('\t', nestingLevel);
             var name = propertyInfo.Name;
 
-            output.Append(indent).Append(name).Append(" = ").Append(serializer(value));
+            output.Append(indent).Append(name).Append(" = ").Append(serialize(value));
         }
 
         private void PrintComplexObject(PropertyInfo propertyInfo, object value, int nestingLevel)
@@ -188,21 +188,21 @@ namespace ObjectPrinting.Configs
                    excludedMembers.Contains(propertyInfo);
         }
 
-        private bool TryGetSerializer(PropertyInfo propertyInfo, out Func<object, string> serializer)
+        private bool TryGetSerialize(PropertyInfo propertyInfo, out Func<object, string> serialize)
         {
             if (membersConfig.TryGetValue(propertyInfo, out var config))
             {
-                serializer = config.Serializer;
+                serialize = config.Serialize;
                 return true;
             }
 
             if (typesConfigs.TryGetValue(propertyInfo.PropertyType, out config))
             {
-                serializer = config.Serializer;
+                serialize = config.Serialize;
                 return true;
             }
 
-            serializer = null;
+            serialize = null;
             return false;
         }
     }
