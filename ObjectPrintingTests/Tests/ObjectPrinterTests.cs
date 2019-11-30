@@ -145,9 +145,9 @@ namespace ObjectPrintingTests.Tests
             var actual = dictionary.PrintToString();
 
             actual.Should().Be("Dictionary<String, Int32>\n" +
-                               "\tKeyValuePair<String, Int32>\n" +
+                               "KeyValuePair<String, Int32>\n" +
                                "\t\tKey = a\r\n\t\tValue = 1\r\n" +
-                               "\tKeyValuePair<String, Int32>\n" +
+                               "KeyValuePair<String, Int32>\n" +
                                "\t\tKey = b\r\n\t\tValue = 2\r\n");
         }
 
@@ -162,10 +162,10 @@ namespace ObjectPrintingTests.Tests
             var actual = firstPerson.PrintToString();
 
             actual.Should().Be("Person\n\tId = 2\r\n\tName = Bob" +
-                               "\r\n\tHeight = 190\r\n\tAge = 20\r\n\tFriends = \tPerson[]\n" +
+                               "\r\n\tHeight = 190\r\n\tAge = 20\r\n\tFriends = Person[]\n" +
                                "\t\tPerson\n\t\t\tId = 3\r\n\t\t\tName = Alice" +
                                "\r\n\t\t\tHeight = 170\r\n\t\t\tAge = 19" +
-                               "\r\n\t\t\tFriends = \t\t\tPerson[]\n\t\t\t\tCyclic reference \r\n");
+                               "\r\n\t\t\tFriends = Person[]\n\t\t\t\tCyclic reference \r\n");
         }
     }
 }

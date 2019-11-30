@@ -6,8 +6,8 @@ namespace ObjectPrinting.Core.PrintingConfig
 {
     public interface IPrintingConfig
     {
-        Dictionary<Type, Delegate> TypePrintingFunctions { get; }
-        Dictionary<string, Delegate> PropertyPrintingFunctions { get; }
+        Dictionary<Type, Func<object, string>> TypePrintingFunctions { get; }
+        Dictionary<string, Func<object, string>> PropertyPrintingFunctions { get; }
         Dictionary<Type, CultureInfo> TypeCultures { get; }
     }
 }

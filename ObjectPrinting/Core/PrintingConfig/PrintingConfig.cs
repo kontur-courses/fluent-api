@@ -13,18 +13,20 @@ namespace ObjectPrinting.Core.PrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
-        private readonly Dictionary<Type, Delegate> typePrintingFunctions = new Dictionary<Type, Delegate>();
 
-        private readonly Dictionary<string, Delegate> propertyPrintingFunctions =
-            new Dictionary<string, Delegate>();
+        private readonly Dictionary<Type, Func<object, string>> typePrintingFunctions =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<string, Func<object, string>> propertyPrintingFunctions =
+            new Dictionary<string, Func<object, string>>();
 
         private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
         private readonly HashSet<object> processedObjects = new HashSet<object>();
 
         private readonly Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(long),
+            typeof(short), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -84,7 +86,7 @@ namespace ObjectPrinting.Core.PrintingConfig
 
                 return objectToPrint + Environment.NewLine;
             }
-            
+
             processedObjects.Add(objectToPrint);
 
             var builder = new StringBuilder();
@@ -99,6 +101,7 @@ namespace ObjectPrinting.Core.PrintingConfig
                     builder.AppendLine(childIndentation + $"Cyclic reference {itemInfo.Name}");
                     continue;
                 }
+
                 if (itemInfo.Name == null)
                 {
                     builder.Append(PrintToString(itemInfo.Item, nestingLevel + 1));
@@ -114,7 +117,6 @@ namespace ObjectPrinting.Core.PrintingConfig
 
         private static void AppendType(Type objectType, StringBuilder builder, string indentation)
         {
-            builder.Append(indentation);
             if (objectType.IsGenericType)
             {
                 builder.Append(objectType.Name.Split('`')[0]);
@@ -123,6 +125,11 @@ namespace ObjectPrinting.Core.PrintingConfig
             }
             else
             {
+                if (!objectType.IsArray)
+                {
+                    builder.Append(indentation);
+                }
+
                 builder.Append(objectType.Name);
             }
 
@@ -153,9 +160,9 @@ namespace ObjectPrinting.Core.PrintingConfig
             }
         }
 
-        Dictionary<Type, Delegate> IPrintingConfig.TypePrintingFunctions => typePrintingFunctions;
+        Dictionary<Type, Func<object, string>> IPrintingConfig.TypePrintingFunctions => typePrintingFunctions;
 
-        Dictionary<string, Delegate> IPrintingConfig.PropertyPrintingFunctions =>
+        Dictionary<string, Func<object, string>> IPrintingConfig.PropertyPrintingFunctions =>
             propertyPrintingFunctions;
 
         Dictionary<Type, CultureInfo> IPrintingConfig.TypeCultures => typeCultures;

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using ObjectPrinting.Core.PrintingConfig;
 
 namespace ObjectPrinting.Core.PropertyPrintingConfig
@@ -22,6 +23,80 @@ namespace ObjectPrinting.Core.PropertyPrintingConfig
                 str.Length > maxLen
                     ? str.Substring(0, maxLen)
                     : str);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, byte> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, sbyte> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, short> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, ushort> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, uint> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, long> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, ulong> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, decimal> propConfig,
+            CultureInfo cultureInfo)
+        {
+            return UsingCultureForNumberType(propConfig, cultureInfo);
+        }
+
+        private static PrintingConfig<TOwner> UsingCultureForNumberType<TOwner, TPropType>(
+            PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo cultureInfo)
+        {
+            var parentConfig = ((IPropertyPrintingConfig<TOwner>) propConfig).ParentConfig;
+            ((IPrintingConfig) parentConfig).TypeCultures[typeof(TPropType)] = cultureInfo;
+            return parentConfig;
         }
     }
 }

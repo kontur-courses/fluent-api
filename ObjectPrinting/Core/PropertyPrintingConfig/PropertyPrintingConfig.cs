@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using ObjectPrinting.Core.PrintingConfig;
 
 namespace ObjectPrinting.Core.PropertyPrintingConfig
@@ -17,23 +16,30 @@ namespace ObjectPrinting.Core.PropertyPrintingConfig
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> printingFunction)
         {
+            var wrapper = WrapPrintingFunction(printingFunction);
             if (propertyName == null)
             {
-                ((IPrintingConfig) printingConfig).TypePrintingFunctions[typeof(TPropType)] = printingFunction;
+                ((IPrintingConfig) printingConfig).TypePrintingFunctions[typeof(TPropType)] = wrapper;
             }
             else
             {
-                ((IPrintingConfig) printingConfig).PropertyPrintingFunctions[propertyName] =
-                    printingFunction;
+                ((IPrintingConfig) printingConfig).PropertyPrintingFunctions[propertyName] = wrapper;
             }
 
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        private Func<object, string> WrapPrintingFunction(Func<TPropType, string> printingFunction)
         {
-            ((IPrintingConfig) printingConfig).TypeCultures[typeof(TPropType)] = culture;
-            return printingConfig;
+            return (obj) =>
+            {
+                if (obj is TPropType propType)
+                {
+                    return printingFunction(propType);
+                }
+
+                throw new ArgumentException($"Argument must be of type {nameof(TPropType)}");
+            };
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.ParentConfig => printingConfig;
