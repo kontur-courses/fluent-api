@@ -1,14 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
 
@@ -20,76 +16,26 @@ namespace ObjectPrinting
         private readonly Dictionary<string, ISerializerConfig<TOwner>> propertySerializerConfigs 
             = new Dictionary<string, ISerializerConfig<TOwner>>();
 
+        HashSet<Type> IPrintingConfig<TOwner>.ExcludingTypes => excludingTypes;
+        
+        HashSet<string> IPrintingConfig<TOwner>.ExcludingProperties => excludingProperties;
+
+        Dictionary<Type, ISerializerConfig<TOwner>> IPrintingConfig<TOwner>.TypeSerializerConfigs =>
+            typeSerializerConfigs;
+
+        Dictionary<string, ISerializerConfig<TOwner>> IPrintingConfig<TOwner>.PropertySerializerConfigs =>
+            propertySerializerConfigs;
+
+        string IPrintingConfig<TOwner>.Print(object obj, int nestingLevel) => Print(obj, nestingLevel);
+
         private string Print(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (excludingTypes.Contains(obj.GetType()))
-                return "";
-            if (typeSerializerConfigs.ContainsKey(obj.GetType()))
-                return typeSerializerConfigs[obj.GetType()].SerializeFunc(obj);
-            
-            if (ObjectPrinter.FinalTypes.Contains(obj.GetType()))
-                return PrintFinalObj(obj);
-            
-            return obj is IEnumerable enumerable 
-            ? PrintEnumerableObj(enumerable, nestingLevel) 
-            : PrintNonFinalObj(obj, nestingLevel);
+
+            return PrintingObjectFactory<TOwner>.MakePrintingObject(obj, this).Print(nestingLevel);
         }
 
-        private string PrintFinalObj(object obj)
-        {
-            return obj + Environment.NewLine;
-        }
-
-        private string PrintEnumerableObj(IEnumerable obj, int nestingLevel)
-        {
-            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return ObjectPrinter.MaxDepthSerializeString;;
-            
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(obj.GetType().Name);
-            
-            foreach (var element in obj)
-                sb.Append(indentation + Print(element, nestingLevel + 1));
-
-            return sb.ToString();
-        }
-
-        private string PrintNonFinalObj(object obj, int nestingLevel)
-        {
-            if (nestingLevel == ObjectPrinter.MaxDepthSerialize) return ObjectPrinter.MaxDepthSerializeString;
-            
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(obj.GetType().Name);
-
-            foreach (var propertyInfo in obj.GetType().GetProperties())
-            {
-                if (excludingTypes.Contains(propertyInfo.PropertyType)
-                    || excludingProperties.Contains(propertyInfo.Name))
-                {
-                    continue;
-                } 
-                    
-                sb.Append(indentation
-                          + PrintProperty(propertyInfo, obj, nestingLevel));
-            }
-
-            return sb.ToString();
-        }
-
-        private string PrintProperty(PropertyInfo info, object obj, int nestingLevel)
-        {
-            if (propertySerializerConfigs.ContainsKey(info.Name))
-                return Print(
-                    propertySerializerConfigs[info.Name].SerializeFunc(info.GetValue(obj)), 
-                    nestingLevel);
-            return info.Name 
-                   + " = " 
-                   + Print(info.GetValue(obj), nestingLevel + 1);
-        }
-        
         public string PrintToString(TOwner obj)
         {
             return Print(obj, 0);

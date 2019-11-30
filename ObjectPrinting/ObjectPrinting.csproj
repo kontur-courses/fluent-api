@@ -52,12 +52,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\IPrintingConfig.cs" />
     <Compile Include="Core\ISerializerConfig.cs" />
+    <Compile Include="Core\PrintingObject.cs" />
     <Compile Include="Extensions\ObjectPrinterExtensions.cs" />
     <Compile Include="Extensions\SerializerConfigExtensions.cs" />
     <Compile Include="ObjectPrinter.cs" />
     <Compile Include="ObjectPrinterConfigs\PrintingConfig.cs" />
     <Compile Include="ObjectPrinterConfigs\SerializerConfig.cs" />
+    <Compile Include="PrintingObjectFactory.cs" />
+    <Compile Include="PrintingObjects\CustomSerializeObject.cs" />
+    <Compile Include="PrintingObjects\EnumerableObject.cs" />
+    <Compile Include="PrintingObjects\ExcludingObject.cs" />
+    <Compile Include="PrintingObjects\FinalObject.cs" />
+    <Compile Include="PrintingObjects\NonFinalObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
