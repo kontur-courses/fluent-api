@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
-using System.Reflection;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -92,7 +91,7 @@ namespace ObjectPrintingTests
             actual.Should().BeEquivalentTo(expected);
         }
 
-        private static IEnumerable<TestCaseData> GenerateObjectAndExcludedTypesAndSerializingResult()
+        private static IEnumerable<TestCaseData> GenerateObjectWithPrimitiveTypeAndExcludedTypeAndSerializingResult()
         {
             yield return new TestCaseData(
                     person,
@@ -124,8 +123,8 @@ namespace ObjectPrintingTests
                 .SetName("excluding property with int type");
         }
 
-        [TestCaseSource(nameof(GenerateObjectAndExcludedTypesAndSerializingResult))]
-        public void Exclude_Type_ObjectsWithThisTypeShouldNotSerialize<T>(Person p, T _, string expected)
+        [TestCaseSource(nameof(GenerateObjectWithPrimitiveTypeAndExcludedTypeAndSerializingResult))]
+        public void Excluding_PrimitiveType_ObjectsWithThisTypeShouldNotSerialize<T>(Person p, T _, string expected)
         {
             var printer = ObjectPrinter.For<Person>().Excluding<T>();
 
@@ -143,22 +142,7 @@ namespace ObjectPrintingTests
             yield return new TestCaseData(new Stack<string>());
         }
 
-        [TestCase("text")]
-        [TestCase(314)]
-        [TestCase(3.14f)]
-        [TestCase(3.14)]
-        [TestCaseSource(nameof(GetObjectsVariousTypes))]
-        public void Serializing_ForType_ShouldReturnRightContextForThisType<T>(T obj)
-        {
-            var printer = ObjectPrinter.For<T>();
-
-            var expected = new PropertySerializingConfig<T, T>(printer);
-            var actual = printer.Serializing<T>();
-
-            actual.Should().BeOfType(expected.GetType());
-        }
-
-        private static IEnumerable<TestCaseData> GenerateObjAndObjToExcludedPropertyFuncAndSerializingResult()
+        private static IEnumerable<TestCaseData> GenerateObjAndExcludedPropertyFuncAndSerializingResult()
         {
             Expression<Func<Person, string>> personToName = s => s.Name;
             Expression<Func<Person, string>> personToSurname = s => s.Surname;
@@ -210,8 +194,8 @@ namespace ObjectPrintingTests
                 $"Age = {person.Age}");
         }
 
-        [TestCaseSource(nameof(GenerateObjAndObjToExcludedPropertyFuncAndSerializingResult))]
-        public void Excluding_PropertyByFunc_ShouldNotPrintExcludedProperty<T>(Person obj,
+        [TestCaseSource(nameof(GenerateObjAndExcludedPropertyFuncAndSerializingResult))]
+        public void Excluding_PropertyWithPrimitiveTypeByFunc_ShouldNotPrintExcludedProperty<T>(Person obj,
             Expression<Func<Person, T>> objToExcludedProperty, string expected)
         {
             var printer = ObjectPrinter.For<Person>().Excluding<T>(objToExcludedProperty);
@@ -220,12 +204,223 @@ namespace ObjectPrintingTests
             actual.Should().BeEquivalentTo(expected);
         }
 
+        private static IEnumerable<TestCaseData>
+            GenerateObjAndObjToPropertyFuncAndSerializePropertyAndSerializeObjResult()
+        {
+            Expression<Func<SimplePerson, int>> personToAge = s => s.Age;
+            Expression<Func<SimplePerson, string>> personToName = s => s.Name;
+
+            string SerializeAge(int age) => "Age is serialized using the serializer";
+            string SerializeName(string name) => "Name is serialized using the serializer";
+
+            var obj = new SimplePerson() {Name = "Bob", Age = 42};
+
+            yield return new TestCaseData(
+                obj, personToAge,
+                (Func<int, string>) SerializeAge,
+                $"Name = Bob{newLine}Age = Age is serialized using the serializer");
+
+            yield return new TestCaseData(
+                obj, personToName,
+                (Func<string, string>) SerializeName,
+                $"Name = Name is serialized using the serializer{newLine}Age = 42");
+        }
+
+        [TestCaseSource(nameof(GenerateObjAndObjToPropertyFuncAndSerializePropertyAndSerializeObjResult))]
+        public void Serializing_IndicatingSerializationOfPrimitiveProperty_ShouldReturnResultOfThisSerialization<T>(
+            SimplePerson obj,
+            Expression<Func<SimplePerson, T>> objToSerializedProperty,
+            Func<T, string> serialize, string expected)
+        {
+            var printer = ObjectPrinter.For<SimplePerson>()
+                .Serializing(objToSerializedProperty)
+                .Using(serialize);
+
+            var actual = printer.PrintToString(obj);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Excluding_TypeFromComplexTypeObject_ShouldNotSerializeObjectsWithThisType()
+        {
+            var printer = ObjectPrinter
+                .For<PersonWithParentContainer>()
+                .Excluding<PersonWithParent>();
+            var person1 = new PersonWithParent {Name = "Bob", Age = 42};
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42};
+            var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
+            var expected = $"Name = {container.Name}";
+
+            var actual = printer.PrintToString(container);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Excluding_PropertyFromComplexTypeObject_ShouldNotSerializeObjectsWithThisType()
+        {
+            var printer = ObjectPrinter
+                .For<PersonWithParentContainer>()
+                .Excluding(x => x.Person1);
+            var person1 = new PersonWithParent {Name = "Bob", Age = 42};
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42};
+            var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
+            var expected =
+                $"Name = {container.Name}{newLine}Person2{newLine}\tName = Alice{newLine}\tAge = 42{newLine}\tParent = null";
+
+            var actual = printer.PrintToString(container);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_IndicatingSerializationOfComplexProperty_ShouldReturnResultOfThisSerialization()
+        {
+            var printer = ObjectPrinter
+                .For<PersonWithParentContainer>()
+                .Serializing(x => x.Person1).Using(y => "used serializer");
+            var person1 = new PersonWithParent {Name = "Bob", Age = 42};
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42};
+            var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
+            var expected =
+                $"Name = {container.Name}{newLine}Person1 = used serializer{newLine}" +
+                $"Person2{newLine}\tName = Alice{newLine}\tAge = 42{newLine}\tParent = null";
+
+            var actual = printer.PrintToString(container);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_IndicatingSerializationOfComplexType_ShouldReturnResultOfThisSerialization()
+        {
+            var printer = ObjectPrinter.For<PersonWithParentContainer>().Serializing<PersonWithParent>()
+                .Using(y => "used serializer");
+            var person1 = new PersonWithParent {Name = "Bob", Age = 42};
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42};
+            var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
+            var expected =
+                $"Name = {container.Name}{newLine}" +
+                $"Person1 = used serializer{newLine}" +
+                $"Person2 = used serializer";
+
+            var actual = printer.PrintToString(container);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Excluding_TypeFromCollectionTypeObject_ShouldNotSerializeObjectsWithThisType()
+        {
+            var printer = ObjectPrinter.For<Class>().Excluding<List<Person>>();
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+
+            var expected = "ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Excluding_PropertyWithCollectionType_ShouldNotSerializeObjectsWithThisProperty()
+        {
+            var printer = ObjectPrinter
+                .For<Class>()
+                .Excluding(x => x.Students);
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+            var expected = "ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void
+            Serializing_IndicatingSerializationForPropertyWithCollectionType_ShouldReturnResultOfThisSerialization()
+        {
+            var printer = ObjectPrinter
+                .For<Class>()
+                .Serializing(x => x.Students)
+                .Using(y => "used serializer");
+
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+            var expected = $"Students = used serializer{newLine}ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_IndicatingSerializationOfCollectionType_ShouldReturnResultOfThisSerialization()
+        {
+            var printer = ObjectPrinter
+                .For<Class>()
+                .Serializing<List<Person>>()
+                .Using(x => "used serializer");
+
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+            var expected = $"Students = used serializer{newLine}ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Excluding_CollectionItemType_ShouldNotSerializeObjectsWithThisType()
+        {
+            var printer = ObjectPrinter.For<Class>().Excluding<Person>();
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+
+            var expected = $"Students = []{newLine}ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void Serializing_IndicatingSerializationForCollectionItemType_ShouldSerializeElementsThisFunc()
+        {
+            var printer = ObjectPrinter
+                .For<Class>()
+                .Serializing<Person>()
+                .Using(y => "used serializer");
+
+            var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
+            var expected =
+                $"Students = [used serializer,{newLine}used serializer]{newLine}{newLine}ClassNumber = 7";
+
+            var actual = printer.PrintToString(@class);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [TestCase("text")]
+        [TestCase(314)]
+        [TestCase(3.14f)]
+        [TestCase(3.14)]
+        [TestCaseSource(nameof(GetObjectsVariousTypes))]
+        public void Serializing_ForType_ShouldReturnRightContextForThisType<T>(T obj)
+        {
+            var printer = ObjectPrinter.For<T>();
+
+            var expected = new PropertySerializingConfig<T, T>(printer);
+            var actual = printer.Serializing<T>();
+
+            actual.Should().BeOfType(expected.GetType());
+        }
+
         [Test]
         public void PrintToString_WithCyclingReference_ShouldNotThrowException()
         {
             var obj = new PersonWithParent {Name = "Bob", Age = 42};
             obj.Parent = obj;
-            
+
             var expected = $"Name = Bob{newLine}Age = 42{newLine}Parent = [Cyclic reference detected]";
 
             var actual = ObjectPrinter
@@ -238,22 +433,15 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_WithComplexType()
         {
-            var parent = new PersonWithParent() { Name = "Mike", Age = 62 };
+            var parent = new PersonWithParent() {Name = "Mike", Age = 62};
             var person1 = new PersonWithParent {Name = "Bob", Age = 42};
-            var person2 = new PersonWithParent {Name = "Alice", Age = 42,  Parent = parent};
-            
+            var person2 = new PersonWithParent {Name = "Alice", Age = 42, Parent = parent};
+
             var container = new PersonWithParentContainer {Person1 = person1, Person2 = person2};
-            var expected = @"Person1
-	Name = Bob
-	Age = 42
-	Parent = null
-Person2
-	Name = Alice
-	Age = 42
-	Parent
-		Name = Mike
-		Age = 62
-		Parent = null";
+            var expected = $"Name = Container{newLine}" +
+                           $"Person1{newLine}\tName = Bob{newLine}\tAge = 42{newLine}\tParent = null{newLine}" +
+                           $"Person2{newLine}\tName = Alice{newLine}\tAge = 42{newLine}" +
+                           $"\tParent{newLine}\t\tName = Mike{newLine}\t\tAge = 62{newLine}\t\tParent = null";
 
             var actual = ObjectPrinter
                 .For<PersonWithParentContainer>()
@@ -326,7 +514,8 @@ Person2
         }
 
         [Test]
-        public void Serializing_SpecifyPropertySerialization_ShouldReturnResultOfThisSerializationForThisProperty()
+        public void
+            Serializing_SpecifyPropertySerializationForComplexTypeOfProperty_ShouldReturnResultOfThisSerializationForThisProperty()
         {
             var @class = new Class() {ClassNumber = 15, Students = new List<Person> {person}};
             string Serialize(List<Person> s) => "students serialized by studentsSerializer";

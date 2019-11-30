@@ -22,6 +22,7 @@ namespace ObjectPrintingTests
 
     public class PersonWithParentContainer
     {
+        public string Name => "Container";
         public PersonWithParent Person1 { get; set; }
         public PersonWithParent Person2 { get; set; }
     }

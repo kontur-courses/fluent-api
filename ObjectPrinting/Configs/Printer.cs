@@ -61,7 +61,7 @@ namespace ObjectPrinting.Configs
             else if (objectToPrint is IEnumerable enumerable)
             {
                 printed.Add(objectToPrint);
-                PrintCollectionValue(enumerable, -1);
+                PrintCollectionValue(enumerable);
             }
             else
             {
@@ -96,10 +96,9 @@ namespace ObjectPrinting.Configs
 
         private void PrintProperty(PropertyInfo propertyInfo, object value, int nestingLevel)
         {
-            Func<object, string> serialize = null;
-
-            if (TryGetSerialize(propertyInfo, out serialize) || finalTypes.Contains(propertyInfo.PropertyType)
-                                                               || propertyInfo.PropertyType.IsPrimitive)
+            if (TryGetSerialize(propertyInfo, out var serialize)
+                || finalTypes.Contains(propertyInfo.PropertyType)
+                || propertyInfo.PropertyType.IsPrimitive)
                 PrintElementaryProperty(propertyInfo, value, serialize ?? (x => x.ToString()), nestingLevel);
             else
                 PrintComplexObject(propertyInfo, value, nestingLevel);
@@ -138,8 +137,15 @@ namespace ObjectPrinting.Configs
             PrintRegularObjectValue(value, nestingLevel);
         }
 
-        private void PrintCollectionValue(IEnumerable enumerable, int nestingLevel)
+        private void PrintCollectionValue(IEnumerable enumerable)
         {
+            if (ElementsIsExcluded(enumerable))
+            {
+                output.Append("[]");
+                return;
+            }
+
+
             output.Append("[");
 
             var i = 0;
@@ -157,6 +163,15 @@ namespace ObjectPrinting.Configs
 
             output.Append("]").Append(Environment.NewLine);
         }
+
+        private bool ElementsIsExcluded(IEnumerable enumerable)
+        {
+            var enumerator = enumerable.GetEnumerator();
+            enumerator.MoveNext();
+
+            return enumerator.Current != null && excludedTypes.Contains(enumerator.Current.GetType());
+        }
+
 
         private void PrintRegularObjectValue(object value, int nestingLevel)
         {
@@ -179,7 +194,7 @@ namespace ObjectPrinting.Configs
 
             output.Append(indent).Append(propertyInfo.Name).Append(" = ");
 
-            PrintCollectionValue(value, nestingLevel);
+            PrintCollectionValue(value);
         }
 
         private bool IsExcluded(PropertyInfo propertyInfo)
