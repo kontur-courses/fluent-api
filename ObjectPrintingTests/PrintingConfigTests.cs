@@ -507,9 +507,10 @@ namespace ObjectPrintingTests
             var @class = new Class() {Students = new List<Person>() {person1, person2}, ClassNumber = 7};
             var printer = ObjectPrinter.For<Class>().Excluding<double>().Excluding<Guid>();
             var newLine = Environment.NewLine;
-            var expected = $"Students = [{newLine}\tName = Tom{newLine}\tSurname = null\tAge = 14{newLine}" +
-                           $"\tCitizenship = null,{newLine}\tName = Bob{newLine}\tSurname = null\tAge = 13" +
-                           $"{newLine}\tCitizenship = null{newLine}]{newLine + newLine}classNumber = 7";
+            var expected = $"Students = [{newLine}\tName = Tom{newLine}\tSurname = null{newLine}" +
+                           $"\tAge = 14{newLine}\tCitizenship = null,{newLine}\tName = Bob{newLine}" +
+                           $"\tSurname = null{newLine}\tAge = 13{newLine}\tCitizenship = null{newLine}]" +
+                           $"{newLine + newLine}classNumber = 7";
 
             var actual = printer.PrintToString(@class);
 

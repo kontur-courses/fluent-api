@@ -81,7 +81,7 @@ namespace ObjectPrinting.Configs
                 PrintRegularObjectValue(objectToPrint, nestingLevel);
             }
         }
-        
+
         private void PrintCollectionValue(IEnumerable enumerable, int nestingLevel)
         {
             if (ElementsIsExcluded(enumerable))
@@ -113,16 +113,20 @@ namespace ObjectPrinting.Configs
         private void PrintRegularObjectValue(object value, int nestingLevel)
         {
             var indent = new string('\t', nestingLevel);
-
             var properties = value.GetType().GetProperties().Where(p => !IsExcluded(p)).ToList();
+            var propertiesCount = properties.Count;
 
-            for (var i = 0; i < properties.Count; i++)
+            for (var i = 0; i < propertiesCount; i++)
             {
                 var property = properties[i];
 
                 if (property.GetValue(value) == null)
                 {
                     output.Append(indent).Append(property.Name).Append(" = ").Append("null");
+
+                    if (i != propertiesCount - 1)
+                        output.Append(newLine);
+
                     continue;
                 }
 
@@ -137,7 +141,7 @@ namespace ObjectPrinting.Configs
                     var isFinalType = TypesIsFinal(propertyValue);
                     var propertyValueIsCollection = propertyValue is IEnumerable;
                     var valueIsCollection = value is IEnumerable;
-                    var end = ((isFinalType && !valueIsCollection) || propertyValueIsCollection)
+                    var end = isFinalType && !valueIsCollection || propertyValueIsCollection
                         ? " = "
                         : Environment.NewLine;
 
@@ -145,7 +149,7 @@ namespace ObjectPrinting.Configs
                     TryPrint(propertyValue, isFinalType ? nestingLevel : nestingLevel + 1, end);
                 }
 
-                if (i != properties.Count - 1)
+                if (i != propertiesCount - 1)
                     output.Append(newLine);
             }
         }
