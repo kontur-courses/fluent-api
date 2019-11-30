@@ -393,7 +393,7 @@ namespace ObjectPrintingTests
 
             var @class = new Class {Students = new List<Person> {person, new Person()}, ClassNumber = 7};
             var expected =
-                $"Students = [used serializer,{newLine}used serializer]{newLine}{newLine}ClassNumber = 7";
+                $"Students = [{newLine}used serializer,{newLine}used serializer{newLine}]{newLine}{newLine}ClassNumber = 7";
 
             var actual = printer.PrintToString(@class);
 
@@ -421,7 +421,7 @@ namespace ObjectPrintingTests
             var obj = new PersonWithParent {Name = "Bob", Age = 42};
             obj.Parent = obj;
 
-            var expected = $"Name = Bob{newLine}Age = 42{newLine}Parent = [Cyclic reference detected]";
+            var expected = $"Name = Bob{newLine}Age = 42{newLine}Parent[Cyclic reference detected]";
 
             var actual = ObjectPrinter
                 .For<PersonWithParent>()
@@ -433,11 +433,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_CollectionElementWithCyclingReferenceOnCollection_ShouldNotThrowException()
         {
-            var personWithFamily = new PersonWithFamily{Name = "Bob"};
+            var personWithFamily = new PersonWithFamily {Name = "Bob"};
             var family = new List<PersonWithFamily> {personWithFamily};
             personWithFamily.Family = family;
             var printer = ObjectPrinter.For<List<PersonWithFamily>>();
-            var expected = $"[Name = Bob{newLine}Family = [Cyclic reference detected]]{newLine}";
+            var expected = $"[{newLine}Name = Bob{newLine}Family = [Cyclic reference detected]{newLine}]{newLine}";
 
             var actual = printer.PrintToString(family);
 
@@ -450,7 +450,7 @@ namespace ObjectPrintingTests
             var collection = new List<object>();
             collection.Add(collection);
             var printer = ObjectPrinter.For<List<object>>();
-            var expected = $"[[Cyclic reference detected]]{newLine}";
+            var expected = $"[{newLine}[Cyclic reference detected]{newLine}]{newLine}";
 
             var actual = printer.PrintToString(collection);
 
@@ -479,12 +479,14 @@ namespace ObjectPrintingTests
 
         private static IEnumerable<TestCaseData> GenerateCollectionAndSerializingResult()
         {
-            yield return new TestCaseData(new List<int> {3, 1, 4}, $"[3,{newLine}1,{newLine}4]{newLine}");
+            yield return new TestCaseData(new List<int> {3, 1, 4},
+                $"[{newLine}3,{newLine}1,{newLine}4{newLine}]{newLine}");
 
-            yield return new TestCaseData(new HashSet<string> {"first", "second"}, $"[first,{newLine}second]{newLine}");
+            yield return new TestCaseData(new HashSet<string> {"first", "second"},
+                $"[{newLine}first,{newLine}second{newLine}]{newLine}");
 
             yield return new TestCaseData(new Dictionary<double, bool> {[0.0] = true, [-3.14] = false},
-                $"[Key = 0{newLine}Value = True,{newLine}Key = -3.14{newLine}Value = False]{newLine}");
+                $"[{newLine}Key = 0{newLine}Value = True,{newLine}Key = -3.14{newLine}Value = False{newLine}]{newLine}");
         }
 
         [TestCaseSource(nameof(GenerateCollectionAndSerializingResult))]
@@ -505,9 +507,9 @@ namespace ObjectPrintingTests
             var @class = new Class() {Students = new List<Person>() {person1, person2}, ClassNumber = 7};
             var printer = ObjectPrinter.For<Class>().Excluding<double>().Excluding<Guid>();
             var newLine = Environment.NewLine;
-            var expected = $"students = [Name = Tom{newLine}Surname = null{newLine}Age = 14{newLine}" +
-                           $"Citizenship = null,{newLine}Name = Bob{newLine}Surname = null" +
-                           $"{newLine}Age = 13{newLine}Citizenship = null]{newLine + newLine}classNumber = 7";
+            var expected = $"Students = [{newLine}\tName = Tom{newLine}\tSurname = null\tAge = 14{newLine}" +
+                           $"\tCitizenship = null,{newLine}\tName = Bob{newLine}\tSurname = null\tAge = 13" +
+                           $"{newLine}\tCitizenship = null{newLine}]{newLine + newLine}classNumber = 7";
 
             var actual = printer.PrintToString(@class);
 

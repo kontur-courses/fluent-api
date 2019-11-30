@@ -40,7 +40,6 @@ namespace ObjectPrinting.Configs
         public string PrintToString(TOwner obj)
         {
             var printer = new Printer<TOwner>(excludedTypes, excludedMembers, typesConfigs, membersConfigs);
-
             return printer.PrintToString(obj);
         }
 
