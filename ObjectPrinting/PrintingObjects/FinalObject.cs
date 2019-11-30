@@ -4,13 +4,8 @@ namespace ObjectPrinting
 {
     public class FinalObject<T> : PrintingObject<T>
     {
-        public override string Print(int nestingLevel)
-        {
-            return ObjectForPrint + Environment.NewLine;
-        }
-
-        public FinalObject(object obj, PrintingConfig<T> config) : base(obj, config)
-        {
-        }
+        public FinalObject(object obj, IPrintingConfig<T> config) : base(obj, config) { }
+        
+        public override string Print(int nestingLevel) => ObjectForPrint + Environment.NewLine;
     }
 }

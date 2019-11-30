@@ -5,12 +5,12 @@ namespace ObjectPrinting
 {
     public static class PrintingObjectFactory<TOwner>
     {
-        public static PrintingObject<TOwner> MakePrintingObject(object obj, PrintingConfig<TOwner> config)
+        public static PrintingObject<TOwner> MakePrintingObject(object obj, IPrintingConfig<TOwner> config)
         {
-            if ((config as IPrintingConfig<TOwner>).ExcludingTypes.Contains(obj.GetType()))
+            if (config.ExcludingTypes.Contains(obj.GetType()))
                 return new ExcludingObject<TOwner>(obj, config);
             
-            if ((config as IPrintingConfig<TOwner>).TypeSerializerConfigs.ContainsKey(obj.GetType()))
+            if (config.TypeSerializerConfigs.ContainsKey(obj.GetType()))
                 return new CustomSerializeObject<TOwner>(obj, config);
             
             if (ObjectPrinter.FinalTypes.Contains(obj.GetType()))

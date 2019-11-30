@@ -17,7 +17,7 @@ namespace ObjectPrinting
             = new Dictionary<string, ISerializerConfig<TOwner>>();
 
         HashSet<Type> IPrintingConfig<TOwner>.ExcludingTypes => excludingTypes;
-        
+
         HashSet<string> IPrintingConfig<TOwner>.ExcludingProperties => excludingProperties;
 
         Dictionary<Type, ISerializerConfig<TOwner>> IPrintingConfig<TOwner>.TypeSerializerConfigs =>
@@ -33,7 +33,9 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            return PrintingObjectFactory<TOwner>.MakePrintingObject(obj, this).Print(nestingLevel);
+            return PrintingObjectFactory<TOwner>
+                .MakePrintingObject(obj, this)
+                .Print(nestingLevel);
         }
 
         public string PrintToString(TOwner obj)

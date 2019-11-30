@@ -5,9 +5,7 @@ namespace ObjectPrinting
 {
     public class EnumerableObject<T> : PrintingObject<T>
     {
-        public EnumerableObject(object obj, PrintingConfig<T> config) : base(obj, config)
-        {
-        }
+        public EnumerableObject(object obj, IPrintingConfig<T> config) : base(obj, config) { }
 
         public override string Print(int nestingLevel)
         {
@@ -18,7 +16,7 @@ namespace ObjectPrinting
             sb.AppendLine(ObjectForPrint.GetType().Name);
             
             foreach (var element in (IEnumerable) ObjectForPrint)
-                sb.Append(indentation + (PrintingConfig as IPrintingConfig<T>).Print(element, nestingLevel + 1));
+                sb.Append(indentation + PrintingConfig.Print(element, nestingLevel + 1));
 
             return sb.ToString();
         }

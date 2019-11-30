@@ -5,9 +5,7 @@ namespace ObjectPrinting
 {
     public class NonFinalObject<T> : PrintingObject<T>
     {
-        public NonFinalObject(object obj, PrintingConfig<T> config) : base(obj, config)
-        {
-        }
+        public NonFinalObject(object obj, IPrintingConfig<T> config) : base(obj, config) { }
 
         public override string Print(int nestingLevel)
         {
@@ -19,8 +17,8 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in ObjectForPrint.GetType().GetProperties())
             {
-                if ((PrintingConfig as IPrintingConfig<T>).ExcludingTypes.Contains(propertyInfo.PropertyType)
-                    || (PrintingConfig as IPrintingConfig<T>).ExcludingProperties.Contains(propertyInfo.Name))
+                if (PrintingConfig.ExcludingTypes.Contains(propertyInfo.PropertyType)
+                    || PrintingConfig.ExcludingProperties.Contains(propertyInfo.Name))
                 {
                     continue;
                 } 
@@ -34,13 +32,13 @@ namespace ObjectPrinting
         
         private string PrintProperty(PropertyInfo info, object obj, int nestingLevel)
         {
-            if ((PrintingConfig as IPrintingConfig<T>).PropertySerializerConfigs.ContainsKey(info.Name))
-                return (PrintingConfig as IPrintingConfig<T>).Print(
-                    (PrintingConfig as IPrintingConfig<T>).PropertySerializerConfigs[info.Name].SerializeFunc(info.GetValue(obj)), 
+            if (PrintingConfig.PropertySerializerConfigs.ContainsKey(info.Name))
+                return PrintingConfig.Print(
+                    PrintingConfig.PropertySerializerConfigs[info.Name].SerializeFunc(info.GetValue(obj)), 
                     nestingLevel);
             return info.Name 
                    + " = " 
-                   + (PrintingConfig as IPrintingConfig<T>).Print(info.GetValue(obj), nestingLevel + 1);
+                   + PrintingConfig.Print(info.GetValue(obj), nestingLevel + 1);
         }
     }
 }

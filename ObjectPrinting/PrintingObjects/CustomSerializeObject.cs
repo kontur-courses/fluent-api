@@ -2,13 +2,11 @@
 {
     public class CustomSerializeObject<T> : PrintingObject<T>
     {
-        public CustomSerializeObject(object obj, PrintingConfig<T> config) : base(obj, config)
-        {
-        }
+        public CustomSerializeObject(object obj, IPrintingConfig<T> config) : base(obj, config) { }
 
         public override string Print(int nestingLevel)
         {
-            return (PrintingConfig as IPrintingConfig<T>)
+            return PrintingConfig
                 .TypeSerializerConfigs[ObjectForPrint.GetType()]
                 .SerializeFunc(ObjectForPrint);
         }
