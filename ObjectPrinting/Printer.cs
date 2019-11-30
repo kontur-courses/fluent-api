@@ -51,13 +51,13 @@ namespace ObjectPrinting
         private string PrintProperties(object obj, int nestingLevel, int depthCount, HashSet<object> printedObjects)
         {
             var newPrintedObjects = new HashSet<object>(printedObjects);
-            if (obj != null && !obj.GetType().IsValueType)
-                newPrintedObjects.Add(obj);
-            else if (obj == null)
+            if (obj == null)
                 return string.Empty;
+            var objType = obj.GetType();
+            if (!objType.IsValueType)
+                newPrintedObjects.Add(obj);
             var sb = new StringBuilder();
-            foreach (var propInfo in obj
-                .GetType()
+            foreach (var propInfo in objType
                 .GetProperties()
                 .OrderBy(p => p.Name))
             {
