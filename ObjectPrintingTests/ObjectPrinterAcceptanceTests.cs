@@ -5,8 +5,9 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Extensions;
+using ObjectPrintingTests.ClassesForTests;
 
-namespace ObjectPrinterTests
+namespace ObjectPrintingTests
 {
     public class ObjectPrinterAcceptanceTests
     {
@@ -50,6 +51,7 @@ namespace ObjectPrinterTests
             serializingDictionary.Remove(nameof(person.Age));
             var expected3 = TestHelper.GetExpectedResult(typeof(Person), serializingDictionary);
             s3.Should().BeEquivalentTo(expected3);
+
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);

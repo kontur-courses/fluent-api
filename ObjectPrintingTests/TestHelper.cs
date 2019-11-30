@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ObjectPrinterTests
+namespace ObjectPrintingTests
 {
     public class TestHelper
     {
@@ -17,11 +17,11 @@ namespace ObjectPrinterTests
             return builder.ToString();
         }
 
-        public static string GetExpectedResultForCollection(ICollection collection)
+        public static string GetExpectedResultForCollection(ICollection collection, string indentation = "\t")
         {
             var builder = new StringBuilder();
             builder.AppendLine(collection.GetType().Name);
-            AppendLinesToBuilder(collection.Cast<object>().Select(element => $"\t{element}"), builder);
+            AppendLinesToBuilder(collection.Cast<object>().Select(element => $"{indentation}{element}"), builder);
 
             return builder.ToString();
         }

@@ -7,8 +7,9 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Extensions;
+using ObjectPrintingTests.ClassesForTests;
 
-namespace ObjectPrinterTests
+namespace ObjectPrintingTests
 {
     public class ObjectPrinterTests
     {
@@ -186,11 +187,11 @@ namespace ObjectPrinterTests
 
             var result = printer.PrintToString(obj);
 
-            var expectedCollectionString = string.Concat(obj.Friends.Select(f => $"\t\t{f}{NewLine}"));
-            var expectedResult = $"{obj.GetType().Name}{NewLine}" +
-                                 $"\tFriends = {obj.Friends.GetType().Name}{NewLine}" +
-                                 expectedCollectionString;
-            result.Should().BeEquivalentTo(expectedResult);
+            var expectedResult = TestHelper.GetExpectedResult(obj.GetType(), new Dictionary<string, string>
+            {
+                {nameof(obj.Friends), TestHelper.GetExpectedResultForCollection(obj.Friends, "\t\t")}
+            });
+            result.Should().BeEquivalentTo(expectedResult.Substring(0, expectedResult.Length - NewLine.Length));
         }
 
         [Test]

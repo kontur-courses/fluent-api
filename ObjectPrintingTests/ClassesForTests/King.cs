@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinterTests
+﻿namespace ObjectPrintingTests.ClassesForTests
 {
     public class King
     {

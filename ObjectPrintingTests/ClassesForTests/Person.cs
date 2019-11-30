@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ObjectPrinterTests
+namespace ObjectPrintingTests.ClassesForTests
 {
     public class Person
     {
