@@ -22,6 +22,12 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Age);
             
             string s1 = printer.PrintToString(person);
+
+            string s2 = person.PrintToString();
+
+            string s3 = person.PrintToString(c => c
+                .Excluding(p => p.Age)
+                .Serialize(p => p.Name).Cut(3));
         }
     }
 }
