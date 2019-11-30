@@ -11,11 +11,14 @@ namespace ObjectPrinting
 
         public string PrintToString(
             IEnumerable enumerable,
-            int nestingLevel,
-            int depthCount,
-            HashSet<object> printedObjects,
-            string propertyName)
+            int nestingLevel = 0,
+            int depthCount = 15,
+            HashSet<object> printedObjects = default,
+            string propertyName = default)
         {
+            if (printedObjects == default)
+                printedObjects = new HashSet<object>();
+            CheckParameters(enumerable, nestingLevel, depthCount, printedObjects);
             var newPrintedObjects = new HashSet<object>(printedObjects) { enumerable };
             var sb = new StringBuilder();
             sb.Append(PrintValue(nestingLevel, enumerable.GetType().Name, propertyName));

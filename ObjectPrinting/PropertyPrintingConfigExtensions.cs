@@ -16,35 +16,20 @@ namespace ObjectPrinting
             return propPrintCfg.ParentConfig;
         }
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
-        {
-            return UsingCulture(propConfig, culture);
-        }
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture) =>
+            UsingCulture(propConfig, culture);
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
-        {
-            return UsingCulture(propConfig, culture);
-        }
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture) =>
+            UsingCulture(propConfig, culture);
 
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture)
-        {
-            return UsingCulture(propConfig, culture);
-        }
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture) =>
+            UsingCulture(propConfig, culture);
 
-        public static PrintingConfig<TOwner> UsingCulture<TOwner, TPropType>(PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture)
+        private static PrintingConfig<TOwner> UsingCulture<TOwner, TPropType>(PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture)
+            where TPropType : IConvertible
         {
-            Func<object, string> getStr = null;
-            var type = typeof(TPropType);
-            if (type == typeof(int))
-                getStr = obj => ((int)obj).ToString(culture);
-            else if (type == typeof(float))
-                getStr = obj => ((float)obj).ToString(culture);
-            else if (type == typeof(double))
-                getStr = obj => ((double)obj).ToString(culture);
-            else
-                throw new ArgumentException($"{typeof(TPropType)} is not numeric type");
             var printingConfig = (IPropertyPrintingConfig<TOwner, TPropType>)propConfig;
-            printingConfig.Config.PrintingWithCulture[printingConfig.Member] = getStr;
+            printingConfig.Config.PrintingWithCulture[printingConfig.Member] = obj => ((IConvertible)obj).ToString(culture);
             return printingConfig.ParentConfig;
         }
     }

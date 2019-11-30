@@ -14,7 +14,7 @@ namespace ObjectPrinting
 
         public Printer(Config config)
         {
-            this.config = config;
+            this.config = config ?? throw new ArgumentNullException();
             printingPriority = new Dictionary<MemberInfo, Func<object, string>>[]
             {
                 this.config.Printing,
@@ -22,17 +22,15 @@ namespace ObjectPrinting
             };
         }
 
-        public string PrintToString(object obj)
+        public string PrintToString(
+            object obj,
+            int nestingLevel = 0,
+            int depthCount = 15,
+            HashSet<object> printedObjects = default)
         {
-            var nestingLevel = 0;
-            var depthCount = 15;
-            var printedObjects = new HashSet<object>();
-
-            return PrintToString(obj, nestingLevel, depthCount, printedObjects);
-        }
-
-        public string PrintToString(object obj, int nestingLevel, int depthCount, HashSet<object> printedObjects)
-        {
+            if (printedObjects == default)
+                printedObjects = new HashSet<object>();
+            CheckParameters(obj, nestingLevel, depthCount, printedObjects);
             var sb = new StringBuilder();
             var (value, isObjFinal) = PrintObj(obj, nestingLevel, depthCount, printedObjects);
             sb.Append(value);
@@ -42,11 +40,21 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        protected void CheckParameters(object obj, int nestingLevel, int depthCount, HashSet<object> printedObjects)
+        {
+            if (obj == null || printedObjects == null)
+                throw new ArgumentNullException();
+            if (nestingLevel < 0 || depthCount < 0)
+                throw new ArgumentOutOfRangeException();
+        }
+
         private string PrintProperties(object obj, int nestingLevel, int depthCount, HashSet<object> printedObjects)
         {
             var newPrintedObjects = new HashSet<object>(printedObjects);
             if (obj != null && !obj.GetType().IsValueType)
                 newPrintedObjects.Add(obj);
+            else if (obj == null)
+                return string.Empty;
             var sb = new StringBuilder();
             foreach (var propInfo in obj
                 .GetType()
@@ -62,46 +70,37 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool IsPropertyExcluded(PropertyInfo propertyInfo) =>
-            config.Excluding.Contains(propertyInfo.PropertyType) || config.Excluding.Contains(propertyInfo);
-
         private bool TryGetPropertyPrinter(PropertyInfo propertyInfo, out Func<object, string> printer)
         {
+            printer = null;
             if (propertyInfo == null)
-            {
-                printer = null;
                 return false;
-            }
             var memberPriority = new MemberInfo[]
             {
                 propertyInfo,
                 propertyInfo.PropertyType
             };
-            Func<object, string> printToString = null;
-            var found = printingPriority.Any(
-                dict => memberPriority.Any(
-                    member =>
+            foreach (var dict in printingPriority)
+                foreach (var member in memberPriority)
+                    if (dict.ContainsKey(member))
                     {
-                        if (dict.ContainsKey(member))
-                        {
-                            printToString = propObj => dict[member](propObj);
-                            return true;
-                        }
-                        return false;
-                    }));
-            printer = found ? printToString : null;
-            return found;
+                        printer = dict[member];
+                        return true;
+                    }
+            return false;
         }
 
         private bool TryGetPrinter(MemberInfo memberInfo, out Func<object, string> printer)
         {
+            printer = null;
+            if (memberInfo == null)
+                return false;
             foreach (var p in printingPriority)
                 if (p.ContainsKey(memberInfo))
                 {
                     printer = p[memberInfo];
                     return true;
                 }
-            printer = null;
             return false;
         }
 
@@ -112,34 +111,71 @@ namespace ObjectPrinting
             HashSet<object> printedObjects,
             PropertyInfo propertyInfo = default)
         {
-            var propertyName = propertyInfo?.Name;
-            if (propertyInfo != null && IsPropertyExcluded(propertyInfo))
-                return (string.Empty, true);
-            if (obj != null && printedObjects.Contains(obj))
-                return (PrintValue(nestingLevel, "* circular reference *", propertyName), true);
-            if (depthCount <= 0)
-                return (PrintValue(nestingLevel, "* reached maximum recursion depth *", propertyName), true);
             var objType = obj?.GetType();
-            if (objType == null)
-                return (PrintValue(nestingLevel, "null", propertyName), true);
-            if (config.Excluding.Contains(objType))
+            var propertyName = propertyInfo?.Name;
+            if (CheckObjAndPropertyOnExcluding(objType, propertyInfo))
                 return (string.Empty, true);
-            if (TryGetPropertyPrinter(propertyInfo, out var propertyPrinter))
-                return (PrintValue(nestingLevel, propertyPrinter(obj), propertyName), true);
-            if (TryGetPrinter(objType, out var printer))
-                return (PrintValue(nestingLevel, printer(obj), propertyName), true);
+            if (CheckOnExceptions(obj, printedObjects, depthCount, out var exceptionMessage))
+                return (PrintValue(nestingLevel, exceptionMessage, propertyName), true);
+            if (CheckOnUserPrinting(obj, propertyInfo, out var userPrinting))
+                return (PrintValue(nestingLevel, userPrinting, propertyName), true);
+
+            return GetDefaultObjectValue(obj, nestingLevel, depthCount, printedObjects, propertyName);
+        }
+
+        private (string defaultObjValue, bool isObjFinal) GetDefaultObjectValue(
+            object obj,
+            int nestingLevel,
+            int depthCount,
+            HashSet<object> printedObjects,
+            string propertyName)
+        {
+            if (obj == null)
+                return (PrintValue(nestingLevel, "null", propertyName), true);
+            var objType = obj.GetType();
             if (config.FinalTypes.Contains(objType))
                 return (PrintValue(nestingLevel, obj.ToString(), propertyName), true);
             if (objType.GetInterface(typeof(IEnumerable).Name) != null)
-                return 
-                    (new EnumerablePrinter(config).PrintToString(
-                        (IEnumerable)obj,
-                        nestingLevel,
-                        depthCount,
-                        printedObjects,
-                        propertyName),
-                    true);
+                return
+                (new EnumerablePrinter(config).PrintToString(
+                    (IEnumerable)obj,
+                    nestingLevel,
+                    depthCount,
+                    printedObjects,
+                    propertyName),
+                true);
             return (PrintValue(nestingLevel, objType.Name, propertyName), false);
+        }
+
+        private bool IsPropertyExcluded(PropertyInfo propertyInfo) =>
+            config.Excluding.Contains(propertyInfo.PropertyType) || config.Excluding.Contains(propertyInfo);
+
+        private bool CheckObjAndPropertyOnExcluding(Type objType, PropertyInfo propertyInfo)
+        {
+            return (objType != null && config.Excluding.Contains(objType)) ||
+                (propertyInfo != null && IsPropertyExcluded(propertyInfo));
+        }
+
+        private bool CheckOnExceptions(
+            object obj,
+            HashSet<object> printedObjects,
+            int depthCount,
+            out string exceptionMessage)
+        {
+            exceptionMessage = null;
+            if (obj != null && printedObjects != null && printedObjects.Contains(obj))
+                exceptionMessage = "* circular reference *";
+            else if (depthCount <= 0)
+                exceptionMessage = "* reached maximum recursion depth *";
+            return exceptionMessage != null;
+        }
+
+        private bool CheckOnUserPrinting(object obj, PropertyInfo propertyInfo, out string userPrinting)
+        {
+            var propPrinting = TryGetPropertyPrinter(propertyInfo, out var propertyPrinter);
+            var objPrinting = TryGetPrinter(obj?.GetType(), out var printer);
+            userPrinting = propPrinting ? propertyPrinter(obj) : objPrinting ? printer(obj) : null;
+            return propPrinting || objPrinting;
         }
 
         protected string PrintValue(int nestingLevel, string propertyValue, string propertyName = default) =>
