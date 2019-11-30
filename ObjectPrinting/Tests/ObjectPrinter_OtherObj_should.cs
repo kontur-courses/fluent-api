@@ -7,7 +7,7 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinter_OtherObj_should
     {
         [Test]
-        public void PrintToString_WhenIEnum()
+        public void PrintToString_WhenCollection()
         {
             var result = new[] {1, 2, 3, 4};
             foreach (var num in result)
