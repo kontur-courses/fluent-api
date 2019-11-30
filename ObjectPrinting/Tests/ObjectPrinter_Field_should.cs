@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -18,7 +19,22 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_WhenField()
         {
-            _class.PrintToString().Should().Contain(nameof(_class.IntField));
+            _class.PrintToString().Should().Contain(nameof(_class.IntField)).And.Contain(nameof(_class.DoublField)).And
+                .Contain(nameof(_class.StrField));
+        }
+
+        [Test]
+        public void PrintToString_WhenPersonWithArgument_ShouldContainValueAfterName()
+        {
+            _class = new ClassWithField {StrField = "Value"};
+            var result = _class.PrintToString();
+            IsValueAfterName(nameof(_class.StrField), _class.StrField, result).Should().BeTrue();
+        }
+
+        private bool IsValueAfterName(string name, string value, string str)
+        {
+            var regexp = new Regex($@"{name}.+{value}");
+            return regexp.Match(str).Success;
         }
 
         [Test]
@@ -50,9 +66,18 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_WhenTakeOnlySerial()
         {
-            var _class = new ClassWithField {StrField = "String"};
+            _class = new ClassWithField {StrField = "String"};
             _class.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1)).Should().NotContain(_class.StrField)
                 .And.Contain(_class.StrField[0].ToString());
+        }
+        
+        [TestCase(null)]
+        [TestCase("")]
+        public void PrintToString_WhenTakeOnlySerialWithNullOrEmpty(string str)
+        {
+            _class = new ClassWithField {StrField = str};
+            var result = _class.PrintToString(ser => ser.AlternativeFor<string>().TakeOnly(1));
+            result.Should().Contain(nameof(_class.StrField));
         }
 
         [TestCase("en-GB", 50.5, "50.5")]
