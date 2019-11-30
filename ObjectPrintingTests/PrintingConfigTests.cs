@@ -431,6 +431,33 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_CollectionElementWithCyclingReferenceOnCollection_ShouldNotThrowException()
+        {
+            var personWithFamily = new PersonWithFamily{Name = "Bob"};
+            var family = new List<PersonWithFamily> {personWithFamily};
+            personWithFamily.Family = family;
+            var printer = ObjectPrinter.For<List<PersonWithFamily>>();
+            var expected = $"[Name = Bob{newLine}Family = [Cyclic reference detected]]{newLine}";
+
+            var actual = printer.PrintToString(family);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void PrintToString_CollectionWithCyclingReference_ShouldNotThrowException()
+        {
+            var collection = new List<object>();
+            collection.Add(collection);
+            var printer = ObjectPrinter.For<List<object>>();
+            var expected = $"[[Cyclic reference detected]]{newLine}";
+
+            var actual = printer.PrintToString(collection);
+
+            actual.Should().BeEquivalentTo(expected);
+        }
+
+        [Test]
         public void PrintToString_WithComplexType()
         {
             var parent = new PersonWithParent() {Name = "Mike", Age = 62};

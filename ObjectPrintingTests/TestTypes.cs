@@ -38,4 +38,10 @@ namespace ObjectPrintingTests
         public string Name { get; set; }
         public int Age { get; set; }
     }
+
+    public class PersonWithFamily
+    {
+        public string Name { get; set; }
+        public List<PersonWithFamily> Family { get; set; }
+    }
 }

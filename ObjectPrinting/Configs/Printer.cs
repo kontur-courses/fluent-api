@@ -147,7 +147,6 @@ namespace ObjectPrinting.Configs
 
 
             output.Append("[");
-
             var i = 0;
 
             foreach (var obj in enumerable)
@@ -156,6 +155,16 @@ namespace ObjectPrinting.Configs
                 {
                     output.Append(",").Append(Environment.NewLine);
                 }
+                
+                var isReferenceType = !obj.GetType().IsValueType;
+                if (isReferenceType && printed.Contains(obj))
+                {
+                    output.Append("[Cyclic reference detected]");
+                    continue;
+                }
+
+                if (isReferenceType)
+                    printed.Add(obj);
 
                 Print(obj);
                 i++;
