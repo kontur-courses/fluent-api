@@ -10,9 +10,9 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<string> excludedTypes = new HashSet<string>();
 
-        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<string> excludedProperties = new HashSet<string>();
 
         private readonly Dictionary<Type, Func<object, string>> specialPrintingFunctionsForTypes =
             new Dictionary<Type, Func<object, string>>();
@@ -22,7 +22,7 @@ namespace ObjectPrinting
 
         private readonly Dictionary<object, int> objectsLevels = new Dictionary<object, int>();
 
-        private readonly Type[] finalTypes =
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
@@ -42,13 +42,16 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedProperties.Add(ExtractPropertyInfo(memberSelector));
+            excludedProperties.Add(
+                ConstructPropertyFullName(typeof(TOwner), 
+                    ExtractPropertyInfo(memberSelector)));
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            var type = typeof(TPropType);
+            excludedTypes.Add(type.FullName);
             return this;
         }
 
@@ -75,7 +78,7 @@ namespace ObjectPrinting
         private string TryToPrintType(object obj, int nestingLevel, bool newLineRequested = true)
         {
             var type = obj.GetType();
-            if (excludedTypes.Contains(type))
+            if (excludedTypes.Contains(type.FullName))
                 return "";
             if (specialPrintingFunctionsForTypes.ContainsKey(type))
                 return specialPrintingFunctionsForTypes[type](obj) + Environment.NewLine;
@@ -124,8 +127,8 @@ namespace ObjectPrinting
             {
                 var name = propertyInfo.Name;
                 var value = propertyInfo.GetValue(obj);
-                if (excludedProperties.Contains(propertyInfo)
-                    || value != null && excludedTypes.Contains(value.GetType()))
+                if (excludedProperties.Contains(ConstructPropertyFullName(type, propertyInfo))
+                    || value != null && excludedTypes.Contains(value.GetType().FullName))
                 {
                     continue;
                 }
@@ -145,6 +148,11 @@ namespace ObjectPrinting
                 }
             }
             return sb.ToString();
+        }
+
+        private string ConstructPropertyFullName(Type type, PropertyInfo propertyInfo)
+        {
+            return $"{type.FullName}.{propertyInfo.Name}";
         }
     }
 }
