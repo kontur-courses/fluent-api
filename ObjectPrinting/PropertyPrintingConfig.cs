@@ -28,21 +28,7 @@ namespace ObjectPrinting
                 printingConfig.SetMemberSerialization(memberSelector, print);
             return printingConfig;
         }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            Func<TPropType, string> сonvertIntToSpecificCulture = x => ((int)(object)x).ToString(culture);
-            Func<TPropType, string> сonvertDoubleToSpecificCulture = x => ((double)(object)x).ToString(culture);
-            Func<TPropType, string> сonvertFloatToSpecificCulture = x => ((float)(object)x).ToString(culture);
-            if (typeof(TPropType) == typeof(int))                
-                Using(сonvertIntToSpecificCulture);
-            if (typeof(TPropType) == typeof(double))
-                Using(сonvertDoubleToSpecificCulture);
-            if (typeof(TPropType) == typeof(float))                
-                Using(сonvertFloatToSpecificCulture);
-            return printingConfig;
-        }
-        
+                
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 

@@ -12,64 +12,65 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterTests
     {
-        private readonly Person person = new Person { Name = "James", Age = 30, Height = 182.2 };
 
+        private Person person;
+        
+        [SetUp]
+        public void CreatePerson()
+        {
+            person = new Person { Name = "James", Age = 30, Height = 182.2, Family = new List<Person>()};
+        }
+        
         [Test]
-        public void ExcludingSpecificTypeShouldWorkCorrect()
+        public void ExcludingType_ShouldExcludePropertiesOfSelectedType()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
-
             printer.PrintToString(person).Should().NotContain("30").And.Contain("James");
         }
 
         [Test]
-        public void ExcludingSpecificPropertyShouldWorkCorrect()
+        public void ExcludingProperty_ShouldExcludeSelectedProperty()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Name);
-
             printer.PrintToString(person).Should().NotContain("James").And.NotContain("Name");
         }
 
-        [Test]
-        public void UseWithCultureShouldWorkCorrect()
+        
+        [TestCase("en-GB", "182.2")]
+        [TestCase("de", "182,2")]
+        public void Using_ShouldSerializeNumericPropertiesWithSelectedCulture(string culture, string expected)
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(CultureInfo.GetCultureInfo("en-GB"));
-
-            printer.PrintToString(person).Should().NotContain("182,2").And.Contain("182.2");
-            printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(CultureInfo.GetCultureInfo("de"));
-
-            printer.PrintToString(person).Should().NotContain("182.2").And.Contain("182,2");
+                .Printing<double>().Using(CultureInfo.GetCultureInfo(culture));
+            printer.PrintToString(person).Should().Contain(expected);            
         }
+        
 
         [Test]
-        public void UseWithSpecificSerializationShouldWorkCorrect()
+        public void Using_ShouldSerializeSelectedTypeProperties_WithAlternativeMethod()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => i.ToString("X"));
-
             printer.PrintToString(person).Should().NotContain("30").And.Contain("1E");
         }
 
         [Test]
-        public void TrimmedToLengthShouldWorkCorrect()
+        public void Trim_ShouldReturnProperty_WithTrimmedLength()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(p => p.Name).TrimmedToLength(4);
-
+                .Printing(p => p.Name).Trim(4);
             printer.PrintToString(person).Should().Contain("Jame").And.NotContain("James");
         }
 
         [Test]
-        public void PrintToStringShouldWorkCorrectWithConfig()
+        public void PrintToString_ShouldPrintPropertiesByConfig()
         {
             person.PrintToString(s => s.Excluding(p => p.Name))
                 .Should().NotContain("James");
         }
 
         [Test]
-        public void PrintToStringShouldWorkCorrectWithList()
+        public void PrintToString_ShouldPrintElementsOfList()
         {
             var person1 = new Person { Name = "Alex", Age = 19, Height = 170.2 };
             var listOfPersons = new List<Person> { person, person1 };
@@ -78,14 +79,12 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToStringShouldWorkCorrectWithDictionary()
+        public void PrintToString_ShouldPrintElementsOfDictionary()
         {
             var person1 = new Person { Name = "Alex", Age = 19, Height = 170.2 };
             var dictOfPersons = new Dictionary<string, Person> { { "olderPerson", person}, {"youngerPerson", person1 } };
             var printer = ObjectPrinter.For<Dictionary<string, Person>>();
             printer.PrintToString(dictOfPersons).Should().Contain("olderPerson : Person").And.Contain("youngerPerson : Person");
         }
-
-
     }
 }

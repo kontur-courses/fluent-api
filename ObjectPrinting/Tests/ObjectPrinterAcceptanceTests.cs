@@ -21,7 +21,7 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
+                .Printing(p => p.Name).Trim(10)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 

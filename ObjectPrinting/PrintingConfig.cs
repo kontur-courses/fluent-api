@@ -13,8 +13,8 @@ namespace ObjectPrinting
         private HashSet<string> excludedProperties = new HashSet<string>();
         private HashSet<object> visited = new HashSet<object>();
 
-        private readonly Dictionary<Type, Func<object, string>> typesSerializationDict = new Dictionary<Type, Func<object, string>>();
-        private readonly Dictionary<string, Func<object, string>> propertiesSerializationDict = new Dictionary<string, Func<object, string>>();
+        private readonly Dictionary<Type, Func<object, string>> typesPrintingFunctions = new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<string, Func<object, string>> propertiesPrintingFunctions = new Dictionary<string, Func<object, string>>();
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -22,7 +22,7 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan), typeof(bool)
         };
 
-        private readonly int currentNestingLevel = 5;
+        private int currentNestingLevel = 5;
         
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -52,12 +52,20 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
-        }
+            return PrintObjectToString(obj, 0);
+        }        
+
+        
+        public string PrintToString(TOwner obj, int nestingLevel)
+        {
+            currentNestingLevel = nestingLevel;
+            return PrintObjectToString(obj, 0);
+        }        
+
 
         public void SetTypeSerialization<TPropType>(Func<TPropType, string> print)
         {
-            typesSerializationDict.Add(typeof(TPropType), x => print((TPropType)x));
+            typesPrintingFunctions.Add(typeof(TPropType), x => print((TPropType)x));
         }
 
         
@@ -67,11 +75,11 @@ namespace ObjectPrinting
             {                
                 var propertyName = memberExpr.Member.Name;
                 Func<object, string> func = x => print((TPropType)x);
-                propertiesSerializationDict.Add(propertyName, func);
+                propertiesPrintingFunctions.Add(propertyName, func);
             }
         }
                 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintObjectToString(object obj, int nestingLevel)
         {
             if (currentNestingLevel == nestingLevel)
                 return "Nesting level exceeded" + Environment.NewLine;
@@ -85,59 +93,58 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            var objectStringBuilder = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            if (obj is IEnumerable enumerable)            
-                AddElementsFromCollection(enumerable, sb,identation, nestingLevel);                        
+            objectStringBuilder.AppendLine(type.Name);
+            if (obj is IEnumerable enumerable)
+                objectStringBuilder.Append(AddElementsFromCollection(enumerable, indentation, nestingLevel));                        
             else
-                AddProperties(obj, nestingLevel, sb);
-            return sb.ToString();            
+                objectStringBuilder.Append(AddProperties(obj, nestingLevel));
+            return objectStringBuilder.ToString();            
         }
 
-        private void AddElementsFromCollection(IEnumerable enumerable, StringBuilder sb, string identation, int nestingLevel)
-        {            
+        private string AddElementsFromCollection(IEnumerable enumerable, string indentation, int nestingLevel)
+        {
+            var collectionStringBuilder = new StringBuilder();
             if (enumerable is IDictionary dictionary)
                 foreach (DictionaryEntry pair in dictionary)
-                    sb.Append(identation + pair.Key + " : " + PrintToString(pair.Value, nestingLevel + 1));
+                    collectionStringBuilder.Append($"{indentation} {pair.Key} : {PrintObjectToString(pair.Value, nestingLevel + 1)}");
             else
             {
                 var index = 0;
                 foreach (var item in enumerable)
-                    sb.Append(identation + index++.ToString() + " : " + PrintToString(item, nestingLevel + 1));
+                    collectionStringBuilder.Append($"{indentation} {index++.ToString()} : {PrintObjectToString(item, nestingLevel + 1)}");
             }
+            return collectionStringBuilder.ToString();
         }
 
-        private void AddProperties(object obj, int nestingLevel, StringBuilder sb)
+        private string AddProperties(object obj, int nestingLevel)
         {
+            var propertiesStringBuilder = new StringBuilder();
             var objType = obj.GetType();
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
 
             foreach (var property in objType.GetProperties())
             {
                 if (CheckExcludingForType(property) || CheckExcludingForProperty(property))
                     continue;                
                 
-                if (propertiesSerializationDict.ContainsKey(property.Name))
+                if (propertiesPrintingFunctions.ContainsKey(property.Name))
                 {
-                    sb.Append(identation + property.Name + " = " +
-                              propertiesSerializationDict[property.Name].Invoke(property.GetValue(obj))
-                              + Environment.NewLine);
+                    propertiesStringBuilder.Append($"{indentation}{property.Name} = { propertiesPrintingFunctions[property.Name].Invoke(property.GetValue(obj))}{Environment.NewLine}");
                     continue;
                 }
-                else if (typesSerializationDict.ContainsKey(property.PropertyType))
+                if (typesPrintingFunctions.ContainsKey(property.PropertyType))
                 {
-                    sb.Append(identation + property.Name + " = " +
-                              typesSerializationDict[property.PropertyType]
-                                  .Invoke(property.GetValue(obj))
-                              + Environment.NewLine);
+                    propertiesStringBuilder.Append($"{indentation}{property.Name} = {typesPrintingFunctions[property.PropertyType].Invoke(property.GetValue(obj)) }{Environment.NewLine}");                    
                     continue;
                 }
                 
-                var propertyString = PrintToString(property.GetValue(obj), nestingLevel + 1);
-                sb.Append(identation + property.Name + " = " + propertyString);
+                var propertyString = PrintObjectToString(property.GetValue(obj), nestingLevel + 1);
+                propertiesStringBuilder.Append($"{indentation} {property.Name} = {propertyString}");                
             }
+            return propertiesStringBuilder.ToString();
         }
 
         private bool CheckExcludingForType(PropertyInfo propertyInfo)
