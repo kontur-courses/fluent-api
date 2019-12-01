@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -180,7 +181,7 @@ namespace ObjectPrinting.Tests
                                                              .TrimmedToLength(0)));
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasCyclicReference()
+        public void PrintToString_WhenSerialisedObjectHasCyclicDependency_ThrowsMemberAccessException()
         {
             var cyclicA = new CyclicTypeA();
             var cyclicB = new CyclicTypeB();
@@ -189,6 +190,30 @@ namespace ObjectPrinting.Tests
             cyclicB.CyclicProperty = cyclicA;
 
             Assert.Throws<MemberAccessException>(() => cyclicA.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_WhenSerialisedObjectHasCollection()
+        {
+            var objectWithCollections = new TypeWithCollections
+            {
+                Numbers = new[] { 1, 2, 3 },
+                Strings = new List<string> { "a", "b", "c" },
+                NumberByString = new Dictionary<string, int>
+                {
+                    ["d"] = 4,
+                    ["e"] = 5,
+                    ["f"] = 6
+                }
+            };
+
+            var expectedSerialisation = string.Join(Environment.NewLine,
+                                                    "TypeWithCollections",
+                                                    "\tNumbers = 1 2 3",
+                                                    "\tStrings = a b c",
+                                                    $"\tNumberByString = [d]: 4 [e]: 5 [f]: 6{Environment.NewLine}");
+
+            objectWithCollections.PrintToString().Should().Be(expectedSerialisation);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -121,6 +122,14 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(objectRuntimeType))
                 return printedObject + Environment.NewLine;
 
+            switch (printedObject)
+            {
+                case IDictionary dictionary:
+                    return SerialiseDictionary(dictionary, nestingLevel);
+                case IEnumerable enumerable:
+                    return SerialiseEnumerable(enumerable, nestingLevel);
+            }
+
             var objectSerialisationBuilder = new StringBuilder();
 
             objectSerialisationBuilder.AppendLine(objectRuntimeType.Name);
@@ -139,7 +148,7 @@ namespace ObjectPrinting
             {
                 var propertyValue = propertyInfo.GetValue(printedObject);
 
-                var propertyValueSerialisation = SerialiseValue(propertyInfo, propertyValue);
+                var propertyValueSerialisation = SerialisePropertyValue(propertyInfo, propertyValue);
 
                 propertyValueSerialisation = TrimValueIfNecessary(propertyInfo, propertyValueSerialisation);
 
@@ -153,7 +162,7 @@ namespace ObjectPrinting
 
             return propertiesBuilder.ToString();
 
-            string SerialiseValue(PropertyInfo propertyInfo, object propertyValue) =>
+            string SerialisePropertyValue(PropertyInfo propertyInfo, object propertyValue) =>
                 individualSetUpFuncByPropertyInfo.ContainsKey(propertyInfo)
                     ? individualSetUpFuncByPropertyInfo[propertyInfo](propertyValue) + Environment.NewLine
                     : PrintToString(propertyValue, nestingLevel + 1);
@@ -188,5 +197,32 @@ namespace ObjectPrinting
 
         private static string TruncateString(string str, int maxLength) =>
             string.IsNullOrEmpty(str) ? str : str.Substring(0, Math.Min(str.Length, maxLength));
+
+        // ReSharper disable once SuggestBaseTypeForParameter
+        private string SerialiseDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var dictionaryBuilder = new StringBuilder(dictionary.Count);
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                var key = PrintToString(entry.Key, nestingLevel)
+                    .TrimEnd(Environment.NewLine.ToCharArray());
+                var value = PrintToString(entry.Value, nestingLevel)
+                    .TrimEnd(Environment.NewLine.ToCharArray());
+                dictionaryBuilder.Append($"[{key}]: {value} ");
+            }
+
+            dictionaryBuilder.Remove(dictionaryBuilder.Length - 1, 1);
+            dictionaryBuilder.AppendLine();
+
+            return dictionaryBuilder.ToString();
+        }
+
+        private string SerialiseEnumerable(IEnumerable enumerable, int nestingLevel) =>
+            string.Join(' ', enumerable
+                             .Cast<object>()
+                             .Select(obj => PrintToString(obj, nestingLevel)
+                                         .TrimEnd(Environment.NewLine.ToCharArray()))) +
+            Environment.NewLine;
     }
 }
