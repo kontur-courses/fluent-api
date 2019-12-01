@@ -13,5 +13,6 @@ namespace ObjectPrintingTests
         public int[] Marks { get; set; }
         public List<string> VisitedCountries { get; set; }
         public Dictionary<string, int> YearsPerJob { get; set; }
+        public IEnumerable<int> SomeNumbers { get; set; }
     }
 }

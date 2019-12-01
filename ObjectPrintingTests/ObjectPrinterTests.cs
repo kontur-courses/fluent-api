@@ -148,5 +148,19 @@ namespace ObjectPrintingTests
             var result = person.PrintToString();
             result.Should().Contain("a = 1").And.Contain("b = 2").And.Contain("c = 3");
         }
+
+        [Test]
+        public void PrintToString_ShouldPrintCollections_OnInfiniteEnumerable()
+        {
+            person.SomeNumbers = GetInfiniteEnumerable();
+            var result = person.PrintToString();
+            result.Should().Contain("1; 1; 1; 1; 1; 1; 1; 1; 1; 1 ...");
+        }
+
+        private static IEnumerable<int> GetInfiniteEnumerable()
+        {
+            while (true)
+                yield return 1;
+        }
     }
 }

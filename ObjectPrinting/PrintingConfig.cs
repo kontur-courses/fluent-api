@@ -22,10 +22,12 @@ namespace ObjectPrinting
 
         private readonly Dictionary<object, int> objectsLevels = new Dictionary<object, int>();
 
+        private int collectionsPrintCount = 10;
+
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -70,48 +72,56 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel, bool newLineRequested = true)
         {
             if (obj == null)
-                return "null" + (newLineRequested ? Environment.NewLine : "");
+                return $"null{(newLineRequested ? Environment.NewLine : "")}";
             objectsLevels[obj] = nestingLevel;
-            return TryToPrintType(obj, nestingLevel, newLineRequested) ?? PrintProperties(obj, nestingLevel);
+            if (TryToPrintType(obj, out var printed, nestingLevel, newLineRequested))
+                return printed;
+            return PrintProperties(obj, nestingLevel);
         }
 
-        private string TryToPrintType(object obj, int nestingLevel, bool newLineRequested = true)
+        private bool TryToPrintType(object obj, out string result, int nestingLevel, bool newLineRequested = true)
         {
             var type = obj.GetType();
+            result = null;
             if (excludedTypes.Contains(type.FullName))
-                return "";
-            if (specialPrintingFunctionsForTypes.ContainsKey(type))
-                return specialPrintingFunctionsForTypes[type](obj) + Environment.NewLine;
-            if (finalTypes.Contains(type))
-                return obj + (newLineRequested ? Environment.NewLine : "");
-            if (typeof(IDictionary).IsAssignableFrom(type))
-                return PrintDictionary(obj, nestingLevel);
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-                return PrintEnumerable(obj, nestingLevel);
-            return null;
+                result = "";
+            else if (specialPrintingFunctionsForTypes.TryGetValue(type, out var print))
+                result = print(obj) + Environment.NewLine;
+            else if (finalTypes.Contains(type))
+                result = obj + (newLineRequested ? Environment.NewLine : "");
+            else if (obj is IDictionary dictionary)
+                result = PrintDictionary(dictionary, nestingLevel);
+            else if (obj is IEnumerable enumerable)
+                result = PrintEnumerable(enumerable, nestingLevel);
+            return result != null;
         }
 
-        private string PrintEnumerable(object obj, int nestingLevel)
+        private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
         {
-            var enumerable = ((IEnumerable)obj).Cast<object>();
-            return string.Join("; ", enumerable
-                .Select(n => PrintToString(n, nestingLevel + 1, false)))
-                   + Environment.NewLine;
+            var objectsEnumerable = enumerable.Cast<object>();
+            var printedObjects = objectsEnumerable
+                .Select(n => PrintToString(n, nestingLevel + 1, false))
+                .Take(collectionsPrintCount);
+            return $"{string.Join("; ", printedObjects)}" +
+                   $"{(printedObjects.Count() == collectionsPrintCount ? " ..." : "")}" +
+                   $"{Environment.NewLine}";
         }
 
-        private string PrintDictionary(object obj, int nestingLevel)
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel)
         {
-            var dictionary = ((IDictionary)obj);
             var sb = new StringBuilder();
             sb.Append(Environment.NewLine);
-            foreach (var key in dictionary.Keys)
+            foreach (DictionaryEntry pair in dictionary)
             {
-                var value = dictionary[key];
-                var printedKeyType = TryToPrintType(key, 0, false);
+                var key = pair.Key;
+                var value = pair.Value;
+                var printedKey = TryToPrintType(key, out var result, 0, false)
+                    ? result
+                    : key.GetType().ToString();
                 var printedValue = PrintToString(value, nestingLevel + 2, false);
                 var indentation = new string('\t', nestingLevel + 1);
-                sb.Append(indentation + (printedKeyType ?? key.GetType().ToString())
-                                      + " = " + printedValue + Environment.NewLine);
+                var entry = $"{printedKey} = {printedValue}";
+                sb.Append($"{indentation}{entry}{Environment.NewLine}");
             }
             sb.Append(Environment.NewLine);
             return sb.ToString();
@@ -127,30 +137,30 @@ namespace ObjectPrinting
             {
                 var name = propertyInfo.Name;
                 var value = propertyInfo.GetValue(obj);
+                string entry;
                 if (excludedProperties.Contains(ConstructPropertyFullName(type, propertyInfo))
-                    || value != null && excludedTypes.Contains(value.GetType().FullName))
+                    || (value != null && excludedTypes.Contains(value.GetType().FullName)))
                 {
                     continue;
                 }
                 if (value != null && objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
                 {
-                    sb.Append(indentation + name + " contains cyclic reference" + Environment.NewLine);
+                    entry = $"{name} contains cyclic reference{Environment.NewLine}";
                 }
-                else if (specialPrintingFunctionsForProperties.ContainsKey(propertyInfo))
+                else if (specialPrintingFunctionsForProperties.TryGetValue(propertyInfo, out var print))
                 {
-                    sb.Append(indentation +
-                              specialPrintingFunctionsForProperties[propertyInfo](value) + Environment.NewLine);
+                    entry = $"{print(value)}{Environment.NewLine}";
                 }
                 else
                 {
-                    sb.Append(indentation + name + " = " +
-                              PrintToString(value, nestingLevel + 1));
+                    entry = $"{name} = {PrintToString(value, nestingLevel + 1)}";
                 }
+                sb.Append($"{indentation}{entry}");
             }
             return sb.ToString();
         }
 
-        private string ConstructPropertyFullName(Type type, PropertyInfo propertyInfo)
+        private static string ConstructPropertyFullName(Type type, PropertyInfo propertyInfo)
         {
             return $"{type.FullName}.{propertyInfo.Name}";
         }
