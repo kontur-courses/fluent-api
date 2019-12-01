@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : PrintingConfigBase
     {
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -27,36 +28,42 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(TOwner printedObject)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(printedObject, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object printedObject, int nestingLevel)
         {
             //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            if (printedObject is null)
+                return NullRepresentation + Environment.NewLine;
 
-            var finalTypes = new[]
+            var objectRuntimeType = printedObject.GetType();
+            
+            if (FinalTypes.Contains(objectRuntimeType))
+                return printedObject + Environment.NewLine;
+            
+            var objectRepresentationBuilder = new StringBuilder();
+            
+            objectRepresentationBuilder.AppendLine(objectRuntimeType.Name);
+            
+            var indentation = new string(Indentation, nestingLevel + 1);
+            
+            foreach (var propertyInfo in objectRuntimeType.GetProperties())
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propertyObjectRepresentation = PrintToString(propertyInfo.GetValue(printedObject),
+                                                                 nestingLevel + 1);
+                var propertyRepresentation = string.Concat(
+                    indentation, 
+                    propertyInfo.Name, 
+                    " = ", 
+                    propertyObjectRepresentation);
+                
+                objectRepresentationBuilder.Append(propertyRepresentation);
             }
-            return sb.ToString();
+            
+            return objectRepresentationBuilder.ToString();
         }
     }
 }
