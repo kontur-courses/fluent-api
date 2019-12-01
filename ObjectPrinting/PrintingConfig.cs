@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Common;
 
 namespace ObjectPrinting
 {
@@ -38,16 +37,16 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                this, specialPrintingFunctionsForProperties, memberSelector.GetPropertyInfo());
+                this, specialPrintingFunctionsForProperties, ExtractPropertyInfo(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedProperties.Add(memberSelector.GetPropertyInfo());
+            excludedProperties.Add(ExtractPropertyInfo(memberSelector));
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
@@ -56,6 +55,13 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        private static PropertyInfo ExtractPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            if (memberSelector.Body is MemberExpression memberExpression)
+                return (PropertyInfo) memberExpression.Member;
+            throw new ArgumentException("Member selector should be member expression");
         }
 
         private string PrintToString(object obj, int nestingLevel, bool newLineRequested = true)
