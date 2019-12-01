@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting.Tests.TestTypes
 {
     public class CyclicTypeB
     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting.Tests.TestTypes;
 
 namespace ObjectPrinting.Tests
 {

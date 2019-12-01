@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Tests.TestTypes
 {
     public class TypeWithCollections
     {
