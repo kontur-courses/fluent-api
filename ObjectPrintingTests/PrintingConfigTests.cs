@@ -492,7 +492,7 @@ namespace ObjectPrintingTests
         [TestCaseSource(nameof(GenerateCollectionAndSerializingResult))]
         public void PrintToString_WithCollection_ShouldRightSerializeCollection(IEnumerable enumerable, string expected)
         {
-            var printer = ObjectPrinter.For<IEnumerable>();
+            var printer = ObjectPrinter.For<IEnumerable>().Serializing<double>().Using(CultureInfo.InvariantCulture);
 
             var actual = printer.PrintToString(enumerable);
 

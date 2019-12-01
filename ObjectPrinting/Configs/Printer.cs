@@ -41,45 +41,63 @@ namespace ObjectPrinting.Configs
 
         public string PrintToString(TOwner objectToPrint)
         {
-            Print(objectToPrint, 0);
+            TryPrint(objectToPrint, 0);
 
             return output.ToString();
         }
 
-        private void Print(object objectToPrint, int nestingLevel, string outputAdd = null)
+        private bool TryPrint(object objectToPrint, int nestingLevel, string outputAdd = null)
         {
+            if (TryPrintAsCycleReference(objectToPrint, outputAdd))
+                return false;
+
+            if (outputAdd != null)
+                output.Append(outputAdd);
+
             var type = objectToPrint.GetType();
 
             if (typesConfigs.TryGetValue(type, out var config))
             {
                 var serialize = config.Serialize;
-                if (outputAdd != null)
-                    output.Append(outputAdd);
                 output.Append(serialize(objectToPrint));
             }
-            else if (finalTypes.Contains(type) || type.IsPrimitive)
+            else if (TypesIsFinal(objectToPrint))
             {
-                if (outputAdd != null)
-                    output.Append(outputAdd);
-
                 output.Append(objectToPrint);
             }
             else if (objectToPrint is IEnumerable enumerable)
             {
-                if (outputAdd != null)
-                    output.Append(outputAdd);
-
                 printed.Add(objectToPrint);
                 PrintCollectionValue(enumerable, nestingLevel == -1 ? 0 : nestingLevel);
             }
             else
             {
-                if (outputAdd != null)
-                    output.Append(outputAdd);
-
                 printed.Add(objectToPrint);
                 PrintRegularObjectValue(objectToPrint, nestingLevel);
             }
+
+            return true;
+        }
+
+        private bool TryPrintAsCycleReference(object objectToPrint, string outputAdd)
+        {
+            var isReferenceType = !objectToPrint.GetType().IsValueType;
+
+            if (isReferenceType && printed.Contains(objectToPrint))
+            {
+                if (outputAdd != null && outputAdd != newLine)
+                {
+                    output.Append(outputAdd);
+                }
+
+                output.Append("[Cyclic reference detected]");
+                return true;
+            }
+
+            if (isReferenceType)
+                printed.Add(objectToPrint);
+
+            return false;
         }
 
         private void PrintCollectionValue(IEnumerable enumerable, int nestingLevel)
@@ -89,7 +107,6 @@ namespace ObjectPrinting.Configs
                 output.Append("[]");
                 return;
             }
-
 
             output.Append("[").Append(newLine);
             var i = 0;
@@ -154,33 +171,14 @@ namespace ObjectPrinting.Configs
             }
         }
 
-        private bool TryPrint(object value, int nestingLevel, string outputAdd = null)
+        private bool ElementsIsExcluded(object enumerable)
         {
-            var isReferenceType = !value.GetType().IsValueType;
-            if (isReferenceType && printed.Contains(value))
-            {
-                if (outputAdd != null && outputAdd != newLine)
-                {
-                    output.Append(outputAdd);
-                }
+            var types = enumerable.GetType().GetGenericArguments();
 
-                output.Append("[Cyclic reference detected]");
-                return false;
-            }
-
-            if (isReferenceType)
-                printed.Add(value);
-
-            Print(value, nestingLevel, outputAdd);
-            return true;
-        }
-
-        private bool ElementsIsExcluded(IEnumerable enumerable)
-        {
-            var enumerator = enumerable.GetEnumerator();
-            enumerator.MoveNext();
-
-            return enumerator.Current != null && excludedTypes.Contains(enumerator.Current.GetType());
+            return types
+                .Select(type => type.AssemblyQualifiedName)
+                .Where(name => name != null)
+                .Any(name => excludedTypes.Contains(Type.GetType(name)));
         }
 
         private static bool TypesIsFinal(object info)
