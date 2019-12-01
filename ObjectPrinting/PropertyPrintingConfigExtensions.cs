@@ -14,7 +14,7 @@ namespace ObjectPrinting
         {
             var interfacedPropConfig = (IPropertyPrintingConfig<TOwner, string>)propConfig;
             interfacedPropConfig.SpecialPrintingFunctionsForProperties[interfacedPropConfig.Property] =
-                o => ((string)o).Substring(0, maxLen);
+                o => ((string)o).Substring(0, ((string)o).Length < maxLen ? ((string)o).Length : maxLen);
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
 

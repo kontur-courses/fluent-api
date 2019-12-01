@@ -14,5 +14,7 @@ namespace ObjectPrintingTests
         public List<string> VisitedCountries { get; set; }
         public Dictionary<string, int> YearsPerJob { get; set; }
         public IEnumerable<int> SomeNumbers { get; set; }
+        public int Weight;
+        public bool Married;
     }
 }

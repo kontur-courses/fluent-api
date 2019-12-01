@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -9,18 +10,20 @@ namespace ObjectPrintingTests
     public class ObjectPrinterTests
     {
         private Person person;
+        private string result;
 
         [SetUp]
         public void SetUp()
         {
             person = new Person { Age = 20, Height = 185.5, Name = "Alex" };
+            result = "";
         }
 
         [Test]
         public void Printer_ShouldPrintEverything_WithoutConfiguration()
         {
             var printer = ObjectPrinter.For<Person>();
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("185,5").And.Contain("Alex").And.Contain("20");
         }
 
@@ -28,7 +31,7 @@ namespace ObjectPrintingTests
         public void Excluding_ShouldExcludeType_OnInt()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("185,5").And.Contain("Alex").And.NotContain("20").And.NotContain("Age");
         }
 
@@ -36,7 +39,7 @@ namespace ObjectPrintingTests
         public void Excluding_ShouldExcludeProperty_OnName()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Name);
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("185,5").And.Contain("20").And.NotContain("Alex");
         }
 
@@ -44,7 +47,7 @@ namespace ObjectPrintingTests
         public void Printing_ShouldPrintTypeAsSpecified_OnInt()
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(i => "abc");
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("abc").And.NotContain("20");
         }
 
@@ -52,7 +55,7 @@ namespace ObjectPrintingTests
         public void Printing_ShouldPrintTypeWithSpecifiedCulture_OnDouble()
         {
             var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().NotContain("185,5").And.Contain("185.5");
         }
 
@@ -62,7 +65,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(d => "double")
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().NotContain("185,5").And.NotContain("double").And.Contain("185.5");
         }
 
@@ -71,7 +74,7 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).Using(n => $"Имя: {n}");
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("Имя: Alex").And.NotContain("Name = Alex");
         }
 
@@ -81,7 +84,7 @@ namespace ObjectPrintingTests
             person.Name = "abcdefghijklmnop";
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(4);
-            var result = printer.PrintToString(person);
+            result = printer.PrintToString(person);
             result.Should().Contain("abcd").And.NotContain("abcdefghijklmnop");
         }
 
@@ -91,7 +94,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>();
             var expectedResult = printer.PrintToString(person);
 
-            var result = person.PrintToString();
+            result = person.PrintToString();
 
             result.Should().Be(expectedResult);
         }
@@ -102,7 +105,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).Using(n => $"Имя: {n}");
             var expectedResult = printer.PrintToString(person);
 
-            var result = person.PrintToString(c => c.Printing(p => p.Name).Using(n => $"Имя: {n}"));
+            result = person.PrintToString(c => c.Printing(p => p.Name).Using(n => $"Имя: {n}"));
 
             result.Should().Be(expectedResult);
         }
@@ -114,7 +117,7 @@ namespace ObjectPrintingTests
             var person2 = new Person { Name = "Bob", Partner = person1};
             person1.Partner = person2;
 
-            var result = person1.PrintToString();
+            result = person1.PrintToString();
 
             result.Should().Contain("Partner contains cyclic reference");
         }
@@ -123,7 +126,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldPrintCollections_OnArray()
         {
             person.Marks = new[] {1, 2, 3};
-            var result = person.PrintToString();
+            result = person.PrintToString();
             result.Should().Contain("1").And.Contain("2").And.Contain("3");
 
         }
@@ -132,7 +135,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldPrintCollections_OnList()
         {
             person.VisitedCountries = new List<string>{"a", "b", "c"};
-            var result = person.PrintToString();
+            result = person.PrintToString();
             result.Should().Contain("a").And.Contain("b").And.Contain("c");
         }
 
@@ -145,7 +148,7 @@ namespace ObjectPrintingTests
                 {"b", 2 },
                 {"c", 3 },
             };
-            var result = person.PrintToString();
+            result = person.PrintToString();
             result.Should().Contain("a = 1").And.Contain("b = 2").And.Contain("c = 3");
         }
 
@@ -153,7 +156,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldPrintCollections_OnInfiniteEnumerable()
         {
             person.SomeNumbers = GetInfiniteEnumerable();
-            var result = person.PrintToString();
+            result = person.PrintToString();
             result.Should().Contain("1; 1; 1; 1; 1; 1; 1; 1; 1; 1 ...");
         }
 
@@ -161,6 +164,21 @@ namespace ObjectPrintingTests
         {
             while (true)
                 yield return 1;
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintFields()
+        {
+            person.Married = true;
+            person.Weight = 90;
+            result = person.PrintToString();
+            result.Should().Contain("Married = True").And.Contain("Weight = 90");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Console.WriteLine(result);
         }
     }
 }

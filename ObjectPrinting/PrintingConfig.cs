@@ -27,7 +27,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(bool)
         };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -45,7 +45,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             excludedProperties.Add(
-                ConstructPropertyFullName(typeof(TOwner), 
+                ConstructPropertyFullName(typeof(TOwner),
                     ExtractPropertyInfo(memberSelector)));
             return this;
         }
@@ -65,7 +65,7 @@ namespace ObjectPrinting
         private static PropertyInfo ExtractPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is MemberExpression memberExpression)
-                return (PropertyInfo) memberExpression.Member;
+                return (PropertyInfo)memberExpression.Member;
             throw new ArgumentException("Member selector should be member expression");
         }
 
@@ -76,7 +76,7 @@ namespace ObjectPrinting
             objectsLevels[obj] = nestingLevel;
             if (TryToPrintType(obj, out var printed, nestingLevel, newLineRequested))
                 return printed;
-            return PrintProperties(obj, nestingLevel);
+            return PrintFieldsAndProperties(obj, nestingLevel);
         }
 
         private bool TryToPrintType(object obj, out string result, int nestingLevel, bool newLineRequested = true)
@@ -123,43 +123,58 @@ namespace ObjectPrinting
                 var entry = $"{printedKey} = {printedValue}";
                 sb.Append($"{indentation}{entry}{Environment.NewLine}");
             }
-            sb.Append(Environment.NewLine);
             return sb.ToString();
         }
 
-        private string PrintProperties(object obj, int nestingLevel)
+        private string PrintFieldsAndProperties(object obj, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            PrintProperties(obj, type.GetProperties(), nestingLevel, indentation, sb);
+            PrintFields(obj, type.GetFields(), nestingLevel, indentation, sb);
+            return sb.ToString();
+        }
+
+        private void PrintProperties(object obj, PropertyInfo[] properties,
+            int nestingLevel, string indentation, StringBuilder sb)
+        {
+            foreach (var propertyInfo in properties)
             {
                 var name = propertyInfo.Name;
                 var value = propertyInfo.GetValue(obj);
                 string entry;
-                if (excludedProperties.Contains(ConstructPropertyFullName(type, propertyInfo))
+                if (excludedProperties.Contains(ConstructPropertyFullName(obj.GetType(), propertyInfo))
                     || (value != null && excludedTypes.Contains(value.GetType().FullName)))
-                {
                     continue;
-                }
                 if (value != null && objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
-                {
                     entry = $"{name} contains cyclic reference{Environment.NewLine}";
-                }
                 else if (specialPrintingFunctionsForProperties.TryGetValue(propertyInfo, out var print))
-                {
                     entry = $"{print(value)}{Environment.NewLine}";
-                }
                 else
-                {
                     entry = $"{name} = {PrintToString(value, nestingLevel + 1)}";
-                }
                 sb.Append($"{indentation}{entry}");
             }
-            return sb.ToString();
         }
 
+        private void PrintFields(object obj, FieldInfo[] fields,
+            int nestingLevel, string indentation, StringBuilder sb)
+        {
+            foreach (var fieldInfo in fields)
+            {
+                var name = fieldInfo.Name;
+                var value = fieldInfo.GetValue(obj);
+                string entry;
+                if (value != null && excludedTypes.Contains(value.GetType().FullName))
+                    continue;
+                if (value != null && objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
+                    entry = $"{name} contains cyclic reference{Environment.NewLine}";
+                else
+                    entry = $"{name} = {PrintToString(value, nestingLevel + 1)}";
+                sb.Append($"{indentation}{entry}");
+            }
+        }
         private static string ConstructPropertyFullName(Type type, PropertyInfo propertyInfo)
         {
             return $"{type.FullName}.{propertyInfo.Name}";
