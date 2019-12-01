@@ -12,6 +12,9 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
+        private readonly Dictionary<Type, HashSet<object>> visitedProperties =
+            new Dictionary<Type, HashSet<object>>();
+
         private readonly Dictionary<Type, Func<object, string>> alternatePropertySerialisator =
             new Dictionary<Type, Func<object, string>>();
 
@@ -98,6 +101,16 @@ namespace ObjectPrinting
 
             if (excludedTypes.Contains(objectRuntimeType))
                 return string.Empty;
+
+            if (visitedProperties.ContainsKey(objectRuntimeType))
+            {
+                if (visitedProperties[objectRuntimeType].Contains(printedObject))
+                    throw new MemberAccessException($"Cyclic dependency detected in '{objectRuntimeType}' type.");
+
+                visitedProperties[objectRuntimeType].Add(printedObject);
+            }
+            else
+                visitedProperties[objectRuntimeType] = new[] { printedObject }.ToHashSet();
 
             if (alternatePropertySerialisator.ContainsKey(objectRuntimeType))
                 return alternatePropertySerialisator[objectRuntimeType](printedObject) + Environment.NewLine;

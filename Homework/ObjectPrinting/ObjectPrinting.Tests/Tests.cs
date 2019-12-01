@@ -178,5 +178,17 @@ namespace ObjectPrinting.Tests
                 () => person.PrintToString(printingConfig => printingConfig
                                                              .Printing(p => p.Property)
                                                              .TrimmedToLength(0)));
+
+        [Test]
+        public void PrintToString_WhenSerialisedObjectHasCyclicReference()
+        {
+            var cyclicA = new CyclicTypeA();
+            var cyclicB = new CyclicTypeB();
+
+            cyclicA.CyclicProperty = cyclicB;
+            cyclicB.CyclicProperty = cyclicA;
+
+            Assert.Throws<MemberAccessException>(() => cyclicA.PrintToString());
+        }
     }
 }
