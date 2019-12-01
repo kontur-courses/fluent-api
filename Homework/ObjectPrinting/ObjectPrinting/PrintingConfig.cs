@@ -142,11 +142,13 @@ namespace ObjectPrinting
 
             string SerialiseValue(PropertyInfo propertyInfo, object propertyValue) =>
                 individualSetUpFuncByPropertyInfo.ContainsKey(propertyInfo)
-                    ? individualSetUpFuncByPropertyInfo[propertyInfo](propertyValue)
+                    ? individualSetUpFuncByPropertyInfo[propertyInfo](propertyValue) + Environment.NewLine
                     : PrintToString(propertyValue, nestingLevel + 1);
 
             string TrimValueIfNecessary(PropertyInfo propertyInfo, string propertyValueSerialisation)
             {
+                if (propertyInfo.PropertyType != typeof(string)) return propertyValueSerialisation;
+
                 var maxPropertyLength = maxValueLengthByPropertyInfo.ContainsKey(propertyInfo)
                                             ? maxValueLengthByPropertyInfo[propertyInfo]
                                             : mutualMaxPropertiesLength;

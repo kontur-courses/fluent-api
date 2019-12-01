@@ -8,7 +8,7 @@ namespace ObjectPrinting
         protected const string NullRepresentation = "null";
         protected const char Indentation = '\t';
 
-        protected static IReadOnlyList<Type> FinalTypes => new[] // TODO: type warning
+        protected static IEnumerable<Type> FinalTypes => new[]
         {
             typeof(string), typeof(int), typeof(double), typeof(float),
             typeof(DateTime), typeof(TimeSpan)
