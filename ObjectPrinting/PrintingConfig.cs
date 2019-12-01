@@ -15,7 +15,7 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
             typeExclusions = new HashSet<Type>();
-            propertyExclusions = new HashSet<MemberInfo>();
+            memberExclusions = new HashSet<MemberInfo>();
             typePrintingFunctions = new Dictionary<Type, Delegate>();
             typeCultures = new Dictionary<Type, CultureInfo>();
             propertyPrintingFunctions = new Dictionary<MemberInfo, Delegate>();
@@ -23,7 +23,7 @@ namespace ObjectPrinting
         }
 
         private readonly HashSet<Type> typeExclusions;
-        private readonly HashSet<MemberInfo> propertyExclusions;
+        private readonly HashSet<MemberInfo> memberExclusions;
         private readonly Dictionary<Type, Delegate> typePrintingFunctions;
         private readonly Dictionary<Type, CultureInfo> typeCultures;
         private readonly Dictionary<MemberInfo, Delegate> propertyPrintingFunctions;
@@ -54,7 +54,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is MemberExpression memberExpression)
-                propertyExclusions.Add(memberExpression.Member);
+                memberExclusions.Add(memberExpression.Member);
             return this;
         }
 
@@ -71,7 +71,6 @@ namespace ObjectPrinting
 
         private string MemberToString(object value, MemberInfo memberInfo, int nestingLevel, List<object> serializeObjects)
         {
-            var test =  memberInfo.Module;
             string valueString;
             if (propertyPrintingFunctions.TryGetValue(memberInfo, out var printingFunc)) 
                 valueString = (string) printingFunc.DynamicInvoke(value);
@@ -84,6 +83,11 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, List<object> serializeObjects = null)
         {
+            if (nestingLevel > 30)
+            {
+                throw new StackOverflowException("Вложеность струтур больше 30");
+            }
+            
             if (obj == null)
                 return "null";
             serializeObjects = serializeObjects ?? new List<object>();
@@ -114,11 +118,11 @@ namespace ObjectPrinting
             }
 
             foreach (var propertyInfo in type.GetProperties())
-               if (!typeExclusions.Contains(propertyInfo.PropertyType) && !propertyExclusions.Contains(propertyInfo))
+               if (!typeExclusions.Contains(propertyInfo.PropertyType) && !memberExclusions.Contains(propertyInfo))
                     sb.AppendLine(MemberToString(propertyInfo.GetValue(obj), propertyInfo, nestingLevel, serializeObjects));
             foreach (var fieldInfo in type.GetFields())
                 if ((obj.GetType().IsClass || !fieldInfo.IsStatic) && !typeExclusions.Contains(fieldInfo.FieldType) &&
-                    fieldInfo.IsPublic)
+                    fieldInfo.IsPublic && !memberExclusions.Contains(fieldInfo))
                     sb.AppendLine(MemberToString(fieldInfo.GetValue(obj), fieldInfo, nestingLevel, serializeObjects));
             return sb.ToString();
         }
