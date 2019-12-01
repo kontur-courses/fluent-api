@@ -14,13 +14,13 @@ namespace ObjectPrinting.Tests
     {
 
         private Person person;
-        
+
         [SetUp]
         public void CreatePerson()
         {
-            person = new Person { Name = "James", Age = 30, Height = 182.2, Family = new List<Person>()};
+            person = new Person { Name = "James", Age = 30, Height = 182.2, Family = new List<Person>() };
         }
-        
+
         [Test]
         public void ExcludingType_ShouldExcludePropertiesOfSelectedType()
         {
@@ -35,16 +35,16 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(person).Should().NotContain("James").And.NotContain("Name");
         }
 
-        
+
         [TestCase("en-GB", "182.2")]
         [TestCase("de", "182,2")]
         public void Using_ShouldSerializeNumericPropertiesWithSelectedCulture(string culture, string expected)
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.GetCultureInfo(culture));
-            printer.PrintToString(person).Should().Contain(expected);            
+            printer.PrintToString(person).Should().Contain(expected);
         }
-        
+
 
         [Test]
         public void Using_ShouldSerializeSelectedTypeProperties_WithAlternativeMethod()
@@ -82,9 +82,56 @@ namespace ObjectPrinting.Tests
         public void PrintToString_ShouldPrintElementsOfDictionary()
         {
             var person1 = new Person { Name = "Alex", Age = 19, Height = 170.2 };
-            var dictOfPersons = new Dictionary<string, Person> { { "olderPerson", person}, {"youngerPerson", person1 } };
+            var dictOfPersons = new Dictionary<string, Person> { { "olderPerson", person }, { "youngerPerson", person1 } };
             var printer = ObjectPrinter.For<Dictionary<string, Person>>();
             printer.PrintToString(dictOfPersons).Should().Contain("olderPerson : Person").And.Contain("youngerPerson : Person");
+        }
+
+
+        [Test]
+        public void PrintToString_ShouldPrintAboutCircularReference()
+        {
+            person.Family.Add(person);
+            person.PrintToString().Should().Contain("Circular reference");
+        }
+
+
+        [Test]
+        public void Using_ShouldSerializeSelectedProperty_WithAlternativeMethod()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name).Using(x => "Some person name");
+            printer.PrintToString(person).Should().Contain("Name = Some person name");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintNestedObjects()
+        {
+            var boss = new Person { Name = "First level boss" };
+            var boss1 = new Person { Name = "Second level boss" };
+            var boss2 = new Person { Name = "Third level boss" };
+            boss1.Boss = boss2;
+            boss.Boss = boss1;
+            person.Boss = boss;
+            person.PrintToString(4)
+                .Should().Contain("Name = Second level boss");
+            person.PrintToString(4)
+                .Should().NotContain("Name = Third level boss");
+            person.PrintToString(4)
+                .Should().Contain("Nesting level exceeded");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintNestedCollections()
+        {
+            var cousin = new Person { Name = "Bob", Family = new List<Person>() };
+            var cousinFather = new Person { Name = "Peter" };
+            cousin.Family.Add(cousinFather);
+            person.Family.Add(cousin);
+            person.PrintToString(6)
+                .Should().Contain("Name = Bob");
+            person.PrintToString(6)
+                .Should().Contain("Name = Peter");
         }
     }
 }
