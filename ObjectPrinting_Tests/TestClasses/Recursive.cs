@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting_Tests
 {
     public class Recursive
     {

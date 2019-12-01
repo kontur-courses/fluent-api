@@ -2,7 +2,7 @@
 using ObjectPrinting.Formatting;
 using ObjectPrinting.Serializer;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfigs
 {
     internal interface IPrintingConfig
     {

@@ -8,12 +8,12 @@ namespace ObjectPrinting.Serializer
     public struct PropertySerializationRule
     {
         public readonly SerializationFilter FilterHandler;
-        public readonly SerializationFormer ResultHandler;
+        public readonly SerializationFormer FormattingHandler;
 
-        public PropertySerializationRule(SerializationFilter filterHandler, SerializationFormer resultHandler)
+        public PropertySerializationRule(SerializationFilter filterHandler, SerializationFormer formattingHandler)
         {
-            this.FilterHandler = filterHandler;
-            this.ResultHandler = resultHandler;
+            FilterHandler = filterHandler;
+            FormattingHandler = formattingHandler;
         }
     }
 }

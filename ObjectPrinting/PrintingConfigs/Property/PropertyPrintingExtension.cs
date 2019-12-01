@@ -2,11 +2,11 @@
 using ObjectPrinting.PrintingConfigs;
 using ObjectPrinting.Serializer;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfigs
 {
     public static class PropertyPrintingExtension
     {
-        public static PrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> currentConfig, int length)
+        public static PrintingConfig<TOwner> Trim<TOwner>(this PropertyPrintingConfig<TOwner, string> currentConfig, int length)
         {
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
 

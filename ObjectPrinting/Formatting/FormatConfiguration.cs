@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -8,8 +7,8 @@ namespace ObjectPrinting.Formatting
     public abstract class FormatConfiguration
     {
         public readonly Type[] FinalTypes;
-        
-        public FormatConfiguration()
+
+        protected FormatConfiguration()
         {
             FinalTypes = CustomFinalTypes == null
                 ? DefaultFinalTypes
@@ -27,7 +26,7 @@ namespace ObjectPrinting.Formatting
         
         protected abstract Type[] CustomFinalTypes { get; }
 
-        public static FormatConfiguration Default() =>
+        public static FormatConfiguration Default =>
             new DefaultFormatting();
         
         private static readonly Type[] DefaultFinalTypes =

@@ -16,14 +16,14 @@ namespace ObjectPrinting
             return new PrintingConfig<T>();
         }
 
-        public static string PrintToString<TOwner>(object obj, PrintingConfig<TOwner> config)
+        public static string PrintToString<TOwner>(object obj, PrintingConfig<TOwner> configuration)
         {
-            var interConfig = config as IPrintingConfig;
+            var interConfig = configuration as IPrintingConfig;
 
-            var rules = new SerializationConfiguration(interConfig.SerializationRules,
-                interConfig.InstalledFormatting ?? FormatConfiguration.Default());
+            var serializationConfig = new SerializationConfiguration(interConfig.SerializationRules,
+                interConfig.InstalledFormatting ?? FormatConfiguration.Default);
             
-            return PrintToString(obj, 0, rules);
+            return PrintToString(obj, 0, serializationConfig);
         }
 
         private static string PrintToString(object obj, int nestingLevel, SerializationConfiguration config)
@@ -61,10 +61,7 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in properties)
             {
-                var propertyResultStr = 
-                    ApplyRulesToProperty(obj, propertyInfo, nestingLevel, config);
-
-                if(propertyResultStr == null)
+                if(!TrySerializeProperty(obj, propertyInfo, nestingLevel, config, out var propertyResultStr))
                     continue;
 
                 buildingString.Append(propertyResultStr);
@@ -76,25 +73,26 @@ namespace ObjectPrinting
             return buildingString.ToString();
         }
 
-        private static string ApplyRulesToProperty(object obj, PropertyInfo propertyInfo, int nestingLevel,
-            SerializationConfiguration config)
+        private static bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, int nestingLevel,
+            SerializationConfiguration config, out string resultStr)
         {
-            string propertyResultStr = null;
+            resultStr = null;
 
             var start = config.Formatting.GetPropertyPrintingStart(nestingLevel + 1, propertyInfo);
 
             foreach (var serializationRule in config.SerializationRules
                 .Where(rule => rule.FilterHandler.Invoke(obj, propertyInfo))
-                .Select(x => x.ResultHandler))
+                .Select(x => x.FormattingHandler))
             {
                 if (serializationRule == null)
-                    return null;
+                    return false;
 
-                propertyResultStr = start + serializationRule.Invoke(obj, propertyInfo);
+                resultStr = start + serializationRule.Invoke(obj, propertyInfo);
             }
             
-            return propertyResultStr ?? start + 
+            resultStr = resultStr ?? start + 
                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, config);
+            return true;
         }
 
         private static string PrintEnumerable(object obj, Type type, int nestingLevel,
@@ -130,8 +128,6 @@ namespace ObjectPrinting
         private static string PrintKeyValuePairs(object obj, Type type, int nestingLevel,
             SerializationConfiguration config)
         {
-            //return "\n#-#-#-#-NOT IMPLEMENTED-#-#-#-#\n";
-            
             var buildingString = new StringBuilder();
 
             buildingString.Append(config.Formatting.GetGenericVisualisation(type.GetGenericArguments()));
