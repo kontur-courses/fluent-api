@@ -147,27 +147,33 @@ namespace ObjectPrinting.Configs
                     continue;
                 }
 
-                var propertyValue = property.GetValue(value);
-
-                if (TryGetSerialize(property, out var serialize))
-                {
-                    output.Append(indent).Append(property.Name).Append(" = ").Append(serialize(propertyValue));
-                }
-                else
-                {
-                    var isFinalType = TypesIsFinal(propertyValue);
-                    var propertyValueIsCollection = propertyValue is IEnumerable;
-                    var valueIsCollection = value is IEnumerable;
-                    var end = isFinalType && !valueIsCollection || propertyValueIsCollection
-                        ? " = "
-                        : Environment.NewLine;
-
-                    output.Append(indent).Append(property.Name);
-                    TryPrint(propertyValue, isFinalType ? nestingLevel : nestingLevel + 1, end);
-                }
-
+                PrintProperty(property, value, nestingLevel);
+               
                 if (i != propertiesCount - 1)
                     output.Append(newLine);
+            }
+        }
+
+        private void PrintProperty(PropertyInfo property, object value, int nestingLevel)
+        {
+            var indent = new string('\t', nestingLevel);
+            var propertyValue = property.GetValue(value);
+
+            if (TryGetSerialize(property, out var serialize))
+            {
+                output.Append(indent).Append(property.Name).Append(" = ").Append(serialize(propertyValue));
+            }
+            else
+            {
+                var isFinalType = TypesIsFinal(propertyValue);
+                var propertyValueIsCollection = propertyValue is IEnumerable;
+                var valueIsCollection = value is IEnumerable;
+                var end = isFinalType && !valueIsCollection || propertyValueIsCollection
+                    ? " = "
+                    : Environment.NewLine;
+
+                output.Append(indent).Append(property.Name);
+                TryPrint(propertyValue, isFinalType ? nestingLevel : nestingLevel + 1, end);
             }
         }
 
