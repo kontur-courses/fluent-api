@@ -10,26 +10,26 @@ namespace ObjectPrinting.Tests
         [Test]
         public void UsageDemonstration()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alex", Age = 19, Height = 232.32432 };
 
             var objectPrinter =
                 ObjectPrinter
                     .For<Person>()
-                    
+
                     // 1. Исключить из сериализации свойства определенного типа
                     .Excluding<Guid>()
 
                     // 2. Указать альтернативный способ сериализации для определенного типа
-                    .Printing<int>().Using(i => i.ToString("X"))
+                    .Printing<int>().Using(integer => integer.ToString("X"))
 
                     // 3. Для числовых типов указать культуру
-                    .Printing<double>().Using(CultureInfo.InvariantCulture)
+                    .Printing<double>().Using(CultureInfo.GetCultureInfo("ru"))
 
                     // 4. Настроить сериализацию конкретного свойства
                     .Printing(p => p.Name)
 
                     // 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                    .TrimmedToLength(10)
+                    .TrimmedToLength(3)
 
                     // 6. Исключить из сериализации конкретного свойства
                     .Excluding(p => p.Age);

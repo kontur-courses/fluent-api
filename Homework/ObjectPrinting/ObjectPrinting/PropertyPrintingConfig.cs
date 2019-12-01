@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -7,26 +6,15 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
-        {
-            this.printingConfig = printingConfig;
-        }
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig) => this.printingConfig = printingConfig;
+
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            ((IPrintingConfig)printingConfig).SetAlternatePropertySerialisator(print);
+
             return printingConfig;
         }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            return printingConfig;
-        }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }
