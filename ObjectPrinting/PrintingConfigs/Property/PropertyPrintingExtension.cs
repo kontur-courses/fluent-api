@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using ObjectPrinting.PrintingConfigs;
 using ObjectPrinting.Serializer;
 
@@ -18,54 +19,15 @@ namespace ObjectPrinting.PrintingConfigs
             return propConfig.Config;
         }
 
-        public static PrintingConfig<TOwner> SetCulture<TOwner>(this PropertyPrintingConfig<TOwner, int> currentConfig,
-            CultureInfo info) 
+        public static PrintingConfig<TOwner> SetCulture<TOwner, T>(this PropertyPrintingConfig<TOwner, T> currentConfig,
+            CultureInfo info) where T : IFormattable
         {
             var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
-
+            
             (propConfig.Config as IPrintingConfig)
                 .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
                     (obj, propertyInfo) =>
-                        ((int) propertyInfo.GetValue(obj)).ToString(info)));
-
-            return propConfig.Config;
-        }
-
-        public static PrintingConfig<TOwner> SetCulture<TOwner>(this PropertyPrintingConfig<TOwner, double> currentConfig,
-            CultureInfo info)
-        {
-            var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
-
-            (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
-                    (obj, propertyInfo) =>
-                        ((double) propertyInfo.GetValue(obj)).ToString(info)));
-
-            return propConfig.Config;
-        }
-
-        public static PrintingConfig<TOwner> SetCulture<TOwner>(this PropertyPrintingConfig<TOwner, byte> currentConfig,
-            CultureInfo info)
-        {
-            var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
-
-            (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
-                    (obj, propertyInfo) =>
-                        ((byte) propertyInfo.GetValue(obj)).ToString(info)));
-
-            return propConfig.Config;
-        }
-
-        public static PrintingConfig<TOwner> SetCulture<TOwner>(this PropertyPrintingConfig<TOwner, float> currentConfig,
-            CultureInfo info)
-        {
-            var propConfig = currentConfig as IPropertyPrintingConfig<TOwner>;
-
-            (propConfig.Config as IPrintingConfig)
-                .ApplyNewSerializationRule(new PropertySerializationRule(propConfig.Filter,
-                    (obj, propertyInfo) =>
-                        ((byte) propertyInfo.GetValue(obj)).ToString(info)));
+                        ((T) propertyInfo.GetValue(obj)).ToString(null, info)));
 
             return propConfig.Config;
         }
