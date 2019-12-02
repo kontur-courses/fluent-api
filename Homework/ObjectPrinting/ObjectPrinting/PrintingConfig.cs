@@ -13,10 +13,10 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
-        private readonly Dictionary<Type, HashSet<object>> visitedProperties =
+        private readonly Dictionary<Type, HashSet<object>> visitedPropertiesByType =
             new Dictionary<Type, HashSet<object>>();
 
-        private readonly Dictionary<Type, Func<object, string>> alternatePropertySerialisator =
+        private readonly Dictionary<Type, Func<object, string>> alternatePropertySerialisatorByType =
             new Dictionary<Type, Func<object, string>>();
 
         private readonly Dictionary<Type, Func<object, string>> cultureInfoApplierByType =
@@ -29,7 +29,6 @@ namespace ObjectPrinting
             new Dictionary<PropertyInfo, int>();
 
         private int mutualMaxPropertiesLength;
-
         private PropertyInfo currentSettingUpProperty;
 
         void IPrintingConfig.SetCultureInfoApplierForNumberType<TNumber>(Func<TNumber, string> cultureInfoApplier)
@@ -53,7 +52,7 @@ namespace ObjectPrinting
         void IPrintingConfig.SetAlternatePropertySerialisator<TPropType>(Func<TPropType, string> alternateSerialisator)
         {
             if (currentSettingUpProperty is null)
-                alternatePropertySerialisator[typeof(TPropType)] = SerialiseProperty;
+                alternatePropertySerialisatorByType[typeof(TPropType)] = SerialiseProperty;
             else
                 individualSetUpFuncByPropertyInfo[currentSettingUpProperty] = SerialiseProperty;
 
@@ -91,6 +90,16 @@ namespace ObjectPrinting
             return this;
         }
 
+        private static PropertyInfo GetPropertyInfoFromMemberExpression<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            if (!(memberSelector.Body is MemberExpression memberExpression) ||
+                !(memberExpression.Member is PropertyInfo propertyInfo))
+                throw new ArgumentException("Passed expression has to represent accessing a property",
+                                            nameof(memberSelector));
+            return propertyInfo;
+        }
+
         public string PrintToString(TOwner printedObject) => PrintToString(printedObject, 0);
 
         private string PrintToString(object printedObject, int nestingLevel)
@@ -103,18 +112,10 @@ namespace ObjectPrinting
             if (excludedTypes.Contains(objectRuntimeType))
                 return string.Empty;
 
-            if (visitedProperties.ContainsKey(objectRuntimeType))
-            {
-                if (visitedProperties[objectRuntimeType].Contains(printedObject))
-                    throw new MemberAccessException($"Cyclic dependency detected in '{objectRuntimeType}' type.");
+            MarkObjectAsVisited();
 
-                visitedProperties[objectRuntimeType].Add(printedObject);
-            }
-            else
-                visitedProperties[objectRuntimeType] = new[] { printedObject }.ToHashSet();
-
-            if (alternatePropertySerialisator.ContainsKey(objectRuntimeType))
-                return alternatePropertySerialisator[objectRuntimeType](printedObject) + Environment.NewLine;
+            if (alternatePropertySerialisatorByType.ContainsKey(objectRuntimeType))
+                return alternatePropertySerialisatorByType[objectRuntimeType](printedObject) + Environment.NewLine;
 
             if (cultureInfoApplierByType.ContainsKey(objectRuntimeType))
                 return cultureInfoApplierByType[objectRuntimeType](printedObject) + Environment.NewLine;
@@ -137,6 +138,19 @@ namespace ObjectPrinting
             objectSerialisationBuilder.Append(PrintAllProperties(printedObject, objectRuntimeType, nestingLevel));
 
             return objectSerialisationBuilder.ToString();
+
+            void MarkObjectAsVisited()
+            {
+                if (visitedPropertiesByType.ContainsKey(objectRuntimeType))
+                {
+                    if (visitedPropertiesByType[objectRuntimeType].Contains(printedObject))
+                        throw new MemberAccessException($"Cyclic dependency detected in '{objectRuntimeType}' type.");
+
+                    visitedPropertiesByType[objectRuntimeType].Add(printedObject);
+                }
+                else
+                    visitedPropertiesByType[objectRuntimeType] = new[] { printedObject }.ToHashSet();
+            }
         }
 
         private string PrintAllProperties(object printedObject, Type objectRuntimeType, int nestingLevel)
@@ -166,33 +180,25 @@ namespace ObjectPrinting
                 individualSetUpFuncByPropertyInfo.ContainsKey(propertyInfo)
                     ? individualSetUpFuncByPropertyInfo[propertyInfo](propertyValue) + Environment.NewLine
                     : PrintToString(propertyValue, nestingLevel + 1);
-
-            string TrimValueIfNecessary(PropertyInfo propertyInfo, string propertyValueSerialisation)
-            {
-                if (propertyInfo.PropertyType != typeof(string)) return propertyValueSerialisation;
-
-                var maxPropertyLength = maxValueLengthByPropertyInfo.ContainsKey(propertyInfo)
-                                            ? maxValueLengthByPropertyInfo[propertyInfo]
-                                            : mutualMaxPropertiesLength;
-
-                if (maxPropertyLength > 0)
-                    return TruncateString(propertyValueSerialisation, maxPropertyLength) + $"...{Environment.NewLine}";
-
-                return propertyValueSerialisation;
-            }
         }
 
         private bool IsExcludedProperty(PropertyInfo propertyInfo) =>
-            excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo);
+            excludedTypes.Contains(propertyInfo.PropertyType) ||
+            excludedProperties.Contains(propertyInfo);
 
-        private static PropertyInfo GetPropertyInfoFromMemberExpression<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        private string TrimValueIfNecessary(PropertyInfo propertyInfo, string propertyValueSerialisation)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpression) ||
-                !(memberExpression.Member is PropertyInfo propertyInfo))
-                throw new ArgumentException("Passed expression has to represent accessing a property",
-                                            nameof(memberSelector));
-            return propertyInfo;
+            if (propertyInfo.PropertyType != typeof(string)) return propertyValueSerialisation;
+
+            var maxPropertyLength = maxValueLengthByPropertyInfo.ContainsKey(propertyInfo)
+                                        ? maxValueLengthByPropertyInfo[propertyInfo]
+                                        : mutualMaxPropertiesLength;
+
+            if (maxPropertyLength > 0)
+                return TruncateString(propertyValueSerialisation, maxPropertyLength) +
+                       $"...{Environment.NewLine}";
+
+            return propertyValueSerialisation;
         }
 
         private static string TruncateString(string str, int maxLength) =>
