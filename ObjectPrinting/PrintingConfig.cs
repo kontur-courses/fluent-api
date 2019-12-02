@@ -11,7 +11,7 @@ namespace ObjectPrinting
     {
         private HashSet<Type> excludedTypes = new HashSet<Type>();       
         private HashSet<string> excludedProperties = new HashSet<string>();
-        private HashSet<object> visited = new HashSet<object>();
+        private HashSet<object> visited;
 
         private readonly Dictionary<Type, Func<object, string>> typesPrintingFunctions = new Dictionary<Type, Func<object, string>>();
         private readonly Dictionary<string, Func<object, string>> propertiesPrintingFunctions = new Dictionary<string, Func<object, string>>();
@@ -52,12 +52,14 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            visited = new HashSet<object>();
             return PrintObjectToString(obj, 0);
         }        
 
         
         public string PrintToString(TOwner obj, int nestingLevel)
         {
+            visited = new HashSet<object>();
             currentNestingLevel = nestingLevel;
             return PrintObjectToString(obj, 0);
         }        

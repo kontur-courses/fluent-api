@@ -143,5 +143,14 @@ namespace ObjectPrinting.Tests
                 .Printing<DateTime>().Using(CultureInfo.GetCultureInfo(culture));
             printer.PrintToString(person).Should().Contain(expected);            
         }
+
+        [Test]
+        public void PrintToString_ShouldNotReturnCircularReferenceStringOnSecondCall()
+        {
+            var printer = ObjectPrinter.For<Person>().Excluding<int>();
+            var a = printer.PrintToString(person);
+            var b = printer.PrintToString(person);
+            b.Should().NotContain("Circular");
+        }
     }
 }
