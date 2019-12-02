@@ -12,5 +12,7 @@ namespace ObjectPrinting.Tests
 
         public Person Boss { get; set; }
         public List<Person> Family { get; set; }
+
+        public DateTime BirthDay { get; set; }
     }
 }

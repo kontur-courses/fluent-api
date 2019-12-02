@@ -19,23 +19,11 @@ namespace ObjectPrinting
                     : str);
         }
         
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig,
-            CultureInfo culture)
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(this PropertyPrintingConfig<TOwner, TPropType> propConfig,
+            CultureInfo culture) where TPropType : IFormattable
         {
-            return propConfig.Using(x => ((int)(object)x).ToString(culture));            
-        }        
-                
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig,
-            CultureInfo culture)
-        {
-            return propConfig.Using(x => ((double)(object)x).ToString(culture));
+            return propConfig.Using(x => x.ToString("", culture));
         }
-
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig,
-            CultureInfo culture)
-        {
-            return propConfig.Using(x => ((float)(object)x).ToString(culture));
-        } 
     }
 }
  

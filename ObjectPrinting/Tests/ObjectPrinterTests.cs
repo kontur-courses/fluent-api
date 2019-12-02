@@ -133,5 +133,15 @@ namespace ObjectPrinting.Tests
             person.PrintToString(6)
                 .Should().Contain("Name = Peter");
         }
+
+        [TestCase("ja-JP", "1995/11/11")]
+        [TestCase("de-DE", "11.11.1995")]
+        public void Using_ShouldSerializeDateTimePropertiesWithSelectedCulture(string culture, string expected)
+        {
+            person.BirthDay = new DateTime(1995, 11, 11);
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<DateTime>().Using(CultureInfo.GetCultureInfo(culture));
+            printer.PrintToString(person).Should().Contain(expected);            
+        }
     }
 }
