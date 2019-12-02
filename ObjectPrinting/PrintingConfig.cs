@@ -89,7 +89,8 @@ namespace ObjectPrinting
             else if (obj is IDictionary dictionary)
                 result = PrintDictionary(dictionary, nestingLevel);
             else if (obj is IEnumerable enumerable)
-                result = PrintEnumerable(enumerable, nestingLevel);
+                result = PrintEnumerable(enumerable, nestingLevel) 
+                         + (newLineRequested ? Environment.NewLine : "");
             return result != null;
         }
 
@@ -102,20 +103,9 @@ namespace ObjectPrinting
                         ? PrintToString(n, nestingLevel + 1, false)
                         : "...")
                 .Take(collectionsPrintCount + 1);
-            return $"[{string.Join(", ", printedObjects)}]{Environment.NewLine}";
+            return $"[{string.Join(", ", printedObjects)}]";
         }
-
-        //private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
-        //{
-        //    var objectsEnumerable = enumerable.Cast<object>();
-        //    var printedObjects = objectsEnumerable
-        //        .Select(n => PrintToString(n, nestingLevel + 1, false))
-        //        .Take(collectionsPrintCount);
-        //    return $"{string.Join("; ", printedObjects)}" +
-        //           $"{(printedObjects.Count() == collectionsPrintCount ? " ..." : "")}" +
-        //           $"{Environment.NewLine}";
-        //}
-
+        
         private string PrintDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();

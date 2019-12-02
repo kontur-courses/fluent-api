@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
-using System.Linq.Expressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -86,6 +84,15 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Name).Using(n => $"Имя: {n}");
             result = printer.PrintToString(person);
             result.Should().Contain("Имя: Alex").And.NotContain("Name = Alex");
+        }
+
+        [Test]
+        public void Printing_ShouldPrintFieldAsSpecified_OnMarried()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Married).Using(m => m ? "Married" : "Single");
+            result = printer.PrintToString(person);
+            result.Should().Contain("Single");
         }
 
         [Test]
@@ -185,18 +192,39 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_ShouldPrintCollections_OnNestedCollections()
+        {
+            var collection = new List<List<int>>
+            {
+                new List<int> {1, 2},
+                new List<int> {3, 4},
+                new List<int> {5, 6}
+            };
+            result = collection.PrintToString();
+            result.Should().Contain("[[1, 2], [3, 4], [5, 6]]");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintCollections_OnNestedCollectionsAsClassMember()
+        {
+            var collection = new List<List<int>>
+            {
+                new List<int> {1, 2},
+                new List<int> {3, 4},
+                new List<int> {5, 6}
+            };
+            person.SomeNumbersLists = collection;
+            result = person.PrintToString();
+            result.Should().Contain("[[1, 2], [3, 4], [5, 6]]");
+        }
+
+        [Test]
         public void PrintToString_ShouldPrintFields()
         {
             person.Married = true;
             person.Weight = 90;
             result = person.PrintToString();
             result.Should().Contain("Married = True").And.Contain("Weight = 90");
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Console.WriteLine(result);
         }
     }
 }

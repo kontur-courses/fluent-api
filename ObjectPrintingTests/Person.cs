@@ -16,5 +16,6 @@ namespace ObjectPrintingTests
         public IEnumerable<int> SomeNumbers { get; set; }
         public int Weight;
         public bool Married;
+        public List<List<int>> SomeNumbersLists;
     }
 }
