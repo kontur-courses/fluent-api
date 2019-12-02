@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -41,6 +42,15 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Name);
             result = printer.PrintToString(person);
             result.Should().Contain("185,5").And.Contain("20").And.NotContain("Alex");
+        }
+
+        [Test]
+        public void Excluding_ShouldExcludeField_OnWeight()
+        {
+            person.Weight = 90;
+            var printer = ObjectPrinter.For<Person>().Excluding(p => p.Weight);
+            result = printer.PrintToString(person);
+            result.Should().NotContain("Weight").And.NotContain("90");
         }
 
         [Test]
@@ -157,7 +167,7 @@ namespace ObjectPrintingTests
         {
             person.SomeNumbers = GetInfiniteEnumerable();
             result = person.PrintToString();
-            result.Should().Contain("1; 1; 1; 1; 1; 1; 1; 1; 1; 1 ...");
+            result.Should().Contain("1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...");
         }
 
         private static IEnumerable<int> GetInfiniteEnumerable()
@@ -167,12 +177,26 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_ShouldPrintCollections_OnEmptyEnumerable()
+        {
+            person.SomeNumbers = new List<int>();
+            result = person.PrintToString();
+            result.Should().Contain("[]");
+        }
+
+        [Test]
         public void PrintToString_ShouldPrintFields()
         {
             person.Married = true;
             person.Weight = 90;
             result = person.PrintToString();
             result.Should().Contain("Married = True").And.Contain("Weight = 90");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Console.WriteLine(result);
         }
     }
 }

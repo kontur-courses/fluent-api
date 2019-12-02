@@ -10,15 +10,14 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<string> excludedTypes = new HashSet<string>();
-
-        private readonly HashSet<string> excludedProperties = new HashSet<string>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
 
         private readonly Dictionary<Type, Func<object, string>> specialPrintingFunctionsForTypes =
             new Dictionary<Type, Func<object, string>>();
 
-        private readonly Dictionary<PropertyInfo, Func<object, string>> specialPrintingFunctionsForProperties =
-            new Dictionary<PropertyInfo, Func<object, string>>();
+        private readonly Dictionary<MemberInfo, Func<object, string>> specialPrintingFunctionsForMembers =
+            new Dictionary<MemberInfo, Func<object, string>>();
 
         private readonly Dictionary<object, int> objectsLevels = new Dictionary<object, int>();
 
@@ -39,21 +38,19 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                this, specialPrintingFunctionsForProperties, ExtractPropertyInfo(memberSelector));
+                this, specialPrintingFunctionsForMembers, ExtractMemberInfo(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedProperties.Add(
-                ConstructPropertyFullName(typeof(TOwner),
-                    ExtractPropertyInfo(memberSelector)));
+            excludedMembers.Add(ExtractMemberInfo(memberSelector));
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             var type = typeof(TPropType);
-            excludedTypes.Add(type.FullName);
+            excludedTypes.Add(type);
             return this;
         }
 
@@ -62,10 +59,10 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private static PropertyInfo ExtractPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private static MemberInfo ExtractMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is MemberExpression memberExpression)
-                return (PropertyInfo)memberExpression.Member;
+                return memberExpression.Member;
             throw new ArgumentException("Member selector should be member expression");
         }
 
@@ -83,7 +80,7 @@ namespace ObjectPrinting
         {
             var type = obj.GetType();
             result = null;
-            if (excludedTypes.Contains(type.FullName))
+            if (excludedTypes.Contains(type))
                 result = "";
             else if (specialPrintingFunctionsForTypes.TryGetValue(type, out var print))
                 result = print(obj) + Environment.NewLine;
@@ -100,17 +97,31 @@ namespace ObjectPrinting
         {
             var objectsEnumerable = enumerable.Cast<object>();
             var printedObjects = objectsEnumerable
-                .Select(n => PrintToString(n, nestingLevel + 1, false))
-                .Take(collectionsPrintCount);
-            return $"{string.Join("; ", printedObjects)}" +
-                   $"{(printedObjects.Count() == collectionsPrintCount ? " ..." : "")}" +
-                   $"{Environment.NewLine}";
+                .Select((n, i) =>
+                    i < collectionsPrintCount
+                        ? PrintToString(n, nestingLevel + 1, false)
+                        : "...")
+                .Take(collectionsPrintCount + 1);
+            return $"[{string.Join(", ", printedObjects)}]{Environment.NewLine}";
         }
+
+        //private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
+        //{
+        //    var objectsEnumerable = enumerable.Cast<object>();
+        //    var printedObjects = objectsEnumerable
+        //        .Select(n => PrintToString(n, nestingLevel + 1, false))
+        //        .Take(collectionsPrintCount);
+        //    return $"{string.Join("; ", printedObjects)}" +
+        //           $"{(printedObjects.Count() == collectionsPrintCount ? " ..." : "")}" +
+        //           $"{Environment.NewLine}";
+        //}
 
         private string PrintDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();
+            sb.Append("{");
             sb.Append(Environment.NewLine);
+            var indentation = new string('\t', nestingLevel + 1);
             foreach (DictionaryEntry pair in dictionary)
             {
                 var key = pair.Key;
@@ -119,10 +130,10 @@ namespace ObjectPrinting
                     ? result
                     : key.GetType().ToString();
                 var printedValue = PrintToString(value, nestingLevel + 2, false);
-                var indentation = new string('\t', nestingLevel + 1);
                 var entry = $"{printedKey} = {printedValue}";
                 sb.Append($"{indentation}{entry}{Environment.NewLine}");
             }
+            sb.Append($"{new string('\t', nestingLevel)}}}{Environment.NewLine}");
             return sb.ToString();
         }
 
@@ -132,52 +143,49 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            PrintProperties(obj, type.GetProperties(), nestingLevel, indentation, sb);
-            PrintFields(obj, type.GetFields(), nestingLevel, indentation, sb);
-            return sb.ToString();
-        }
-
-        private void PrintProperties(object obj, PropertyInfo[] properties,
-            int nestingLevel, string indentation, StringBuilder sb)
-        {
-            foreach (var propertyInfo in properties)
+            foreach (var memberInfo in GetFieldsAndProperties(type))
             {
-                var name = propertyInfo.Name;
-                var value = propertyInfo.GetValue(obj);
+                var name = memberInfo.Name;
+                var value = GetMemberValue(memberInfo, obj);
                 string entry;
-                if (excludedProperties.Contains(ConstructPropertyFullName(obj.GetType(), propertyInfo))
-                    || (value != null && excludedTypes.Contains(value.GetType().FullName)))
+                if (excludedMembers.Contains(memberInfo) 
+                    || (value != null && excludedTypes.Contains(value.GetType())))
                     continue;
-                if (value != null && objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
+                if (ContainsCycleReference(value, nestingLevel))
                     entry = $"{name} contains cyclic reference{Environment.NewLine}";
-                else if (specialPrintingFunctionsForProperties.TryGetValue(propertyInfo, out var print))
+                else if (specialPrintingFunctionsForMembers.TryGetValue(memberInfo, out var print))
                     entry = $"{print(value)}{Environment.NewLine}";
                 else
                     entry = $"{name} = {PrintToString(value, nestingLevel + 1)}";
                 sb.Append($"{indentation}{entry}");
             }
+            return sb.ToString();
         }
 
-        private void PrintFields(object obj, FieldInfo[] fields,
-            int nestingLevel, string indentation, StringBuilder sb)
+        private bool ContainsCycleReference(object value, int nestingLevel)
         {
-            foreach (var fieldInfo in fields)
-            {
-                var name = fieldInfo.Name;
-                var value = fieldInfo.GetValue(obj);
-                string entry;
-                if (value != null && excludedTypes.Contains(value.GetType().FullName))
-                    continue;
-                if (value != null && objectsLevels.ContainsKey(value) && objectsLevels[value] < nestingLevel)
-                    entry = $"{name} contains cyclic reference{Environment.NewLine}";
-                else
-                    entry = $"{name} = {PrintToString(value, nestingLevel + 1)}";
-                sb.Append($"{indentation}{entry}");
-            }
+            return value != null && objectsLevels.TryGetValue(value, out var savedLevel) && savedLevel < nestingLevel;
         }
-        private static string ConstructPropertyFullName(Type type, PropertyInfo propertyInfo)
+
+        private IEnumerable<MemberInfo> GetFieldsAndProperties(Type type)
         {
-            return $"{type.FullName}.{propertyInfo.Name}";
+            foreach (var fieldInfo in type.GetFields())
+                yield return fieldInfo;
+            foreach (var propertyInfo in type.GetProperties())
+                yield return propertyInfo;
+        }
+
+        private static object GetMemberValue(MemberInfo memberInfo, object obj)
+        {
+            switch (memberInfo)
+            {
+                case PropertyInfo propertyInfo:
+                    return propertyInfo.GetValue(obj);
+                case FieldInfo fieldInfo:
+                    return fieldInfo.GetValue(obj);
+                default:
+                    throw new ArgumentException("Member info should be an info with value");
+            }
         }
     }
 }

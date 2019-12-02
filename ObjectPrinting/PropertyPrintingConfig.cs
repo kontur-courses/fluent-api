@@ -8,15 +8,15 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Dictionary<Type, Func<object, string>> specialPrintingFunctionsForTypes;
-        private readonly Dictionary<PropertyInfo, Func<object, string>> specialPrintingFunctionsForProperties;
-        private readonly PropertyInfo property;
+        private readonly Dictionary<MemberInfo, Func<object, string>> specialPrintingFunctionsForMembers;
+        private readonly MemberInfo member;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Dictionary<PropertyInfo, 
-            Func<object, string>> specialPrintingFunctionsForProperties, PropertyInfo property)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Dictionary<MemberInfo, 
+            Func<object, string>> specialPrintingFunctionsForMembers, MemberInfo member)
         {
             this.printingConfig = printingConfig;
-            this.specialPrintingFunctionsForProperties = specialPrintingFunctionsForProperties;
-            this.property = property;
+            this.specialPrintingFunctionsForMembers = specialPrintingFunctionsForMembers;
+            this.member = member;
         }
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, 
@@ -28,9 +28,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (property != null)
+            if (member != null)
             {
-                specialPrintingFunctionsForProperties[property] = o => print((TPropType)o);
+                specialPrintingFunctionsForMembers[member] = o => print((TPropType)o);
                 return printingConfig;
             }
             specialPrintingFunctionsForTypes[typeof(TPropType)] = o => print((TPropType)o);
@@ -42,17 +42,17 @@ namespace ObjectPrinting
         Dictionary<Type, Func<object, string>> IPropertyPrintingConfig<TOwner, TPropType>.SpecialPrintingFunctionsForTypes =>
             specialPrintingFunctionsForTypes;
 
-        Dictionary<PropertyInfo, Func<object, string>> IPropertyPrintingConfig<TOwner, TPropType>.SpecialPrintingFunctionsForProperties =>
-            specialPrintingFunctionsForProperties;
+        Dictionary<MemberInfo, Func<object, string>> IPropertyPrintingConfig<TOwner, TPropType>.SpecialPrintingFunctionsForMembers =>
+            specialPrintingFunctionsForMembers;
 
-        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.Property => property;
+        MemberInfo IPropertyPrintingConfig<TOwner, TPropType>.Member => member;
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
         Dictionary<Type, Func<object, string>> SpecialPrintingFunctionsForTypes { get; }
-        Dictionary<PropertyInfo, Func<object, string>> SpecialPrintingFunctionsForProperties { get; }
-        PropertyInfo Property { get; }
+        Dictionary<MemberInfo, Func<object, string>> SpecialPrintingFunctionsForMembers { get; }
+        MemberInfo Member { get; }
     }
 }
