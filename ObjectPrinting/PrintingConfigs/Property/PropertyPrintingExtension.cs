@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using ObjectPrinting.PrintingConfigs;
 using ObjectPrinting.Serializer;
 
 namespace ObjectPrinting.PrintingConfigs

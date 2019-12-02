@@ -6,6 +6,11 @@ namespace ObjectPrinting.Formatting
 {
     public class DefaultFormatting : FormatConfiguration
     {
+        public DefaultFormatting(int maximumRecursionDepth = 20)
+        {
+            MaximumRecursionDepth = maximumRecursionDepth;
+        }
+        
         public override string GetGenericVisualisation(params Type[] types)
         {
             if(types == null || types.Length == 0)
@@ -25,7 +30,7 @@ namespace ObjectPrinting.Formatting
             return resultStr.ToString();
         }
 
-        public override int MaximumRecursionDepth { get; } = 20;
+        public override int MaximumRecursionDepth { get; protected set; }
 
         public override string GetPropertyPrintingStart(int level, PropertyInfo property) =>
             GetIndent(level) + property.Name + " = ";

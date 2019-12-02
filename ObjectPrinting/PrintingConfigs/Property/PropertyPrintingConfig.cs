@@ -9,7 +9,7 @@ namespace ObjectPrinting.PrintingConfigs
     {
         private readonly PrintingConfig<TOwner> config;
         private readonly Action<PropertySerializationRule> applyNewRuleToConfig;
-        private readonly SerializationFilter propFilter;
+        private readonly Func<object, PropertyInfo, bool> propFilter;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> owner)
         {
@@ -36,6 +36,6 @@ namespace ObjectPrinting.PrintingConfigs
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner>.Config => config;
-        SerializationFilter IPropertyPrintingConfig<TOwner>.Filter => propFilter;
+        Func<object, PropertyInfo, bool> IPropertyPrintingConfig<TOwner>.Filter => propFilter;
     }
 }

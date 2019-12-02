@@ -15,7 +15,7 @@ namespace ObjectPrinting.Formatting
                 : DefaultFinalTypes.Concat(CustomFinalTypes).ToArray();
         }
 
-        public abstract int MaximumRecursionDepth { get; }
+        public abstract int MaximumRecursionDepth { get; protected set;  }
         public abstract string GetPropertyPrintingStart(int nestingLevel, PropertyInfo property);
         public abstract string GetIndent(int nestingLevel);
         public abstract string GetEnumerableIndent(int nestingLevel, int index);
