@@ -30,10 +30,10 @@ namespace ObjectPrinting
         {
             if (property != null)
             {
-                specialPrintingFunctionsForProperties[property] = o => print((TPropType) o);
+                specialPrintingFunctionsForProperties[property] = o => print((TPropType)o);
                 return printingConfig;
             }
-            specialPrintingFunctionsForTypes[typeof(TPropType)] = o => print((TPropType) o);
+            specialPrintingFunctionsForTypes[typeof(TPropType)] = o => print((TPropType)o);
             return printingConfig;
         }
 

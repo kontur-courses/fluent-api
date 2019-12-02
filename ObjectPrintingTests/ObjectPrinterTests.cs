@@ -174,11 +174,5 @@ namespace ObjectPrintingTests
             result = person.PrintToString();
             result.Should().Contain("Married = True").And.Contain("Weight = 90");
         }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Console.WriteLine(result);
-        }
     }
 }
