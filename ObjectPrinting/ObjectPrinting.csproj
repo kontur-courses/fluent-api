@@ -64,7 +64,7 @@
     <Compile Include="PropertySerializingConfig.cs" />
     <Compile Include="Tests\Node.cs" />
     <Compile Include="Tests\ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Tests\ObjectPrinterCyclingTests.cs" />
+    <Compile Include="Tests\ObjectPrinterCyclicTests.cs" />
     <Compile Include="Tests\ObjectPrinterTests.cs" />
     <Compile Include="Tests\Person.cs" />
   </ItemGroup>

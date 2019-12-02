@@ -6,6 +6,9 @@ namespace ObjectPrinting
     public class PropertySerializingConfig<TOwner, TPropType> :
         IPropertySerializingConfig<TOwner>
     {
+        PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
+        PropertyInfo IPropertySerializingConfig<TOwner>.UsedPropertyInfo => propertyInfo;
+
         private readonly PrintingConfig<TOwner> parentConfig;
         private readonly PropertyInfo propertyInfo;
 
@@ -33,8 +36,5 @@ namespace ObjectPrinting
 
             return parentConfig;
         }
-
-        PrintingConfig<TOwner> IPropertySerializingConfig<TOwner>.ParentConfig => parentConfig;
-        PropertyInfo IPropertySerializingConfig<TOwner>.UsedPropertyInfo => propertyInfo;
     }
 }

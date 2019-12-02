@@ -8,6 +8,6 @@ namespace ObjectPrinting.Tests
 {
     class Node
     {
-        public Node neighbor { get; set; }
+        public Node Neighbor { get; set; }
     }
 }

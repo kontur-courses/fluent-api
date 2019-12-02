@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
@@ -11,23 +13,21 @@ namespace ObjectPrinting
             var propertyInfo = (config as IPropertySerializingConfig<TOwner>).UsedPropertyInfo;
             var parent = (config as IPropertySerializingConfig<TOwner>).ParentConfig as IPrintingConfig<TOwner>;
 
-            Func<string, string> oldMethod = (s => s?.ToString());
-            if (propertyInfo is null)
-            {
-                if (parent.SerializingMethods.ContainsKey(typeof(string)))
-                    oldMethod = parent.SerializingMethods[typeof(string)].Compile();
-
-                parent.SerializingMethods[typeof(string)] = s => new string(oldMethod.Invoke((string) s).Take(length).ToArray());
-                
-                return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
-            }
-
-            if (parent.PropertySerializingMethods.ContainsKey(propertyInfo))
-                oldMethod = parent.PropertySerializingMethods[propertyInfo].Compile();
-
-            parent.PropertySerializingMethods[propertyInfo] = s => new string(oldMethod.Invoke((string) s).Take(length).ToArray());
+            if (propertyInfo is null )
+                UpdateMethod(parent.SerializingMethods, typeof(string), s => new string(s.Take(length).ToArray()));
+            else
+                UpdateMethod(parent.PropertySerializingMethods, propertyInfo, s => new string(s.Take(length).ToArray()));
 
             return (config as IPropertySerializingConfig<TOwner>).ParentConfig;
+        }
+
+        private static void UpdateMethod<TKey>(IDictionary<TKey, Expression<Func<object, string>>> methods, TKey key, Func<string, string> method)
+        {
+            Func<object, string> oldMethod = (s => s?.ToString());
+            if (methods.ContainsKey(key))
+                oldMethod = s => methods[key].Compile().Invoke(s);
+
+            methods[key] = s => method(oldMethod.Invoke(s));
         }
     }
 }

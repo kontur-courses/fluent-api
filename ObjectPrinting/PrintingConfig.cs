@@ -89,9 +89,7 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float),
             };
             if (numberTypes.Contains(obj.GetType()))
-            {
                 return $"{NumberToStringUsingCulture(obj)} (Hash: {obj.GetHashCode()})";
-            }
 
             if (obj is DateTime || obj is TimeSpan || obj is string)
                 return $"{obj} (Hash: {obj.GetHashCode()})";
@@ -99,12 +97,7 @@ namespace ObjectPrinting
             if (usedFields.Contains(obj))
                 return $"<was above> (Hash: {obj.GetHashCode()})";
             usedFields.Add(obj);
-            var result = "";
-            if (obj is IEnumerable enumerable)
-                result = GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
-            else
-                result = ComplexObjectToString(obj, nestingLevel);
-
+            var result = ComplexObjectToString(obj, nestingLevel);
 
             usedFields.Remove(obj);
             return result;
@@ -120,7 +113,21 @@ namespace ObjectPrinting
                 counter++;
             }
 
-            return builder.Append("}").ToString();
+            return builder.Append(new string('\t', nestingLevel - 1)).Append("}").ToString();
+        }
+
+        private string GetIDictionaryString(IDictionary obj, int nestingLevel)
+        {
+            var padding = new string('\t', nestingLevel);
+            var builder = new StringBuilder("{").Append(Environment.NewLine);
+            foreach (var key in obj.Keys)
+            {
+                builder.Append($"{padding}{{{Environment.NewLine}{padding}\tkey: {PrintToString(key, nestingLevel + 2)}{Environment.NewLine}")
+                    .Append($"{padding}\tvalue: {PrintToString(obj[key], nestingLevel + 2)}")
+                    .Append($"{padding}}}{Environment.NewLine}");
+            }
+
+            return builder.Append(new string('\t', nestingLevel - 1)).Append("}").Append($" (Hash: {obj.GetHashCode()})").ToString();
         }
 
         private string NumberToStringUsingCulture(object obj)
@@ -140,6 +147,13 @@ namespace ObjectPrinting
 
         private string ComplexObjectToString(object obj, int nestingLevel)
         {
+            switch (obj)
+            {
+                case IDictionary dict:
+                    return GetIDictionaryString(dict, nestingLevel + 1);
+                case IEnumerable enumerable:
+                    return GetIEnumerableString(enumerable, nestingLevel + 1) + $" (Hash: {obj.GetHashCode()})";
+            }
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -148,8 +162,8 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties().Where(p =>
                 !excludingTypes.Contains(p.PropertyType) && !excludingProperties.Contains(p)))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          GetStringFromProperty(obj, propertyInfo, nestingLevel + 1) + Environment.NewLine);
+                sb.Append(identation).Append(propertyInfo.Name).Append(" = ")
+                    .Append(GetStringFromProperty(obj, propertyInfo, nestingLevel + 1)).Append(Environment.NewLine);
             }
 
             return sb.ToString();

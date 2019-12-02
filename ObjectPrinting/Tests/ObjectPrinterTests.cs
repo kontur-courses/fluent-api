@@ -20,18 +20,19 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_OnIEnumerable()
         {
-            var array = new[] {12, 15, 20};
+            var array = new[] {12, 15, 20} as IEnumerable<int>;
             var expected = $"{{\r\n\t0: 12 (Hash: 12)\r\n\t1: 15 (Hash: 15)\r\n\t2: 20 (Hash: 20)\r\n}} (Hash: {array.GetHashCode()})";
             array.PrintToString().Should().Be(expected);
         }
 
         [Test]
-        public void PrintToString_OnDictionary()
+        public void PrintToString_OnIDictionary()
         {
-            var dict = new Dictionary<string, Node> {{"abc", new Node()}};
+            var dict = new Dictionary<string, Node> {{"abc", new Node()}} as IDictionary<string, Node>;
             var kvPair = dict.First();
             var expected =
-                $"{{\r\n\t0: KeyValuePair`2 (Hash: {kvPair.GetHashCode()})\r\n\t\t\tKey = abc (Hash: {kvPair.Key.GetHashCode()})\r\n\t\t\tValue = Node (Hash: {kvPair.Value.GetHashCode()})\r\n\t\t\t\tneighbor = null\r\n\r\n\r\n}} (Hash: {dict.GetHashCode()})";
+                $"{{\r\n\t{{\r\n\t\tkey: abc (Hash: {kvPair.Key.GetHashCode()})\r\n\t\tvalue: " +
+                $"Node (Hash: {kvPair.Value.GetHashCode()})\r\n\t\t\t\tneighbor = null\r\n\t}}\r\n}} (Hash: {dict.GetHashCode()})";
 
             dict.PrintToString().Should().Be(expected);
         }
