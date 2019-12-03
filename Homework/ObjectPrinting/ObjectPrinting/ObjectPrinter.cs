@@ -2,6 +2,6 @@
 {
     public static class ObjectPrinter
     {
-        public static PrintingConfig<T> For<T>() => new PrintingConfig<T>();
+        public static PrintingConfig<T> For<T>(int serialiseDepth = 30) => new PrintingConfig<T>(serialiseDepth);
     }
 }

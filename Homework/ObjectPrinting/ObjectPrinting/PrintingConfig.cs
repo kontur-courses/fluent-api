@@ -13,9 +13,6 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
-        private readonly Dictionary<Type, HashSet<object>> visitedPropertiesByType =
-            new Dictionary<Type, HashSet<object>>();
-
         private readonly Dictionary<Type, Func<object, string>> alternatePropertySerialisatorByType =
             new Dictionary<Type, Func<object, string>>();
 
@@ -28,8 +25,11 @@ namespace ObjectPrinting
         private readonly Dictionary<PropertyInfo, int> maxValueLengthByPropertyInfo =
             new Dictionary<PropertyInfo, int>();
 
+        private readonly int serialiseDepth;
         private int mutualMaxPropertiesLength;
         private PropertyInfo currentSettingUpProperty;
+
+        public PrintingConfig(int serialiseDepth) => this.serialiseDepth = serialiseDepth;
 
         void IPrintingConfig.SetCultureInfoApplierForNumberType<TNumber>(Func<TNumber, string> cultureInfoApplier)
         {
@@ -112,7 +112,9 @@ namespace ObjectPrinting
             if (excludedTypes.Contains(objectRuntimeType))
                 return string.Empty;
 
-            MarkObjectAsVisited();
+            if (nestingLevel > serialiseDepth)
+                throw new ApplicationException(
+                    $"Was detected nesting level more than specified serialiseDepth ({serialiseDepth})");
 
             if (alternatePropertySerialisatorByType.ContainsKey(objectRuntimeType))
                 return alternatePropertySerialisatorByType[objectRuntimeType](printedObject) + Environment.NewLine;
@@ -138,19 +140,6 @@ namespace ObjectPrinting
             objectSerialisationBuilder.Append(PrintAllProperties(printedObject, objectRuntimeType, nestingLevel));
 
             return objectSerialisationBuilder.ToString();
-
-            void MarkObjectAsVisited()
-            {
-                if (visitedPropertiesByType.ContainsKey(objectRuntimeType))
-                {
-                    if (visitedPropertiesByType[objectRuntimeType].Contains(printedObject))
-                        throw new MemberAccessException($"Cyclic dependency detected in '{objectRuntimeType}' type.");
-
-                    visitedPropertiesByType[objectRuntimeType].Add(printedObject);
-                }
-                else
-                    visitedPropertiesByType[objectRuntimeType] = new[] { printedObject }.ToHashSet();
-            }
         }
 
         private string PrintAllProperties(object printedObject, Type objectRuntimeType, int nestingLevel)
@@ -211,14 +200,16 @@ namespace ObjectPrinting
 
             foreach (DictionaryEntry entry in dictionary)
             {
-                var key = PrintToString(entry.Key, nestingLevel)
-                    .TrimEnd(Environment.NewLine.ToCharArray());
-                var value = PrintToString(entry.Value, nestingLevel)
-                    .TrimEnd(Environment.NewLine.ToCharArray());
+                var key = PrintToString(entry.Key, nestingLevel).TrimLineTerminator();
+                var value = PrintToString(entry.Value, nestingLevel).TrimLineTerminator();
+
+                key = WrapIfCollection(key, entry.Key);
+                value = WrapIfCollection(value, entry.Value);
+
                 dictionaryBuilder.Append($"[{key}]: {value} ");
             }
 
-            dictionaryBuilder.Remove(dictionaryBuilder.Length - 1, 1);
+            dictionaryBuilder.Remove(dictionaryBuilder.Length - 1, 1); // removed redundant whitespace
             dictionaryBuilder.AppendLine();
 
             return dictionaryBuilder.ToString();
@@ -227,8 +218,18 @@ namespace ObjectPrinting
         private string SerialiseEnumerable(IEnumerable enumerable, int nestingLevel) =>
             string.Join(' ', enumerable
                              .Cast<object>()
-                             .Select(obj => PrintToString(obj, nestingLevel)
-                                         .TrimEnd(Environment.NewLine.ToCharArray()))) +
-            Environment.NewLine;
+                             .Select(obj => WrapIfCollection(PrintToString(obj, nestingLevel)
+                                                                 .TrimLineTerminator(),
+                                                             obj)))
+          + Environment.NewLine;
+
+        private static string WrapIfCollection(string objectSerialisation, object obj)
+        {
+            var objectType = obj.GetType();
+
+            return obj is IEnumerable && !FinalTypes.Contains(objectType)
+                       ? $"{obj.GetType()}({objectSerialisation})"
+                       : objectSerialisation;
+        }
     }
 }

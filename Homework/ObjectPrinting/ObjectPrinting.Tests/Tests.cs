@@ -10,8 +10,17 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class Tests
     {
-        private readonly Person person = new Person
-            { Name = "Alex", Age = 19, Height = 232.32432, Property = "qwerty" };
+        private Person person;
+
+        [SetUp]
+        public void SetUp() =>
+            person = new Person
+            {
+                Name = "Alex",
+                Property = "qwerty",
+                Age = 19,
+                Height = 232.32432
+            };
 
         [Test]
         public void PrintToString_ReturnsSerialisedObject()
@@ -182,7 +191,7 @@ namespace ObjectPrinting.Tests
                                                              .TrimmedToLength(0)));
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasCyclicDependency_ThrowsMemberAccessException()
+        public void PrintToString_WhenSerialisedObjectHasCyclicDependency_ThrowsApplicationException()
         {
             var cyclicA = new CyclicTypeA();
             var cyclicB = new CyclicTypeB();
@@ -190,7 +199,26 @@ namespace ObjectPrinting.Tests
             cyclicA.CyclicProperty = cyclicB;
             cyclicB.CyclicProperty = cyclicA;
 
-            Assert.Throws<MemberAccessException>(() => cyclicA.PrintToString());
+            Assert.Throws<ApplicationException>(() => cyclicA.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_WhenSerialisedObjectHasTwoPropertiesWithTheSameReferenceToObject()
+        {
+            const string mutualReferenceObject = "";
+
+            person.Name = mutualReferenceObject;
+            person.Property = mutualReferenceObject;
+
+            var expectedSerialisation = string.Join(Environment.NewLine,
+                                                    "Person",
+                                                    "\tId = Guid",
+                                                    "\tName = ",
+                                                    "\tProperty = ",
+                                                    "\tHeight = 232.32432",
+                                                    $"\tAge = 19{Environment.NewLine}");
+
+            person.PrintToString().Should().Be(expectedSerialisation);
         }
 
         [Test]
@@ -215,6 +243,42 @@ namespace ObjectPrinting.Tests
                                                     $"\tNumberByString = [d]: 4 [e]: 5 [f]: 6{Environment.NewLine}");
 
             objectWithCollections.PrintToString().Should().Be(expectedSerialisation);
+        }
+
+        [Test]
+        public void PrintToString_WhenSerialisedObjectHasCollectionOfCollections()
+        {
+            var objectWithCollectionOfCollections = new TypeWithCollectionOfCollections
+            {
+                ArrayOfArrays = new[] { new[] { 1, 2 }, new[] { 3, 4 } },
+
+                ListOfLists = new List<List<string>>(new[]
+                {
+                    new List<string>(new[] { "a", "b" }),
+                    new List<string>(new[] { "c", "d" })
+                }),
+
+                DictionaryByString = new Dictionary<string, Dictionary<string, int>>
+                {
+                    ["x"] = new Dictionary<string, int> { ["e"] = 5, ["f"] = 6 },
+                    ["y"] = new Dictionary<string, int> { ["g"] = 7, ["h"] = 8 }
+                }
+            };
+
+            var arrayType = new int[0].GetType();
+            var listType = new List<string>().GetType();
+            var dictionaryType = new Dictionary<string, int>().GetType();
+
+            var expectedSerialisation =
+                string.Join(
+                    Environment.NewLine,
+                    "TypeWithCollectionOfCollections",
+                    $"\tArrayOfArrays = {arrayType}(1 2) {arrayType}(3 4)",
+                    $"\tListOfLists = {listType}(a b) {listType}(c d)",
+                    $"\tDictionaryByString = [x]: {dictionaryType}([e]: 5 [f]: 6) [y]: {dictionaryType}([g]: 7 [h]: 8)")
+              + Environment.NewLine;
+
+            objectWithCollectionOfCollections.PrintToString().Should().Be(expectedSerialisation);
         }
     }
 }
