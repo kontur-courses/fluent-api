@@ -145,12 +145,12 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldNotReturnCircularReferenceStringOnSecondCall()
+        public void PrintToString_ShouldReturnTheSameString_ForTheSameObjectInEveryCall()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
-            var a = printer.PrintToString(person);
-            var b = printer.PrintToString(person);
-            b.Should().NotContain("Circular");
+            var firstString = printer.PrintToString(person);
+            var secondString = printer.PrintToString(person);
+            firstString.Should().BeEquivalentTo(secondString);
         }
     }
 }
