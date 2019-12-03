@@ -10,9 +10,9 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> alternatePropertySerialisator)
         {
-            ((IPrintingConfig)printingConfig).SetAlternatePropertySerialisator(print);
+            ((IPrintingConfig)printingConfig).SetAlternatePropertySerialisator(alternatePropertySerialisator);
 
             return printingConfig;
         }

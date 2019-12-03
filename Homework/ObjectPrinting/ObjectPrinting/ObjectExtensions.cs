@@ -2,7 +2,7 @@
 {
     public static class ObjectExtensions
     {
-        public static string PrintToString<T>(this T obj, int serialiseDepth = 30) =>
+        public static string PrintToString<T>(this T obj, int serialiseDepth = ObjectPrinter.DefaultSerialiseDepth) =>
             ObjectPrinter.For<T>(serialiseDepth).PrintToString(obj);
     }
 }

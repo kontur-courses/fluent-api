@@ -8,7 +8,7 @@ using ObjectPrinting.Tests.TestTypes;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    public class Tests
+    public class PrintToStringTests
     {
         private Person person;
 
@@ -23,7 +23,7 @@ namespace ObjectPrinting.Tests
             };
 
         [Test]
-        public void PrintToString_ReturnsSerialisedObject()
+        public void ByDefaultReturnsSerialisedObject()
         {
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
@@ -37,7 +37,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenExcludedOneProperty()
+        public void WhenExcludedOneProperty()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig.Excluding(p => p.Name));
 
@@ -52,7 +52,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenExcludedSomeProperties()
+        public void WhenExcludedSomeProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
                                                                              .Excluding(p => p.Name)
@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenExcludedAllProperties()
+        public void WhenExcludedAllProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
                                                                              .Excluding(p => p.Name)
@@ -83,7 +83,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenExcludedType()
+        public void WhenExcludedType()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig.Excluding<string>());
 
@@ -97,7 +97,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetAlternateSerialisationBehaviorForType()
+        public void WhenSetAlternateSerialisationBehaviorForType()
         {
             string serialisedPerson = person.PrintToString(
                 printingConfig => printingConfig.Printing<string>()
@@ -115,7 +115,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetAlternateSerialisationBehaviorForProperty()
+        public void WhenSetAlternateSerialisationBehaviorForProperty()
         {
             string serialisedPerson = person.PrintToString(
                 printingConfig => printingConfig.Printing(p => p.Age)
@@ -133,7 +133,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetAlternateCultureInfoForType()
+        public void WhenSetAlternateCultureInfoForType()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
                                                                              .Printing<double>()
@@ -150,11 +150,11 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetTrimmingForAllStringProperties()
+        public void WhenSetTrimmingForAllStringProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
                                                                              .Printing<string>()
-                                                                             .TrimmedToLength(2));
+                                                                             .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
                                                     "\tId = Guid",
@@ -167,11 +167,11 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetTrimmingForConcreteProperty()
+        public void WhenSetTrimmingForConcreteProperty()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
                                                                              .Printing(p => p.Property)
-                                                                             .TrimmedToLength(2));
+                                                                             .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
                                                     "\tId = Guid",
@@ -184,14 +184,14 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSetZeroTrimming_ThrowsArgumentException() =>
+        public void WhenSetZeroTrimming_ThrowsArgumentException() =>
             Assert.Throws<ArgumentException>(
                 () => person.PrintToString(printingConfig => printingConfig
                                                              .Printing(p => p.Property)
-                                                             .TrimmedToLength(0)));
+                                                             .Trim(0)));
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasCyclicDependency_ThrowsApplicationException()
+        public void WhenSerialisedObjectHasCyclicDependency_ThrowsApplicationException()
         {
             var cyclicA = new CyclicTypeA();
             var cyclicB = new CyclicTypeB();
@@ -203,7 +203,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasTwoPropertiesWithTheSameReferenceToObject()
+        public void WhenSerialisedObjectHasTwoPropertiesWithTheSameReferenceToObject()
         {
             const string mutualReferenceObject = "";
 
@@ -222,7 +222,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasCollection()
+        public void WhenSerialisedObjectHasCollection()
         {
             var objectWithCollections = new TypeWithCollections
             {
@@ -246,7 +246,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WhenSerialisedObjectHasCollectionOfCollections()
+        public void WhenSerialisedObjectHasCollectionOfCollections()
         {
             var objectWithCollectionOfCollections = new TypeWithCollectionOfCollections
             {

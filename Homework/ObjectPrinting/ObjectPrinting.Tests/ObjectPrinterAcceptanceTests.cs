@@ -30,7 +30,7 @@ namespace ObjectPrinting.Tests
                     .Printing(p => p.Name)
 
                     // 5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                    .TrimmedToLength(3)
+                    .Trim(3)
 
                     // 6. Исключить из сериализации конкретного свойства
                     .Excluding(p => p.Age);

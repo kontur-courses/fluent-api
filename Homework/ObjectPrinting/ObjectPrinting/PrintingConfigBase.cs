@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ObjectPrinting
 {
@@ -8,10 +9,11 @@ namespace ObjectPrinting
         protected const string NullRepresentation = "null";
         protected const char Indentation = '\t';
 
-        protected static IEnumerable<Type> FinalTypes => new[]
+        protected static bool IsFinalType(Type type) => type.IsPrimitive || FinalTypes.Contains(type);
+
+        private static IEnumerable<Type> FinalTypes => new[]
         {
-            typeof(string), typeof(int), typeof(double), typeof(float),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(string), typeof(DateTime), typeof(TimeSpan)
         };
     }
 }

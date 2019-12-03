@@ -2,6 +2,9 @@
 {
     public static class ObjectPrinter
     {
-        public static PrintingConfig<T> For<T>(int serialiseDepth = 30) => new PrintingConfig<T>(serialiseDepth);
+        internal const int DefaultSerialiseDepth = 50;
+
+        public static PrintingConfig<T> For<T>(int serialiseDepth = DefaultSerialiseDepth) =>
+            new PrintingConfig<T>(serialiseDepth);
     }
 }

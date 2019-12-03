@@ -122,7 +122,7 @@ namespace ObjectPrinting
             if (cultureInfoApplierByType.ContainsKey(objectRuntimeType))
                 return cultureInfoApplierByType[objectRuntimeType](printedObject) + Environment.NewLine;
 
-            if (FinalTypes.Contains(objectRuntimeType))
+            if (IsFinalType(objectRuntimeType))
                 return printedObject + Environment.NewLine;
 
             switch (printedObject)
@@ -216,19 +216,17 @@ namespace ObjectPrinting
         }
 
         private string SerialiseEnumerable(IEnumerable enumerable, int nestingLevel) =>
-            string.Join(' ', enumerable
-                             .Cast<object>()
-                             .Select(obj => WrapIfCollection(PrintToString(obj, nestingLevel)
-                                                                 .TrimLineTerminator(),
-                                                             obj)))
+            string.Join(' ', enumerable.Cast<object>()
+                                       .Select(obj => WrapIfCollection(
+                                                   PrintToString(obj, nestingLevel).TrimLineTerminator(), obj)))
           + Environment.NewLine;
 
-        private static string WrapIfCollection(string objectSerialisation, object obj)
+        private static string WrapIfCollection(string objectSerialisation, object wrappedObject)
         {
-            var objectType = obj.GetType();
+            var objectType = wrappedObject.GetType();
 
-            return obj is IEnumerable && !FinalTypes.Contains(objectType)
-                       ? $"{obj.GetType()}({objectSerialisation})"
+            return wrappedObject is IEnumerable && !IsFinalType(objectType)
+                       ? $"{objectType}({objectSerialisation})"
                        : objectSerialisation;
         }
     }
