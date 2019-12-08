@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : PrintingConfigBase, IPrintingConfig
+    public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
@@ -105,7 +105,7 @@ namespace ObjectPrinting
         private string PrintToString(object printedObject, int nestingLevel)
         {
             if (printedObject is null)
-                return NullRepresentation + Environment.NewLine;
+                return PrintingConfigHelper.NullRepresentation + Environment.NewLine;
 
             var objectRuntimeType = printedObject.GetType();
 
@@ -116,13 +116,13 @@ namespace ObjectPrinting
                 throw new ApplicationException(
                     $"Was detected nesting level more than specified serialiseDepth ({serialiseDepth})");
 
-            if (alternatePropertySerialisatorByType.ContainsKey(objectRuntimeType))
-                return alternatePropertySerialisatorByType[objectRuntimeType](printedObject) + Environment.NewLine;
+            if (alternatePropertySerialisatorByType.TryGetValue(objectRuntimeType, out var alternateSerialisator))
+                return alternateSerialisator(printedObject) + Environment.NewLine;
 
-            if (cultureInfoApplierByType.ContainsKey(objectRuntimeType))
-                return cultureInfoApplierByType[objectRuntimeType](printedObject) + Environment.NewLine;
+            if (cultureInfoApplierByType.TryGetValue(objectRuntimeType, out var cultureInfoApplier))
+                return cultureInfoApplier(printedObject) + Environment.NewLine;
 
-            if (IsFinalType(objectRuntimeType))
+            if (PrintingConfigHelper.IsFinalType(objectRuntimeType))
                 return printedObject + Environment.NewLine;
 
             switch (printedObject)
@@ -145,7 +145,7 @@ namespace ObjectPrinting
         private string PrintAllProperties(object printedObject, Type objectRuntimeType, int nestingLevel)
         {
             var propertiesBuilder = new StringBuilder();
-            var indentation = new string(Indentation, nestingLevel + 1);
+            var indentation = new string(PrintingConfigHelper.Indentation, nestingLevel + 1);
 
             foreach (var propertyInfo in objectRuntimeType.GetProperties().Where(pInfo => !IsExcludedProperty(pInfo)))
             {
@@ -166,8 +166,8 @@ namespace ObjectPrinting
             return propertiesBuilder.ToString();
 
             string SerialisePropertyValue(PropertyInfo propertyInfo, object propertyValue) =>
-                individualSetUpFuncByPropertyInfo.ContainsKey(propertyInfo)
-                    ? individualSetUpFuncByPropertyInfo[propertyInfo](propertyValue) + Environment.NewLine
+                individualSetUpFuncByPropertyInfo.TryGetValue(propertyInfo, out var setUpFunc)
+                    ? setUpFunc(propertyValue) + Environment.NewLine
                     : PrintToString(propertyValue, nestingLevel + 1);
         }
 
@@ -179,8 +179,8 @@ namespace ObjectPrinting
         {
             if (propertyInfo.PropertyType != typeof(string)) return propertyValueSerialisation;
 
-            var maxPropertyLength = maxValueLengthByPropertyInfo.ContainsKey(propertyInfo)
-                                        ? maxValueLengthByPropertyInfo[propertyInfo]
+            var maxPropertyLength = maxValueLengthByPropertyInfo.TryGetValue(propertyInfo, out var maxValueLength)
+                                        ? maxValueLength
                                         : mutualMaxPropertiesLength;
 
             if (maxPropertyLength > 0)
@@ -196,7 +196,7 @@ namespace ObjectPrinting
         // ReSharper disable once SuggestBaseTypeForParameter
         private string SerialiseDictionary(IDictionary dictionary, int nestingLevel)
         {
-            var dictionaryBuilder = new StringBuilder(dictionary.Count);
+            var dictionaryBuilder = new StringBuilder();
 
             foreach (DictionaryEntry entry in dictionary)
             {
@@ -217,15 +217,15 @@ namespace ObjectPrinting
 
         private string SerialiseEnumerable(IEnumerable enumerable, int nestingLevel) =>
             string.Join(' ', enumerable.Cast<object>()
-                                       .Select(obj => WrapIfCollection(
-                                                   PrintToString(obj, nestingLevel).TrimLineTerminator(), obj)))
+                            .Select(obj => WrapIfCollection(
+                                        PrintToString(obj, nestingLevel).TrimLineTerminator(), obj)))
           + Environment.NewLine;
 
         private static string WrapIfCollection(string objectSerialisation, object wrappedObject)
         {
             var objectType = wrappedObject.GetType();
 
-            return wrappedObject is IEnumerable && !IsFinalType(objectType)
+            return wrappedObject is IEnumerable && !PrintingConfigHelper.IsFinalType(objectType)
                        ? $"{objectType}({objectSerialisation})"
                        : objectSerialisation;
         }
