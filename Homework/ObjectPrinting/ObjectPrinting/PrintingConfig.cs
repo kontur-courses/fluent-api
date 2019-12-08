@@ -100,7 +100,7 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
-                throw new ArgumentException("Passed expression has to represent accessing a property of field",
+                throw new ArgumentException("Passed expression has to represent accessing a property or field",
                                             nameof(memberSelector));
             return memberExpression.Member;
         }

@@ -291,7 +291,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void WhenSerialisedObjectHasPublicFields_ExpectedBehavior()
+        public void WhenSerialisedObjectHasPublicFields()
         {
             var objectWithPublicFields = new TypeWithPublicFields(1337, DateTime.UnixEpoch);
 
