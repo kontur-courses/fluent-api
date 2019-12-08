@@ -10,6 +10,7 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class PrintToStringTests
     {
+        private static readonly Guid defaultGuid = default;
         private Person person;
 
         [SetUp]
@@ -27,7 +28,7 @@ namespace ObjectPrinting.Tests
         {
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = Alex",
                                                     "\tProperty = qwerty",
                                                     "\tHeight = 232.32432",
@@ -43,7 +44,7 @@ namespace ObjectPrinting.Tests
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tProperty = qwerty",
                                                     "\tHeight = 232.32432",
                                                     $"\tAge = 19{Environment.NewLine}");
@@ -89,7 +90,7 @@ namespace ObjectPrinting.Tests
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tHeight = 232.32432",
                                                     $"\tAge = 19{Environment.NewLine}");
 
@@ -105,7 +106,7 @@ namespace ObjectPrinting.Tests
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = <alternate>Alex</alternate>",
                                                     "\tProperty = <alternate>qwerty</alternate>",
                                                     "\tHeight = 232.32432",
@@ -123,7 +124,7 @@ namespace ObjectPrinting.Tests
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = Alex",
                                                     "\tProperty = qwerty",
                                                     "\tHeight = 232.32432",
@@ -140,7 +141,7 @@ namespace ObjectPrinting.Tests
                                                                .Using(CultureInfo.GetCultureInfo("ru")));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = Alex",
                                                     "\tProperty = qwerty",
                                                     "\tHeight = 232,32432",
@@ -157,7 +158,7 @@ namespace ObjectPrinting.Tests
                                                                .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = Al...",
                                                     "\tProperty = qw...",
                                                     "\tHeight = 232.32432",
@@ -174,7 +175,7 @@ namespace ObjectPrinting.Tests
                                                                .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = Alex",
                                                     "\tProperty = qw...",
                                                     "\tHeight = 232.32432",
@@ -212,7 +213,7 @@ namespace ObjectPrinting.Tests
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
-                                                    "\tId = Guid",
+                                                    $"\tId = {defaultGuid}",
                                                     "\tName = ",
                                                     "\tProperty = ",
                                                     "\tHeight = 232.32432",

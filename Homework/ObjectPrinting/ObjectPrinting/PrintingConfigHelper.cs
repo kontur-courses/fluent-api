@@ -13,7 +13,7 @@ namespace ObjectPrinting
 
         private static readonly IEnumerable<Type> finalTypes = new[]
         {
-            typeof(string), typeof(DateTime), typeof(TimeSpan)
+            typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
     }
 }
