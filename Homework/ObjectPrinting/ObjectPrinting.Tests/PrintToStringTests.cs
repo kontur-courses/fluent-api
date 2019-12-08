@@ -289,5 +289,19 @@ namespace ObjectPrinting.Tests
 
             Assert.Throws<ApplicationException>(() => objectWithInfinitySequence.PrintToString());
         }
+
+        [Test]
+        public void WhenSerialisedObjectHasPublicFields_ExpectedBehavior()
+        {
+            var objectWithPublicFields = new TypeWithPublicFields(1337, DateTime.UnixEpoch);
+
+            var expectedSerialisation = string.Join(Environment.NewLine,
+                                                    "TypeWithPublicFields",
+                                                    "\tSomeProperty = null",
+                                                    "\tNumberField = 1337",
+                                                    $"\tDateTimeField = {DateTime.UnixEpoch}{Environment.NewLine}");
+
+            objectWithPublicFields.PrintToString().Should().Be(expectedSerialisation);
+        }
     }
 }

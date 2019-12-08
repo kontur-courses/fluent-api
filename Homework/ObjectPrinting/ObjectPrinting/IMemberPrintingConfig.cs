@@ -1,7 +1,7 @@
 ﻿namespace ObjectPrinting
 {
     // ReSharper disable once UnusedTypeParameter
-    internal interface IPropertyPrintingConfig<TOwner, TPropType>
+    internal interface IMemberPrintingConfig<TOwner, TMemberType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
     }

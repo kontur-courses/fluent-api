@@ -11,24 +11,24 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
 
-        private readonly Dictionary<Type, Func<object, string>> alternatePropertySerialisatorByType =
+        private readonly Dictionary<Type, Func<object, string>> alternateMemberSerialisatorByType =
             new Dictionary<Type, Func<object, string>>();
 
         private readonly Dictionary<Type, Func<object, string>> cultureInfoApplierByType =
             new Dictionary<Type, Func<object, string>>();
 
-        private readonly Dictionary<PropertyInfo, Func<object, string>> individualSetUpFuncByPropertyInfo =
-            new Dictionary<PropertyInfo, Func<object, string>>();
+        private readonly Dictionary<MemberInfo, Func<object, string>> individualSetUpFuncByMemberInfo =
+            new Dictionary<MemberInfo, Func<object, string>>();
 
-        private readonly Dictionary<PropertyInfo, int> maxValueLengthByPropertyInfo =
-            new Dictionary<PropertyInfo, int>();
+        private readonly Dictionary<MemberInfo, int> maxValueLengthByMemberInfo =
+            new Dictionary<MemberInfo, int>();
 
         private readonly int serialiseDepth;
         private readonly int sequencesMaxLength;
-        private int mutualMaxPropertiesLength;
-        private PropertyInfo currentSettingUpProperty;
+        private int mutualMaxMembersLength;
+        private MemberInfo currentSettingUpMember;
 
         public PrintingConfig(int serialiseDepth, int sequencesMaxLength)
         {
@@ -38,71 +38,71 @@ namespace ObjectPrinting
 
         void IPrintingConfig.SetCultureInfoApplierForNumberType<TNumber>(Func<TNumber, string> cultureInfoApplier)
         {
-            if (currentSettingUpProperty is null)
+            if (currentSettingUpMember is null)
                 cultureInfoApplierByType[typeof(TNumber)] = ApplyCultureInfo;
             else
-                individualSetUpFuncByPropertyInfo[currentSettingUpProperty] = ApplyCultureInfo;
+                individualSetUpFuncByMemberInfo[currentSettingUpMember] = ApplyCultureInfo;
 
             string ApplyCultureInfo(object number) => cultureInfoApplier((TNumber)number);
         }
 
-        void IPrintingConfig.SetMaxValueLengthForStringProperty(int maxValueLength)
+        void IPrintingConfig.SetMaxValueLengthForStringMember(int maxValueLength)
         {
-            if (currentSettingUpProperty is null)
-                mutualMaxPropertiesLength = maxValueLength;
+            if (currentSettingUpMember is null)
+                mutualMaxMembersLength = maxValueLength;
             else
-                maxValueLengthByPropertyInfo[currentSettingUpProperty] = maxValueLength;
+                maxValueLengthByMemberInfo[currentSettingUpMember] = maxValueLength;
         }
 
-        void IPrintingConfig.SetAlternatePropertySerialisator<TPropType>(Func<TPropType, string> alternateSerialisator)
+        void IPrintingConfig.SetAlternateMemberSerialisator<TMemberType>(
+            Func<TMemberType, string> alternateSerialisator)
         {
-            if (currentSettingUpProperty is null)
-                alternatePropertySerialisatorByType[typeof(TPropType)] = SerialiseProperty;
+            if (currentSettingUpMember is null)
+                alternateMemberSerialisatorByType[typeof(TMemberType)] = SerialiseMember;
             else
-                individualSetUpFuncByPropertyInfo[currentSettingUpProperty] = SerialiseProperty;
+                individualSetUpFuncByMemberInfo[currentSettingUpMember] = SerialiseMember;
 
-            string SerialiseProperty(object propertyValue) => alternateSerialisator((TPropType)propertyValue);
+            string SerialiseMember(object memberValue) => alternateSerialisator((TMemberType)memberValue);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
         {
-            currentSettingUpProperty = null;
+            currentSettingUpMember = null;
 
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new MemberPrintingConfig<TOwner, TMemberType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            currentSettingUpProperty = GetPropertyInfoFromMemberExpression(memberSelector);
+            currentSettingUpMember = GetMemberInfoFromMemberExpression(memberSelector);
 
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new MemberPrintingConfig<TOwner, TMemberType>(this);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var propertyInfo = GetPropertyInfoFromMemberExpression(memberSelector);
+            var memberInfo = GetMemberInfoFromMemberExpression(memberSelector);
 
-            excludedProperties.Add(propertyInfo);
+            excludedMembers.Add(memberInfo);
 
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TMemberType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            excludedTypes.Add(typeof(TMemberType));
 
             return this;
         }
 
-        private static PropertyInfo GetPropertyInfoFromMemberExpression<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        private static MemberInfo GetMemberInfoFromMemberExpression<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpression) ||
-                !(memberExpression.Member is PropertyInfo propertyInfo))
-                throw new ArgumentException("Passed expression has to represent accessing a property",
+            if (!(memberSelector.Body is MemberExpression memberExpression))
+                throw new ArgumentException("Passed expression has to represent accessing a property of field",
                                             nameof(memberSelector));
-            return propertyInfo;
+            return memberExpression.Member;
         }
 
         public string PrintToString(TOwner printedObject) => PrintToString(printedObject, 0);
@@ -121,7 +121,7 @@ namespace ObjectPrinting
                 throw new ApplicationException(
                     $"Was detected nesting level more than specified serialiseDepth ({serialiseDepth})");
 
-            if (alternatePropertySerialisatorByType.TryGetValue(objectRuntimeType, out var alternateSerialisator))
+            if (alternateMemberSerialisatorByType.TryGetValue(objectRuntimeType, out var alternateSerialisator))
                 return alternateSerialisator(printedObject) + Environment.NewLine;
 
             if (cultureInfoApplierByType.TryGetValue(objectRuntimeType, out var cultureInfoApplier))
@@ -142,57 +142,64 @@ namespace ObjectPrinting
 
             objectSerialisationBuilder.AppendLine(objectRuntimeType.Name);
 
-            objectSerialisationBuilder.Append(PrintAllProperties(printedObject, objectRuntimeType, nestingLevel));
+            objectSerialisationBuilder.Append(PrintAllMembers(printedObject, objectRuntimeType, nestingLevel));
 
             return objectSerialisationBuilder.ToString();
         }
 
-        private string PrintAllProperties(object printedObject, Type objectRuntimeType, int nestingLevel)
+        private string PrintAllMembers(object printedObject, Type objectRuntimeType, int nestingLevel)
         {
-            var propertiesBuilder = new StringBuilder();
+            var membersBuilder = new StringBuilder();
             var indentation = new string(PrintingConfigHelper.Indentation, nestingLevel + 1);
 
-            foreach (var propertyInfo in objectRuntimeType.GetProperties().Where(pInfo => !IsExcludedProperty(pInfo)))
+            var validTypeMembers = GetPropertiesAndFields(objectRuntimeType).Where(pInfo => !IsExcludedMember(pInfo));
+
+            foreach (var memberInfo in validTypeMembers)
             {
-                var propertyValue = propertyInfo.GetValue(printedObject);
+                var memberValue = memberInfo.GetValue(printedObject);
 
-                var propertyValueSerialisation = SerialisePropertyValue(propertyInfo, propertyValue);
+                var memberValueSerialisation = SerialiseMemberValue(memberInfo, memberValue);
 
-                propertyValueSerialisation = TrimValueIfNecessary(propertyInfo, propertyValueSerialisation);
+                memberValueSerialisation = TrimValueIfNecessary(memberInfo, memberValueSerialisation);
 
-                var propertySerialisation = string.Concat(indentation,
-                                                          propertyInfo.Name,
-                                                          " = ",
-                                                          propertyValueSerialisation);
+                var memberSerialisation = string.Concat(indentation,
+                                                        memberInfo.Name,
+                                                        " = ",
+                                                        memberValueSerialisation);
 
-                propertiesBuilder.Append(propertySerialisation);
+                membersBuilder.Append(memberSerialisation);
             }
 
-            return propertiesBuilder.ToString();
+            return membersBuilder.ToString();
 
-            string SerialisePropertyValue(PropertyInfo propertyInfo, object propertyValue) =>
-                individualSetUpFuncByPropertyInfo.TryGetValue(propertyInfo, out var setUpFunc)
-                    ? setUpFunc(propertyValue) + Environment.NewLine
-                    : PrintToString(propertyValue, nestingLevel + 1);
+            string SerialiseMemberValue(MemberInfo memberInfo, object memberValue) =>
+                individualSetUpFuncByMemberInfo.TryGetValue(memberInfo, out var setUpFunc)
+                    ? setUpFunc(memberValue) + Environment.NewLine
+                    : PrintToString(memberValue, nestingLevel + 1);
         }
 
-        private bool IsExcludedProperty(PropertyInfo propertyInfo) =>
-            excludedTypes.Contains(propertyInfo.PropertyType) ||
-            excludedProperties.Contains(propertyInfo);
+        private static IEnumerable<MemberInfo> GetPropertiesAndFields(Type type) =>
+            type.GetMembers()
+                .Where(memberInfo => memberInfo.MemberType == MemberTypes.Property ||
+                                     memberInfo.MemberType == MemberTypes.Field);
 
-        private string TrimValueIfNecessary(PropertyInfo propertyInfo, string propertyValueSerialisation)
+        private bool IsExcludedMember(MemberInfo memberInfo) =>
+            excludedTypes.Contains(memberInfo.GetMemberType()) ||
+            excludedMembers.Contains(memberInfo);
+
+        private string TrimValueIfNecessary(MemberInfo memberInfo, string memberValueSerialisation)
         {
-            if (propertyInfo.PropertyType != typeof(string)) return propertyValueSerialisation;
+            if (memberInfo.GetMemberType() != typeof(string)) return memberValueSerialisation;
 
-            var maxPropertyLength = maxValueLengthByPropertyInfo.TryGetValue(propertyInfo, out var maxValueLength)
-                                        ? maxValueLength
-                                        : mutualMaxPropertiesLength;
+            var maxMemberLength = maxValueLengthByMemberInfo.TryGetValue(memberInfo, out var maxValueLength)
+                                      ? maxValueLength
+                                      : mutualMaxMembersLength;
 
-            if (maxPropertyLength > 0)
-                return TruncateString(propertyValueSerialisation, maxPropertyLength) +
+            if (maxMemberLength > 0)
+                return TruncateString(memberValueSerialisation, maxMemberLength) +
                        $"...{Environment.NewLine}";
 
-            return propertyValueSerialisation;
+            return memberValueSerialisation;
         }
 
         private static string TruncateString(string str, int maxLength) =>

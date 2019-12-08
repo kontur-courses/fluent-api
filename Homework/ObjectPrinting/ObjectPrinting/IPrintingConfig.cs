@@ -4,8 +4,8 @@ namespace ObjectPrinting
 {
     internal interface IPrintingConfig
     {
-        void SetAlternatePropertySerialisator<TPropType>(Func<TPropType, string> alternateSerialisator);
+        void SetAlternateMemberSerialisator<TMemberType>(Func<TMemberType, string> alternateSerialisator);
         void SetCultureInfoApplierForNumberType<TNumber>(Func<TNumber, string> cultureApplier);
-        void SetMaxValueLengthForStringProperty(int maxValueLength);
+        void SetMaxValueLengthForStringMember(int maxValueLength);
     }
 }
