@@ -26,10 +26,15 @@ namespace ObjectPrinting
             new Dictionary<PropertyInfo, int>();
 
         private readonly int serialiseDepth;
+        private readonly int sequencesMaxLength;
         private int mutualMaxPropertiesLength;
         private PropertyInfo currentSettingUpProperty;
 
-        public PrintingConfig(int serialiseDepth) => this.serialiseDepth = serialiseDepth;
+        public PrintingConfig(int serialiseDepth, int sequencesMaxLength)
+        {
+            this.serialiseDepth = serialiseDepth;
+            this.sequencesMaxLength = sequencesMaxLength;
+        }
 
         void IPrintingConfig.SetCultureInfoApplierForNumberType<TNumber>(Func<TNumber, string> cultureInfoApplier)
         {
@@ -198,6 +203,10 @@ namespace ObjectPrinting
         {
             var dictionaryBuilder = new StringBuilder();
 
+            if (dictionary.Count > sequencesMaxLength)
+                throw new ApplicationException($@"Was detected sequence with length ({dictionary.Count
+                                                   }) more than specified sequencesMaxLength ({sequencesMaxLength})");
+
             foreach (DictionaryEntry entry in dictionary)
             {
                 var key = PrintToString(entry.Key, nestingLevel).TrimLineTerminator();
@@ -217,8 +226,15 @@ namespace ObjectPrinting
 
         private string SerialiseEnumerable(IEnumerable enumerable, int nestingLevel) =>
             string.Join(' ', enumerable.Cast<object>()
-                            .Select(obj => WrapIfCollection(
-                                        PrintToString(obj, nestingLevel).TrimLineTerminator(), obj)))
+                            .Select((obj, index) =>
+                            {
+                                if (index > sequencesMaxLength)
+                                    throw new ApplicationException(
+                                        $@"Was detected sequence with length more than specified sequencesMaxLength ({
+                                            sequencesMaxLength})");
+
+                                return WrapIfCollection(PrintToString(obj, nestingLevel).TrimLineTerminator(), obj);
+                            }))
           + Environment.NewLine;
 
         private static string WrapIfCollection(string objectSerialisation, object wrappedObject)

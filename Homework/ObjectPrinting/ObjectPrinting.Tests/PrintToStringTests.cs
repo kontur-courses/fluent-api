@@ -281,5 +281,13 @@ namespace ObjectPrinting.Tests
 
             objectWithCollectionOfCollections.PrintToString().Should().Be(expectedSerialisation);
         }
+
+        [Test]
+        public void WhenSerialisedObjectHasInfinitySequence_ThrowsApplicationException()
+        {
+            var objectWithInfinitySequence = new TypeWithInfinitySequence();
+
+            Assert.Throws<ApplicationException>(() => objectWithInfinitySequence.PrintToString());
+        }
     }
 }

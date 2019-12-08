@@ -6,8 +6,9 @@ namespace ObjectPrinting
     public static class PropertyPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config,
-                                              int serialiseDepth = ObjectPrinter.DefaultSerialiseDepth) =>
-            config(ObjectPrinter.For<T>(serialiseDepth)).PrintToString(obj);
+                                              int serialiseDepth = ObjectPrinter.DefaultSerialiseDepth,
+                                              int sequencesMaxLength = ObjectPrinter.DefaultSequencesMaxLength) =>
+            config(ObjectPrinter.For<T>(serialiseDepth, sequencesMaxLength)).PrintToString(obj);
 
         public static PrintingConfig<TOwner> Trim<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propertyConfig, int maxContentLength)
