@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ObjectPrinting.Tests.TestTypes
 {
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")] // "set" used implicitly
     public class Person
     {
         public Guid Id { get; set; }

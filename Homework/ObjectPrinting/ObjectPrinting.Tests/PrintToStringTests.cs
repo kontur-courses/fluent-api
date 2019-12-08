@@ -55,9 +55,9 @@ namespace ObjectPrinting.Tests
         public void WhenExcludedSomeProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
-                                                                             .Excluding(p => p.Name)
-                                                                             .Excluding(p => p.Age)
-                                                                             .Excluding(p => p.Id));
+                                                               .Excluding(p => p.Name)
+                                                               .Excluding(p => p.Age)
+                                                               .Excluding(p => p.Id));
 
 
             var expectedSerialisation = string.Join(Environment.NewLine,
@@ -72,11 +72,11 @@ namespace ObjectPrinting.Tests
         public void WhenExcludedAllProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
-                                                                             .Excluding(p => p.Name)
-                                                                             .Excluding(p => p.Age)
-                                                                             .Excluding(p => p.Id)
-                                                                             .Excluding(p => p.Property)
-                                                                             .Excluding(p => p.Height));
+                                                               .Excluding(p => p.Name)
+                                                               .Excluding(p => p.Age)
+                                                               .Excluding(p => p.Id)
+                                                               .Excluding(p => p.Property)
+                                                               .Excluding(p => p.Height));
             var expectedSerialisation = $"Person{Environment.NewLine}";
 
             serialisedPerson.Should().Be(expectedSerialisation);
@@ -101,7 +101,7 @@ namespace ObjectPrinting.Tests
         {
             string serialisedPerson = person.PrintToString(
                 printingConfig => printingConfig.Printing<string>()
-                                                .Using(s => $"<alternate>{s}</alternate>"));
+                    .Using(s => $"<alternate>{s}</alternate>"));
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
@@ -119,7 +119,7 @@ namespace ObjectPrinting.Tests
         {
             string serialisedPerson = person.PrintToString(
                 printingConfig => printingConfig.Printing(p => p.Age)
-                                                .Using(age => $"<alternate>{age}</alternate>"));
+                    .Using(age => $"<alternate>{age}</alternate>"));
 
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
@@ -136,8 +136,8 @@ namespace ObjectPrinting.Tests
         public void WhenSetAlternateCultureInfoForType()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
-                                                                             .Printing<double>()
-                                                                             .Using(CultureInfo.GetCultureInfo("ru")));
+                                                               .Printing<double>()
+                                                               .Using(CultureInfo.GetCultureInfo("ru")));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
                                                     "\tId = Guid",
@@ -153,8 +153,8 @@ namespace ObjectPrinting.Tests
         public void WhenSetTrimmingForAllStringProperties()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
-                                                                             .Printing<string>()
-                                                                             .Trim(2));
+                                                               .Printing<string>()
+                                                               .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
                                                     "\tId = Guid",
@@ -170,8 +170,8 @@ namespace ObjectPrinting.Tests
         public void WhenSetTrimmingForConcreteProperty()
         {
             string serialisedPerson = person.PrintToString(printingConfig => printingConfig
-                                                                             .Printing(p => p.Property)
-                                                                             .Trim(2));
+                                                               .Printing(p => p.Property)
+                                                               .Trim(2));
             var expectedSerialisation = string.Join(Environment.NewLine,
                                                     "Person",
                                                     "\tId = Guid",
@@ -187,8 +187,8 @@ namespace ObjectPrinting.Tests
         public void WhenSetZeroTrimming_ThrowsArgumentException() =>
             Assert.Throws<ArgumentException>(
                 () => person.PrintToString(printingConfig => printingConfig
-                                                             .Printing(p => p.Property)
-                                                             .Trim(0)));
+                                               .Printing(p => p.Property)
+                                               .Trim(0)));
 
         [Test]
         public void WhenSerialisedObjectHasCyclicDependency_ThrowsApplicationException()
