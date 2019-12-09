@@ -17,6 +17,7 @@ namespace ObjectPrinting.Tests
         public void SetUp() =>
             person = new Person
             {
+                Id = default,
                 Name = "Alex",
                 Property = "qwerty",
                 Age = 19,

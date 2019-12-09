@@ -1,9 +1,12 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
+
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable NotAccessedField.Global
+// ReSharper disable UnusedMember.Global
 
 namespace ObjectPrinting.Tests.TestTypes
 {
-    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")] // public fields used implicitly
+    // class members used implicitly when calling PrintToString() for instance in PrintToStringTests class.
     public class TypeWithPublicFields
     {
         public readonly int NumberField;

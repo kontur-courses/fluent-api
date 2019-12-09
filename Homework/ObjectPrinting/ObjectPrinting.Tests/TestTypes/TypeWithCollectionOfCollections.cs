@@ -3,7 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ObjectPrinting.Tests.TestTypes
 {
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")] // "get" used implicitly
+    // "get" used implicitly when calling PrintToString() for instance in PrintToStringTests class.
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public class TypeWithCollectionOfCollections
     {
         public int[][] ArrayOfArrays { get; set; }

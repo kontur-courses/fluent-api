@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ObjectPrinting
 {
@@ -11,7 +10,7 @@ namespace ObjectPrinting
 
         public static bool IsFinalType(Type type) => type.IsPrimitive || finalTypes.Contains(type);
 
-        private static readonly IEnumerable<Type> finalTypes = new[]
+        private static readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
