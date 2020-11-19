@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -13,6 +13,5 @@ namespace ObjectPrinting.Solved
         {
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
-
     }
 }

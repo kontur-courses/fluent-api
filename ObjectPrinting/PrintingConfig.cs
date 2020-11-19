@@ -1,11 +1,32 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            return this;
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
