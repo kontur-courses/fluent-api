@@ -14,6 +14,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingConfig.AddPrintingFunction(print);
             return printingConfig;
         }
 
