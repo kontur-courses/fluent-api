@@ -14,36 +14,36 @@ namespace ObjectPrinting.Solved
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(string), typeof(DateTime), typeof(TimeSpan)
         };
 
-        private readonly Dictionary<Type, Delegate> printingFunctions =
+        private readonly Dictionary<MemberInfo, Delegate> printingFunctionsForMembers =
+            new Dictionary<MemberInfo, Delegate>();
+
+        private readonly Dictionary<Type, Delegate> printingFunctionsForTypes =
             new Dictionary<Type, Delegate>();
 
-        private readonly Dictionary<Type, CultureInfo> typeCulture =
+        private readonly Dictionary<Type, CultureInfo> cultureTypes =
             new Dictionary<Type, CultureInfo>();
-
-        public void AddPrintingFunction<TPropType>(Func<TPropType, string> func)
-        {
-            printingFunctions[typeof(TPropType)] = func;
-        }
 
         public void AddCultureForType<TPropType>(CultureInfo culture)
         {
             if (typeof(IFormattable).IsAssignableFrom(typeof(TPropType)))
-                typeCulture[typeof(TPropType)] = culture;
+                cultureTypes[typeof(TPropType)] = culture;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this,
+                func => printingFunctionsForTypes[typeof(TPropType)] = func);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var member = ((MemberExpression)memberSelector.Body).Member;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, 
+                func => printingFunctionsForMembers[member] = func);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -64,42 +64,44 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-            if (finalTypes.Contains(obj.GetType()))
-            {
-                return typeCulture.ContainsKey(obj.GetType()) 
-                        ? string.Format(typeCulture[obj.GetType()], "{0}" + Environment.NewLine, obj)
-                        : obj + Environment.NewLine;
-            }
+            if (obj == null || obj.GetType().IsPrimitive || finalTypes.Contains(obj.GetType()))
+                return GetSerializedObject(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
             var resultString = new StringBuilder();
             var type = obj.GetType();
             resultString.AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties().Where(prop => !excludingTypes.Contains(prop.PropertyType)))
-            {
-                var propertyValue = printingFunctions.ContainsKey(propertyInfo.PropertyType)
-                    ? ChangeWithPrintingFunction(propertyInfo.PropertyType, propertyInfo.GetValue(obj))
-                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                resultString.Append(indentation + propertyInfo.Name + " = " + propertyValue);
-            }
+            foreach (var member in type.GetProperties().Cast<MemberInfo>()
+                .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public))
+                .Where(prop => prop is PropertyInfo propertyInfo && !excludingTypes.Contains(propertyInfo.PropertyType)
+                               || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType)))
+                resultString.Append(indentation + member.Name + " = " + GetSerializedValue(member, obj, nestingLevel));
 
-            foreach (var fieldInfo in type.GetFields(BindingFlags.Instance | BindingFlags.Public)
-                .Where(prop => !excludingTypes.Contains(prop.FieldType)))
-            {
-                var propertyValue = printingFunctions.ContainsKey(fieldInfo.FieldType)
-                    ? ChangeWithPrintingFunction(fieldInfo.FieldType, fieldInfo.GetValue(obj))
-                    : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1);
-                resultString.Append(indentation + fieldInfo.Name + " = " + propertyValue);
-            }
             return resultString.ToString();
         }
 
-        private string ChangeWithPrintingFunction(Type propertyType, object value)
+        private string GetSerializedObject(object obj)
         {
-            return printingFunctions[propertyType].DynamicInvoke(value)?.ToString();
+            return obj != null && cultureTypes.ContainsKey(obj.GetType())
+                ? string.Format(cultureTypes[obj.GetType()], "{0}" + Environment.NewLine, obj)
+                : obj + Environment.NewLine;
+        }
+
+        private string GetSerializedValue(MemberInfo member, object obj, int nestingLevel)
+        {
+            var memberValue = member is PropertyInfo info
+                ? info.GetValue(obj)
+                : ((FieldInfo)member).GetValue(obj);
+            var memberType = member is PropertyInfo propertyInfo
+                ? propertyInfo.PropertyType
+                : ((FieldInfo)member).FieldType;
+
+            if (printingFunctionsForMembers.ContainsKey(member))
+                return printingFunctionsForMembers[member].DynamicInvoke(memberValue)?.ToString();
+            if (printingFunctionsForTypes.ContainsKey(memberType))
+                return printingFunctionsForTypes[memberType].DynamicInvoke(memberValue)?.ToString();
+            return PrintToString(memberValue, nestingLevel + 1);
         }
     }
 }

@@ -6,15 +6,17 @@ namespace ObjectPrinting.Solved
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly Action<Func<TPropType, string>> printingFunction;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Action<Func<TPropType, string>> func)
         {
             this.printingConfig = printingConfig;
+            printingFunction = func;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingConfig.AddPrintingFunction(print);
+            printingFunction(print);
             return printingConfig;
         }
 

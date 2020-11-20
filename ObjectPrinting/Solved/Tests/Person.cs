@@ -9,5 +9,6 @@ namespace ObjectPrinting.Solved.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        public int Weight { get; set; }
     }
 }
