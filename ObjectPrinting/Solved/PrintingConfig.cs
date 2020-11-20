@@ -11,6 +11,7 @@ namespace ObjectPrinting.Solved
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+        private readonly HashSet<MemberInfo> excludingMembers = new HashSet<MemberInfo>();
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -48,6 +49,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            excludingMembers.Add(((MemberExpression)memberSelector.Body).Member);
             return this;
         }
 
@@ -74,8 +76,9 @@ namespace ObjectPrinting.Solved
 
             foreach (var member in type.GetProperties().Cast<MemberInfo>()
                 .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public))
-                .Where(prop => prop is PropertyInfo propertyInfo && !excludingTypes.Contains(propertyInfo.PropertyType)
-                               || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType)))
+                .Where(prop => !excludingMembers.Contains(prop) 
+                               && (prop is PropertyInfo propertyInfo && !excludingTypes.Contains(propertyInfo.PropertyType)
+                               || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType))))
                 resultString.Append(indentation + member.Name + " = " + GetSerializedValue(member, obj, nestingLevel));
 
             return resultString.ToString();

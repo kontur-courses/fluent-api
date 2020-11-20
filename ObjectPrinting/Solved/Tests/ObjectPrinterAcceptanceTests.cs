@@ -23,9 +23,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding<Guid>()
                 .Printing<int>().Using(i => (i + 1).ToString())
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
             var s1 = printer.PrintToString(person);
@@ -145,6 +143,33 @@ namespace ObjectPrinting.Solved.Tests
             printer.Printing(p => p.BirthDate).Using(p => $"!{p}!");
             Assert.AreEqual(
                 GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", "19\r\n", "0\r\n", "!03.02.2001 0:00:00!"),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenPrintingWithCutting()
+        {
+            printer.Printing(p => p.Name).TrimmedToLength(3);
+            Assert.AreEqual(
+                GetCorrectPrintingConfig("Guid\r\n", "Ale", "0\r\n", "19\r\n", "0\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenExcludingAge()
+        {
+            printer.Excluding(p => p.Age);
+            Assert.AreEqual(
+                GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", null, "0\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenExcludingBirthDate()
+        {
+            printer.Excluding(p => p.BirthDate);
+            Assert.AreEqual(
+                GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", "19\r\n", "0\r\n", null),
                 printer.PrintToString(person));
         }
 
