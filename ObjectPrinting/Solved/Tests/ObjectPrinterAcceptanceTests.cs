@@ -6,12 +6,13 @@ namespace ObjectPrinting.Solved.Tests
 {
     public class ObjectPrinterAcceptanceTests
     {
-        private readonly Person person = new Person {Name = "Alex", Age = 19};
+        private Person person;
         private PrintingConfig<Person> printer;
 
         [SetUp]
         public void SetUp()
         {
+            person = new Person {Name = "Alex", Age = 19, BirthDate = new DateTime(2001, 2, 3)};
             printer = ObjectPrinter.For<Person>();
         }
 
@@ -19,11 +20,8 @@ namespace ObjectPrinting.Solved.Tests
         public void Demo()
         {
             printer
-                //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => (i + 1).ToString())
-                //3. Для числовых типов указать культуру
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
@@ -47,7 +45,7 @@ namespace ObjectPrinting.Solved.Tests
         public void PrintToString_CorrectResult_WhenExcludingInt()
         {
             printer.Excluding<int>();
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n",
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", null, "03.02.2001 0:00:00\r\n"),
                 printer.PrintToString(person));
         }
 
@@ -55,29 +53,47 @@ namespace ObjectPrinting.Solved.Tests
         public void PrintToString_CorrectResult_WhenExcludingDouble()
         {
             printer.Excluding<double>();
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n", printer.PrintToString(person));
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", null, "19\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
         }
 
         [Test]
         public void PrintToString_CorrectResult_WhenExcludingGuid()
         {
             printer.Excluding<Guid>();
-            Assert.AreEqual("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n", printer.PrintToString(person));
+            Assert.AreEqual(GetCorrectPrintingConfig(null, "Alex\r\n", "0\r\n", "19\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenExcludingDateTime()
+        {
+            printer.Excluding<DateTime>();
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", "19\r\n", null),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenExcludingString()
+        {
+            printer.Excluding<string>();
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", null, "0\r\n", "19\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
         }
 
         [Test]
         public void PrintToString_CorrectResult_WhenPrintingInt()
         {
             printer.Printing<int>().Using(i => (i + 1).ToString());
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 20",
-                printer.PrintToString(person));
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", "20", "03.02.2001 0:00:00\r\n"),
+               printer.PrintToString(person));
         }
 
         [Test]
         public void PrintToString_CorrectResult_WhenPrintingString()
         {
             printer.Printing<string>().Using(i => i + i);
-            Assert.AreEqual("Person\r\n\tId = Guid\r\n\tName = AlexAlex\tHeight = 0\r\n\tAge = 19\r\n",
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "AlexAlex", "0\r\n", "19\r\n", "03.02.2001 0:00:00\r\n"),
                 printer.PrintToString(person));
         }
 
@@ -85,8 +101,36 @@ namespace ObjectPrinting.Solved.Tests
         public void PrintToString_CorrectResult_WhenPrintingGuid()
         {
             printer.Printing<Guid>().Using(i => "Guid");
-            Assert.AreEqual("Person\r\n\tId = Guid\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n",
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid", "Alex\r\n", "0\r\n", "19\r\n", "03.02.2001 0:00:00\r\n"),
                 printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenPrintingDoubleWithCulture()
+        {
+            person = new Person {Name = "Alex", Age = 19, Height = 171.5, BirthDate = new DateTime(2001, 2, 3) };
+            printer.Printing<double>().Using(CultureInfo.InvariantCulture);
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "171.5\r\n", "19\r\n", "03.02.2001 0:00:00\r\n"),
+                printer.PrintToString(person));
+        }
+
+        [Test]
+        public void PrintToString_CorrectResult_WhenPrintingDateTimeWithCulture()
+        {
+            person = new Person { Name = "Alex", Age = 19, BirthDate = new DateTime(2001, 2, 3) };
+            printer.Printing<DateTime>().Using(CultureInfo.InvariantCulture);
+            Assert.AreEqual(GetCorrectPrintingConfig("Guid\r\n", "Alex\r\n", "0\r\n", "19\r\n", "02/03/2001 00:00:00\r\n"),
+                printer.PrintToString(person));
+        }
+
+        private string GetCorrectPrintingConfig(string id, string name, string height, string age, string birthDate)
+        {
+            return $"{nameof(Person)}\r\n" +
+                   (!string.IsNullOrEmpty(id) ? $"\t{nameof(person.Id)} = {id}" : "") +
+                   (!string.IsNullOrEmpty(name) ? $"\t{nameof(person.Name)} = {name}" : "") +
+                   (!string.IsNullOrEmpty(height) ? $"\t{nameof(person.Height)} = {height}" : "") +
+                   (!string.IsNullOrEmpty(age) ? $"\t{nameof(person.Age)} = {age}" : "") +
+                   (!string.IsNullOrEmpty(birthDate) ? $"\t{nameof(person.BirthDate)} = {birthDate}" : "");
         }
     }
 }

@@ -20,6 +20,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            printingConfig.AddCultureForType<TPropType>(culture);
             return printingConfig;
         }
 
