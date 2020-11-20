@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Linq.Expressions;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -11,13 +12,19 @@ namespace ObjectPrinting.Tests
     {
         private PrintingConfig<Person> printer;
 
-        private readonly Person person = new Person
-            {FirstName = "Alex", LastName = "Terminator", Age = 19, Height = 1.79, Weight = 75.5};
-
+        private Person person;
+        
         [SetUp]
         public void SetUp()
         {
             printer = ObjectPrinter.For<Person>();
+            var parent = new Person
+            {
+                FirstName = "Donald", LastName = "Trump", Age = 74, Height = 1.9, Weight = 90,
+                Cousins = new List<Person> {new Person {FirstName = "Cousin"}}
+            };
+            person = new Person
+                {FirstName = "Alex", LastName = "Terminator", Age = 19, Height = 1.79, Weight = 75.5, Parent = parent};
         }
         
         [Test]
@@ -167,6 +174,81 @@ namespace ObjectPrinting.Tests
             var actual = person.PrintToString(config => config.Excluding(p => p.Age));
 
             actual.Should().NotContain(person.Age.ToString());
+        }
+
+        [Test]
+        public void Find_CyclicReference_WithParent()
+        {
+            person.Parent.Parent = person;
+
+            var actual = "";
+            Assert.DoesNotThrow(() => actual = printer.PrintToString(person));
+            actual.Should().Be("Cyclic reference found");
+        }
+        
+        [Test]
+        public void Find_CyclicReference_WithGrandparent()
+        {
+            var secondParent = new Person{Parent = person};
+            var grandParent = new Person{Parent = secondParent};
+            person.Parent = grandParent;
+
+            var actual = "";
+            Assert.DoesNotThrow(() => actual = printer.PrintToString(person));
+            actual.Should().Be("Cyclic reference found");
+        }
+
+        [Test]
+        public void Serialize_Array_OfIntegers()
+        {
+            var array = new []{3, 4, 5, 2, 1, 0};
+            var actual = ObjectPrinter.For<int[]>().PrintToString(array);
+
+            actual.Should().ContainAll(array.Select(n => n.ToString()));
+            Console.WriteLine(actual);
+        }
+        
+        [Test]
+        public void Serialize_Array_OfPersons()
+        {
+            var array = new []{person, person.Parent};
+            var actual = ObjectPrinter.For<Person[]>().PrintToString(array);
+
+            actual.Should().ContainAll(array.SelectMany(p => printer.PrintToString(person).Split()));
+            Console.WriteLine(actual);
+        }
+
+        [Test]
+        public void Find_CyclicReference_InArray_OfPersons()
+        {
+            var secondParent = new Person{Parent = person};
+            var grandParent = new Person{Parent = secondParent};
+            person.Parent = grandParent;
+            var array = new []{person, person.Parent, grandParent, secondParent};
+
+            var actual = "";
+            Assert.DoesNotThrow(() => actual = ObjectPrinter.For<Person[]>().PrintToString(array));
+            actual.Should().Be("Cyclic reference found");
+        }
+        
+        [Test]
+        public void Serialize_List_OfPersons()
+        {
+            var list = new List<Person> {person, person.Parent};
+            var actual = ObjectPrinter.For<List<Person>>().PrintToString(list);
+
+            actual.Should().ContainAll(list.SelectMany(p => printer.PrintToString(person).Split()));
+            Console.WriteLine(actual);
+        }
+        
+        [Test]
+        public void Serialize_Dictionary_IntString()
+        {
+            var dictionary = new Dictionary<int, string>{[3] = "abc", [5] = "cde", [person.Age] = person.LastName};
+            var actual = ObjectPrinter.For<Dictionary<int, string>>().PrintToString(dictionary);
+
+            actual.Should().ContainAll(dictionary.SelectMany(p => new[]{p.Key.ToString(), p.Value}));
+            Console.WriteLine(actual);
         }
     }
 }

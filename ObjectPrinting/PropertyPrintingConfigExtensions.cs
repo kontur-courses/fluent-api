@@ -14,7 +14,14 @@ namespace ObjectPrinting
             int maxLen)
         {
             var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            parentConfig.AddRule((string s) => s.Substring(0, Math.Min(s.Length, maxLen)));
+            string Trim(string s)
+            {
+                if (s == null) return null;
+                var length = Math.Max(0, Math.Min(s.Length, maxLen));
+                return s.Substring(0, length);
+            }
+
+            parentConfig.AddRule( (Func<string, string>) Trim);
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
     }
