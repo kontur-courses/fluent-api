@@ -9,6 +9,8 @@ namespace ObjectPrinting
         HashSet<Type> ExcludedTypes { get; }
         Dictionary<Type, Delegate> TypeSerialization { get; }
         Dictionary<PropertyInfo, Delegate> PropertySerialization { get; }
+        Dictionary<FieldInfo, Delegate> FieldSerialization { get; }
         HashSet<PropertyInfo> ExcludedProperties { get; }
+        HashSet<FieldInfo> ExcludedFields { get; }
     }
 }

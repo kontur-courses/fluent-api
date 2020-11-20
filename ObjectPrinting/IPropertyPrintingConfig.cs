@@ -6,5 +6,6 @@ namespace ObjectPrinting
     {
         PrintingConfig<TOwner> ParentConfig { get; }
         PropertyInfo PropertyInfo { get; }
+        FieldInfo FieldInfo { get; }
     }
 }
