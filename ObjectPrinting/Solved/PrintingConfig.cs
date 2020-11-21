@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,8 +11,11 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+        private readonly Dictionary<Type, CultureInfo> cultureTypes =
+            new Dictionary<Type, CultureInfo>();
+
         private readonly HashSet<MemberInfo> excludingMembers = new HashSet<MemberInfo>();
+        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -23,9 +27,6 @@ namespace ObjectPrinting.Solved
 
         private readonly Dictionary<Type, Delegate> printingFunctionsForTypes =
             new Dictionary<Type, Delegate>();
-
-        private readonly Dictionary<Type, CultureInfo> cultureTypes =
-            new Dictionary<Type, CultureInfo>();
 
         private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
@@ -44,14 +45,14 @@ namespace ObjectPrinting.Solved
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, 
+            var member = ((MemberExpression) memberSelector.Body).Member;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this,
                 func => printingFunctionsForMembers[member] = func);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludingMembers.Add(((MemberExpression)memberSelector.Body).Member);
+            excludingMembers.Add(((MemberExpression) memberSelector.Body).Member);
             return this;
         }
 
@@ -70,25 +71,42 @@ namespace ObjectPrinting.Solved
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (obj.GetType().IsPrimitive || finalTypes.Contains(obj.GetType()))
+
+            var type = obj.GetType();
+            if (type.IsPrimitive || finalTypes.Contains(type))
                 return GetSerializedObject(obj);
             if (visitedObjects.Contains(obj))
                 return "cycle" + Environment.NewLine;
-            if (obj.GetType().IsClass)
+            if (type.IsClass)
                 visitedObjects.Add(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
-            var resultString = new StringBuilder();
-            var type = obj.GetType();
-            resultString.AppendLine(type.Name);
 
-            foreach (var member in type.GetProperties().Cast<MemberInfo>()
-                .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public))
-                .Where(prop => !excludingMembers.Contains(prop) 
-                               && (prop is PropertyInfo propertyInfo && !excludingTypes.Contains(propertyInfo.PropertyType)
-                               || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType))))
-                resultString.Append(indentation + member.Name + " = " + GetSerializedValue(member, obj, nestingLevel));
+            return typeof(ICollection).IsAssignableFrom(type)
+                ? GetSerializedCollection(obj, nestingLevel, indentation)
+                : GetSerializedMembers(obj, nestingLevel, indentation);
+        }
 
+        private string GetSerializedMembers(object obj, int nestingLevel, string indentation)
+        {
+            var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
+
+            foreach (var member in obj.GetType().GetProperties().Cast<MemberInfo>()
+                .Concat(obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public))
+                .Where(prop => !excludingMembers.Contains(prop)
+                               && (prop is PropertyInfo propertyInfo &&
+                                   !excludingTypes.Contains(propertyInfo.PropertyType)
+                                   || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType))))
+                resultString.Append(indentation + member.Name + " = " + GetSerializedMember(member, obj, nestingLevel));
+
+            return resultString.ToString();
+        }
+
+        private string GetSerializedCollection(object obj, int nestingLevel, string indentation)
+        {
+            var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
+            foreach (var e in (IEnumerable) obj)
+                resultString.Append(indentation + PrintToString(e, nestingLevel + 1));
             return resultString.ToString();
         }
 
@@ -99,14 +117,14 @@ namespace ObjectPrinting.Solved
                 : obj + Environment.NewLine;
         }
 
-        private string GetSerializedValue(MemberInfo member, object obj, int nestingLevel)
+        private string GetSerializedMember(MemberInfo member, object obj, int nestingLevel)
         {
             var memberValue = member is PropertyInfo info
                 ? info.GetValue(obj)
-                : ((FieldInfo)member).GetValue(obj);
+                : ((FieldInfo) member).GetValue(obj);
             var memberType = member is PropertyInfo propertyInfo
                 ? propertyInfo.PropertyType
-                : ((FieldInfo)member).FieldType;
+                : ((FieldInfo) member).FieldType;
 
             if (printingFunctionsForMembers.ContainsKey(member))
                 return printingFunctionsForMembers[member].DynamicInvoke(memberValue)?.ToString();
