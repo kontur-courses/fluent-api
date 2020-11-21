@@ -6,5 +6,8 @@ namespace ObjectPrinting.Solved
         {
             return ObjectPrinter.For<T>().PrintToString(obj);
         }
+
+        public static string GetFullNameProperty<TOwner, TPropType>(this Expression<Func<TOwner, TPropType>> memberSelector) =>
+            string.Join("", memberSelector.Body.ToString().SkipWhile(c => c != '.'));
     }
 }
