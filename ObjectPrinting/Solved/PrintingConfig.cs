@@ -27,6 +27,8 @@ namespace ObjectPrinting.Solved
         private readonly Dictionary<Type, CultureInfo> cultureTypes =
             new Dictionary<Type, CultureInfo>();
 
+        private readonly HashSet<object> visitedObjects = new HashSet<object>();
+
         public void AddCultureForType<TPropType>(CultureInfo culture)
         {
             if (typeof(IFormattable).IsAssignableFrom(typeof(TPropType)))
@@ -66,8 +68,14 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null || obj.GetType().IsPrimitive || finalTypes.Contains(obj.GetType()))
+            if (obj == null)
+                return "null" + Environment.NewLine;
+            if (obj.GetType().IsPrimitive || finalTypes.Contains(obj.GetType()))
                 return GetSerializedObject(obj);
+            if (visitedObjects.Contains(obj))
+                return "cycle" + Environment.NewLine;
+            if (obj.GetType().IsClass)
+                visitedObjects.Add(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
             var resultString = new StringBuilder();
@@ -86,7 +94,7 @@ namespace ObjectPrinting.Solved
 
         private string GetSerializedObject(object obj)
         {
-            return obj != null && cultureTypes.ContainsKey(obj.GetType())
+            return cultureTypes.ContainsKey(obj.GetType())
                 ? string.Format(cultureTypes[obj.GetType()], "{0}" + Environment.NewLine, obj)
                 : obj + Environment.NewLine;
         }
