@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,6 +10,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly ConfigInfo configInfo = new ConfigInfo();
+        private Dictionary<Type, List<object>> objectsCache;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -71,6 +73,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            objectsCache = new Dictionary<Type, List<object>>();
             return PrintToString(obj, 0);
         }
 
@@ -101,11 +104,19 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+
             var type = obj.GetType();
+            if (!objectsCache.ContainsKey(type))
+                objectsCache[type] = new List<object>();
+            int index;
+            if ((index = objectsCache[type].IndexOf(obj)) != -1)
+                return type.Name + " " + index + 1 + Environment.NewLine;
+
+            objectsCache[type].Add(obj);
             if (configInfo.IsFinal(type))
                 return PrintToStringFinalType(obj);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(type.Name + " " + objectsCache[type].Count);
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (configInfo.IsExcluded(propertyInfo.PropertyType)

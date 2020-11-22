@@ -21,6 +21,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
+            person.Parent = new Person {Name = "Anna"};
             personPrinter = personPrinter
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
@@ -53,7 +54,7 @@ namespace ObjectPrinting.Tests
             person.PrintToString()
                 .Should()
                 .BeEquivalentTo(
-                    "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 195,5\r\n\tAge = 19\r\n");
+                    "Person 1\r\n\tId = Guid 1\r\n\tName = Alex\r\n\tHeight = 195,5\r\n\tAge = 19\r\n\tParent = null\r\n");
         }
 
         [Test]
@@ -118,6 +119,14 @@ namespace ObjectPrinting.Tests
                 .TrimmedToLength(1)
                 .PrintToString(person)
                 .Should().NotContain("Al").And.Contain("A");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldNotThrowStackOverflowException_OnObjectWithCircularReferences()
+        {
+            person.Parent = person;
+            Action action = () => person.PrintToString();
+            action.Should().NotThrow<StackOverflowException>();
         }
     }
 }
