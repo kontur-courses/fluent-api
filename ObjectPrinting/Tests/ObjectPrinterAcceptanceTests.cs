@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -46,6 +49,8 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+
+            Console.WriteLine(new object[] {person, 3, 4, null}.PrintToString());
         }
 
         [Test]
@@ -127,6 +132,39 @@ namespace ObjectPrinting.Tests
             person.Parent = person;
             Action action = () => person.PrintToString();
             action.Should().NotThrow<StackOverflowException>();
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintArray()
+        {
+            ObjectPrinter_ShouldPrintCollection(new object[] {person, 3, 4, null});
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintList()
+        {
+            ObjectPrinter_ShouldPrintCollection(new List<object> {person, 3, 4, null});
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintDictionary()
+        {
+            ObjectPrinter_ShouldPrintCollection(new Dictionary<object, object>
+            {
+                [person] = null,
+                [3] = 1,
+                [4] = person
+            });
+        }
+
+        private void ObjectPrinter_ShouldPrintCollection(ICollection collection)
+        {
+            var collectionStr = collection.PrintToString();
+            foreach (var obj in collection)
+            foreach (var str in obj.PrintToString()
+                .Split('\n', '\r', '\t')
+                .Where(str => str != ""))
+                collectionStr.Should().Contain(str);
         }
     }
 }

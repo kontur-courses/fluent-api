@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -100,6 +101,17 @@ namespace ObjectPrinting
             return identation + propInfo.Name + " = " + strProperty;
         }
 
+        private string PrintToStringCollection(ICollection collection, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine(identation + "[");
+            foreach (var element in collection) 
+                sb.Append(identation + PrintToString(element, nestingLevel + 1));
+            sb.AppendLine(identation + "]");
+            return sb.ToString();
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
@@ -110,13 +122,21 @@ namespace ObjectPrinting
                 objectsCache[type] = new List<object>();
             int index;
             if ((index = objectsCache[type].IndexOf(obj)) != -1)
-                return type.Name + " " + index + 1 + Environment.NewLine;
+                return type.Name + " " + (index + 1) + Environment.NewLine;
 
             objectsCache[type].Add(obj);
             if (configInfo.IsFinal(type))
                 return PrintToStringFinalType(obj);
+
             var sb = new StringBuilder();
             sb.AppendLine(type.Name + " " + objectsCache[type].Count);
+
+            if (obj is ICollection)
+            {
+                sb.Append(PrintToStringCollection((ICollection) obj, nestingLevel));
+                return sb.ToString();
+            }
+
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (configInfo.IsExcluded(propertyInfo.PropertyType)
