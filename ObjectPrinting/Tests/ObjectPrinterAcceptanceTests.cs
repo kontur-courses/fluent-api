@@ -107,10 +107,28 @@ namespace ObjectPrinting.Tests
                 Id = new Guid(),
                 Parent = person
             };
-            person.Child = child;
+            person.Children.Add(child);
 
             var printer = ObjectPrinter.For<Person>();
             printer.PrintToString(person).Should().Contain($"Parent = {child.Parent.GetType().Name}");
+        }
+
+        [Test]
+        public void PrinterShouldWork_WhenObjectHaveEmptyCollection()
+        {
+            person.PrintToString().Should().Contain("CustomDict = Empty");
+            person.PrintToString().Should().Contain("Children = Empty");
+        }
+
+        [Test]
+        public void PrinterShouldWork_WhenObjectHaveNonEmptyCollection()
+        {
+            person.CustomDict.Add("string", 1234);
+            var serialized = person.PrintToString();
+            serialized.Should().Contain($"KeyValuePair`2{Environment.NewLine}");
+            serialized.Should().Contain($"Key = string{Environment.NewLine}");
+            serialized.Should().Contain($"Value = 1234{Environment.NewLine}");
+
         }
 
         [Test]
@@ -128,8 +146,10 @@ namespace ObjectPrinting.Tests
                 $"Person{Environment.NewLine}" +
                 $"\tId = Guid{Environment.NewLine}" +
                 $"\tName = {person.Name.Substring(0, 2)}{Environment.NewLine}" +
-                $"\tAge = value: {person.Age.ToString(CultureInfo.InvariantCulture)}{Environment.NewLine}" + 
-                $"\tWeight = {person.Weight.ToString(CultureInfo.InvariantCulture)}kg{Environment.NewLine}");
+                $"\tAge = value: {person.Age.ToString(CultureInfo.InvariantCulture)}{Environment.NewLine}" +
+                $"\tWeight = {person.Weight.ToString(CultureInfo.InvariantCulture)}kg{Environment.NewLine}" +
+                $"\tChildren = Empty{Environment.NewLine}" +
+                $"\tCustomDict = Empty{Environment.NewLine}");
         }
     }
 }
