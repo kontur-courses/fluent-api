@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ObjectPrinting.Config;
 
 namespace ObjectPrinting
 {
-    public class TypePrintingConfig<TOwner, TPropType> : ITypePrintingConfig<TOwner, TPropType>
+    public class TypePrintingConfig<TOwner, TPropType> : IConfig<TOwner, TPropType>
     {
         private readonly IPrintingConfig<TOwner> printingConfig;
 
@@ -16,10 +13,10 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public IPrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             printingConfig.TypeSerialization[typeof(TPropType)] = print;
-            return (PrintingConfig<TOwner>)printingConfig;
+            return printingConfig;
         }
     }
 }

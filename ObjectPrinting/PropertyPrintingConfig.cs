@@ -16,10 +16,10 @@ namespace ObjectPrinting
             this.propertyInfo = propertyInfo;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public IPrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             printingConfig.PropertySerialization[propertyInfo] = print;
-            return (PrintingConfig<TOwner>)printingConfig;
+            return printingConfig;
         }
 
         IPrintingConfig<TOwner> IConfig<TOwner, TPropType>.ParentConfig => printingConfig;

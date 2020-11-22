@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace ObjectPrinting.Tests
@@ -11,6 +12,10 @@ namespace ObjectPrinting.Tests
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
+            var family = new List<Person> { new Person { Name = "Mom" }, new Person { Name = "Dad" } };
+            var book = new Dictionary<string, int>() { { "Mom", 123 }, { "Dad", 321 } };
+            person.PhoneBook = book;
+            person.Family = family;
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа

@@ -14,10 +14,10 @@ namespace ObjectPrinting
             this.fieldInfo = fieldInfo;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public IPrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             printingConfig.FieldSerialization[fieldInfo] = print;
-            return (PrintingConfig<TOwner>)printingConfig;
+            return printingConfig;
         }
 
         FieldInfo IFieldPrintingConfig<TOwner, TPropType>.FieldInfo => fieldInfo;

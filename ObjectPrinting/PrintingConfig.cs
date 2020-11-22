@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -56,7 +54,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;

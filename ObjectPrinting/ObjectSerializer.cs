@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -28,17 +29,20 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (visited.Contains(obj))
+            if (visited.Contains(obj) && !finalTypes.Contains(obj.GetType()))
                 return "cycle" + Environment.NewLine;
             visited.Add(obj);
 
             if (config.TypeSerialization.TryGetValue(type, out var serializer))
-                return serializer.DynamicInvoke(obj).ToString() + Environment.NewLine; ;
+                return serializer.DynamicInvoke(obj).ToString() + Environment.NewLine;
 
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            if (obj is IEnumerable enumerable)
+                return PrintCollection(enumerable, nestingLevel) + Environment.NewLine;
+
+            var identation = GetIdentation(nestingLevel + 1);
             var serializedObj = new StringBuilder();
             serializedObj.AppendLine(type.Name);
             PropertiesSerialize(serializedObj, type, obj, identation, nestingLevel);
@@ -73,6 +77,23 @@ namespace ObjectPrinting
                                 nestingLevel + 1));
             }
         }
+
+        private string PrintCollection(IEnumerable collection, int nestingLevel)
+        {
+            var serializedObj = new StringBuilder("[" + Environment.NewLine);
+            foreach (var elem in collection)
+            {
+                serializedObj.Append(GetIdentation(nestingLevel + 1));
+                serializedObj.Append(Serialize(elem, nestingLevel + 1));
+                serializedObj.Append(GetIdentation(nestingLevel + 2));
+                serializedObj.Append("," + Environment.NewLine);
+            }
+            serializedObj.Remove(serializedObj.Length - 3, 3);
+            serializedObj.Append("]");
+            return serializedObj.ToString();
+        }
+
+        private string GetIdentation(int nestingLevel) => new string('\t', nestingLevel);
 
         private string PrintProperty(object value, PropertyInfo propertyInfo, int nestingLevel)
         {

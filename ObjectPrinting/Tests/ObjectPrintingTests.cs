@@ -3,7 +3,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace ObjectPrinting.Tests
 {
@@ -66,44 +65,44 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Using_Should_Specified_Serialization_Method_For_Specific_Field()
         {
-            person.address = "USA";
-            person.phoneNumber = 123;
+            person.Address = "USA";
+            person.PhoneNumber = 123;
 
             var serializedPerson = person.PrintToString(config => config
-                                                                    .Printing(p => p.address)
+                                                                    .Printing(p => p.Address)
                                                                         .Using(address => "UK")
-                                                                    .Printing(p => p.phoneNumber)
+                                                                    .Printing(p => p.PhoneNumber)
                                                                         .Using(phoneNumber => "000"));
 
-            serializedPerson.Should().ContainAll(new[] { "address = UK", "phoneNumber = 000" });
-            serializedPerson.Should().NotContainAll(new[] { "address = USA", "phoneNumber = 123" });
+            serializedPerson.Should().ContainAll(new[] { "Address = UK", "PhoneNumber = 000" });
+            serializedPerson.Should().NotContainAll(new[] { "Address = USA", "PhoneNumber = 123" });
         }
 
         [Test]
         public void TrimmedToLength_Should_Trimmed_String()
         {
             person.Name = "Alex";
-            person.address = "Russian Federation";
+            person.Address = "Russian Federation";
 
             var serializedPerson = person.PrintToString(config => config.Printing(p => p.Name).TrimmedToLength(2));
 
             serializedPerson.Should().Contain("Name = Al");
             serializedPerson.Should().NotContain("Name = Alex");
-            serializedPerson.Should().Contain("address = Russian Federation");
+            serializedPerson.Should().Contain("Address = Russian Federation");
         }
 
         [Test]
         public void Excluding_Should_Exclude_Specific_Field()
         {
-            var serializedPerson = person.PrintToString(config => config.Excluding(p => p.address)
-                                                                        .Excluding(p => p.phoneNumber));
+            var serializedPerson = person.PrintToString(config => config.Excluding(p => p.Address)
+                                                                        .Excluding(p => p.PhoneNumber));
 
-            serializedPerson.Should().NotContain("address =");
-            serializedPerson.Should().NotContain("phoneNumber =");
+            serializedPerson.Should().NotContain("Address =");
+            serializedPerson.Should().NotContain("PhoneNumber =");
         }
 
         [Test]
-        public void Circular_ReferencesShould_NotThrow_Exceptions()
+        public void Circular_References_Should_Not_Throw_Exceptions()
         {
             var friend = new Person();
             person.Friend = friend;
@@ -114,6 +113,32 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain("Friend = cycle");
             serializedFriend.Should().Contain("Friend = cycle");
+        }
+
+        [Test]
+        public void Serializer_Should_Process_Collections()
+        {
+            var mom = new Person { Name = "Mom", Address = "USA" };
+            var dad = new Person { Name = "Dad", Address = "USA" };
+            person.Family = new List<Person>() { mom, dad };
+
+            var serializedPerson = person.PrintToString();
+
+            serializedPerson.Should().ContainAll(new[] { "Name = Mom", "Name = Dad" });
+            Console.WriteLine(serializedPerson);
+        }
+
+        [Test]
+        public void Serializer_Should_Process_Dictionary()
+        {
+            var book = new Dictionary<string, int>() { { "Mom", 12345 }, { "Dad", 54321 } };
+            person.PhoneBook = book;
+
+            var serializedPerson = person.PrintToString();
+
+            serializedPerson.Should().ContainAll(new[] { "Key = Mom", "Value = 12345",
+                                                         "Key = Dad", "Value = 54321"});
+            Console.WriteLine(serializedPerson);
         }
     }
 }

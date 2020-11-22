@@ -5,7 +5,7 @@ namespace ObjectPrinting
 {
     public static class PrintingConfigExtentions
     {
-        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
+        public static IPrintingConfig<TOwner> Using<TOwner, TPropType>(
             this IConfig<TOwner, TPropType> config,
             CultureInfo cultureInfo) where TPropType : IFormattable
         {
@@ -13,7 +13,7 @@ namespace ObjectPrinting
             return config.Using(serializer);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        public static IPrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this IConfig<TOwner, string> config, int maxLen)
         {
             Func<string, string> serializer = str => str.Substring(0, Math.Min(str.Length, maxLen));
