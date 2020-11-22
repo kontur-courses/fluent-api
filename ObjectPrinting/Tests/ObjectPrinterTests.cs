@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -9,7 +10,10 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterTests
     {
         private static readonly Person Person = new Person
-            {Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex"};
+        {
+            Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex", Wallet = new[] {"$: 50", "P: 40000"},
+            RelativesNames = new Dictionary<string, string> {{"Mother", "Lana"}, {"Father", "John"}}
+        };
 
         [Test]
         public void PrintToString_DoNotPrintProperties_AfterExcludingType()
@@ -56,6 +60,15 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Age);
             var objInString = printer.PrintToString(Person);
             objInString.Should().NotContain($"{nameof(Person.Age)} = {Person.Age}");
+        }
+
+        [Test]
+        public void PrintToString_PrintCollections_WhenInProperties()
+        {
+            var printer = ObjectPrinter.For<Person>();
+            var objInString = printer.PrintToString(Person);
+            objInString.Should().Contain($"{nameof(Person.Wallet)} = [$: 50", "P: 40000]");
+            objInString.Should().Contain($"{nameof(Person.RelativesNames)} = [[Mother, Lana], [Father, John]]");
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,6 +11,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(IEnumerable)
+        };
+
         private readonly Dictionary<PropertyInfo, Delegate> propPrintingMethods =
             new Dictionary<PropertyInfo, Delegate>();
 
@@ -17,6 +24,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> typePrintingCultureInfo = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> typePrintingMethods = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
+
         private PropertyInfo propertyToConfig;
 
         public void AddPrintingMethod<TPropType>(Func<TPropType, string> method)
@@ -70,34 +78,41 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
+            if (obj is IEnumerable collection) return ParseCollectionToString(collection);
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties().Where(prop =>
-                !typesToExclude.Contains(prop.PropertyType) && !propsToExclude.Contains(prop))
-            )
+            var props = type.GetProperties().Where(prop =>
+                !typesToExclude.Contains(prop.PropertyType) && !propsToExclude.Contains(prop));
+            foreach (var propertyInfo in props)
                 sb.Append(indentation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo, obj, nestingLevel));
             return sb.ToString();
+        }
+
+        private static string ParseCollectionToString(IEnumerable collection)
+        {
+            var items = new StringBuilder("[");
+            foreach (var item in collection) items.Append($"{item}, ");
+
+            items.Remove(items.Length - 2, 2);
+            items.Append("]");
+            return items + Environment.NewLine;
         }
 
         private string PrintToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
             var value = propertyInfo.GetValue(obj) as dynamic;
             var type = propertyInfo.PropertyType;
+
             if (propPrintingMethods.TryGetValue(propertyInfo, out var printProperty))
                 return printProperty.DynamicInvoke(value) + Environment.NewLine;
 
