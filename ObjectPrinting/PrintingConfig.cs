@@ -1,41 +1,159 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
+using FluentAssertions.Types;
+using ObjectPrinting.Solved.Tests;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly ImmutableHashSet<Type> typesToExclude;
+        private readonly ImmutableDictionary<Type, Func<object, string>> typesToSerialize;
+        private readonly ImmutableHashSet<MemberInfo> membersToExclude;
+        private readonly ImmutableDictionary<MemberInfo, Func<object, string>> membersToSerialize;
+        private readonly CultureInfo culture;
+        private readonly HashSet<object> handledObjects;
+        public PrintingConfig()
+        {
+            typesToExclude = ImmutableHashSet<Type>.Empty;
+            typesToSerialize = ImmutableDictionary<Type, Func<object, string>>.Empty;
+            membersToExclude = ImmutableHashSet<MemberInfo>.Empty;
+            membersToSerialize = ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
+            handledObjects = new HashSet<object>();
+        }
+
+        private PrintingConfig(ImmutableHashSet<Type> typesToExclude, 
+            ImmutableDictionary<Type, Func<object, string>> typesToSerialize,
+            ImmutableHashSet<MemberInfo> membersToExclude,
+            ImmutableDictionary<MemberInfo, Func<object, string>> membersToSerialize, CultureInfo culture)
+        {
+            this.typesToExclude = typesToExclude;
+            this.typesToSerialize = typesToSerialize;
+            this.culture = culture;
+            this.membersToExclude = membersToExclude;
+            this.membersToSerialize = membersToSerialize;
+            handledObjects = new HashSet<object>();
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
+        public PrintingConfig<TOwner> WithoutType<T>()
+        {
+            return new PrintingConfig<TOwner>(typesToExclude.Add(typeof(T)), typesToSerialize, membersToExclude, membersToSerialize, culture);
+        }
+
+        public PrintingConfig<TOwner> SerializeTypeAs<T>(Func<T, string> serializator)
+        {
+            return new PrintingConfig<TOwner>(typesToExclude, 
+                typesToSerialize.Add(typeof(T), obj => serializator((T)obj)), 
+                membersToExclude, membersToSerialize, culture);
+        }
+
+        public PrintingConfig<TOwner> SetCulture(CultureInfo culture)
+        {
+            return new PrintingConfig<TOwner>(typesToExclude,
+                typesToSerialize,
+                membersToExclude, membersToSerialize, culture);
+        }
+
+        public PrintingConfig<TOwner> SerializePropertyAs<T>(
+            Expression<Func<TOwner, T>> memberSelector, Func<T, string> serializator)
+        {
+            if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
+                throw new ArgumentException();
+            var memberAccess = (MemberExpression) memberSelector.Body;
+            if (memberAccess.Member.MemberType != MemberTypes.Field &&
+                memberAccess.Member.MemberType != MemberTypes.Property)
+                throw new ArgumentException();
+            return new PrintingConfig<TOwner>(typesToExclude,
+                typesToSerialize, membersToExclude,
+                membersToSerialize.Add(memberAccess.Member, obj=> serializator((T)obj)),
+                culture);
+        }
+
+        public PrintingConfig<TOwner> WithoutProperty<T>(Expression<Func<TOwner, T>> memberSelector)
+        {
+            if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
+                throw new ArgumentException();
+            var memberAccess = (MemberExpression)memberSelector.Body;
+            if (memberAccess.Member.MemberType != MemberTypes.Field &&
+                memberAccess.Member.MemberType != MemberTypes.Property)
+                throw new ArgumentException();
+            return new PrintingConfig<TOwner>(typesToExclude, typesToSerialize,
+                membersToExclude.Add(memberAccess.Member),
+                membersToSerialize, culture);
+        }
+
+        public PrintingConfig<TOwner> TrimStrings(int length)
+        {
+            return new PrintingConfig<TOwner>(typesToExclude, 
+                typesToSerialize.Add(typeof(string), obj => 
+                    length < ((string)obj).Length ? 
+                        ((string)obj).Substring(0, length) :
+                        (string)obj),
+                membersToExclude, membersToSerialize, culture);
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            var type = obj.GetType();
+            if (typesToSerialize.ContainsKey(type))
+                return typesToSerialize[type](obj) + Environment.NewLine;
+            if (finalTypes.Contains(type))
+                return (obj is IFormattable formattable && culture != null ?
+                    formattable.ToString(null, culture) : obj) + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            if (handledObjects.Contains(obj))
+                return sb.ToString();
+            foreach (var memberInfo in GetFieldsAndProperties(type)
+                .Where(member => (member is PropertyInfo propertyInfo && !typesToExclude.Contains(propertyInfo.PropertyType)
+                    || member is FieldInfo fieldInfo && !typesToExclude.Contains(fieldInfo.FieldType)) 
+                                 && !membersToExclude.Contains(member)))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                sb.Append(identation + memberInfo.Name + " = " +
+                          (membersToSerialize.ContainsKey(memberInfo) ?
+                              membersToSerialize[memberInfo](GetObject(memberInfo, obj)) + Environment.NewLine :
+                          PrintToString(GetObject(memberInfo, obj),
+                              nestingLevel + 1)));
             }
+            handledObjects.Add(obj);
             return sb.ToString();
+        }
+
+        private object GetObject(MemberInfo member, object obj)
+        {
+            if (member is PropertyInfo propertyInfo)
+                return propertyInfo.GetValue(obj);
+            if (member is FieldInfo fieldInfo)
+                return fieldInfo.GetValue(obj);
+            throw new ArgumentException("Wrong member type");
+        }
+
+        private IEnumerable<MemberInfo> GetFieldsAndProperties(Type type)
+        {
+            foreach (var property in type.GetProperties())
+                yield return property;
+            foreach (var fields in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                yield return fields;
         }
     }
 }
