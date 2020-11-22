@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using FluentAssertions;
@@ -50,6 +51,28 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void Collections_Demo()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing<int>().Using(i => i + "XXXX")
+                .Printing<double>().Using(CultureInfo.InvariantCulture);
+
+            var pers1 = new Person {Age = 23, Height = 100, Name = "Alex"};
+            var pers2 = new Person {Age = 13, Height = 150, Name = "Misha"};
+            var pers3 = new Person {Age = 26, Height = 200, Name = "Vasya"};
+
+            var personList = new List<Person>();
+            personList.Add(pers1);
+            personList.Add(pers2);
+            personList.Add(pers3);
+
+            Console.WriteLine(printer.PrintToString(personList));
+            var arr = new[] {pers1, pers2, pers3};
+            Console.WriteLine(printer.PrintToString(arr));
+        }
+
+        [Test]
         public void PrintToString_PersonWithoutId_ExcludingGuid()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
@@ -88,11 +111,11 @@ namespace ObjectPrinterTests
         public void PrintToString_PersonPropertiesExcludedId_ExcludingPersonId()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Id);
-            
+
 
             printer.PrintToString(person).Should().Be("Person\r\n\tName = Alex\r\n\tHeight = 193,2\r\n\tAge = 19\r\n");
         }
-        
+
         [Test]
         [Timeout(1000)]
         public void PrintToString_ShouldNotThrow_SelfReference()

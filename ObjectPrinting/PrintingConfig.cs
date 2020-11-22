@@ -53,6 +53,17 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
+        public string PrintToString(ICollection<TOwner> objCollection)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(objCollection.GetType().Name);
+
+            foreach (var obj in objCollection)
+                sb.AppendLine(PrintToString(obj, 1));
+
+            return sb.ToString();
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
@@ -72,10 +83,11 @@ namespace ObjectPrinting
                 return valueToPrint.ToString();
             }
 
-            var identation = new string('\t', nestingLevel + 1);
+            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(identation + type.Name);
+            identation += '\t';
             foreach (var propertyInfo in type.GetProperties())
             {
                 var propertyValue = propertyInfo.GetValue(obj);
@@ -88,8 +100,8 @@ namespace ObjectPrinting
                     valueToPrint = "self";
                 else
                     valueToPrint = propertiesSerialization.ContainsKey(propertyInfo)
-                    ? propertiesSerialization[propertyInfo](propertyValue)
-                    : PrintToString(propertyValue, nestingLevel + 1);
+                        ? propertiesSerialization[propertyInfo](propertyValue)
+                        : PrintToString(propertyValue, nestingLevel + 1);
 
                 sb.AppendLine($"{identation}{propertyInfo.Name} = {valueToPrint}");
             }
