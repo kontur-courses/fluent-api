@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -30,7 +31,7 @@ namespace ObjectPrinting
         
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, new HashSet<object>());
         }
 
         public PrintingConfig<TOwner> Exclude<TProperty>()
@@ -70,16 +71,21 @@ namespace ObjectPrinting
                 .SetCustomSerialization(serialization));
         }
         
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, HashSet<object> parents, string newLine = null)
         {
-            //TODO apply configurations
+            newLine ??= Environment.NewLine;
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null" + newLine;
             
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            if (parents.Contains(obj))
+                return $"Cycling reference. Type: {obj.GetType().Name}" + newLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            if (finalTypes.Contains(obj.GetType()))
+                return obj + newLine;
+
+            parents.Add(obj);
+
+            var identation = new string('\t', parents.Count);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -88,18 +94,80 @@ namespace ObjectPrinting
                 if (configInfo.ShouldToExclude(propertyInfo))
                     continue;
                 
-                var serialization = configInfo.GetSpecialSerialization(propertyInfo);
-
                 sb.Append(identation + propertyInfo.Name + " = ");
                 
-                if (serialization != null)
-                    sb.Append(serialization
-                        .DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
-                else
-                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
+                sb.Append(Serialize(obj, propertyInfo, parents));
             }
+            parents.Remove(obj);
             return sb.ToString();
+        }
+
+        private string Serialize(object obj, PropertyInfo propertyInfo, HashSet<object> parents)
+        {
+            var propertyValue = propertyInfo.GetValue(obj);
+            
+            if (propertyValue is ICollection collectionProperty)
+            {
+                return collectionProperty is IDictionary dictionaryProperty 
+                    ? SerializeDictionary(dictionaryProperty, parents) 
+                    : SerializeCollection(collectionProperty, parents);
+            }
+
+            return SerializeProperty(propertyValue, propertyInfo, parents);
+        }
+        
+        // Не нравится что метод похож на SerializeCollection, но как их объединить я не знаю
+        private string SerializeDictionary(IDictionary collection, HashSet<object> parents)
+        {
+            if (collection.Count == 0)
+                return "Empty dictionary" + Environment.NewLine;
+            
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine + new string('\t', parents.Count) + '{' + Environment.NewLine);
+            
+            foreach (var key in collection.Keys)
+            {
+                sb.Append(new string('\t', parents.Count + 1));
+                sb.Append(PrintToString(key, parents, ""));
+                sb.Append(": ");
+                sb.Append(PrintToString(collection[key], parents));
+            }
+
+            sb.Append(new string('\t', parents.Count) + '}');
+
+            sb.Append(Environment.NewLine);
+            return sb.ToString();
+        }
+        
+        private string SerializeCollection(ICollection collection, HashSet<object> parents)
+        {
+            if (collection.Count == 0)
+                return "Empty collection" + Environment.NewLine;
+            
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine + new string('\t', parents.Count) + '[' + Environment.NewLine);
+            
+            foreach (var e in collection)
+            {
+                sb.Append(new string('\t', parents.Count));
+                sb.Append(PrintToString(e, parents));
+            }
+
+            sb.Append(new string('\t', parents.Count) + ']');
+
+            sb.Append(Environment.NewLine);
+            return sb.ToString();
+        }
+        
+        private string SerializeProperty(object propertyValue, PropertyInfo propertyInfo, HashSet<object> parents)
+        {
+            var serialization = configInfo.GetSpecialSerialization(propertyInfo);
+                
+            if (propertyValue == null)
+                return "null" + Environment.NewLine;
+            if (serialization != null)
+                return serialization.DynamicInvoke(propertyValue) + Environment.NewLine;
+            return PrintToString(propertyValue, parents);
         }
     }
 }

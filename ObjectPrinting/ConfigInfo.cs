@@ -41,16 +41,16 @@ namespace ObjectPrinting
         
         public ConfigInfo SetCustomSerialization<TProperty>(Func<TProperty, string> serialization)
         {
-            var newTypeToSerialization = typeToSerialization
-                .Add(typeof(TProperty), serialization);
+            var newTypeToSerialization = AddOrSet(typeToSerialization, 
+                typeof(TProperty), serialization);
             return new ConfigInfo(this) {typeToSerialization = newTypeToSerialization};
         }
         
         public ConfigInfo SetCustomSerialization<TProperty>(Func<TProperty, string> serialization,
             PropertyInfo property)
         {
-            var newPropertyToSerialization = propertyToSerialization
-                .Add(property, serialization);
+            var newPropertyToSerialization = AddOrSet(propertyToSerialization,
+                property, serialization);
             return new ConfigInfo(this) {propertyToSerialization = newPropertyToSerialization};
         }
 
@@ -67,6 +67,14 @@ namespace ObjectPrinting
             if (typeToSerialization.ContainsKey(property.PropertyType))
                 return typeToSerialization[property.PropertyType];
             return null;
+        }
+        
+        // Хотел этот метод вынести в расширения, но была ошибка связанная с generic
+        private static ImmutableDictionary<TKey, TValue> AddOrSet<TKey, TValue>(
+            ImmutableDictionary<TKey, TValue> dictionary, 
+            TKey key, TValue value)
+        {
+            return dictionary.ContainsKey(key) ? dictionary.SetItem(key, value) : dictionary.Add(key, value);
         }
     }
 }
