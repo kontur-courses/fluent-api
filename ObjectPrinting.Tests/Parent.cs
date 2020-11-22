@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Solved.Tests
+﻿namespace ObjectPrinting.Tests
 {
     public class Parent : Person
     {

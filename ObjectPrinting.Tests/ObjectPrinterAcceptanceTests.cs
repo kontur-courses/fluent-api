@@ -1,10 +1,10 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using NUnit.Framework;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrinting.Tests
 {
     public class ObjectPrinterAcceptanceTests
     {
@@ -14,7 +14,7 @@ namespace ObjectPrinting.Solved.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Name = "Alex", Age = 19, BirthDate = new DateTime(2001, 2, 3)};
+            person = new Person { Name = "Alex", Age = 19, BirthDate = new DateTime(2001, 2, 3) };
             printer = ObjectPrinter.For<Person>();
         }
 
@@ -212,7 +212,7 @@ namespace ObjectPrinting.Solved.Tests
         [Test]
         public void PrintToString_CorrectResult_WhenCycleBetweenObjectsSameTypes()
         {
-            var parent = new Parent {BirthDate = new DateTime(2001, 2, 3)};
+            var parent = new Parent { BirthDate = new DateTime(2001, 2, 3) };
             parent.Parent = parent;
 
             Assert.AreEqual(GetCorrectPrintingConfig(nameof(Parent), 1, "Guid\r\n", "null\r\n", "0\r\n",

@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
@@ -45,18 +45,18 @@ namespace ObjectPrinting.Solved
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression) memberSelector.Body).Member;
+            var member = ((MemberExpression)memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this,
                 func => printingFunctionsForMembers[member] = func);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludingMembers.Add(((MemberExpression) memberSelector.Body).Member);
+            excludingMembers.Add(((MemberExpression)memberSelector.Body).Member);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludingTypes.Add(typeof(TPropType));
             return this;
@@ -105,7 +105,7 @@ namespace ObjectPrinting.Solved
         private string GetSerializedCollection(object obj, int nestingLevel, string indentation)
         {
             var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
-            foreach (var e in (IEnumerable) obj)
+            foreach (var e in (IEnumerable)obj)
                 resultString.Append(indentation + PrintToString(e, nestingLevel + 1));
             return resultString.ToString();
         }
@@ -121,10 +121,10 @@ namespace ObjectPrinting.Solved
         {
             var memberValue = member is PropertyInfo info
                 ? info.GetValue(obj)
-                : ((FieldInfo) member).GetValue(obj);
+                : ((FieldInfo)member).GetValue(obj);
             var memberType = member is PropertyInfo propertyInfo
                 ? propertyInfo.PropertyType
-                : ((FieldInfo) member).FieldType;
+                : ((FieldInfo)member).FieldType;
 
             if (printingFunctionsForMembers.ContainsKey(member))
                 return printingFunctionsForMembers[member].DynamicInvoke(memberValue)?.ToString();
