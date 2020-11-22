@@ -18,14 +18,13 @@ namespace ObjectPrinting
         private readonly ImmutableHashSet<MemberInfo> membersToExclude;
         private readonly ImmutableDictionary<MemberInfo, Func<object, string>> membersToSerialize;
         private readonly CultureInfo culture;
-        private readonly HashSet<object> handledObjects;
+
         public PrintingConfig()
         {
             typesToExclude = ImmutableHashSet<Type>.Empty;
             typesToSerialize = ImmutableDictionary<Type, Func<object, string>>.Empty;
             membersToExclude = ImmutableHashSet<MemberInfo>.Empty;
             membersToSerialize = ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
-            handledObjects = new HashSet<object>();
         }
 
         private PrintingConfig(ImmutableHashSet<Type> typesToExclude, 
@@ -38,7 +37,6 @@ namespace ObjectPrinting
             this.culture = culture;
             this.membersToExclude = membersToExclude;
             this.membersToSerialize = membersToSerialize;
-            handledObjects = new HashSet<object>();
         }
 
         public string PrintToString(TOwner obj)
@@ -103,14 +101,16 @@ namespace ObjectPrinting
                 membersToExclude, membersToSerialize, culture);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, Dictionary<object, Guid> handledObjects = null)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+            if (handledObjects == null)
+                handledObjects = new Dictionary<object, Guid>();
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
             var type = obj.GetType();
             if (typesToSerialize.ContainsKey(type))
@@ -121,10 +121,16 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            if (handledObjects.Contains(obj))
+            sb.AppendLine($"{type.Name}");
+            var members = GetFieldsAndProperties(type);
+            var guid = GetGuid(members, obj);
+            if (handledObjects.ContainsKey(obj))
+            {
+                sb.AppendLine($"{identation}Id = {handledObjects[obj]}");
                 return sb.ToString();
-            foreach (var memberInfo in GetFieldsAndProperties(type)
+            }
+            handledObjects.Add(obj, guid);
+            foreach (var memberInfo in members
                 .Where(member => (member is PropertyInfo propertyInfo && !typesToExclude.Contains(propertyInfo.PropertyType)
                     || member is FieldInfo fieldInfo && !typesToExclude.Contains(fieldInfo.FieldType)) 
                                  && !membersToExclude.Contains(member)))
@@ -133,9 +139,8 @@ namespace ObjectPrinting
                           (membersToSerialize.ContainsKey(memberInfo) ?
                               membersToSerialize[memberInfo](GetObject(memberInfo, obj)) + Environment.NewLine :
                           PrintToString(GetObject(memberInfo, obj),
-                              nestingLevel + 1)));
+                              nestingLevel + 1, handledObjects)));
             }
-            handledObjects.Add(obj);
             return sb.ToString();
         }
 
@@ -154,6 +159,19 @@ namespace ObjectPrinting
                 yield return property;
             foreach (var fields in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 yield return fields;
+        }
+
+        private Guid GetGuid(IEnumerable<MemberInfo> members, object obj)
+        {
+            var guidType = typeof(Guid);
+            foreach (var m in members)
+            {
+                if (m is PropertyInfo property && property.PropertyType == guidType)
+                    return (Guid)property.GetValue(obj);
+                if (m is FieldInfo field && field.FieldType == guidType)
+                    return (Guid)field.GetValue(obj);
+            }
+            return Guid.NewGuid();
         }
     }
 }
