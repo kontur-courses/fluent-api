@@ -48,7 +48,7 @@ namespace ObjectPrinting
             return new SelectedProperty<TOwner, TProperty>(target, this);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object? obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
