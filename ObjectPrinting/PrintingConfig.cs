@@ -11,10 +11,14 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<Delegate> excludedFields = new List<Delegate>();
         public readonly Dictionary<Type, CultureInfo> Cultures = new Dictionary<Type, CultureInfo>();
+        public readonly Dictionary<Type, Delegate> Serializations = new Dictionary<Type, Delegate>();
+        public readonly Dictionary<Delegate, int> TrimForStringProperties = new Dictionary<Delegate, int>();
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            excludedFields.Add(memberSelector.Compile());
             return this;
         }
         internal PrintingConfig<TOwner> Excluding<TPropType>()
@@ -48,6 +52,10 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+            if (Serializations.TryGetValue(obj.GetType(), out var func))
+            {
+                return func.DynamicInvoke(obj) + Environment.NewLine;
+            }
             if (finalTypes.Contains(obj.GetType()))
             {
                 if (Cultures.TryGetValue(obj.GetType(), out var culture))
@@ -82,9 +90,22 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                sb.Append(identation + propertyInfo.Name + " = ");
-                sb.Append( PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var isExcluded = false;
+                foreach (var func in excludedFields)
+                {
+                    if (func.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
+                    {
+                        isExcluded = true;
+                        break;
+                    }
+                }
+
+                if (!isExcluded)
+                {
+                    sb.Append(identation + propertyInfo.Name + " = ");
+                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
+                        nestingLevel + 1));
+                }
             }
             return sb.ToString();
         }

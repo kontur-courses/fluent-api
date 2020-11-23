@@ -36,6 +36,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ExcludingField_Name()
+        {
+            printer.Excluding(person => person.Name);
+            printer.PrintToString(me).Should().NotContain("Name = Natasha");
+        }
+
+        [Test]
         public void AddSerialization_ForStrings()
         {
             printer.Printing<string>().Using(str => '"' + str + '"');
@@ -50,7 +57,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void AddlengthTrim_ForHeight()
+        public void AddLengthTrim_ForName()
         {
             printer.Printing(p => p.Name).TrimmedToLength(3);
             printer.PrintToString(me).Should().Contain("Name = Nat\n");

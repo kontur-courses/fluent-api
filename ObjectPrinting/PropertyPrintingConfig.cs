@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -14,6 +15,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingConfig.Serializations[typeof(TPropType)] = print;
             return printingConfig;
         }
         public PrintingConfig<TOwner> Using(CultureInfo culture)
