@@ -25,7 +25,8 @@ namespace ObjectPrinting.Solved
         internal void AddSerialization<TPropType>(Func<TPropType, string> func) => 
             alternativeSerialization[typeof(TPropType)] = func;
 
-        internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => alternativeSerializationField[fullName] = func;
+        internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => 
+            alternativeSerializationField[fullName] = func;
 
         internal void AddFieldsTrim(string fullName, int length) => fieldsTrim[fullName] = length;
 
@@ -43,8 +44,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var s = memberSelector.GetFullNameProperty();
-            excludingFields.Add(s);
+            excludingFields.Add(memberSelector.GetFullNameProperty());
             return this;
         }
 
@@ -56,8 +56,7 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
-            var result = PrintToString(obj, 0);
-            return result;
+            return PrintToString(obj, 0);
         }
 
         private string PrintToString(object obj, int nestingLevel, string fullName = "", bool fromCollection = false)
