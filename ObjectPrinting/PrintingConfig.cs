@@ -41,40 +41,80 @@ namespace ObjectPrinting
         {
             return PrintToString(obj, 0);
         }
+        
+        private readonly Type[] finalTypes =  new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private string GetNumberWithCultureOrNull(object obj)
+        {
+            if (Cultures.TryGetValue(obj.GetType(), out var culture))
+            {
+                switch (obj)
+                {
+                    case int i:
+                        return i.ToString(culture) + Environment.NewLine;
+                    case double d:
+                        return d.ToString(culture) + Environment.NewLine;
+                    case float f:
+                        return f.ToString(culture) + Environment.NewLine;
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsExcludedField(object obj, PropertyInfo propertyInfo)
+        {
+            foreach (var func in excludedFields)
+            {
+                if (func.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            
             if (Serializations.TryGetValue(obj.GetType(), out var func))
             {
                 return func.DynamicInvoke(obj) + Environment.NewLine;
             }
+            
             if (finalTypes.Contains(obj.GetType()))
             {
-                if (Cultures.TryGetValue(obj.GetType(), out var culture))
-                {
-                    switch (obj)
-                    {
-                        case int i:
-                            return i.ToString(culture) + Environment.NewLine;
-                        case double d:
-                            return d.ToString(culture) + Environment.NewLine;
-                        case float f:
-                            return f.ToString(culture) + Environment.NewLine;
-                        
-                    }
-                }
-                return obj + Environment.NewLine;
+                return GetNumberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
             }
 
             return PrintObject(obj, nestingLevel);
+        }
+
+        private bool TryAddSpecialSerialization(Object obj, PropertyInfo propertyInfo, StringBuilder sb, string identation)
+        {
+            if (propertyInfo.PropertyType == typeof(string))
+            {
+                foreach (var memberSelector in TrimForStringProperties.Keys)
+                {
+                    if (memberSelector.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
+                    {
+                        sb.Append(identation + propertyInfo.Name + " = ");
+                        sb.Append(propertyInfo.GetValue(obj)?.ToString()
+                            ?.Substring(0, TrimForStringProperties[memberSelector]));
+                        sb.Append(Environment.NewLine);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private string PrintObject(object obj, int nestingLevel)
@@ -90,37 +130,18 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                var isExcluded = false;
-                foreach (var func in excludedFields)
+                if (IsExcludedField(obj, propertyInfo))
                 {
-                    if (func.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
-                    {
-                        isExcluded = true;
-                        break;
-                    }
+                    continue;
                 }
 
-                if (!isExcluded && propertyInfo.PropertyType == typeof(string))
+                if (TryAddSpecialSerialization(obj, propertyInfo, sb, identation))
                 {
-                    foreach (var memberSelector in TrimForStringProperties.Keys)
-                    {
-                        if (memberSelector.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
-                        {
-                            sb.Append(identation + propertyInfo.Name + " = ");
-                            sb.Append(propertyInfo.GetValue(obj)?.ToString()
-                                ?.Substring(0, TrimForStringProperties[memberSelector]));
-                            sb.Append(Environment.NewLine);
-                            isExcluded = true;
-                        }
-                    }
+                    continue;
                 }
-
-                if (!isExcluded)
-                {
-                    sb.Append(identation + propertyInfo.Name + " = ");
-                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
-                        nestingLevel + 1));
-                }
+                
+                sb.Append(identation + propertyInfo.Name + " = ");
+                sb.Append(PrintToString(propertyInfo.GetValue(obj),nestingLevel + 1));
             }
             return sb.ToString();
         }
