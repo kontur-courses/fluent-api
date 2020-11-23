@@ -7,9 +7,16 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        public readonly Func<TOwner, TPropType> memberSelector;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
+            this.printingConfig = printingConfig;
+        }
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Func<TOwner, TPropType> memberSelector)
+        {
+            this.memberSelector = memberSelector;
             this.printingConfig = printingConfig;
         }
 

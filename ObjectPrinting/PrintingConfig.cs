@@ -34,7 +34,7 @@ namespace ObjectPrinting
         
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector.Compile());
         }
         
         public string PrintToString(TOwner obj)
@@ -97,6 +97,21 @@ namespace ObjectPrinting
                     {
                         isExcluded = true;
                         break;
+                    }
+                }
+
+                if (!isExcluded && propertyInfo.PropertyType == typeof(string))
+                {
+                    foreach (var memberSelector in TrimForStringProperties.Keys)
+                    {
+                        if (memberSelector.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
+                        {
+                            sb.Append(identation + propertyInfo.Name + " = ");
+                            sb.Append(propertyInfo.GetValue(obj)?.ToString()
+                                ?.Substring(0, TrimForStringProperties[memberSelector]));
+                            sb.Append(Environment.NewLine);
+                            isExcluded = true;
+                        }
                     }
                 }
 
