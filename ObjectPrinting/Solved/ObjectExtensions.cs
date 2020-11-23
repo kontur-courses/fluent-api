@@ -12,6 +12,6 @@ namespace ObjectPrinting.Solved
         }
 
         public static string GetFullNameProperty<TOwner, TPropType>(this Expression<Func<TOwner, TPropType>> memberSelector) =>
-            string.Join("", memberSelector.Body.ToString().SkipWhile(c => c != '.'));
+            string.Join(string.Empty, memberSelector.Body.ToString().SkipWhile(c => c != '.'));
     }
 }
