@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             startObject = obj;
-            return PrintToString(obj, 0);
+            return obj is IEnumerable collection ? PrintToStringIenumerable(collection) : PrintToString(obj, 0);
         }
         
         private readonly Type[] finalTypes =  new[]
@@ -96,6 +97,20 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = ");
                 sb.Append(PrintToString(propertyInfo.GetValue(obj),nestingLevel + 1));
             }
+            return sb.ToString();
+        }
+
+        private string PrintToStringIenumerable(IEnumerable collection)
+        {
+            var sb = new StringBuilder();
+            var index = 0;
+            foreach (var obj in collection)
+            {
+                sb.Append(index + ": ");
+                sb.Append(PrintToString(obj, 1));
+                index++;
+            }
+
             return sb.ToString();
         }
 

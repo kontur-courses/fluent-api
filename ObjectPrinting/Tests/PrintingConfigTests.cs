@@ -122,7 +122,6 @@ namespace ObjectPrinting.Tests
         {
             MyParent.Parent = Me;
             printer.PrintToString(Me).Should().Contain("Parent = circle ref");
-
         }
     }
 }
