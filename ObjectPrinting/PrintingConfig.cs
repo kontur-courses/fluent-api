@@ -19,7 +19,7 @@ namespace ObjectPrinting
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
-            typeof(string), typeof(DateTime), typeof(TimeSpan)
+            typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(DateTimeOffset)
         };
 
         private readonly Dictionary<MemberInfo, Delegate> printingFunctionsForMembers =
@@ -30,35 +30,55 @@ namespace ObjectPrinting
 
         private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
-        public void AddCultureForType<TPropType>(CultureInfo culture)
+        private string indentation = "\t";
+        private string separatorBetweenNameAndValue = "=";
+
+        public PrintingConfig<TOwner> AddCultureForType<TPropType>(CultureInfo culture)
         {
             if (typeof(IFormattable).IsAssignableFrom(typeof(TPropType)))
                 cultureTypes[typeof(TPropType)] = culture;
+            return this;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this,
                 func => printingFunctionsForTypes[typeof(TPropType)] = func);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
+            if (!(memberSelector.Body is MemberExpression))
+                throw new InvalidCastException("unable to cast to MemberExpression");
+            var member = ((MemberExpression) memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this,
                 func => printingFunctionsForMembers[member] = func);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludingMembers.Add(((MemberExpression)memberSelector.Body).Member);
+            if (!(memberSelector.Body is MemberExpression))
+                throw new InvalidCastException("unable to cast to MemberExpression");
+            excludingMembers.Add(((MemberExpression) memberSelector.Body).Member);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludingTypes.Add(typeof(TPropType));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> ChangeIndentation(string newIndentation)
+        {
+            indentation = newIndentation;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> ChangeSeparatorBetweenNameAndValue(string separator)
+        {
+            separatorBetweenNameAndValue = separator;
             return this;
         }
 
@@ -80,33 +100,34 @@ namespace ObjectPrinting
             if (type.IsClass)
                 visitedObjects.Add(obj);
 
-            var indentation = new string('\t', nestingLevel + 1);
+            var currentIndentation = string.Concat(Enumerable.Repeat(indentation, nestingLevel + 1));
 
             return typeof(ICollection).IsAssignableFrom(type)
-                ? GetSerializedCollection(obj, nestingLevel, indentation)
-                : GetSerializedMembers(obj, nestingLevel, indentation);
+                ? GetSerializedCollection(obj, nestingLevel, currentIndentation)
+                : GetSerializedMembers(obj, nestingLevel, currentIndentation);
         }
 
-        private string GetSerializedMembers(object obj, int nestingLevel, string indentation)
+        private string GetSerializedMembers(object obj, int nestingLevel, string currentIndentation)
         {
             var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
 
             foreach (var member in obj.GetType().GetProperties().Cast<MemberInfo>()
                 .Concat(obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public))
-                .Where(prop => !excludingMembers.Contains(prop)
-                               && (prop is PropertyInfo propertyInfo &&
-                                   !excludingTypes.Contains(propertyInfo.PropertyType)
-                                   || prop is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType))))
-                resultString.Append(indentation + member.Name + " = " + GetSerializedMember(member, obj, nestingLevel));
+                .Where(x => !excludingMembers.Contains(x)
+                            && (x is PropertyInfo propertyInfo &&
+                                !excludingTypes.Contains(propertyInfo.PropertyType)
+                                || x is FieldInfo fieldInfo && !excludingTypes.Contains(fieldInfo.FieldType))))
+                resultString.Append(currentIndentation + member.Name + $" {separatorBetweenNameAndValue} " +
+                                    GetSerializedMember(member, obj, nestingLevel));
 
             return resultString.ToString();
         }
 
-        private string GetSerializedCollection(object obj, int nestingLevel, string indentation)
+        private string GetSerializedCollection(object obj, int nestingLevel, string currentIndentation)
         {
             var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
-            foreach (var e in (IEnumerable)obj)
-                resultString.Append(indentation + PrintToString(e, nestingLevel + 1));
+            foreach (var e in (IEnumerable) obj)
+                resultString.Append(currentIndentation + PrintToString(e, nestingLevel + 1));
             return resultString.ToString();
         }
 
@@ -121,10 +142,10 @@ namespace ObjectPrinting
         {
             var memberValue = member is PropertyInfo info
                 ? info.GetValue(obj)
-                : ((FieldInfo)member).GetValue(obj);
+                : ((FieldInfo) member).GetValue(obj);
             var memberType = member is PropertyInfo propertyInfo
                 ? propertyInfo.PropertyType
-                : ((FieldInfo)member).FieldType;
+                : ((FieldInfo) member).FieldType;
 
             if (printingFunctionsForMembers.ContainsKey(member))
                 return printingFunctionsForMembers[member].DynamicInvoke(memberValue)?.ToString();

@@ -14,8 +14,6 @@ namespace ObjectPrinting
             printingFunction = func;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             printingFunction(print);
@@ -24,8 +22,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            printingConfig.AddCultureForType<TPropType>(culture);
-            return printingConfig;
+            return printingConfig.AddCultureForType<TPropType>(culture);
         }
     }
 }
