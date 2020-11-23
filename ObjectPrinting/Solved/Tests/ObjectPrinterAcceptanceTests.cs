@@ -54,77 +54,75 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         [Test]
-        public void ExcludeType()
+        public void ExcludeType_ResultWithoutExcludedType()
         {
-            var printind = ObjectPrinter.For<Person>().Excluding<Guid>();
-            var result = printind.PrintToString(person);
+            var printing = ObjectPrinter.For<Person>().Excluding<Guid>();
+            var result = printing.PrintToString(person);
             Assert.IsFalse(result.Contains("Id"));
         }
 
         [Test]
 
-        public void ExcludingFieldFirstLevel()
+        public void ExcludingFieldFirstLevel_ResultWithoutExcludedType()
         {
-            var printind = ObjectPrinter.For<Person>().Excluding(p => p.Age);
-            var result = printind.PrintToString(person);
+            var printing = ObjectPrinter.For<Person>().Excluding(p => p.Age);
+            var result = printing.PrintToString(person);
             Assert.IsTrue(!result.Contains($"Age = {person.Age}") && result.Contains($"Age = {person.AlterEgo.Age}"));
         }
 
         [Test]
-        public void ExcludingFieldDeepLevel()
+        public void ExcludingFieldDeepLevel_ResultWithoutExcludedType()
         {
-            var printind = ObjectPrinter.For<Person>().Excluding(p => p.AlterEgo.Age);
-            var result = printind.PrintToString(person);
+            var printing = ObjectPrinter.For<Person>().Excluding(p => p.AlterEgo.Age);
+            var result = printing.PrintToString(person);
             Assert.IsTrue(result.Contains($"Age = {person.Age}") && !result.Contains($"Age = {person.AlterEgo.Age}"));
         }
         
         [Test]
-        public void TrimedAllStrings()
+        public void TrimmedToLength_PrintingTrimAllStrings()
         {
-            var printind = ObjectPrinter.For<Person>()
+            var printing = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(2);
-            var result = printind.PrintToString(person);
+            var result = printing.PrintToString(person);
             var nameTrim = $"Name = {person.Name[0..2]}" + Environment.NewLine;
             var nameEgo = $"Name = {person.AlterEgo.Name[0..2]}" + Environment.NewLine;
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
         
         [Test]
-        public void TrimedSomeStrings()
+        public void TrimmedToLength_PrintingTrimSomeString()
         {
-            var printind = ObjectPrinter.For<Person>()
+            var printing = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(2);
             var nameTrim = $"Name = {person.Name[0..2]}" + Environment.NewLine;
             var nameEgo = $"Name = {person.AlterEgo.Name}";
-            var result = printind.PrintToString(person);
+            var result = printing.PrintToString(person);
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
         
         [TestCase(2, 3)]
         [TestCase(2, 2)]
         [TestCase(3, 2)]
-        public void TrimedAllAndSomeStrings(int stringTrim, int fieldTrim)
+        public void TrimmedToLength_FieldsAndOtherStringDifferentTrim(int stringTrim, int fieldTrim)
         {
-            var printind = ObjectPrinter.For<Person>()
+            var printing = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(stringTrim)
                 .Printing(p => p.AlterEgo.Name).TrimmedToLength(fieldTrim);
-            var result = printind.PrintToString(person);
+            var result = printing.PrintToString(person);
             var nameTrim = $"Name = {person.Name[0..stringTrim]}" + Environment.NewLine;
             var nameEgo = $"Name = {person.AlterEgo.Name[0..fieldTrim]}" + Environment.NewLine;
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
 
         [Test]
-        public void NotReferenceCicle()
+        public void PrintingMustBeWithoutCircleReference()
         {
             person.AlterEgo = person;
-            //hmm... it's logic
-            var printing = ObjectPrinter.For<Person>();
-            printing.PrintToString(person);
+            Assert.DoesNotThrow(() => person.PrintToString());
         }
 
         [Test]
-        public void PrintingWithCulture()
+        public void PrintingWithCulture_TypesMustBePrintWithCulture()
         {
             var culture = CultureInfo.InvariantCulture;
             var printer = ObjectPrinter.For<Person>()
