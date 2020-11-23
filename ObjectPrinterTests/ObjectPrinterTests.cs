@@ -16,7 +16,8 @@ namespace ObjectPrinterTests
         {
             person = new Person {Name = "Alex", Age = 19, Height = 193.2};
         }
-
+        
+        
         private Person person;
 
 
@@ -56,11 +57,12 @@ namespace ObjectPrinterTests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<Guid>()
                 .Printing<int>().Using(i => i + "XXXX")
+                .Printing(p => p.Age).Using(i => i + " years old")
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            var pers1 = new Person {Age = 23, Height = 100, Name = "Alex"};
-            var pers2 = new Person {Age = 13, Height = 150, Name = "Misha"};
-            var pers3 = new Person {Age = 26, Height = 200, Name = "Vasya"};
+            var pers1 = new Person {Age = 23, Height = 100.5, Name = "Alex"};
+            var pers2 = new Person {Age = 13, Height = 150.5, Name = "Misha"};
+            var pers3 = new Person {Age = 26, Height = 200.5, Name = "Vasya"};
 
             var personList = new List<Person>();
             personList.Add(pers1);
@@ -70,6 +72,26 @@ namespace ObjectPrinterTests
             Console.WriteLine(printer.PrintToString(personList));
             var arr = new[] {pers1, pers2, pers3};
             Console.WriteLine(printer.PrintToString(arr));
+        }
+
+        [Test]
+        public void Dictionary_Demo()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing(p => p.Age).Using(i => i + " years old")
+                .Printing<double>().Using(CultureInfo.InvariantCulture);
+            
+            var pers1 = new Person {Age = 23, Height = 100.5, Name = "Alex"};
+            var pers2 = new Person {Age = 13, Height = 150.5, Name = "Misha"};
+            var pers3 = new Person {Age = 26, Height = 200.5, Name = "Vasya"};
+
+            var dic1 = new Dictionary<int, Person> {[1] = pers1, [2] = pers2, [3] = pers3};
+            var dic2 = new Dictionary<string, Person> {[pers1.Name] = pers1, [pers2.Name] = pers2, [pers3.Name] = pers3};
+            
+            
+            Console.WriteLine(printer.PrintToString(dic1));
+            Console.WriteLine(printer.PrintToString(dic2));
         }
 
         [Test]
@@ -123,7 +145,7 @@ namespace ObjectPrinterTests
             var personWithFriend = new PersonWithFriend {Name = "Alex", Age = 19};
             personWithFriend.Friend = personWithFriend;
 
-            personWithFriend.PrintToString();
+            Console.WriteLine(personWithFriend.PrintToString());
         }
     }
 }
