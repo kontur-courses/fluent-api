@@ -9,7 +9,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : SerializationConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
             {typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)};
         private readonly HashSet<object> parents = new HashSet<object>();
 
@@ -22,20 +22,17 @@ namespace ObjectPrinting
         
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (parents.Contains(obj))
-                return null;
+            if (parents.Contains(obj)) return null;
 
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            if (obj == null) return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
+            if (finalTypes.Contains(type)) return obj + Environment.NewLine;
 
             var elements = obj switch
             {
-                IDictionary _ => SerializeDictionaryElements(obj, nestingLevel),
-                IEnumerable _ => SerializeEnumerableElements(obj, nestingLevel),
+                IDictionary dictionary => SerializeDictionaryElements(dictionary, nestingLevel),
+                IEnumerable enumerable => SerializeEnumerableElements(enumerable, nestingLevel),
                 _ => SerializeProperties(obj, nestingLevel)
             };
             if (elements == null) return null;
@@ -47,10 +44,13 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
+            var members = type.GetProperties().Cast<MemberInfo>()
+                .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public))
+                .Where(m => !ExcludingConfig.IsExcluded(m));
             parents.Add(obj);
-            foreach (var propertyInfo in type.GetProperties().Where(t => !IsExcluded(t)))
+            foreach (var propertyInfo in members)
             {
-                dynamic value = propertyInfo.GetValue(obj);
+                var value = propertyInfo.GetValue(obj);
                 var serializedProperty = PropertyToString(propertyInfo, value, nestingLevel);
                 if (serializedProperty == null) return null;
                 sb.Append(indentation + propertyInfo.Name + " = " + serializedProperty);
@@ -58,18 +58,19 @@ namespace ObjectPrinting
             parents.Remove(obj);
             return sb.ToString();
         }
+
+        private string PropertyToString(MemberInfo propertyInfo, object value, int nestingLevel) =>
+            AlternativeConfig.GetAlternativeSerialization(propertyInfo, value) ??
+            PrintToString(value, nestingLevel + 1);
         
-        private string PropertyToString(PropertyInfo propertyInfo, dynamic value, int nestingLevel) =>
-            GetAlternativeSerialization(propertyInfo, value) ?? PrintToString(value, nestingLevel + 1);
-        
-        private string SerializeEnumerableElements(object obj, int nestingLevel)
+        private string SerializeEnumerableElements(IEnumerable obj, int nestingLevel)
         {
             var sb = new StringBuilder();
             var arrayIndentation = new string('\t', nestingLevel);
             var indentation = new string('\t', nestingLevel + 1);
             
             sb.AppendLine(arrayIndentation + "[");
-            foreach (var item in (IEnumerable)obj)
+            foreach (var item in obj)
             {
                 var serializedItem = PrintToString(item, nestingLevel + 1);
                 if (serializedItem == null) return null;
@@ -80,23 +81,22 @@ namespace ObjectPrinting
             return sb.ToString();
         }
         
-        private string SerializeDictionaryElements(object obj, int nestingLevel)
+        private string SerializeDictionaryElements(IDictionary obj, int nestingLevel)
         {
             var sb = new StringBuilder();
             var arrayIndentation = new string('\t', nestingLevel);
             var indentation = new string('\t', nestingLevel + 1);
-            var dict = (IDictionary) obj;
-            var keys = new object[dict.Count];
-            dict.Keys.CopyTo(keys, 0);
-            var values = new object[dict.Count];
-            dict.Values.CopyTo(values, 0);
+            var keys = new object[obj.Count];
+            obj.Keys.CopyTo(keys, 0);
+            var values = new object[obj.Count];
+            obj.Values.CopyTo(values, 0);
             
             sb.AppendLine(arrayIndentation + "[");
-            foreach (var item in keys.Zip(values).ToDictionary(pair => pair.First, pair => pair.Second))
+            foreach (var (key, value) in keys.Zip(values).ToDictionary(pair => pair.First, pair => pair.Second))
             {
-                var serializedKey = PrintToString(item.Key, nestingLevel + 1);
+                var serializedKey = PrintToString(key, nestingLevel + 1);
                 if (serializedKey == null) return null;
-                var serializedValue = PrintToString(item.Value, nestingLevel + 1);
+                var serializedValue = PrintToString(value, nestingLevel + 1);
                 if (serializedValue == null) return null;
                 sb.Append(indentation + "[" + RemoveNewLineAtEnd(serializedKey) + "] = " + serializedValue);
             }
