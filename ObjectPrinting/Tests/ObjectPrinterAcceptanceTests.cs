@@ -38,7 +38,7 @@ namespace ObjectPrinting.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .Printing(x => x.Name).Using(x => "wqw")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(1)
+                .Printing(p => p.Name).SetMaxLength(1)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
@@ -99,7 +99,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SetMaxLength_ForStringField()
         {
-            var serializable = person.PrintToString(config => config.Printing(x => x.FamilyName).TrimmedToLength(1));
+            var serializable = person.PrintToString(config => config.Printing(x => x.FamilyName).SetMaxLength(1));
             serializable.Should().Contain($"{nameof(person.FamilyName)} = {person.FamilyName[0]}")
                 .And.NotContain($"{nameof(person.FamilyName)} = {person.FamilyName}")
                 .And.Contain($"{nameof(person.Name)} = {person.Name}");
@@ -108,7 +108,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SetMaxLength_ForAllStrings()
         {
-            var serializable = person.PrintToString(config => config.Printing<string>().TrimmedToLength(1));
+            var serializable = person.PrintToString(config => config.Printing<string>().SetMaxLength(1));
             serializable.Should().Contain($"{nameof(person.Name)} = {person.Name[0]}")
                 .And.NotContain($"{nameof(person.Name)} = {person.Name}")
                 .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName[0]}")
@@ -118,7 +118,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SetMaxLength_ForStringProperty()
         {
-            var serializable = person.PrintToString(config => config.Printing(x => x.Name).TrimmedToLength(1));
+            var serializable = person.PrintToString(config => config.Printing(x => x.Name).SetMaxLength(1));
             serializable.Should().Contain($"{nameof(person.Name)} = {person.Name[0]}")
                 .And.NotContain($"{nameof(person.Name)} = {person.Name}")
                 .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName}");

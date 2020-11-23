@@ -10,12 +10,12 @@ namespace ObjectPrinting
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        public static PrintingConfig<TOwner> SetMaxLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             var propertyConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
 
-            propertyConfig.SetTrim(maxLen);
+            propertyConfig.SetMaxLength(maxLen);
             return propertyConfig;
         }
 
