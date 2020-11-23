@@ -9,5 +9,9 @@ namespace ObjectPrinting.Solved.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public Person AlterEgo { get; set; }
+        public int[] Array { get; set; }
+        public List<double> List { get; set; }
+        public Dictionary<string, string> Dict { get; set; }
+        public List<List<int>> ListOfList { get; set; }
     }
 }

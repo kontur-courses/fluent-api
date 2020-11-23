@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+
 namespace ObjectPrinting.Solved
 {
     public static class ObjectExtensions

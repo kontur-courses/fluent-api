@@ -1,6 +1,7 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
-using NUnit.Framework;
 
 namespace ObjectPrinting.Solved.Tests
 {
@@ -13,7 +14,14 @@ namespace ObjectPrinting.Solved.Tests
         public void SetUp()
         {
             var alterEgo = new Person { Name = "Ivan IV", Age = 52, Height = 164 };
-            person = new Person { Name = "Misha", Age = 21, Height = 172, AlterEgo = alterEgo };
+            var array = new int[]{ 1, 2, 3 };
+            var list = new List<double> { 2.5, 3.2, 8.8 };
+            var dict = new Dictionary<string, string> { ["a1"] = "a", ["a2"] = "aa", ["a3"] = "aaa" };
+            var listOfList = new List<List<int>> { 
+                new List<int> { 1, 2, 3}, new List<int> { 2, 3, 4}, new List<int> { 3, 4, 5} };
+            person = new Person { 
+                Name = "Misha", Age = 21, Height = 172, AlterEgo = alterEgo, 
+                Array = array, List = list, Dict = dict, ListOfList = listOfList};
         }
         [Test]
         public void Demo()
@@ -125,6 +133,63 @@ namespace ObjectPrinting.Solved.Tests
             var heightPerson = $"Height = {person.Height.ToString(culture)}";
             var heightEgo = $"Height = {person.AlterEgo.Height.ToString(culture)}";
             Assert.IsTrue(result.Contains(heightPerson) && result.Contains(heightEgo));
+        }
+
+        [Test]
+        public void PrintingWithAlternativeSerialization()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<int>().Using(i => i.ToString("X"));
+            var result = printer.PrintToString(person);
+            var agePerson = $"Age = {person.Age:X}" + Environment.NewLine;
+            var ageEgo = $"Age = {person.AlterEgo.Age:X}" + Environment.NewLine;
+            Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
+        }
+
+        [Test]
+        public void PrintingWithAlternativeSerialisationFirstLevel()
+        {
+            var printer = ObjectPrinter.For<Person>()
+               .Printing(p => p.Age).Using(i => i.ToString("X"));
+            var result = printer.PrintToString(person);
+            var agePerson = $"Age = {person.Age:X}" + Environment.NewLine;
+            var ageEgo = $"Age = {person.AlterEgo.Age}" + Environment.NewLine;
+            Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
+        }
+
+        [Test]
+        public void PrintingWithAlternativeSerialisationDeepLevel()
+        {
+            var printer = ObjectPrinter.For<Person>()
+               .Printing(p => p.AlterEgo.Age).Using(i => i.ToString("X"));
+            var result = printer.PrintToString(person);
+            var agePerson = $"Age = {person.Age}" + Environment.NewLine;
+            var ageEgo = $"Age = {person.AlterEgo.Age:X}" + Environment.NewLine;
+            Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
+        }
+
+        [Test]
+        public void PrintingWithArray()
+        {
+            var result = person.PrintToString();
+            foreach (var i in person.Array)
+                Assert.IsTrue(result.Contains(i.ToString()));
+        }
+
+        [Test]
+        public void PrintingWithList()
+        {
+            var result = person.PrintToString();
+            foreach (var i in person.List)
+                Assert.IsTrue(result.Contains(i.ToString()));
+        }
+
+        [Test]
+        public void PrintingWithDictionary()
+        {
+            var result = person.PrintToString();
+            foreach (var i in person.Dict)
+                Assert.IsTrue(result.Contains($"[Key] = [{i.Key}], [Value] = [{i.Value}]"));
         }
     }
 }

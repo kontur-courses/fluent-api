@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq.Expressions;
+using System.Linq;
 
 namespace ObjectPrinting.Solved
 {
@@ -16,6 +18,10 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            if(fullNameProp == null)
+                printingConfig.AddSerialization(print);
+            else
+                printingConfig.AddSerialization(fullNameProp, print);
             return printingConfig;
         }
 

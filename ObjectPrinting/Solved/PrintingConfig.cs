@@ -2,10 +2,12 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Collections;
 
 namespace ObjectPrinting.Solved
-{
-    public class PrintingConfig<TOwner>
+{public class PrintingConfig<TOwner>
     {
         private static readonly Type[] finalTypes = new[]
             {
@@ -15,15 +17,18 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
         private readonly HashSet<string> excludingFields = new HashSet<string>();
         private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
-        private int? trimedString;
         private readonly Dictionary<string, int> fieldsTrim = new Dictionary<string, int>();
         private readonly HashSet<object> objects = new HashSet<object>();
+        private readonly Dictionary<Type, Delegate> alternativeSerialization = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<string, Delegate> alternativeSerializationField = new Dictionary<string, Delegate>();
+
+        internal void AddSerialization<TPropType>(Func<TPropType, string> func) => alternativeSerialization[typeof(TPropType)] = func;
+
+        internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => alternativeSerializationField[fullName] = func;
 
         internal void AddFieldsTrim(string fullName, int length) => fieldsTrim[fullName] = length;
 
         internal void AddCulture(Type type, CultureInfo culture) => cultures[type] = culture;
-
-        internal void TrimedString(int trimed) => trimedString = trimed;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -54,51 +59,50 @@ namespace ObjectPrinting.Solved
             return result;
         }
 
-        private string PrintToString(object obj, int nestingLevel, string fullName = "")
+        private string PrintToString(object obj, int nestingLevel, string fullName = "", bool fromCollection = false)
         {
-            //TODO apply configurations
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null" + (!fromCollection ? Environment.NewLine : "");
+
             var type = obj.GetType();
 
+            if ((fullName != null && alternativeSerializationField.TryGetValue(fullName, out var func)) ||
+                alternativeSerialization.TryGetValue(type, out func))
+                return func.DynamicInvoke(obj) + (!fromCollection ? Environment.NewLine : "");
+
             if (finalTypes.Contains(type))
-            {
-                return GetStringFinalType();
-            }
+                return GetStringFinalType() + (!fromCollection ? Environment.NewLine : "");
 
             objects.Add(obj);
 
+            if (obj is ICollection)
+                return PrintToStringCollection(obj, nestingLevel) + (!fromCollection ? Environment.NewLine : "");
+
             var identation = new string('\t', nestingLevel + 1);
+
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (!excludingTypes.Contains(propertyInfo.PropertyType) &&
-                    !excludingFields.Contains(fullName + '.' + propertyInfo.Name))
+                    (fullName == null || !excludingFields.Contains(GetFullName())))
                 {
-                    if(finalTypes.Contains(propertyInfo.DeclaringType) || 
+                    if (finalTypes.Contains(propertyInfo.DeclaringType) ||
                        !objects.Contains<object>(propertyInfo.GetValue(obj)))
                     sb.Append(identation + propertyInfo.Name + " = " +
                         PrintToString(propertyInfo.GetValue(obj),
-                        nestingLevel + 1, fullName + '.' + propertyInfo.Name));
+                        nestingLevel + 1, GetFullName()));
                 }
+
+                string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
             }
             return sb.ToString();
 
             string GetStringFinalType()
             {
-                if (type == typeof(string))
-                {
-                    var result = obj as string;
-                    int trimed = fieldsTrim.ContainsKey(fullName) ? fieldsTrim[fullName] : trimedString ?? result.Length;
-                    var trimedResult = Math.Min(result.Length, trimed);
-                    if (cultures.ContainsKey(type))
-                        return result.ToString(cultures[type])[0..trimedResult] + Environment.NewLine;
-                    return result[0..trimedResult] + Environment.NewLine;
-                }
                 if (cultures.ContainsKey(type))
                     return GetCulturesResult();
-                return obj + Environment.NewLine;
+                return obj.ToString();
             }
 
             string GetCulturesResult()
@@ -112,6 +116,42 @@ namespace ObjectPrinting.Solved
                 if (type == typeof(DateTime))
                     return ((DateTime)obj).ToString(cultures[type]);
                 return obj.ToString();
+            }
+        }
+
+        private string PrintToStringCollection(object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            if (obj is IDictionary)
+                return GetDictionaryResult();
+            return GetCollectionResult();
+
+            string GetDictionaryResult()
+            {
+                var dict = (IDictionary)obj;
+                var keys = dict.Keys;
+                var result = new StringBuilder(Environment.NewLine);
+                foreach (var k in keys)
+                {
+                    result.Append(identation + "[Key] = [");
+                    result.Append(PrintToString(k, nestingLevel + 1, null, true) + "]");
+                    result.Append(", [Value] = [");
+                    result.Append(PrintToString(dict[k], nestingLevel + 1, null, true) + "]");
+                    result.Append(Environment.NewLine);
+                }
+                return result.ToString();
+            }
+
+            string GetCollectionResult()
+            {
+                var array = (ICollection)obj;
+                var result = new StringBuilder(Environment.NewLine);
+                foreach (var i in array)
+                {
+                    result.Append(identation + PrintToString(i, nestingLevel + 1, null, true));
+                    result.Append(Environment.NewLine);
+                }
+                return result.ToString();
             }
         }
     }
