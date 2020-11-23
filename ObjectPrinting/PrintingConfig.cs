@@ -11,13 +11,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private static readonly IEnumerable<Type> finalTypes = new[]{
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
-        private readonly HashSet<object> visited = new HashSet<object>();
-
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
         private readonly HashSet<FieldInfo> excludedFields = new HashSet<FieldInfo>();
@@ -67,100 +60,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var type = obj.GetType();
-            if (visited.Contains(obj))
-                return "cycle" + Environment.NewLine;
-
-            if (typeToSerializer.TryGetValue(type, out var serializer))
-                return serializer.DynamicInvoke(obj) + Environment.NewLine;
-
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
-
-            if (obj is IEnumerable enumerable)
-                return PrintCollection(enumerable, nestingLevel) + Environment.NewLine;
-
-            visited.Add(obj);
-
-            var indent = GetIndent(nestingLevel);
-            var serializedObj = new StringBuilder()
-                .AppendLine(type.Name)
-                .Append(SerializeProperties(obj, type, indent, nestingLevel))
-                .Append(SerializeFields(obj, type, indent, nestingLevel));
-            return serializedObj.ToString();
-        }
-
-        private static string GetIndent(int nestingLevel)
-        {
-            return new string('\t', nestingLevel + 1);
-        }
-
-        private StringBuilder SerializeProperties(object obj, Type type, string indent, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-
-            foreach (var propInfo in type.GetProperties()
-                .Where(info => !excludedProperties.Contains(info) &&
-                               !excludedTypes.Contains(info.PropertyType)))
-                sb.Append(indent)
-                    .Append(propInfo.Name)
-                    .Append(" = ")
-                    .Append(PrintProperty(propInfo.GetValue(obj), propInfo, nestingLevel + 1));
-
-            return sb;
-        }
-
-        private StringBuilder SerializeFields(object obj, Type type, string indent, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-
-            foreach (var fieldInfo in type.GetFields()
-                .Where(info => !excludedFields.Contains(info) &&
-                               !excludedTypes.Contains(info.FieldType)))
-                sb.Append(indent)
-                    .Append(fieldInfo.Name)
-                    .Append(" = ")
-                    .Append(PrintField(fieldInfo.GetValue(obj), fieldInfo, nestingLevel + 1));
-
-            return sb;
-        }
-
-        private string PrintProperty(object value, PropertyInfo propertyInfo, int nestingLevel)
-        {
-            return propertyToSerializer.TryGetValue(propertyInfo, out var serializer) ?
-                 serializer.DynamicInvoke(value) + Environment.NewLine :
-                 PrintToString(value, nestingLevel);
-        }
-
-        private string PrintField(object value, FieldInfo fieldInfo, int nestingLevel)
-        {
-            return fieldToSerializer.TryGetValue(fieldInfo, out var serializer) ?
-                 serializer.DynamicInvoke(value) + Environment.NewLine :
-                 PrintToString(value, nestingLevel);
-        }
-
-        private string PrintCollection(IEnumerable collection, int nestingLevel)
-        {
-            var serializedObj = new StringBuilder("[" + Environment.NewLine);
-            foreach (var el in collection)
-                serializedObj
-                    .Append(GetIndent(nestingLevel + 1))
-                    .Append(PrintToString(el, nestingLevel + 1))
-                    .Append(GetIndent(nestingLevel + 2))
-                    .Append("," + Environment.NewLine);
-
-            return serializedObj
-                .Remove(serializedObj.Length - 3, 3)
-                .Append("]")
-                .ToString();
+            return new ObjectSerializer<TOwner>(this).Serialize(obj, 0);
         }
 
         private static void ThrowIfNotValidMember(PropertyInfo propertyInfo, FieldInfo fieldInfo)
