@@ -18,12 +18,6 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            printingConfig.SetCulture<TPropType>(culture);
-            return printingConfig;
-        }
-
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 

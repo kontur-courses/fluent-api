@@ -11,6 +11,30 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+
+        private readonly Dictionary<Type, Func<object, string>> typePrintingRules =
+            new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<MemberInfo, Func<object, string>> memberPrintingRules =
+            new Dictionary<MemberInfo, Func<object, string>>();
+
+        private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<MemberInfo, CultureInfo> memberCultures = new Dictionary<MemberInfo, CultureInfo>();
+
+        private readonly Dictionary<MemberInfo, Func<string, string>> memberTrimToLength =
+            new Dictionary<MemberInfo, Func<string, string>>();
+
+        private Func<string, string> globalTrimToLength = x => x;
+        private MemberInfo currentMember;
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -19,18 +43,18 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            member = ((MemberExpression) memberSelector.Body).Member;
+            currentMember = ((MemberExpression) memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            member = ((MemberExpression) memberSelector.Body).Member;
-            exludedMembers.Add(member);
+            currentMember = ((MemberExpression) memberSelector.Body).Member;
+            excludedMembers.Add(currentMember);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
@@ -41,24 +65,37 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private readonly Type[] finalTypes = new[]
+        public void SetPrintingRule<TPropType>(Func<TPropType, string> print)
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
+            if (currentMember == null)
+                typePrintingRules[typeof(TPropType)] = x => print((TPropType) x);
+            else
+                memberPrintingRules[currentMember] = x => print((TPropType) x);
+            currentMember = null;
+        }
 
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<MemberInfo> exludedMembers = new HashSet<MemberInfo>();
-        private readonly Dictionary<Type, Delegate> typePrintingRules = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<MemberInfo, Delegate> memberPrintigRules = new Dictionary<MemberInfo, Delegate>();
-        private readonly Dictionary<Type, CultureInfo> typeCultures = new Dictionary<Type, CultureInfo>();
-        private Dictionary<MemberInfo, CultureInfo> memberCultures = new Dictionary<MemberInfo, CultureInfo>();
+        public void SetCulture<TPropType>(CultureInfo culture)
+        {
+            if (currentMember == null)
+                typeCultures[typeof(TPropType)] = culture;
+            else
+                memberCultures[currentMember] = culture;
+            currentMember = null;
+        }
 
-        private readonly Dictionary<MemberInfo, Func<string, string>> memberTrim =
-            new Dictionary<MemberInfo, Func<string, string>>();
+        public void SetTrim(int maxLen)
+        {
+            if (currentMember == null)
+            {
+                globalTrimToLength = x => x.Substring(0, Math.Min(x.Length, maxLen));
+            }
+            else
+            {
+                memberTrimToLength[currentMember] = x => x.Substring(0, Math.Min(x.Length, maxLen));
+            }
 
-        private Func<string, string> globalTrim = x => x;
-        private MemberInfo member = null;
+            currentMember = null;
+        }
 
 
         private string PrintToString(object obj, int nestingLevel)
@@ -110,7 +147,7 @@ namespace ObjectPrinting
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("[");
             foreach (var key in obj)
-                stringBuilder.AppendLine(identation + PrintToString(key, nestingLevel + 2) + ",");
+                stringBuilder.AppendLine(identation + PrintToString(key, nestingLevel + 1) + ",");
 
             stringBuilder.Append(identation + "]");
             var serializedIEnumerable = stringBuilder.ToString();
@@ -125,11 +162,11 @@ namespace ObjectPrinting
         {
             if ((memberInfo.MemberType & MemberTypes.Field) != 0)
                 return excludedTypes.Contains((memberInfo as FieldInfo)?.FieldType) ||
-                       exludedMembers.Contains(memberInfo);
+                       excludedMembers.Contains(memberInfo);
 
             if ((memberInfo.MemberType & MemberTypes.Property) != 0)
                 return excludedTypes.Contains((memberInfo as PropertyInfo)?.PropertyType) ||
-                       exludedMembers.Contains(memberInfo);
+                       excludedMembers.Contains(memberInfo);
 
             return false;
         }
@@ -160,16 +197,16 @@ namespace ObjectPrinting
         {
             var sb = "";
 
-            if (memberPrintigRules.TryGetValue(memberInfo, out var rule))
+            if (memberPrintingRules.TryGetValue(memberInfo, out var rule))
                 sb = rule.DynamicInvoke(value)?.ToString();
             else if (memberCultures.TryGetValue(memberInfo, out var cultureInfo))
                 sb = ((dynamic) value).ToString(cultureInfo);
             else
                 sb = (PrintToString(value, nestingLevel + 1));
 
-            sb = globalTrim(sb);
+            sb = globalTrimToLength(sb);
 
-            if (memberTrim.TryGetValue(memberInfo, out var trimRule))
+            if (memberTrimToLength.TryGetValue(memberInfo, out var trimRule))
                 return trimRule(sb);
             return sb;
         }
@@ -187,38 +224,6 @@ namespace ObjectPrinting
                 return (memberInfo as PropertyInfo)?.GetValue(obj);
 
             return null;
-        }
-
-        public void SetPrintingRule<TPropType>(Func<TPropType, string> print)
-        {
-            if (member == null)
-                typePrintingRules[typeof(TPropType)] = print;
-            else
-                memberPrintigRules[member] = print;
-            member = null;
-        }
-
-        public void SetCulture<TPropType>(CultureInfo culture)
-        {
-            if (member == null)
-                typeCultures[typeof(TPropType)] = culture;
-            else
-                memberCultures[member] = culture;
-            member = null;
-        }
-
-        public void SetTrim(int maxLen)
-        {
-            if (member == null)
-            {
-                globalTrim = x => x.Substring(0, Math.Min(x.Length, maxLen));
-            }
-            else
-            {
-                memberTrim[member] = x => x.Substring(0, Math.Min(x.Length, maxLen));
-            }
-
-            member = null;
         }
     }
 }
