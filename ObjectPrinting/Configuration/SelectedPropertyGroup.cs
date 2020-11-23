@@ -1,8 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting.Configuration
 {
+    /// <summary>
+    /// Group of fields or properties with same type to be serialized
+    /// </summary>
     public class SelectedPropertyGroup<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
         public SelectedPropertyGroup(IEnumerable<SerializationTarget> targets, PrintingConfig<TOwner> parent)

@@ -1,7 +1,11 @@
 ﻿using System.Collections.Generic;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting.Configuration
 {
+    /// <summary>
+    /// Single selected property to be serialized
+    /// </summary>
     public class SelectedProperty<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
         public SelectedProperty(SerializationTarget target, PrintingConfig<TOwner> parent)

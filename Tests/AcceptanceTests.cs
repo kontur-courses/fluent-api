@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.IO;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;

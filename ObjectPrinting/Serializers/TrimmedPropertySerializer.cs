@@ -1,6 +1,4 @@
-﻿using ObjectPrinting.Configuration;
-
-namespace ObjectPrinting.Serializers
+﻿namespace ObjectPrinting.Serializers
 {
     public class TrimmedPropertySerializer : IPropertySerializer<string>
     {
