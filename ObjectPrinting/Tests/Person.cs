@@ -20,7 +20,7 @@ namespace ObjectPrinting.Tests
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            return (Id.GetHashCode() * 997) ^ Name.GetHashCode();
         }
     }
 }
