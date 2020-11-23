@@ -61,12 +61,50 @@ namespace Tests
         public void PrintToString_ShouldContainCorrectCulture_AddedCultureForProperty()//TODO
         {
             var printer = ObjectPrinter.For<Person>()
-                .Choose(o => o.Age).SetCulture(CultureInfo.InvariantCulture);
+                .Choose(o => o.Height).SetCulture(new CultureInfo("ru-RU", false));
+            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
+            firstPerson.Height = 44.5;
+            
+            var firstPersonText = printer.PrintToString(firstPerson);
+            
+            firstPersonText.Should().Contain("44,5");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldNotContainProperty_ExcludeProperty()//TODO
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Age).Exclude();
             var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
             
             var firstPersonText = printer.PrintToString(firstPerson);
             
-            firstPersonText.Should().Contain("My beautiful shiny double:");
+            firstPersonText.Should().NotContain("Age = ");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldContainSpecialFieldSerialization_PropertySerialization()//TODO
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Name).UseSerializer(d => $"The name is: {d}");
+            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
+            
+            var firstPersonText = printer.PrintToString(firstPerson);
+            
+            firstPersonText.Should().Contain("The name is");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldContainTrimmedString_TrimString()//TODO
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Name).Trim(2);
+            printer.Choose(o => o.Age).Trim(2);
+            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
+            
+            var firstPersonText = printer.PrintToString(firstPerson);
+            
+            firstPersonText.Should().Contain("The name is");
         }
     }
 }

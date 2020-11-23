@@ -10,16 +10,20 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly List<Type> excludedFields;
+        private readonly List<Type> excludedTypes;
         private readonly Dictionary<Type, Delegate> typesSerializer;
         private readonly Dictionary<PropertyInfo, CultureInfo> numbersCulture;
         private PropertyInfo selectedProperty;
+        private readonly List<PropertyInfo> exludedFields;
+        private readonly Dictionary<PropertyInfo, Delegate> fieldSerializers;
 
         public  PrintingConfig()
         {
-            excludedFields = new List<Type>();
+            excludedTypes = new List<Type>();
             typesSerializer = new Dictionary<Type, Delegate>();
             numbersCulture = new Dictionary<PropertyInfo, CultureInfo>();
+            exludedFields = new List<PropertyInfo>();
+            fieldSerializers = new Dictionary<PropertyInfo, Delegate>();
         }
         
         public string PrintToString(TOwner obj)
@@ -41,23 +45,27 @@ namespace ObjectPrinting
         
         public PrintingConfig<TOwner> Exclude<TProperty>()
         {
-            excludedFields.Add(typeof(TProperty));
+            excludedTypes.Add(typeof(TProperty));
             return this;
         }
         public PrintingConfig<TOwner> Exclude()
         {
+            exludedFields.Add(selectedProperty);
+            selectedProperty = null;
             return this;
         }
 
         public PrintingConfig<TOwner> Choose<TProperty>(
             Expression<Func<TOwner, TProperty>> selector)
         {
+            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
             return this;
         }
 
         public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, string>> selector)
         {
+            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
             return this;
         }
         public PrintingConfig<TOwner> Choose(
@@ -70,24 +78,28 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, double>> selector)
         {
+            selectedProperty = (PropertyInfo) ((MemberExpression) selector.Body).Member;
             return this;
         }
         
         public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, float>> selector)
         {
+            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
             return this;
         }
         
         public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, decimal>> selector)
         {
+            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
             return this;
         }
         
         public PrintingConfig<TOwner> UseSerializer(Func<object, string> func)
         {
-            throw new NotImplementedException();
+            fieldSerializers[selectedProperty] = func;
+            return this;
         }
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo currentCulture)
@@ -121,12 +133,14 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(excludedFields.Contains(propertyInfo.PropertyType))
+                if(excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
-
+                if(exludedFields.Contains(propertyInfo))
+                    continue;
+                
                 var current = propertyInfo.GetValue(obj).ToString();
                 if (numbersCulture.ContainsKey(propertyInfo))
-                    current = current.ToString(numbersCulture[propertyInfo]);
+                    current = string.Format(numbersCulture[propertyInfo], current);
                 
                 if (typesSerializer.ContainsKey(propertyInfo.PropertyType))
                 {
@@ -135,6 +149,15 @@ namespace ObjectPrinting
                         ?.ToString();
                     sb.Append(indentation + propertyInfo.Name + " = " + valueToString);
                 }
+
+                if (fieldSerializers.ContainsKey(propertyInfo))
+                {
+                    var textToAdd = fieldSerializers[propertyInfo]
+                        .DynamicInvoke(current)
+                        ?.ToString();
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              textToAdd);
+                }
                 else
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               PrintToString(propertyInfo.GetValue(obj),
@@ -142,68 +165,7 @@ namespace ObjectPrinting
                         
                 
             }
-
             return sb.ToString();
-        }
-    }
-
-    public class SelectedProperty<TOwner, TConfigurator, TProperty>
-        where TConfigurator : PropertyConfigurator<TProperty>
-    {
-        public PrintingConfig<TOwner> Parent { get; }
-
-        public PrintingConfig<TOwner> Using(Action<TConfigurator> configurator)
-        {
-            return Parent;
-        }
-
-        public PrintingConfig<TOwner> Exclude()
-        {
-            return Parent;
-        }
-
-        public PrintingConfig<TOwner> UseSerializer(Func<object, string> func)
-        {
-            throw new NotImplementedException();
-        }
-
-        public PrintingConfig<TOwner> SetCulture(CultureInfo currentCulture)
-        {
-            throw new NotImplementedException();
-        }
-
-        public PrintingConfig<TOwner> Trim(int i)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class PropertyConfigurator<TProperty>
-    {
-        public void Exclude()
-        {
-            
-        }
-
-        public PropertyConfigurator<TProperty> UseSerializer(Func<TProperty, string> serializer)
-        {
-            return this;
-        }
-    }
-
-    public class StringPropertyConfigurator : PropertyConfigurator<string>
-    {
-        public StringPropertyConfigurator Substring()
-        {
-            return this;
-        }
-    }
-
-    public class NumberPropertyConfigurator : PropertyConfigurator<int>
-    {
-        public NumberPropertyConfigurator SetCulture(CultureInfo cultureInfo)
-        {
-            return this;
         }
     }
 }
