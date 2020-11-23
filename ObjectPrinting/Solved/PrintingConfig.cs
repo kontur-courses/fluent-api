@@ -61,22 +61,12 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel, string fullName = "", bool fromCollection = false)
         {
-            if (obj == null)
-                return "null" + (!fromCollection ? Environment.NewLine : "");
-
-            var type = obj.GetType();
-
-            if ((fullName != null && alternativeSerializationField.TryGetValue(fullName, out var func)) ||
-                alternativeSerialization.TryGetValue(type, out func))
-                return func.DynamicInvoke(obj) + (!fromCollection ? Environment.NewLine : "");
-
-            if (finalTypes.Contains(type))
-                return GetStringFinalType() + (!fromCollection ? Environment.NewLine : "");
-
+            var type = obj?.GetType();
             objects.Add(obj);
 
-            if (obj is ICollection)
-                return PrintToStringCollection(obj, nestingLevel) + (!fromCollection ? Environment.NewLine : "");
+            var result = TryReturnFinalRecursion(obj, type, fullName, nestingLevel, fromCollection);
+            if (result != null)
+                return result + (!fromCollection ? Environment.NewLine : "");
 
             var identation = new string('\t', nestingLevel + 1);
 
@@ -97,6 +87,24 @@ namespace ObjectPrinting.Solved
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
             }
             return sb.ToString();
+        }
+
+        private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel, bool fromCollection)
+        {
+            if (obj == null)
+                return "null";
+
+            if ((fullName != null && alternativeSerializationField.TryGetValue(fullName, out var func)) ||
+                alternativeSerialization.TryGetValue(type, out func))
+                return func.DynamicInvoke(obj).ToString();
+
+            if (type.IsPrimitive)
+                return GetStringFinalType();
+
+            if (obj is ICollection)
+                return PrintToStringCollection(obj, nestingLevel);
+
+            return null;
 
             string GetStringFinalType()
             {
@@ -107,7 +115,7 @@ namespace ObjectPrinting.Solved
 
             string GetCulturesResult()
             {
-                if(type == typeof(double))
+                if (type == typeof(double))
                     return ((double)obj).ToString(cultures[type]);
                 if (type == typeof(int))
                     return ((double)obj).ToString(cultures[type]);
