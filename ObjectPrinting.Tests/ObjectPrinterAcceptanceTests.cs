@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -14,175 +13,106 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Name = "Alex", BirthDate = new DateTime(2001, 2, 3)};
+            person = new Person {Name = "Alex"};
         }
 
         [Test]
         public void PrintToString_SerializedWithNewIndentation_WhenChangeIndentation()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.ChangeIndentation(" "));
+            var actual = ObjectPrinter.PrintToString(person, x => x.ChangeIndentation(" "));
+            var expected = "Person\r\n Id = 00000000-0000-0000-0000-000000000000\r\n Name = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n",
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n",
-                    "null\r\n",
-                    null,
-                    " "));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithNewSeparator_WhenChangeSeparator()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.ChangeSeparatorBetweenNameAndValue(":"));
+            var actual = ObjectPrinter.PrintToString(person, x => x.ChangeSeparatorBetweenNameAndValue(":"));
+            var expected = "Person\r\n\tId : 00000000-0000-0000-0000-000000000000\r\n\tName : Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n",
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n",
-                    "null\r\n",
-                    null,
-                    "\t",
-                    ":"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithoutInt_WhenExcludingGuid()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Excluding<Guid>());
+            var actual = ObjectPrinter.PrintToString(person, x => x.Excluding<Guid>());
+            var expected = "Person\r\n\tName = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    null,
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithChangedGuid_WhenPrintingGuid()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Printing<Guid>().Using(i => "Guid"));
+            var actual = ObjectPrinter.PrintToString(person, x => x.Printing<Guid>().Using(i => "Guid"));
+            var expected = "Person\r\n\tId = Guid\tName = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "Guid",
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithCulturedDateTime_WhenPrintingDateTimeWithCulture()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Printing<DateTime>().Using(CultureInfo.InvariantCulture));
+            var time = new ClassWithDateTime {Date = new DateTime(2001, 2, 3)};
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person), 
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n", 
-                    "Alex\r\n",
-                    "02/03/2001 00:00:00\r\n"));
+            var actual =
+                ObjectPrinter.PrintToString(time, x => x.Printing<DateTime>().Using(CultureInfo.InvariantCulture));
+            var expected = "ClassWithDateTime\r\n\tDate = 02/03/2001 00:00:00\r\n";
+
+            actual.Should().Be(expected);
         }
 
         [Test]
-        public void PrintToString_SerializedWithChangedMemberParent_WhenPrintingParentAsMember()
+        public void PrintToString_SerializedWithChangedMemberId_WhenPrintingId()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Parent).Using(p => "!Parent!"));
+            var actual = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Id).Using(p => "!Guid!"));
+            var expected = "Person\r\n\tId = !Guid!\tName = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n",
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n",
-                    "!Parent!"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithCutString_WhenPrintingWithCutting()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Name).TrimmedToLength(3));
+            var actual = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Name).TrimmedToLength(3));
+            var expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Ale";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n",
-                    "Ale",
-                    "03.02.2001 0:00:00\r\n"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithoutMemberId_WhenExcludingId()
         {
-            var result = ObjectPrinter.PrintToString(person, x => x.Excluding(p => p.Id));
+            var actual = ObjectPrinter.PrintToString(person, x => x.Excluding(p => p.Id));
+            var expected = "Person\r\n\tName = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1, 
-                    null, 
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n"));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithFoundCycle_WhenCycleBetweenObjectsDifferentTypes()
         {
-            person.Parent = new Parent
-            {
-                Name = "John",
-                Child = person,
-                BirthDate = new DateTime(1975, 2, 3)
-            };
+            var human = new Human();
+            human.Parent = new Parent {Child = human};
 
-            var result = ObjectPrinter.PrintToString(person, x => x);
+            var actual = ObjectPrinter.PrintToString(human, x => x);
+            var expected = "Human\r\n\tParent = Parent\r\n\t\tParent = null\r\n\t\tChild = cycle\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Person),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n", 
-                    "Alex\r\n",
-                    "03.02.2001 0:00:00\r\n",
-                    GetCorrectPrintingConfig(
-                        nameof(Parent),
-                        2,
-                        "00000000-0000-0000-0000-000000000000\r\n", 
-                        "John\r\n",
-                        "03.02.1975 0:00:00\r\n",
-                        "null\r\n", 
-                        "cycle\r\n")));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithFoundCycle_WhenCycleBetweenObjectsSameTypes()
         {
-            var parent = new Parent {BirthDate = new DateTime(1975, 2, 3)};
+            var parent = new Parent();
             parent.Parent = parent;
 
-            var result = ObjectPrinter.PrintToString(parent, x => x);
+            var actual = ObjectPrinter.PrintToString(parent, x => x);
+            var expected = "Parent\r\n\tParent = cycle\r\n\tChild = null\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingConfig(
-                    nameof(Parent),
-                    1,
-                    "00000000-0000-0000-0000-000000000000\r\n",
-                    "null\r\n",
-                    "03.02.1975 0:00:00\r\n",
-                    "cycle\r\n", 
-                    "null\r\n"));
+            actual.Should().Be(expected);
         }
 
         [Test]
@@ -190,11 +120,12 @@ namespace ObjectPrinting.Tests
         {
             var library = new Library();
 
-            var result = ObjectPrinter.PrintToString(library, x => x.Excluding<List<Book>>()
+            var actual = ObjectPrinter.PrintToString(library, x => x.Excluding<List<Book>>()
                 .Excluding<Dictionary<string, Book>>());
+            var expected = "Library\r\n\tBooksArray = Book[]\r\n\t\tBook\r\n\t\t\t" +
+                           "Name = MyBook\r\n\t\t\tAuthor = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingArray(nameof(Library.BooksArray), library.BooksArray.GetType().Name));
+            actual.Should().Be(expected);
         }
 
         [Test]
@@ -202,29 +133,26 @@ namespace ObjectPrinting.Tests
         {
             var library = new Library();
 
-            var result = ObjectPrinter.PrintToString(library,
+            var actual = ObjectPrinter.PrintToString(library,
                 x => x.Excluding<Book[]>().Excluding<Dictionary<string, Book>>());
+            var expected = "Library\r\n\tBooksList = List`1\r\n\t\tBook\r\n\t\t\t" +
+                           "Name = MyBook\r\n\t\t\tAuthor = Alex\r\n";
 
-            result.Should().Be(
-                GetCorrectPrintingArray(nameof(Library.BooksList), library.BooksList.GetType().Name));
+            actual.Should().Be(expected);
         }
 
         [Test]
         public void PrintToString_SerializedWithDictionary_WhenPrintingDictionary()
         {
             var library = new Library();
-            var serializedObject = ObjectPrinter.PrintToString(library,
+
+            var actual = ObjectPrinter.PrintToString(library,
                 x => x.Excluding<Book[]>().Excluding<List<Book>>());
+            var result = "Library\r\n\tBooksDictionary = Dictionary`2\r\n\t\t" +
+                         "KeyValuePair`2\r\n\t\t\tKey = Alex\r\n\t\t\tValue = Book\r\n\t\t\t\t" +
+                         "Name = MyBook\r\n\t\t\t\tAuthor = Alex\r\n";
 
-            var dict = library.BooksDictionary.First();
-            var result = $"{nameof(Library)}\r\n\t{nameof(Library.BooksDictionary)} = " +
-                         $"{library.BooksDictionary.GetType().Name}\r\n\t\t" +
-                         $"{dict.GetType().Name}\r\n\t\t\t" +
-                         $"{nameof(dict.Key)} = Alex\r\n\t\t\t" +
-                         $"{nameof(dict.Value)} = {nameof(Book)}\r\n\t\t\t\t" +
-                         $"{nameof(Book.Name)} = MyBook\r\n\t\t\t\t{nameof(Book.Author)} = Alex\r\n";
-
-            serializedObject.Should().Be(result);
+            actual.Should().Be(result);
         }
 
 
@@ -232,29 +160,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_ThrowException_WhenPrintingIncorrectExpression()
         {
             Assert.Throws<InvalidCastException>(() => ObjectPrinter.PrintToString(person,
-                x => x.Printing(y => y.Name + 2).Using(CultureInfo.InvariantCulture)));
-        }
-
-        private static string GetCorrectPrintingArray(string name, string type)
-        {
-            return $"{nameof(Library)}\r\n\t{name} = {type}\r\n\t\t" +
-                   $"{nameof(Book)}\r\n\t\t\t" +
-                   $"{nameof(Book.Name)} = MyBook\r\n\t\t\t{nameof(Book.Author)} = Alex\r\n\t\t" +
-                   $"{nameof(Book)}\r\n\t\t\t" +
-                   $"{nameof(Book.Name)} = 1\r\n\t\t\t{nameof(Book.Author)} = John\r\n";
-        }
-
-        private string GetCorrectPrintingConfig(string type, int level, string id, string name, 
-            string birthDate, string parent = "null\r\n", string child = null,
-            string indentation = "\t", string sep = "=")
-        {
-            var indent = string.Concat(Enumerable.Repeat(indentation, level));
-            return $"{type}\r\n" +
-                   (!string.IsNullOrEmpty(id) ? $"{indent}{nameof(person.Id)} {sep} {id}" : "") +
-                   (!string.IsNullOrEmpty(name) ? $"{indent}{nameof(person.Name)} {sep} {name}" : "") +
-                   (!string.IsNullOrEmpty(child) ? $"{indent}{nameof(person.Parent.Child)} {sep} {child}" : "") +
-                   (!string.IsNullOrEmpty(birthDate) ? $"{indent}{nameof(person.BirthDate)} {sep} {birthDate}" : "") +
-                   (!string.IsNullOrEmpty(parent) ? $"{indent}{nameof(person.Parent)} {sep} {parent}" : "");
+                x => x.Printing(y => y.Name + new Guid() + 25).Using(CultureInfo.InvariantCulture)));
         }
     }
 }

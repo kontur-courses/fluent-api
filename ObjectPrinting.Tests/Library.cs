@@ -11,14 +11,12 @@ namespace ObjectPrinting.Tests
 
         public List<Book> BooksList = new List<Book>
         {
-            new Book("Alex", "MyBook"),
-            new Book("John", "1")
+            new Book("Alex", "MyBook")
         };
 
         public Book[] BooksArray { get; set; } =
         {
-            new Book("Alex", "MyBook"),
-            new Book("John", "1")
+            new Book("Alex", "MyBook")
         };
     }
 }

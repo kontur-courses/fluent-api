@@ -1,7 +1,7 @@
 ﻿namespace ObjectPrinting.Tests
 {
-    public class Parent : Person
+    public class Parent : Human
     {
-        public Person Child;
+        public Human Child;
     }
 }
