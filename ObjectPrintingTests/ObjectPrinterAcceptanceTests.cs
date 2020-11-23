@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -38,6 +39,17 @@ namespace ObjectPrintingTests
             Console.WriteLine(s3);
         }
 
+        [Test]
+        public void PrintToString_WhenSomeMembersIsNull()
+        {
+            person.Surname = null;
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>().Using(str => str.ToUpper());
+            var serialization = printer.PrintToString(person);
+            serialization.Should().Be(
+                $"Person{Environment.NewLine}\tId = Guid{Environment.NewLine}\tName = ALEX{Environment.NewLine}" +
+                $"\tHeight = 175,1{Environment.NewLine}\tAge = 19{Environment.NewLine}\tSurname = null{Environment.NewLine}");
+        }
 
         [Test]
         public void Excluding_OneType()
@@ -211,6 +223,33 @@ namespace ObjectPrintingTests
             serialization.Should().Be(
                 $"Person{Environment.NewLine}\tId = Guid{Environment.NewLine}\tName = Alex{Environment.NewLine}" +
                 $"\tHeight = 175,1{Environment.NewLine}\tAge = 19{Environment.NewLine}\tSurname = Ivanov{Environment.NewLine}");
+        }
+
+        [Test]
+        public void PrintToString_Dictionary_Demo()
+        {
+            var dictionary = new Dictionary<string, Person>
+            {
+                {"a", person},
+                {"b", person}
+            };
+            Console.WriteLine(dictionary.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_List_Demo()
+        {
+            var list = new List<Person>();
+            list.Add(person);
+            list.Add(person);
+            Console.WriteLine(list.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_Array_Demo()
+        {
+            var array = new [] {person, person};
+            Console.WriteLine(array.PrintToString());
         }
     }
 }
