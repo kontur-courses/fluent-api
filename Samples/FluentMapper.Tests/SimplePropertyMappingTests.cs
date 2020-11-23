@@ -1,5 +1,5 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
+using NUnit.Framework;
 
 namespace FluentMapping.Tests
 {
@@ -16,8 +16,8 @@ namespace FluentMapping.Tests
             var ex = Assert.Throws<Exception>(() => spec.Create());
 
             var expectedMessage = "Unmapped properties: " +
-                "Target.Num, Target.Str, " +
-                "Source.ID, Source.Name";
+                                  "Target.Num, Target.Str, " +
+                                  "Source.ID, Source.Name";
 
             Assert.That(ex.Message, Is.EqualTo(expectedMessage));
         }
@@ -31,7 +31,8 @@ namespace FluentMapping.Tests
                 .ThatSets(tgt => tgt.Num).From(src => src.ID)
                 .Create();
 
-            var source = new Source {
+            var source = new Source
+            {
                 ID = 7,
                 Name = "Bob"
             };
@@ -71,8 +72,8 @@ namespace FluentMapping.Tests
             var ex = Assert.Throws<Exception>(() => spec.IgnoringSourceProperty(src => 7));
 
             Assert.That(ex.Message, Is.EqualTo("IgnoringSourceProperty(...) requires an expression "
-                + "that is a simple property access of the form 'src => src.Property'."
-                ));
+                                               + "that is a simple property access of the form 'src => src.Property'."
+            ));
         }
 
         [Test]
@@ -83,16 +84,15 @@ namespace FluentMapping.Tests
             var ex = Assert.Throws<Exception>(() => spec.IgnoringTargetProperty(tgt => tgt.AField));
 
             Assert.That(ex.Message, Is.EqualTo("IgnoringTargetProperty(...) requires an expression "
-                + "that is a simple property access of the form 'tgt => tgt.Property'."
-                ));
+                                               + "that is a simple property access of the form 'tgt => tgt.Property'."
+            ));
         }
 
         public sealed class Target
         {
+            public int AField;
             public string Str { get; set; }
             public int Num { get; set; }
-
-            public int AField;
         }
 
         public sealed class Source
