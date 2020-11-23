@@ -13,5 +13,6 @@ namespace ObjectPrinting.Tests
         public int Age { get; set; }
         public Person Parent { get; set; }
         public List<Person> Cousins { get; set; }
+        public string Login;
     }
 }

@@ -54,77 +54,55 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s2);
             Console.WriteLine(s3);
         }
-
+        
         [Test]
-        public void Exclude_Guid_FromSerialization()
+        public void Exclude_Type_FromSerialization()
         {
-            var actual = printer.Excluding<Guid>().PrintToString(person);
+            var actual = printer
+                .Excluding<Guid>()
+                .PrintToString(person);
 
             actual.Should().NotContain("Id");
         }
-        
-        [Test]
-        public void Exclude_String_FromSerialization()
-        {
-            var actual = printer.Excluding<string>().PrintToString(person);
-
-            actual.Should().NotContain("Name");
-        }
 
         [Test]
-        public void Change_Serialization_ForInteger()
+        public void Change_Serialization_ForType()
         {
-            var actual = printer.Printing<int>().Using(i => i.ToString("X")).PrintToString(person);
+            var actual = printer
+                .Printing<int>().Using(i => i.ToString("X"))
+                .PrintToString(person);
 
             actual.Should().Contain(person.Age.ToString("X"));
         }
         
         [Test]
-        public void Change_Serialization_ForGuid()
+        public void Change_Culture_ForNumbers()
         {
-            var actual = printer.Printing<Guid>().Using(i => i + "!").PrintToString(person);
-
-            actual.Should().Contain(person.Id + "!");
-        }
-        
-        [Test]
-        public void Change_Culture_ForDouble()
-        {
-            var actual = printer.Printing<double>().Using(CultureInfo.InvariantCulture).PrintToString(person);
+            var actual = printer
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .PrintToString(person);
 
             actual.Should().Contain(person.Height.ToString(CultureInfo.InvariantCulture));
         }
         
         [Test]
-        public void Change_Culture_ForInt()
-        {
-            var actual = printer.Printing<int>().Using(CultureInfo.InvariantCulture).PrintToString(person);
-
-            actual.Should().Contain(person.Age.ToString(CultureInfo.InvariantCulture));
-        }
-        
-        [Test]
         public void Change_Serialization_ForProperty()
         {
-            var actual = printer.Printing(p => p.Height).Using(h => h + "!").PrintToString(person);
+            var actual = printer
+                .Printing(p => p.Height).Using(h => h + "!")
+                .PrintToString(person);
 
             actual.Should().Contain(person.Height + "!");
             actual.Should().NotContain(person.Weight + "!");
         }
 
         [Test]
-        public void Make_Alex_Flex()
-        {
-            var actual = printer.Printing(p => p.FirstName).Using(n => n.Replace("A", "F")).PrintToString(person);
-
-            actual.Should().Contain(person.FirstName.Replace("A", "F"));
-        }
-
-        [Test]
         public void Trim_AllStringProperties_WithGreaterMaxLength()
         {
             var length = Math.Max(person.FirstName.Length, person.LastName.Length) + 1;
-            var actual = printer.Printing<string>().TrimmedToLength(length).PrintToString(person);
+            var actual = printer
+                .Printing<string>().TrimmedToLength(length)
+                .PrintToString(person);
 
             actual.Should().Contain(person.FirstName);
             actual.Should().Contain(person.LastName);
@@ -134,26 +112,32 @@ namespace ObjectPrinting.Tests
         public void Trim_AllStringProperties_WithSmallerMaxLength()
         {
             var length = Math.Min(person.FirstName.Length, person.LastName.Length) - 1;
-            var actual = printer.Printing<string>().TrimmedToLength(length).PrintToString(person);
+            var actual = printer
+                .Printing<string>().TrimmedToLength(length)
+                .PrintToString(person);
 
-            actual.Should().Contain(person.FirstName.Substring(0, length));
-            actual.Should().Contain(person.LastName.Substring(0, length));
+            actual.Should().NotContain(person.FirstName);
+            actual.Should().NotContain(person.LastName);
         }
         
         [Test]
         public void Trim_ChosenProperties_WithSmallerMaxLength()
         {
             var length = person.FirstName.Length - 1;
-            var actual = printer.Printing(p => p.FirstName).TrimmedToLength(length).PrintToString(person);
+            var actual = printer
+                .Printing(p => p.FirstName).TrimmedToLength(length)
+                .PrintToString(person);
 
-            actual.Should().Contain(person.FirstName.Substring(0, length));
+            actual.Should().NotContain(person.FirstName);
             actual.Should().Contain(person.LastName);
         }
 
         [Test]
         public void Exclude_ChosenProperty()
         {
-            var actual = printer.Excluding(p => p.Weight).PrintToString(person);
+            var actual = printer
+                .Excluding(p => p.Weight)
+                .PrintToString(person);
             
             actual.Should().NotContain(nameof(person.Weight));
             actual.Should().Contain(nameof(person.Height));
@@ -197,24 +181,14 @@ namespace ObjectPrinting.Tests
             Assert.DoesNotThrow(() => actual = printer.PrintToString(person));
             actual.Should().Be("Cyclic reference found");
         }
-
-        [Test]
-        public void Serialize_Array_OfIntegers()
-        {
-            var array = new []{3, 4, 5, 2, 1, 0};
-            var actual = ObjectPrinter.For<int[]>().PrintToString(array);
-
-            actual.Should().ContainAll(array.Select(n => n.ToString()));
-            Console.WriteLine(actual);
-        }
         
         [Test]
-        public void Serialize_Array_OfPersons()
+        public void Serialize_Array()
         {
             var array = new []{person, person.Parent};
             var actual = ObjectPrinter.For<Person[]>().PrintToString(array);
 
-            actual.Should().ContainAll(array.SelectMany(p => printer.PrintToString(person).Split()));
+            actual.Should().ContainAll(array.Select(p => p.FirstName));
             Console.WriteLine(actual);
         }
 
@@ -232,23 +206,31 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void Serialize_List_OfPersons()
+        public void Serialize_List()
         {
             var list = new List<Person> {person, person.Parent};
             var actual = ObjectPrinter.For<List<Person>>().PrintToString(list);
 
-            actual.Should().ContainAll(list.SelectMany(p => printer.PrintToString(person).Split()));
+            actual.Should().ContainAll(list.Select(p => p.FirstName));
             Console.WriteLine(actual);
         }
         
         [Test]
-        public void Serialize_Dictionary_IntString()
+        public void Serialize_Dictionary()
         {
-            var dictionary = new Dictionary<int, string>{[3] = "abc", [5] = "cde", [person.Age] = person.LastName};
-            var actual = ObjectPrinter.For<Dictionary<int, string>>().PrintToString(dictionary);
+            var dictionary = new Dictionary<string, Person>{["abc"] = person, ["cde"] = person.Parent};
+            var actual = ObjectPrinter.For<Dictionary<string, Person>>().PrintToString(dictionary);
 
-            actual.Should().ContainAll(dictionary.SelectMany(p => new[]{p.Key.ToString(), p.Value}));
+            actual.Should().ContainAll(dictionary.Values.Select(p => p.FirstName));
             Console.WriteLine(actual);
+        }
+        
+        [Test]
+        public void Contains_Fields()
+        {
+            var actual = printer.PrintToString(person);
+                
+            actual.Should().Contain("Login");
         }
     }
 }
