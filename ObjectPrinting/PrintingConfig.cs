@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,27 +10,43 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        private readonly Type[] finalTypes;
+
+        public PrintingConfig()
         {
-            return PrintToString(obj, 0);
+            finalTypes = new[]
+            {
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            };
         }
 
-        public static PrintingConfig<TOwner> Default => new PrintingConfig<TOwner>();
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
         public SelectedPropertyGroup<TOwner, TProperty> Choose<TProperty>()
         {
-            return new SelectedPropertyGroup<TOwner, TProperty>(this);
+            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+            var targetsEnumerable = typeof(TOwner)
+                .GetFields(bindingFlags)
+                .Select(f => new SerializationTarget(f))
+                .Union(typeof(TOwner)
+                    .GetProperties(bindingFlags)
+                    .Select(p => new SerializationTarget(p)));
+            return new SelectedPropertyGroup<TOwner, TProperty>(targetsEnumerable, this);
         }
 
-        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(
-            Expression<Func<TOwner, TProperty>> selector)
+        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>> selector)
         {
-            var memberInfo = selector.Body as MemberExpression;
-            var propertyInfo = memberInfo?.Member as PropertyInfo;
-            if (propertyInfo == null)
-                throw new ArgumentException($"{nameof(selector)} must point on a Property");
+            var memberInfo = (selector.Body as MemberExpression)?.Member;
 
-            return new SelectedProperty<TOwner, TProperty>(propertyInfo, this);
+            var target = memberInfo switch
+            {
+                PropertyInfo propertyInfo => new SerializationTarget(propertyInfo),
+                FieldInfo fieldInfo => new SerializationTarget(fieldInfo),
+                _ => throw new ArgumentException($"{nameof(selector)} must point on a Property")
+            };
+
+            return new SelectedProperty<TOwner, TProperty>(target, this);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -38,26 +55,22 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            var type = obj.GetType();
+            if (finalTypes.Contains(type))
+                return obj.ToString() + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
                 sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                          PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
 
             return sb.ToString();
         }
+
+        public static PrintingConfig<TOwner> Default => new PrintingConfig<TOwner>();
     }
 }

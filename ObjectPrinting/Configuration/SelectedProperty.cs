@@ -1,21 +1,25 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
 
 namespace ObjectPrinting.Configuration
 {
-    public class SelectedProperty<TOwner, TProperty> : IConfigurable<TOwner, TProperty>
+    public class SelectedProperty<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
-        public SelectedProperty(PropertyInfo propertyInfo, PrintingConfig<TOwner> parent)
+        public SelectedProperty(SerializationTarget target, PrintingConfig<TOwner> parent)
         {
-            PropertyInfo = propertyInfo;
+            Target = target;
             Owner = parent;
         }
 
-        public PropertyInfo PropertyInfo { get; }
+        public IPropertySerializer<TProperty> AppliedSerializer { get; private set; }
+        public SerializationTarget Target { get; }
         public PrintingConfig<TOwner> Owner { get; }
 
         public PrintingConfig<TOwner> Using(IPropertySerializer<TProperty> serializer)
         {
+            AppliedSerializer = serializer;
             return Owner;
         }
+
+        IReadOnlyList<SerializationTarget> IPropertyConfigurator.Targets => new[] {Target};
     }
 }

@@ -33,7 +33,6 @@ namespace Tests
             person.Serialize();
             //8. ...с конфигурированием
             new object().Serialize(d => d.Choose<int>().Exclude());
-            new FileInfo("").Serialize(d => d.Choose(fi => fi.Directory).Exclude());
             //Ну после такого можно и бутылочку пива бахнуть
             //Я бы ебнул так то
         }
