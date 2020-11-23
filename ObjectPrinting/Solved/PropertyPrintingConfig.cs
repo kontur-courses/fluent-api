@@ -13,7 +13,7 @@ namespace ObjectPrinting.Solved
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> expression = null)
         {
             this.printingConfig = printingConfig;
-            fullNameProp =  expression != null ? expression.GetFullNameProperty() : null;
+            fullNameProp = expression?.GetFullNameProperty();
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
@@ -28,8 +28,7 @@ namespace ObjectPrinting.Solved
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             var type = typeof(TOwner);
-            if(type.GetMethod("ToString").GetParameters()
-                .Where(p => p.ParameterType == typeof(IFormatProvider)).Any())
+            if(type.GetMethod("ToString").GetParameters().Any(p => p.ParameterType == typeof(IFormatProvider)))
                 printingConfig.AddCulture(typeof(TPropType), culture);
             return printingConfig;
         }

@@ -22,7 +22,8 @@ namespace ObjectPrinting.Solved
         private readonly Dictionary<Type, Delegate> alternativeSerialization = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Delegate> alternativeSerializationField = new Dictionary<string, Delegate>();
 
-        internal void AddSerialization<TPropType>(Func<TPropType, string> func) => alternativeSerialization[typeof(TPropType)] = func;
+        internal void AddSerialization<TPropType>(Func<TPropType, string> func) => 
+            alternativeSerialization[typeof(TPropType)] = func;
 
         internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => alternativeSerializationField[fullName] = func;
 
