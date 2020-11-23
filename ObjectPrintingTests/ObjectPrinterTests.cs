@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -12,8 +11,8 @@ namespace ObjectPrintingTests
     {
         private static readonly Person Person = new Person
         {
-            Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex", Wallet = new[] {"$: 50", "P: 40000"},
-            RelativesNames = new Dictionary<string, string> {{"Mother", "Lana"}, {"Father", "John"}}
+            Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex", /*Wallet = new[] {"$: 50", "P: 40000"},
+            RelativesNames = new Dictionary<string, string> {{"Mother", "Lana"}, {"Father", "John"}}*/
         };
 
         [Test]

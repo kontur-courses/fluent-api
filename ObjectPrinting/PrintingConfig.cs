@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,10 +12,10 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(IEnumerable)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private readonly Dictionary<PropertyInfo, Delegate> propPrintingMethods =
@@ -27,7 +28,7 @@ namespace ObjectPrinting
 
         private PropertyInfo propertyToConfig;
 
-        public void AddPrintingMethod<TPropType>(Func<TPropType, string> method)
+        public PrintingConfig<TOwner> AddPrintingMethod<TPropType>(Func<TPropType, string> method)
         {
             if (propertyToConfig == null)
             {
@@ -38,11 +39,14 @@ namespace ObjectPrinting
                 propPrintingMethods[propertyToConfig] = method;
                 propertyToConfig = null;
             }
+
+            return this;
         }
 
-        public void AddPrintingCulture<TPropType>(CultureInfo cultureInfo)
+        public PrintingConfig<TOwner> AddPrintingCulture<TPropType>(CultureInfo cultureInfo)
         {
             typePrintingCultureInfo[typeof(TPropType)] = cultureInfo;
+            return this;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -60,12 +64,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var body = (MemberExpression) memberSelector.Body;
-            propsToExclude.Add((PropertyInfo) body.Member);
+            if (memberSelector.Body is MemberExpression body)
+            {
+                propsToExclude.Add((PropertyInfo) body.Member);
+            }
+
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             typesToExclude.Add(typeof(TPropType));
             return this;
@@ -79,12 +86,14 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
+            {
                 return "null" + Environment.NewLine;
+            }
 
             if (finalTypes.Contains(obj.GetType()))
+            {
                 return obj + Environment.NewLine;
-
-            if (obj is IEnumerable collection) return ParseCollectionToString(collection);
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -93,34 +102,56 @@ namespace ObjectPrinting
             var props = type.GetProperties().Where(prop =>
                 !typesToExclude.Contains(prop.PropertyType) && !propsToExclude.Contains(prop));
             foreach (var propertyInfo in props)
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo, obj, nestingLevel));
+            {
+                /*if (propertyInfo.PropertyType == typeof(string[]))
+                {
+                    var collection = propertyInfo.GetValue(obj) as IEnumerable<string>;
+                    var items = new StringBuilder();
+                    if (collection != null)
+                    {
+                        foreach (var elem in collection)
+                        {
+                            items.Append(PrintToString(elem, nestingLevel + 1) + "\n");
+                        }
+                    }
+                    else
+                    {
+                        items = new StringBuilder("null");
+                    }
+
+                    sb.Append(indentation + propertyInfo.Name + " = " + items);
+                }
+                else*/
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo, obj, nestingLevel));
+                }
+            }
+
             return sb.ToString();
-        }
-
-        private static string ParseCollectionToString(IEnumerable collection)
-        {
-            var items = new StringBuilder("[");
-            foreach (var item in collection) items.Append($"{item}, ");
-
-            items.Remove(items.Length - 2, 2);
-            items.Append("]");
-            return items + Environment.NewLine;
         }
 
         private string PrintToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
+            
             var value = propertyInfo.GetValue(obj) as dynamic;
             var type = propertyInfo.PropertyType;
 
             if (propPrintingMethods.TryGetValue(propertyInfo, out var printProperty))
+            {
                 return printProperty.DynamicInvoke(value) + Environment.NewLine;
+            }
 
             if (typePrintingMethods.TryGetValue(type, out var printType))
+            {
                 return printType.DynamicInvoke(value) + Environment.NewLine;
+            }
 
             if (typePrintingCultureInfo.TryGetValue(type, out var cultureInfo))
+            {
                 return value?.ToString(cultureInfo) + Environment.NewLine;
+            }
+
             return PrintToString(value, nestingLevel + 1);
         }
     }

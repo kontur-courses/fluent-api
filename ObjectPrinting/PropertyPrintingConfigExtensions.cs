@@ -13,8 +13,7 @@ namespace ObjectPrinting
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            parentConfig.AddPrintingMethod((string s) => s.Substring(0, Math.Min(s.Length, maxLen)));
-            return parentConfig;
+            return parentConfig.AddPrintingMethod((string s) => s.Substring(0, Math.Min(s.Length, maxLen)));
         }
     }
 }
