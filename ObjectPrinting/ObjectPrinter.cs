@@ -8,13 +8,18 @@ namespace ObjectPrinting
 {
     public static class ObjectPrinter
     {
-        public static string PrintToString<TOwner>(TOwner obj,
-            Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> config)
+        public static string PrintToString<TOwner>(TOwner obj)
         {
-            return PrintToString(obj, config(new PrintingConfig<TOwner>()), 0);
+            return PrintToString(obj, new PrintingConfig(), 0);
         }
 
-        private static string PrintToString<TOwner>(object obj, PrintingConfig<TOwner> config, int nestingLevel)
+        public static string PrintToString<TOwner>(TOwner obj,
+            Func<Configurator<TOwner>, Configurator<TOwner>> config)
+        {
+            return PrintToString(obj, config(new Configurator<TOwner>()).Build(), 0);
+        }
+
+        private static string PrintToString(object obj, PrintingConfig config, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -28,11 +33,11 @@ namespace ObjectPrinting
                 config.VisitedObjects.Add(obj);
 
             return typeof(ICollection).IsAssignableFrom(type)
-                ? GetSerializedCollection(obj, nestingLevel, config)
-                : GetSerializedMembers(obj, nestingLevel, config);
+                ? GetSerializedCollection(obj, config, nestingLevel)
+                : GetSerializedMembers(obj, config, nestingLevel);
         }
 
-        private static string GetSerializedMembers<TOwner>(object obj, int nestingLevel, PrintingConfig<TOwner> config)
+        private static string GetSerializedMembers(object obj, PrintingConfig config, int nestingLevel)
         {
             var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
             var currentIndentation = string.Concat(Enumerable.Repeat(config.Indentation, nestingLevel + 1));
@@ -44,13 +49,13 @@ namespace ObjectPrinting
                                 !config.ExcludingTypes.Contains(propertyInfo.PropertyType)
                                 || x is FieldInfo fieldInfo && !config.ExcludingTypes.Contains(fieldInfo.FieldType))))
                 resultString.Append(currentIndentation + member.Name + $" {config.SeparatorBetweenNameAndValue} " +
-                                    GetSerializedMember(member, obj, nestingLevel, config));
+                                    GetSerializedMember(obj, config, member, nestingLevel));
 
             return resultString.ToString();
         }
 
-        private static string GetSerializedCollection<TOwner>(object obj, int nestingLevel,
-            PrintingConfig<TOwner> config)
+        private static string GetSerializedCollection(object obj, PrintingConfig config,
+            int nestingLevel)
         {
             var resultString = new StringBuilder().AppendLine(obj.GetType().Name);
             var currentIndentation = string.Concat(Enumerable.Repeat(config.Indentation, nestingLevel + 1));
@@ -60,15 +65,15 @@ namespace ObjectPrinting
             return resultString.ToString();
         }
 
-        private static string GetSerializedObject<TOwner>(object obj, PrintingConfig<TOwner> config)
+        private static string GetSerializedObject(object obj, PrintingConfig config)
         {
             return config.CultureTypes.ContainsKey(obj.GetType())
                 ? string.Format(config.CultureTypes[obj.GetType()], "{0}" + Environment.NewLine, obj)
                 : obj + Environment.NewLine;
         }
 
-        private static string GetSerializedMember<TOwner>(MemberInfo member, object obj, int nestingLevel,
-            PrintingConfig<TOwner> config)
+        private static string GetSerializedMember(object obj, PrintingConfig config,
+            MemberInfo member, int nestingLevel)
         {
             var memberValue = member is PropertyInfo info
                 ? info.GetValue(obj)

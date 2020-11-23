@@ -97,7 +97,7 @@ namespace ObjectPrinting.Tests
             var human = new Human();
             human.Parent = new Parent {Child = human};
 
-            var actual = ObjectPrinter.PrintToString(human, x => x);
+            var actual = ObjectPrinter.PrintToString(human);
             var expected = "Human\r\n\tParent = Parent\r\n\t\tParent = null\r\n\t\tChild = cycle\r\n";
 
             actual.Should().Be(expected);
@@ -109,7 +109,7 @@ namespace ObjectPrinting.Tests
             var parent = new Parent();
             parent.Parent = parent;
 
-            var actual = ObjectPrinter.PrintToString(parent, x => x);
+            var actual = ObjectPrinter.PrintToString(parent);
             var expected = "Parent\r\n\tParent = cycle\r\n\tChild = null\r\n";
 
             actual.Should().Be(expected);
