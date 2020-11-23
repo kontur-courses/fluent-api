@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -22,7 +23,17 @@ namespace ObjectPrinting
             }
 
             parentConfig.AddRule( (Func<string, string>) Trim);
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return parentConfig;
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
+            this PropertyPrintingConfig<TOwner, TPropType> propConfig, 
+            CultureInfo culture) 
+            where TPropType : IFormattable
+        {
+            var parentConfig = ((IPropertyPrintingConfig<TOwner, TPropType>) propConfig).ParentConfig;
+            parentConfig.AddCulture<TPropType>(culture);
+            return parentConfig;
         }
     }
 }
