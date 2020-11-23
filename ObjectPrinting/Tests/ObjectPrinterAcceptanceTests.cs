@@ -88,7 +88,7 @@ namespace ObjectPrinting.Tests
         {
             person.Name = "Alexander";
             printer = printer.SetTrimming(x => x.Name, 4);
-            printer.PrintToString(person).Should().Contain($"{nameof(person.Name)} = Alex");
+            printer.PrintToString(person).Should().Contain($"{nameof(person.Name)} = Alex\r\n");
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace ObjectPrinting.Tests
         {
             person.Surname = "Brown";
             printer = printer.SetTrimming(x => x.Surname, 1);
-            printer.PrintToString(person).Should().Contain($"{nameof(person.Surname)} = B");
+            printer.PrintToString(person).Should().Contain($"{nameof(person.Surname)} = B\r\n");
         }
 
         [Test]
