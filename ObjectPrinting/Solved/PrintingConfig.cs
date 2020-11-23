@@ -64,7 +64,7 @@ namespace ObjectPrinting.Solved
             var type = obj?.GetType();
             objects.Add(obj);
 
-            var result = TryReturnFinalRecursion(obj, type, fullName, nestingLevel, fromCollection);
+            var result = TryReturnFinalRecursion(obj, type, fullName, nestingLevel);
             if (result != null)
                 return result + (!fromCollection ? Environment.NewLine : "");
 
@@ -74,22 +74,24 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (!excludingTypes.Contains(propertyInfo.PropertyType) &&
-                    (fullName == null || !excludingFields.Contains(GetFullName())))
+                if (CanConsiderProperty())
                 {
-                    if (finalTypes.Contains(propertyInfo.DeclaringType) ||
-                       !objects.Contains<object>(propertyInfo.GetValue(obj)))
                     sb.Append(identation + propertyInfo.Name + " = " +
                         PrintToString(propertyInfo.GetValue(obj),
                         nestingLevel + 1, GetFullName()));
                 }
 
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
+
+                bool CanConsiderProperty() =>
+                    !excludingTypes.Contains(propertyInfo.PropertyType) &&
+                    (fullName == null || !excludingFields.Contains(GetFullName())) &&
+                    !objects.Contains<object>(propertyInfo.GetValue(obj));
             }
             return sb.ToString();
         }
 
-        private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel, bool fromCollection)
+        private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel)
         {
             if (obj == null)
                 return "null";
