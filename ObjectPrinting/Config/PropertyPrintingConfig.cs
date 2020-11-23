@@ -1,8 +1,7 @@
-﻿using ObjectPrinting.Config;
-using System;
+﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Config
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {

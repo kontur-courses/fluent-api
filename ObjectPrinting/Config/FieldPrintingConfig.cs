@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Reflection;
-using ObjectPrinting.Config;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Config
 {
     public class FieldPrintingConfig<TOwner, TPropType> : IFieldPrintingConfig<TOwner, TPropType>
     {

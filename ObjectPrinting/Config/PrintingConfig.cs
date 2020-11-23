@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using ObjectPrinting.Config;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Config
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {

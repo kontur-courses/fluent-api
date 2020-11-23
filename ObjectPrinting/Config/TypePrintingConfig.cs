@@ -1,7 +1,6 @@
-﻿using ObjectPrinting.Config;
-using System;
+﻿using System;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Config
 {
     public class TypePrintingConfig<TOwner, TPropType> : IConfig<TOwner, TPropType>
     {
