@@ -12,7 +12,13 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person();
+            person = new Person
+            {
+                Name = "Alex",
+                Age = 19,
+                Height = 1.85,
+                Surname = "Brown"
+            };
             printer = ObjectPrinter.For<Person>();
         }
 
@@ -22,11 +28,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingAll_IfHasNoConfig()
         {
-            person.Name = "Alex";
-            person.Age = 19;
-            person.Height = 180;
-            person.Surname = "Brown";
-            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 180\r\n\t" +
+            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1,85\r\n\t" +
                                                       "Age = 19\r\n\tFriend = null\r\n\tSurname = Brown\r\n");
         }
 
@@ -54,15 +56,13 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingWithCulture_IfCultureWasSet()
         {
-            person.Height = 0.5;
             printer = printer.SetCultureInfo<double>(CultureInfo.InvariantCulture);
-            printer.PrintToString(person).Should().Contain($"{nameof(person.Height)} = 0.5");
+            printer.PrintToString(person).Should().Contain($"{nameof(person.Height)} = 1.85");
         }
 
         [Test]
         public void PrintToString_PrintingPropertyByAlternateSerializing()
         {
-            person.Name = "Alex";
             printer = printer.SetAlternateSerialize(x => x.Name, x => x + "!!");
             printer.PrintToString(person).Should().Contain($"{nameof(person.Name)} = Alex!!");
         }
@@ -70,7 +70,6 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingFieldByAlternateSerializing()
         {
-            person.Surname = "Brown";
             printer = printer.SetAlternateSerialize(x => x.Surname, x => x + "!!");
             printer.PrintToString(person).Should().Contain($"{nameof(person.Surname)} = Brown!!");
         }
@@ -78,9 +77,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingTypeByAlternateSerializing()
         {
-            person.Age = 18;
             printer = printer.SetAlternateSerialize<int>(x => x + "!!!");
-            printer.PrintToString(person).Should().Contain($"{nameof(person.Age)} = 18!!!");
+            printer.PrintToString(person).Should().Contain($"{nameof(person.Age)} = 19!!!");
         }
 
         [Test]
