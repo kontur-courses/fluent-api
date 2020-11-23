@@ -77,8 +77,8 @@ namespace ObjectPrinting.Solved.Tests
             var result = printind.PrintToString(person);
             Assert.IsTrue(result.Contains($"Age = {person.Age}") && !result.Contains($"Age = {person.AlterEgo.Age}"));
         }
-
-	    [Test]
+        
+        [Test]
         public void TrimedAllStrings()
         {
             var printind = ObjectPrinter.For<Person>()
@@ -88,8 +88,8 @@ namespace ObjectPrinting.Solved.Tests
             var nameEgo = $"Name = {person.AlterEgo.Name[0..2]}" + Environment.NewLine;
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
-
-	    [Test]
+        
+        [Test]
         public void TrimedSomeStrings()
         {
             var printind = ObjectPrinter.For<Person>()
@@ -99,10 +99,10 @@ namespace ObjectPrinting.Solved.Tests
             var result = printind.PrintToString(person);
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
-
-	    [TestCase(2, 3)]
-	    [TestCase(2, 2)]
-	    [TestCase(3, 2)]
+        
+        [TestCase(2, 3)]
+        [TestCase(2, 2)]
+        [TestCase(3, 2)]
         public void TrimedAllAndSomeStrings(int stringTrim, int fieldTrim)
         {
             var printind = ObjectPrinter.For<Person>()
@@ -156,7 +156,7 @@ namespace ObjectPrinting.Solved.Tests
             var ageEgo = $"Age = {person.AlterEgo.Age}" + Environment.NewLine;
             Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
         }
-
+        
         [Test]
         public void PrintingWithAlternativeSerialisationDeepLevel()
         {
