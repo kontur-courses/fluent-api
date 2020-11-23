@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -104,23 +105,48 @@ namespace ObjectPrinting
             var type = memberInfo is PropertyInfo
                 ? ((PropertyInfo) memberInfo).PropertyType
                 : ((FieldInfo) memberInfo).FieldType;
-
+            var value = memberInfo is PropertyInfo
+                ? ((PropertyInfo)memberInfo).GetValue(obj)
+                : ((FieldInfo)memberInfo).GetValue(obj);
             var indentation = new string('\t', nestingLevel + 1);
             if (excludedMembers.Contains(memberInfo))
                 return null;
             if (excludedTypes.Contains(type))
                 return null;
-            if (ownSerializationsForMembers.ContainsKey(memberInfo))
+            if (ownSerializationsForMembers.ContainsKey(memberInfo) && value != null)
                 return GetOwnSerializationForMember(memberInfo, obj, indentation);
-            if (ownSerializationsForTypes.ContainsKey(type))
+            if (ownSerializationsForTypes.ContainsKey(type) && value != null)
                 return GetOwnSerializationForType(type, memberInfo, obj, indentation);
 
-            var value = memberInfo is PropertyInfo
-                ? ((PropertyInfo) memberInfo).GetValue(obj)
-                : ((FieldInfo) memberInfo).GetValue(obj);
             return indentation + memberInfo.Name + " = " +
                    PrintToString(value,
                        nestingLevel + 1);
+        }
+
+        private string GetSerializationForDictionary(IDictionary obj, int nestingLevel)
+        {
+            var serialization = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            foreach (var key in obj.Keys)
+            {
+                serialization.Append(PrintToString(key, nestingLevel).TrimEnd() + ":" + Environment.NewLine);
+                serialization.Append(indentation + PrintToString(obj[key], nestingLevel+1));
+            }
+            return serialization.ToString();
+        }
+
+        private string GetSerializationForIList(IList obj, int nestingLevel)
+        {
+            var serialization = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            var index = 0;
+            foreach (var element in obj)
+            {
+                serialization.Append(PrintToString(index, nestingLevel).TrimEnd() + ":" + Environment.NewLine);
+                serialization.Append(indentation + PrintToString(element, nestingLevel + 1));
+                index++;
+            }
+            return serialization.ToString();
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -139,6 +165,14 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             if (finalTypes.Contains(type)) return obj + Environment.NewLine;
+
+            if (obj is IEnumerable)
+            {
+                if (obj is IDictionary)
+                    return GetSerializationForDictionary((IDictionary)obj, nestingLevel);
+                if (obj is IList)
+                    return GetSerializationForIList((IList)obj, nestingLevel);
+            }
 
             var serialization = new StringBuilder();
             serialization.AppendLine(type.Name);
