@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,19 +10,26 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private ImmutableHashSet<PropertyInfo> excludedProperties = ImmutableHashSet<PropertyInfo>.Empty;
+        private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
 
-        private readonly Dictionary<PropertyInfo, Func<object, string>> propertiesSerialization =
-            new Dictionary<PropertyInfo, Func<object, string>>();
+        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertiesSerialization =
+            ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
 
-        private readonly Dictionary<Type, Func<object, string>> typesSerialization =
-            new Dictionary<Type, Func<object, string>>();
+        private ImmutableDictionary<Type, Func<object, string>> typesSerialization =
+            ImmutableDictionary<Type, Func<object, string>>.Empty;
 
-        Dictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.TypesSerialization => typesSerialization;
+        ImmutableDictionary<Type, Func<object, string>> IPrintingConfig<TOwner>.TypesSerialization
+        {
+            get => typesSerialization;
+            set => typesSerialization = value;
+        }
 
-        Dictionary<PropertyInfo, Func<object, string>> IPrintingConfig<TOwner>.PropsSerialization =>
-            propertiesSerialization;
+        ImmutableDictionary<PropertyInfo, Func<object, string>> IPrintingConfig<TOwner>.PropsSerialization
+        {
+            get => propertiesSerialization;
+            set => propertiesSerialization = value;
+        }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -38,13 +46,13 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var selectedProp = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
-            excludedProperties.Add(selectedProp);
+            excludedProperties = excludedProperties.Add(selectedProp);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            excludedTypes = excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -64,6 +72,17 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        public string PrintToString<TKey>(IDictionary<TKey, TOwner> objDictionary)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(objDictionary.GetType().Name);
+
+            foreach (var (key, value) in objDictionary)
+                sb.AppendLine($"{key} : {PrintToString(value, 1)}");
+
+            return sb.ToString();
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
@@ -74,6 +93,7 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()) || typesSerialization.ContainsKey(obj.GetType()))
             {
                 var valueToPrint = typesSerialization.ContainsKey(obj.GetType())
@@ -95,24 +115,33 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
                     continue;
 
-                string valueToPrint;
-                if (propertyValue == obj)
-                    valueToPrint = "self";
-                else
-                    valueToPrint = propertiesSerialization.ContainsKey(propertyInfo)
-                        ? propertiesSerialization[propertyInfo](propertyValue)
-                        : PrintToString(propertyValue, nestingLevel + 1);
+                var valueToPrint = GetValueToPrint(obj, nestingLevel, propertyValue, propertyInfo);
 
-                sb.AppendLine($"{identation}{propertyInfo.Name} = {valueToPrint}");
+                sb.Append($"{identation}{propertyInfo.Name} = {valueToPrint}");
             }
 
             return sb.ToString();
+        }
+
+        private string GetValueToPrint(object obj, int nestingLevel, object propertyValue, PropertyInfo propertyInfo)
+        {
+            string valueToPrint;
+            if (propertyValue == obj)
+                valueToPrint = "self";
+            else
+                valueToPrint = propertiesSerialization.ContainsKey(propertyInfo)
+                    ? propertiesSerialization[propertyInfo](propertyValue)
+                    : PrintToString(propertyValue, nestingLevel + 1);
+
+            if (!valueToPrint.EndsWith("\r\n")) valueToPrint += Environment.NewLine;
+
+            return valueToPrint;
         }
     }
 
     public interface IPrintingConfig<TOwner>
     {
-        Dictionary<Type, Func<object, string>> TypesSerialization { get; }
-        Dictionary<PropertyInfo, Func<object, string>> PropsSerialization { get; }
+        ImmutableDictionary<Type, Func<object, string>> TypesSerialization { get; set; }
+        ImmutableDictionary<PropertyInfo, Func<object, string>> PropsSerialization { get; set; }
     }
 }

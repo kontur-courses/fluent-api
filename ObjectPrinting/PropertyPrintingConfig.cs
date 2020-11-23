@@ -27,13 +27,19 @@ namespace ObjectPrinting
                 return print(prop);
             });
 
+
             switch (target)
             {
                 case Target.Type:
-                    ((IPrintingConfig<TOwner>) printingConfig).TypesSerialization[typeof(TPropType)] = objPrint;
+                    ((IPrintingConfig<TOwner>) printingConfig).TypesSerialization =
+                        ((IPrintingConfig<TOwner>) printingConfig).TypesSerialization
+                        .AddOrReplace(typeof(TPropType), objPrint);
                     break;
+                
                 case Target.Property:
-                    ((IPrintingConfig<TOwner>) printingConfig).PropsSerialization[targetProp] = objPrint;
+                    ((IPrintingConfig<TOwner>) printingConfig).PropsSerialization =
+                        ((IPrintingConfig<TOwner>) printingConfig).PropsSerialization
+                        .AddOrReplace(targetProp, objPrint);
                     break;
 
                 default:
