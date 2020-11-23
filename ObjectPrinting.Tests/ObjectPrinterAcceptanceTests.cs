@@ -10,21 +10,19 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private Person person;
-        private PrintingConfig<Person> printer;
 
         [SetUp]
         public void SetUp()
         {
             person = new Person {Name = "Alex", BirthDate = new DateTime(2001, 2, 3)};
-            printer = ObjectPrinter.For<Person>();
         }
 
         [Test]
         public void PrintToString_SerializedWithNewIndentation_WhenChangeIndentation()
         {
-            printer.ChangeIndentation(" ");
+            var result = ObjectPrinter.PrintToString(person, x => x.ChangeIndentation(" "));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -39,9 +37,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithNewSeparator_WhenChangeSeparator()
         {
-            printer.ChangeSeparatorBetweenNameAndValue(":");
+            var result = ObjectPrinter.PrintToString(person, x => x.ChangeSeparatorBetweenNameAndValue(":"));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -57,9 +55,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithoutInt_WhenExcludingGuid()
         {
-            printer.Excluding<Guid>();
+            var result = ObjectPrinter.PrintToString(person, x => x.Excluding<Guid>());
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -71,9 +69,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithChangedGuid_WhenPrintingGuid()
         {
-            printer.Printing<Guid>().Using(i => "Guid");
+            var result = ObjectPrinter.PrintToString(person, x => x.Printing<Guid>().Using(i => "Guid"));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -85,9 +83,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithCulturedDateTime_WhenPrintingDateTimeWithCulture()
         {
-            printer.Printing<DateTime>().Using(CultureInfo.InvariantCulture);
+            var result = ObjectPrinter.PrintToString(person, x => x.Printing<DateTime>().Using(CultureInfo.InvariantCulture));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person), 
                     1,
@@ -99,9 +97,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithChangedMemberParent_WhenPrintingParentAsMember()
         {
-            printer.Printing(p => p.Parent).Using(p => "!Parent!");
+            var result = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Parent).Using(p => "!Parent!"));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -114,9 +112,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithCutString_WhenPrintingWithCutting()
         {
-            printer.Printing(p => p.Name).TrimmedToLength(3);
+            var result = ObjectPrinter.PrintToString(person, x => x.Printing(p => p.Name).TrimmedToLength(3));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -128,9 +126,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_SerializedWithoutMemberId_WhenExcludingId()
         {
-            printer.Excluding(p => p.Id);
+            var result = ObjectPrinter.PrintToString(person, x => x.Excluding(p => p.Id));
 
-            printer.PrintToString(person).Should().Be(
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1, 
@@ -149,7 +147,9 @@ namespace ObjectPrinting.Tests
                 BirthDate = new DateTime(1975, 2, 3)
             };
 
-            printer.PrintToString(person).Should().Be(
+            var result = ObjectPrinter.PrintToString(person, x => x);
+
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Person),
                     1,
@@ -172,7 +172,9 @@ namespace ObjectPrinting.Tests
             var parent = new Parent {BirthDate = new DateTime(1975, 2, 3)};
             parent.Parent = parent;
 
-            printer.PrintToString(parent).Should().Be(
+            var result = ObjectPrinter.PrintToString(parent, x => x);
+
+            result.Should().Be(
                 GetCorrectPrintingConfig(
                     nameof(Parent),
                     1,
@@ -187,33 +189,32 @@ namespace ObjectPrinting.Tests
         public void PrintToString_SerializedWithArray_WhenPrintingArray()
         {
             var library = new Library();
-            var printerLibrary = new PrintingConfig<Library>().Excluding<List<Book>>()
-                .Excluding<Dictionary<string, Book>>();
 
-            printerLibrary.PrintToString(library).Should().Be(
-                GetCorrectPrintingArray(
-                    nameof(Library.BooksArray),
-                    library.BooksArray.GetType().Name));
+            var result = ObjectPrinter.PrintToString(library, x => x.Excluding<List<Book>>()
+                .Excluding<Dictionary<string, Book>>());
+
+            result.Should().Be(
+                GetCorrectPrintingArray(nameof(Library.BooksArray), library.BooksArray.GetType().Name));
         }
 
         [Test]
         public void PrintToString_SerializedWithList_WhenPrintingList()
         {
             var library = new Library();
-            var printerLibrary =
-                new PrintingConfig<Library>().Excluding<Book[]>().Excluding<Dictionary<string, Book>>();
 
-            printerLibrary.PrintToString(library).Should().Be(
-                GetCorrectPrintingArray(
-                    nameof(Library.BooksList),
-                    library.BooksList.GetType().Name));
+            var result = ObjectPrinter.PrintToString(library,
+                x => x.Excluding<Book[]>().Excluding<Dictionary<string, Book>>());
+
+            result.Should().Be(
+                GetCorrectPrintingArray(nameof(Library.BooksList), library.BooksList.GetType().Name));
         }
 
         [Test]
         public void PrintToString_SerializedWithDictionary_WhenPrintingDictionary()
         {
             var library = new Library();
-            var printerLibrary = new PrintingConfig<Library>().Excluding<Book[]>().Excluding<List<Book>>();
+            var serializedObject = ObjectPrinter.PrintToString(library,
+                x => x.Excluding<Book[]>().Excluding<List<Book>>());
 
             var dict = library.BooksDictionary.First();
             var result = $"{nameof(Library)}\r\n\t{nameof(Library.BooksDictionary)} = " +
@@ -223,14 +224,15 @@ namespace ObjectPrinting.Tests
                          $"{nameof(dict.Value)} = {nameof(Book)}\r\n\t\t\t\t" +
                          $"{nameof(Book.Name)} = MyBook\r\n\t\t\t\t{nameof(Book.Author)} = Alex\r\n";
 
-            printerLibrary.PrintToString(library).Should().Be(result);
+            serializedObject.Should().Be(result);
         }
 
 
         [Test]
         public void PrintToString_ThrowException_WhenPrintingIncorrectExpression()
         {
-            Assert.Throws<InvalidCastException>(() => printer.Printing(x => x.Name + 2));
+            Assert.Throws<InvalidCastException>(() => ObjectPrinter.PrintToString(person,
+                x => x.Printing(y => y.Name + 2).Using(CultureInfo.InvariantCulture)));
         }
 
         private static string GetCorrectPrintingArray(string name, string type)
