@@ -8,9 +8,12 @@ namespace ObjectPrinting.Tests
     public class PrintingConfigTests
     {
         private PrintingConfig<Person> printer;
-
-        private readonly Person me =
-            new Person() {Age = 20, Height = 150.5, Id = Guid.Empty, Name = "Natasha"};
+        
+        private static readonly Person MyParent = 
+            new Person() {Age = 40, Height = 200.001, Id = Guid.Empty, Name = "Anthony", Surname = "Smit"};
+        
+        private static readonly Person Me =
+            new Person() {Age = 20, Height = 150.5, Id = Guid.Empty, Name = "Natasha", Parent = MyParent, Surname = "Smit"};
 
         [SetUp]
         public void SetUp()
@@ -19,90 +22,107 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ExcludingType_PrintEverything_WhenExcludingMissingType()
+        public void PrintEverything()
         {
-            printer.Excluding<DateTime>();
-            printer.PrintToString(me).Should().Contain("Age = 20")
+            printer.PrintToString(Me).Should()
+                .Contain("Age = 20")
                 .And.Contain("Height = 150,5")
                 .And.Contain("Id =")
-                .And.Contain("Name = Natasha");
+                .And.Contain("Name = Natasha")
+                .And.Contain("Surname = Smit")
+                .And.Contain("Parent = ")
+                .And.Contain("Name = Anthony")
+                .And.Contain("Age = 40")
+                .And.Contain("Height = 200,001");
+
         }
 
         [Test]
-        public void ExcludingType_DoNotPrintStrings()
+        public void ExcludingType_DoNotPrintStrings_On()
         {
             printer.Excluding<string>();
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .NotContain("Name = Natasha")
-                .And.Contain("Age = 20")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =");
+                .And.NotContain("Name = Anthony")
+                .And.NotContain("Surname = Smit");
         }
 
         [Test]
         public void ExcludingField()
         {
             printer.Excluding(person => person.Name);
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .NotContain("Name = Natasha")
-                .And.Contain("Age = 20")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =");
+                .And.NotContain("Name = Anthony")
+                .And.Contain("Surname = Smit");
         }
 
         [Test]
         public void AddSerialization_ForType()
         {
             printer.Printing<string>().Using(str => '"' + str + '"');
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .Contain("Name = \"Natasha\"")
-                .And.Contain("Age = 20")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =");
+                .And.Contain("Name = \"Natasha\"")
+                .And.Contain("Surname = \"Smit\"");
         }
 
         [Test]
         public void AddCultureInfo_ForType()
         {
             printer.Printing<double>().Using(CultureInfo.InvariantCulture);
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .Contain("Height = 150.5")
-                .And.Contain("Age = 20")
-                .And.Contain("Id =")
-                .And.Contain("Name = Natasha");
+                .And.Contain("Height = 200.001");
         }
 
         [Test]
         public void AddLengthTrim_ForProperty()
         {
             printer.Printing(p => p.Name).TrimmedToLength(3);
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .Contain("Name = Nat" + Environment.NewLine)
-                .And.Contain("Age = 20")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =");
+                .And.Contain("Name = Ant" + Environment.NewLine)
+                .And.Contain("Surname = Smit");
         }
 
         [Test]
         public void AddSerialization_ForNumberProperty()
         {
             printer.Printing(p => p.Age).Using(age => age + ".00");
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .Contain("Age = 20.00")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =")
-                .And.Contain("Name = Natasha");
+                .And.Contain("Age = 40.00");
         }
 
         [Test]
         public void AddSerialization_ForStringProperty()
         {
             printer.Printing(p => p.Name).Using(name => name.ToUpper());
-            printer.PrintToString(me).Should()
+            printer.PrintToString(Me).Should()
                 .Contain("Name = NATASHA")
+                .And.Contain("Name = ANTHONY")
+                .And.Contain("Surname = Smit");
+        }
+
+        [Test]
+        public void ShouldNotFall_OnSimpleCircleRef()
+        {
+            Me.Parent = Me;
+            printer.PrintToString(Me).Should()
+                .Contain("Parent = circle ref")
+                .And.Contain("Name = Natasha")
                 .And.Contain("Age = 20")
                 .And.Contain("Height = 150,5")
                 .And.Contain("Id =");
+        }
+
+        [Test]
+        public void ShouldNotFall_OnDeepCircleRef()
+        {
+            MyParent.Parent = Me;
+            printer.PrintToString(Me).Should().Contain("Parent = circle ref");
+
         }
     }
 }
