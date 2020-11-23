@@ -1,38 +1,104 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly List<Type> excludedFields;
+        private readonly Dictionary<Type, Delegate> typesSerializer;
+        private readonly Dictionary<PropertyInfo, CultureInfo> numbersCulture;
+        private PropertyInfo selectedProperty;
+
+        public  PrintingConfig()
+        {
+            excludedFields = new List<Type>();
+            typesSerializer = new Dictionary<Type, Delegate>();
+            numbersCulture = new Dictionary<PropertyInfo, CultureInfo>();
+        }
+        
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
-        public SelectedProperty<TOwner, PropertyConfigurator<TProperty>, TProperty> Choose<TProperty>()
+        public PrintingConfig<TOwner> Choose<TProperty>()
         {
-            return new SelectedProperty<TOwner, PropertyConfigurator<TProperty>, TProperty>();
+            
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> TypeSerializer<TProperty>(Func<object, string> func)
+        {
+            typesSerializer.Add(typeof(TProperty), func);
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Exclude<TProperty>()
+        {
+            excludedFields.Add(typeof(TProperty));
+            return this;
+        }
+        public PrintingConfig<TOwner> Exclude()
+        {
+            return this;
         }
 
-        public SelectedProperty<TOwner, PropertyConfigurator<TProperty>, TProperty> Choose<TProperty>(
+        public PrintingConfig<TOwner> Choose<TProperty>(
             Expression<Func<TOwner, TProperty>> selector)
         {
-            return new SelectedProperty<TOwner, PropertyConfigurator<TProperty>, TProperty>();
+            return this;
         }
 
-        public SelectedProperty<TOwner, StringPropertyConfigurator, string> Choose(
+        public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, string>> selector)
         {
-            return new SelectedProperty<TOwner, StringPropertyConfigurator, string>();
+            return this;
         }
-        public SelectedProperty<TOwner, NumberPropertyConfigurator, int> Choose(
+        public PrintingConfig<TOwner> Choose(
             Expression<Func<TOwner, int>> selector)
         {
-            return new SelectedProperty<TOwner, NumberPropertyConfigurator, int>();
+            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Choose(
+            Expression<Func<TOwner, double>> selector)
+        {
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Choose(
+            Expression<Func<TOwner, float>> selector)
+        {
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> Choose(
+            Expression<Func<TOwner, decimal>> selector)
+        {
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> UseSerializer(Func<object, string> func)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PrintingConfig<TOwner> SetCulture(CultureInfo currentCulture)
+        {
+            numbersCulture[selectedProperty] = currentCulture;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Trim(int i)
+        {
+            throw new NotImplementedException();
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -55,9 +121,26 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if(excludedFields.Contains(propertyInfo.PropertyType))
+                    continue;
+
+                var current = propertyInfo.GetValue(obj).ToString();
+                if (numbersCulture.ContainsKey(propertyInfo))
+                    current = current.ToString(numbersCulture[propertyInfo]);
+                
+                if (typesSerializer.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var valueToString = typesSerializer[propertyInfo.PropertyType]
+                        .DynamicInvoke(current)
+                        ?.ToString();
+                    sb.Append(indentation + propertyInfo.Name + " = " + valueToString);
+                }
+                else
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                        
+                
             }
 
             return sb.ToString();
@@ -76,7 +159,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude()
         {
-            throw new NotImplementedException();
+            return Parent;
         }
 
         public PrintingConfig<TOwner> UseSerializer(Func<object, string> func)
@@ -99,6 +182,7 @@ namespace ObjectPrinting
     {
         public void Exclude()
         {
+            
         }
 
         public PropertyConfigurator<TProperty> UseSerializer(Func<TProperty, string> serializer)
@@ -121,10 +205,5 @@ namespace ObjectPrinting
         {
             return this;
         }
-    }
-
-    public class PersonExtensions
-    {
-        
     }
 }

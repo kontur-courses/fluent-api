@@ -8,5 +8,16 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        
+
+        public object Serialize()
+        {
+            throw new NotImplementedException();
+        }
+
+        public object Serialize(Func<object, object> func)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
