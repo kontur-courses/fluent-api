@@ -11,11 +11,12 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<object> appearedObjects;
+        private readonly Type configType;
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private readonly Dictionary<string, Delegate> propertySerialization;
@@ -26,6 +27,7 @@ namespace ObjectPrinting
 
         public PrintingConfig()
         {
+            configType = typeof(TOwner);
             typeToExclude = new HashSet<Type>();
             typeSerialization = new Dictionary<Type, Delegate>();
             typeCultureInfo = new Dictionary<Type, CultureInfo>();
@@ -94,10 +96,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, obj.GetType().Name);
+            return PrintToString(obj, 0, obj.GetType().Name, obj.GetType());
         }
 
-        private string PrintToString(object obj, int nestingLevel, string propertyName)
+        private string PrintToString(object obj, int nestingLevel, string propertyName, Type parentType)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -105,7 +107,8 @@ namespace ObjectPrinting
             if (appearedObjects.Contains(obj))
                 return "Fall in cycle" + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType())) return SerializeProperty(obj, propertyName);
+            if (finalTypes.Contains(obj.GetType()))
+                return SerializeProperty(obj, propertyName, parentType);
 
             appearedObjects.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
@@ -115,7 +118,8 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (typeToExclude.Contains(propertyInfo.PropertyType) || propertyToExclude.Contains(propertyInfo.Name))
+                if ((typeToExclude.Contains(propertyInfo.PropertyType) ||
+                     propertyToExclude.Contains(propertyInfo.Name)) && type == configType)
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
@@ -132,24 +136,24 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                sb.Append(PrintToString(value, nestingLevel + 1, propertyInfo.Name));
+                sb.Append(PrintToString(value, nestingLevel + 1, propertyInfo.Name, type));
             }
 
             appearedObjects.Remove(obj);
             return sb.ToString();
         }
 
-        private string SerializeProperty(object obj, string propertyName)
+        private string SerializeProperty(object obj, string propertyName, Type parentType)
         {
             var culture = CultureInfo.CurrentCulture;
-            if (typeCultureInfo.ContainsKey(obj.GetType()))
+            if (typeCultureInfo.ContainsKey(obj.GetType()) && parentType == configType)
                 culture = typeCultureInfo[obj.GetType()];
 
-            if (propertySerialization.ContainsKey(propertyName))
+            if (propertySerialization.ContainsKey(propertyName) && parentType == configType)
                 return string.Format(culture, "{0}", propertySerialization[propertyName].DynamicInvoke(obj)) +
                        Environment.NewLine;
 
-            if (typeSerialization.ContainsKey(obj.GetType()))
+            if (typeSerialization.ContainsKey(obj.GetType()) && parentType == configType)
                 return string.Format(culture, "{0}", typeSerialization[obj.GetType()].DynamicInvoke(obj)) +
                        Environment.NewLine;
 
@@ -164,7 +168,8 @@ namespace ObjectPrinting
                 return "empty" + Environment.NewLine;
 
             result.Append("{" + Environment.NewLine);
-            foreach (var item in collection) result.Append(PrintToString(item, nestingLevel + 1, item.GetType().Name));
+            foreach (var item in collection)
+                result.Append(PrintToString(item, nestingLevel + 1, item.GetType().Name, item.GetType()));
             result.Append(new string('\t', nestingLevel) + "}" + Environment.NewLine);
 
             return result.ToString();
@@ -180,9 +185,9 @@ namespace ObjectPrinting
             result.Append("{" + Environment.NewLine);
             foreach (var key in collection.Keys)
             {
-                result.Append(PrintToString(key, nestingLevel + 1, key.GetType().Name));
+                result.Append(PrintToString(key, nestingLevel + 1, key.GetType().Name, key.GetType()));
                 result.Append(" : ");
-                result.Append(PrintToString(collection[key], nestingLevel + 1, key.GetType().Name));
+                result.Append(PrintToString(collection[key], nestingLevel + 1, key.GetType().Name, key.GetType()));
             }
 
             result.Append(new string('\t', nestingLevel) + "}" + Environment.NewLine);

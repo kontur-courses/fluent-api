@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.TestObjects;
+using ObjectPrinting.Tests.TestObjects;
 
 namespace ObjectPrinting.Tests
 {
@@ -17,7 +19,7 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            Person = new Person {Name = "Alex", Age = 19, Height = 1.73};
+            Person = new Person {Name = "Alex", Age = 19, Height = 1.73, Id = Guid.Empty};
             SecondPerson = new Person {Name = "Martin", Age = 18, Height = 0.6};
             ThirdPerson = new Person {Name = "Melman", Age = 20, Height = 3.0};
             FourthPerson = new Person {Name = "Gloria", Age = 5, Height = 0.2};
@@ -48,9 +50,11 @@ namespace ObjectPrinting.Tests
                 ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimmed(4).Exclude(x => x.Id));
         }
 
-        [TestCase(typeof(string), "Person\r\n\tId = Guid\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
+        [TestCase(typeof(string),
+            "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
             TestName = "String")]
-        [TestCase(typeof(int), "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tParents = empty\r\n",
+        [TestCase(typeof(int),
+            "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tParents = empty\r\n",
             TestName = "Integer")]
         [TestCase(typeof(Guid), "Person\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
             TestName = "Guid")]
@@ -64,8 +68,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnsRightString_WhenChangedIntegerSerialization()
         {
-            const string expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tAge = 19.00\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tId = {Person.Id}\r\n\tName = Alex\r\n\tHeight = {Person.Height}\r\n\tAge = 19.00\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(x => x + ".00");
 
             printer.PrintToString(Person).Should().Be(expectedResult);
@@ -74,8 +78,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnsRightString_WhenChangedDoubleCulture()
         {
-            const string expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1,73\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tId = {Person.Id}\r\n\tName = Alex\r\n\tHeight = 1,73\r\n\tAge = 19\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>()
                 .SetCultureInfo<double>(CultureInfo.CreateSpecificCulture("fr-FR"));
 
@@ -85,8 +89,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnsRightString_WhenChangedPropertySerialization()
         {
-            const string expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = <em>Alex</em>\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tId = {Person.Id}\r\n\tName = <em>Alex</em>\r\n\tHeight = {Person.Height}\r\n\tAge = 19\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>()
                 .SelectProperty(x => x.Name).Using(x => $"<em>{x}</em>");
 
@@ -96,8 +100,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnsRightString_WhenTrimmedStringProperty()
         {
-            const string expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = Al\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tId = {Person.Id}\r\n\tName = Al\r\n\tHeight = {Person.Height}\r\n\tAge = 19\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>()
                 .SelectProperty(x => x.Name).Trimmed(2);
 
@@ -107,8 +111,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnsRightString_WhenPropertyExcluded()
         {
-            const string expectedResult =
-                "Person\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tName = Alex\r\n\tHeight = {Person.Height}\r\n\tAge = 19\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>().Exclude(x => x.Id);
 
             printer.PrintToString(Person).Should().Be(expectedResult);
@@ -117,8 +121,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnRightString_WhenDefaultPrintToString()
         {
-            const string expectedResult =
-                "Person\r\n\tId = Guid\r\n\tName = Martin\r\n\tHeight = 0.6\r\n\tAge = 18\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tId = {SecondPerson.Id}\r\n\tName = Martin\r\n\tHeight = {SecondPerson.Height}\r\n\tAge = 18\r\n\tParents = empty\r\n";
+
 
             SecondPerson.PrintToString().Should().Be(expectedResult);
         }
@@ -126,8 +131,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ReturnRightString_WhenPrintToStringWithParameters()
         {
-            const string expectedResult =
-                "Person\r\n\tName = Me\r\n\tHeight = 3\r\n\tAge = 20\r\n\tParents = empty\r\n";
+            var expectedResult =
+                $"Person\r\n\tName = Me\r\n\tHeight = {ThirdPerson.Height}\r\n\tAge = 20\r\n\tParents = empty\r\n";
 
             ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimmed(4).Exclude(x => x.Id))
                 .Should()
@@ -183,6 +188,37 @@ namespace ObjectPrinting.Tests
             var house = new House();
 
             house.PrintToString(x => x.Exclude(typeof(Dictionary<int, string>))).Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void ReturnRightString_WhenChangeAnotherPerson()
+        {
+            var expectedResult = new StringBuilder();
+            expectedResult.Append("AnotherPerson\r\n\tAge = 13%\r\n\tParents = {\r\nPerson\r\n\t\t\tId = ");
+            expectedResult.Append($"{Person.Id}\r\n\t\t\tName = Alex\r\n\t\t\tHeight = {Person.Height}");
+            expectedResult.Append("\r\n\t\t\tAge = 19\r\n\t\t\tParents = empty\r\n\t}\r\n");
+
+            var person = new AnotherPerson {Name = "Nikita", Age = 13, Parents = {Person}};
+            var printer = ObjectPrinter.For<AnotherPerson>()
+                .Exclude(x => x.Name)
+                .Printing<int>().Using(x => x + "%")
+                .Exclude(typeof(Guid), typeof(double));
+
+            printer.PrintToString(person).Should().Be(expectedResult.ToString());
+        }
+
+        [Test]
+        public void ReturnRightString_WhenObjectInCollection()
+        {
+            var expectedResult = new StringBuilder();
+            expectedResult.Append(
+                "City\r\n\tName = Msk\r\n\tRoadsToCity = {\r\n1\r\n : City\r\n\t\t\tName = Ekb\r\n\t\t\tRoadsToCity = empty\r\n\t}\r\n");
+            var printer = ObjectPrinter.For<City>().Exclude(typeof(int));
+            var city = new City {Name = "Msk", Population = 13};
+            var secondCity = new City {Name = "Ekb", Population = 2};
+            city.RoadsToCity.Add(1, secondCity);
+
+            printer.PrintToString(city).Should().Be(expectedResult.ToString());
         }
     }
 }
