@@ -63,13 +63,15 @@ namespace ObjectPrinting.Tests
             Console.WriteLine("--------------------------------");
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            //8. ...с конфигурированием
             Console.WriteLine(person.PrintToString(printer.Excluding(p => p.Father.Mother)));
             Console.WriteLine("--------------------------------");
             Console.WriteLine(person.PrintToString(c => c
                 .Excluding<Guid>()
                 .Printing<Person>().As(p => "...no! Enough recursive printing!")
+                .Printing(p => p.SomeArray).As(a => $"int[{a.Length}] [...]")
+                .Excluding(p => p.SomeDict)
                 .Printing<DateTime>().Using(CultureInfo.InvariantCulture)));
-            //8. ...с конфигурированием
         }
     }
 }
