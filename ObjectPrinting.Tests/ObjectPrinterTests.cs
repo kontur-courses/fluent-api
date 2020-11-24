@@ -50,17 +50,31 @@ namespace ObjectPrinting.Tests
                 ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimmed(4).Exclude(x => x.Id));
         }
 
-        [TestCase(typeof(string),
-            "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
-            TestName = "String")]
-        [TestCase(typeof(int),
-            "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tParents = empty\r\n",
-            TestName = "Integer")]
-        [TestCase(typeof(Guid), "Person\r\n\tName = Alex\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
-            TestName = "Guid")]
-        public void ReturnsRightString_WhenTypeExcluded(Type type, string expectedResult)
+
+
+        [Test]
+        public void ReturnsRightString_WhenIntegerExcluded()
         {
-            var printer = ObjectPrinter.For<Person>().Exclude(type);
+            var expectedResult = $"Person\r\n\tId = {Person.Id}\r\n\tName = Alex\r\n\tHeight = {Person.Height}\r\n\tParents = empty\r\n";
+            var printer = ObjectPrinter.For<Person>().Exclude(typeof(int));
+
+            printer.PrintToString(Person).Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void ReturnsRightString_WhenStringExcluded()
+        {
+            var expectedResult = $"Person\r\n\tId = {Person.Id}\r\n\tHeight = {Person.Height}\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var printer = ObjectPrinter.For<Person>().Exclude(typeof(string));
+
+            printer.PrintToString(Person).Should().Be(expectedResult);
+        }
+
+        [Test]
+        public void ReturnsRightString_WhenObjectExcluded()
+        {
+            var expectedResult = $"Person\r\n\tName = Alex\r\n\tHeight = {Person.Height}\r\n\tAge = 19\r\n\tParents = empty\r\n";
+            var printer = ObjectPrinter.For<Person>().Exclude(typeof(Guid));
 
             printer.PrintToString(Person).Should().Be(expectedResult);
         }
