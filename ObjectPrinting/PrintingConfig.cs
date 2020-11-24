@@ -62,12 +62,12 @@ namespace ObjectPrinting
 
         private IPropertyConfigurator? GetConfiguratorOrDefault(string propertyName, string[] path, Type type)
         {
-            if (groupAppliedConfigurators.TryGetValue(type, out var configurator))
-                return configurator;
-
             var matchedNode = configurationRoot.GetByPathOrDefault(path.Append(propertyName).ToArray());
             if (matchedNode is TerminalNode<IPropertyConfigurator> terminal)
                 return terminal.Payload;
+
+            if (groupAppliedConfigurators.TryGetValue(type, out var configurator))
+                return configurator;
             return default;
         }
     }

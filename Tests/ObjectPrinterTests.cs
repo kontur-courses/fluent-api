@@ -205,6 +205,28 @@ namespace Tests
                 .Contain($"{nameof(TestingPropertiesClass.Double)} = C2H5OH");
         }
 
+        [Test]
+        public void ConflictingSettings_ChooseDirectlySpecified()
+        {
+            var subject = new TestingPropertiesClass
+            {
+                Int = 18,
+                Double = 123.456,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            result = ObjectPrinter.For<TestingPropertiesClass>()
+                .Choose(p => p.Double)
+                .UseSerializer(_ => "direct")
+                .Choose<double>()
+                .UseSerializer(_ => "group")
+                .PrintToString(subject);
+
+            result.Should()
+                .Contain($"{nameof(TestingPropertiesClass.Double)} = direct");
+        }
+
         [TearDown]
         public void TearDown()
         {
