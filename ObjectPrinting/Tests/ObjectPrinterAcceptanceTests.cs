@@ -6,7 +6,6 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-    [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         [SetUp]
@@ -28,15 +27,21 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingAll_IfHasNoConfig()
         {
-            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1,85\r\n\t" +
-                                                      "Age = 19\r\n\tFriend = null\r\n\tSurname = Brown\r\n");
+            var heightToString = person.Height.ToString(CultureInfo.CurrentCulture);
+            printer.PrintToString(person).Should().Be("Person\r\n" +
+                                                      "\tId = Guid\r\n" +
+                                                      "\tName = Alex\r\n" +
+                                                      $"\tHeight = {heightToString}\r\n" +
+                                                      "\tAge = 19\r\n" +
+                                                      "\tFriend = null\r\n" +
+                                                      "\tSurname = Brown\r\n");
         }
 
         [Test]
         public void PrintToString_NotPrintingType_IfTypeExcluded()
         {
             printer = printer.Excluding<int>();
-            printer.PrintToString(person).Should().NotContain("Age");
+            printer.PrintToString(person).Should().NotContain(nameof(person.Age));
         }
 
         [Test]
