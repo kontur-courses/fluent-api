@@ -1,18 +1,27 @@
 using System;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
-    public static class PropertyPrintingConfigExtensions
+    public static class MemberPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
+        { 
+            var config = (IPrintingConfig<TOwner>)((IMemberPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return propConfig.Using(x => x.Substring(0, Math.Min(x.Length, maxLen)));
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
+            this MemberPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture) where TPropType : IFormattable
         {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return propConfig.Using(x => x.ToString(null, culture));
         }
     }
 }
