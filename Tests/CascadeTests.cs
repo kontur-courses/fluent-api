@@ -59,6 +59,20 @@ namespace Tests
                 .Contain($"{nameof(CascadeTestingClass.Int32)} = {subject.Int32}");
         }
 
+        [Test]
+        public void CyclicReference_IgnoreAlreadyPrinted()
+        {
+            var subject = new CascadeTestingClass {Int32 = 1, String = "a"};
+            subject.Child = subject;
+
+            result = ObjectPrinter.For<CascadeTestingClass>()
+                .Build()
+                .PrintToString(subject);
+
+            result.Should()
+                .NotContain($"{nameof(CascadeTestingClass.Child)}");
+        }
+
         [TearDown]
         public void TearDown()
         {

@@ -12,6 +12,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes;
         private readonly RootNode<IPropertyConfigurator> configurationRoot;
         private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
+        private readonly HashSet<object> alreadySerialized = new HashSet<object>();
 
         public PrintingConfig(Type[] finalTypes, RootNode<IPropertyConfigurator> configurationRoot,
             IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators)
@@ -28,13 +29,16 @@ namespace ObjectPrinting
 
         private string SerializeObject(object? obj, string[] path, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
             if (finalTypes.Contains(type))
                 return obj.ToString() + Environment.NewLine;
+
+            if (alreadySerialized.Contains(obj))
+                return string.Empty;
+            alreadySerialized.Add(obj);
 
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
