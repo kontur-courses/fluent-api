@@ -12,18 +12,18 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person
             {
-                Name = "Alex",//ммя ему - Алексей
-                Age = 19,//и возраст его - 19 долларов...
+                Name = "Alex",//ммя ему - Алексей...
+                Age = 19,//...и возраст его - 19 долларов...
                 Father = new Person
                 {
                     Name = "John",
                     Mother = new Person
                     {
-                        Name = "Steve",
+                        Name = "Jessieieieieieieieieieieieieie",
                         Height = 1.1,
                         Mother = new Person
                         {
-                            Name = "Adam",
+                            Name = "someone",
                             Height = 336.333,
                             Father = new Person
                             {
@@ -52,6 +52,8 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Father.Mother).Using(config => config
                     .Printing<DateTime>().As(d => $"...but not here: {d}"))
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                .Printing<string>().Truncated(5)
+                .Printing(p => p.Father.Mother.Name).Truncated(10)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Mother)
                 .Excluding(p => p.Father.Father);
