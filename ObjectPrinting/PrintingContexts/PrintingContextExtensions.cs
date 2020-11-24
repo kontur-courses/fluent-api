@@ -27,5 +27,12 @@ namespace ObjectPrinting
         {
             return context.As(s => s.Length <= length ? s : s.Substring(0, length) + "...");
         }
+
+        public static string PrintToString<T>(this T obj) => ObjectPrinter.For<T>().PrintToString(obj);
+
+        public static string PrintToString<T>(this T obj, PrintingConfig<T> config) => config.PrintToString(obj);
+        
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> configFunc)
+            => configFunc(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 }
