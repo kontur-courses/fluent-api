@@ -10,7 +10,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
-        private RootNode<IPropertyConfigurator> configurationRoot;
+        private readonly RootNode<IPropertyConfigurator> configurationRoot;
         private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
 
         public PrintingConfig(Type[] finalTypes, RootNode<IPropertyConfigurator> configurationRoot,
@@ -38,22 +38,38 @@ namespace ObjectPrinting
 
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            foreach (var target in SerializationTarget.EnumerateFrom(type))
-                sb.Append(
-                    SerializeProperty(target.MemberName, target.GetValue(obj), target.MemberType, nestingLevel + 1));
 
+            var serializedProperties = SerializationTarget.EnumerateFrom(type)
+                .Select(t => SerializeProperty(t.MemberName, t.GetValue(obj), t.MemberType, nestingLevel + 1));
+
+            sb.AppendJoin(string.Empty, serializedProperties);
             return sb.ToString();
         }
 
         private string SerializeProperty(string propertyName, object value, Type type, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
-            var serialized = groupAppliedConfigurators.TryGetValue(type, out var configurator) && configurator != null
-                ? configurator.AppliedSerializer.Serialize(value)
-                : PrintToString(value, nestingLevel + 1);
-            if (string.IsNullOrEmpty(serialized))
-                return string.Empty;
-            return $"{indentation}{propertyName} = " + serialized;
+            var serialized = GetConfiguratorOrDefault(propertyName, type)?.AppliedSerializer.Serialize(value)
+                             ?? PrintToString(value, nestingLevel + 1);
+
+            return string.IsNullOrEmpty(serialized)
+                ? string.Empty
+                : $"{indentation}{propertyName} = " +
+                  (serialized.EndsWith(Environment.NewLine)
+                      ? serialized
+                      : serialized + Environment.NewLine);
+        }
+
+        private IPropertyConfigurator? GetConfiguratorOrDefault(string propertyName, Type type)
+        {
+            if (groupAppliedConfigurators.TryGetValue(type, out var configurator))
+                return configurator;
+
+            if (configurationRoot.TryGetChild(propertyName, out var child) &&
+                child is TerminalNode<IPropertyConfigurator> terminal)
+                return terminal.Payload;
+
+            return default;
         }
     }
 }

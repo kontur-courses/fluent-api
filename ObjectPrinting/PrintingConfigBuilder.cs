@@ -27,16 +27,19 @@ namespace ObjectPrinting
             return propertyGroup;
         }
 
-        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>> selector)
+        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>>? selector)
         {
-            var memberInfo = (selector.Body as MemberExpression)?.Member;
+            if (!(selector?.Body is MemberExpression memberExpression))
+                throw new ArgumentException($"{nameof(selector)} must be {nameof(MemberExpression)}, but was " +
+                                            selector?.Body.GetType().Name ?? "<null>");
 
-            //TODO extract full path from expression (TypedParameterExpression)
+            var memberInfo = memberExpression.Member;
+            //TODO extract full path from expression (collect PropertyExpression until TypedParameterExpression)
             var target = memberInfo switch
             {
                 PropertyInfo propertyInfo => new SerializationTarget(propertyInfo),
                 FieldInfo fieldInfo => new SerializationTarget(fieldInfo),
-                _ => throw new ArgumentException($"{nameof(selector)} must point on a Property")
+                _ => throw new ArgumentException($"{nameof(selector)} must point on a property or field")
             };
 
             var selectedProperty = new SelectedProperty<TOwner, TProperty>(target, this);
@@ -44,7 +47,7 @@ namespace ObjectPrinting
             return selectedProperty;
         }
 
-        public PrintingConfig<TOwner> Build() => 
+        public PrintingConfig<TOwner> Build() =>
             new PrintingConfig<TOwner>(finalTypes, configurationRoot, groupAppliedConfigurators);
 
         public static PrintingConfigBuilder<TOwner> Default() => new PrintingConfigBuilder<TOwner>(new[]

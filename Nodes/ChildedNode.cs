@@ -13,6 +13,12 @@ namespace Nodes
         }
 
         public string Name { get; }
-        public IChildedNode<TPayload> Parent { get; set; }
+        public IChildedNode<TPayload> Parent { get; internal set; }
+
+        IChildedNode<TPayload> IParentedNode<TPayload>.Parent
+        {
+            get => Parent;
+            set => Parent = value;
+        }
     }
 }
