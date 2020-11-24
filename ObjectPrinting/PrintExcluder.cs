@@ -10,36 +10,36 @@ namespace ObjectPrinting
         private ImmutableHashSet<PropertyInfo> PropertiesForExclude { get; }
         private ImmutableHashSet<FieldInfo> FieldsForExclude { get; }
 
-        public PrintExcluder()
-        {
-            TypesForExclude = ImmutableHashSet<Type>.Empty;
-            PropertiesForExclude = ImmutableHashSet<PropertyInfo>.Empty;
-            FieldsForExclude = ImmutableHashSet<FieldInfo>.Empty;
-        }
+        public PrintExcluder() : this(
+            ImmutableHashSet<Type>.Empty,
+            ImmutableHashSet<PropertyInfo>.Empty,
+            ImmutableHashSet<FieldInfo>.Empty) 
+        { }
 
         private PrintExcluder(
-            ImmutableHashSet<FieldInfo> fieldsForExclude,
+            ImmutableHashSet<Type> typesForExclude,
             ImmutableHashSet<PropertyInfo> propertiesForExclude,
-            ImmutableHashSet<Type> typesForExclude)
+            ImmutableHashSet<FieldInfo> fieldsForExclude
+        )
         {
-            FieldsForExclude = fieldsForExclude;
-            PropertiesForExclude = propertiesForExclude;
             TypesForExclude = typesForExclude;
+            PropertiesForExclude = propertiesForExclude;
+            FieldsForExclude = fieldsForExclude;
         }
 
-        public bool DidExclude(PropertyInfo property) => PropertiesForExclude.Contains(property) ||
-                                                         TypesForExclude.Contains(property.PropertyType);
+        public bool IsExclude(PropertyInfo property) =>
+            PropertiesForExclude.Contains(property) || TypesForExclude.Contains(property.PropertyType);
 
-        public bool DidExclude(FieldInfo field) => FieldsForExclude.Contains(field) ||
-                                                   TypesForExclude.Contains(field.FieldType);
+        public bool IsExclude(FieldInfo field) =>
+            FieldsForExclude.Contains(field) || TypesForExclude.Contains(field.FieldType);
 
         public PrintExcluder Exclude(Type type) =>
-            new PrintExcluder(FieldsForExclude, PropertiesForExclude, TypesForExclude.Add(type));
+            new PrintExcluder(TypesForExclude.Add(type), PropertiesForExclude, FieldsForExclude);
 
         public PrintExcluder Exclude(FieldInfo field) =>
-            new PrintExcluder(FieldsForExclude.Add(field), PropertiesForExclude, TypesForExclude);
+            new PrintExcluder(TypesForExclude, PropertiesForExclude, FieldsForExclude.Add(field));
 
         public PrintExcluder Exclude(PropertyInfo property) =>
-            new PrintExcluder(FieldsForExclude, PropertiesForExclude.Add(property), TypesForExclude);
+            new PrintExcluder(TypesForExclude, PropertiesForExclude.Add(property), FieldsForExclude);
     }
 }

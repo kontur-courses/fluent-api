@@ -14,8 +14,13 @@ namespace ObjectPrinting
 
         private readonly Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(int),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Guid)
         };
 
         private readonly HashSet<object> visitedMembers = new HashSet<object>();
@@ -46,19 +51,23 @@ namespace ObjectPrinting
 
         private void PrintingProperties(object obj, int nestingLevel, StringBuilder sb)
         {
-            foreach (var property in obj.GetType().GetProperties().Where(p => !Config.PrintExcluder.DidExclude(p)))
+            var nonExcludedProperties = obj.GetType().GetProperties().Where(p => !Config.PrintExcluder.IsExclude(p));
+            foreach (var property in nonExcludedProperties)
             {
-                sb.AppendFormat("{0}{1} = {2}", GetIdentationFor(nestingLevel), property.Name,
-                    PrintProperty(property.GetValue(obj), property, nestingLevel));
+                var indentation = GetIndentationFor(nestingLevel);
+                var propertyValue = PrintProperty(property.GetValue(obj), property, nestingLevel);
+                sb.Append($"{indentation}{property.Name} = {propertyValue}");
             }
         }
 
         private void PrintingFields(object obj, int nestingLevel, StringBuilder sb)
         {
-            foreach (var field in obj.GetType().GetFields().Where(f => !Config.PrintExcluder.DidExclude(f)))
+            var nonExcludedFields = obj.GetType().GetFields().Where(p => !Config.PrintExcluder.IsExclude(p));
+            foreach (var field in nonExcludedFields)
             {
-                sb.AppendFormat("{0}{1} = {2}", GetIdentationFor(nestingLevel), field.Name,
-                    PrintField(field.GetValue(obj), field, nestingLevel));
+                var indentation = GetIndentationFor(nestingLevel);
+                var fieldValue = PrintField(field.GetValue(obj), field, nestingLevel);
+                sb.Append($"{indentation}{field.Name} = {fieldValue}");
             }
         }
 
@@ -84,16 +93,16 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             var newCollection = from object element in collection
-                select GetIdentationFor(nestingLevel + 1) + PrintToString(element, nestingLevel + 1);
+                select GetIndentationFor(nestingLevel + 1) + PrintToString(element, nestingLevel + 1);
 
             return sb
                 .AppendLine(collection.GetType().Name)
-                .AppendLine(GetIdentationFor(nestingLevel) + '{')
+                .AppendLine(GetIndentationFor(nestingLevel) + '{')
                 .AppendJoin(Environment.NewLine, newCollection)
-                .AppendLine(GetIdentationFor(nestingLevel) + '}')
+                .AppendLine(GetIndentationFor(nestingLevel) + '}')
                 .ToString();
         }
 
-        private static string GetIdentationFor(int nestingLevel) => new string('\t', nestingLevel);
+        private static string GetIndentationFor(int nestingLevel) => new string('\t', nestingLevel);
     }
 }
