@@ -109,9 +109,9 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel, HashSet<object> serializedObjects)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return $"null{Environment.NewLine}";
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+                return $"{obj}{Environment.NewLine}";
             if (!serializedObjects.Add(obj))
                 throw new SerializationException("Circular reference");
             var indentation = new string('\t', nestingLevel + 1);
@@ -129,8 +129,8 @@ namespace ObjectPrinting
                     : memberValue;
                 if (memberLengths.TryGetValue(memberInfo, out var maxLength))
                     toPrint = toPrint.ToString()?.Substring(0, maxLength);
-                sb.Append(indentation + memberInfo.Name + " = "
-                          + PrintToString(toPrint, nestingLevel + 1, serializedObjects));
+                var serializedObject = PrintToString(toPrint, nestingLevel + 1, serializedObjects);
+                sb.Append($"{indentation}{memberInfo.Name} = {serializedObject}");
             }
 
             return sb.ToString();
