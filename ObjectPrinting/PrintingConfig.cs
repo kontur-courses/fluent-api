@@ -65,7 +65,7 @@ namespace ObjectPrinting
                 yield return expression.Member;
                 if (expression.Expression is MemberExpression memberExpression)
                     expression = memberExpression;
-                else if(expression.Expression is ParameterExpression) yield break;
+                else if (expression.Expression is ParameterExpression) yield break;
                 else throw new InvalidOperationException("Only member expressions are supported!");
             }
         }

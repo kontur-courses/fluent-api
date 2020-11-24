@@ -23,7 +23,8 @@ namespace ObjectPrinting
             TypeConfigs = TypeConfigs
         };
 
-        private PrintingConfigBase WithParentTypeConfigs(ImmutableDictionary<Type, PrintingConfigBase> parentTypeConfigs)
+        private PrintingConfigBase WithParentTypeConfigs(
+            ImmutableDictionary<Type, PrintingConfigBase> parentTypeConfigs)
         {
             var newItems = parentTypeConfigs.Where(p => !TypeConfigs.ContainsKey(p.Key));
             var result = Copy();
@@ -34,14 +35,15 @@ namespace ObjectPrinting
         protected PrintingConfigBase WithConfigForMember(MemberInfo[] memberChain, PrintingConfigBase config)
             => Copy().WithConfigForMember(memberChain, config, 0);
 
-        private PrintingConfigBase WithConfigForMember(MemberInfo[] memberChain, PrintingConfigBase config, int indexInChain)
+        private PrintingConfigBase WithConfigForMember(MemberInfo[] memberChain, PrintingConfigBase config,
+            int indexInChain)
         {
             if (indexInChain == memberChain.Length - 1)
                 return WithConfigForMember(memberChain[indexInChain], config);
-            
-            if(!MemberConfigs.TryGetValue(memberChain[indexInChain], out var currentConfig))
+
+            if (!MemberConfigs.TryGetValue(memberChain[indexInChain], out var currentConfig))
                 currentConfig = new PrintingConfigBase();
-            
+
             var result = Copy();
             result.MemberConfigs = result.MemberConfigs.SetItem(memberChain[indexInChain],
                 currentConfig.WithConfigForMember(memberChain, config, indexInChain + 1));
@@ -56,7 +58,7 @@ namespace ObjectPrinting
             config = this;
             for (var i = 0; i < memberChain.Length; i++)
             {
-                var hasConfig = config.MemberConfigs.TryGetValue(memberChain[i], out config); 
+                var hasConfig = config.MemberConfigs.TryGetValue(memberChain[i], out config);
                 if (!hasConfig || config == null)
                 {
                     if (i < memberChain.Length - 1 || !hasConfig || defaultConfig != null)
@@ -89,6 +91,7 @@ namespace ObjectPrinting
                     TypeConfigs = config.TypeConfigs
                 };
             }
+
             throw new Exception($"{config} is not generic of {typeof(T)}!");
         }
 
@@ -114,7 +117,7 @@ namespace ObjectPrinting
                 if (!(MemberConfigs.TryGetValue(propertyInfo, out var config)
                       || TypeConfigs.TryGetValue(propertyInfo.PropertyType, out config)))
                     config = new PrintingConfigBase {TypeConfigs = TypeConfigs};
-                else if(config == null) continue;
+                else if (config == null) continue;
                 else config = config.WithParentTypeConfigs(TypeConfigs);
 
                 sb.Append(identation + propertyInfo.Name + " = " +

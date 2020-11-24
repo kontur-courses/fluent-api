@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Mother)
                 .Excluding(p => p.Father.Father);
-            
+
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
 

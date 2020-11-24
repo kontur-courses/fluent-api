@@ -11,11 +11,11 @@ namespace ObjectPrinting
             public TypePrintingContext(PrintingConfig<TOwner> ownerConfig, Type type)
             {
                 OwnerConfig = ownerConfig;
-                
-                if(!OwnerConfig.TypeConfigs.TryGetValue(type, out var currentConfig))
+
+                if (!OwnerConfig.TypeConfigs.TryGetValue(type, out var currentConfig))
                     currentConfig = new PrintingConfig<TMember>();
                 CurrentConfig = (PrintingConfig<TMember>) currentConfig;
-                
+
                 this.type = type;
             }
 
