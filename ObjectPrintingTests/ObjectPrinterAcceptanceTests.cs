@@ -248,8 +248,16 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_Array_Demo()
         {
-            var array = new [] {person, person};
+            var array = new[] {person, person};
             Console.WriteLine(array.PrintToString());
+        }
+
+        [Test]
+        public void PrintToString_ShouldNotThrowException_WhenThereIsCyclicalRef()
+        {
+            var obj = new ClassForTestingCyclicalRefs();
+            obj.Reference = obj;
+            Assert.DoesNotThrow(() => obj.PrintToString());
         }
     }
 }
