@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public class MemberPrintingConfig<TOwner, TMemberType> : IMemberPrintingConfig<TOwner, TMemberType>
+    public class MemberPrintingConfig<TOwner, TMemberType> : IMemberPrintingConfig
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private Func<object, string> printMember = obj => obj.ToString();
@@ -18,13 +18,11 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TMemberType>.ParentConfig => printingConfig;
-        Func<object, string> IMemberPrintingConfig<TOwner, TMemberType>.PrintMember => printMember;
+        Func<object, string> IMemberPrintingConfig.PrintMember => printMember;
     }
 
-    public interface IMemberPrintingConfig<TOwner, TMemberType>
+    public interface IMemberPrintingConfig
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
         Func<object, string> PrintMember { get; }
     }
 }

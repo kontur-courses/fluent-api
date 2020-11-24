@@ -140,8 +140,7 @@ namespace ObjectPrinting
             MemberPrintingConfig<TOwner, TMemberType> memberConfig)
         {
             return obj =>
-                ((IMemberPrintingConfig<TOwner, TMemberType>) memberConfig).PrintMember(obj) +
-                endOfLine;
+                ((IMemberPrintingConfig) memberConfig).PrintMember(obj) + endOfLine;
         }
     }
 }
