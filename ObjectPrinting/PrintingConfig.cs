@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -12,7 +10,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        internal readonly Dictionary<Type, CultureInfo> CulturesForProperties = new Dictionary<Type, CultureInfo>();
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
@@ -21,6 +18,8 @@ namespace ObjectPrinting
 
         protected internal readonly Dictionary<Type, Func<object, string>> TypeConverters =
             new Dictionary<Type, Func<object, string>>();
+
+        protected internal Dictionary<Type, CultureInfo> CulturesForProperties = new Dictionary<Type, CultureInfo>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -34,24 +33,11 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(GetSelectedPropertyName(memberSelector), this);
         }
 
-        private string GetSelectedPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-        {
-            CheckExpressionType(memberSelector.Body.NodeType);
-            var choice = memberSelector.Body.ToString();
-            return choice.Substring(choice.LastIndexOf('.') + 1);
-        }
-
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             CheckExpressionType(memberSelector.Body.NodeType);
             excludedProperties.Add(GetSelectedPropertyName(memberSelector));
             return this;
-        }
-
-        private void CheckExpressionType(ExpressionType type)
-        {
-            if (type != ExpressionType.MemberAccess)
-                throw new ArgumentException("Function should chose property of object");
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -72,10 +58,10 @@ namespace ObjectPrinting
         {
             if (obj == null) return "null" + Environment.NewLine;
 
-            if (nestingLevel > 256)
-                throw new InternalBufferOverflowException("nesting level should be less than 256");
+            if (nestingLevel > 8)
+                return "Cycling reference error" + Environment.NewLine;
 
-            var result = SerializeSimpleObject(obj)??SerializeCollection(obj as ICollection,nestingLevel);
+            var result = SerializeSimpleObject(obj) ?? SerializeCollection(obj as ICollection, nestingLevel);
             if (result != null) return result;
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -85,39 +71,37 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public string SerializeCollection(ICollection collection,int nestingLevel)
+        private string SerializeCollection(ICollection collection, int nestingLevel)
         {
-            
             var indentation = new string('\t', nestingLevel + 1);
-            if (collection == null)
-            {
-                return null;
-            }
-            var sb = new StringBuilder(collection.GetType().Name+Environment.NewLine);
-            foreach (var item in collection) 
-                sb.Append(indentation+PrintToString(item, nestingLevel+1));
+            if (collection == null) return null;
+            var sb = new StringBuilder(collection.GetType().Name + Environment.NewLine);
+            foreach (var item in collection)
+                sb.Append(indentation + PrintToString(item, nestingLevel + 1));
             return sb.ToString();
         }
 
         private string SerializeSimpleObject(object obj)
         {
-            var finalTypes = new[]
+            switch (obj)
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-            {
-                dynamic buff = obj;
-                if (TypeConverters.ContainsKey(obj.GetType()))
+                case {} when TypeConverters.ContainsKey(obj.GetType()):
                     return TypeConverters[obj.GetType()].Invoke(obj) + Environment.NewLine;
-                if (CulturesForProperties.TryGetValue(obj.GetType(), out var cultureInfo))
-                    return buff.ToString(cultureInfo) + Environment.NewLine;
-                return buff.ToString() + Environment.NewLine;
+                case IFormattable formattable
+                    when CulturesForProperties.TryGetValue(formattable.GetType(), out var cultureInfo):
+                    return formattable.ToString(null, cultureInfo) + Environment.NewLine;
+                case IFormattable formattable:
+                    return formattable.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine;
+                case string s:
+                    return s.ToString(CulturesForProperties.ContainsKey(typeof(string))
+                        ? CulturesForProperties[typeof(string)]
+                        : CultureInfo.InvariantCulture) + Environment.NewLine;
             }
 
             if (TypeConverters.ContainsKey(obj.GetType()))
                 return TypeConverters[obj.GetType()].Invoke(obj) + Environment.NewLine;
+
+
             return null;
         }
 
@@ -143,6 +127,19 @@ namespace ObjectPrinting
 
             return indentation + propertyInfo.Name + " = " +
                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+        }
+
+        private string GetSelectedPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            CheckExpressionType(memberSelector.Body.NodeType);
+            var propertySelection = memberSelector.Body.ToString();
+            return propertySelection.Substring(propertySelection.LastIndexOf('.') + 1);
+        }
+
+        private void CheckExpressionType(ExpressionType type)
+        {
+            if (type != ExpressionType.MemberAccess)
+                throw new ArgumentException("Function should chose property of object");
         }
     }
 }
