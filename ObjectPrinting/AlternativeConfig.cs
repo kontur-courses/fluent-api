@@ -49,7 +49,7 @@ namespace ObjectPrinting
                 return (string) typeRule.DynamicInvoke(value) + Environment.NewLine;
             
             if (cultures.TryGetValue(type, out var cultureInfo))
-                return ((dynamic)value).ToString(cultureInfo) + Environment.NewLine;
+                return ((IFormattable) value).ToString(null, cultureInfo) + Environment.NewLine;
 
             return null;
         }
