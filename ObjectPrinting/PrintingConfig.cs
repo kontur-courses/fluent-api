@@ -10,11 +10,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private ImmutableHashSet<PropertyInfo> excludedProperties = ImmutableHashSet<PropertyInfo>.Empty;
+        private readonly HashSet<object> parentObjects = new HashSet<object>();
+        private ImmutableHashSet<MemberInfo> excludedMembers = ImmutableHashSet<MemberInfo>.Empty;
         private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
 
-        private ImmutableDictionary<PropertyInfo, Func<object, string>> propertiesSerialization =
-            ImmutableDictionary<PropertyInfo, Func<object, string>>.Empty;
+        private ImmutableDictionary<MemberInfo, Func<object, string>> MemberSerializations =
+            ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
 
         private ImmutableDictionary<Type, Func<object, string>> typesSerialization =
             ImmutableDictionary<Type, Func<object, string>>.Empty;
@@ -25,10 +26,10 @@ namespace ObjectPrinting
             set => typesSerialization = value;
         }
 
-        ImmutableDictionary<PropertyInfo, Func<object, string>> IPrintingConfig<TOwner>.PropsSerialization
+        ImmutableDictionary<MemberInfo, Func<object, string>> IPrintingConfig<TOwner>.PropsSerialization
         {
-            get => propertiesSerialization;
-            set => propertiesSerialization = value;
+            get => MemberSerializations;
+            set => MemberSerializations = value;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -46,7 +47,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var selectedProp = (PropertyInfo) ((MemberExpression) memberSelector.Body).Member;
-            excludedProperties = excludedProperties.Add(selectedProp);
+            excludedMembers = excludedMembers.Add(selectedProp);
             return this;
         }
 
@@ -91,7 +92,7 @@ namespace ObjectPrinting
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
 
             if (finalTypes.Contains(obj.GetType()) || typesSerialization.ContainsKey(obj.GetType()))
@@ -103,45 +104,64 @@ namespace ObjectPrinting
                 return valueToPrint.ToString();
             }
 
+            parentObjects.Add(obj);
             var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(identation + type.Name);
             identation += '\t';
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                var propertyValue = propertyInfo.GetValue(obj);
 
-                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
-                    continue;
+            var membersToPrint = type.GetProperties()
+                .Where(prop => !excludedTypes.Contains(prop.PropertyType) && !excludedMembers.Contains(prop))
+                .ToDictionary(prop => prop.Name, prop => GetValueToPrint(obj, nestingLevel, prop));
 
-                var valueToPrint = GetValueToPrint(obj, nestingLevel, propertyValue, propertyInfo);
+            membersToPrint = membersToPrint.Union(
+                    type.GetFields()
+                        .Where(prop => !excludedTypes.Contains(prop.FieldType) && !excludedMembers.Contains(prop))
+                        .ToDictionary(prop => prop.Name, prop => GetValueToPrint(obj, nestingLevel, prop)))
+                .ToDictionary(x => x.Key, x => x.Value);
 
-                sb.Append($"{identation}{propertyInfo.Name} = {valueToPrint}");
-            }
+            foreach (var (key, value) in membersToPrint)
+                sb.AppendLine($"{identation}{key} = {value}");
 
             return sb.ToString();
         }
 
-        private string GetValueToPrint(object obj, int nestingLevel, object propertyValue, PropertyInfo propertyInfo)
+
+        private string GetValueToPrint(object obj, int nestingLevel, PropertyInfo propertyInfo)
+        {
+            return GetValueToPrint(obj, nestingLevel, propertyInfo.GetValue(obj), propertyInfo);
+        }
+
+        private string GetValueToPrint(object obj, int nestingLevel, FieldInfo fieldInfo)
+        {
+            return GetValueToPrint(obj, nestingLevel, fieldInfo.GetValue(obj), fieldInfo);
+        }
+
+        private string GetValueToPrint(object obj, int nestingLevel, object memberValue, MemberInfo memberInfo)
         {
             string valueToPrint;
-            if (propertyValue == obj)
-                valueToPrint = "self";
+            if (parentObjects.Contains(memberValue))
+                valueToPrint = "<parent>";
             else
-                valueToPrint = propertiesSerialization.ContainsKey(propertyInfo)
-                    ? propertiesSerialization[propertyInfo](propertyValue)
-                    : PrintToString(propertyValue, nestingLevel + 1);
-
-            if (!valueToPrint.EndsWith("\r\n")) valueToPrint += Environment.NewLine;
+                valueToPrint = MemberSerializations.ContainsKey(memberInfo)
+                    ? MemberSerializations[memberInfo](memberValue)
+                    : PrintToString(memberValue, nestingLevel + 1);
 
             return valueToPrint;
         }
+
+        private enum MemberType
+        {
+            Property,
+            Field
+        }
     }
+
 
     public interface IPrintingConfig<TOwner>
     {
         ImmutableDictionary<Type, Func<object, string>> TypesSerialization { get; set; }
-        ImmutableDictionary<PropertyInfo, Func<object, string>> PropsSerialization { get; set; }
+        ImmutableDictionary<MemberInfo, Func<object, string>> PropsSerialization { get; set; }
     }
 }
