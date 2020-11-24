@@ -50,11 +50,13 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeProperty(string propertyName, string[] path, object value, Type type, int nestingLevel)
+        private string SerializeProperty(string propertyName, string[] path, object? value, Type type, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
-            var serialized = GetConfiguratorOrDefault(propertyName, path, type)?.AppliedSerializer.Serialize(value)
-                             ?? SerializeObject(value, path.Append(propertyName).ToArray(), nestingLevel + 1);
+            var serialized = value == null
+                ? "null"
+                : GetConfiguratorOrDefault(propertyName, path, type)?.AppliedSerializer.Serialize(value) ??
+                  SerializeObject(value, path.Append(propertyName).ToArray(), nestingLevel + 1);
 
             return string.IsNullOrEmpty(serialized)
                 ? string.Empty

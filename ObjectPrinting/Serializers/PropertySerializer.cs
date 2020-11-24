@@ -16,8 +16,8 @@ namespace ObjectPrinting.Serializers
             if (value is TProperty prop)
                 return Serialize(prop);
 
-            var serializerInfo = $"serializer type: {GetType()}, value type: <{nameof(TProperty)}>";
-            throw new ArgumentException($"Attempted to serialize object of type <{value.GetType()}>; {serializerInfo}");
+            var serializerInfo = $"serializer type: [{GetType()}], prop type: [{typeof(TProperty).Name}]";
+            throw new ArgumentException($"Attempted to serialize object of type [{value.GetType()}]; {serializerInfo}");
         }
     }
 }

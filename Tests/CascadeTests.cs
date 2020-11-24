@@ -70,7 +70,11 @@ namespace Tests
                 .PrintToString(subject);
 
             result.Should()
-                .NotContain($"{nameof(CascadeTestingClass.Child)}");
+                .NotContainAny($"{nameof(CascadeTestingClass.Child)}")
+                .And
+                .ContainEquivalentOf(nameof(CascadeTestingClass.Int32), Exactly.Once())
+                .And
+                .ContainEquivalentOf(nameof(CascadeTestingClass.String), Exactly.Once());
         }
 
         [TearDown]

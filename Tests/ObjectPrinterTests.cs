@@ -227,6 +227,20 @@ namespace Tests
                 .Contain($"{nameof(TestingPropertiesClass.Double)} = direct");
         }
 
+        [Test]
+        public void NullProperty_PrintNull()
+        {
+            var subject = new TestingPropertiesClass
+            {
+                String = null
+            };
+
+            result = ObjectPrinter.For<TestingPropertiesClass>().PrintToString(subject);
+
+            result.Should()
+                .Contain($"{nameof(TestingPropertiesClass.String)} = null");
+        }
+
         [TearDown]
         public void TearDown()
         {
