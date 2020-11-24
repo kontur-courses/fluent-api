@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using ObjectPrinting.Serializers;
+﻿using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting.Configuration
 {
@@ -14,7 +13,7 @@ namespace ObjectPrinting.Configuration
             Owner = parent;
         }
 
-        public PropertySerializer<TProperty> AppliedSerializer { get; private set; }
+        public PropertySerializer<TProperty>? AppliedSerializer { get; private set; }
         public SerializationTarget Target { get; }
         public PrintingConfigBuilder<TOwner> Owner { get; }
 
@@ -23,7 +22,5 @@ namespace ObjectPrinting.Configuration
             AppliedSerializer = serializer;
             return Owner;
         }
-
-        IReadOnlyList<SerializationTarget> IPropertyConfigurator.Targets => new[] {Target};
     }
 }

@@ -2,15 +2,20 @@
 {
     public class TerminalNode<TPayload> : IParentedNode<TPayload>
     {
-        internal TerminalNode(string name, IChildedNode<TPayload> parent, TPayload payload)
+        internal TerminalNode(string name, TPayload payload)
         {
             Name = name;
-            Parent = parent;
             Payload = payload;
         }
 
         public string Name { get; }
-        public IChildedNode<TPayload> Parent { get; set; }
+        public IChildedNode<TPayload> Parent { get; internal set; }
+
+        IChildedNode<TPayload> IParentedNode<TPayload>.Parent
+        {
+            get => this.Parent;
+            set => this.Parent = value;
+        }
 
         public TPayload Payload { get; }
     }

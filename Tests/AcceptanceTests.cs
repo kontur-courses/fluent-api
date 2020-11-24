@@ -13,7 +13,7 @@ namespace Tests
         {
             var person = new TestingFieldsClass();
 
-            ObjectPrinter.For<TestingFieldsClass>()
+            var result = ObjectPrinter.For<TestingFieldsClass>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Choose<int>().Exclude()
                 //2. Указать альтернативный способ сериализации для определенного типа
@@ -27,6 +27,7 @@ namespace Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Choose(o => o.Double).Exclude()
                 .PrintToString(person);
+            TestContext.Progress.WriteLine(result);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             person.Serialize();

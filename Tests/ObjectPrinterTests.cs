@@ -8,6 +8,8 @@ namespace Tests
 {
     public class ObjectPrinterTests
     {
+        private string result;
+
         [Test]
         public void CanPrintProperties()
         {
@@ -19,11 +21,9 @@ namespace Tests
                 String = "Abc xyz"
             };
 
-            ObjectPrinter.For<TestingPropertiesClass>()
-                .Choose<int>()
-                .Exclude()
-                .PrintToString(subject)
-                .Should()
+            result = ObjectPrinter.For<TestingPropertiesClass>().PrintToString(subject);
+
+            result.Should()
                 .ContainAll(
                     nameof(TestingPropertiesClass),
                     $"{nameof(TestingPropertiesClass.Guid)} = {subject.Guid}",
@@ -43,36 +43,15 @@ namespace Tests
                 String = "Abc xyz"
             };
 
-            ObjectPrinter.For<TestingFieldsClass>()
-                .Choose<int>()
-                .Exclude()
-                .PrintToString(subject)
-                .Should()
+            result = ObjectPrinter.For<TestingFieldsClass>().PrintToString(subject);
+
+            result.Should()
                 .ContainAll(
                     nameof(TestingFieldsClass),
                     $"{nameof(TestingFieldsClass.Guid)} = {subject.Guid}",
                     $"{nameof(TestingFieldsClass.String)} = {subject.String}",
                     $"{nameof(TestingFieldsClass.Double)} = {subject.Double}",
                     $"{nameof(TestingFieldsClass.Int32)} = {subject.Int32}");
-        }
-
-        [Test]
-        public void PropertyExcluded_DoNotPrint()
-        {
-            var subject = new TestingPropertiesClass
-            {
-                Int32 = 18,
-                Double = 123,
-                Guid = Guid.NewGuid(),
-                String = "Abc xyz"
-            };
-
-            ObjectPrinter.For<TestingPropertiesClass>()
-                .Choose<int>()
-                .Exclude()
-                .PrintToString(subject)
-                .Should()
-                .NotContainAny($"{nameof(TestingPropertiesClass.Int32)}", $"{subject.Int32}");
         }
 
         [Test]
@@ -86,19 +65,39 @@ namespace Tests
                 String = "Abc xyz"
             };
 
-            ObjectPrinter.For<TestingPropertiesClass>()
+            result = ObjectPrinter.For<TestingPropertiesClass>()
+                .Choose<int>()
+                .Exclude()
+                .PrintToString(subject);
+
+            result.Should()
+                .NotContainAny($"{nameof(TestingPropertiesClass.Int32)}", $"{subject.Int32}");
+        }
+
+        [Test]
+        public void PropertyExcluded_DoNotPrint()
+        {
+            var subject = new TestingPropertiesClass
+            {
+                Int32 = 18,
+                Double = 123,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            result = ObjectPrinter.For<TestingPropertiesClass>()
                 .Choose(p => p.Guid)
                 .Exclude()
-                .PrintToString(subject)
-                .Should()
+                .PrintToString(subject);
+            
+            result.Should()
                 .NotContainAny($"{nameof(TestingPropertiesClass.Guid)}", $"{subject.Guid}");
         }
-    }
 
-    public class CascadeTestingClass
-    {
-        public int Int32 { get; set; }
-        public string String { get; set; }
-        public CascadeTestingClass Child { get; set; }
+        [TearDown]
+        public void TearDown()
+        {
+            TestContext.Out.WriteLine(result);
+        }
     }
 }

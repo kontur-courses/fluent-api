@@ -7,10 +7,9 @@ namespace Nodes
         IDictionary<string, IParentedNode<TPayload>> IChildedNode<TPayload>.ChildNodes { get; } =
             new Dictionary<string, IParentedNode<TPayload>>();
 
-        public ChildedNode(string name, IChildedNode<TPayload> parent)
+        public ChildedNode(string name)
         {
             Name = name;
-            Parent = parent;
         }
 
         public string Name { get; }

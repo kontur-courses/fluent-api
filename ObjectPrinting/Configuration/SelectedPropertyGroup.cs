@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using ObjectPrinting.Serializers;
+﻿using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting.Configuration
 {
@@ -9,9 +7,8 @@ namespace ObjectPrinting.Configuration
     /// </summary>
     public class SelectedPropertyGroup<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
-        public SelectedPropertyGroup(IEnumerable<SerializationTarget> targets, PrintingConfigBuilder<TOwner> parent)
+        public SelectedPropertyGroup(PrintingConfigBuilder<TOwner> parent)
         {
-            Targets = targets.ToArray();
             Owner = parent;
         }
 
@@ -23,7 +20,5 @@ namespace ObjectPrinting.Configuration
             AppliedSerializer = serializer;
             return Owner;
         }
-
-        public IReadOnlyList<SerializationTarget> Targets { get; }
     }
 }

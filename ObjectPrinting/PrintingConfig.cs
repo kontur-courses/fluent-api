@@ -1,21 +1,24 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Nodes;
 using ObjectPrinting.Configuration;
-using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
-        private RootNode<IPropertySerializer> configurationRoot;
+        private RootNode<IPropertyConfigurator> configurationRoot;
+        private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
 
-        public PrintingConfig(Type[] finalTypes, RootNode<IPropertySerializer> configurationRoot)
+        public PrintingConfig(Type[] finalTypes, RootNode<IPropertyConfigurator> configurationRoot,
+            IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators)
         {
             this.finalTypes = finalTypes;
             this.configurationRoot = configurationRoot;
+            this.groupAppliedConfigurators = groupAppliedConfigurators;
         }
 
         public string PrintToString(TOwner obj)
@@ -36,15 +39,21 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             foreach (var target in SerializationTarget.EnumerateFrom(type))
-                sb.Append(SerializeProperty(target.MemberName, target.GetValue(obj), nestingLevel + 1));
+                sb.Append(
+                    SerializeProperty(target.MemberName, target.GetValue(obj), target.MemberType, nestingLevel + 1));
 
             return sb.ToString();
         }
 
-        private string SerializeProperty(string propertyName, object? value, int nestingLevel)
+        private string SerializeProperty(string propertyName, object value, Type type, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
-            return $"{indentation}{propertyName} = " + PrintToString(value, nestingLevel + 1);
+            var serialized = groupAppliedConfigurators.TryGetValue(type, out var configurator) && configurator != null
+                ? configurator.AppliedSerializer.Serialize(value)
+                : PrintToString(value, nestingLevel + 1);
+            if (string.IsNullOrEmpty(serialized))
+                return string.Empty;
+            return $"{indentation}{propertyName} = " + serialized;
         }
     }
 }
