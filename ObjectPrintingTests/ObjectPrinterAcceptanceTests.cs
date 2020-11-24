@@ -16,7 +16,7 @@ namespace ObjectPrintingTests
         public void SetUp()
         {
             person = new Person {Name = "Alex", Age = 19, Height = 195.5};
-            personPrintingConfig = PrintingConfig<Person>.For<Person>();
+            personPrintingConfig = ObjectPrinter<Person>.For();
         }
 
         private Person person;
@@ -39,7 +39,7 @@ namespace ObjectPrintingTests
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
-            var s1 = new ObjectPrinter<Person>(personPrintingConfig).PrintToString(person);
+            var s1 = personPrintingConfig.PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             var s2 = person.PrintToString();
@@ -64,9 +64,9 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldIgnorePropertyType_IfPropertyTypeIsExcluding()
         {
-            person
-                .PrintToString(config => config
-                    .Excluding<Guid>())
+            personPrintingConfig
+                .Excluding<Guid>()
+                .PrintToString(person)
                 .Should()
                 .NotContain(nameof(person.Id));
         }
@@ -74,9 +74,9 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldIgnoreProperty_IfPropertyIsExcluding()
         {
-            person
-                .PrintToString(config => config
-                    .Excluding(p => p.Age))
+            personPrintingConfig
+                .Excluding(p => p.Age)
+                .PrintToString(person)
                 .Should()
                 .NotContain(nameof(person.Age));
         }
@@ -84,10 +84,10 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldUseCustomTypePrinter()
         {
-            person
-                .PrintToString(config => config
-                    .Printing<string>()
-                    .Using(str => "name"))
+            personPrintingConfig
+                .Printing<string>()
+                .Using(str => "name")
+                .PrintToString(person)
                 .Should()
                 .NotContain(person.Name).And.Contain("name");
         }
@@ -100,8 +100,10 @@ namespace ObjectPrintingTests
                 .Should()
                 .Contain(person.Height.ToString());
 
-            person.PrintToString(config => config.Printing<double>()
-                    .Using(CultureInfo.InvariantCulture))
+            personPrintingConfig
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture)
+                .PrintToString(person)
                 .Should()
                 .Contain(person.Height.ToString(CultureInfo.InvariantCulture));
         }
@@ -109,10 +111,10 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldUseCustomPropertyPrinter()
         {
-            person
-                .PrintToString(config => config
-                    .Printing(p => p.Age)
-                    .Using(age => "100"))
+            personPrintingConfig
+                .Printing(p => p.Age)
+                .Using(age => "100")
+                .PrintToString(person)
                 .Should()
                 .NotContain($"{nameof(person.Age)} = {person.Age}")
                 .And
@@ -122,10 +124,10 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldTrimStringProperties()
         {
-            person
-                .PrintToString(config => config
-                    .Printing(p => p.Name)
-                    .TrimmedToLength(1))
+            personPrintingConfig
+                .Printing(p => p.Name)
+                .TrimmedToLength(1)
+                .PrintToString(person)
                 .Should()
                 .NotContain("Al").And.Contain("A");
         }
@@ -153,9 +155,9 @@ namespace ObjectPrintingTests
 
             firstPerson.PrintToString()
                 .Should()
-                .Contain($"{nameof(Person)} {ObjectPrinter<Person>.MaxSerializationDepth}")
+                .Contain($"{nameof(Person)} {personPrintingConfig.maxSerializationDepth}")
                 .And
-                .NotContain($"{nameof(Person)} {ObjectPrinter<Person>.MaxSerializationDepth + 1}");
+                .NotContain($"{nameof(Person)} {personPrintingConfig.maxSerializationDepth + 1}");
         }
 
         [Test]

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -17,7 +16,7 @@ namespace ObjectPrinting
         private readonly Type[] finalNotPrimitiveTypes =
         {
             typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid),
-            typeof(Point), typeof(Rectangle), typeof(Size), typeof(decimal), typeof(DateTimeOffset)
+            typeof(decimal), typeof(DateTimeOffset)
         };
 
         public PrintingConfig()
@@ -28,10 +27,7 @@ namespace ObjectPrinting
             customPropertyPrinters = new Dictionary<PropertyInfo, Func<object, string>>();
         }
 
-        public static PrintingConfig<T> For<T>()
-        {
-            return new PrintingConfig<T>();
-        }
+        public int maxSerializationDepth { get; private set; } = 50;
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -57,8 +53,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Using<TPropType>(
-            Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using<TPropType>(Func<TPropType, string> print)
         {
             customTypePrinters[typeof(TPropType)] = obj => print((TPropType) obj);
             return this;
@@ -69,6 +64,12 @@ namespace ObjectPrinting
             Func<TPropType, string> print)
         {
             customPropertyPrinters[memberSelector.GetPropertyInfo()] = obj => print((TPropType) obj);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Using(int maxSerializationDepth)
+        {
+            this.maxSerializationDepth = maxSerializationDepth;
             return this;
         }
 
@@ -86,6 +87,11 @@ namespace ObjectPrinting
         {
             return customPropertyPrinters.TryGetValue(propInfo, out result) ||
                    customTypePrinters.TryGetValue(propInfo.PropertyType, out result);
+        }
+
+        public string PrintToString(TOwner obj)
+        {
+            return new ObjectPrinter<TOwner>(this).PrintToString(obj);
         }
     }
 }

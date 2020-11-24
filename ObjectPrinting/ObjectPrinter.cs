@@ -5,23 +5,22 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class ObjectPrinter<TOwner>
+    public class ObjectPrinter<T>
     {
-        public const int MaxSerializationDepth = 10;
-        private readonly PrintingConfig<TOwner> config;
+        private readonly PrintingConfig<T> config;
         private Dictionary<Type, List<object>> objectsCache;
 
-        public ObjectPrinter()
-        {
-            config = new PrintingConfig<TOwner>();
-        }
-
-        public ObjectPrinter(PrintingConfig<TOwner> config)
+        internal ObjectPrinter(PrintingConfig<T> config)
         {
             this.config = config;
         }
 
-        public string PrintToString(TOwner obj)
+        public static PrintingConfig<T> For()
+        {
+            return new PrintingConfig<T>();
+        }
+
+        public string PrintToString(T obj)
         {
             objectsCache = new Dictionary<Type, List<object>>();
             return PrintToString(obj, 0);
@@ -29,7 +28,7 @@ namespace ObjectPrinting
 
         private string PrintToStringFinalType(object obj)
         {
-            return obj + Environment.NewLine;
+            return obj.ToString();
         }
 
         private string PrintToStringCollection(ICollection collection, int nestingLevel)
@@ -38,15 +37,15 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine($"{indentation}[");
             foreach (var element in collection)
-                sb.Append($"{indentation}\t{PrintToString(element, nestingLevel + 1)}");
-            sb.AppendLine($"{indentation}]");
+                sb.AppendLine($"{indentation}\t{PrintToString(element, nestingLevel + 1)}");
+            sb.Append($"{indentation}]");
             return sb.ToString();
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return $"null{Environment.NewLine}";
+                return "null";
 
             var type = obj.GetType();
 
@@ -57,13 +56,13 @@ namespace ObjectPrinting
                 objectsCache[type] = new List<object>();
             int index;
             if ((index = objectsCache[type].IndexOf(obj)) != -1)
-                return $"{type.Name} {index + 1}{Environment.NewLine}";
+                return $"{type.Name} {index + 1}";
             objectsCache[type].Add(obj);
 
             var sb = new StringBuilder();
             sb.AppendLine($"{type.Name} {objectsCache[type].Count}");
 
-            if (nestingLevel == MaxSerializationDepth - 1)
+            if (nestingLevel == config.maxSerializationDepth - 1)
                 return sb.ToString();
 
             if (obj is ICollection)
@@ -80,11 +79,11 @@ namespace ObjectPrinting
                 if (config.TryGetCustomPrinter(propInfo, out var printer))
                     sb.AppendLine($"{indentation}{propInfo.Name} = {printer(propInfo.GetValue(obj))}");
                 else
-                    sb.Append($"{indentation}{propInfo.Name}" +
-                              " = " +
-                              PrintToString(propInfo.GetValue(obj), nestingLevel + 1));
+                    sb.AppendLine(
+                        $"{indentation}{propInfo.Name} = {PrintToString(propInfo.GetValue(obj), nestingLevel + 1)}");
             }
 
+            sb.Remove(sb.Length - Environment.NewLine.Length, Environment.NewLine.Length);
             return sb.ToString();
         }
     }
