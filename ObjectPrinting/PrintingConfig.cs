@@ -105,15 +105,15 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             var indentation = new string('\t', nestingLevel + 1);
-            var elements = new object[collection.Count];
-            collection.CopyTo(elements, 0);
-            
+
             sb.AppendLine(collection.GetType().Name);
-            for (int i = 0; i < elements.Length; i++)
+            int i = 0;
+            foreach (var element in collection)
             {
-                customPrintForType.TryGetValue(elements[i].GetType(), out var printingFunc);
+                customPrintForType.TryGetValue(element.GetType(), out var printingFunc);
                 printingFunc ??= obj => PrintToString(obj, nestingLevel + 1);
-                sb.Append($"{indentation}[{i}] => {printingFunc(elements[i])}");
+                sb.Append($"{indentation}[{i}] => {printingFunc(element)}");
+                i++;
             }
 
             return sb.ToString();
