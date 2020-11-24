@@ -6,13 +6,13 @@ namespace ObjectPrinting.Core
     public class MemberPrintingConfig<TOwner, TMemberType> : IMemberPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> _parentConfig;
-        private readonly string _propertyName;
+        private readonly string _memberName;
         PrintingConfig<TOwner> IMemberPrintingConfig<TOwner>.ParentConfig => _parentConfig;
 
-        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, string propertyName = null)
+        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, string memberName = null)
         {
             _parentConfig = parentConfig;
-            _propertyName = propertyName;
+            _memberName = memberName;
         }
 
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> print)
