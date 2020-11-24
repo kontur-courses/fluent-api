@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -40,7 +41,7 @@ namespace ObjectPrinting
             var memberVar = MemberVariable.FromExpression(memberSelector);
             var memberConfig = new MemberPrintingConfig<TOwner, TMemberType>(this);
             customPrintForMember[memberVar] = GetPrintMemberFrom(memberConfig);
-            
+
             return memberConfig;
         }
 
@@ -67,7 +68,12 @@ namespace ObjectPrinting
                 return "null" + endOfLine;
 
             if (simpleTypes.Contains(obj.GetType()))
-                return obj + endOfLine;
+            {
+                var printedValue = obj is IFormattable formattable ?
+                    formattable.ToString(null, CultureInfo.InvariantCulture) :
+                    obj.ToString();
+                return printedValue + endOfLine;
+            }
 
             if (printedObjects.Contains(obj))
                 return "This object already printed" + endOfLine;
@@ -94,7 +100,7 @@ namespace ObjectPrinting
                 var printingFunc = GetPrintingFunc(memberVar, nestingLevel);
                 sb.Append(indentation + memberVar.Name + " = " + printingFunc(memberVar.GetValue(obj)));
             }
-            
+
             if (nestingLevel == 0)
                 printedObjects.Clear();
 
@@ -127,8 +133,6 @@ namespace ObjectPrinting
 
         private Func<object, string> GetPrintingFunc(MemberVariable memberVar, int nestingLevel)
         {
-            
-            
             if (customPrintForMember.TryGetValue(memberVar, out var printingFunc) ||
                 customPrintForType.TryGetValue(memberVar.MemberVarType, out printingFunc))
                 return printingFunc;

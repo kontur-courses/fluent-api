@@ -15,7 +15,9 @@ namespace ObjectPrintingTests
         {
             var onlyFields = new OnlyFieldClass {DoubleField = 10.1};
             var expectedValue = new PrintedObjectBuilder(nameof(OnlyFieldClass))
-                .AddSimpleMember(nameof(onlyFields.DoubleField), onlyFields.DoubleField.ToString())
+                .AddSimpleMember(
+                    nameof(onlyFields.DoubleField),
+                    onlyFields.DoubleField.ToString(CultureInfo.InvariantCulture))
                 .Build();
 
             var printer = ObjectPrinter.For<OnlyFieldClass>();
@@ -58,8 +60,12 @@ namespace ObjectPrintingTests
                 .AddComplexMember(nameof(simpleClass.ReferenceField), nameof(OnlyPropertyClass),
                     complexField => complexField.AddSimpleMember(
                         nameof(OnlyPropertyClass.StrProperty), simpleClass.ReferenceField.StrProperty))
-                .AddSimpleMember(nameof(simpleClass.DoubleField), simpleClass.DoubleField.ToString())
-                .AddSimpleMember(nameof(simpleClass.DoubleProperty), simpleClass.DoubleProperty.ToString())
+                .AddSimpleMember(
+                    nameof(simpleClass.DoubleField),
+                    simpleClass.DoubleField.ToString(CultureInfo.InvariantCulture))
+                .AddSimpleMember(
+                    nameof(simpleClass.DoubleProperty),
+                    simpleClass.DoubleProperty.ToString(CultureInfo.InvariantCulture))
                 .Build();
 
             var printer = ObjectPrinter.For<SimpleClass>();
@@ -132,7 +138,7 @@ namespace ObjectPrintingTests
                                 nameof(ClassWithCollections.Array),
                                 "Double[]",
                                 config =>
-                                    config.AddSimpleElement(2.5.ToString()))
+                                    config.AddSimpleElement(2.5.ToString(CultureInfo.InvariantCulture)))
                             .AddNullMember(nameof(ClassWithCollections.Dict))
                             .Build())
                     .SetName("WithArray");
@@ -157,8 +163,12 @@ namespace ObjectPrintingTests
         {
             var simpleClass = new SimpleClass {DoubleField = 1.5, DoubleProperty = 2.5};
             var expectedValue = new PrintedObjectBuilder(nameof(SimpleClass))
-                .AddSimpleMember(nameof(simpleClass.DoubleField), simpleClass.DoubleField.ToString())
-                .AddSimpleMember(nameof(simpleClass.DoubleProperty), simpleClass.DoubleProperty.ToString())
+                .AddSimpleMember(
+                    nameof(simpleClass.DoubleField),
+                    simpleClass.DoubleField.ToString(CultureInfo.InvariantCulture))
+                .AddSimpleMember(
+                    nameof(simpleClass.DoubleProperty),
+                    simpleClass.DoubleProperty.ToString(CultureInfo.InvariantCulture))
                 .Build();
 
             var printer = ObjectPrinter.For<SimpleClass>()
@@ -189,7 +199,9 @@ namespace ObjectPrintingTests
             var expectedValue = new PrintedObjectBuilder(nameof(SimpleClass))
                 .AddNullMember(nameof(simpleClass.ReferenceField))
                 .AddSimpleMember(nameof(simpleClass.DoubleField), $"With member config {simpleClass.DoubleField}")
-                .AddSimpleMember(nameof(simpleClass.DoubleProperty), simpleClass.DoubleProperty.ToString())
+                .AddSimpleMember(
+                    nameof(simpleClass.DoubleProperty),
+                    simpleClass.DoubleProperty.ToString(CultureInfo.InvariantCulture))
                 .Build();
 
             var printer = ObjectPrinter.For<SimpleClass>()
@@ -203,12 +215,12 @@ namespace ObjectPrintingTests
         {
             var onlyFieldObj = new OnlyFieldClass {DoubleField = 2.5};
             var expectedValue = new PrintedObjectBuilder(nameof(OnlyFieldClass))
-                .AddSimpleMember(nameof(onlyFieldObj.DoubleField), "2.5")
+                .AddSimpleMember(nameof(onlyFieldObj.DoubleField), onlyFieldObj.DoubleField.ToString())
                 .Build();
 
             var printer = ObjectPrinter.For<OnlyFieldClass>()
                 .Printing<double>()
-                .Using(CultureInfo.InvariantCulture);
+                .Using(CultureInfo.CurrentCulture);
             printer.PrintToString(onlyFieldObj).Should().Be(expectedValue);
         }
 
