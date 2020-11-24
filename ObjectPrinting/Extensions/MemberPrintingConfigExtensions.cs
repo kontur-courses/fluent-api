@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using ObjectPrinting.Core;
+using ObjectPrinting.Interfaces;
 
 namespace ObjectPrinting.Extensions
 {
@@ -9,13 +10,17 @@ namespace ObjectPrinting.Extensions
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this MemberPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
-            throw new NotImplementedException();
+            if (maxLength <= 0)
+                throw new Exception("Parameter maxLength must be positive");
+            propConfig.Using(p => p.Length > maxLength ? p.Substring(0, maxLength) : p);
+            return ((IMemberPrintingConfig<TOwner>) propConfig).ParentConfig;
         }
 
         public static PrintingConfig<TOwner> SpecifyCulture<TOwner, T>(
             this MemberPrintingConfig<TOwner, T> memberConfig, CultureInfo culture) where T : IFormattable
         {
-            throw new NotImplementedException();
+            memberConfig.Using(prop => prop.ToString(null, culture));
+            return ((IMemberPrintingConfig<TOwner>) memberConfig).ParentConfig;
         }
     }
 }
