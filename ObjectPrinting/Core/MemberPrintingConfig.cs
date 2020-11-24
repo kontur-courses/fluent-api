@@ -17,7 +17,13 @@ namespace ObjectPrinting.Core
 
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> print)
         {
-            throw new NotImplementedException();
+            if (_memberName != null)
+                ((IPrintingConfig) _parentConfig).AlternativeSerializationByNames[_memberName] =
+                    print;
+            else
+                ((IPrintingConfig) _parentConfig).AlternativeSerializationByTypes[typeof(TMemberType)]
+                    = print;
+            return _parentConfig;
         }
     }
 }

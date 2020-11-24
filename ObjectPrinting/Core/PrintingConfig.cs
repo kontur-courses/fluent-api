@@ -40,13 +40,15 @@ namespace ObjectPrinting.Core
 
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
         {
-            throw new NotImplementedException();
+            return new MemberPrintingConfig<TOwner, TMemberType>(this);
         }
 
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            throw new NotImplementedException();
+            if (!(memberSelector.Body is MemberExpression memberExpression))
+                throw new Exception("Expression type must be MemberExpression");
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberExpression.Member.Name);
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
@@ -105,7 +107,19 @@ namespace ObjectPrinting.Core
         {
             var member = new StringBuilder();
             var partResult = new string('\t', nestingLevel + 1) + elementInfo.NameElement + " = ";
-            member.Append(partResult + PrintToString(elementInfo.Value, nestingLevel + 1));
+            if (elementInfo.Value != null && _alternativeSerializationByNames.ContainsKey(elementInfo.NameElement))
+            {
+                var serializationResult = (string) _alternativeSerializationByNames[elementInfo.NameElement]
+                    .DynamicInvoke(elementInfo.Value);
+                member.Append(partResult + serializationResult + Environment.NewLine);
+            }
+            else if (elementInfo.Value != null && _alternativeSerializationByTypes.ContainsKey(elementInfo.ElementType))
+            {
+                var serializationResult = (string) _alternativeSerializationByTypes[elementInfo.ElementType]
+                    .DynamicInvoke(elementInfo.Value);
+                member.Append(partResult + serializationResult + Environment.NewLine);
+            }
+            else member.Append(partResult + PrintToString(elementInfo.Value, nestingLevel + 1));
 
             return member.ToString();
         }
