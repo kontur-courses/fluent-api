@@ -82,8 +82,8 @@ namespace ObjectPrinting.Solved.Tests
             var printing = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(2);
             var result = printing.PrintToString(person);
-            var nameTrim = $"Name = {person.Name[0..2]}" + Environment.NewLine;
-            var nameEgo = $"Name = {person.AlterEgo.Name[0..2]}" + Environment.NewLine;
+            var nameTrim = $"Name = {person.Name[0..2]}{Environment.NewLine}";
+            var nameEgo = $"Name = {person.AlterEgo.Name[0..2]}{Environment.NewLine}";
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
         
@@ -92,7 +92,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printing = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(2);
-            var nameTrim = $"Name = {person.Name[0..2]}" + Environment.NewLine;
+            var nameTrim = $"Name = {person.Name[0..2]}{Environment.NewLine}";
             var nameEgo = $"Name = {person.AlterEgo.Name}";
             var result = printing.PrintToString(person);
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
@@ -107,8 +107,8 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing<string>().TrimmedToLength(stringTrim)
                 .Printing(p => p.AlterEgo.Name).TrimmedToLength(fieldTrim);
             var result = printing.PrintToString(person);
-            var nameTrim = $"Name = {person.Name[0..stringTrim]}" + Environment.NewLine;
-            var nameEgo = $"Name = {person.AlterEgo.Name[0..fieldTrim]}" + Environment.NewLine;
+            var nameTrim = $"Name = {person.Name[0..stringTrim]}{Environment.NewLine}";
+            var nameEgo = $"Name = {person.AlterEgo.Name[0..fieldTrim]}{Environment.NewLine}";
             Assert.IsTrue(result.Contains(nameTrim) && result.Contains(nameEgo));
         }
 
@@ -137,8 +137,8 @@ namespace ObjectPrinting.Solved.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => i.ToString("X"));
             var result = printer.PrintToString(person);
-            var agePerson = $"Age = {person.Age:X}" + Environment.NewLine;
-            var ageEgo = $"Age = {person.AlterEgo.Age:X}" + Environment.NewLine;
+            var agePerson = $"Age = {person.Age:X}{Environment.NewLine}";
+            var ageEgo = $"Age = {person.AlterEgo.Age:X}{Environment.NewLine}";
             Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
         }
 
@@ -148,8 +148,8 @@ namespace ObjectPrinting.Solved.Tests
             var printer = ObjectPrinter.For<Person>()
                .Printing(p => p.Age).Using(i => i.ToString("X"));
             var result = printer.PrintToString(person);
-            var agePerson = $"Age = {person.Age:X}" + Environment.NewLine;
-            var ageEgo = $"Age = {person.AlterEgo.Age}" + Environment.NewLine;
+            var agePerson = $"Age = {person.Age:X}{Environment.NewLine}";
+            var ageEgo = $"Age = {person.AlterEgo.Age}{Environment.NewLine}";
             Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
         }
         
@@ -159,8 +159,8 @@ namespace ObjectPrinting.Solved.Tests
             var printer = ObjectPrinter.For<Person>()
                .Printing(p => p.AlterEgo.Age).Using(i => i.ToString("X"));
             var result = printer.PrintToString(person);
-            var agePerson = $"Age = {person.Age}" + Environment.NewLine;
-            var ageEgo = $"Age = {person.AlterEgo.Age:X}" + Environment.NewLine;
+            var agePerson = $"Age = {person.Age}{Environment.NewLine}";
+            var ageEgo = $"Age = {person.AlterEgo.Age:X}{ Environment.NewLine}";
             Assert.IsTrue(result.Contains(agePerson) && result.Contains(ageEgo));
         }
 
