@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.TestObjects
 {
     public class House
     {

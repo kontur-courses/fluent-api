@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.TestObjects;
 
 namespace ObjectPrinting.Tests
 {
-    public class ObjectPrinterAcceptanceTests
+    public class ObjectPrinterTests
     {
         private Person Person { get; set; }
         private Person SecondPerson { get; set; }
