@@ -61,9 +61,6 @@ namespace ObjectPrinting
         }
 
         public string PrintToString(TOwner obj)
-        {
-            var serialization = new Serializer(Config);
-            return serialization.Serialize(obj);
-        }
+            => new Serializer(Config).Serialize(obj);
     }
 }

@@ -55,6 +55,13 @@ namespace ObjectPrinting
             }
 
             sb.Append(indentation + "}");
+            
+            var serializedIDictionary = sb.ToString();
+            var lastIndexOf = serializedIDictionary.LastIndexOf(",", StringComparison.Ordinal);
+            if (lastIndexOf != -1)
+                return serializedIDictionary.Remove(lastIndexOf, 1);
+            return serializedIDictionary;
+
             return sb.ToString();
         }
 
@@ -95,7 +102,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.Append(type.Name);
             foreach (var memberInfo in type.GetMembers()
-                                           .Where(IsFieldOrProperty).Where(x => !IsExcludedMember(x)))
+                .Where(IsFieldOrProperty).Where(x => !IsExcludedMember(x)))
             {
                 var value = GetValue(obj, memberInfo);
 

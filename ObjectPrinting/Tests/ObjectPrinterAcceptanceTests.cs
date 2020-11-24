@@ -43,35 +43,40 @@ namespace ObjectPrinting.Tests
         public void Excluding_Property_FromSerialization()
         {
             var serialized = person.PrintToString(config => config.Excluding(x => x.AgeProperty));
-            serialized.Should().NotContain(nameof(person.AgeProperty)).And.Contain($"{nameof(person.AgeField)} = {person.AgeField}");
+            serialized.Should().NotContain(nameof(person.AgeProperty)).And
+                .Contain($"{nameof(person.AgeField)} = {person.AgeField}");
         }
 
         [Test]
         public void Excluding_Field_FromSerialization()
         {
             var serialized = person.PrintToString(config => config.Excluding(x => x.AgeField));
-            serialized.Should().NotContain(nameof(person.AgeField)).And.Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}");
+            serialized.Should().NotContain(nameof(person.AgeField)).And
+                .Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}");
         }
 
         [Test]
         public void ChangeSerialization_ForType()
         {
             var serialized = person.PrintToString(config => config.Printing<int>().Using(x => x + "q"));
-            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}q").And.Contain($"{nameof(person.AgeField)} = {person.AgeField}q");
+            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}q").And
+                .Contain($"{nameof(person.AgeField)} = {person.AgeField}q");
         }
 
         [Test]
         public void ChangeSerialization_ForProperty()
         {
             var serialized = person.PrintToString(config => config.Printing(x => x.AgeProperty).Using(x => x + "q"));
-            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}q").And.Contain($"{nameof(person.AgeField)} = {person.AgeField}");
+            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}q").And
+                .Contain($"{nameof(person.AgeField)} = {person.AgeField}");
         }
 
         [Test]
         public void ChangeSerialization_ForField()
         {
             var serialized = person.PrintToString(config => config.Printing(x => x.AgeField).Using(x => x + "q"));
-            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}").And.Contain($"{nameof(person.AgeField)} = {person.AgeField}q");
+            serialized.Should().Contain($"{nameof(person.AgeProperty)} = {person.AgeProperty}").And
+                .Contain($"{nameof(person.AgeField)} = {person.AgeField}q");
         }
 
         [Test]
@@ -79,8 +84,8 @@ namespace ObjectPrinting.Tests
         {
             var serialized = person.PrintToString(config => config.Printing(x => x.FamilyName).SetMaxLength(1));
             serialized.Should().Contain($"{nameof(person.FamilyName)} = {person.FamilyName[0]}")
-                      .And.NotContain($"{nameof(person.FamilyName)} = {person.FamilyName}")
-                      .And.Contain($"{nameof(person.Name)} = {person.Name}");
+                .And.NotContain($"{nameof(person.FamilyName)} = {person.FamilyName}")
+                .And.Contain($"{nameof(person.Name)} = {person.Name}");
         }
 
         [Test]
@@ -88,9 +93,9 @@ namespace ObjectPrinting.Tests
         {
             var serialized = person.PrintToString(config => config.Printing<string>().SetMaxLength(1));
             serialized.Should().Contain($"{nameof(person.Name)} = {person.Name[0]}")
-                      .And.NotContain($"{nameof(person.Name)} = {person.Name}")
-                      .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName[0]}")
-                      .And.NotContain($"{nameof(person.FamilyName)} = {person.FamilyName}");
+                .And.NotContain($"{nameof(person.Name)} = {person.Name}")
+                .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName[0]}")
+                .And.NotContain($"{nameof(person.FamilyName)} = {person.FamilyName}");
         }
 
         [Test]
@@ -98,8 +103,8 @@ namespace ObjectPrinting.Tests
         {
             var serialized = person.PrintToString(config => config.Printing(x => x.Name).SetMaxLength(1));
             serialized.Should().Contain($"{nameof(person.Name)} = {person.Name[0]}")
-                      .And.NotContain($"{nameof(person.Name)} = {person.Name}")
-                      .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName}");
+                .And.NotContain($"{nameof(person.Name)} = {person.Name}")
+                .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName}");
         }
 
         [Test]
@@ -108,7 +113,9 @@ namespace ObjectPrinting.Tests
             var circularReference = new CircularReference();
 
             var serialized = circularReference.PrintToString();
-            serialized.Should().Be($"{nameof(CircularReference)}{Environment.NewLine}\t{nameof(circularReference.Self)} = {nameof(CircularReference)}");
+            serialized.Should()
+                .Be(
+                    $"{nameof(CircularReference)}{Environment.NewLine}\t{nameof(circularReference.Self)} = {nameof(CircularReference)}");
         }
 
         [Test]
@@ -125,33 +132,51 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SetCulture_ForProperty()
         {
-            var englishFormat = person.PrintToString(x => x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("ru")));
+            var englishFormat = person.PrintToString(x =>
+                x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("en")));
+            var russianFormat = person.PrintToString(x =>
+                x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("ru")));
 
-            englishFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            englishFormat.Should()
+                .Contain(
+                    $"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}");
+            russianFormat.Should()
+                .Contain(
+                    $"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
         }
 
         [Test]
         public void SetCulture_ForType()
         {
-            var englishFormat = person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("ru")));
+            var englishFormat =
+                person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("en")));
+            var russianFormat =
+                person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("ru")));
 
-            englishFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}")
-                         .And.Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}")
-                         .And.Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            englishFormat.Should()
+                .Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}")
+                .And.Contain(
+                    $"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
+            russianFormat.Should()
+                .Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}")
+                .And.Contain(
+                    $"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
         }
 
         [Test]
         public void SetCulture_ForField()
         {
-            var englishFormat = person.PrintToString(x => x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("ru")));
+            var englishFormat = person.PrintToString(x =>
+                x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("en")));
+            var russianFormat = person.PrintToString(x =>
+                x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("ru")));
 
-            englishFormat.Should().Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            englishFormat.Should()
+                .Contain(
+                    $"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
+            russianFormat.Should()
+                .Contain(
+                    $"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
         }
     }
 }
