@@ -73,8 +73,8 @@ namespace ObjectPrinting.Solved
             if (FinalTypes.IsFinalType(type))
                 return GetStringFinalType();
 
-            if (obj is ICollection)
-                return PrintToStringCollection(obj, nestingLevel);
+            if (obj is ICollection collection)
+                return PrintToStringCollection(collection, nestingLevel);
 
             return null;
 
@@ -84,16 +84,15 @@ namespace ObjectPrinting.Solved
             }
         }
 
-        private string PrintToStringCollection(object obj, int nestingLevel)
+        private string PrintToStringCollection(ICollection collection, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
-            if (obj is IDictionary)
-                return GetDictionaryResult();
-            return GetCollectionResult();
+            if (collection is IDictionary dict)
+                return GetDictionaryResult(dict);
+            return GetCollectionResult(collection);
 
-            string GetDictionaryResult()
+            string GetDictionaryResult(IDictionary dict)
             {
-                var dict = (IDictionary)obj;
                 var keys = dict.Keys;
                 var result = new StringBuilder(Environment.NewLine);
                 foreach (var k in keys)
@@ -107,11 +106,10 @@ namespace ObjectPrinting.Solved
                 return result.ToString();
             }
 
-            string GetCollectionResult()
+            string GetCollectionResult(ICollection collection)
             {
-                var array = (ICollection)obj;
                 var result = new StringBuilder(Environment.NewLine);
-                foreach (var i in array)
+                foreach (var i in collection)
                 {
                     result.Append(identation + PrintToString(i, nestingLevel + 1, null, true));
                     result.Append(Environment.NewLine);
