@@ -8,17 +8,17 @@ namespace ObjectPrinting.Configuration
     /// </summary>
     public class SelectedProperty<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
-        public SelectedProperty(SerializationTarget target, PrintingConfig<TOwner> parent)
+        public SelectedProperty(SerializationTarget target, PrintingConfigBuilder<TOwner> parent)
         {
             Target = target;
             Owner = parent;
         }
 
-        public IPropertySerializer<TProperty> AppliedSerializer { get; private set; }
+        public PropertySerializer<TProperty> AppliedSerializer { get; private set; }
         public SerializationTarget Target { get; }
-        public PrintingConfig<TOwner> Owner { get; }
+        public PrintingConfigBuilder<TOwner> Owner { get; }
 
-        public PrintingConfig<TOwner> Using(IPropertySerializer<TProperty> serializer)
+        public PrintingConfigBuilder<TOwner> Using(PropertySerializer<TProperty> serializer)
         {
             AppliedSerializer = serializer;
             return Owner;

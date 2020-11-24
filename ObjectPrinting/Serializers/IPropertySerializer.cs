@@ -1,10 +1,10 @@
-﻿namespace ObjectPrinting.Serializers
+﻿using System;
+
+namespace ObjectPrinting.Serializers
 {
-    /// <summary>
-    /// General property serializer
-    /// </summary>
-    public interface IPropertySerializer<in TProperty>
+    public interface IPropertySerializer
     {
-        string Serialize(TProperty value);
+        Type PropertyType { get; }
+        string Serialize(object value);
     }
 }

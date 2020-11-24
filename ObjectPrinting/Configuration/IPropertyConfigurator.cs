@@ -10,7 +10,7 @@ namespace ObjectPrinting.Configuration
 
     public interface IPropertyConfigurator<TOwner, TProperty> : IPropertyConfigurator
     {
-        IPropertySerializer<TProperty> AppliedSerializer { get; }
-        PrintingConfig<TOwner> Using(IPropertySerializer<TProperty> serializer);
+        PropertySerializer<TProperty> AppliedSerializer { get; }
+        PrintingConfigBuilder<TOwner> Using(PropertySerializer<TProperty> serializer);
     }
 }

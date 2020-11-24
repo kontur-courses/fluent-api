@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting.Serializers
 {
-    public class DelegatePropertySerializer<TProperty> : IPropertySerializer<TProperty>
+    public class DelegatePropertySerializer<TProperty> : PropertySerializer<TProperty>
     {
         private readonly Func<TProperty, string> serializer;
 
@@ -11,6 +11,6 @@ namespace ObjectPrinting.Serializers
             this.serializer = serializer;
         }
 
-        public string Serialize(TProperty value) => serializer.Invoke(value);
+        public override string Serialize(TProperty value) => serializer.Invoke(value);
     }
 }

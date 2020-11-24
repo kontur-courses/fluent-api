@@ -2,34 +2,103 @@
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Configuration;
 
 namespace Tests
 {
     public class ObjectPrinterTests
     {
-        private PrintingConfig<Person> printer;
-        private Person testSubject;
-
-        [SetUp]
-        public void SetUp()
+        [Test]
+        public void CanPrintProperties()
         {
-            printer = ObjectPrinter.For<Person>();
-            testSubject = new Person {Age = 18, Height = 123, Id = Guid.NewGuid(), Name = "Abc xyz"};
+            var subject = new TestingPropertiesClass
+            {
+                Int32 = 18,
+                Double = 123,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            ObjectPrinter.For<TestingPropertiesClass>()
+                .Choose<int>()
+                .Exclude()
+                .PrintToString(subject)
+                .Should()
+                .ContainAll(
+                    nameof(TestingPropertiesClass),
+                    $"{nameof(TestingPropertiesClass.Guid)} = {subject.Guid}",
+                    $"{nameof(TestingPropertiesClass.String)} = {subject.String}",
+                    $"{nameof(TestingPropertiesClass.Double)} = {subject.Double}",
+                    $"{nameof(TestingPropertiesClass.Int32)} = {subject.Int32}");
         }
 
         [Test]
-        public void CanPrintFieldsAndProperties()
+        public void CanPrintFields()
         {
-            PerformTest("Person", $"Id = {testSubject.Id}", $"Name = {testSubject.Name}",
-                $"Height = {testSubject.Height}", $"Age = {testSubject.Age}");
+            var subject = new TestingFieldsClass
+            {
+                Int32 = 18,
+                Double = 123,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            ObjectPrinter.For<TestingFieldsClass>()
+                .Choose<int>()
+                .Exclude()
+                .PrintToString(subject)
+                .Should()
+                .ContainAll(
+                    nameof(TestingFieldsClass),
+                    $"{nameof(TestingFieldsClass.Guid)} = {subject.Guid}",
+                    $"{nameof(TestingFieldsClass.String)} = {subject.String}",
+                    $"{nameof(TestingFieldsClass.Double)} = {subject.Double}",
+                    $"{nameof(TestingFieldsClass.Int32)} = {subject.Int32}");
         }
 
-        private void PerformTest(params string[] expectedParts)
+        [Test]
+        public void PropertyExcluded_DoNotPrint()
         {
-            var result = printer.PrintToString(testSubject);
-            result.Should()
-                .ContainAll(expectedParts);
-            TestContext.Out.WriteLine(result);
+            var subject = new TestingPropertiesClass
+            {
+                Int32 = 18,
+                Double = 123,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            ObjectPrinter.For<TestingPropertiesClass>()
+                .Choose<int>()
+                .Exclude()
+                .PrintToString(subject)
+                .Should()
+                .NotContainAny($"{nameof(TestingPropertiesClass.Int32)}", $"{subject.Int32}");
         }
+
+        [Test]
+        public void PropertyGroupExcluded_DoNotPrint()
+        {
+            var subject = new TestingPropertiesClass
+            {
+                Int32 = 18,
+                Double = 123,
+                Guid = Guid.NewGuid(),
+                String = "Abc xyz"
+            };
+
+            ObjectPrinter.For<TestingPropertiesClass>()
+                .Choose(p => p.Guid)
+                .Exclude()
+                .PrintToString(subject)
+                .Should()
+                .NotContainAny($"{nameof(TestingPropertiesClass.Guid)}", $"{subject.Guid}");
+        }
+    }
+
+    public class CascadeTestingClass
+    {
+        public int Int32 { get; set; }
+        public string String { get; set; }
+        public CascadeTestingClass Child { get; set; }
     }
 }

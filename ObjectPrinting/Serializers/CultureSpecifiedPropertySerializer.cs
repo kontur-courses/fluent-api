@@ -3,10 +3,10 @@ using System.Globalization;
 
 namespace ObjectPrinting.Serializers
 {
-    public class CultureSpecifiedPropertySerializer<TProperty> : IPropertySerializer<TProperty>
+    public class CultureSpecifiedPropertySerializer<TProperty> : PropertySerializer<TProperty>
         where TProperty : IFormattable
     {
-        private readonly string format;
+        private readonly string? format;
         private readonly CultureInfo cultureInfo;
 
         public CultureSpecifiedPropertySerializer(CultureInfo cultureInfo, string format)
@@ -21,7 +21,7 @@ namespace ObjectPrinting.Serializers
             format = null;
         }
 
-        public string Serialize(TProperty value)
+        public override string Serialize(TProperty value)
         {
             return value.ToString(format, cultureInfo);
         }

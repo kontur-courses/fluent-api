@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace ObjectPrinting.Configuration
@@ -13,13 +15,20 @@ namespace ObjectPrinting.Configuration
         public SerializationTarget(PropertyInfo propertyInfo)
         {
             valueGetter = propertyInfo.GetValue;
+            MemberType = propertyInfo.PropertyType;
+            OwnerType = propertyInfo.DeclaringType!;
+            MemberName = propertyInfo.Name;
         }
 
         public SerializationTarget(FieldInfo fieldInfo)
         {
             valueGetter = fieldInfo.GetValue;
+            MemberType = fieldInfo.FieldType;
+            OwnerType = fieldInfo.DeclaringType!;
+            MemberName = fieldInfo.Name;
         }
 
+        public string MemberName { get; set; }
         public Type MemberType { get; set; }
         public Type OwnerType { get; set; }
 
@@ -28,6 +37,15 @@ namespace ObjectPrinting.Configuration
             if (owner.GetType() != OwnerType)
                 throw new ArgumentException($"Owner must have type {OwnerType}, but was {owner.GetType()}");
             return valueGetter.Invoke(owner);
+        }
+
+        public static IEnumerable<SerializationTarget> EnumerateFrom(Type type)
+        {
+            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+            return type.GetFields(bindingFlags)
+                .Select(f => new SerializationTarget(f))
+                .Union(type.GetProperties(bindingFlags)
+                    .Select(p => new SerializationTarget(p))).ToArray();
         }
     }
 }

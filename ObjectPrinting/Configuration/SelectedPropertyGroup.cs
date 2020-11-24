@@ -9,16 +9,16 @@ namespace ObjectPrinting.Configuration
     /// </summary>
     public class SelectedPropertyGroup<TOwner, TProperty> : IPropertyConfigurator<TOwner, TProperty>
     {
-        public SelectedPropertyGroup(IEnumerable<SerializationTarget> targets, PrintingConfig<TOwner> parent)
+        public SelectedPropertyGroup(IEnumerable<SerializationTarget> targets, PrintingConfigBuilder<TOwner> parent)
         {
             Targets = targets.ToArray();
             Owner = parent;
         }
 
-        public IPropertySerializer<TProperty>? AppliedSerializer { get; private set; }
-        public PrintingConfig<TOwner> Owner { get; }
+        public PropertySerializer<TProperty>? AppliedSerializer { get; private set; }
+        public PrintingConfigBuilder<TOwner> Owner { get; }
 
-        public PrintingConfig<TOwner> Using(IPropertySerializer<TProperty> serializer)
+        public PrintingConfigBuilder<TOwner> Using(PropertySerializer<TProperty> serializer)
         {
             AppliedSerializer = serializer;
             return Owner;

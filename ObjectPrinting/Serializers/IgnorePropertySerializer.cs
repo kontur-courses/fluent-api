@@ -1,7 +1,7 @@
 ﻿namespace ObjectPrinting.Serializers
 {
-    public class IgnorePropertySerializer<TProperty> : IPropertySerializer<TProperty>
+    public class IgnorePropertySerializer<TProperty> : PropertySerializer<TProperty>
     {
-        public string Serialize(TProperty value) => string.Empty;
+        public override string Serialize(TProperty value) => string.Empty;
     }
 }

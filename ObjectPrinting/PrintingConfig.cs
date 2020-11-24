@@ -1,51 +1,25 @@
 using System;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 using ObjectPrinting.Configuration;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
+        private Node<IPropertySerializer>? configuration;
 
-        public PrintingConfig()
+        public PrintingConfig(Type[] finalTypes, Node<IPropertySerializer>? configuration)
         {
-            finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
+            this.finalTypes = finalTypes;
+            this.configuration = configuration;
         }
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
-
-        public SelectedPropertyGroup<TOwner, TProperty> Choose<TProperty>()
+        public string PrintToString(TOwner obj)
         {
-            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
-            var targetsEnumerable = typeof(TOwner)
-                .GetFields(bindingFlags)
-                .Select(f => new SerializationTarget(f))
-                .Union(typeof(TOwner)
-                    .GetProperties(bindingFlags)
-                    .Select(p => new SerializationTarget(p)));
-            return new SelectedPropertyGroup<TOwner, TProperty>(targetsEnumerable, this);
-        }
-
-        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>> selector)
-        {
-            var memberInfo = (selector.Body as MemberExpression)?.Member;
-
-            var target = memberInfo switch
-            {
-                PropertyInfo propertyInfo => new SerializationTarget(propertyInfo),
-                FieldInfo fieldInfo => new SerializationTarget(fieldInfo),
-                _ => throw new ArgumentException($"{nameof(selector)} must point on a Property")
-            };
-
-            return new SelectedProperty<TOwner, TProperty>(target, this);
+            return PrintToString(obj, 0);
         }
 
         private string PrintToString(object? obj, int nestingLevel)
@@ -58,18 +32,18 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return obj.ToString() + Environment.NewLine;
 
-            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-            }
+            foreach (var target in SerializationTarget.EnumerateFrom(type))
+                sb.Append(SerializeProperty(target.MemberName, target.GetValue(obj), nestingLevel + 1));
 
             return sb.ToString();
         }
 
-        public static PrintingConfig<TOwner> Default => new PrintingConfig<TOwner>();
+        private string SerializeProperty(string propertyName, object? value, int nestingLevel)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            return $"{indentation}{propertyName} = " + PrintToString(value, nestingLevel + 1);
+        }
     }
 }

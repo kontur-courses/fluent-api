@@ -11,21 +11,21 @@ namespace Tests
         [Test]
         public void Demo()
         {
-            var person = new Person {Name = "Alex", Age = 19};
+            var person = new TestingFieldsClass();
 
-            ObjectPrinter.For<Person>()
+            ObjectPrinter.For<TestingFieldsClass>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Choose<int>().Exclude()
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Choose<double>().UseSerializer(d => $"My beautiful shiny double: {d}")
                 //3. Для числовых типов указать культуру
-                .Choose(o => o.Age).SetCulture(CultureInfo.CurrentCulture)
+                .Choose(o => o.Int32).SetCulture(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
-                .Choose(o => o.Id).UseSerializer(i => i.ToString())
+                .Choose(o => o.Guid).UseSerializer(i => i.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Choose(o => o.Name).Trim(10)
+                .Choose(o => o.String).Trim(10)
                 //6. Исключить из сериализации конкретного свойства
-                .Choose(o => o.Height).Exclude()
+                .Choose(o => o.Double).Exclude()
                 .PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        

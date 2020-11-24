@@ -1,6 +1,6 @@
 ﻿namespace ObjectPrinting.Serializers
 {
-    public class TrimmedPropertySerializer : IPropertySerializer<string>
+    public class TrimmedPropertySerializer : PropertySerializer<string>
     {
         private readonly int maxLength;
 
@@ -9,7 +9,7 @@
             this.maxLength = maxLength;
         }
 
-        public string Serialize(string value)
+        public override string Serialize(string value)
         {
             return value.Length <= maxLength ? value : value.Substring(0, maxLength);
         }
