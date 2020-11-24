@@ -60,8 +60,15 @@ namespace ObjectPrinting.Tests
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
+            Console.WriteLine("--------------------------------");
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            Console.WriteLine(person.PrintToString(printer.Excluding(p => p.Father.Mother)));
+            Console.WriteLine("--------------------------------");
+            Console.WriteLine(person.PrintToString(c => c
+                .Excluding<Guid>()
+                .Printing<Person>().As(p => "...no! Enough recursive printing!")
+                .Printing<DateTime>().Using(CultureInfo.InvariantCulture)));
             //8. ...с конфигурированием
         }
     }
