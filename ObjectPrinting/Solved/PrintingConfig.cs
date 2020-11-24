@@ -14,7 +14,8 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<object> objects = new HashSet<object>();
         internal readonly AlternativeSerializator serializator = new AlternativeSerializator();
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector = null)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
@@ -55,11 +56,11 @@ namespace ObjectPrinting.Solved
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
 
                 bool CanConsiderProperty() => !excluder.IsExclude(propertyInfo.PropertyType, GetFullName()) &&
-                    (FinalTypes.IsFinalType(propertyInfo.PropertyType) || IsReferenceCircle(propertyInfo.GetValue(obj)));
+                    (FinalTypes.IsFinalType(propertyInfo.PropertyType) || !IsReferenceCircle(propertyInfo.GetValue(obj)));
             }
             return sb.ToString();
 
-            bool IsReferenceCircle(object obj) => !objects.Any(o => ReferenceEquals(o, obj));
+            bool IsReferenceCircle(object obj) => objects.Any(o => ReferenceEquals(o, obj));
         }
 
         private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel)

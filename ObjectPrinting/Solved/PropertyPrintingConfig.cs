@@ -10,7 +10,8 @@ namespace ObjectPrinting.Solved
         internal readonly string fullNameProp;
         private readonly PrintingConfig<TOwner> printingConfig;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> expression = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, 
+            Expression<Func<TOwner, TPropType>> expression = null)
         {
             this.printingConfig = printingConfig;
             fullNameProp = expression?.GetFullNameProperty();
