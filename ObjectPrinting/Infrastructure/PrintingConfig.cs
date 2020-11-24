@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Infrastructure
 {
     public class PrintingConfig<TOwner>
     {
@@ -22,7 +22,7 @@ namespace ObjectPrinting.Solved
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             return this;
         }

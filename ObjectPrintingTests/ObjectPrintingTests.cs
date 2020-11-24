@@ -1,6 +1,10 @@
+using System;
+using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
-using ObjectPrinting.Tests;
+using ObjectPrinting.Infrastructure;
+using ObjectPrintingTests.Mocks;
 
 namespace ObjectPrintingTests
 {
@@ -24,7 +28,7 @@ namespace ObjectPrintingTests
         public void SelectorForPropertyOrField_Exists()
         {
             var _ = printer
-                .Printing(p => p.Name);
+                .Printing<object>();
         }
 
         [Test]
@@ -32,7 +36,7 @@ namespace ObjectPrintingTests
         {
             var _ = printer
                 .Printing<int>()
-                .Using(i => i);
+                .Using(i => "i");
         }
 
         [Test]
@@ -54,9 +58,42 @@ namespace ObjectPrintingTests
         [Test]
         public void PropertyOrFieldExcluding_Exists()
         {
-            var printer = ObjectPrinter.For<Person>();
+            var printer = ObjectPrinter.For<SingleProperty>();
 
-            var _ = this.printer.Excluding(p => p.Name);
+            var _ = printer.Excluding(p => p.Property);
+        }
+        
+        [Test]
+        public void PrintToString_ExcludingByProperty()
+        {
+            var expected = GetSystemIndependent("SingleProperty\n");
+            var objectToPrint = new SingleProperty() { Property = new{} };
+            var printer = ObjectPrinter
+                .For<SingleProperty>()
+                .Excluding(p => p.Property);
+
+            var actual = printer.PrintToString(objectToPrint);
+
+            actual.Should().Be(expected);
+        }
+        
+        [Test]
+        public void PrintToString_ExcludingByType()
+        {
+            var expected = GetSystemIndependent("SingleProperty\n");
+            var objectToPrint = new SingleProperty() { Property = new{} };
+            var printer = ObjectPrinter
+                .For<SingleProperty>()
+                .Excluding<object>();
+
+            var actual = printer.PrintToString(objectToPrint);
+
+            actual.Should().Be(expected);
+        }
+
+        private static string GetSystemIndependent(string text)
+        {
+            return text.Replace("\n", Environment.NewLine);
         }
     }
 }

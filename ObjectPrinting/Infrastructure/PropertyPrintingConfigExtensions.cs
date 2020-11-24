@@ -1,6 +1,6 @@
 using System;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Infrastructure
 {
     public static class PropertyPrintingConfigExtensions
     {
