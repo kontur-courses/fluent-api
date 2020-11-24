@@ -15,7 +15,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private ImmutableDictionary<MemberInfo, Func<object, string>> alternateMemberSerializers =

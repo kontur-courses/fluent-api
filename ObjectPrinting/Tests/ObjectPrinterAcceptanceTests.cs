@@ -29,7 +29,7 @@ namespace ObjectPrinting.Tests
         {
             var heightToString = person.Height.ToString(CultureInfo.CurrentCulture);
             printer.PrintToString(person).Should().Be("Person\r\n" +
-                                                      "\tId = Guid\r\n" +
+                                                      "\tId = 00000000-0000-0000-0000-000000000000\r\n" +
                                                       "\tName = Alex\r\n" +
                                                       $"\tHeight = {heightToString}\r\n" +
                                                       "\tAge = 19\r\n" +
