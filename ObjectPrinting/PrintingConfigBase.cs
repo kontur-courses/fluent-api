@@ -111,15 +111,12 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(objType)) return obj.ToString();
-            if (objType.IsGenericType)
+            
+            if (objType.IsGenericType && objType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
             {
-                var baseType = objType.GetGenericTypeDefinition();
-                if (baseType == typeof(KeyValuePair<,>))
-                {
-                    var key = objType.GetProperty("Key").GetValue(obj);
-                    var value = objType.GetProperty("Value").GetValue(obj);
-                    return $"{PrintToString(key, nestingLevel)}: {PrintToString(value, nestingLevel)}";
-                }
+                var key = objType.GetProperty("Key").GetValue(obj);
+                var value = objType.GetProperty("Value").GetValue(obj);
+                return $"{PrintToString(key, nestingLevel)}: {PrintToString(value, nestingLevel)}";
             }
 
             var identation = new string('\t', nestingLevel + 1);
