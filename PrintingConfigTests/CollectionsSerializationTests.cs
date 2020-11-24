@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -83,6 +84,37 @@ namespace PrintingConfigTests
                     $"[2]:Int32 = {subject.IntCollection[2]}",
                     $"[3]:Int32 = {subject.IntCollection[3]}",
                     $"[4]:Int32 = {subject.IntCollection[4]}");
+        }
+
+        [Test]
+        public void Dictionary_SerializeEachItem()
+        {
+            var subject = new DictionaryContainingTestingClass
+            {
+                String = "abc",
+                Dictionary = new Dictionary<int, string>
+                {
+                    {10, "a"},
+                    {20, "b"},
+                    {30, "c"},
+                    {40, "d"},
+                    {50, "e"},
+                }
+            };
+
+            result = ObjectPrinter.For<DictionaryContainingTestingClass>()
+                .Build()
+                .PrintToString(subject);
+
+            result.Should()
+                .ContainAll(nameof(DictionaryContainingTestingClass),
+                    $"{nameof(DictionaryContainingTestingClass.String)} = {subject.String}",
+                    $"{nameof(DictionaryContainingTestingClass.Dictionary)} = [{subject.Dictionary.Count}]",
+                    $"[10:Int32]:String = {subject.Dictionary[10]}",
+                    $"[20:Int32]:String = {subject.Dictionary[20]}",
+                    $"[30:Int32]:String = {subject.Dictionary[30]}",
+                    $"[40:Int32]:String = {subject.Dictionary[40]}",
+                    $"[50:Int32]:String = {subject.Dictionary[50]}");
         }
 
         [TearDown]

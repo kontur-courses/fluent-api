@@ -37,10 +37,15 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return obj.ToString() + Environment.NewLine;
 
-
             if (alreadySerialized.Contains(obj))
                 return string.Empty;
             alreadySerialized.Add(obj);
+
+            if (obj is IDictionary dictionary)
+            {
+                return $"[{dictionary.Count}]" + Environment.NewLine +
+                       SerializeDictionary(dictionary, path, nestingLevel + 1);
+            }
 
             if (obj is ICollection collection)
             {
@@ -87,6 +92,25 @@ namespace ObjectPrinting
                     path.Append(currentIndex.ToString()).ToArray(),
                     nestingLevel + 1));
                 currentIndex++;
+            }
+
+            return sb.ToString();
+        }
+
+        private string SerializeDictionary(IDictionary dictionary, string[] path, int nestingLevel)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+
+            foreach (var key in dictionary.Keys)
+            {
+                var keyString = key.ToString(); // TODO serialize keys and values separately
+                var item = dictionary[key];
+                var prefix = indentation + $"[{keyString}:{key.GetType().Name}]:{item?.GetType().Name ?? "null"} = ";
+                sb.Append(prefix + SerializeObject(
+                    item,
+                    path.Append(keyString).ToArray(),
+                    nestingLevel + 1));
             }
 
             return sb.ToString();
