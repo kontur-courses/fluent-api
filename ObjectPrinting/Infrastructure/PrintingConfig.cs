@@ -55,7 +55,7 @@ namespace ObjectPrinting.Infrastructure
         private bool TryProcess(object obj)
         {
             processed ??= new HashSet<object>();
-            return processed.Add(obj);
+            return !obj.GetType().IsClass || processed.Add(obj);
         }
         
         private string PrintToString(object obj, int nestingLevel)
