@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -61,17 +62,24 @@ namespace ObjectPrinting.Infrastructure
         {
             if (!TryProcess(obj))
                 return "[cycle]" + Environment.NewLine;
-            
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+            
             var type = obj.GetType();
+            var sb = new StringBuilder();
             sb.AppendLine(type.Name);
+            var nextLevel = nestingLevel + 1;
+            if (typeof(IEnumerable).IsAssignableFrom(type))
+            {
+                foreach (var child in (IEnumerable) obj)
+                    sb.Append(new string('\t', nextLevel)).Append(PrintToString(child, nextLevel));
+
+                return sb.ToString();
+            }
+
+            var indentation = new string('\t', nextLevel);
             foreach (var memberInfo in type.GetMembers())
             {
                 if (IsExcluded(memberInfo))
@@ -82,7 +90,7 @@ namespace ObjectPrinting.Infrastructure
                     sb.Append(toPrint).Append(Environment.NewLine);
                     continue;
                 }
-                sb.Append(PrintToString(GetValue(obj, memberInfo), nestingLevel + 1));
+                sb.Append(PrintToString(GetValue(obj, memberInfo), nextLevel));
             }
             return sb.ToString();
         }

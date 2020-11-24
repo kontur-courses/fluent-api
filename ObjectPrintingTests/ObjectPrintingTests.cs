@@ -77,6 +77,16 @@ namespace ObjectPrintingTests
                             .Excluding(p => p.Age),
                         new Person { Name = "name", Age = 10 },
                         "Person\n\tName = name\n"),
+                    
+                    ("Array of Persons",
+                        ObjectPrinter.For<Person[]>(),
+                        new []
+                        {
+                            new Person { Name = "A", Age = 1 },
+                            new Person { Name = "B", Age = 2 },
+                            new Person { Name = "C", Age = 3 },
+                        },
+                        "Person[]\n\tPerson\n\t\tName = A\n\t\tAge = 1\n\tPerson\n\t\tName = B\n\t\tAge = 2\n\tPerson\n\t\tName = C\n\t\tAge = 3\n"),
 
                 };
 
