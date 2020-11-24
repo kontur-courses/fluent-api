@@ -172,7 +172,7 @@ namespace ObjectPrinting
                 type = field.FieldType;
             }
             else throw new InvalidOperationException($"{member.MemberType} is not supported!");
-            
+
             if (!(MemberConfigs.TryGetValue(member, out var config)
                   || TypeConfigs.TryGetValue(type, out config)))
                 config = new PrintingConfigBase {TypeConfigs = TypeConfigs};
