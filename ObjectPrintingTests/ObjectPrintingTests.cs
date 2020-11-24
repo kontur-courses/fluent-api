@@ -99,7 +99,7 @@ namespace ObjectPrintingTests
         {
             var expected = GetSystemIndependent("WithInteger\n\tInteger = i\n");
             var objectToPrint = new WithInteger();
-            var _ = ObjectPrinter.For<WithInteger>()
+            var printer = ObjectPrinter.For<WithInteger>()
                 .Printing<int>()
                 .Using(i => "i");
 
@@ -113,7 +113,7 @@ namespace ObjectPrintingTests
         {
             var expected = GetSystemIndependent("WithInteger\n\tInteger = i\n");
             var objectToPrint = new WithInteger();
-            var _ = ObjectPrinter.For<WithInteger>()
+            var printer = ObjectPrinter.For<WithInteger>()
                 .Printing(p => p.Integer)
                 .Using(i => "i");
 
@@ -126,7 +126,7 @@ namespace ObjectPrintingTests
         public void PrintToString_WithCultureInfo()
         {
             var objectToPrint = new WithDouble();
-            var _ = ObjectPrinter.For<WithDouble>()
+            var printer = ObjectPrinter.For<WithDouble>()
                 .Printing<double>()
                 .Using(CultureInfo.CurrentCulture);
             var expected = GetSystemIndependent("WithDouble\n\tDouble = 0.0\n");
@@ -140,7 +140,7 @@ namespace ObjectPrintingTests
         public void PrintToString_FormatProperty()
         {
             var objectToPrint = new SingleProperty {Property = null};
-            var _ = ObjectPrinter.For<SingleProperty>()
+            var printer = ObjectPrinter.For<SingleProperty>()
                 .Printing(p => p.Property)
                 .Using(p => "custom");
             var expected = GetSystemIndependent("WithString\n\tProperty = custom\n");
@@ -154,7 +154,7 @@ namespace ObjectPrintingTests
         public void PrintToString_WithStringShortening()
         {
             var objectToPrint = new WithString {String = "1234"};
-            var _ = ObjectPrinter.For<WithString>()
+            var printer = ObjectPrinter.For<WithString>()
                 .Printing<string>()
                 .TrimmedToLength(1);
             var expected = GetSystemIndependent("WithString\n\tString = 1\n");
@@ -165,21 +165,9 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrintToString_ExcludeByName()
-        {
-            var objectToPrint = new Person();
-            var _ = ObjectPrinter.For<Person>()
-                .Excluding(p => p.Name);
-            var expected = GetSystemIndependent("Person\n\tAge = 0\n");
-            
-            var actual = printer.PrintToString(objectToPrint);
-
-            actual.Should().Be(expected);
-        }
-
-        [Test]
         public void PrintToString_DoesNotThrowWhenCycleReference()
         {
+            Assert.Fail();
             var node1 = new Node();
             var node2 = new Node {Next = node1};
             node1.Next = node2;
