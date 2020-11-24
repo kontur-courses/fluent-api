@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,7 +16,7 @@ namespace ObjectPrintingTests
         public void SetUp()
         {
             person = new Person {Name = "Alex", Age = 19, Height = 195.5};
-            personPrintingConfig = ObjectPrinter<Person>.For();
+            personPrintingConfig = ObjectPrinter.For<Person>();
         }
 
         private Person person;
@@ -27,24 +27,24 @@ namespace ObjectPrintingTests
         {
             person.Parent = new Person {Name = "Anna"};
             personPrintingConfig = personPrintingConfig
-                //1. Исключить из сериализации свойства определенного типа
+                //1. РСЃРєР»СЋС‡РёС‚СЊ РёР· СЃРµСЂРёР°Р»РёР·Р°С†РёРё СЃРІРѕР№СЃС‚РІР° РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ С‚РёРїР°
                 .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
+                //2. РЈРєР°Р·Р°С‚СЊ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ СЃРїРѕСЃРѕР± СЃРµСЂРёР°Р»РёР·Р°С†РёРё РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ С‚РёРїР°
                 .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
+                //3. Р”Р»СЏ С‡РёСЃР»РѕРІС‹С… С‚РёРїРѕРІ СѓРєР°Р·Р°С‚СЊ РєСѓР»СЊС‚СѓСЂСѓ
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                //4. РќР°СЃС‚СЂРѕРёС‚СЊ СЃРµСЂРёР°Р»РёР·Р°С†РёСЋ РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
+                //5. РќР°СЃС‚СЂРѕРёС‚СЊ РѕР±СЂРµР·Р°РЅРёРµ СЃС‚СЂРѕРєРѕРІС‹С… СЃРІРѕР№СЃС‚РІ (РјРµС‚РѕРґ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІРёРґРµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ СЃС‚СЂРѕРєРѕРІС‹С… СЃРІРѕР№СЃС‚РІ)
                 .Printing(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
+                //6. РСЃРєР»СЋС‡РёС‚СЊ РёР· СЃРµСЂРёР°Р»РёР·Р°С†РёРё РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
                 .Excluding(p => p.Age);
 
             var s1 = personPrintingConfig.PrintToString(person);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            //7. РЎРёРЅС‚Р°РєСЃРёС‡РµСЃРєРёР№ СЃР°С…Р°СЂ РІ РІРёРґРµ РјРµС‚РѕРґР° СЂР°СЃС€РёСЂРµРЅРёСЏ, СЃРµСЂРёР°Р»РёР·СѓСЋС‰РµРіРѕ РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ
             var s2 = person.PrintToString();
 
-            //8. ...с конфигурированием
+            //8. ...СЃ РєРѕРЅС„РёРіСѓСЂРёСЂРѕРІР°РЅРёРµРј
             var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
 
             Console.WriteLine(s1);

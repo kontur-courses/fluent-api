@@ -15,11 +15,6 @@ namespace ObjectPrinting
             this.config = config;
         }
 
-        public static PrintingConfig<T> For()
-        {
-            return new PrintingConfig<T>();
-        }
-
         public string PrintToString(T obj)
         {
             objectsCache = new Dictionary<Type, List<object>>();
@@ -85,6 +80,14 @@ namespace ObjectPrinting
 
             sb.Remove(sb.Length - Environment.NewLine.Length, Environment.NewLine.Length);
             return sb.ToString();
+        }
+    }
+
+    public class ObjectPrinter
+    {
+        public static PrintingConfig<T> For<T>()
+        {
+            return new PrintingConfig<T>();
         }
     }
 }

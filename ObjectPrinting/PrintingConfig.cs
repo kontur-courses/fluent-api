@@ -67,9 +67,9 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Using(int maxSerializationDepth)
+        public PrintingConfig<TOwner> LimitingSerializationDepth(int maxDepth)
         {
-            this.maxSerializationDepth = maxSerializationDepth;
+            maxSerializationDepth = maxDepth;
             return this;
         }
 
