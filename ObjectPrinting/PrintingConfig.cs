@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<object> appearedObjects;
 
@@ -34,14 +34,14 @@ namespace ObjectPrinting
             appearedObjects = new HashSet<object>();
         }
 
-        public PrintingConfig<TOwner> Exclude(params Type[] types)
+        public IPrintingConfig<TOwner> Exclude(params Type[] types)
         {
             types.ToList().ForEach(x => typeToExclude.Add(x));
 
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> property)
+        public IPrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> property)
         {
             var propertyName = ((MemberExpression) property.Body).Member.Name;
             propertyToExclude.Add(propertyName);
@@ -49,7 +49,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public ITypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
@@ -76,14 +76,14 @@ namespace ObjectPrinting
             propertySerialization.Add(name, action);
         }
 
-        public PropertyPrintingConfig<TProperty, TOwner> SelectProperty<TProperty>(
+        public IPropertyPrintingConfig<TProperty, TOwner> SelectProperty<TProperty>(
             Expression<Func<TOwner, TProperty>> property)
         {
             var propertyName = ((MemberExpression) property.Body).Member.Name;
             return new PropertyPrintingConfig<TProperty, TOwner>(this, propertyName);
         }
 
-        public PrintingConfig<TOwner> SetCultureInfo<T>(CultureInfo cultureInfo) where T : IFormattable
+        public IPrintingConfig<TOwner> SetCultureInfo<T>(CultureInfo cultureInfo) where T : IFormattable
         {
             if (typeCultureInfo.ContainsKey(typeof(T)))
                 typeCultureInfo[typeof(T)] = cultureInfo;

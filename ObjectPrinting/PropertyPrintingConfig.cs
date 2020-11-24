@@ -2,18 +2,18 @@
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TProperty, TOwner>
+    public class PropertyPrintingConfig<TProperty, TOwner> : IPropertyPrintingConfig<TProperty, TOwner>
     {
-        public PropertyPrintingConfig(PrintingConfig<TOwner> config, string propertyName)
+        public PropertyPrintingConfig(IPrintingConfig<TOwner> config, string propertyName)
         {
             Config = config;
             Property = propertyName;
         }
 
-        private PrintingConfig<TOwner> Config { get; }
+        private IPrintingConfig<TOwner> Config { get; }
         private string Property { get; }
 
-        public PrintingConfig<TOwner> Using(Func<TProperty, string> func)
+        public IPrintingConfig<TOwner> Using(Func<TProperty, string> func)
         {
             Config.AddSerialization(Property, func);
 

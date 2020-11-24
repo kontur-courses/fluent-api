@@ -10,7 +10,7 @@ namespace ObjectPrinting
         }
 
         public static string PrintToString<TOwner>(this TOwner obj,
-            Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> config)
+            Func<IPrintingConfig<TOwner>, IPrintingConfig<TOwner>> config)
         {
             var printer = config(ObjectPrinter.For<TOwner>());
             return printer.PrintToString(obj);

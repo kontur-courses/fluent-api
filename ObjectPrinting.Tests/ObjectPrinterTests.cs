@@ -36,7 +36,7 @@ namespace ObjectPrinting.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .SelectProperty(properties => properties.Name).Using(name => $"<em>{name}</em>")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .SelectProperty(properties => properties.Name).Trimm(2)
+                .SelectProperty(properties => properties.Name).Trimmed(2)
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(properties => properties.Id);
 
@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
             var secondPeronSerialization = SecondPerson.PrintToString();
             //8. ...с конфигурированием
             var thirdPeronSerialization =
-                ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimm(4).Exclude(x => x.Id));
+                ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimmed(4).Exclude(x => x.Id));
         }
 
         [TestCase(typeof(string), "Person\r\n\tId = Guid\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n",
@@ -99,7 +99,7 @@ namespace ObjectPrinting.Tests
             const string expectedResult =
                 "Person\r\n\tId = Guid\r\n\tName = Al\r\n\tHeight = 1.73\r\n\tAge = 19\r\n\tParents = empty\r\n";
             var printer = ObjectPrinter.For<Person>()
-                .SelectProperty(x => x.Name).Trimm(2);
+                .SelectProperty(x => x.Name).Trimmed(2);
 
             printer.PrintToString(Person).Should().Be(expectedResult);
         }
@@ -129,7 +129,7 @@ namespace ObjectPrinting.Tests
             const string expectedResult =
                 "Person\r\n\tName = Me\r\n\tHeight = 3\r\n\tAge = 20\r\n\tParents = empty\r\n";
 
-            ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimm(4).Exclude(x => x.Id))
+            ThirdPerson.PrintToString(config => config.SelectProperty(x => x.Name).Trimmed(4).Exclude(x => x.Id))
                 .Should()
                 .Be(expectedResult);
         }
