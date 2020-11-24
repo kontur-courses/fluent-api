@@ -7,17 +7,16 @@ using System.Globalization;
 using System.Collections;
 
 namespace ObjectPrinting.Solved
-{public class PrintingConfig<TOwner>
+{
+    public class PrintingConfig<TOwner>
     {
-        private static readonly Type[] finalTypes = new[]
+        private static readonly HashSet<Type> finalTypes = new HashSet<Type>
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
         private readonly HashSet<string> excludingFields = new HashSet<string>();
-        private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<string, int> fieldsTrim = new Dictionary<string, int>();
         private readonly HashSet<object> objects = new HashSet<object>();
         private readonly Dictionary<Type, Delegate> alternativeSerialization = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Delegate> alternativeSerializationField = new Dictionary<string, Delegate>();
@@ -27,10 +26,6 @@ namespace ObjectPrinting.Solved
 
         internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => 
             alternativeSerializationField[fullName] = func;
-
-        internal void AddFieldsTrim(string fullName, int length) => fieldsTrim[fullName] = length;
-
-        internal void AddCulture(Type type, CultureInfo culture) => cultures[type] = culture;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -83,13 +78,18 @@ namespace ObjectPrinting.Solved
 
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
 
-                bool CanConsiderProperty() =>
-                    !excludingTypes.Contains(propertyInfo.PropertyType) &&
-                    (fullName == null || !excludingFields.Contains(GetFullName())) &&
-                    !objects.Contains<object>(propertyInfo.GetValue(obj));
+                bool CanConsiderProperty() => !IsExcluding() &&
+                    (TypeIsFinal(propertyInfo.PropertyType) || IsReferenceCircle(propertyInfo.GetValue(obj)));
+
+                bool IsExcluding() => excludingTypes.Contains(propertyInfo.PropertyType) ||
+                    (fullName != null && excludingFields.Contains(GetFullName()));
             }
             return sb.ToString();
+
+            bool IsReferenceCircle(object obj) => !objects.Any(o => ReferenceEquals(o, obj));
         }
+
+        private bool TypeIsFinal(Type type) => type.IsPrimitive || finalTypes.Contains(type);
 
         private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel)
         {
@@ -100,7 +100,7 @@ namespace ObjectPrinting.Solved
                 alternativeSerialization.TryGetValue(type, out func))
                 return func.DynamicInvoke(obj).ToString();
 
-            if (type.IsPrimitive)
+            if (TypeIsFinal(type))
                 return GetStringFinalType();
 
             if (obj is ICollection)
@@ -110,21 +110,6 @@ namespace ObjectPrinting.Solved
 
             string GetStringFinalType()
             {
-                if (cultures.ContainsKey(type))
-                    return GetCulturesResult();
-                return obj.ToString();
-            }
-
-            string GetCulturesResult()
-            {
-                if (type == typeof(double))
-                    return ((double)obj).ToString(cultures[type]);
-                if (type == typeof(int))
-                    return ((double)obj).ToString(cultures[type]);
-                if (type == typeof(float))
-                    return ((float)obj).ToString(cultures[type]);
-                if (type == typeof(DateTime))
-                    return ((DateTime)obj).ToString(cultures[type]);
                 return obj.ToString();
             }
         }

@@ -13,21 +13,19 @@ namespace ObjectPrinting.Solved.Tests
         [SetUp]
         public void SetUp()
         {
-            var alterEgo = new Person { Name = "Ivan IV", Age = 52, Height = 164 };
+            var alterEgo = new Person { Name = "Ivan IV", Age = 52, Height = 164, Id = Guid.NewGuid() };
             var array = new int[]{ 1, 2, 3 };
             var list = new List<double> { 2.5, 3.2, 8.8 };
             var dict = new Dictionary<string, string> { ["a1"] = "a", ["a2"] = "aa", ["a3"] = "aaa" };
             var listOfList = new List<List<int>> { 
                 new List<int> { 1, 2, 3}, new List<int> { 2, 3, 4}, new List<int> { 3, 4, 5} };
             person = new Person { 
-                Name = "Misha", Age = 21, Height = 172, AlterEgo = alterEgo, 
+                Name = "Misha", Age = 21, Height = 172, Id = Guid.NewGuid(), AlterEgo = alterEgo, 
                 Array = array, List = list, Dict = dict, ListOfList = listOfList};
         }
         [Test]
         public void Demo()
         {
-            person = new Person { Name = "Alex", Age = 19 };
-
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()

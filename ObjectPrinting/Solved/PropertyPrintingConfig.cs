@@ -25,14 +25,6 @@ namespace ObjectPrinting.Solved
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            var type = typeof(TOwner);
-            if(type.GetMethod("ToString").GetParameters().Any(p => p.ParameterType == typeof(IFormatProvider)))
-                printingConfig.AddCulture(typeof(TPropType), culture);
-            return printingConfig;
-        }
-
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 
