@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public readonly object SelectedMember;
+        public readonly MemberInfo SelectedMember;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, object selectedMember)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember)
         {
             this.printingConfig = printingConfig;
             SelectedMember = selectedMember;
