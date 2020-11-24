@@ -18,21 +18,19 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private ImmutableDictionary<MemberInfo, MethodInfo> alternateMemberSerializers;
-        private ImmutableDictionary<Type, MethodInfo> alternateTypeSerializers;
-        private ImmutableDictionary<Type, CultureInfo> cultureInfos;
-        private ImmutableHashSet<MemberInfo> excludingMembers;
-        private ImmutableHashSet<Type> excludingTypes;
-        private ImmutableDictionary<MemberInfo, int> memberLengths;
+        private ImmutableDictionary<MemberInfo, Func<object, string>> alternateMemberSerializers =
+            ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
+
+        private ImmutableDictionary<Type, Func<object, string>> alternateTypeSerializers =
+            ImmutableDictionary<Type, Func<object, string>>.Empty;
+
+        private ImmutableDictionary<Type, CultureInfo> cultureInfos = ImmutableDictionary<Type, CultureInfo>.Empty;
+        private ImmutableHashSet<MemberInfo> excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
+        private ImmutableHashSet<Type> excludingTypes = ImmutableHashSet<Type>.Empty;
+        private ImmutableDictionary<MemberInfo, int> memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
 
         public PrintingConfig()
         {
-            excludingTypes = ImmutableHashSet<Type>.Empty;
-            excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
-            memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
-            alternateTypeSerializers = ImmutableDictionary<Type, MethodInfo>.Empty;
-            alternateMemberSerializers = ImmutableDictionary<MemberInfo, MethodInfo>.Empty;
-            cultureInfos = ImmutableDictionary<Type, CultureInfo>.Empty;
         }
 
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
@@ -67,11 +65,12 @@ namespace ObjectPrinting
             };
         }
 
-        public PrintingConfig<TOwner> SetAlternateSerialize<TPropType>(Func<TPropType, string> alternateSerialize)
+        public PrintingConfig<TOwner> SetAlternateSerialize<TPropType>(Func<TPropType, string> serializer)
         {
             return new PrintingConfig<TOwner>(this)
             {
-                alternateTypeSerializers = alternateTypeSerializers.Add(typeof(TPropType), alternateSerialize.Method)
+                alternateTypeSerializers =
+                    alternateTypeSerializers.Add(typeof(TPropType), x => serializer((TPropType) x))
             };
         }
 
@@ -93,7 +92,8 @@ namespace ObjectPrinting
             var selectedMember = ((MemberExpression) memberSelector.Body).Member;
             return new PrintingConfig<TOwner>(this)
             {
-                alternateMemberSerializers = alternateMemberSerializers.Add(selectedMember, serializer.Method)
+                alternateMemberSerializers =
+                    alternateMemberSerializers.Add(selectedMember, x => serializer((TPropType) x))
             };
         }
 
@@ -139,17 +139,15 @@ namespace ObjectPrinting
         private bool TrySerializeMember(MemberInfo memberInfo, object value, Type valueType,
             out string serializedMember)
         {
-            if (alternateMemberSerializers.TryGetValue(memberInfo, out var method))
+            if (alternateMemberSerializers.TryGetValue(memberInfo, out var serializer))
             {
-                serializedMember = method.Invoke(Activator.CreateInstance(method.DeclaringType!),
-                    new[] {value})?.ToString();
+                serializedMember = serializer(value);
                 return true;
             }
 
-            if (alternateTypeSerializers.TryGetValue(valueType, out method))
+            if (alternateTypeSerializers.TryGetValue(valueType, out serializer))
             {
-                serializedMember = method.Invoke(Activator.CreateInstance(method.DeclaringType!),
-                    new[] {value})?.ToString();
+                serializedMember = serializer(value);
                 return true;
             }
 
