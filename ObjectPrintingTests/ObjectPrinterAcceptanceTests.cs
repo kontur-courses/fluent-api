@@ -253,11 +253,13 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrintToString_ShouldNotThrowException_WhenThereIsCyclicalRef()
+        public void PrintToString_WhenThereIsCyclicalRef()
         {
             var obj = new ClassForTestingCyclicalRefs();
             obj.Reference = obj;
-            Assert.DoesNotThrow(() => obj.PrintToString());
+            obj.PrintToString().Should()
+                .Be(
+                    $"ClassForTestingCyclicalRefs{Environment.NewLine}\tReference = Cyclical reference{Environment.NewLine}");
         }
     }
 }
