@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -11,8 +12,8 @@ namespace ObjectPrintingTests
     {
         private static readonly Person Person = new Person
         {
-            Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex", /*Wallet = new[] {"$: 50", "P: 40000"},
-            RelativesNames = new Dictionary<string, string> {{"Mother", "Lana"}, {"Father", "John"}}*/
+            Age = 19, Height = 175.5, Id = Guid.NewGuid(), Name = "Alex", Wallet = new[] {"$: 50", "P: 40000"},
+            RelativesNames = new Dictionary<string, string> {{"Mother", "Lana"}, {"Father", "John"}}
         };
 
         [Test]
@@ -67,8 +68,8 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>();
             var objInString = printer.PrintToString(Person);
-            objInString.Should().Contain($"{nameof(Person.Wallet)} = [$: 50", "P: 40000]");
-            objInString.Should().Contain($"{nameof(Person.RelativesNames)} = [[Mother, Lana], [Father, John]]");
+            objInString.Should().ContainAll($"{nameof(Person.Wallet)} = ", "$: 50", "P: 40000");
+            objInString.Should().ContainAll($"{nameof(Person.RelativesNames)} = ", "Key = Mother", "Value = Lana", "Key = Father", "Value = John");
         }
     }
 }

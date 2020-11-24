@@ -97,35 +97,34 @@ namespace ObjectPrinting
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
+            if (obj is IEnumerable collection)
+            {
+                return PrintCollectionToString(nestingLevel,
+                    sb,
+                    collection,
+                    indentation);
+            }
+
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             var props = type.GetProperties().Where(prop =>
                 !typesToExclude.Contains(prop.PropertyType) && !propsToExclude.Contains(prop));
             foreach (var propertyInfo in props)
             {
-                /*if (propertyInfo.PropertyType == typeof(string[]))
-                {
-                    var collection = propertyInfo.GetValue(obj) as IEnumerable<string>;
-                    var items = new StringBuilder();
-                    if (collection != null)
-                    {
-                        foreach (var elem in collection)
-                        {
-                            items.Append(PrintToString(elem, nestingLevel + 1) + "\n");
-                        }
-                    }
-                    else
-                    {
-                        items = new StringBuilder("null");
-                    }
+                sb.Append(indentation + propertyInfo.Name + " = " +
+                          PrintToString(propertyInfo, obj, nestingLevel));
+            }
 
-                    sb.Append(indentation + propertyInfo.Name + " = " + items);
-                }
-                else*/
-                {
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo, obj, nestingLevel));
-                }
+            return sb.ToString();
+        }
+
+        private string PrintCollectionToString(int nestingLevel, StringBuilder sb, IEnumerable collection,
+            string indentation)
+        {
+            sb.AppendLine();
+            foreach (var elem in collection)
+            {
+                sb.Append(indentation + PrintToString(elem, nestingLevel + 1));
             }
 
             return sb.ToString();
@@ -133,7 +132,6 @@ namespace ObjectPrinting
 
         private string PrintToString(PropertyInfo propertyInfo, object obj, int nestingLevel)
         {
-            
             var value = propertyInfo.GetValue(obj) as dynamic;
             var type = propertyInfo.PropertyType;
 
