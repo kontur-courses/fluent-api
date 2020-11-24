@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq.Expressions;
+using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -12,22 +12,28 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person
             {
+                Name = "Alex",//ммя ему - Алексей
+                Age = 19,//и возраст его - 19 долларов...
                 Father = new Person
                 {
+                    Name = "John",
                     Mother = new Person
                     {
+                        Name = "Steve",
+                        Height = 1.1,
                         Mother = new Person
                         {
                             Name = "Adam",
+                            Height = 336.333,
                             Father = new Person
                             {
+                                Name = "???",
                                 Age = 2000,
-                                Name = "???"
+                                Height = 875.375
                             }
                         },
                     }
-                },
-                Name = "Alex", Age = 19
+                }
             };
 
             var printer = ObjectPrinter.For<Person>()
@@ -37,10 +43,14 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().As(s => $"<<{s}>>")
                 .Printing<DateTime>().As(d => $"year: {d.Year}, the rest is mistery...")
                 //3. Для числовых типов указать культуру
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing(p => p.Father.Mother.Mother.Father.Height).Using("f10")
+                .Printing(p => p.Age).Using("C", CultureInfo.CreateSpecificCulture("en-US"))
                 //4. Настроить сериализацию конкретного свойства
+                .Printing(p => p.Name).As(p => "Алексей")
                 .Printing(p => p.Father.Mother.Mother.Father.Name).As(name => $"who is that?{name}")
                 .Printing(p => p.Father.Mother).Using(config => config
-                    .Printing<DateTime>().As(d => $"...but there is less mystery: {d}"))
+                    .Printing<DateTime>().As(d => $"...but not here: {d}"))
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Mother)
