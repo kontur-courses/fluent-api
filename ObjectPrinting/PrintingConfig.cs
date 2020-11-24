@@ -1,116 +1,44 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Reflection;
+using System.Text;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly List<Type> excludedTypes;
-        private readonly Dictionary<Type, Delegate> typesSerializer;
-        private readonly Dictionary<PropertyInfo, CultureInfo> numbersCulture;
+        private readonly Config config;
         private PropertyInfo selectedProperty;
-        private readonly List<PropertyInfo> exludedFields;
-        private readonly Dictionary<PropertyInfo, Delegate> fieldSerializers;
 
-        public  PrintingConfig()
+        public PrintingConfig()
         {
-            excludedTypes = new List<Type>();
-            typesSerializer = new Dictionary<Type, Delegate>();
-            numbersCulture = new Dictionary<PropertyInfo, CultureInfo>();
-            exludedFields = new List<PropertyInfo>();
-            fieldSerializers = new Dictionary<PropertyInfo, Delegate>();
+            config = new Config();
         }
-        
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
-        public PrintingConfig<TOwner> Choose<TProperty>()
-        {
-            
-            return this;
-        }
-        
         public PrintingConfig<TOwner> TypeSerializer<TProperty>(Func<object, string> func)
         {
-            typesSerializer.Add(typeof(TProperty), func);
+            config.typesSerializer.Add(typeof(TProperty), func);
             return this;
         }
-        
+
         public PrintingConfig<TOwner> Exclude<TProperty>()
         {
-            excludedTypes.Add(typeof(TProperty));
-            return this;
-        }
-        public PrintingConfig<TOwner> Exclude()
-        {
-            exludedFields.Add(selectedProperty);
-            selectedProperty = null;
+            config.excludedTypes.Add(typeof(TProperty));
             return this;
         }
 
-        public PrintingConfig<TOwner> Choose<TProperty>(
-            Expression<Func<TOwner, TProperty>> selector)
-        {
-            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
-            return this;
-        }
 
-        public PrintingConfig<TOwner> Choose(
-            Expression<Func<TOwner, string>> selector)
-        {
-            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
-            return this;
-        }
-        public PrintingConfig<TOwner> Choose(
-            Expression<Func<TOwner, int>> selector)
-        {
-            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
-            return this;
-        }
-        
-        public PrintingConfig<TOwner> Choose(
-            Expression<Func<TOwner, double>> selector)
+        public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>> selector)
         {
             selectedProperty = (PropertyInfo) ((MemberExpression) selector.Body).Member;
-            return this;
-        }
-        
-        public PrintingConfig<TOwner> Choose(
-            Expression<Func<TOwner, float>> selector)
-        {
-            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
-            return this;
-        }
-        
-        public PrintingConfig<TOwner> Choose(
-            Expression<Func<TOwner, decimal>> selector)
-        {
-            selectedProperty = (PropertyInfo)((MemberExpression) selector.Body).Member;
-            return this;
-        }
-        
-        public PrintingConfig<TOwner> UseSerializer(Func<object, string> func)
-        {
-            fieldSerializers[selectedProperty] = func;
-            return this;
-        }
-
-        public PrintingConfig<TOwner> SetCulture(CultureInfo currentCulture)
-        {
-            numbersCulture[selectedProperty] = currentCulture;
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Trim(int i)
-        {
-            throw new NotImplementedException();
+            return new SelectedProperty<TOwner, TProperty>(selectedProperty, this, config);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -133,38 +61,39 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                if (config.excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
-                if(exludedFields.Contains(propertyInfo))
+                if (config.exludedFields.Contains(propertyInfo))
                     continue;
-                
+
                 var current = propertyInfo.GetValue(obj).ToString();
-                if (numbersCulture.ContainsKey(propertyInfo))
-                    current = string.Format(numbersCulture[propertyInfo], current);
-                
-                if (typesSerializer.ContainsKey(propertyInfo.PropertyType))
+                if (config.numbersCulture.ContainsKey(propertyInfo))
+                    current = string.Format(config.numbersCulture[propertyInfo], current);
+
+                if (config.typesSerializer.ContainsKey(propertyInfo.PropertyType))
                 {
-                    var valueToString = typesSerializer[propertyInfo.PropertyType]
+                    var valueToString = config.typesSerializer[propertyInfo.PropertyType]
                         .DynamicInvoke(current)
                         ?.ToString();
                     sb.Append(indentation + propertyInfo.Name + " = " + valueToString);
                 }
 
-                if (fieldSerializers.ContainsKey(propertyInfo))
+                if (config.fieldSerializers.ContainsKey(propertyInfo))
                 {
-                    var textToAdd = fieldSerializers[propertyInfo]
+                    var textToAdd = config.fieldSerializers[propertyInfo]
                         .DynamicInvoke(current)
                         ?.ToString();
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               textToAdd);
                 }
                 else
+                {
                     sb.Append(indentation + propertyInfo.Name + " = " +
                               PrintToString(propertyInfo.GetValue(obj),
                                   nestingLevel + 1));
-                        
-                
+                }
             }
+
             return sb.ToString();
         }
     }

@@ -1,10 +1,8 @@
 ﻿using System.Globalization;
-using System.IO;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Tests;
-using FluentAssertions;
-using ObjectExtensions = ObjectPrinting.Solved.ObjectExtensions;
 
 namespace Tests
 {
@@ -36,75 +34,75 @@ namespace Tests
             //8. ...с конфигурированием
             //var string2 =person.Serialize(d => d.Choose<int>().Exclude());
         }
+
         [Test]
-        public void PrintToString_ShouldNotContainProperty_WhenPropertyExcluded()//TODO
+        public void PrintToString_ShouldNotContainProperty_WhenPropertyExcluded() //TODO
         {
             var printer = ObjectPrinter.For<Person>().Exclude<int>();
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
             var firstPersonText = printer.PrintToString(firstPerson);
-           firstPersonText.Should().NotContain("Age = ");
+            firstPersonText.Should().NotContain("Age = ");
         }
-        
+
         [Test]
-        public void PrintToString_ShouldContainNewSerialization_AddedSerializationForType()//TODO
+        public void PrintToString_ShouldContainNewSerialization_AddedSerializationForType() //TODO
         {
             var printer = ObjectPrinter.For<Person>()
                 .TypeSerializer<double>(d => $"My beautiful shiny double: {d}");
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
-            
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
+
             var firstPersonText = printer.PrintToString(firstPerson);
-            
+
             firstPersonText.Should().Contain("My beautiful shiny double:");
         }
-        
+
         [Test]
-        public void PrintToString_ShouldContainCorrectCulture_AddedCultureForProperty()//TODO
+        public void PrintToString_ShouldContainCorrectCulture_AddedCultureForProperty() //TODO
         {
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Height).SetCulture(new CultureInfo("ru-RU", false));
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
             firstPerson.Height = 44.5;
-            
+
             var firstPersonText = printer.PrintToString(firstPerson);
-            
+
             firstPersonText.Should().Contain("44,5");
         }
-        
+
         [Test]
-        public void PrintToString_ShouldNotContainProperty_ExcludeProperty()//TODO
+        public void PrintToString_ShouldNotContainProperty_ExcludeProperty() //TODO
         {
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Age).Exclude();
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
-            
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
+
             var firstPersonText = printer.PrintToString(firstPerson);
-            
+
             firstPersonText.Should().NotContain("Age = ");
         }
-        
+
         [Test]
-        public void PrintToString_ShouldContainSpecialFieldSerialization_PropertySerialization()//TODO
+        public void PrintToString_ShouldContainSpecialFieldSerialization_PropertySerialization() //TODO
         {
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Name).UseSerializer(d => $"The name is: {d}");
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
-            
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
+
             var firstPersonText = printer.PrintToString(firstPerson);
-            
+
             firstPersonText.Should().Contain("The name is");
         }
-        
+
         [Test]
-        public void PrintToString_ShouldContainTrimmedString_TrimString()//TODO
+        public void PrintToString_ShouldContainTrimmedString_TrimString() //TODO
         {
             var printer = ObjectPrinter.For<Person>()
-                .Choose(o => o.Name).Trim(2);
-            printer.Choose(o => o.Age).Trim(2);
-            var firstPerson = new Person { Name = "Alexander", Age = 19, Height = 1.84};
-            
+                .Choose(o => o.Name).Trim(4);
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
+
             var firstPersonText = printer.PrintToString(firstPerson);
-            
-            firstPersonText.Should().Contain("The name is");
+
+            firstPersonText.Should().Contain("Alex");
         }
     }
 }
