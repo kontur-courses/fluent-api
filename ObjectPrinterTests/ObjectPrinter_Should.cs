@@ -171,7 +171,7 @@ namespace ObjectPrinterTests
                 .Be("Person\r\n\tName = Dan\r\n\tHeight = 160.5\r\n\tAge = 15*\r\n\tWeight = 67.778 kilo\r\n\t" +
                     "BirthPlace = null\r\n");
         }
-        
+
         [Test]
         public void PrintToString_StringWithInformationAboutCycle_WhenNotConfiguration()
         {
@@ -197,13 +197,24 @@ namespace ObjectPrinterTests
 
             act.Should().Contain("Name = Danil years old");
         }
-        
+
         [Test]
         public void PrintingToString_SerializedTextUpToMaxNestingLevel_WhenMaxNestingLevelExceeded()
         {
             var act = Instances.EmployeeWithManySubordinates.PrintToString();
 
             act.Should().NotContain("11").And.Contain("Nesting level exceeded");
+        }
+
+        [Test]
+        public void PrintToString_SerializedCollection_WhenNotConfiguration()
+        {
+            var act = Instances.Collection.PrintToString();
+
+            act.Should().Be($"Dictionary`2\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t1\r\n\t\t\t2\r\n\t\t\t3" +
+                            $"\r\n\t\tValue = Int32[]\r\n\t\t\t5\r\n\t\t\t7" +
+                            $"\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t7\r\n\t\t\t9" +
+                            $"\r\n\t\tValue = Int32[]\r\n\t\t\t10\r\n");
         }
     }
 }

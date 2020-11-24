@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -82,7 +83,19 @@ namespace ObjectPrinting.Core
             if (_parents.Contains(obj))
                 return $"Type = {type.Name}, Value = {obj} : found a cyclic link\r\n";
             _parents.Add(obj);
-            return GetSerializedMembers(obj, nestingLevel);
+            return typeof(ICollection).IsAssignableFrom(type)
+                ? GetSerializedCollection(obj, nestingLevel)
+                : GetSerializedMembers(obj, nestingLevel);
+        }
+
+        private string GetSerializedCollection(object obj, int nestingLevel)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            var result = new StringBuilder().AppendLine(obj.GetType().Name);
+            var collection = (IEnumerable) obj;
+            foreach (var element in collection)
+                result.Append(indentation + PrintToString(element, nestingLevel + 1));
+            return result.ToString();
         }
 
         private string GetSerializedMembers(object obj, int nestingLevel)

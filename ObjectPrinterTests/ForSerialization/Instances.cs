@@ -1,8 +1,13 @@
-﻿namespace ObjectPrinterTests.ForSerialization
+﻿using System.Collections.Generic;
+
+namespace ObjectPrinterTests.ForSerialization
 {
     public static class Instances
     {
         public static readonly Person Person = new Person {Age = 15, Weight = 67.778, Height = 160.5, Name = "Danil"};
+
+        public static readonly Dictionary<List<int>, int[]> Collection = new Dictionary<List<int>, int[]>
+            {[new List<int> {1, 2, 3}] = new[] {5, 7}, [new List<int> {7, 9}] = new[] {10}};
 
         public static readonly Employee EmployeeWithManySubordinates = new Employee
         {
