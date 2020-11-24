@@ -14,13 +14,12 @@ namespace ObjectPrinterTests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Name = "Alex", Age = 19, Height = 193.2};
+            person = new Person {Id = Guid.Empty, Name = "Alex", Age = 19, Height = 193.2, money = 0};
         }
-        
         
         private Person person;
 
-
+        [Explicit]
         [Test]
         [SuppressMessage("ReSharper", "SuggestVarOrType_BuiltInTypes")]
         public void Demo()
@@ -51,6 +50,7 @@ namespace ObjectPrinterTests
             Console.WriteLine(s3);
         }
 
+        [Explicit]
         [Test]
         public void Collections_Demo()
         {
@@ -64,16 +64,14 @@ namespace ObjectPrinterTests
             var pers2 = new Person {Age = 13, Height = 150.5, Name = "Misha"};
             var pers3 = new Person {Age = 26, Height = 200.5, Name = "Vasya"};
 
-            var personList = new List<Person>();
-            personList.Add(pers1);
-            personList.Add(pers2);
-            personList.Add(pers3);
+            var personList = new List<Person> {pers1, pers2, pers3};
 
             Console.WriteLine(printer.PrintToString(personList));
             var arr = new[] {pers1, pers2, pers3};
             Console.WriteLine(printer.PrintToString(arr));
         }
 
+        [Explicit]
         [Test]
         public void Dictionary_Demo()
         {
@@ -89,17 +87,18 @@ namespace ObjectPrinterTests
             var dic1 = new Dictionary<int, Person> {[1] = pers1, [2] = pers2, [3] = pers3};
             var dic2 = new Dictionary<string, Person> {[pers1.Name] = pers1, [pers2.Name] = pers2, [pers3.Name] = pers3};
             
-            
             Console.WriteLine(printer.PrintToString(dic1));
             Console.WriteLine(printer.PrintToString(dic2));
         }
+        
+        
 
         [Test]
-        public void PrintToString_PersonWithoutId_ExcludingGuid()
+        public void PrintToString_PersonIdDoesNotPrint_ExcludingGuid()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
 
-            printer.PrintToString(person).Should().Be("Person\r\n\tName = Alex\r\n\tHeight = 193,2\r\n\tAge = 19\r\n");
+            Assert.That(printer.PrintToString(person), Is.EqualTo("Person\r\n\tName = Alex\r\n\tHeight = 193,2\r\n\tAge = 19\r\n\tmoney = 0\r\n"));
         }
 
         [Test]
@@ -107,7 +106,7 @@ namespace ObjectPrinterTests
         {
             var printer = ObjectPrinter.For<int>().Printing<int>().Using(i => i + "X");
 
-            printer.PrintToString(5).Should().Be("5X");
+            Assert.That(printer.PrintToString(5), Is.EqualTo("5X"));
         }
 
         [Test]
@@ -115,7 +114,24 @@ namespace ObjectPrinterTests
         {
             var printer = ObjectPrinter.For<double>().Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            printer.PrintToString(2.5).Should().Be("2.5");
+            Assert.That(printer.PrintToString(2.5), Is.EqualTo("2.5"));
+        }
+
+        [Test]
+        public void PrintToString_PrintedTrimmedStr_UsingTrimmingToLen()
+        {
+            var printer = ObjectPrinter.For<string>().Printing<string>().TrimmedToLength(3);
+            
+            Assert.That(printer.PrintToString("abcdef"), Is.EqualTo("abc"));
+        }
+        
+        [Test]
+        public void PrintToString_ShouldNotThrow_TrimmedToLenThatIsBiggerThanTextLen()
+        {
+            var printer = ObjectPrinter.For<string>().Printing<string>().TrimmedToLength(5);
+            
+            Assert.DoesNotThrow(() => printer.PrintToString("abc"));
+            Assert.That(printer.PrintToString("abc"), Is.EqualTo("abc"));
         }
 
         [Test]
@@ -123,19 +139,15 @@ namespace ObjectPrinterTests
         {
             var printer = ObjectPrinter.For<DateTime>().Printing<DateTime>().Using(CultureInfo.InvariantCulture);
 
-
-            var actual = printer.PrintToString(DateTime.MinValue);
-            printer.PrintToString(DateTime.MinValue).Should()
-                .Be(DateTime.MinValue.ToString(CultureInfo.InvariantCulture));
+            Assert.That(printer.PrintToString(DateTime.MinValue), Is.EqualTo(DateTime.MinValue.ToString(CultureInfo.InvariantCulture)));
         }
 
         [Test]
-        public void PrintToString_PersonPropertiesExcludedId_ExcludingPersonId()
+        public void PrintToString_PersonIdDoesNotPrint_ExcludingPersonId()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Id);
 
-
-            printer.PrintToString(person).Should().Be("Person\r\n\tName = Alex\r\n\tHeight = 193,2\r\n\tAge = 19\r\n");
+            Assert.That(printer.PrintToString(person), Is.EqualTo("Person\r\n\tName = Alex\r\n\tHeight = 193,2\r\n\tAge = 19\r\n\tmoney = 0\r\n"));
         }
 
         [Test]
@@ -146,6 +158,53 @@ namespace ObjectPrinterTests
             personWithFriend.Friend = personWithFriend;
 
             Console.WriteLine(personWithFriend.PrintToString());
+        }
+        
+        [Test]
+        [Timeout(1000)]
+        public void PrintToString_ShouldNotThrow_CyclicReference()
+        {
+            var personWithFriend1 = new PersonWithFriend {Name = "Alex", Age = 19};
+            var personWithFriend2 = new PersonWithFriend {Name = "Petr", Age = 19};
+            personWithFriend1.Friend = personWithFriend2;
+            personWithFriend2.Friend = personWithFriend1;
+
+            Console.WriteLine(personWithFriend1.PrintToString());
+        }
+
+        [Test]
+        public void PrintRoString_PrintedEachObjectInCollection_PrintingList()
+        {
+            var printer = ObjectPrinter.For<int>();
+            var list = new List<int> {1, 2, 3};
+            
+            Assert.That(printer.PrintToString(list), Is.EqualTo("List`1\r\n1\r\n2\r\n3\r\n"));
+            Console.WriteLine(printer.PrintToString(list));
+        }
+
+        [Test]
+        public void PrintRoString_PrintedEachObjectInCollection_PrintingArray()
+        {
+            var printer = ObjectPrinter.For<int>();
+            var arr = new [] {1, 2, 3};
+            
+            Assert.That(printer.PrintToString(arr), Is.EqualTo("Int32[]\r\n1\r\n2\r\n3\r\n"));
+            Console.WriteLine(printer.PrintToString(arr));
+        }
+
+        [Test]
+        public void PrintRoString_PrintedEachObjectInCollection_PrintingDictionary()
+        {
+            var printer = ObjectPrinter.For<string>();
+            var dic = new Dictionary<int, string>
+            {
+                {1, "a"},
+                {2, "b"},
+                {3, "c"},
+            };
+
+            Assert.That(printer.PrintToString(dic), Is.EqualTo("Dictionary`2\r\n1 : a\r\n2 : b\r\n3 : c\r\n"));
+            Console.WriteLine(printer.PrintToString(dic));
         }
     }
 }
