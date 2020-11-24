@@ -7,28 +7,22 @@ namespace ObjectPrinting
     {
         public static object GetValue(this MemberInfo memberInfo, object forObject)
         {
-            switch (memberInfo.MemberType)
+            return memberInfo switch
             {
-                case MemberTypes.Field:
-                    return ((FieldInfo)memberInfo).GetValue(forObject);
-                case MemberTypes.Property:
-                    return ((PropertyInfo)memberInfo).GetValue(forObject);
-                default:
-                    throw new ArgumentException("Not field or property");
-            }
+                FieldInfo fieldInfo => fieldInfo.GetValue(forObject),
+                PropertyInfo propertyInfo => propertyInfo.GetValue(forObject),
+                _ => throw new ArgumentException("Not field or property")
+            };
         } 
         
         public static Type GetMemberType(this MemberInfo memberInfo)
         {
-            switch (memberInfo.MemberType)
+            return memberInfo switch
             {
-                case MemberTypes.Field:
-                    return ((FieldInfo)memberInfo).FieldType;
-                case MemberTypes.Property:
-                    return ((PropertyInfo)memberInfo).PropertyType;
-                default:
-                    throw new ArgumentException("Not field or property");
-            }
+                FieldInfo fieldInfo => fieldInfo.FieldType,
+                PropertyInfo propertyInfo => propertyInfo.PropertyType,
+                _ => throw new ArgumentException("Not field or property")
+            };
         }
     }
 }
