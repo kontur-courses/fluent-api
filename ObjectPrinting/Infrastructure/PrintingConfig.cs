@@ -164,8 +164,8 @@ namespace ObjectPrinting.Infrastructure
                 return true;
             return false;
         }
-        
-        public static Type GetType(MemberInfo member) =>
+
+        private static Type GetType(MemberInfo member) =>
             member.MemberType switch
             {
                 MemberTypes.Field => ((FieldInfo) member).FieldType,

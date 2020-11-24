@@ -109,13 +109,13 @@ namespace ObjectPrintingTests
                         "Dictionary`2\n\tKeyValuePair`2\n\t\tKey = 1\n\t\tValue = Person\n\t\t\tName = A\n\t\t\tAge = 1\n\tKeyValuePair`2\n\t\tKey = 2\n\t\tValue = Person\n\t\t\tName = B\n\t\t\tAge = 2\n\tKeyValuePair`2\n\t\tKey = 3\n\t\tValue = Person\n\t\t\tName = C\n\t\t\tAge = 3\n"),
                 };
 
-            foreach (var data in testData)
+            foreach (var (testName, config, toPrint, expectedRaw) in testData)
             {
                 yield return new TestCaseData(
-                        data.config,
-                        data.toPrint,
-                        GetSystemIndependent(data.expectedRaw))
-                    {TestName = data.testName};
+                        config,
+                        toPrint,
+                        GetSystemIndependent(expectedRaw))
+                    {TestName = testName};
             }
         }
 
