@@ -44,7 +44,7 @@ namespace ObjectPrinting.Configuration
             const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
             return type.GetFields(bindingFlags)
                 .Select(f => new SerializationTarget(f))
-                .Union(type.GetProperties(bindingFlags)
+                .Union(type.GetProperties(bindingFlags).Where(p => p.GetIndexParameters().Length < 1)
                     .Select(p => new SerializationTarget(p))).ToArray();
         }
     }

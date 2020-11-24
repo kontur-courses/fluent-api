@@ -88,7 +88,7 @@ namespace ObjectPrinting
 
         public static PrintingConfigBuilder<TOwner> Default() => new PrintingConfigBuilder<TOwner>(new[]
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(bool),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         });
     }

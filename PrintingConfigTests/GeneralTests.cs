@@ -43,7 +43,8 @@ namespace PrintingConfigTests
                 Int32 = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
-                String = "Abc xyz"
+                String = "Abc xyz",
+                Bool = true
             };
 
             result = ObjectPrinter.For<TestingFieldsClass>().PrintToString(subject);
@@ -54,6 +55,7 @@ namespace PrintingConfigTests
                     $"{nameof(TestingFieldsClass.Guid)} = {subject.Guid}",
                     $"{nameof(TestingFieldsClass.String)} = {subject.String}",
                     $"{nameof(TestingFieldsClass.Double)} = {subject.Double}",
+                    $"{nameof(TestingFieldsClass.Bool)} = {subject.Bool}",
                     $"{nameof(TestingFieldsClass.Int32)} = {subject.Int32}");
         }
 

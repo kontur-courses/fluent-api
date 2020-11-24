@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,9 +37,16 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return obj.ToString() + Environment.NewLine;
 
+
             if (alreadySerialized.Contains(obj))
                 return string.Empty;
             alreadySerialized.Add(obj);
+
+            if (obj is ICollection collection)
+            {
+                return $"[{collection.Count}]" + Environment.NewLine +
+                       SerializeCollection(collection, path, nestingLevel + 1);
+            }
 
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -64,6 +72,24 @@ namespace ObjectPrinting
                   (serialized.EndsWith(Environment.NewLine)
                       ? serialized
                       : serialized + Environment.NewLine);
+        }
+
+        private string SerializeCollection(ICollection collection, string[] path, int nestingLevel)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var currentIndex = 0;
+            foreach (var item in collection)
+            {
+                var prefix = indentation + $"[{currentIndex}]:{item?.GetType().Name ?? "null"} = ";
+                sb.Append(prefix + SerializeObject(
+                    item,
+                    path.Append(currentIndex.ToString()).ToArray(),
+                    nestingLevel + 1));
+                currentIndex++;
+            }
+
+            return sb.ToString();
         }
 
         private IPropertyConfigurator? GetConfiguratorOrDefault(string propertyName, string[] path, Type type)

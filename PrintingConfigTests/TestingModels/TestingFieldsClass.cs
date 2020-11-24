@@ -8,5 +8,6 @@ namespace PrintingConfigTests.TestingModels
         public string String;
         public double Double;
         public int Int32;
+        public bool Bool;
     }
 }
