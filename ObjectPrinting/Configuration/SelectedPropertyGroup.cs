@@ -15,7 +15,7 @@ namespace ObjectPrinting.Configuration
             Owner = parent;
         }
 
-        public IPropertySerializer<TProperty> AppliedSerializer { get; private set; }
+        public IPropertySerializer<TProperty>? AppliedSerializer { get; private set; }
         public PrintingConfig<TOwner> Owner { get; }
 
         public PrintingConfig<TOwner> Using(IPropertySerializer<TProperty> serializer)
