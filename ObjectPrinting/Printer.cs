@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public static class Printer<TOwner>
+    public static class Printer
     {
         private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
@@ -15,14 +15,14 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        public static string PrintToString(TOwner obj,
+        public static string PrintToString<TOwner>(TOwner obj,
             Func<Configurator<TOwner>, Configurator<TOwner>> configuratorFunc)
         {
             var config = configuratorFunc(new Configurator<TOwner>());
             return PrintToString(obj, 0, config);
         }
 
-        private static string PrintToString(object obj, int nestingLevel, Configurator<TOwner> config)
+        private static string PrintToString<TOwner>(object obj, int nestingLevel, Configurator<TOwner> config)
         {
             if (obj == null)
             {
@@ -48,7 +48,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             var props = type.GetProperties().Where(prop =>
-                !config.typesToExclude.Contains(prop.PropertyType) && !config.propsToExclude.Contains(prop));
+                !config.TypesToExclude.Contains(prop.PropertyType) && !config.PropsToExclude.Contains(prop));
             foreach (var propertyInfo in props)
             {
                 sb.Append(indentation + propertyInfo.Name + " = " +
@@ -61,7 +61,8 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static string PrintCollectionToString(int nestingLevel, StringBuilder sb, IEnumerable collection,
+        private static string PrintCollectionToString<TOwner>(int nestingLevel, StringBuilder sb,
+            IEnumerable collection,
             string indentation, Configurator<TOwner> config)
         {
             sb.AppendLine();
@@ -73,23 +74,23 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static string PrintToString(PropertyInfo propertyInfo, object obj, int nestingLevel,
+        private static string PrintToString<TOwner>(PropertyInfo propertyInfo, object obj, int nestingLevel,
             Configurator<TOwner> config)
         {
             var value = propertyInfo.GetValue(obj) as dynamic;
             var type = propertyInfo.PropertyType;
 
-            if (config.propPrintingMethods.TryGetValue(propertyInfo, out var printProperty))
+            if (config.PropPrintingMethods.TryGetValue(propertyInfo, out var printProperty))
             {
                 return printProperty.DynamicInvoke(value) + Environment.NewLine;
             }
 
-            if (config.typePrintingMethods.TryGetValue(type, out var printType))
+            if (config.TypePrintingMethods.TryGetValue(type, out var printType))
             {
                 return printType.DynamicInvoke(value) + Environment.NewLine;
             }
 
-            if (config.typePrintingCultureInfo.TryGetValue(type, out var cultureInfo))
+            if (config.TypePrintingCultureInfo.TryGetValue(type, out var cultureInfo))
             {
                 return value?.ToString(cultureInfo) + Environment.NewLine;
             }

@@ -19,7 +19,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_DoNotPrintProperties_AfterExcludingType()
         {
-            var objInString = Printer<Person>.PrintToString(Person,
+            var objInString = Printer.PrintToString(Person,
                 x => x
                     .Excluding<string>());
             objInString.Should().NotContain($"{nameof(Person.Name)} = {Person.Name}");
@@ -28,7 +28,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_PrintByAnotherMethod_AfterUsing()
         {
-            var objInString = Printer<Person>.PrintToString(Person,
+            var objInString = Printer.PrintToString(Person,
                 x => x
                     .Printing<int>().Using(p => p + " y.o."));
             objInString.Should().Contain($"{nameof(Person.Age)} = {Person.Age} y.o.");
@@ -37,7 +37,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_Print_WithConfigCulture()
         {
-            var objInString = Printer<Person>.PrintToString(Person,
+            var objInString = Printer.PrintToString(Person,
                 x => x
                     .Printing<double>().Using(CultureInfo.GetCultureInfo("en-US")));
             objInString.Should().Contain($"{nameof(Person.Height)} = 175.5");
@@ -47,7 +47,7 @@ namespace ObjectPrintingTests
         public void PrintToString_PrintPropByAnotherMethod_AfterPrinting()
         {
             const int maxLen = 2;
-            var objInString = Printer<Person>.PrintToString(Person,
+            var objInString = Printer.PrintToString(Person,
                 x => x
                     .Printing(p => p.Name).TrimmedToLength(maxLen));
             objInString.Should().NotContain($"{nameof(Person.Name)} = {Person.Name}");
@@ -57,7 +57,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_DoNotPrintProperties_AfterExcludingProps()
         {
-            var objInString = Printer<Person>.PrintToString(Person,
+            var objInString = Printer.PrintToString(Person,
                 x => x
                     .Excluding(p => p.Age));
             objInString.Should().NotContain($"{nameof(Person.Age)} = {Person.Age}");

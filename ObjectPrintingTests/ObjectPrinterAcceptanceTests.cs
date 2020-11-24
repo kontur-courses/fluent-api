@@ -13,7 +13,7 @@ namespace ObjectPrintingTests
         {
             var person = new Person {Name = "Alex", Age = 19};
 
-            var s1 = Printer<Person>.PrintToString(person,
+            var s1 = Printer.PrintToString(person,
                 x => x
                     .Excluding<Guid>()
                     .Printing<int>().Using(i => i.ToString("X"))

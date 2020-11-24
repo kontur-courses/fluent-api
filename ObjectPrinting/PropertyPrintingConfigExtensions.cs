@@ -6,13 +6,13 @@ namespace ObjectPrinting
     {
         public static string PrintToString<T>(this T obj, Func<Configurator<T>, Configurator<T>> config)
         {
-            return Printer<T>.PrintToString(obj, config);
+            return Printer.PrintToString(obj, config);
         }
 
         public static Configurator<TOwner> TrimmedToLength<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+            this IPropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            var parentConfig = propConfig.ParentConfig;
             return parentConfig.AddPrintingMethod((string s) => s.Substring(0, Math.Min(s.Length, maxLen)));
         }
     }
