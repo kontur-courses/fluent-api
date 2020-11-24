@@ -15,8 +15,7 @@ namespace ObjectPrinting.Solved
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
-        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
-        private readonly HashSet<string> excludingFields = new HashSet<string>();
+        private readonly Excluder excluder = new Excluder();
         private readonly HashSet<object> objects = new HashSet<object>();
 
         internal readonly AlternativeSerializator serializator = new AlternativeSerializator();
@@ -31,15 +30,9 @@ namespace ObjectPrinting.Solved
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
-            excludingFields.Add(memberSelector.GetFullNameProperty());
-            return this;
-        }
-
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
-        {
-            excludingTypes.Add(typeof(TPropType));
+            excluder.Exclude(memberSelector);
             return this;
         }
 
@@ -72,11 +65,8 @@ namespace ObjectPrinting.Solved
 
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
 
-                bool CanConsiderProperty() => !IsExcluding() &&
+                bool CanConsiderProperty() => !excluder.IsExclude(propertyInfo.PropertyType, GetFullName()) &&
                     (TypeIsFinal(propertyInfo.PropertyType) || IsReferenceCircle(propertyInfo.GetValue(obj)));
-
-                bool IsExcluding() => excludingTypes.Contains(propertyInfo.PropertyType) ||
-                    (fullName != null && excludingFields.Contains(GetFullName()));
             }
             return sb.ToString();
 
