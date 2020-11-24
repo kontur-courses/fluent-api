@@ -4,12 +4,12 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        public static string PrintToString<T>(this T obj, Func<Configurator<T>, Configurator<T>> config)
         {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
+            return Printer<T>.PrintToString(obj, config);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        public static Configurator<TOwner> TrimmedToLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;

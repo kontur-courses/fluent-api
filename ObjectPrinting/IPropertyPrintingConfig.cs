@@ -2,6 +2,6 @@
 {
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        Configurator<TOwner> ParentConfig { get; }
     }
 }

@@ -5,23 +5,23 @@ namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly Configurator<TOwner> configurator;
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        Configurator<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => configurator;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(Configurator<TOwner> configurator)
         {
-            this.printingConfig = printingConfig;
+            this.configurator = configurator;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public Configurator<TOwner> Using(Func<TPropType, string> print)
         {
-            return printingConfig.AddPrintingMethod(print);
+            return configurator.AddPrintingMethod(print);
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        public Configurator<TOwner> Using(CultureInfo culture)
         {
-            return printingConfig.AddPrintingCulture<TPropType>(culture);
+            return configurator.AddPrintingCulture<TPropType>(culture);
         }
     }
 }

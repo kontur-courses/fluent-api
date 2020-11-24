@@ -4,7 +4,7 @@ namespace ObjectPrinting
     {
         public static string PrintToString<T>(this T obj)
         {
-            return ObjectPrinter.For<T>().PrintToString(obj);
+            return Printer<T>.PrintToString(obj, x => x);
         }
     }
 }
