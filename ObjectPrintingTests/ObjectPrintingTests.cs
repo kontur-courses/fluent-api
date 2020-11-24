@@ -167,7 +167,6 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_DoesNotThrowWhenCycleReference()
         {
-            Assert.Fail();
             var node1 = new Node();
             var node2 = new Node {Next = node1};
             node1.Next = node2;

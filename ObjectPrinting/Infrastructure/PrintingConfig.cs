@@ -11,6 +11,10 @@ namespace ObjectPrinting.Infrastructure
     {
         private readonly Dictionary<MemberInfo, Settings> membersSettings = new Dictionary<MemberInfo, Settings>();
         private readonly Dictionary<Type, Settings> typeSettings = new Dictionary<Type, Settings>();
+        
+        private readonly object[] finalTypes = {
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)
+        };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -45,16 +49,22 @@ namespace ObjectPrinting.Infrastructure
             return PrintToString(obj, 0);
         }
 
+        private HashSet<object> processed;
+
+        private bool TryProcess(object obj)
+        {
+            processed ??= new HashSet<object>();
+            return processed.Add(obj);
+        }
+        
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (!TryProcess(obj))
+                return "[cycle]" + Environment.NewLine;
+            
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
