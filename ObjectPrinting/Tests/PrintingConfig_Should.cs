@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using FluentAssertions;
+using ApprovalTests;
+using ApprovalTests.Namers;
+using ApprovalTests.Reporters;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
-using ApprovalTests;
-using ApprovalTests.Reporters;
 
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
     [UseReporter(typeof(DiffReporter), typeof(FileLauncherReporter))]
-    [ApprovalTests.Namers.UseApprovalSubdirectory("Approval")]
+    [UseApprovalSubdirectory("Approval")]
     public class PrintingConfig_Should
     {
         [Test]
@@ -84,6 +83,9 @@ namespace ObjectPrinting.Tests
                 .ToDictionary(person => count++, person => person);
             Approvals.Verify(dictionary.PrintToString());
         }
+
+        [Test]
+        public void PrintToString_Cycle_ReturnsCorrectResult() => Approvals.Verify(long.MaxValue.PrintToString());
 
         private static void VerifyWithCustomConfig(Func<PrintingConfig<Person>, PrintingConfig<Person>> conf) =>
             Approvals.Verify(new Person().PrintToString(conf));

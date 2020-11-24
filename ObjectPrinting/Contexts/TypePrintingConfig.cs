@@ -6,7 +6,7 @@ namespace ObjectPrinting.Contexts
     public class TypePrintingConfig<TOwner, TType> : IContextPrintingConfig<TOwner, TType>
     {
         private IPrintingConfig PrintingConfig { get; }
-        public TypePrintingConfig(IPrintingConfig type) => PrintingConfig = type;
+        public TypePrintingConfig(IPrintingConfig printingConfig) => PrintingConfig = printingConfig;
 
         public PrintingConfig<TOwner> Using(Func<TType, string> print)
         {

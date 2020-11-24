@@ -66,7 +66,7 @@ namespace ObjectPrinting
             {
                 PropertyInfo property => property,
                 FieldInfo field => field,
-                _ => throw new ArgumentException($"{memberSelector} should return field oк property {nameof(TOwner)}")
+                _ => throw new ArgumentException($"{memberSelector} should return field or property {nameof(TOwner)}")
             };
         }
     }

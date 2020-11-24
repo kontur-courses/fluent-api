@@ -54,7 +54,7 @@ namespace ObjectPrinting
             var nonExcludedProperties = obj.GetType().GetProperties().Where(p => !Config.PrintExcluder.IsExclude(p));
             foreach (var property in nonExcludedProperties)
             {
-                var indentation = GetIndentationFor(nestingLevel);
+                var indentation = GetIdentationFor(nestingLevel);
                 var propertyValue = PrintProperty(property.GetValue(obj), property, nestingLevel);
                 sb.Append($"{indentation}{property.Name} = {propertyValue}");
             }
@@ -65,7 +65,7 @@ namespace ObjectPrinting
             var nonExcludedFields = obj.GetType().GetFields().Where(p => !Config.PrintExcluder.IsExclude(p));
             foreach (var field in nonExcludedFields)
             {
-                var indentation = GetIndentationFor(nestingLevel);
+                var indentation = GetIdentationFor(nestingLevel);
                 var fieldValue = PrintField(field.GetValue(obj), field, nestingLevel);
                 sb.Append($"{indentation}{field.Name} = {fieldValue}");
             }
@@ -93,16 +93,16 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             var newCollection = from object element in collection
-                select GetIndentationFor(nestingLevel + 1) + PrintToString(element, nestingLevel + 1);
+                select GetIdentationFor(nestingLevel + 1) + PrintToString(element, nestingLevel + 1);
 
             return sb
                 .AppendLine(collection.GetType().Name)
-                .AppendLine(GetIndentationFor(nestingLevel) + '{')
+                .AppendLine(GetIdentationFor(nestingLevel) + '{')
                 .AppendJoin(Environment.NewLine, newCollection)
-                .AppendLine(GetIndentationFor(nestingLevel) + '}')
+                .AppendLine(GetIdentationFor(nestingLevel) + '}')
                 .ToString();
         }
 
-        private static string GetIndentationFor(int nestingLevel) => new string('\t', nestingLevel);
+        private static string GetIdentationFor(int nestingLevel) => new string('\t', nestingLevel);
     }
 }
