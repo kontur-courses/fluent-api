@@ -14,12 +14,7 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<object> objects = new HashSet<object>();
         internal readonly AlternativeSerializator serializator = new AlternativeSerializator();
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-        {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
-        }
-
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector = null)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
         }
