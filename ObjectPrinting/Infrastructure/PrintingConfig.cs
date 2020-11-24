@@ -52,33 +52,42 @@ namespace ObjectPrinting.Infrastructure
 
         private HashSet<object> processed;
 
-        private bool TryProcess(object obj)
+        private bool TryProcess(object obj, out string reason)
         {
+            if (obj == null)
+            {
+                reason = "null";
+                return false;
+            }
+
+            if (finalTypes.Contains(obj.GetType()))
+            {
+                reason = obj.ToString();
+                return false;
+            }
+
             processed ??= new HashSet<object>();
+            reason = "[cycle]";
             return !obj.GetType().IsClass || processed.Add(obj);
         }
         
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (!TryProcess(obj))
-                return "[cycle]" + Environment.NewLine;
-            if (obj == null)
-                return "null" + Environment.NewLine;
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-            
+            if (!TryProcess(obj, out var reason))
+                return reason + Environment.NewLine;
+
             var type = obj.GetType();
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
             var nextLevel = nestingLevel + 1;
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-            {
-                foreach (var child in (IEnumerable) obj)
-                    sb.Append(new string('\t', nextLevel)).Append(PrintToString(child, nextLevel));
+            sb.AppendLine(type.Name);
+            
+            return typeof(IEnumerable).IsAssignableFrom(type) 
+                ? PrintIEnumerable(obj, sb, nextLevel) 
+                : PrintMember(obj, nextLevel, type, sb);
+        }
 
-                return sb.ToString();
-            }
-
+        private string PrintMember(object obj, int nextLevel, Type type, StringBuilder sb)
+        {
             var indentation = new string('\t', nextLevel);
             foreach (var memberInfo in type.GetMembers())
             {
@@ -86,12 +95,19 @@ namespace ObjectPrinting.Infrastructure
                     continue;
                 sb.Append(indentation).Append(memberInfo.Name).Append(" = ");
                 if (TryAlternatePrint(memberInfo, obj, out var toPrint))
-                {
                     sb.Append(toPrint).Append(Environment.NewLine);
-                    continue;
-                }
-                sb.Append(PrintToString(GetValue(obj, memberInfo), nextLevel));
+                else
+                    sb.Append(PrintToString(GetValue(obj, memberInfo), nextLevel));
             }
+
+            return sb.ToString();
+        }
+
+        private string PrintIEnumerable(object obj, StringBuilder sb, int nextLevel)
+        {
+            foreach (var child in (IEnumerable) obj)
+                sb.Append(new string('\t', nextLevel)).Append(PrintToString(child, nextLevel));
+
             return sb.ToString();
         }
 
@@ -135,6 +151,8 @@ namespace ObjectPrinting.Infrastructure
                 MemberTypes.Property => ((PropertyInfo) memberInfo).GetValue(owner),
                 _ => throw new ArgumentException($"Cannot get value {memberInfo} from {owner}")
             };
+
+        private bool IsNotExcluded(MemberInfo memberInfo) => !IsExcluded(memberInfo);
 
         private bool IsExcluded(MemberInfo memberInfo)
         {
