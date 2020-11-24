@@ -20,5 +20,12 @@ namespace ObjectPrinting
         {
             return context.As(f => f.ToString(format, formatProvider));
         }
+        
+        public static PrintingConfig<TOwner> Truncated<TOwner>(
+            this PrintingConfig<TOwner>.PrintingContext<string> context,
+            int length)
+        {
+            return context.As(s => s.Length <= length ? s : s.Substring(0, length) + "...");
+        }
     }
 }
