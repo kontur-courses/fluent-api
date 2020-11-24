@@ -31,11 +31,9 @@ namespace ObjectPrinting
         {
             if (!(selector?.Body is MemberExpression memberExpression))
                 throw new ArgumentException($"{nameof(selector)} must be {nameof(MemberExpression)}, but was " +
-                                            selector?.Body.GetType().Name ?? "<null>");
+                    selector?.Body.GetType().Name ?? "<null>");
 
-            var memberInfo = memberExpression.Member;
-            //TODO extract full path from expression (collect PropertyExpression until TypedParameterExpression)
-            var target = memberInfo switch
+            var target = memberExpression.Member switch
             {
                 PropertyInfo propertyInfo => new SerializationTarget(propertyInfo),
                 FieldInfo fieldInfo => new SerializationTarget(fieldInfo),
@@ -43,8 +41,46 @@ namespace ObjectPrinting
             };
 
             var selectedProperty = new SelectedProperty<TOwner, TProperty>(target, this);
-            configurationRoot.AddChild(Node.Terminal<IPropertyConfigurator>(target.MemberName, selectedProperty));
+            var nodePath = GetPathFromExpression(memberExpression);
+            var currentNode = GetOrCreateNodeByPath(nodePath);
+            currentNode.AddChild(Node.Terminal<IPropertyConfigurator>(target.MemberName, selectedProperty));
             return selectedProperty;
+        }
+
+        private IChildedNode<IPropertyConfigurator> GetOrCreateNodeByPath(IEnumerable<string> path)
+        {
+            IChildedNode<IPropertyConfigurator> currentNode = configurationRoot;
+            foreach (var part in path)
+            {
+                if (!currentNode.TryGetChild(part, out var child))
+                {
+                    child = Node.Childed<IPropertyConfigurator>(part);
+                    currentNode.AddChild(child);
+                }
+
+                currentNode = (IChildedNode<IPropertyConfigurator>) child;
+            }
+
+            return currentNode;
+        }
+
+        private static List<string> GetPathFromExpression(MemberExpression memberExpression)
+        {
+            var path = new List<string>();
+            var innerExpression = memberExpression.Expression;
+            while (innerExpression is MemberExpression expr)
+            {
+                if (expr.Member is FieldInfo || expr.Member is PropertyInfo)
+                {
+                    path.Add(expr.Member.Name);
+                    innerExpression = expr.Expression;
+                }
+                else break;
+            }
+
+            if (!(innerExpression is ParameterExpression))
+                throw new ArgumentException($"Selector contain wrong expression inside: {innerExpression.Type}");
+            return path;
         }
 
         public PrintingConfig<TOwner> Build() =>

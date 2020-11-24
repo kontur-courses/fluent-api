@@ -1,4 +1,4 @@
-﻿namespace Tests
+﻿namespace Tests.TestingModels
 {
     public class CascadeTestingClass
     {

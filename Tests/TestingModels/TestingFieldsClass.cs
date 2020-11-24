@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tests
+namespace Tests.TestingModels
 {
     public class TestingFieldsClass
     {

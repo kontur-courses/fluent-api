@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Tests
+namespace Tests.TestingModels
 {
     public class TestingPropertiesClass
     {
         public Guid Guid { get; set; }
         public string String { get; set; }
         public double Double { get; set; }
-        public int Int32 { get; set; }
+        public int Int { get; set; }
     }
 }

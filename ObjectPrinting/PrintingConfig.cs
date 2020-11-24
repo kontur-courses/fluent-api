@@ -23,10 +23,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return SerializeObject(obj, new string[0], 0);
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
+        private string SerializeObject(object? obj, string[] path, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
@@ -40,17 +40,17 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
 
             var serializedProperties = SerializationTarget.EnumerateFrom(type)
-                .Select(t => SerializeProperty(t.MemberName, t.GetValue(obj), t.MemberType, nestingLevel + 1));
+                .Select(t => SerializeProperty(t.MemberName, path, t.GetValue(obj), t.MemberType, nestingLevel + 1));
 
             sb.AppendJoin(string.Empty, serializedProperties);
             return sb.ToString();
         }
 
-        private string SerializeProperty(string propertyName, object value, Type type, int nestingLevel)
+        private string SerializeProperty(string propertyName, string[] path, object value, Type type, int nestingLevel)
         {
             var indentation = new string('\t', nestingLevel + 1);
-            var serialized = GetConfiguratorOrDefault(propertyName, type)?.AppliedSerializer.Serialize(value)
-                             ?? PrintToString(value, nestingLevel + 1);
+            var serialized = GetConfiguratorOrDefault(propertyName, path, type)?.AppliedSerializer.Serialize(value)
+                             ?? SerializeObject(value, path.Append(propertyName).ToArray(), nestingLevel + 1);
 
             return string.IsNullOrEmpty(serialized)
                 ? string.Empty
@@ -60,15 +60,14 @@ namespace ObjectPrinting
                       : serialized + Environment.NewLine);
         }
 
-        private IPropertyConfigurator? GetConfiguratorOrDefault(string propertyName, Type type)
+        private IPropertyConfigurator? GetConfiguratorOrDefault(string propertyName, string[] path, Type type)
         {
             if (groupAppliedConfigurators.TryGetValue(type, out var configurator))
                 return configurator;
 
-            if (configurationRoot.TryGetChild(propertyName, out var child) &&
-                child is TerminalNode<IPropertyConfigurator> terminal)
+            var matchedNode = configurationRoot.GetByPathOrDefault(path.Append(propertyName).ToArray());
+            if (matchedNode is TerminalNode<IPropertyConfigurator> terminal)
                 return terminal.Payload;
-
             return default;
         }
     }

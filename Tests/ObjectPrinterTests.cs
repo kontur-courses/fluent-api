@@ -4,9 +4,11 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
+using Tests.TestingModels;
 
 namespace Tests
 {
+    [TestFixture]
     public class ObjectPrinterTests
     {
         private string result;
@@ -16,7 +18,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"
@@ -30,7 +32,7 @@ namespace Tests
                     $"{nameof(TestingPropertiesClass.Guid)} = {subject.Guid}",
                     $"{nameof(TestingPropertiesClass.String)} = {subject.String}",
                     $"{nameof(TestingPropertiesClass.Double)} = {subject.Double}",
-                    $"{nameof(TestingPropertiesClass.Int32)} = {subject.Int32}");
+                    $"{nameof(TestingPropertiesClass.Int)} = {subject.Int}");
         }
 
         [Test]
@@ -60,7 +62,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = int.MaxValue,
+                Int = int.MaxValue,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"
@@ -72,7 +74,7 @@ namespace Tests
                 .PrintToString(subject);
 
             result.Should()
-                .NotContainAny($"{nameof(TestingPropertiesClass.Int32)}", $"{subject.Int32}");
+                .NotContainAny($"{nameof(TestingPropertiesClass.Int)}", $"{subject.Int}");
         }
 
         [Test]
@@ -80,7 +82,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"
@@ -100,7 +102,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"
@@ -121,7 +123,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"
@@ -145,7 +147,7 @@ namespace Tests
             const int maxLength = 10;
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = new string('.', maxLength) + "!"
@@ -168,7 +170,7 @@ namespace Tests
             const int maxLength = 10;
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = new string('.', maxLength - 1)
@@ -188,7 +190,7 @@ namespace Tests
         {
             var subject = new TestingPropertiesClass
             {
-                Int32 = 18,
+                Int = 18,
                 Double = 123.456,
                 Guid = Guid.NewGuid(),
                 String = "Abc xyz"

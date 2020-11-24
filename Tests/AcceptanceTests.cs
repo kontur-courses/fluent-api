@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
+using Tests.TestingModels;
 
 namespace Tests
 {
