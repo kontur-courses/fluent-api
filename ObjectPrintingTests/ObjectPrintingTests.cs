@@ -58,7 +58,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PropertyOrFieldExcluding_Exists()
         {
-            var printer = ObjectPrinter.For<SingleProperty>();
+            var printer = ObjectPrinter.For<Household>();
 
             var _ = printer.Excluding(p => p.Property);
         }
@@ -125,11 +125,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_WithCultureInfo()
         {
-            var objectToPrint = new WithDouble() {Double = 1.1};
-            var printer = ObjectPrinter.For<WithDouble>()
+            var objectToPrint = new Number() {Double = 1.1};
+            var printer = ObjectPrinter.For<Number>()
                 .Printing<double>()
                 .Using(CultureInfo.GetCultureInfo("sv-SE"));
-            var expected = GetSystemIndependent("WithDouble\n\tDouble = 1,1\n");
+            var expected = GetSystemIndependent("Number\n\tDouble = 1,1\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
@@ -139,11 +139,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_FormatProperty()
         {
-            var objectToPrint = new SingleProperty {Property = null};
-            var printer = ObjectPrinter.For<SingleProperty>()
+            var objectToPrint = new Household {Property = null};
+            var printer = ObjectPrinter.For<Household>()
                 .Printing(p => p.Property)
                 .Using(p => "custom");
-            var expected = GetSystemIndependent("SingleProperty\n\tProperty = custom\n");
+            var expected = GetSystemIndependent("Household\n\tProperty = custom\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
@@ -153,11 +153,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_WithStringShortening()
         {
-            var objectToPrint = new WithString {String = "1234"};
-            var printer = ObjectPrinter.For<WithString>()
+            var objectToPrint = new Text {String = "1234"};
+            var printer = ObjectPrinter.For<Text>()
                 .Printing<string>()
                 .TrimmedToLength(2);
-            var expected = GetSystemIndependent("WithString\n\tString = 12\n");
+            var expected = GetSystemIndependent("Text\n\tString = 12\n");
             
             var actual = printer.PrintToString(objectToPrint);
 

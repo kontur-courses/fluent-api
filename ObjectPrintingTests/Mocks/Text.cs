@@ -1,6 +1,6 @@
 namespace ObjectPrintingTests.Mocks
 {
-    public class WithString
+    public class Text
     {
         public string String;
     }

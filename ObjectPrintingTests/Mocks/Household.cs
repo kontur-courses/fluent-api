@@ -1,6 +1,6 @@
 namespace ObjectPrintingTests.Mocks
 {
-    public class SingleProperty
+    public class Household
     {
         public object Property;
     }
