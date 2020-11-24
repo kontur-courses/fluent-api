@@ -5,11 +5,6 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
-        {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
-        }
-
         public static PrintingConfig<TOwner> SetMaxLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
@@ -24,6 +19,7 @@ namespace ObjectPrinting
             where TPropType : IFormattable
         {
             var printingConfig = ((IPropertyPrintingConfig<TOwner, TPropType>) propConfig).ParentConfig;
+
             printingConfig.SetCulture<TPropType>(culture);
             return printingConfig;
         }

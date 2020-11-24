@@ -6,34 +6,30 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class Serialization
+    public class Serializer
     {
-        private readonly SerializationConfig serializationConfig;
-        public Serialization(SerializationConfig serializationConfig)
-        {
-            this.serializationConfig = serializationConfig;
-        }
+        private readonly SerializationConfig config;
 
-        public string Serialize(object obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        public Serializer(SerializationConfig serializationConfig) =>
+            this.config = serializationConfig;
+
+        public string Serialize(object obj) =>
+            PrintToString(obj, 0);
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (nestingLevel > 100)
+            if (nestingLevel > config.MaxNestingLevel)
                 return "";
 
             if (obj == null)
                 return "null";
 
+            if (config.TypePrintingRules.TryGetValue(obj.GetType(), out var typePrintingRule))
+                return typePrintingRule(obj);
 
-            if (serializationConfig.TypePrintingRules.TryGetValue(obj.GetType(), out var typePrintingRule))
-                return typePrintingRule(obj).ToString();
-
-            if (serializationConfig.FinalTypes.Contains(obj.GetType()))
+            if (config.FinalTypes.Contains(obj.GetType()))
             {
-                if (serializationConfig.TypeCultures.TryGetValue(obj.GetType(), out var cultureInfo))
+                if (config.TypeCultures.TryGetValue(obj.GetType(), out var cultureInfo))
                     return ((dynamic) obj).ToString(cultureInfo);
                 return obj.ToString();
             }
@@ -49,29 +45,29 @@ namespace ObjectPrinting
         private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             sb.AppendLine("{");
             foreach (var key in dictionary.Keys)
             {
-                sb.Append(identation + "{" + PrintToString(key, nestingLevel + 1) + Environment.NewLine
-                          + identation + ":" + PrintToString(dictionary[key], nestingLevel + 1) + "},"
+                sb.Append(indentation + "{" + PrintToString(key, nestingLevel + 1) + Environment.NewLine
+                          + indentation + ":" + PrintToString(dictionary[key], nestingLevel + 1) + "},"
                           + Environment.NewLine);
             }
 
-            sb.Append(identation + "}");
+            sb.Append(indentation + "}");
             return sb.ToString();
         }
 
         private string SerializeIEnumerable(IEnumerable obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("[");
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine("[");
             foreach (var key in obj)
-                stringBuilder.AppendLine(identation + PrintToString(key, nestingLevel + 1) + ",");
+                sb.AppendLine(indentation + PrintToString(key, nestingLevel + 1) + ",");
 
-            stringBuilder.Append(identation + "]");
-            var serializedIEnumerable = stringBuilder.ToString();
+            sb.Append(indentation + "]");
+            var serializedIEnumerable = sb.ToString();
 
             var lastIndexOf = serializedIEnumerable.LastIndexOf(",", StringComparison.Ordinal);
             if (lastIndexOf != -1)
@@ -82,32 +78,35 @@ namespace ObjectPrinting
         private bool IsExcludedMember(MemberInfo memberInfo)
         {
             if ((memberInfo.MemberType & MemberTypes.Field) != 0)
-                return serializationConfig.ExcludedTypes.Contains((memberInfo as FieldInfo)?.FieldType) ||
-                       serializationConfig.ExcludedMembers.Contains(memberInfo);
+                return config.ExcludedTypes.Contains((memberInfo as FieldInfo)?.FieldType) ||
+                       config.ExcludedMembers.Contains(memberInfo);
 
             if ((memberInfo.MemberType & MemberTypes.Property) != 0)
-                return serializationConfig.ExcludedTypes.Contains((memberInfo as PropertyInfo)?.PropertyType) ||
-                       serializationConfig.ExcludedMembers.Contains(memberInfo);
+                return config.ExcludedTypes.Contains((memberInfo as PropertyInfo)?.PropertyType) ||
+                       config.ExcludedMembers.Contains(memberInfo);
 
             return false;
         }
 
-
         private string SerializeMembers(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.Append(type.Name);
             foreach (var memberInfo in type.GetMembers()
-                .Where(IsFieldOrProperty).Where(x => !IsExcludedMember(x)))
+                                           .Where(IsFieldOrProperty).Where(x => !IsExcludedMember(x)))
             {
                 var value = GetValue(obj, memberInfo);
 
                 if (value != null && value.Equals(obj))
+                {
+                    sb.Append(Environment.NewLine + indentation + memberInfo.Name + " = " +
+                              obj.GetType().Name);
                     continue;
+                }
 
-                sb.Append(Environment.NewLine + identation + memberInfo.Name + " = " +
+                sb.Append(Environment.NewLine + indentation + memberInfo.Name + " = " +
                           SerializeValue(nestingLevel, memberInfo, value));
             }
 
@@ -116,25 +115,24 @@ namespace ObjectPrinting
 
         private string SerializeValue(int nestingLevel, MemberInfo memberInfo, object value)
         {
-            var sb = "";
+            var valueString = "";
 
-            if (serializationConfig.MemberPrintingRules.TryGetValue(memberInfo, out var rule))
-                sb = rule(value);
-            else if (serializationConfig.MemberCultures.TryGetValue(memberInfo, out var cultureInfo))
-                sb = ((dynamic) value).ToString(cultureInfo);
+            if (config.MemberPrintingRules.TryGetValue(memberInfo, out var rule))
+                valueString = rule(value);
+            else if (config.MemberCultures.TryGetValue(memberInfo, out var cultureInfo))
+                valueString = ((dynamic) value).ToString(cultureInfo);
             else
-                sb = (PrintToString(value, nestingLevel + 1));
+                valueString = (PrintToString(value, nestingLevel + 1));
 
-            sb = serializationConfig.GlobalTrimToLength(sb);
+            valueString = config.GlobalTrimToLength(valueString);
 
-            if (serializationConfig.MemberTrimToLength.TryGetValue(memberInfo, out var trimRule))
-                return trimRule(sb);
-            return sb;
+            if (config.MemberTrimToLength.TryGetValue(memberInfo, out var trimRule))
+                return trimRule(valueString);
+            return valueString;
         }
 
         private static bool IsFieldOrProperty(MemberInfo memberInfo) =>
             memberInfo.MemberType == MemberTypes.Field || memberInfo.MemberType == MemberTypes.Property;
-
 
         private static object GetValue(object obj, MemberInfo memberInfo)
         {

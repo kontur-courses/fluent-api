@@ -11,13 +11,14 @@ namespace ObjectPrinting.Tests
         
         public double Height { get; set; }
         
-        public int Age { get; set; }
+        public int AgeProperty { get; set; }
         
         public Person[] Relatives { get; set; }
         
         public Dictionary<Person, Person> Persons { get; set; }
         
-        public int Field = 1;
+        public readonly int AgeField = 1;
+        public int HeightField = 1;
 
         public string FamilyName = "abc";
     }
