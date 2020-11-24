@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Collections;
 
 namespace ObjectPrinting.Solved
@@ -33,10 +32,8 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel, string fullName = "", bool fromCollection = false)
         {
-            var type = obj?.GetType();
-            objects.Add(obj);
+            var result = TryReturnFinalRecursion(obj, out var type, fullName, nestingLevel);
 
-            var result = TryReturnFinalRecursion(obj, type, fullName, nestingLevel);
             if (result != null)
                 return result + (!fromCollection ? Environment.NewLine : "");
 
@@ -63,26 +60,27 @@ namespace ObjectPrinting.Solved
             bool IsReferenceCircle(object obj) => objects.Any(o => ReferenceEquals(o, obj));
         }
 
-        private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel)
+        private string TryReturnFinalRecursion(object obj, out Type type, string fullName, int nestingLevel)
         {
+            type = null;
+
             if (obj == null)
                 return "null";
+
+            type = obj.GetType();
 
             if (serializator.TrySerializate(obj, type, fullName, out var result))
                 return result;
 
             if (FinalTypes.IsFinalType(type))
-                return GetStringFinalType();
+                return obj.ToString();
+
+            objects.Add(obj);
 
             if (obj is ICollection collection)
                 return PrintToStringCollection(collection, nestingLevel);
 
             return null;
-
-            string GetStringFinalType()
-            {
-                return obj.ToString();
-            }
         }
 
         private string PrintToStringCollection(ICollection collection, int nestingLevel)
