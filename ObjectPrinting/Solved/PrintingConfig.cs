@@ -10,14 +10,8 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly HashSet<Type> finalTypes = new HashSet<Type>
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
         private readonly Excluder excluder = new Excluder();
         private readonly HashSet<object> objects = new HashSet<object>();
-
         internal readonly AlternativeSerializator serializator = new AlternativeSerializator();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -66,14 +60,12 @@ namespace ObjectPrinting.Solved
                 string GetFullName() => fullName == null ? null : fullName + '.' + propertyInfo.Name;
 
                 bool CanConsiderProperty() => !excluder.IsExclude(propertyInfo.PropertyType, GetFullName()) &&
-                    (TypeIsFinal(propertyInfo.PropertyType) || IsReferenceCircle(propertyInfo.GetValue(obj)));
+                    (FinalTypes.IsFinalType(propertyInfo.PropertyType) || IsReferenceCircle(propertyInfo.GetValue(obj)));
             }
             return sb.ToString();
 
             bool IsReferenceCircle(object obj) => !objects.Any(o => ReferenceEquals(o, obj));
         }
-
-        private bool TypeIsFinal(Type type) => type.IsPrimitive || finalTypes.Contains(type);
 
         private string TryReturnFinalRecursion(object obj, Type type, string fullName, int nestingLevel)
         {
@@ -83,7 +75,7 @@ namespace ObjectPrinting.Solved
             if (serializator.TrySerializate(obj, type, fullName, out var result))
                 return result;
 
-            if (TypeIsFinal(type))
+            if (FinalTypes.IsFinalType(type))
                 return GetStringFinalType();
 
             if (obj is ICollection)
