@@ -17,7 +17,7 @@ namespace ObjectPrinting
             {
                 MemberTypes.Field => ((FieldInfo) memberInfo).GetValue(obj),
                 MemberTypes.Property => ((PropertyInfo) memberInfo).GetValue(obj),
-                _ => throw new ArgumentException()
+                _ => throw new InvalidOperationException()
             };
         }
 
@@ -27,7 +27,7 @@ namespace ObjectPrinting
             {
                 MemberTypes.Field => ((FieldInfo) memberInfo).FieldType,
                 MemberTypes.Property => ((PropertyInfo) memberInfo).PropertyType,
-                _ => throw new ArgumentException()
+                _ => throw new InvalidOperationException()
             };
         }
     }
