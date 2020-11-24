@@ -32,7 +32,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
-            config.numbersCulture[selectedProperty] = cultureInfo;
+            var func = new Func<TProperty, string>(x => string.Format(cultureInfo, x.ToString()));
+
+            config.fieldSerializers[selectedProperty] = func;
             return parent;
         }
     }

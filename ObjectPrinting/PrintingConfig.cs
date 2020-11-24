@@ -52,49 +52,44 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var indentation = new string('\t', nestingLevel + 1);
+            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (config.excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-                if (config.exludedFields.Contains(propertyInfo))
+                if (config.IsExcluded(propertyInfo))
                     continue;
 
-                var current = propertyInfo.GetValue(obj).ToString();
-                if (config.numbersCulture.ContainsKey(propertyInfo))
-                    current = string.Format(config.numbersCulture[propertyInfo], current);
+                sb.Append(identation + propertyInfo.Name + " = ");
 
-                if (config.typesSerializer.ContainsKey(propertyInfo.PropertyType))
-                {
-                    var valueToString = config.typesSerializer[propertyInfo.PropertyType]
-                        .DynamicInvoke(current)
-                        ?.ToString();
-                    sb.Append(indentation + propertyInfo.Name + " = " + valueToString);
-                }
-
-                if (config.fieldSerializers.ContainsKey(propertyInfo))
-                {
-                    var textToAdd = config.fieldSerializers[propertyInfo]
-                        .DynamicInvoke(current)
-                        ?.ToString();
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              textToAdd);
-                }
-                else
-                {
-                    sb.Append(indentation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
-                }
+                var lineToAdd = SerializeProperty(propertyInfo, obj) ?? (SerializeType(propertyInfo, obj)
+                                                                         ?? DefaultSerialization(propertyInfo, obj));
+                sb.Append(lineToAdd);
             }
 
             return sb.ToString();
+        }
+
+        private string SerializeProperty(PropertyInfo propertyInfo, object obj)
+        {
+            var current = propertyInfo.GetValue(obj);
+            return config.IsSpecialSerialize(propertyInfo, current, out var result) ? result : null;
+        }
+
+        private string SerializeType(PropertyInfo propertyInfo, object obj)
+        {
+            var current = propertyInfo.GetValue(obj);
+            return config.IsSpecialSerialize(propertyInfo.PropertyType, current, out var result) ? result : null;
+        }
+
+        private static string DefaultSerialization(PropertyInfo propertyInfo, object obj)
+        {
+            return propertyInfo.GetValue(obj)?.ToString();
         }
     }
 }

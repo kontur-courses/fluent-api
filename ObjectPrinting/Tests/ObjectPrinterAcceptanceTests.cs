@@ -61,8 +61,7 @@ namespace Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Height).SetCulture(new CultureInfo("ru-RU", false));
-            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
-            firstPerson.Height = 44.5;
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 44.5};
 
             var firstPersonText = printer.PrintToString(firstPerson);
 
@@ -102,7 +101,7 @@ namespace Tests
 
             var firstPersonText = printer.PrintToString(firstPerson);
 
-            firstPersonText.Should().Contain("Alex");
+            firstPersonText.Should().NotContain("ander");
         }
     }
 }
