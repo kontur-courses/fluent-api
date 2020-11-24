@@ -67,7 +67,7 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(this)
             {
                 alternateTypeSerializers =
-                    alternateTypeSerializers.Add(typeof(TPropType), x => serializer((TPropType) x))
+                    alternateTypeSerializers.AddOrSet(typeof(TPropType), x => serializer((TPropType) x))
             };
         }
 
@@ -78,7 +78,7 @@ namespace ObjectPrinting
             var selectedMember = ((MemberExpression) memberSelector.Body).Member;
             return new PrintingConfig<TOwner>(this)
             {
-                memberLengths = memberLengths.Add(selectedMember, maxLength)
+                memberLengths = memberLengths.AddOrSet(selectedMember, maxLength)
             };
         }
 
@@ -90,7 +90,7 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(this)
             {
                 alternateMemberSerializers =
-                    alternateMemberSerializers.Add(selectedMember, x => serializer((TPropType) x))
+                    alternateMemberSerializers.AddOrSet(selectedMember, x => serializer((TPropType) x))
             };
         }
 
@@ -100,7 +100,7 @@ namespace ObjectPrinting
             return new PrintingConfig<TOwner>(this)
             {
                 alternateTypeSerializers =
-                    alternateTypeSerializers.Add(
+                    alternateTypeSerializers.AddOrSet(
                         typeof(TPropType),
                         x => ((IFormattable)x).ToString(null, cultureInfo))
             };
