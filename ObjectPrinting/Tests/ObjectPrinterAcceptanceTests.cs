@@ -124,15 +124,5 @@ namespace ObjectPrinting.Tests
             var serializedPerson = printer.PrintToString(person);
             serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 785\r\n");
         }
-
-        [Test]
-        public void ObjectPrinter_ShouldHandleRecurtionByIds()
-        {
-            var printer = ObjectPrinter.For<A>();
-            var a = new A { Id = Guid.NewGuid()};
-            a.bField = new B { Id = Guid.NewGuid(), aField = a};
-            var serializedClass = printer.PrintToString(a);
-            serializedClass.Should().Be($"A\r\n\tId = {a.Id}\r\n\tbField = B\r\n\t\tId = {a.bField.Id}\r\n\t\taField = A\r\n\t\t\tId = {a.Id}\r\n");
-        }
     }
 }

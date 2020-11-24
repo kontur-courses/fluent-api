@@ -11,18 +11,18 @@ namespace ObjectPrinting.Solved
         private readonly MemberInfo member;
         private readonly Type type;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PrintingParameters parameters, MemberInfo member)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member)
         {
             this.printingConfig = printingConfig;
-            this.parameters = parameters;
             this.member = member;
+            parameters = printingConfig.Parameters;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PrintingParameters parameters, Type type)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Type type)
         {
             this.printingConfig = printingConfig;
-            this.parameters = parameters;
             this.type = type;
+            parameters = printingConfig.Parameters;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)

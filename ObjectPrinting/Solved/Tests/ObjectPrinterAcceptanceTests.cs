@@ -45,7 +45,7 @@ namespace ObjectPrinting.Solved.Tests
             var printer = ObjectPrinter.For<Person>();
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding<int>();
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n");
         }
 
 
@@ -66,7 +66,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing<string>().Using(str => "abc");
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = abc\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = abc\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
         }
 
         [Test]
@@ -76,12 +76,12 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1.83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphanasiy\r\n\tHeight = 1.83\r\n\tAge = 321\r\n");
 
             printer = printer
                 .Printing<double>().Using(CultureInfo.GetCultureInfo(3));
             serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing<string>().TrimmedToLength(5);
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphan\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphan\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
         }
 
         [Test]
@@ -101,7 +101,7 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Name);
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tHeight = 1,83\r\n\tAge = 321\r\n");
         }
 
         [Test]
@@ -119,17 +119,26 @@ namespace ObjectPrinting.Solved.Tests
                 .Printing(p => p.Age).Using(age => "785");
             var person = new Person { Name = "Aphanasiy", Age = 321, Height = 1.83 };
             var serializedPerson = printer.PrintToString(person);
-            serializedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 785\r\n");
+            serializedPerson.Should().Be("Person Id = 0\r\n\tName = Aphanasiy\r\n\tHeight = 1,83\r\n\tAge = 785\r\n");
         }
 
         [Test]
         public void ObjectPrinter_ShouldHandleRecurtionByIds()
         {
             var printer = ObjectPrinter.For<A>();
-            var a = new A { Id = Guid.NewGuid() };
-            a.bField = new B { Id = Guid.NewGuid(), aField = a };
+            var a = new A();
+            a.bField = new B {aField = a};
             var serializedClass = printer.PrintToString(a);
-            serializedClass.Should().Be($"A\r\n\tId = {a.Id}\r\n\tbField = B\r\n\t\tId = {a.bField.Id}\r\n\t\taField = A\r\n\t\t\tId = {a.Id}\r\n");
+            serializedClass.Should().Be($"A Id = 0\r\n\tbField = B Id = 1\r\n\t\taField = A Id = 0\r\n");
         }
+/*
+        [Test]
+        public void ObjectPrinter_ShouldSerializeArraysByElements()
+        {
+            var printer = ObjectPrinter.For<int[]>();
+            var a = new int[]{1, 2, 3, 4};
+            var serializedClass = printer.PrintToString(a);
+            serializedClass.Should().Be("int[] Id = 0");
+        }*/
     }
 }
