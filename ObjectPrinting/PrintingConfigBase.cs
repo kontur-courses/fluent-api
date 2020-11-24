@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -98,16 +99,28 @@ namespace ObjectPrinting
 
         protected string PrintToString(object obj, int nestingLevel)
         {
-            if (nestingLevel > 5) return "...";
+            var maxNexting = 5;
+            if (nestingLevel > maxNexting) return "...";
             if (obj == null) return "null";
 
             if (PrintFunc != null) return PrintFunc(obj);
+            var objType = obj.GetType();
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType())) return obj.ToString();
+            if (finalTypes.Contains(objType)) return obj.ToString();
+            if (objType.IsGenericType)
+            {
+                var baseType = objType.GetGenericTypeDefinition();
+                if (baseType == typeof(KeyValuePair<,>))
+                {
+                    var key = objType.GetProperty("Key").GetValue(obj);
+                    var value = objType.GetProperty("Value").GetValue(obj);
+                    return $"{PrintToString(key, nestingLevel)}: {PrintToString(value, nestingLevel)}";
+                }
+            }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -115,6 +128,8 @@ namespace ObjectPrinting
             sb.Append(type.Name);
             if (obj is IEnumerable enumerable)
             {
+                if (nestingLevel >= maxNexting)
+                    return sb.Append(" [...]").ToString();
                 sb.AppendLine(" [");
                 foreach (var o in enumerable)
                     sb.Append(identation).AppendLine(PrintChild(obj, o, nestingLevel));
@@ -130,6 +145,7 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+
 
         private string PrintChild(object obj, object child, int nestingLevel)
         {
