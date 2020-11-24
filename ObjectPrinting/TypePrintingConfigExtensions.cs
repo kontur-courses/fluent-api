@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace ObjectPrinting
 {
     public static class TypePrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> propConfig, int maxLength)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> propConfig,
+            int maxLength)
         {
             return propConfig.Using(str => str.Substring(Math.Min(str.Length, maxLength)));
         }

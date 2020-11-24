@@ -7,13 +7,13 @@ namespace ObjectPrinting
 {
     public class ObjectPrinter<TOwner>
     {
+        public const int MaxSerializationDepth = 10;
         private readonly PrintingConfig<TOwner> config;
         private Dictionary<Type, List<object>> objectsCache;
-        public const int MaxSerializationDepth = 10;
 
         public ObjectPrinter()
         {
-            this.config = new PrintingConfig<TOwner>();
+            config = new PrintingConfig<TOwner>();
         }
 
         public ObjectPrinter(PrintingConfig<TOwner> config)
@@ -29,7 +29,6 @@ namespace ObjectPrinting
 
         private string PrintToStringFinalType(object obj)
         {
-
             return obj + Environment.NewLine;
         }
 
@@ -69,7 +68,7 @@ namespace ObjectPrinting
 
             if (obj is ICollection)
             {
-                sb.Append(PrintToStringCollection((ICollection)obj, nestingLevel));
+                sb.Append(PrintToStringCollection((ICollection) obj, nestingLevel));
                 return sb.ToString();
             }
 
@@ -85,6 +84,7 @@ namespace ObjectPrinting
                               " = " +
                               PrintToString(propInfo.GetValue(obj), nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }

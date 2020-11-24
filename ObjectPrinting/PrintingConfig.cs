@@ -1,12 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -63,7 +60,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using<TPropType>(
             Func<TPropType, string> print)
         {
-            customTypePrinters[typeof(TPropType)] = obj => print((TPropType)obj);
+            customTypePrinters[typeof(TPropType)] = obj => print((TPropType) obj);
             return this;
         }
 
@@ -71,7 +68,7 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector,
             Func<TPropType, string> print)
         {
-            customPropertyPrinters[memberSelector.GetPropertyInfo()] = obj => print((TPropType)obj);
+            customPropertyPrinters[memberSelector.GetPropertyInfo()] = obj => print((TPropType) obj);
             return this;
         }
 
@@ -87,7 +84,7 @@ namespace ObjectPrinting
 
         public bool TryGetCustomPrinter(PropertyInfo propInfo, out Func<object, string> result)
         {
-            return customPropertyPrinters.TryGetValue(propInfo, out result) || 
+            return customPropertyPrinters.TryGetValue(propInfo, out result) ||
                    customTypePrinters.TryGetValue(propInfo.PropertyType, out result);
         }
     }

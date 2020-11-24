@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Numerics;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -17,7 +15,7 @@ namespace ObjectPrintingTests
         [SetUp]
         public void SetUp()
         {
-            person = new Person { Name = "Alex", Age = 19, Height = 195.5 };
+            person = new Person {Name = "Alex", Age = 19, Height = 195.5};
             personPrintingConfig = PrintingConfig<Person>.For<Person>();
         }
 
@@ -27,7 +25,7 @@ namespace ObjectPrintingTests
         [Test]
         public void Demo()
         {
-            person.Parent = new Person { Name = "Anna" };
+            person.Parent = new Person {Name = "Anna"};
             personPrintingConfig = personPrintingConfig
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
@@ -53,26 +51,14 @@ namespace ObjectPrintingTests
             Console.WriteLine(s2);
             Console.WriteLine(s3);
 
-            Console.WriteLine(new object[] { person, 3, 4, null }.PrintToString());
+            Console.WriteLine(new object[] {person, 3, 4, null}.PrintToString());
         }
 
         [Test]
         public void ObjectPrinter_ShouldReturnCorrectString_WithoutConfiguration()
         {
-            person.PrintToString().Should().ContainAll(new string[]
-            {
-                "Person 1",
-                "Id = 00000000-0000-0000-0000-000000000000",
-                "Parent = null",
-                "Name = Alex",
-                "Height = 195,5",
-                "Age = 19"
-            });
-            Console.WriteLine(new Point(1, 4));
-            Console.WriteLine(new Rectangle(1, 4, 5, 7));
-            Console.WriteLine(new Size(1, 4));
-            Console.WriteLine(typeof(string).IsPrimitive);
-
+            person.PrintToString().Should().ContainAll("Person 1", "Id = 00000000-0000-0000-0000-000000000000",
+                "Parent = null", "Name = Alex", "Height = 195,5", "Age = 19");
         }
 
         [Test]
@@ -115,7 +101,7 @@ namespace ObjectPrintingTests
                 .Contain(person.Height.ToString());
 
             person.PrintToString(config => config.Printing<double>()
-                .Using(CultureInfo.InvariantCulture))
+                    .Using(CultureInfo.InvariantCulture))
                 .Should()
                 .Contain(person.Height.ToString(CultureInfo.InvariantCulture));
         }
@@ -150,15 +136,8 @@ namespace ObjectPrintingTests
             person.Parent = person;
             Action action = () => person.PrintToString();
             action.Should().NotThrow<StackOverflowException>();
-            person.PrintToString().Should().ContainAll(new string[]
-            {
-                "Person 1",
-                "Id = 00000000-0000-0000-0000-000000000000",
-                "Name = Alex",
-                "Height = 195,5",
-                "Age = 19",
-                "Parent = Person 1"
-            });
+            person.PrintToString().Should().ContainAll("Person 1", "Id = 00000000-0000-0000-0000-000000000000",
+                "Name = Alex", "Height = 195,5", "Age = 19", "Parent = Person 1");
         }
 
         [Test]
@@ -177,11 +156,10 @@ namespace ObjectPrintingTests
                 .Contain($"{nameof(Person)} {ObjectPrinter<Person>.MaxSerializationDepth}")
                 .And
                 .NotContain($"{nameof(Person)} {ObjectPrinter<Person>.MaxSerializationDepth + 1}");
-            Console.WriteLine(firstPerson.PrintToString());
-
         }
 
-        [Test, TestCaseSource(nameof(GetCollections))]
+        [Test]
+        [TestCaseSource(nameof(GetCollections))]
         public void ObjectPrinter_ShouldPrintCollection(ICollection collection)
         {
             var collectionStr = collection.PrintToString();
@@ -198,9 +176,9 @@ namespace ObjectPrintingTests
 
         private static IEnumerable<TestCaseData> GetCollections()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 195.5 };
-            yield return new TestCaseData(new int[] { 3, 4 });
-            yield return new TestCaseData(new List<object> { person, 3, 4, null });
+            var person = new Person {Name = "Alex", Age = 19, Height = 195.5};
+            yield return new TestCaseData(new[] {3, 4});
+            yield return new TestCaseData(new List<object> {person, 3, 4, null});
             yield return new TestCaseData(new Dictionary<object, object>
             {
                 [person] = null,
