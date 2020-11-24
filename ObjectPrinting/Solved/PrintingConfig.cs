@@ -18,14 +18,8 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
         private readonly HashSet<string> excludingFields = new HashSet<string>();
         private readonly HashSet<object> objects = new HashSet<object>();
-        private readonly Dictionary<Type, Delegate> alternativeSerialization = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<string, Delegate> alternativeSerializationField = new Dictionary<string, Delegate>();
 
-        internal void AddSerialization<TPropType>(Func<TPropType, string> func) => 
-            alternativeSerialization[typeof(TPropType)] = func;
-
-        internal void AddSerialization<TPropType>(string fullName, Func<TPropType, string> func) => 
-            alternativeSerializationField[fullName] = func;
+        internal readonly AlternativeSerializator serializator = new AlternativeSerializator();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -96,9 +90,8 @@ namespace ObjectPrinting.Solved
             if (obj == null)
                 return "null";
 
-            if ((fullName != null && alternativeSerializationField.TryGetValue(fullName, out var func)) ||
-                alternativeSerialization.TryGetValue(type, out func))
-                return func.DynamicInvoke(obj).ToString();
+            if (serializator.TrySerializate(obj, type, fullName, out var result))
+                return result;
 
             if (TypeIsFinal(type))
                 return GetStringFinalType();

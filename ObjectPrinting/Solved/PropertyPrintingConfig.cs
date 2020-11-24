@@ -18,10 +18,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if(fullNameProp == null)
-                printingConfig.AddSerialization(print);
-            else
-                printingConfig.AddSerialization(fullNameProp, print);
+            printingConfig.serializator.AddSerialization(print, fullNameProp);
             return printingConfig;
         }
 
