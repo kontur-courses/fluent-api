@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using Nodes;
 using ObjectPrinting.Configuration;
 using ObjectPrinting.Serializers;
 
@@ -9,12 +10,12 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
-        private Node<IPropertySerializer>? configuration;
+        private RootNode<IPropertySerializer> configurationRoot;
 
-        public PrintingConfig(Type[] finalTypes, Node<IPropertySerializer>? configuration)
+        public PrintingConfig(Type[] finalTypes, RootNode<IPropertySerializer> configurationRoot)
         {
             this.finalTypes = finalTypes;
-            this.configuration = configuration;
+            this.configurationRoot = configurationRoot;
         }
 
         public string PrintToString(TOwner obj)
