@@ -5,15 +5,15 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public static class PropertyPrintingConfigExtensions
+    public static class TypePrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this TypePrintingConfig<TOwner, string> propConfig, int maxLength)
         {
             return propConfig.Using(str => str.Substring(Math.Min(str.Length, maxLength)));
         }
 
         public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
-            this PropertyPrintingConfig<TOwner, TPropType> propConfig,
+            this TypePrintingConfig<TOwner, TPropType> propConfig,
             CultureInfo culture) where TPropType : IFormattable
         {
             return propConfig.Using(obj => obj.ToString(null, culture));
