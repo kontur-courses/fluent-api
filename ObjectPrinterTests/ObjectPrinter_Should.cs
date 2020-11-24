@@ -173,7 +173,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void PrintToString_StringWithInformationAboutCycle_WhenNotConfiguration()
+        public void PrintToString_StringWithInformationAboutCycle_WhenContainsCycleLinks()
         {
             var chief = new Employee {Name = "Ivan"};
             var subordinate = new Employee {Name = "Victor", Chief = chief};
@@ -207,7 +207,7 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void PrintToString_SerializedCollection_WhenNotConfiguration()
+        public void PrintToString_SerializedCollection_WhenSerializeCollection()
         {
             var act = Instances.Collection.PrintToString();
 

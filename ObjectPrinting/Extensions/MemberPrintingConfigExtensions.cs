@@ -8,12 +8,12 @@ namespace ObjectPrinting.Extensions
     public static class MemberPrintingConfigExtensions
     {
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this MemberPrintingConfig<TOwner, string> propConfig, int maxLength)
+            this MemberPrintingConfig<TOwner, string> memberConfig, int maxLength)
         {
             if (maxLength <= 0)
                 throw new Exception("Parameter maxLength must be positive");
-            propConfig.Using(p => p.Length > maxLength ? p.Substring(0, maxLength) : p);
-            return ((IMemberPrintingConfig<TOwner>) propConfig).ParentConfig;
+            memberConfig.Using(p => p.Length > maxLength ? p.Substring(0, maxLength) : p);
+            return ((IMemberPrintingConfig<TOwner>) memberConfig).ParentConfig;
         }
 
         public static PrintingConfig<TOwner> SpecifyCulture<TOwner, T>(
