@@ -8,25 +8,37 @@ namespace ObjectPrinting
 {
     public class Configurator<TOwner>
     {
-        internal readonly Dictionary<PropertyInfo, Delegate> PropPrintingMethods =
+        private readonly Dictionary<PropertyInfo, Delegate> propPrintingMethods =
             new Dictionary<PropertyInfo, Delegate>();
 
-        internal readonly HashSet<PropertyInfo> PropsToExclude = new HashSet<PropertyInfo>();
-        internal readonly Dictionary<Type, CultureInfo> TypePrintingCultureInfo = new Dictionary<Type, CultureInfo>();
-        internal readonly Dictionary<Type, Delegate> TypePrintingMethods = new Dictionary<Type, Delegate>();
-        internal readonly HashSet<Type> TypesToExclude = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> propsToExclude = new HashSet<PropertyInfo>();
+        private readonly Dictionary<Type, CultureInfo> typePrintingCultureInfo = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, Delegate> typePrintingMethods = new Dictionary<Type, Delegate>();
+        private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
 
         private PropertyInfo propertyToConfig;
+
+        public Config Build()
+        {
+            return new Config
+            {
+                PropPrintingMethods = propPrintingMethods,
+                PropsToExclude = propsToExclude,
+                TypePrintingCultureInfo = typePrintingCultureInfo,
+                TypePrintingMethods = typePrintingMethods,
+                TypesToExclude = typesToExclude
+            };
+        }
 
         public Configurator<TOwner> AddPrintingMethod<TPropType>(Func<TPropType, string> method)
         {
             if (propertyToConfig == null)
             {
-                TypePrintingMethods[typeof(TPropType)] = method;
+                typePrintingMethods[typeof(TPropType)] = method;
             }
             else
             {
-                PropPrintingMethods[propertyToConfig] = method;
+                propPrintingMethods[propertyToConfig] = method;
                 propertyToConfig = null;
             }
 
@@ -35,7 +47,7 @@ namespace ObjectPrinting
 
         public Configurator<TOwner> AddPrintingCulture<TPropType>(CultureInfo cultureInfo)
         {
-            TypePrintingCultureInfo[typeof(TPropType)] = cultureInfo;
+            typePrintingCultureInfo[typeof(TPropType)] = cultureInfo;
             return this;
         }
 
@@ -47,8 +59,11 @@ namespace ObjectPrinting
         public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var body = (MemberExpression) memberSelector.Body;
-            propertyToConfig = (PropertyInfo) body.Member;
+            if (memberSelector.Body is MemberExpression body)
+            {
+                propertyToConfig = (PropertyInfo) body.Member;
+            }
+
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
@@ -56,7 +71,7 @@ namespace ObjectPrinting
         {
             if (memberSelector.Body is MemberExpression body)
             {
-                PropsToExclude.Add((PropertyInfo) body.Member);
+                propsToExclude.Add((PropertyInfo) body.Member);
             }
 
             return this;
@@ -64,7 +79,7 @@ namespace ObjectPrinting
 
         public Configurator<TOwner> Excluding<TPropType>()
         {
-            TypesToExclude.Add(typeof(TPropType));
+            typesToExclude.Add(typeof(TPropType));
             return this;
         }
     }

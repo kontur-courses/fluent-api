@@ -18,11 +18,11 @@ namespace ObjectPrinting
         public static string PrintToString<TOwner>(TOwner obj,
             Func<Configurator<TOwner>, Configurator<TOwner>> configuratorFunc)
         {
-            var config = configuratorFunc(new Configurator<TOwner>());
+            var config = configuratorFunc(new Configurator<TOwner>()).Build();
             return PrintToString(obj, 0, config);
         }
 
-        private static string PrintToString<TOwner>(object obj, int nestingLevel, Configurator<TOwner> config)
+        private static string PrintToString(object obj, int nestingLevel, Config config)
         {
             if (obj == null)
             {
@@ -61,9 +61,9 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static string PrintCollectionToString<TOwner>(int nestingLevel, StringBuilder sb,
+        private static string PrintCollectionToString(int nestingLevel, StringBuilder sb,
             IEnumerable collection,
-            string indentation, Configurator<TOwner> config)
+            string indentation, Config config)
         {
             sb.AppendLine();
             foreach (var elem in collection)
@@ -74,8 +74,8 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static string PrintToString<TOwner>(PropertyInfo propertyInfo, object obj, int nestingLevel,
-            Configurator<TOwner> config)
+        private static string PrintToString(PropertyInfo propertyInfo, object obj, int nestingLevel,
+            Config config)
         {
             var value = propertyInfo.GetValue(obj) as dynamic;
             var type = propertyInfo.PropertyType;
