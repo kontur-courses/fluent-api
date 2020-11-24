@@ -1,4 +1,4 @@
-﻿namespace Tests.TestingModels
+﻿namespace PrintingConfigTests.TestingModels
 {
     public class NestedContainingTestingClass
     {

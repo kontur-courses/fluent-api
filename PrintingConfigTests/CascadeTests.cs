@@ -2,9 +2,9 @@
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
-using Tests.TestingModels;
+using PrintingConfigTests.TestingModels;
 
-namespace Tests
+namespace PrintingConfigTests
 {
     [TestFixture]
     public class CascadeTests

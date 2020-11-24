@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "Samp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectacle", "Samples\Spectacle\Spectacle.csproj", "{EFA9335C-411B-4597-B0B6-5438D1AE04C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{A2DC4A65-DF42-48E1-A267-57F4CAF3A8B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintingConfigTests", "PrintingConfigTests\PrintingConfigTests.csproj", "{A2DC4A65-DF42-48E1-A267-57F4CAF3A8B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nodes", "Nodes\Nodes.csproj", "{E7CBD9D3-9989-494E-8D05-0DDCD166D1DD}"
 EndProject

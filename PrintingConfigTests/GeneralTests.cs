@@ -4,12 +4,12 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
-using Tests.TestingModels;
+using PrintingConfigTests.TestingModels;
 
-namespace Tests
+namespace PrintingConfigTests
 {
     [TestFixture]
-    public class ObjectPrinterTests
+    public class GeneralTests
     {
         private string result;
 
