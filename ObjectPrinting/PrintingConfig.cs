@@ -37,10 +37,10 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             var selectedMember = typeof(TPropType);
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, selectedMember);
+            return new TypePrintingConfig<TOwner, TPropType>(this, selectedMember);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
@@ -50,15 +50,16 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this, selectedMember);
         }
 
+        public void AddOwnSerializationForSelectedType<TPropType>(Func<TPropType, string> print,
+            object selectedMember)
+        {
+            ownSerializationsForTypes[(Type) selectedMember] = print;
+        }
+
         public void AddOwnSerializationForSelectedMember<TPropType>(Func<TPropType, string> print,
             object selectedMember)
         {
-            if (selectedMember is Type)
-                ownSerializationsForTypes[(Type) selectedMember] = print;
-            else if (selectedMember is MemberInfo)
-                ownSerializationsForMembers[(MemberInfo) selectedMember] = print;
-
-            selectedMember = null;
+            ownSerializationsForMembers[(MemberInfo) selectedMember] = print;
         }
 
         public string PrintToString(TOwner obj)
@@ -163,7 +164,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (serializedObjectsWithNestingLevel.Any(serializedObject =>
-                serializedObject.Object.Equals(obj) && serializedObject.NestingLevel < nestingLevel))
+                ReferenceEquals(serializedObject.Object, obj) && serializedObject.NestingLevel < nestingLevel))
                 return "Cyclical reference" + Environment.NewLine;
             if (obj == null)
                 return "null" + Environment.NewLine;

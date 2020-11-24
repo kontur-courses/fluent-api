@@ -3,20 +3,20 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType>
+    public class TypePrintingConfig<TOwner, T> : IMemberPrintingConfig<TOwner, T>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         public readonly MemberInfo SelectedMember;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember)
+        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember)
         {
             this.printingConfig = printingConfig;
             SelectedMember = selectedMember;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using(Func<T, string> print)
         {
-            printingConfig.AddOwnSerializationForSelectedMember(print, SelectedMember);
+            printingConfig.AddOwnSerializationForSelectedType(print, SelectedMember);
             return printingConfig;
         }
     }
