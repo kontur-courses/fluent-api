@@ -171,6 +171,18 @@ namespace ObjectPrinterTests
                 .Be("Person\r\n\tName = Dan\r\n\tHeight = 160.5\r\n\tAge = 15*\r\n\tWeight = 67.778 kilo\r\n\t" +
                     "BirthPlace = null\r\n");
         }
+        
+        [Test]
+        public void PrintToString_StringWithInformationAboutCycle_WhenNotConfiguration()
+        {
+            var chief = new Employee {Name = "Ivan"};
+            var subordinate = new Employee {Name = "Victor", Chief = chief};
+            chief.Subordinate = subordinate;
+
+            var act = chief.PrintToString();
+
+            act.Should().Contain("found a cyclic link");
+        }
 
         [Test]
         public void
@@ -184,6 +196,14 @@ namespace ObjectPrinterTests
                 .PrintToString(Instances.Person);
 
             act.Should().Contain("Name = Danil years old");
+        }
+        
+        [Test]
+        public void PrintingToString_SerializedTextUpToMaxNestingLevel_WhenMaxNestingLevelExceeded()
+        {
+            var act = Instances.EmployeeWithManySubordinates.PrintToString();
+
+            act.Should().NotContain("11").And.Contain("Nesting level exceeded");
         }
     }
 }

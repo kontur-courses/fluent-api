@@ -72,11 +72,16 @@ namespace ObjectPrinting.Core
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (nestingLevel > MaxNestingLevel)
+                return "Nesting level exceeded\r\n";
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
             if (_finalTypes.Contains(type) || type.IsPrimitive)
                 return obj + Environment.NewLine;
+            if (_parents.Contains(obj))
+                return $"Type = {type.Name}, Value = {obj} : found a cyclic link\r\n";
+            _parents.Add(obj);
             return GetSerializedMembers(obj, nestingLevel);
         }
 
