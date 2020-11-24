@@ -1,42 +1,41 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class ConfigurationInfo
+    internal class ConfigurationInfo
     {
         private ImmutableHashSet<Type> typesToExclude;
-        private ImmutableHashSet<string> propertiesToExclude;
+        private ImmutableHashSet<string> membersToExclude;
         private ImmutableDictionary<Type, Delegate> usingForTypes;
-        private ImmutableDictionary<string, Delegate> usingForProperties;
+        private ImmutableDictionary<string, Delegate> usingForMembers;
 
-        public ConfigurationInfo()
+        internal ConfigurationInfo()
         {
             typesToExclude = ImmutableHashSet<Type>.Empty;
-            propertiesToExclude = ImmutableHashSet<string>.Empty;
+            membersToExclude = ImmutableHashSet<string>.Empty;
             usingForTypes = ImmutableDictionary<Type, Delegate>.Empty;
-            usingForProperties = ImmutableDictionary<string, Delegate>.Empty;
+            usingForMembers = ImmutableDictionary<string, Delegate>.Empty;
         }
 
         private ConfigurationInfo(ConfigurationInfo configurationInfo)
         {
             typesToExclude = configurationInfo.typesToExclude;
-            propertiesToExclude = configurationInfo.propertiesToExclude;
+            membersToExclude = configurationInfo.membersToExclude;
             usingForTypes = configurationInfo.usingForTypes;
-            usingForProperties = configurationInfo.usingForProperties;
+            usingForMembers = configurationInfo.usingForMembers;
         }
 
-        public bool ShouldExclude(PropertyInfo propertyInfo) =>
-            typesToExclude.Contains(propertyInfo.PropertyType) || propertiesToExclude.Contains(propertyInfo.Name);
+        internal bool ShouldExclude(Type memberType, string memberName) =>
+            typesToExclude.Contains(memberType) || membersToExclude.Contains(memberName);
 
-        public ConfigurationInfo AddPropertyToExclude(string propertyName) =>
-            new ConfigurationInfo(this) {propertiesToExclude = propertiesToExclude.Add(propertyName)};
+        internal ConfigurationInfo AddPropertyToExclude(string memberName) =>
+            new ConfigurationInfo(this) {membersToExclude = membersToExclude.Add(memberName)};
 
-        public ConfigurationInfo AddTypeToExclude(Type propertyType) =>
-            new ConfigurationInfo(this) {typesToExclude = typesToExclude.Add(propertyType)};
+        internal ConfigurationInfo AddTypeToExclude(Type memberType) =>
+            new ConfigurationInfo(this) {typesToExclude = typesToExclude.Add(memberType)};
 
-        public ConfigurationInfo AddUsingForType<TPropType>(Func<TPropType, string> print)
+        internal ConfigurationInfo AddUsingForType<TPropType>(Func<TPropType, string> print)
         {
             var updatedUsingForTypes = usingForTypes.ContainsKey(typeof(TPropType))
                 ? usingForTypes.SetItem(typeof(TPropType), print)
@@ -44,20 +43,20 @@ namespace ObjectPrinting
             return new ConfigurationInfo(this) {usingForTypes = updatedUsingForTypes};
         }
 
-        public ConfigurationInfo AddUsingForProperty<TPropType>(Func<TPropType, string> print, string propertyName)
+        internal ConfigurationInfo AddUsingForProperty<TPropType>(Func<TPropType, string> print, string propertyName)
         {
-            var updatedUsingForProperties = usingForProperties.ContainsKey(propertyName)
-                ? usingForProperties.SetItem(propertyName, print)
-                : usingForProperties.Add(propertyName, print);
-            return new ConfigurationInfo(this) {usingForProperties = updatedUsingForProperties};
+            var updatedUsingForProperties = usingForMembers.ContainsKey(propertyName)
+                ? usingForMembers.SetItem(propertyName, print)
+                : usingForMembers.Add(propertyName, print);
+            return new ConfigurationInfo(this) {usingForMembers = updatedUsingForProperties};
         }
 
-        public string TryUseConfiguration(PropertyInfo propertyInfo, object obj)
+        internal string TryUseConfiguration(ValueInfo valueInfo, string nestedNames)
         {
-            usingForProperties.TryGetValue(propertyInfo.Name, out var configureAction);
+            usingForMembers.TryGetValue(nestedNames, out var configureAction);
             if (configureAction == null)
-                usingForTypes.TryGetValue(propertyInfo.PropertyType, out configureAction);
-            return (string)configureAction?.DynamicInvoke(propertyInfo.GetValue(obj));
+                usingForTypes.TryGetValue(valueInfo.Type, out configureAction);
+            return (string) configureAction?.DynamicInvoke(valueInfo.Value);
         }
     }
 }

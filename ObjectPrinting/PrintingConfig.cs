@@ -13,40 +13,44 @@ namespace ObjectPrinting
             {typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)};
 
         internal ConfigurationInfo ConfigurationInfo { get; }
-        private readonly HashSet<object> serializedObjects;
+        private List<HashSet<object>> nestedSerializedObjects;
+        private LinkedList<string> nestedNames;
 
         public PrintingConfig()
         {
             ConfigurationInfo = new ConfigurationInfo();
-            serializedObjects = new HashSet<object>();
         }
 
         internal PrintingConfig(ConfigurationInfo configurationInfo)
         {
             ConfigurationInfo = configurationInfo;
-            serializedObjects = new HashSet<object>();
         }
 
-        internal PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
             new PropertyPrintingConfig<TOwner, TPropType>(this);
 
-        internal PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector) =>
             new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector);
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
-            new PrintingConfig<TOwner>(ConfigurationInfo.AddPropertyToExclude(memberSelector.GetPropertyInfo().Name));
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
+            new PrintingConfig<TOwner>(ConfigurationInfo.AddPropertyToExclude(memberSelector.GetObjectName()));
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>() =>
+        public PrintingConfig<TOwner> Excluding<TPropType>() =>
             new PrintingConfig<TOwner>(ConfigurationInfo.AddTypeToExclude(typeof(TPropType)));
 
-        internal string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj)
+        {
+            nestedSerializedObjects = new List<HashSet<object>> {new HashSet<object>()};
+            nestedNames = new LinkedList<string>();
+            nestedNames.AddLast(typeof(TOwner).Name);
+            return PrintToString(obj, 0);
+        }
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (serializedObjects.Contains(obj))
+            if (SerializedObjectsContains(nestingLevel, obj))
                 return obj.GetType().Name + Environment.NewLine;
-            ;
 
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -54,12 +58,12 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            serializedObjects.Add(obj);
+            AddToSerializedObjects(nestingLevel, obj);
             var sb = new StringBuilder();
 
-            sb.Append(obj is IEnumerable
-                ? CollectionToString((ICollection) obj, nestingLevel + 1)
-                : PropertiesToString(obj, nestingLevel));
+            sb.Append(obj is ICollection collection
+                ? CollectionToString(collection, nestingLevel + 1)
+                : MembersToString(obj, nestingLevel));
 
             return sb.ToString();
         }
@@ -85,19 +89,36 @@ namespace ObjectPrinting
             return sb;
         }
 
-        private StringBuilder PropertiesToString(object obj, int nestingLevel)
+        private StringBuilder MembersToString(object obj, int nestingLevel)
         {
             var sb = new StringBuilder();
             sb.AppendLine(new string(obj.GetType().Name));
             foreach (var propertyInfo in obj.GetType().GetProperties())
+                sb.Append(MemberInfoToString(
+                    new ValueInfo(propertyInfo.GetValue(obj), propertyInfo.PropertyType, propertyInfo.Name),
+                    nestingLevel));
+            var a = obj.GetType().GetFields();
+            foreach (var fieldInfo in a.Where(f => f.Name != "Empty"))
+                sb.Append(MemberInfoToString(
+                    new ValueInfo(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name),
+                    nestingLevel));
+
+            nestedSerializedObjects[nestingLevel] = new HashSet<object>();
+            return sb;
+        }
+
+        private StringBuilder MemberInfoToString(ValueInfo valueInfo, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            nestedNames.AddLast(valueInfo.Name);
+
+            if (!ConfigurationInfo.ShouldExclude(valueInfo.Type, string.Join('.', nestedNames)))
             {
-                if (ConfigurationInfo.ShouldExclude(propertyInfo))
-                    continue;
-                sb.Append(new string('\t', nestingLevel + 1) + propertyInfo.Name + " = ");
-                var serialized = ConfigurationInfo.TryUseConfiguration(propertyInfo, obj);
+                sb.Append(new string('\t', nestingLevel + 1) + valueInfo.Name + " = ");
+                var serialized = ConfigurationInfo.TryUseConfiguration(valueInfo, string.Join('.', nestedNames));
                 if (serialized is null)
                 {
-                    serialized = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                    serialized = PrintToString(valueInfo.Value, nestingLevel + 1);
                     sb.Append(serialized);
                 }
                 else
@@ -107,7 +128,26 @@ namespace ObjectPrinting
                 }
             }
 
+            nestedNames.RemoveLast();
             return sb;
+        }
+
+        private void AddToSerializedObjects(int nestingLevel, object obj)
+        {
+            if (nestedSerializedObjects.Count < nestingLevel + 1)
+                nestedSerializedObjects.Add(new HashSet<object>());
+            nestedSerializedObjects[nestingLevel].Add(obj);
+        }
+
+        private bool SerializedObjectsContains(int nestingLevel, object obj)
+        {
+            for (var i = 0; i < nestingLevel; i++)
+            {
+                if (nestedSerializedObjects[i].Any(serialized => ReferenceEquals(serialized, obj)))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

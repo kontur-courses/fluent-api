@@ -59,7 +59,7 @@ namespace ObjectPrinting.Tests
         public void PrinterShouldntPrint_WhenPropertyExcluded()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Age);
-            printer.PrintToString(person).Should().NotContain($"Age = {person.Age}");
+            printer.PrintToString(person).Should().NotContain("Age = 30");
             Console.WriteLine(printer.PrintToString(person));
         }
 
@@ -72,11 +72,19 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrinterShouldPrintWithFormatting_WhenAlternateSerialization()
+        public void PrinterShouldPrintWithFormatting_WhenAlternateSerializationForType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(prop => $"{prop} with using");
-            printer.PrintToString(person).Should().Contain($"Age = {person.Age} with using");
+            printer.PrintToString(person).Should().Contain("Age = 30 with using");
+        }
+
+        [Test]
+        public void PrinterShouldPrintWithFormatting_WhenAlternateSerializationMember()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Age).Using(prop => $"{prop} with using");
+            printer.PrintToString(person).Should().Contain("Age = 30 with using");
         }
 
         [Test]
@@ -84,7 +92,15 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(2);
-            printer.PrintToString(person).Should().Contain($"Name = {person.Name.Substring(0, 2)}");
+            printer.PrintToString(person).Should().Contain("Name = Al");
+        }
+
+        [Test]
+        public void PrinterShouldPrintWithFormatting_WhenTrimGreaterThenStringLength()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>().TrimmedToLength(10);
+            printer.PrintToString(person).Should().Contain("Name = Alex");
         }
 
         [Test]
@@ -92,8 +108,7 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(CultureInfo.InvariantCulture);
-            printer.PrintToString(person).Should()
-                .Contain($"Age = {person.Age.ToString(CultureInfo.InvariantCulture)}");
+            printer.PrintToString(person).Should().Contain("Age = 30");
         }
 
         [Test]
@@ -110,7 +125,7 @@ namespace ObjectPrinting.Tests
             person.Children.Add(child);
 
             var printer = ObjectPrinter.For<Person>();
-            printer.PrintToString(person).Should().Contain($"Parent = {child.Parent.GetType().Name}");
+            printer.PrintToString(person).Should().Contain("Parent = Person");
         }
 
         [Test]
@@ -145,11 +160,61 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(person).Should().Be(
                 $"Person{Environment.NewLine}" +
                 $"\tId = Guid{Environment.NewLine}" +
-                $"\tName = {person.Name.Substring(0, 2)}{Environment.NewLine}" +
-                $"\tAge = value: {person.Age.ToString(CultureInfo.InvariantCulture)}{Environment.NewLine}" +
-                $"\tWeight = {person.Weight.ToString(CultureInfo.InvariantCulture)}kg{Environment.NewLine}" +
+                $"\tName = Al{Environment.NewLine}" +
+                $"\tAge = value: 30{Environment.NewLine}" +
                 $"\tChildren = Empty{Environment.NewLine}" +
-                $"\tCustomDict = Empty{Environment.NewLine}");
+                $"\tCustomDict = Empty{Environment.NewLine}" +
+                $"\tWeight = 60kg{Environment.NewLine}");
+        }
+
+        [Test]
+        public void PrinterShouldWorkCorrect_WhenNestedMemberTrimmed()
+        {
+            var foo = new Bar {Foo = new Foo {Name = "Hello"}};
+            var printer = ObjectPrinter.For<Bar>().Printing(b => b.Foo.Name).TrimmedToLength(2);
+            var actual = printer.PrintToString(foo);
+            actual.Should().Contain("Name = He"); // насчёт формата не уверен, но суть теста понятна
+        }
+
+        [Test]
+        public void PrinterShouldntExcludeAll_WhenMembersHaveSameName()
+        {
+            var foo = new Bar {Foo = new Foo {Name = "Hello"}, Name = "World"};
+            var printer = ObjectPrinter.For<Bar>().Excluding(b => b.Name);
+            var actual = printer.PrintToString(foo);
+            actual.Should().Contain("Name = Hello");
+        }
+
+        [Test]
+        public void PrinterShouldWorkCorrect_WhenEqualsAndGetHashMethodsOverriden()
+        {
+            var foo = new Foo1 {Name = "Hello", Next = new Foo1 {Name = "Hello"}};
+            var printer = ObjectPrinter.For<Foo1>();
+            var actual = printer.PrintToString(foo);
+            actual.Should().Be($"Foo1{Environment.NewLine}" +
+                               $"\tName = Hello{Environment.NewLine}" +
+                               $"\tNext = Foo1{Environment.NewLine}" +
+                               $"\t\tName = Hello{Environment.NewLine}" +
+                               $"\t\tNext = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void PrinterShouldWorkCorrect_WhenSeveralIdenticalMembersOnTheSameLevel()
+        {
+            var foo1 = new Foo {Name = "Foo1"};
+            var foo2 = new Foo {Name = "Foo2", Next = foo1, Friend = foo1};
+            var printer = ObjectPrinter.For<Foo>();
+            var actual = printer.PrintToString(foo2);
+            actual.Should().Be($"Foo{Environment.NewLine}" +
+                               $"\tName = Foo2{Environment.NewLine}" +
+                               $"\tNext = Foo{Environment.NewLine}" +
+                               $"\t\tName = Foo1{Environment.NewLine}" +
+                               $"\t\tNext = null{Environment.NewLine}" +
+                               $"\t\tFriend = null{Environment.NewLine}" +
+                               $"\tFriend = Foo{Environment.NewLine}" +
+                               $"\t\tName = Foo1{Environment.NewLine}" +
+                               $"\t\tNext = null{Environment.NewLine}" +
+                               $"\t\tFriend = null{Environment.NewLine}");
         }
     }
 }
