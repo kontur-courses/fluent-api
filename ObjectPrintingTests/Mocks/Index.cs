@@ -1,6 +1,6 @@
 namespace ObjectPrintingTests.Mocks
 {
-    public class WithInteger
+    public class Index
     {
         public int Integer;
     }
