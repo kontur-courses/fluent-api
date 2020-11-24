@@ -41,7 +41,11 @@ namespace PrintingConfigTests
                 .PrintToString(subject);
 
             result.Should()
-                .NotContain(nameof(CascadeTestingClass.Int32));
+                .Contain($"{nameof(CascadeTestingClass.Int32)} = {subject.Child.Int32}")
+                .And
+                .NotContain(subject.Int32.ToString());
+            
+            Assert.Fail("Ждем ответа от наставника");
         }
 
         [Test]
