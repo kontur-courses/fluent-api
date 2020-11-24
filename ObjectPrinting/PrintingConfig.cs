@@ -114,7 +114,7 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             if (!serializedObjects.Add(obj))
                 throw new SerializationException("Circular reference");
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
             foreach (var memberInfo in obj.GetType()
@@ -129,7 +129,7 @@ namespace ObjectPrinting
                     : memberValue;
                 if (memberLengths.TryGetValue(memberInfo, out var maxLength))
                     toPrint = toPrint.ToString()?.Substring(0, maxLength);
-                sb.Append(identation + memberInfo.Name + " = "
+                sb.Append(indentation + memberInfo.Name + " = "
                           + PrintToString(toPrint, nestingLevel + 1, serializedObjects));
             }
 
