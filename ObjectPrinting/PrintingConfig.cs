@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -24,13 +23,13 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> TypeSerializer<TProperty>(Func<object, string> func)
         {
-            config.typesSerializer.Add(typeof(TProperty), func);
+            config.TypesSerializer.Add(typeof(TProperty), func);
             return this;
         }
 
         public PrintingConfig<TOwner> Exclude<TProperty>()
         {
-            config.excludedTypes.Add(typeof(TProperty));
+            config.ExcludedTypes.Add(typeof(TProperty));
             return this;
         }
 

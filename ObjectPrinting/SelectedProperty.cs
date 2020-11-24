@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Reflection;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -20,21 +19,21 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> UseSerializer(Func<TProperty, string> func)
         {
-            config.fieldSerializers[selectedProperty] = func;
+            config.FieldSerializers[selectedProperty] = func;
             return parent;
         }
 
         public PrintingConfig<TOwner> Exclude()
         {
-            config.exludedFields.Add(selectedProperty);
+            config.ExludedFields.Add(selectedProperty);
             return parent;
         }
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
-            var func = new Func<TProperty, string>(x => string.Format(cultureInfo, x.ToString()));
+            var func = new Func<TProperty, string>(x => string.Format(cultureInfo, x.ToString() ?? ""));
 
-            config.fieldSerializers[selectedProperty] = func;
+            config.FieldSerializers[selectedProperty] = func;
             return parent;
         }
     }
