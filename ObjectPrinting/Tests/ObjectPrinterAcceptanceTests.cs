@@ -30,9 +30,9 @@ namespace Tests
                 .PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            var string1 = person.Serialize();
+            var string1 = person.PrintToString();
             //8. ...с конфигурированием
-            //var string2 =person.Serialize(d => d.Choose<int>().Exclude());
+            var string2 = person.PrintToString(d => d.Exclude<int>());
         }
 
         [Test]
@@ -97,11 +97,25 @@ namespace Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Name).Trim(4);
+
             var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84};
 
             var firstPersonText = printer.PrintToString(firstPerson);
 
             firstPersonText.Should().NotContain("ander");
+        }
+
+        [Test]
+        public void PrintToString_ShouldContainSonField_AddAnotherClass()
+        {
+            var subPerson = new Person {Name = "Ivan", Age = 10};
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Name).Trim(4);
+            var firstPerson = new Person {Name = "Alexander", Age = 19, Height = 1.84, Son = subPerson};
+
+            var firstPersonText = printer.PrintToString(firstPerson);
+
+            firstPersonText.Should().Contain("Ivan");
         }
     }
 }

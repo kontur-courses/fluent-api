@@ -6,10 +6,18 @@ namespace ObjectPrinting.Solved
 {
     public class Config
     {
-        public readonly List<Type> excludedTypes;
-        public readonly List<PropertyInfo> exludedFields;
-        public readonly Dictionary<PropertyInfo, Delegate> fieldSerializers;
-        public readonly Dictionary<Type, Delegate> typesSerializer;
+        public List<Type> excludedTypes;
+        public List<PropertyInfo> exludedFields;
+        public Dictionary<PropertyInfo, Delegate> fieldSerializers;
+        public Dictionary<Type, Delegate> typesSerializer;
+
+        public Config(Config config)
+        {
+            excludedTypes = new List<Type>();
+            typesSerializer = new Dictionary<Type, Delegate>();
+            exludedFields = new List<PropertyInfo>();
+            fieldSerializers = new Dictionary<PropertyInfo, Delegate>();
+        }
 
         public Config()
         {
@@ -40,6 +48,12 @@ namespace ObjectPrinting.Solved
                 return false;
             result = typesSerializer[type].DynamicInvoke(element)?.ToString();
             return true;
+        }
+
+        public Config Exclude(Type type)
+        {
+            excludedTypes.Add(type);
+            return new Config(this);
         }
     }
 }

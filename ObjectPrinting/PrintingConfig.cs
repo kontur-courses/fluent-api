@@ -34,7 +34,6 @@ namespace ObjectPrinting
             return this;
         }
 
-
         public SelectedProperty<TOwner, TProperty> Choose<TProperty>(Expression<Func<TOwner, TProperty>> selector)
         {
             selectedProperty = (PropertyInfo) ((MemberExpression) selector.Body).Member;
@@ -87,9 +86,9 @@ namespace ObjectPrinting
             return config.IsSpecialSerialize(propertyInfo.PropertyType, current, out var result) ? result : null;
         }
 
-        private static string DefaultSerialization(PropertyInfo propertyInfo, object obj)
+        private string DefaultSerialization(PropertyInfo propertyInfo, object obj)
         {
-            return propertyInfo.GetValue(obj)?.ToString();
+            return PrintToString(propertyInfo.GetValue(obj), 1);
         }
     }
 }
