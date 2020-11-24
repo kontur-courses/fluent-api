@@ -184,8 +184,7 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (serializedObjectsWithNestingLevel.Any(serializedObject =>
-                serializedObject.Object.Equals(obj) && serializedObject.NestingLevel < nestingLevel))
+            if (serializedObjectsWithNestingLevel.Any(serializedObject => serializedObject.Object.Equals(obj) && serializedObject.NestingLevel < nestingLevel))
                 return "Cyclical reference";
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -194,7 +193,7 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(type)) return obj + Environment.NewLine;
 
-            serializedObjectsWithNestingLevel.Add(new SerializedObject(obj, nestingLevel));
+            serializedObjectsWithNestingLevel.Add(new SerializedObject(obj,nestingLevel));
 
             if (obj is IEnumerable)
             {

@@ -2,8 +2,8 @@
 {
     public class SerializedObject
     {
-        public readonly int NestingLevel;
         public readonly object Object;
+        public readonly int NestingLevel;
 
         public SerializedObject(object obj, int nestingLevel)
         {
