@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrinting.Contracts
 {
@@ -7,6 +8,10 @@ namespace ObjectPrinting.Contracts
         AlternativePrinter AlternativePrinter { get; }
         PrintExcluder PrintExcluder { get; }
 
-        IPrintingConfig AddAlternativePrintingFor<TContext>(TContext entity, Func<object, string> print);
+        IPrintingConfig AddAlternativePrintingFor(Type type, Func<object, string> print);
+
+        IPrintingConfig AddAlternativePrintingFor(PropertyInfo property, Func<object, string> print);
+
+        IPrintingConfig AddAlternativePrintingFor(FieldInfo field, Func<object, string> print);
     }
 }

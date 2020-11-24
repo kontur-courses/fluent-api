@@ -13,11 +13,7 @@ namespace ObjectPrinting
         AlternativePrinter IPrintingConfig.AlternativePrinter => AlternativePrinter;
         PrintExcluder IPrintingConfig.PrintExcluder => Excluder;
 
-        public PrintingConfig()
-        {
-            Excluder = new PrintExcluder();
-            AlternativePrinter = new AlternativePrinter();
-        }
+        public PrintingConfig() : this(new PrintExcluder(), new AlternativePrinter()) { }
 
         private PrintingConfig(PrintExcluder excluder, AlternativePrinter alternativePrinter)
         {
@@ -25,55 +21,53 @@ namespace ObjectPrinting
             AlternativePrinter = alternativePrinter;
         }
 
-        IPrintingConfig IPrintingConfig.AddAlternativePrintingFor<TContext>(TContext entity, Func<object, string> print)
+        public string PrintToString(TOwner obj)
         {
-            return entity switch
-            {
-                Type type => new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(type, print)),
-                PropertyInfo prop => new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(prop, print)),
-                FieldInfo field => new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(field, print)),
-                _ => throw new ArgumentException($"{nameof(entity)} should be Type, PropertyInfo or FieldInfo!")
-            };
+            var serializer = new Serializer(this);
+            return serializer.PrintToString(obj, 0);
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
             new TypePrintingConfig<TOwner, TPropType>(this);
 
         public IContextPrintingConfig<TOwner, TContext> Printing<TContext>(
-            Expression<Func<TOwner, TContext>> memberSelector)
+            Expression<Func<TOwner, TContext>> memberSelector
+        )
         {
-            var property = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            var field = ((MemberExpression) memberSelector.Body).Member as FieldInfo;
+            var entity = GetClassMemberEntity(memberSelector);
 
-            if (property is null && field is null)
-                throw new ArgumentException($"{memberSelector} should return field of property {nameof(TOwner)}");
-
-            return property is not null
-                ? new PropertyPrintingConfig<TOwner, TContext>(this, property) as
-                    IContextPrintingConfig<TOwner, TContext>
-                : new FieldPrintingConfig<TOwner, TContext>(this, field);
+            if (entity is PropertyInfo)
+                return new PropertyPrintingConfig<TOwner, TContext>(this, entity);
+            return new FieldPrintingConfig<TOwner, TContext>(this, entity);
         }
 
         public PrintingConfig<TOwner> Excluding<TContext>(Expression<Func<TOwner, TContext>> memberSelector)
         {
-            var property = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            var field = ((MemberExpression) memberSelector.Body).Member as FieldInfo;
-
-            if (property is null && field is null)
-                throw new ArgumentException($"{memberSelector} should return field of property {nameof(TOwner)}");
-
-            return property is not null
-                ? new PrintingConfig<TOwner>(Excluder.Exclude(property), AlternativePrinter)
-                : new PrintingConfig<TOwner>(Excluder.Exclude(field), AlternativePrinter);
+            var entity = GetClassMemberEntity(memberSelector);
+            return new PrintingConfig<TOwner>(Excluder.Exclude(entity), AlternativePrinter);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>() =>
             new PrintingConfig<TOwner>(Excluder.Exclude(typeof(TPropType)), AlternativePrinter);
 
-        public string PrintToString(TOwner obj)
+        IPrintingConfig IPrintingConfig.AddAlternativePrintingFor(Type type, Func<object, string> print) =>
+            new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(type, print));
+
+        IPrintingConfig IPrintingConfig.AddAlternativePrintingFor(PropertyInfo property, Func<object, string> print) =>
+            new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(property, print));
+
+        IPrintingConfig IPrintingConfig.AddAlternativePrintingFor(FieldInfo field, Func<object, string> print) =>
+            new PrintingConfig<TOwner>(Excluder, AlternativePrinter.AddOrUpdate(field, print));
+
+
+        private static dynamic GetClassMemberEntity<TContext>(Expression<Func<TOwner, TContext>> memberSelector)
         {
-            var serializer = new Serializer(this);
-            return serializer.PrintToString(obj, 0);
+            return (memberSelector.Body as MemberExpression)?.Member switch
+            {
+                PropertyInfo property => property,
+                FieldInfo field => field,
+                _ => throw new ArgumentException($"{memberSelector} should return field oк property {nameof(TOwner)}")
+            };
         }
     }
 }
