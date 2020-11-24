@@ -129,7 +129,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<WithDouble>()
                 .Printing<double>()
                 .Using(CultureInfo.CurrentCulture);
-            var expected = GetSystemIndependent("WithDouble\n\tDouble = 0.0\n");
+            var expected = GetSystemIndependent("WithDouble\n\tDouble = 0\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
@@ -143,7 +143,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<SingleProperty>()
                 .Printing(p => p.Property)
                 .Using(p => "custom");
-            var expected = GetSystemIndependent("WithString\n\tProperty = custom\n");
+            var expected = GetSystemIndependent("SingleProperty\n\tProperty = custom\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
