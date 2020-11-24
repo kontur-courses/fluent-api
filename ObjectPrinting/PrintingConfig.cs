@@ -41,7 +41,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -64,30 +63,34 @@ namespace ObjectPrinting
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
-
-                var lineToAdd = SerializeProperty(propertyInfo, obj) ?? (SerializeType(propertyInfo, obj)
-                                                                         ?? DefaultSerialization(propertyInfo, obj));
-                sb.Append(lineToAdd);
+                sb.Append(Serialize(propertyInfo, obj, nestingLevel));
             }
 
             return sb.ToString();
         }
 
-        private string SerializeProperty(PropertyInfo propertyInfo, object obj)
+        private string Serialize(PropertyInfo propertyInfo, object element, int nestingLevel)
         {
-            var current = propertyInfo.GetValue(obj);
+            return SerializeProperty(propertyInfo, element) ?? (SerializeType(propertyInfo, element)
+                                                                ?? DefaultSerialization(propertyInfo, element,
+                                                                    nestingLevel));
+        }
+
+        private string SerializeProperty(PropertyInfo propertyInfo, object element)
+        {
+            var current = propertyInfo.GetValue(element);
             return config.IsSpecialSerialize(propertyInfo, current, out var result) ? result : null;
         }
 
-        private string SerializeType(PropertyInfo propertyInfo, object obj)
+        private string SerializeType(PropertyInfo propertyInfo, object element)
         {
-            var current = propertyInfo.GetValue(obj);
+            var current = propertyInfo.GetValue(element);
             return config.IsSpecialSerialize(propertyInfo.PropertyType, current, out var result) ? result : null;
         }
 
-        private string DefaultSerialization(PropertyInfo propertyInfo, object obj)
+        private string DefaultSerialization(PropertyInfo propertyInfo, object element, int nestingLevel)
         {
-            return PrintToString(propertyInfo.GetValue(obj), 1);
+            return PrintToString(propertyInfo.GetValue(element), nestingLevel + 1);
         }
     }
 }
