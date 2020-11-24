@@ -134,7 +134,10 @@ namespace ObjectPrinting
             }
             else
             {
-                var members = type.GetProperties();
+                var members = Enumerable.Empty<MemberInfo>()
+                    .Concat(type.GetProperties())
+                    .Concat(type.GetFields())
+                    .ToArray();
                 if (members.Any()) sb.AppendLine();
                 sb.AppendJoin('\n', members.Select(
                     m => PrintMember(obj, m, nestingLevel)).Where(s => s != null));
