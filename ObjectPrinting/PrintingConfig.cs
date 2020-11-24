@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -74,13 +75,27 @@ namespace ObjectPrinting
             if (nestingLevel > 256)
                 throw new InternalBufferOverflowException("nesting level should be less than 256");
 
-            var result = SerializeSimpleObject(obj);
+            var result = SerializeSimpleObject(obj)??SerializeCollection(obj as ICollection,nestingLevel);
             if (result != null) return result;
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
                 sb.Append(SerializeProperty(obj, propertyInfo, nestingLevel));
+            return sb.ToString();
+        }
+
+        public string SerializeCollection(ICollection collection,int nestingLevel)
+        {
+            
+            var indentation = new string('\t', nestingLevel + 1);
+            if (collection == null)
+            {
+                return null;
+            }
+            var sb = new StringBuilder(collection.GetType().Name+Environment.NewLine);
+            foreach (var item in collection) 
+                sb.Append(indentation+PrintToString(item, nestingLevel+1));
             return sb.ToString();
         }
 
