@@ -9,14 +9,12 @@ namespace ObjectPrinting.Infrastructure
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly List<MemberInfo> excludedMembers = new List<MemberInfo>();
-        public readonly Dictionary<MemberInfo, Delegate> MemberPrinters = new Dictionary<MemberInfo, Delegate>();
-        public readonly Dictionary<Type, Delegate> TypePrinters = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<MemberInfo, Settings> membersSettings = new Dictionary<MemberInfo, Settings>();
+        private readonly Dictionary<Type, Settings> typeSettings = new Dictionary<Type, Settings>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, null);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, typeof(TPropType));
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -27,20 +25,20 @@ namespace ObjectPrinting.Infrastructure
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var memberInfo = GetMemberInfo(memberSelector);
-            excludedMembers.Add(memberInfo);
+            GetSettings(memberInfo).IsExcluded = true;
             return this;
         }
 
+        public PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            GetSettings(typeof(TPropType)).IsExcluded = true;
+            return this;
+        }
+        
         private MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> propertyLambda) =>
             propertyLambda.Body is MemberExpression memberExpression
                 ? memberExpression.Member
                 : throw new ArgumentException("Member is not selected");
-
-        public PrintingConfig<TOwner> Excluding<TPropType>()
-        {
-            excludedTypes.Add(typeof(TPropType));
-            return this;
-        }
 
         public string PrintToString(TOwner obj)
         {
@@ -68,35 +66,43 @@ namespace ObjectPrinting.Infrastructure
             {
                 if (IsExcluded(memberInfo))
                     continue;
+                sb.Append(identation).Append(memberInfo.Name).Append(" = ");
                 if (TryAlternatePrint(memberInfo, obj, out var toPrint))
                 {
-                    sb.Append(identation).Append(memberInfo.Name).Append(" = ").Append(toPrint).Append(Environment.NewLine);
+                    sb.Append(toPrint).Append(Environment.NewLine);
                     continue;
                 }
-                sb.Append(identation)
-                    .Append(memberInfo.Name)
-                    .Append(" = ")
-                    .Append(PrintToString(GetValue(obj, memberInfo), nestingLevel + 1));
+                sb.Append(PrintToString(GetValue(obj, memberInfo), nestingLevel + 1));
             }
             return sb.ToString();
         }
 
         private bool TryAlternatePrint(MemberInfo memberInfo, object owner, out string printed)
         {
-            if (MemberPrinters.TryGetValue(memberInfo, out var printer))
+            if (membersSettings.TryGetValue(memberInfo, out var settings))
             {
-                printed = printer.DynamicInvoke(GetValue(owner, memberInfo)).ToString();
+                printed = ApplySettings(settings, memberInfo, owner);
                 return true;
             }
 
-            if (TypePrinters.TryGetValue(GetType(memberInfo), out printer))
+            if (typeSettings.TryGetValue(GetType(memberInfo), out settings))
             {
-                printed = printer.DynamicInvoke(GetValue(owner, memberInfo)).ToString();
+                printed = ApplySettings(settings, memberInfo, owner);
                 return true;
             }
 
             printed = null;
             return false;
+        }
+
+        private string ApplySettings(Settings settings, MemberInfo memberInfo, object owner)
+        {
+            var toPrint = GetValue(owner, memberInfo)?.ToString();
+            if (settings.Printer != null)
+                toPrint = settings.Printer.DynamicInvoke(GetValue(owner, memberInfo)).ToString();
+            if (settings.MaxLength != null)
+                toPrint = toPrint.Substring(0, Math.Min(toPrint.Length, settings.MaxLength ?? default));
+            return toPrint;
         }
 
         private object GetValue(object owner, MemberInfo memberInfo) =>
@@ -111,9 +117,9 @@ namespace ObjectPrinting.Infrastructure
         {
             if (!(memberInfo.MemberType == MemberTypes.Field || memberInfo.MemberType == MemberTypes.Property))
                 return true;
-            if (excludedTypes.Contains(GetType(memberInfo)))
+            if (typeSettings.TryGetValue(GetType(memberInfo), out var settings) && settings.IsExcluded)
                 return true;
-            if (excludedMembers.Contains(memberInfo))
+            if (membersSettings.TryGetValue(memberInfo, out settings) && settings.IsExcluded)
                 return true;
             return false;
         }
@@ -125,5 +131,25 @@ namespace ObjectPrinting.Infrastructure
                 MemberTypes.Property => ((PropertyInfo) member).PropertyType,
                 _ => throw new ArgumentException()
             };
+
+        public Settings GetSettings(MemberInfo memberInfo)
+        {
+            return GetSettings(membersSettings, memberInfo);
+        }
+        
+        public Settings GetSettings(Type type)
+        {
+            return GetSettings(typeSettings, type);
+        }
+
+        private Settings GetSettings<TKey>(Dictionary<TKey, Settings> settingsDictionary, TKey key)
+        {
+            if (settingsDictionary.TryGetValue(key, out var settings))
+                return settings;
+            
+            settings = new Settings();
+            settingsDictionary.Add(key, settings);
+            return settings;
+        }
     }
 }

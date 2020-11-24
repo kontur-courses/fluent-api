@@ -8,11 +8,21 @@ namespace ObjectPrinting.Infrastructure
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo selectedMember;
+        private readonly Type selectedType;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember)
+        private PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
+        }
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember) : this(printingConfig)
+        {
             this.selectedMember = selectedMember;
+        }
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Type selectedType) : this(printingConfig)
+        {
+            this.selectedType = selectedType;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
@@ -26,11 +36,12 @@ namespace ObjectPrinting.Infrastructure
 
         private void AddTypePrinter(Func<TPropType, string> print)
         {
-            printingConfig.TypePrinters.Add(typeof(TPropType), print);
+            printingConfig.GetSettings(typeof(TPropType)).Printer = print;
         }
+        
         private void AddMemberPrinter(Func<TPropType, string> print)
         {
-            printingConfig.MemberPrinters.Add(selectedMember, print);
+            printingConfig.GetSettings(selectedMember).Printer = print;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
@@ -39,5 +50,23 @@ namespace ObjectPrinting.Infrastructure
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+
+        public void SetLengthConstraint(int length)
+        {
+            if (selectedMember is null)
+                AddTypeLengthConstraint(length);
+            else
+                AddMemberLengthConstraint(length);
+        }
+        
+        private void AddTypeLengthConstraint(int length)
+        {
+            printingConfig.GetSettings(typeof(TPropType)).MaxLength = length;
+        }
+        
+        private void AddMemberLengthConstraint(int length)
+        {
+            printingConfig.GetSettings(selectedMember).MaxLength = length;
+        }
     }
 }

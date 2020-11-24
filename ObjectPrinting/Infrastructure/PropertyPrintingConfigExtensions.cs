@@ -9,9 +9,13 @@ namespace ObjectPrinting.Infrastructure
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, 
+            int maxLength)
         {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            var printer= ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            propConfig.SetLengthConstraint(maxLength);
+            return printer;
         }
 
     }

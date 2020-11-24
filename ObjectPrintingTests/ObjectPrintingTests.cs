@@ -156,8 +156,8 @@ namespace ObjectPrintingTests
             var objectToPrint = new WithString {String = "1234"};
             var printer = ObjectPrinter.For<WithString>()
                 .Printing<string>()
-                .TrimmedToLength(1);
-            var expected = GetSystemIndependent("WithString\n\tString = 1\n");
+                .TrimmedToLength(2);
+            var expected = GetSystemIndependent("WithString\n\tString = 12\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
