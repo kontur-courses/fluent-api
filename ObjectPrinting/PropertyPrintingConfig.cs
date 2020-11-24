@@ -7,10 +7,10 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly Target target;
-        private readonly PropertyInfo targetProp;
+        private readonly MemberInfo targetProp;
 
         private PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Target target,
-            PropertyInfo propertyInfo = null)
+            MemberInfo propertyInfo = null)
         {
             this.target = target;
             targetProp = propertyInfo;
@@ -35,8 +35,8 @@ namespace ObjectPrinting
                         ((IPrintingConfig<TOwner>) printingConfig).TypesSerialization
                         .AddOrReplace(typeof(TPropType), objPrint);
                     break;
-                
-                case Target.Property:
+
+                case Target.Member:
                     ((IPrintingConfig<TOwner>) printingConfig).PropsSerialization =
                         ((IPrintingConfig<TOwner>) printingConfig).PropsSerialization
                         .AddOrReplace(targetProp, objPrint);
@@ -57,14 +57,14 @@ namespace ObjectPrinting
         public static PropertyPrintingConfig<TOwner, TPropType> For(PrintingConfig<TOwner> parentConfig,
             PropertyInfo propertyInfo)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(parentConfig, Target.Property, propertyInfo);
+            return new PropertyPrintingConfig<TOwner, TPropType>(parentConfig, Target.Member, propertyInfo);
         }
     }
 
     public enum Target
     {
         Type,
-        Property
+        Member
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>

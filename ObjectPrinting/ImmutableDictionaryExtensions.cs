@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 namespace ObjectPrinting
 {
     public static class ImmutableDictionaryExtensions
     {
-        public static ImmutableDictionary<TKey, TValue> AddOrReplace<TKey, TValue>(this ImmutableDictionary<TKey, TValue> dic,
+        public static ImmutableDictionary<TKey, TValue> AddOrReplace<TKey, TValue>(
+            this ImmutableDictionary<TKey, TValue> dic,
             TKey key, TValue value)
         {
             ImmutableDictionary<TKey, TValue> result;

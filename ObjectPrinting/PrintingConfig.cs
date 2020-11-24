@@ -111,34 +111,49 @@ namespace ObjectPrinting
             sb.AppendLine(identation + type.Name);
             identation += '\t';
 
-            var membersToPrint = type.GetProperties()
-                .Where(prop => !excludedTypes.Contains(prop.PropertyType) && !excludedMembers.Contains(prop))
-                .ToDictionary(prop => prop.Name, prop => GetValueToPrint(obj, nestingLevel, prop));
-
-            membersToPrint = membersToPrint.Union(
-                    type.GetFields()
-                        .Where(prop => !excludedTypes.Contains(prop.FieldType) && !excludedMembers.Contains(prop))
-                        .ToDictionary(prop => prop.Name, prop => GetValueToPrint(obj, nestingLevel, prop)))
-                .ToDictionary(x => x.Key, x => x.Value);
-
+            var membersToPrint = GetMembersToPrint(obj, nestingLevel, type);
+            
             foreach (var (key, value) in membersToPrint)
                 sb.AppendLine($"{identation}{key} = {value}");
 
             return sb.ToString();
         }
 
+        private Dictionary<string, string> GetMembersToPrint(object obj, int nestingLevel, Type type)
+        {
+            var membersToPrint = new Dictionary<string, string>();
+            
+            foreach (var propInfo in type.GetProperties())
+            {
+                if(excludedMembers.Contains(propInfo) || excludedTypes.Contains(propInfo.PropertyType))
+                    continue;
+
+                membersToPrint[propInfo.Name] = GetValueToPrint(obj, nestingLevel, propInfo);
+            }
+            
+            foreach (var fieldInfo in type.GetFields())
+            {
+                if(excludedMembers.Contains(fieldInfo) || excludedTypes.Contains(fieldInfo.FieldType))
+                    continue;
+
+                membersToPrint[fieldInfo.Name] = GetValueToPrint(obj, nestingLevel, fieldInfo);
+            }
+            
+            return membersToPrint;
+        }
+
 
         private string GetValueToPrint(object obj, int nestingLevel, PropertyInfo propertyInfo)
         {
-            return GetValueToPrint(obj, nestingLevel, propertyInfo.GetValue(obj), propertyInfo);
+            return GetValueToPrint(propertyInfo, propertyInfo.GetValue(obj), nestingLevel);
         }
 
         private string GetValueToPrint(object obj, int nestingLevel, FieldInfo fieldInfo)
         {
-            return GetValueToPrint(obj, nestingLevel, fieldInfo.GetValue(obj), fieldInfo);
+            return GetValueToPrint(fieldInfo, fieldInfo.GetValue(obj), nestingLevel);
         }
 
-        private string GetValueToPrint(object obj, int nestingLevel, object memberValue, MemberInfo memberInfo)
+        private string GetValueToPrint(MemberInfo memberInfo, object memberValue, int nestingLevel)
         {
             string valueToPrint;
             if (parentObjects.Contains(memberValue))
@@ -149,12 +164,6 @@ namespace ObjectPrinting
                     : PrintToString(memberValue, nestingLevel + 1);
 
             return valueToPrint;
-        }
-
-        private enum MemberType
-        {
-            Property,
-            Field
         }
     }
 
