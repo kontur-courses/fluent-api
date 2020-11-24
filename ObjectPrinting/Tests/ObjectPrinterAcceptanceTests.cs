@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
@@ -6,22 +9,109 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Demo()
+        public void Should_BeAbleTo_ExcludeTypes()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person {Name = "Test", Age = 10};
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<DateTime>()
+                .Excluding<double>()
+                .Excluding<string>()
+                .Excluding(x => x.Field);
 
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
-            
-            string s1 = printer.PrintToString(person);
+            printer.PrintToString(person)
+                .Should().Be("Person\r\n\tAge = 10\r\n");
+        }
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+        [Test]
+        public void Should_BeAbleTo_SerializeTypesAlternatively()
+        {
+            var person = new Person { Name = "Test", Age = 10 };
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding<int>()
+                .Excluding<DateTime>()
+                .Printing<string>().Using(x => x.Length.ToString());
+
+            printer.PrintToString(person)
+                .Should().Be("Person\r\n\tName = 4\r\n\tLastName = null\r\n");
+        }
+
+        [Test]
+        public void Should_BeAbleTo_SetCultureForTypes()
+        {
+            var person = new Person { Name = "Test", DateOfBirth = new DateTime(2004, 02, 17)};
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding<int>()
+                .Printing<DateTime>().UsingCulture(CultureInfo.InvariantCulture);
+
+            printer.PrintToString(person)
+                .Should().Be($"Person\r\n\tName = {person.Name}\r\n\tLastName = null\r\n\tDateOfBirth = 02/17/2004 00:00:00\r\n");
+        }
+
+        [Test]
+        public void Should_BeAbleTo_SerializeSpecialPropertyAlternatively()
+        {
+            var person = new Person { Name = "Test", LastName = "Test", Age = 10 };
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<int>()
+                .Excluding<double>()
+                .Excluding<DateTime>()
+                .Printing(x => x.Name).Using(x => x.ToUpper());
+
+            printer.PrintToString(person)
+                .Should().Be($"Person\r\n\tName = {person.Name.ToUpper()}\r\n\tLastName = {person.LastName}\r\n");
+        }
+
+        [Test]
+        public void Should_BeAbleTo_TrimStringMembers()
+        {
+            var person = new Person { Name = "TestToTrim", LastName = "TestToTrim", Age = 10 };
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<int>()
+                .Excluding<double>()
+                .Excluding<DateTime>()
+                .Printing<string>().TrimmedToLength(4);
+
+            printer.PrintToString(person)
+                .Should().Be("Person\r\n\tName = Test\r\n\tLastName = Test\r\n");
+        }
+
+        [Test]
+        public void Should_BeAbleTo_ExcludeSpecialMember()
+        {
+            var person = new Person { Name = "Test", LastName = "Test", Age = 10, Height = 140.37};
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<DateTime>()
+                .Excluding<Guid>()
+                .Excluding(x => x.LastName)
+                .Excluding(x => x.Field);
+
+            printer.PrintToString(person)
+                .Should().Be(
+                    $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n");
+
+        }
+
+        [Test]
+        public void Should_SupportFields()
+        {
+            var person = new Person { Name = "Test", LastName = "Test", Age = 10, Height = 140.37 };
+            person.Field = 2304;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Excluding<DateTime>()
+                .Printing(x => x.Field).Using(x => x.ToString("X"));
+
+            printer.PrintToString(person)
+                .Should().Be(
+                    $"Person\r\n\tName = Test\r\n\tLastName = Test\r\n\tHeight = 140,37\r\n\tAge = 10\r\n\tField = {person.Field:X}\r\n");
         }
     }
 }
