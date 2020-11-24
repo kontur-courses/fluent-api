@@ -23,8 +23,6 @@ namespace ObjectPrinting
 
         private ImmutableDictionary<Type, Func<object, string>> alternateTypeSerializers =
             ImmutableDictionary<Type, Func<object, string>>.Empty;
-
-        private ImmutableDictionary<Type, CultureInfo> cultureInfos = ImmutableDictionary<Type, CultureInfo>.Empty;
         private ImmutableHashSet<MemberInfo> excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
         private ImmutableHashSet<Type> excludingTypes = ImmutableHashSet<Type>.Empty;
         private ImmutableDictionary<MemberInfo, int> memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
@@ -40,7 +38,6 @@ namespace ObjectPrinting
             memberLengths = oldPrintingConfig.memberLengths;
             alternateTypeSerializers = oldPrintingConfig.alternateTypeSerializers;
             alternateMemberSerializers = oldPrintingConfig.alternateMemberSerializers;
-            cultureInfos = oldPrintingConfig.cultureInfos;
         }
 
         public string PrintToString(TOwner obj)
@@ -97,12 +94,15 @@ namespace ObjectPrinting
             };
         }
 
-        public PrintingConfig<TOwner> SetCultureInfo<TPropType>(CultureInfo cultureInfo)
+        public PrintingConfig<TOwner> SetCulture<TPropType>(CultureInfo cultureInfo)
             where TPropType : IFormattable
         {
             return new PrintingConfig<TOwner>(this)
             {
-                cultureInfos = cultureInfos.Add(typeof(TPropType), cultureInfo)
+                alternateTypeSerializers =
+                    alternateTypeSerializers.Add(
+                        typeof(TPropType),
+                        x => ((IFormattable)x).ToString(null, cultureInfo))
             };
         }
 
@@ -148,12 +148,6 @@ namespace ObjectPrinting
             if (alternateTypeSerializers.TryGetValue(valueType, out serializer))
             {
                 serializedMember = serializer(value);
-                return true;
-            }
-
-            if (cultureInfos.TryGetValue(valueType, out var cultureInfo))
-            {
-                serializedMember = ((IFormattable) value).ToString(null, cultureInfo);
                 return true;
             }
 

@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintingWithCulture_IfCultureWasSet()
         {
-            printer = printer.SetCultureInfo<double>(CultureInfo.InvariantCulture);
+            printer = printer.SetCulture<double>(CultureInfo.InvariantCulture);
             printer.PrintToString(person).Should().Contain($"{nameof(person.Height)} = 1.85");
         }
 
