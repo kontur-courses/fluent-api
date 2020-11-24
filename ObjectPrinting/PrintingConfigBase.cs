@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -111,21 +112,59 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            sb.Append(type.Name);
+            if (obj is IEnumerable enumerable)
             {
-                if (!(MemberConfigs.TryGetValue(propertyInfo, out var config)
-                      || TypeConfigs.TryGetValue(propertyInfo.PropertyType, out config)))
-                    config = new PrintingConfigBase {TypeConfigs = TypeConfigs};
-                else if (config == null) continue;
-                else config = config.WithParentTypeConfigs(TypeConfigs);
-
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          config.PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)
-                          + Environment.NewLine);
+                sb.AppendLine(" [");
+                foreach (var o in enumerable)
+                    sb.Append(identation).AppendLine(PrintChild(obj, o, nestingLevel));
+                sb.Append('\t', nestingLevel).Append("]");
+            }
+            else
+            {
+                var members = type.GetProperties();
+                if (members.Any()) sb.AppendLine();
+                sb.AppendJoin('\n', members.Select(
+                    m => PrintMember(obj, m, nestingLevel)).Where(s => s != null));
             }
 
             return sb.ToString();
+        }
+
+        private string PrintChild(object obj, object child, int nestingLevel)
+        {
+            if (child == null || !TypeConfigs.TryGetValue(child.GetType(), out var config))
+                config = new PrintingConfigBase {TypeConfigs = TypeConfigs};
+            else if (config == null) return null;
+            else config = config.WithParentTypeConfigs(TypeConfigs);
+            return config.PrintToString(child, nestingLevel + 1);
+        }
+
+        private string PrintMember(object obj, MemberInfo member, int nestingLevel)
+        {
+            object value;
+            Type type;
+            if (member is PropertyInfo property)
+            {
+                if (!property.CanRead) return $"{member.Name} (not readable)";
+                value = property.GetValue(obj);
+                type = property.PropertyType;
+            }
+            else if (member is FieldInfo field)
+            {
+                value = field.GetValue(obj);
+                type = field.FieldType;
+            }
+            else throw new InvalidOperationException($"{member.MemberType} is not supported!");
+            
+            if (!(MemberConfigs.TryGetValue(member, out var config)
+                  || TypeConfigs.TryGetValue(type, out config)))
+                config = new PrintingConfigBase {TypeConfigs = TypeConfigs};
+            else if (config == null) return null;
+            else config = config.WithParentTypeConfigs(TypeConfigs);
+
+            var identation = new string('\t', nestingLevel + 1);
+            return $"{identation}{member.Name} = {config.PrintToString(value, nestingLevel + 1)}";
         }
     }
 }
