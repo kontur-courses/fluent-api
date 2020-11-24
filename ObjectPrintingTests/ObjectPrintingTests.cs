@@ -107,6 +107,98 @@ namespace ObjectPrintingTests
                             {3, new Person {Name = "C", Age = 3}},
                         },
                         "Dictionary`2\n\tKeyValuePair`2\n\t\tKey = 1\n\t\tValue = Person\n\t\t\tName = A\n\t\t\tAge = 1\n\tKeyValuePair`2\n\t\tKey = 2\n\t\tValue = Person\n\t\t\tName = B\n\t\t\tAge = 2\n\tKeyValuePair`2\n\t\tKey = 3\n\t\tValue = Person\n\t\t\tName = C\n\t\t\tAge = 3\n"),
+
+                    ("Dictionary",
+                        ObjectPrinter.For<Dictionary<Person, List<(Person, TimeSpan)>>[]>(),
+                        new Dictionary<Person, List<(Person, TimeSpan)>>[]
+                        {
+                            new Dictionary<Person, List<(Person, TimeSpan)>>()
+                            {
+                                {
+                                    new Person {Age = 1},
+                                    new List<(Person, TimeSpan)>
+                                    {
+                                        (new Person {Name = "a"}, TimeSpan.Zero),
+                                        (new Person {Name = "c"}, TimeSpan.MinValue),
+                                    }
+                                },
+                            },
+                            new Dictionary<Person, List<(Person, TimeSpan)>>()
+                            {
+                                {
+                                    new Person {Age = 2},
+                                    new List<(Person, TimeSpan)>
+                                    {
+                                        (new Person {Name = "b"}, TimeSpan.MaxValue)
+                                    }
+                                },
+                                {
+                                    new Person {Age = 3},
+                                    new List<(Person, TimeSpan)>
+                                    {
+                                        (new Person {Name = "c"}, TimeSpan.MinValue),
+                                        (new Person {Name = "c"}, TimeSpan.MinValue),
+                                        (new Person {Name = "c"}, TimeSpan.MinValue),
+                                        (new Person {Name = "c"}, TimeSpan.MinValue),
+                                    }
+                                },
+                            },
+                        },
+                        @"Dictionary`2[]
+	Dictionary`2
+		KeyValuePair`2
+			Key = Person
+				Name = null
+				Age = 1
+			Value = List`1
+				ValueTuple`2
+					Item1 = Person
+						Name = a
+						Age = 0
+					Item2 = 00:00:00
+				ValueTuple`2
+					Item1 = Person
+						Name = c
+						Age = 0
+					Item2 = -10675199.02:48:05.4775808
+	Dictionary`2
+		KeyValuePair`2
+			Key = Person
+				Name = null
+				Age = 2
+			Value = List`1
+				ValueTuple`2
+					Item1 = Person
+						Name = b
+						Age = 0
+					Item2 = 10675199.02:48:05.4775807
+		KeyValuePair`2
+			Key = Person
+				Name = null
+				Age = 3
+			Value = List`1
+				ValueTuple`2
+					Item1 = Person
+						Name = c
+						Age = 0
+					Item2 = -10675199.02:48:05.4775808
+				ValueTuple`2
+					Item1 = Person
+						Name = c
+						Age = 0
+					Item2 = -10675199.02:48:05.4775808
+				ValueTuple`2
+					Item1 = Person
+						Name = c
+						Age = 0
+					Item2 = -10675199.02:48:05.4775808
+				ValueTuple`2
+					Item1 = Person
+						Name = c
+						Age = 0
+					Item2 = -10675199.02:48:05.4775808
+"
+                    ),
                 };
 
             foreach (var (testName, config, toPrint, expectedRaw) in testData)
@@ -121,6 +213,7 @@ namespace ObjectPrintingTests
 
         private static string GetSystemIndependent(string text)
         {
+            text = text.Replace("\r\n", Environment.NewLine);
             return text.Replace("\n", Environment.NewLine);
         }
 
