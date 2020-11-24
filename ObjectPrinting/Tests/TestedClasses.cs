@@ -34,19 +34,19 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
     }
 
-    class Foo1
+    class FooWithEquals
     {
         public string Name { get; set; }
-        public Foo1 Next { get; set; }
+        public FooWithEquals Next { get; set; }
 
-        protected bool Equals(Foo1 other) => Name == other.Name;
+        protected bool Equals(FooWithEquals other) => Name == other.Name;
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((Foo1) obj);
+            return Equals((FooWithEquals) obj);
         }
 
         public override int GetHashCode() => (Name != null ? Name.GetHashCode() : 0);

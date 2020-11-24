@@ -140,9 +140,7 @@ namespace ObjectPrinting.Tests
         {
             person.CustomDict.Add("string", 1234);
             var serialized = person.PrintToString();
-            serialized.Should().Contain($"KeyValuePair`2{Environment.NewLine}");
-            serialized.Should().Contain($"Key = string{Environment.NewLine}");
-            serialized.Should().Contain($"Value = 1234{Environment.NewLine}");
+            serialized.Should().Contain($"string: 1234{Environment.NewLine}");
 
         }
 
@@ -173,7 +171,7 @@ namespace ObjectPrinting.Tests
             var foo = new Bar {Foo = new Foo {Name = "Hello"}};
             var printer = ObjectPrinter.For<Bar>().Printing(b => b.Foo.Name).TrimmedToLength(2);
             var actual = printer.PrintToString(foo);
-            actual.Should().Contain("Name = He"); // насчёт формата не уверен, но суть теста понятна
+            actual.Should().Contain("Name = He");
         }
 
         [Test]
@@ -188,12 +186,12 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrinterShouldWorkCorrect_WhenEqualsAndGetHashMethodsOverriden()
         {
-            var foo = new Foo1 {Name = "Hello", Next = new Foo1 {Name = "Hello"}};
-            var printer = ObjectPrinter.For<Foo1>();
+            var foo = new FooWithEquals {Name = "Hello", Next = new FooWithEquals {Name = "Hello"}};
+            var printer = ObjectPrinter.For<FooWithEquals>();
             var actual = printer.PrintToString(foo);
-            actual.Should().Be($"Foo1{Environment.NewLine}" +
+            actual.Should().Be($"FooWithEquals{Environment.NewLine}" +
                                $"\tName = Hello{Environment.NewLine}" +
-                               $"\tNext = Foo1{Environment.NewLine}" +
+                               $"\tNext = FooWithEquals{Environment.NewLine}" +
                                $"\t\tName = Hello{Environment.NewLine}" +
                                $"\t\tNext = null{Environment.NewLine}");
         }

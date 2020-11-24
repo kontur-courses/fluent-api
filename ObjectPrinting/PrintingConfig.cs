@@ -13,7 +13,7 @@ namespace ObjectPrinting
             {typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)};
 
         internal ConfigurationInfo ConfigurationInfo { get; }
-        private List<HashSet<object>> nestedSerializedObjects;
+        private List<List<object>> nestedSerializedObjects;
         private LinkedList<string> nestedNames;
 
         public PrintingConfig()
@@ -41,7 +41,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            nestedSerializedObjects = new List<HashSet<object>> {new HashSet<object>()};
+            nestedSerializedObjects = new List<List<object>> {new List<object>()};
             nestedNames = new LinkedList<string>();
             nestedNames.AddLast(typeof(TOwner).Name);
             return PrintToString(obj, 0);
@@ -68,24 +68,44 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private StringBuilder CollectionToString(ICollection obj, int nestingLevel)
+        private StringBuilder CollectionToString(ICollection collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            if (obj.Count != 0)
+            if (collection.Count != 0)
             {
-                sb.Append(Environment.NewLine + new string('\t', nestingLevel) + '[' + Environment.NewLine);
-                foreach (var elem in obj)
+                if (collection is IDictionary dictionary)
+                    sb = DictionaryToString(dictionary, nestingLevel);
+                else
                 {
-                    sb.Append(new string('\t', nestingLevel));
-                    sb.Append(PrintToString(elem, nestingLevel));
-                }
+                    sb.Append(Environment.NewLine + new string('\t', nestingLevel) + '[' + Environment.NewLine);
+                    foreach (var elem in collection)
+                    {
+                        sb.Append(new string('\t', nestingLevel));
+                        sb.Append(PrintToString(elem, nestingLevel));
+                    }
 
-                sb.Append(new string('\t', nestingLevel) + ']');
+                    sb.Append(new string('\t', nestingLevel) + ']');
+                }
             }
             else
                 sb.Append("Empty");
 
             sb.Append(Environment.NewLine);
+            return sb;
+        }
+
+        private StringBuilder DictionaryToString(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine + new string('\t', nestingLevel) + '{' + Environment.NewLine);
+            foreach (var key in dictionary.Keys)
+            {
+                sb.Append(new string('\t', nestingLevel));
+                sb.Append($"{key}: ");
+                sb.Append(PrintToString(dictionary[key], nestingLevel));
+            }
+
+            sb.Append(new string('\t', nestingLevel) + '}');
             return sb;
         }
 
@@ -103,7 +123,7 @@ namespace ObjectPrinting
                     new ValueInfo(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name),
                     nestingLevel));
 
-            nestedSerializedObjects[nestingLevel] = new HashSet<object>();
+            nestedSerializedObjects[nestingLevel] = new List<object>();
             return sb;
         }
 
@@ -135,7 +155,7 @@ namespace ObjectPrinting
         private void AddToSerializedObjects(int nestingLevel, object obj)
         {
             if (nestedSerializedObjects.Count < nestingLevel + 1)
-                nestedSerializedObjects.Add(new HashSet<object>());
+                nestedSerializedObjects.Add(new List<object>());
             nestedSerializedObjects[nestingLevel].Add(obj);
         }
 
