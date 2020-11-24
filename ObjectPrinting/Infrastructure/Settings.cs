@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Infrastructure
 {
@@ -7,5 +8,6 @@ namespace ObjectPrinting.Infrastructure
         public bool IsExcluded;
         public Delegate Printer;
         public int? MaxLength;
+        public CultureInfo CultureInfo;
     }
 }

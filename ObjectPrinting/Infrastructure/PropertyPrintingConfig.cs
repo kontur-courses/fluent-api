@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.Infrastructure
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TSelected> : IPropertyPrintingConfig<TOwner, TSelected>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo selectedMember;
@@ -25,7 +25,7 @@ namespace ObjectPrinting.Infrastructure
             this.selectedType = selectedType;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using(Func<TSelected, string> print)
         {
             if (selectedMember is null)
                 AddTypePrinter(print);
@@ -34,22 +34,30 @@ namespace ObjectPrinting.Infrastructure
             return printingConfig;
         }
 
-        private void AddTypePrinter(Func<TPropType, string> print)
+        private void AddTypePrinter(Func<TSelected, string> print)
         {
-            printingConfig.GetSettings(typeof(TPropType)).Printer = print;
+            printingConfig.GetSettings(typeof(TSelected)).Printer = print;
         }
         
-        private void AddMemberPrinter(Func<TPropType, string> print)
+        private void AddMemberPrinter(Func<TSelected, string> print)
         {
             printingConfig.GetSettings(selectedMember).Printer = print;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            if (!typeof(IFormattable).IsAssignableFrom(typeof(TSelected)))
+                throw new ArgumentException($"Cannot set culture: {culture} for non IFormattable member: [{selectedMember}]");
+
+            if (selectedMember != null)
+                printingConfig.GetSettings(selectedMember).CultureInfo = culture;
+            else
+                printingConfig.GetSettings(typeof(TSelected)).CultureInfo = culture;
+            
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TSelected>.ParentConfig => printingConfig;
 
         public void SetLengthConstraint(int length)
         {
@@ -61,7 +69,7 @@ namespace ObjectPrinting.Infrastructure
         
         private void AddTypeLengthConstraint(int length)
         {
-            printingConfig.GetSettings(typeof(TPropType)).MaxLength = length;
+            printingConfig.GetSettings(typeof(TSelected)).MaxLength = length;
         }
         
         private void AddMemberLengthConstraint(int length)

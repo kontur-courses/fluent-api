@@ -58,7 +58,7 @@ namespace ObjectPrinting.Infrastructure
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -66,7 +66,7 @@ namespace ObjectPrinting.Infrastructure
             {
                 if (IsExcluded(memberInfo))
                     continue;
-                sb.Append(identation).Append(memberInfo.Name).Append(" = ");
+                sb.Append(indentation).Append(memberInfo.Name).Append(" = ");
                 if (TryAlternatePrint(memberInfo, obj, out var toPrint))
                 {
                     sb.Append(toPrint).Append(Environment.NewLine);
@@ -100,8 +100,13 @@ namespace ObjectPrinting.Infrastructure
             var toPrint = GetValue(owner, memberInfo)?.ToString();
             if (settings.Printer != null)
                 toPrint = settings.Printer.DynamicInvoke(GetValue(owner, memberInfo)).ToString();
+            
+            if (settings.CultureInfo != null)
+                toPrint = ((IFormattable) GetValue(owner, memberInfo)).ToString("", settings.CultureInfo);
+            
             if (settings.MaxLength != null)
                 toPrint = toPrint.Substring(0, Math.Min(toPrint.Length, settings.MaxLength ?? default));
+            
             return toPrint;
         }
 

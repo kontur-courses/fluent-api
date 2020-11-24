@@ -125,11 +125,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_WithCultureInfo()
         {
-            var objectToPrint = new WithDouble();
+            var objectToPrint = new WithDouble() {Double = 1.1};
             var printer = ObjectPrinter.For<WithDouble>()
                 .Printing<double>()
-                .Using(CultureInfo.CurrentCulture);
-            var expected = GetSystemIndependent("WithDouble\n\tDouble = 0\n");
+                .Using(CultureInfo.GetCultureInfo("sv-SE"));
+            var expected = GetSystemIndependent("WithDouble\n\tDouble = 1,1\n");
             
             var actual = printer.PrintToString(objectToPrint);
 
