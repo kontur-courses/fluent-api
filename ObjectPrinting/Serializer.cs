@@ -45,7 +45,8 @@ namespace ObjectPrinting
             sb.AppendLine(obj.GetType().Name);
             PrintingFields(obj, nestingLevel + 1, sb);
             PrintingProperties(obj, nestingLevel + 1, sb);
-
+            
+            visitedMembers.Remove(obj);
             return sb.ToString();
         }
 
