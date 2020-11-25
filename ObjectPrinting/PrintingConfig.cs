@@ -12,7 +12,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private HashSet<Type> excludedTypes;
-        private HashSet<MemberInfo> exludedProperties;
+        private HashSet<MemberInfo> exludedMembers;
         internal Dictionary<Type, Delegate> typeMemberConfigs;
         internal Dictionary<string, Delegate> nameMemberConfigs;
 
@@ -24,7 +24,7 @@ namespace ObjectPrinting
         public PrintingConfig(int maxNestingLevel = 10)
         {
             excludedTypes = new HashSet<Type>();
-            exludedProperties = new HashSet<MemberInfo>();
+            exludedMembers = new HashSet<MemberInfo>();
             typeMemberConfigs = new Dictionary<Type, Delegate>();
             nameMemberConfigs = new Dictionary<string, Delegate>();
             this.maxNestingLevel = maxNestingLevel;
@@ -49,7 +49,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            exludedProperties.Add(propInfo);
+            exludedMembers.Add(propInfo);
             return this;
         }
 
@@ -123,7 +123,7 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var identation = new string('\t', nestingLevel + 1);
-                if (exludedProperties.Contains(propertyInfo))
+                if (exludedMembers.Contains(propertyInfo))
                     continue;
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
@@ -147,7 +147,7 @@ namespace ObjectPrinting
             foreach (var fieldInfo in type.GetFields())
             {
                 var identation = new string('\t', nestingLevel + 1);
-                if (exludedProperties.Contains(fieldInfo))
+                if (exludedMembers.Contains(fieldInfo))
                     continue;
                 if (excludedTypes.Contains(fieldInfo.FieldType))
                     continue;
