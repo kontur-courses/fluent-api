@@ -25,10 +25,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return SerializeObject(obj, new string[0], 0);
+            return SerializeValue(obj, new string[0], 0);
         }
 
-        private string SerializeObject(object? obj, string[] path, int nestingLevel)
+        private string SerializeValue(object? obj, string[] path, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -41,22 +41,22 @@ namespace ObjectPrinting
                 throw new InvalidOperationException($"Cyclic reference in {typeof(TOwner).FullName}");
             alreadySerialized.Add(obj);
 
-            if (obj is IDictionary dictionary)
+            return obj switch
             {
-                return $"[{dictionary.Count}]" + Environment.NewLine +
-                       SerializeDictionary(dictionary, path, nestingLevel + 1);
-            }
+                IDictionary dictionary => $"[{dictionary.Count}]" + Environment.NewLine +
+                                          SerializeDictionary(dictionary, path, nestingLevel + 1),
+                ICollection collection => $"[{collection.Count}]" + Environment.NewLine +
+                                          SerializeCollection(collection, path, nestingLevel + 1),
+                _ => SerializeObjectState(obj, path, nestingLevel, type)
+            };
+        }
 
-            if (obj is ICollection collection)
-            {
-                return $"[{collection.Count}]" + Environment.NewLine +
-                       SerializeCollection(collection, path, nestingLevel + 1);
-            }
-
+        private string SerializeObjectState(object obj, string[] path, int nestingLevel, Type objType)
+        {
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(objType.Name);
 
-            var serializedProperties = SerializationTarget.EnumerateFrom(type)
+            var serializedProperties = SerializationTarget.EnumerateFrom(objType)
                 .Select(t => SerializeProperty(t.MemberName, path, t.GetValue(obj), t.MemberType, nestingLevel + 1));
 
             sb.AppendJoin(string.Empty, serializedProperties);
@@ -69,7 +69,7 @@ namespace ObjectPrinting
             var serialized = value == null
                 ? "null"
                 : GetConfiguratorOrDefault(propertyName, path, type)?.AppliedSerializer.Serialize(value) ??
-                  SerializeObject(value, path.Append(propertyName).ToArray(), nestingLevel + 1);
+                  SerializeValue(value, path.Append(propertyName).ToArray(), nestingLevel + 1);
 
             return string.IsNullOrEmpty(serialized)
                 ? string.Empty
@@ -87,7 +87,7 @@ namespace ObjectPrinting
             foreach (var item in collection)
             {
                 var prefix = indentation + $"[{currentIndex}]:{item?.GetType().Name ?? "null"} = ";
-                sb.Append(prefix + SerializeObject(
+                sb.Append(prefix + SerializeValue(
                     item,
                     path.Append(currentIndex.ToString()).ToArray(),
                     nestingLevel + 1));
@@ -107,7 +107,7 @@ namespace ObjectPrinting
                 var keyString = key.ToString(); // TODO serialize keys and values separately
                 var item = dictionary[key];
                 var prefix = indentation + $"[{keyString}:{key.GetType().Name}]:{item?.GetType().Name ?? "null"} = ";
-                sb.Append(prefix + SerializeObject(
+                sb.Append(prefix + SerializeValue(
                     item,
                     path.Append(keyString).ToArray(),
                     nestingLevel + 1));
