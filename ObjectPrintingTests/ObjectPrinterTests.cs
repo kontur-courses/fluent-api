@@ -57,5 +57,73 @@ namespace ObjectPrintingTests
         }
         
         #endregion
+
+        #region Alternative serialization method for specified type and property
+
+        [Test]
+        public void PrintObject_PrintPersonWithAlternativeSerializationMethodForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty<string>()
+                .WithConfig(str => $"String data: {str}");
+            var result = printer.PrintToString(person);
+            
+            result.Should().Be(
+                $"Person{newLine}" +
+                $"\tId = {person.Id}{newLine}" +
+                $"\tString data: {person.Name}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+        
+        [Test]
+        public void PrintObject_PrintPersonWithAlternativeSerializationMethodForProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty(pers => pers.Id)
+                .WithConfig(guid => $"Person id is {guid.ToString()}");
+            var result = printer.PrintToString(person);
+            
+            result.Should().Be(
+                $"Person{newLine}" +
+                $"\tPerson id is {person.Id.ToString()}{newLine}" +
+                $"\tName = {person.Name}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+        
+        [Test]
+        public void PrintObject_PrintPersonWithAlternativeSerializationMethod_ForTwoProperties()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty(pers => pers.Id)
+                .WithConfig(guid => $"Person id is {guid.ToString()}")
+                .PrintProperty(pers => pers.Name)
+                .WithConfig(str => $"Person name is {str}");
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                $"Person{newLine}" +
+                $"\tPerson id is {person.Id}{newLine}" +
+                $"\tPerson name is {person.Name}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+
+        [Test]
+        public void PrintObject_PrintPersonWithAlternativeSerializationMethodForTypeAndProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty<Guid>()
+                .WithConfig(guid => $"Nice guid - {guid}")
+                .PrintProperty(pers => pers.Name)
+                .WithConfig(name => $"Person name is {name}");
+            var result = printer.PrintToString(person);
+            
+            result.Should().Be(
+                $"Person{newLine}" +
+                $"\tNice guid - {person.Id}{newLine}" +
+                $"\tPerson name is {person.Name}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+        
+        #endregion
     }
 }
