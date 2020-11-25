@@ -14,7 +14,7 @@ namespace ObjectPrinting
         private HashSet<Type> excludedTypes;
         private HashSet<MemberInfo> exludedMembers;
         internal Dictionary<Type, Delegate> typeMemberConfigs;
-        internal Dictionary<string, Delegate> nameMemberConfigs;
+        internal Dictionary<MemberInfo, Delegate> nameMemberConfigs;
 
         // internal Dictionary<Type, Delegate> typePropertyConfigs;
         // internal Dictionary<string, Delegate> namePropertyConfigs;
@@ -26,7 +26,7 @@ namespace ObjectPrinting
             excludedTypes = new HashSet<Type>();
             exludedMembers = new HashSet<MemberInfo>();
             typeMemberConfigs = new Dictionary<Type, Delegate>();
-            nameMemberConfigs = new Dictionary<string, Delegate>();
+            nameMemberConfigs = new Dictionary<MemberInfo, Delegate>();
             this.maxNestingLevel = maxNestingLevel;
         }
 
@@ -128,8 +128,8 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 var value = propertyInfo.GetValue(obj);
-                if (nameMemberConfigs.ContainsKey(propertyInfo.Name))
-                    value = nameMemberConfigs[propertyInfo.Name].DynamicInvoke(value);
+                if (nameMemberConfigs.ContainsKey(propertyInfo))
+                    value = nameMemberConfigs[propertyInfo].DynamicInvoke(value);
                 else if (typeMemberConfigs.ContainsKey(propertyInfo.PropertyType))
                     value = typeMemberConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
                 sb.Append(identation + propertyInfo.Name + " = " +
@@ -152,8 +152,8 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(fieldInfo.FieldType))
                     continue;
                 var value = fieldInfo.GetValue(obj);
-                if (nameMemberConfigs.ContainsKey(fieldInfo.Name))
-                    value = nameMemberConfigs[fieldInfo.Name].DynamicInvoke(value);
+                if (nameMemberConfigs.ContainsKey(fieldInfo))
+                    value = nameMemberConfigs[fieldInfo].DynamicInvoke(value);
                 else if (typeMemberConfigs.ContainsKey(fieldInfo.FieldType))
                     value = typeMemberConfigs[fieldInfo.FieldType].DynamicInvoke(value);
                 sb.Append(identation + fieldInfo.Name + " = " +

@@ -22,7 +22,7 @@ namespace ObjectPrinting
             if (memberInfo == null)
                 printingConfig.typeMemberConfigs[typeof(TPropType)] = print;
             else
-                printingConfig.nameMemberConfigs[memberInfo.Name] = print;
+                printingConfig.nameMemberConfigs[memberInfo] = print;
             return printingConfig;
         }
 
