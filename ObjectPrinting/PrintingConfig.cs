@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -23,6 +19,7 @@ namespace ObjectPrinting
 
         private ImmutableDictionary<Type, Func<object, string>> alternateTypeSerializers =
             ImmutableDictionary<Type, Func<object, string>>.Empty;
+
         private ImmutableHashSet<MemberInfo> excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
         private ImmutableHashSet<Type> excludingTypes = ImmutableHashSet<Type>.Empty;
         private ImmutableDictionary<MemberInfo, int> memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
@@ -42,7 +39,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, new HashSet<object>());
+            return Serializer<TOwner>.Serialize(this, obj);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -102,60 +99,22 @@ namespace ObjectPrinting
                 alternateTypeSerializers =
                     alternateTypeSerializers.AddOrSet(
                         typeof(TPropType),
-                        x => ((IFormattable)x).ToString(null, cultureInfo))
+                        x => ((IFormattable) x).ToString(null, cultureInfo))
             };
         }
 
-        private string PrintToString(object obj, int nestingLevel, HashSet<object> serializedObjects)
+        public bool TryGetSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
         {
-            if (obj == null)
-                return $"null{Environment.NewLine}";
-            if (finalTypes.Contains(obj.GetType()))
-                return $"{obj}{Environment.NewLine}";
-            if (!serializedObjects.Add(obj))
-                throw new SerializationException("Circular reference");
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(obj.GetType().Name);
-            foreach (var memberInfo in obj.GetType()
-                .GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                .Where(x => x.IsPropertyOrField())
-                .Where(IsNotExcluded))
-            {
-                var memberValue = memberInfo.GetValue(obj);
-                var memberType = memberInfo.GetValueType();
-                var toPrint = TrySerializeMember(memberInfo, memberValue, memberType, out var serializedMember)
-                    ? serializedMember
-                    : memberValue;
-                if (memberLengths.TryGetValue(memberInfo, out var maxLength))
-                    toPrint = toPrint.ToString()?.Substring(0, maxLength);
-                var serializedObject = PrintToString(toPrint, nestingLevel + 1, serializedObjects);
-                sb.Append($"{indentation}{memberInfo.Name} = {serializedObject}");
-            }
-
-            return sb.ToString();
+            return alternateMemberSerializers.TryGetValue(memberInfo, out serializer)
+                   || alternateTypeSerializers.TryGetValue(memberInfo.GetValueType(), out serializer);
         }
 
-        private bool TrySerializeMember(MemberInfo memberInfo, object value, Type valueType,
-            out string serializedMember)
+        public bool TryGetMemberLength(MemberInfo memberInfo, out int length)
         {
-            if (alternateMemberSerializers.TryGetValue(memberInfo, out var serializer))
-            {
-                serializedMember = serializer(value);
-                return true;
-            }
-
-            if (alternateTypeSerializers.TryGetValue(valueType, out serializer))
-            {
-                serializedMember = serializer(value);
-                return true;
-            }
-
-            serializedMember = null;
-            return false;
+            return memberLengths.TryGetValue(memberInfo, out length);
         }
 
-        private bool IsNotExcluded(MemberInfo memberInfo)
+        public bool IsMemberNotExcluded(MemberInfo memberInfo)
         {
             return !excludingMembers.Contains(memberInfo) && !excludingTypes.Contains(memberInfo.GetValueType());
         }
