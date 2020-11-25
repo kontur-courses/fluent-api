@@ -26,5 +26,7 @@ namespace ObjectPrinting.Tests
             get => (DateTime.Now - BirthDate).Days / 365;
             set => BirthDate = DateTime.Now - TimeSpan.FromDays(value * 365);
         }
+
+        public override string ToString() => $"({nameof(Person)}) {Name}";
     }
 }
