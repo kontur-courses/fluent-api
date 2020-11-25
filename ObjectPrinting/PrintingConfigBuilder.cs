@@ -20,6 +20,9 @@ namespace ObjectPrinting
             groupAppliedConfigurators = new Dictionary<Type, IPropertyConfigurator>();
         }
 
+        public PrintingConfig<TOwner> Build() =>
+            new PrintingConfig<TOwner>(finalTypes, configurationRoot, groupAppliedConfigurators);
+
         public SelectedPropertyGroup<TOwner, TProperty> Choose<TProperty>()
         {
             var propertyGroup = new SelectedPropertyGroup<TOwner, TProperty>(this);
@@ -42,21 +45,27 @@ namespace ObjectPrinting
 
             var selectedProperty = new SelectedProperty<TOwner, TProperty>(target, this);
             var nodePath = GetPathFromExpression(memberExpression);
-            var currentNode = GetOrCreateNodeByPath(nodePath);
+            var currentNode = GetOrCreateNodeByPath(nodePath, configurationRoot);
             currentNode.AddChild(Node.Terminal<IPropertyConfigurator>(target.MemberName, selectedProperty));
+
             return selectedProperty;
         }
 
-        private IChildedNode<IPropertyConfigurator> GetOrCreateNodeByPath(IEnumerable<string> path)
+        public static PrintingConfigBuilder<TOwner> Default() => new PrintingConfigBuilder<TOwner>(new[]
         {
-            IChildedNode<IPropertyConfigurator> currentNode = configurationRoot;
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(bool),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        });
+
+        private static IChildedNode<IPropertyConfigurator> GetOrCreateNodeByPath(IEnumerable<string> path,
+            IChildedNode<IPropertyConfigurator> currentNode)
+        {
             foreach (var part in path)
             {
-                if (!currentNode.TryGetChild(part, out var child))
-                {
-                    child = Node.Childed<IPropertyConfigurator>(part);
-                    currentNode.AddChild(child);
-                }
+                if (currentNode.TryGetChild(part, out var child))
+                    currentNode.RemoveChild(part);
+                child = Node.Childed<IPropertyConfigurator>(part);
+                currentNode.AddChild(child);
 
                 currentNode = (IChildedNode<IPropertyConfigurator>) child;
             }
@@ -82,14 +91,5 @@ namespace ObjectPrinting
                 throw new ArgumentException($"Selector contain wrong expression inside: {innerExpression.Type}");
             return path;
         }
-
-        public PrintingConfig<TOwner> Build() =>
-            new PrintingConfig<TOwner>(finalTypes, configurationRoot, groupAppliedConfigurators);
-
-        public static PrintingConfigBuilder<TOwner> Default() => new PrintingConfigBuilder<TOwner>(new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string), typeof(bool),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        });
     }
 }

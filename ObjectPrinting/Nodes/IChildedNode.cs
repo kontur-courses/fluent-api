@@ -7,6 +7,7 @@ namespace ObjectPrinting.Nodes
     /// </summary>
     public interface IChildedNode<TPayload> : INode<TPayload>
     {
+        void RemoveChild(string name);
         bool TryGetChild(string childName, out INode<TPayload> child);
         void AddChild(INode<TPayload> child);
         IEnumerable<INode<TPayload>> GetChildNodes();

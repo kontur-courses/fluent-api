@@ -16,6 +16,15 @@ namespace ObjectPrinting.Nodes
         public string Name { get; }
         public IChildedNode<TPayload>? Parent { get; set; }
 
+        public void RemoveChild(string name)
+        {
+            if(childNodes.TryGetValue(name, out var existing))
+            {
+                childNodes.Remove(name);
+                existing.Parent = null;
+            }
+        }
+
         public bool TryGetChild(string childName, out INode<TPayload> child) =>
             childNodes.TryGetValue(childName, out child);
 
