@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -253,6 +254,86 @@ namespace ObjectPrintingTests
                 $"\t\t\tPreviousNode = {node3.PreviousNode.GetType().Name}{newLine}" +
                 $"\t\t\t\tId = {node2.Id}{newLine}" +
                 $"\t\t\t\tPreviousNode = Loopback detected{newLine}");
+        }
+
+        #endregion
+
+        #region IEnumerable processing
+
+        [Test]
+        public void PrintObject_PrintEnumerableElements_WhenEnumerableIsDictionary()
+        {
+            var office = new Office
+            {
+                Employees = new Dictionary<int, Person>
+                {
+                    {1, new Person {Name = "Alex", Age = 21}},
+                    {2, new Person {Name = "Klauz", Age = 26}}
+                }
+            };
+
+            var result = office.PrintToString(conf =>
+                conf.ExcludingPropertyWithType<Guid>()
+                    .ExcludingProperty(office1 => office1.OfficeThings)
+                    .ExcludingProperty(office1 => office1.Times));
+
+            result.Should().Be(
+                $"{office.GetType().Name}{newLine}" +
+                $"\tEmployees = {office.Employees.GetType().Name}{newLine}" +
+                $"\t\t1: Person{newLine}" +
+                $"\t\t\tName = Alex{newLine}" +
+                $"\t\t\tAge = 21{newLine}" +
+                $"\t\t2: Person{newLine}" +
+                $"\t\t\tName = Klauz{newLine}" +
+                $"\t\t\tAge = 26{newLine}");
+        }
+
+        [Test]
+        public void PrintObject_PrintEnumerableElements_WhenEnumerableIsArray()
+        {
+            var office = new Office
+            {
+                Times = new[]
+                {
+                    new DateTime(2020, 11, 26),
+                    new DateTime(1999, 01, 22)
+                }
+            };
+
+            var result = office.PrintToString(conf =>
+                conf.ExcludingPropertyWithType<Guid>()
+                    .ExcludingProperty(office1 => office1.OfficeThings)
+                    .ExcludingProperty(office1 => office1.Employees));
+
+            result.Should().Be(
+                $"{office.GetType().Name}{newLine}" +
+                $"\tTimes = {office.Times.GetType().Name}{newLine}" +
+                $"\t\t0: 26.11.2020 0:00:00{newLine}" +
+                $"\t\t1: 22.01.1999 0:00:00{newLine}");
+        }
+
+        [Test]
+        public void PrintObject_PrintEnumerableElements_WhenEnumerableIsList()
+        {
+            var office = new Office
+            {
+                OfficeThings = new List<string>
+                {
+                    "Pen", "PC", "Table"
+                }
+            };
+
+            var result = office.PrintToString(conf =>
+                conf.ExcludingPropertyWithType<Guid>()
+                    .ExcludingProperty(office1 => office1.Times)
+                    .ExcludingProperty(office1 => office1.Employees));
+
+            result.Should().Be(
+                $"{office.GetType().Name}{newLine}" +
+                $"\tOfficeThings = {office.OfficeThings.GetType().Name}{newLine}" +
+                $"\t\t0: Pen{newLine}" +
+                $"\t\t1: PC{newLine}" +
+                $"\t\t2: Table{newLine}");
         }
 
         #endregion
