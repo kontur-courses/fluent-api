@@ -136,8 +136,7 @@ namespace Tests
         [Test]
         public void PrintToString_ShouldContainFamily_DictionaryFamily()
         {
-            var subPersons = new Dictionary<string, Person>();
-            subPersons.Add("Артем", new Person {Name = "Артем", Age = 63});
+            var subPersons = new Dictionary<string, Person> {{"Артем", new Person {Name = "Артем", Age = 63}}};
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Son).Exclude();
             var person = new Person {Name = "Alexander", Age = 19, Height = 1.84, Family = subPersons};
@@ -158,6 +157,19 @@ namespace Tests
             var personText = printer.PrintToString(person);
 
             personText.Should().Contain("Sergey");
+        }
+
+        [Test]
+        public void PrintToString_CorrectWorkWithCycles_CyclesElements()
+        {
+            var subPerson = new Person {Name = "Oleg"};
+            var printer = ObjectPrinter.For<Person>();
+            var person = new Person {Name = "Alexander", Age = 19, Height = 1.84, Son = subPerson};
+            subPerson.Son = person;
+
+            var personText = printer.PrintToString(person);
+
+            personText.Should().Contain("This element has been already added");
         }
     }
 }
