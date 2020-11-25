@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinterTests.ForSerialization;
@@ -58,8 +59,10 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Danil\r\n\tHeight = 160.5\r\n\tAge = 15\r\n\t" +
-                    "Weight = 67.778\r\n\tBirthPlace = null\r\n");
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Name = Danil\r\n\tHeight = {160.5.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Weight = {67.778.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -71,7 +74,8 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Danil\r\n\tAge = 15\r\n\tBirthPlace = null\r\n");
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\tName = Danil" +
+                    $"\r\n\tAge = {15.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -85,8 +89,10 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Danil\r\n\tHeight = 161\r\n\tAge = 15\r\n\tWeight = 68\r\n\t" +
-                    "BirthPlace = null\r\n");
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Name = Danil\r\n\tHeight = {161.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Weight = {68.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -99,13 +105,14 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Danil\r\n\tHeight = 160,5\r\n\tAge = 15\r\n\tWeight = 67,778" +
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\tName = Danil" +
+                    $"\r\n\tHeight = 160,5\r\n\tAge = {15.ToString(CultureInfo.CurrentCulture)}\r\n\tWeight = 67,778" +
                     "\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
         public void
-            PrintToString_StringWithAlternativeSerializationOfCertainMember_WhenAlternativeSerializationByName()
+            PrintToString_StringWithAlternativeSerializationOfCertainMember_WhenAlternativeSerializationOfMember()
         {
             var act = _personPrinter
                 .Printing(person => person.Age)
@@ -114,8 +121,10 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Danil\r\n\tHeight = 160.5\r\n\tAge = 15 years old\r\n\t" +
-                    "Weight = 67.778\r\n\tBirthPlace = null\r\n");
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\tName = Danil" +
+                    $"\r\n\tHeight = {160.5.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)} years old\r\n\t" +
+                    $"Weight = {67.778.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -128,8 +137,10 @@ namespace ObjectPrinterTests
 
             act.Should()
                 .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Dan\r\n\tHeight = 160.5\r\n\tAge = 15\r\n\tWeight = 67.778" +
-                    "\r\n\tBirthPlace = null\r\n");
+                    $"Person\r\n\tId = {Guid.Empty.ToString(null, CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Name = Dan\r\n\tHeight = {160.5.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Weight = {67.778.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -143,15 +154,17 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void PrintToString_StringWithoutCertainMember_WhenExcludingMemberByName()
+        public void PrintToString_StringWithoutCertainMember_WhenExcludingCertainMember()
         {
             var act = _personPrinter
                 .Excluding(person => person.Id)
                 .PrintToString(Instances.Person);
 
             act.Should()
-                .Be("Person\r\n\tName = Danil\r\n\tHeight = 160.5\r\n\tAge = 15\r\n\tWeight = 67.778" +
-                    "\r\n\tBirthPlace = null\r\n");
+                .Be(
+                    $"Person\r\n\tName = Danil\r\n\tHeight = {160.5.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Weight = {67.778.ToString(CultureInfo.CurrentCulture)}\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -168,8 +181,10 @@ namespace ObjectPrinterTests
                     .Using(weight => weight + " kilo"));
 
             act.Should()
-                .Be("Person\r\n\tName = Dan\r\n\tHeight = 160.5\r\n\tAge = 15*\r\n\tWeight = 67.778 kilo\r\n\t" +
-                    "BirthPlace = null\r\n");
+                .Be(
+                    $"Person\r\n\tName = Dan\r\n\tHeight = {160.5.ToString(CultureInfo.CurrentCulture)}\r\n\t" +
+                    $"Age = {15.ToString(CultureInfo.CurrentCulture)}*\r\n\t" +
+                    $"Weight = {67.778.ToString(CultureInfo.CurrentCulture)} kilo\r\n\tBirthPlace = null\r\n");
         }
 
         [Test]
@@ -185,8 +200,27 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void PrintToString_SerializedInstances_WhenOnePrinterSerializeManyInstances()
+        {
+            var printer = ObjectPrinter.For<Employee>();
+            var chief = new Employee {Name = "Ivan"};
+            var subordinate = new Employee {Name = "Victor", Chief = chief};
+            chief.Subordinate = subordinate;
+
+            var act = printer.PrintToString(chief);
+
+            act.Should().Contain("found a cyclic link");
+
+            chief.Subordinate = null;
+
+            act = printer.PrintToString(subordinate);
+
+            act.Should().NotContain("found a cyclic link");
+        }
+
+        [Test]
         public void
-            PrintToString_StringWithAlternativeSerializationByName_WhenIntersectionOfAlternativeSerializationByTypeAndName()
+            PrintToString_StringWithAlternativeSerializationCertainMember_WhenIntersectionOfAlternativeSerializationByTypeAndMember()
         {
             var act = _personPrinter
                 .Printing(person => person.Name)
@@ -199,11 +233,25 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void
+            PrintToString_StringWithAlternativeSerializationCertainMember_WhenInstanceContainsMembersWithSameNames()
+        {
+            var collection = new List<object> {new Employee {Name = "Victor"}, new Person {Name = "Ivan"}};
+            var printer = ObjectPrinter.For<List<object>>();
+
+            var act = printer.Printing(list => (list[0] as Employee).Name)
+                .Using(name => name + "***").PrintToString(collection);
+
+            act.Should().Contain("Victor***").And.NotContain("Ivan***");
+        }
+
+        [Test]
         public void PrintingToString_SerializedTextUpToMaxNestingLevel_WhenMaxNestingLevelExceeded()
         {
             var act = Instances.EmployeeWithManySubordinates.PrintToString();
 
-            act.Should().NotContain("11").And.Contain("Nesting level exceeded");
+            act.Should().NotContain($"{new Employee {Subordinate = new Employee()}.Subordinate.GetType().Name} null")
+                .And.Contain("Nesting level exceeded");
         }
 
         [Test]
@@ -211,10 +259,13 @@ namespace ObjectPrinterTests
         {
             var act = Instances.Collection.PrintToString();
 
-            act.Should().Be($"Dictionary`2\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t1\r\n\t\t\t2\r\n\t\t\t3" +
-                            $"\r\n\t\tValue = Int32[]\r\n\t\t\t5\r\n\t\t\t7" +
-                            $"\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t7\r\n\t\t\t9" +
-                            $"\r\n\t\tValue = Int32[]\r\n\t\t\t10\r\n");
+            act.Should().Be(
+                $"Dictionary`2\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t{1.ToString(CultureInfo.CurrentCulture)}" +
+                $"\r\n\t\t\t{2.ToString(CultureInfo.CurrentCulture)}\r\n\t\t\t{3.ToString(CultureInfo.CurrentCulture)}" +
+                $"\r\n\t\tValue = Int32[]\r\n\t\t\t{5.ToString(CultureInfo.CurrentCulture)}\r\n\t\t\t" +
+                $"{7.ToString(CultureInfo.CurrentCulture)}\r\n\tKeyValuePair`2\r\n\t\tKey = List`1\r\n\t\t\t" +
+                $"{7.ToString(CultureInfo.CurrentCulture)}\r\n\t\t\t{9.ToString(CultureInfo.CurrentCulture)}" +
+                $"\r\n\t\tValue = Int32[]\r\n\t\t\t{10.ToString(CultureInfo.CurrentCulture)}\r\n");
         }
     }
 }

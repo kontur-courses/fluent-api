@@ -2,7 +2,7 @@
 {
     public class Employee
     {
-        public string Name { get; set; }
+        public string Name;
         public Employee Chief;
         public Employee Subordinate;
     }
