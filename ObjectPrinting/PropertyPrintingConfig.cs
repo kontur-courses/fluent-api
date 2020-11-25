@@ -20,9 +20,9 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (memberInfo == null)
-                printingConfig.typePropertyConfigs[typeof(TPropType)] = print;
+                printingConfig.typeMemberConfigs[typeof(TPropType)] = print;
             else
-                printingConfig.namePropertyConfigs[memberInfo.Name] = print;
+                printingConfig.nameMemberConfigs[memberInfo.Name] = print;
             return printingConfig;
         }
 

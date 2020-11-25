@@ -12,17 +12,21 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private HashSet<Type> excludedTypes;
-        private HashSet<PropertyInfo> exludedProperties;
-        internal Dictionary<Type, Delegate> typePropertyConfigs;
-        internal Dictionary<string, Delegate> namePropertyConfigs;
+        private HashSet<MemberInfo> exludedProperties;
+        internal Dictionary<Type, Delegate> typeMemberConfigs;
+        internal Dictionary<string, Delegate> nameMemberConfigs;
+
+        // internal Dictionary<Type, Delegate> typePropertyConfigs;
+        // internal Dictionary<string, Delegate> namePropertyConfigs;
+
         private readonly int maxNestingLevel;
 
         public PrintingConfig(int maxNestingLevel = 10)
         {
             excludedTypes = new HashSet<Type>();
-            exludedProperties = new HashSet<PropertyInfo>();
-            typePropertyConfigs = new Dictionary<Type, Delegate>();
-            namePropertyConfigs = new Dictionary<string, Delegate>();
+            exludedProperties = new HashSet<MemberInfo>();
+            typeMemberConfigs = new Dictionary<Type, Delegate>();
+            nameMemberConfigs = new Dictionary<string, Delegate>();
             this.maxNestingLevel = maxNestingLevel;
         }
 
@@ -36,8 +40,9 @@ namespace ObjectPrinting
         {
             var member = ((MemberExpression) memberSelector.Body).Member;
             var propInfo = member as PropertyInfo;
-            if (propInfo == null)
-                throw new ArgumentException("Can't extract property from expression body");
+            var fieldInfo = member as FieldInfo;
+            if (propInfo == null && fieldInfo == null)
+                throw new ArgumentException("Can't extract member from expression body");
             return new PropertyPrintingConfig<TOwner, TPropType>(this, member);
         }
 
@@ -111,11 +116,10 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeProperties(object obj, int nestingLevel)
+        private StringBuilder SerializeProperties(object obj, int nestingLevel)
         {
             var type = obj.GetType();
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
                 var identation = new string('\t', nestingLevel + 1);
@@ -124,16 +128,48 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 var value = propertyInfo.GetValue(obj);
-                if (namePropertyConfigs.ContainsKey(propertyInfo.Name))
-                    value = namePropertyConfigs[propertyInfo.Name].DynamicInvoke(value);
-                else if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
-                    value = typePropertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
+                if (nameMemberConfigs.ContainsKey(propertyInfo.Name))
+                    value = nameMemberConfigs[propertyInfo.Name].DynamicInvoke(value);
+                else if (typeMemberConfigs.ContainsKey(propertyInfo.PropertyType))
+                    value = typeMemberConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(value,
                               nestingLevel + 1));
             }
 
-            return sb.ToString();
+            return sb;
+        }
+
+        private StringBuilder SerializeFields(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder();
+            foreach (var fieldInfo in type.GetFields())
+            {
+                var identation = new string('\t', nestingLevel + 1);
+                if (exludedProperties.Contains(fieldInfo))
+                    continue;
+                if (excludedTypes.Contains(fieldInfo.FieldType))
+                    continue;
+                var value = fieldInfo.GetValue(obj);
+                if (nameMemberConfigs.ContainsKey(fieldInfo.Name))
+                    value = nameMemberConfigs[fieldInfo.Name].DynamicInvoke(value);
+                else if (typeMemberConfigs.ContainsKey(fieldInfo.FieldType))
+                    value = typeMemberConfigs[fieldInfo.FieldType].DynamicInvoke(value);
+                sb.Append(identation + fieldInfo.Name + " = " +
+                          PrintToString(value,
+                              nestingLevel + 1));
+            }
+
+            return sb;
+        }
+
+        private string SerializeMembers(object obj, int nestingLevel)
+        {
+            var result = new StringBuilder(obj.GetType().Name + Environment.NewLine);
+            result.Append(SerializeProperties(obj, nestingLevel));
+            result.Append(SerializeFields(obj, nestingLevel));
+            return result.ToString();
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -152,8 +188,8 @@ namespace ObjectPrinting
             var objType = obj.GetType();
             if (finalTypes.Contains(objType))
             {
-                if (typePropertyConfigs.ContainsKey(objType))
-                    return typePropertyConfigs[objType].DynamicInvoke(obj) + Environment.NewLine;
+                if (typeMemberConfigs.ContainsKey(objType))
+                    return typeMemberConfigs[objType].DynamicInvoke(obj) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
 
@@ -162,7 +198,7 @@ namespace ObjectPrinting
                 return PrintCollectionToString(collection, nestingLevel);
             }
 
-            return SerializeProperties(obj, nestingLevel);
+            return SerializeMembers(obj, nestingLevel);
         }
     }
 }
