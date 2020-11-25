@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -127,13 +128,102 @@ namespace ObjectPrinting.Tests
         public void CyclicReferences_ShouldNotCauseStackOverflow()
         {
             var cyclicAnimal1 = new Animal("Peter", "Dog");
-
             var cyclicAnimal2 = new Animal("Jack", "Cat");
             cyclicAnimal1.Parent = cyclicAnimal2;
             cyclicAnimal2.Parent = cyclicAnimal1;
             var printer = ObjectPrinter.For<Animal>();
 
             Assert.DoesNotThrow(() => printer.PrintToString(cyclicAnimal1));
+        }
+
+        [Test]
+        public void ListsSerialization()
+        {
+            var student = new Student("Vasya");
+            student.Friends = new List<string>();
+            student.Friends.Add("Ivan");
+            student.Friends.Add("Anton");
+            student.Friends.Add("Konstantin");
+
+            var printer = ObjectPrinter.For<Student>();
+
+            printer.PrintToString(student).Should().Be($"Student{Environment.NewLine}" +
+                                                       $"\tName = {student.Name}{Environment.NewLine}" +
+                                                       $"\tFriends = {Environment.NewLine}" +
+                                                       $"\t\t[{Environment.NewLine}" +
+                                                       $"\t\t{student.Friends[0]}{Environment.NewLine}" +
+                                                       $"\t\t{student.Friends[1]}{Environment.NewLine}" +
+                                                       $"\t\t{student.Friends[2]}{Environment.NewLine}" +
+                                                       $"\t\t]{Environment.NewLine}" +
+                                                       $"\tFavoriteRealValues = null{Environment.NewLine}" +
+                                                       $"\tMarks = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void DictionarySerialization()
+        {
+            var student = new Student("Vasya");
+            student.Marks = new Dictionary<string, int>();
+            student.Marks["math"] = 5;
+            student.Marks["biology"] = 3;
+
+            var printer = ObjectPrinter.For<Student>();
+            printer.PrintToString(student).Should().Be($"Student{Environment.NewLine}" +
+                                                       $"\tName = {student.Name}{Environment.NewLine}" +
+                                                       $"\tFriends = null{Environment.NewLine}" +
+                                                       $"\tFavoriteRealValues = null{Environment.NewLine}" +
+                                                       $"\tMarks = {Environment.NewLine}" +
+                                                       $"\t\t[{Environment.NewLine}" +
+                                                       $"\t\tmath : 5{Environment.NewLine}" +
+                                                       $"\t\tbiology : 3{Environment.NewLine}" +
+                                                       $"\t\t]{Environment.NewLine}");
+        }
+
+        [Test]
+        public void ArraySerialization()
+        {
+            var student = new Student("Vasya");
+            student.FavoriteRealValues = new[] {1.2, 43, -54.123};
+
+            var printer = ObjectPrinter.For<Student>();
+            printer.PrintToString(student).Should().Be($"Student{Environment.NewLine}" +
+                                                       $"\tName = {student.Name}{Environment.NewLine}" +
+                                                       $"\tFriends = null{Environment.NewLine}" +
+                                                       $"\tFavoriteRealValues = {Environment.NewLine}" +
+                                                       $"\t\t[{Environment.NewLine}" +
+                                                       $"\t\t{student.FavoriteRealValues[0]}{Environment.NewLine}" +
+                                                       $"\t\t{student.FavoriteRealValues[1]}{Environment.NewLine}" +
+                                                       $"\t\t{student.FavoriteRealValues[2]}{Environment.NewLine}" +
+                                                       $"\t\t]{Environment.NewLine}" +
+                                                       $"\tMarks = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void CollectionSerialization_ShouldApplyAllSpecifications()
+        {
+            var student = new Student("Vasya");
+            student.FavoriteRealValues = new[] {1.2, 43, 2.1};
+            student.Marks = new Dictionary<string, int>();
+            student.Marks["math"] = 5;
+            student.Marks["biology"] = 3;
+
+            var printer = ObjectPrinter.For<Student>()
+                .Printing<double>().UsingCulture(CultureInfo.GetCultureInfo("ru-Ru"));
+
+            printer.PrintToString(student).Should().Be($"Student{Environment.NewLine}" +
+                                                       $"\tName = {student.Name}{Environment.NewLine}" +
+                                                       $"\tFriends = null{Environment.NewLine}" +
+                                                       $"\tFavoriteRealValues = {Environment.NewLine}" +
+                                                       $"\t\t[{Environment.NewLine}" +
+                                                       $"\t\t1,2{Environment.NewLine}" +
+                                                       $"\t\t43{Environment.NewLine}" +
+                                                       $"\t\t2,1{Environment.NewLine}" +
+                                                       $"\t\t]{Environment.NewLine}" +
+                                                       $"\tMarks = {Environment.NewLine}" +
+                                                       $"\t\t[{Environment.NewLine}" +
+                                                       $"\t\tmath : 5{Environment.NewLine}" +
+                                                       $"\t\tbiology : 3{Environment.NewLine}" +
+                                                       $"\t\t]{Environment.NewLine}");
         }
     }
 }
