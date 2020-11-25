@@ -2,21 +2,21 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using Nodes;
 using ObjectPrinting.Configuration;
+using ObjectPrinting.Nodes;
 
 namespace ObjectPrinting
 {
     public class PrintingConfigBuilder<TOwner>
     {
         private readonly Type[] finalTypes;
-        private readonly RootNode<IPropertyConfigurator> configurationRoot;
+        private readonly ChildedNode<IPropertyConfigurator> configurationRoot;
         private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
 
         public PrintingConfigBuilder(Type[] finalTypes)
         {
             this.finalTypes = finalTypes;
-            configurationRoot = new RootNode<IPropertyConfigurator>(nameof(TOwner));
+            configurationRoot = new ChildedNode<IPropertyConfigurator>(nameof(TOwner));
             groupAppliedConfigurators = new Dictionary<Type, IPropertyConfigurator>();
         }
 

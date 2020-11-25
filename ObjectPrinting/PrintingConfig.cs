@@ -3,19 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Nodes;
 using ObjectPrinting.Configuration;
+using ObjectPrinting.Nodes;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
-        private readonly RootNode<IPropertyConfigurator> configurationRoot;
+        private readonly ChildedNode<IPropertyConfigurator> configurationRoot;
         private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
         private readonly HashSet<object> alreadySerialized = new HashSet<object>();
 
-        public PrintingConfig(Type[] finalTypes, RootNode<IPropertyConfigurator> configurationRoot,
+        public PrintingConfig(Type[] finalTypes, ChildedNode<IPropertyConfigurator> configurationRoot,
             IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators)
         {
             this.finalTypes = finalTypes;
