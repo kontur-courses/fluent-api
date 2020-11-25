@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,11 +12,15 @@ namespace ObjectPrinting
     {
         private HashSet<Type> excludedTypes;
         private HashSet<PropertyInfo> exludedProperties;
+        internal Dictionary<Type, CultureInfo> cultures;
+        internal Dictionary<Type, Delegate> propertyConfigs;
 
         public PrintingConfig()
         {
             excludedTypes = new HashSet<Type>();
             exludedProperties = new HashSet<PropertyInfo>();
+            cultures = new Dictionary<Type, CultureInfo>();
+            propertyConfigs = new Dictionary<Type, Delegate>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -55,14 +60,23 @@ namespace ObjectPrinting
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+
+            var objType = obj.GetType();
+            if (finalTypes.Contains(objType))
+            {
+                if (!cultures.ContainsKey(objType) || !(obj is IFormattable formattable))
+                    return obj + Environment.NewLine;
+                var culture = cultures[objType];
+                return formattable.ToString(null, culture) + Environment.NewLine;
+            }
+
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
@@ -70,8 +84,11 @@ namespace ObjectPrinting
                     continue;
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
+                var value = propertyInfo.GetValue(obj);
+                if (propertyConfigs.ContainsKey(propertyInfo.PropertyType))
+                    value = propertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
+                          PrintToString(value,
                               nestingLevel + 1));
             }
 
