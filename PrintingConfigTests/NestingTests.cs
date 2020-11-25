@@ -80,6 +80,26 @@ namespace PrintingConfigTests
                 .Contain($"{nameof(NestedContainingTestingClass.Int)} = {subject.Int}");
         }
 
+        [Test]
+        public void NestedObjectSerializerSpecified_UseItInsteadState()
+        {
+            var subject = CreateNestingSubject();
+
+            result = ObjectPrinter.For<NestedContainingTestingClass>()
+                .Choose(x => x.Nested)
+                .UseSerializer(n => "q1w2e3")
+                .Build()
+                .PrintToString(subject);
+
+            result.Should()
+                .Contain($"{nameof(NestedContainingTestingClass.Nested)} = q1w2e3")
+                .And
+                .NotContainAny(subject.Nested.String, 
+                    subject.Nested.Double.ToString(), 
+                    subject.Nested.Guid.ToString(),
+                    subject.Nested.Int.ToString());
+        }
+
         [TearDown]
         public void TearDown()
         {
