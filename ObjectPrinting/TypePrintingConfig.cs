@@ -1,22 +1,21 @@
 ﻿using System;
-using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class TypePrintingConfig<TOwner, T> : IMemberPrintingConfig<TOwner, T>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public readonly MemberInfo SelectedMember;
+        public readonly Type SelectedType;
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo selectedMember)
+        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig, Type selectedType)
         {
             this.printingConfig = printingConfig;
-            SelectedMember = selectedMember;
+            SelectedType = selectedType;
         }
 
         public PrintingConfig<TOwner> Using(Func<T, string> print)
         {
-            printingConfig.AddOwnSerializationForSelectedType(print, SelectedMember);
+            printingConfig.AddOwnSerializationForSelectedType(print, SelectedType);
             return printingConfig;
         }
     }

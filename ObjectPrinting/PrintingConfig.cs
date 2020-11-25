@@ -27,20 +27,22 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedMembers.Add(GetMemberInfo(memberSelector));
+            var selectedMember = GetMemberInfo(memberSelector);
+            excludedMembers.Add(selectedMember);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            var selectedType = typeof(TPropType);
+            excludedTypes.Add(selectedType);
             return this;
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var selectedMember = typeof(TPropType);
-            return new TypePrintingConfig<TOwner, TPropType>(this, selectedMember);
+            var selectedType = typeof(TPropType);
+            return new TypePrintingConfig<TOwner, TPropType>(this, selectedType);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
@@ -51,9 +53,9 @@ namespace ObjectPrinting
         }
 
         public void AddOwnSerializationForSelectedType<TPropType>(Func<TPropType, string> print,
-            object selectedMember)
+            Type selectedType)
         {
-            ownSerializationsForTypes[(Type) selectedMember] = print;
+            ownSerializationsForTypes[selectedType] = print;
         }
 
         public void AddOwnSerializationForSelectedMember<TPropType>(Func<TPropType, string> print,
