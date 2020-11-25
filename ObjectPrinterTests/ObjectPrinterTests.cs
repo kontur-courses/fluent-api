@@ -10,7 +10,7 @@ namespace ObjectPrinterTests
 {
     public class ObjectPrinterTests
     {
-        private static PrintingConfig<Person> printer;
+        private PrintingConfig<Person> printer;
 
 
         [SetUp]
@@ -95,15 +95,20 @@ namespace ObjectPrinterTests
             var other = new Person();
             xsitin.OtherPerson = other;
             other.OtherPerson = xsitin;
-            printer.PrintToString(xsitin).Contains("Cycling reference error");
+            printer.PrintToString(xsitin).Contains("Cycling reference error").Should().BeTrue();
         }
 
         [Test]
         public void ObjectPrinter_ObjectWithNesting_CorrectSerialization()
         {
             var xsitin = new Person
-                {Name = "xsitin", Age = 19, Height = 185.1, Id = new Guid("dddddddddddddddddddddddddddddddd")};
-            xsitin.OtherPerson = new Person();
+            {
+                Name = "xsitin",
+                Age = 19,
+                Height = 185.1,
+                Id = new Guid("dddddddddddddddddddddddddddddddd"),
+                OtherPerson = new Person()
+            };
             xsitin.PrintToString().Should().Be(string.Join($"{NewLine}\t", "Person",
                 "Id = dddddddd-dddd-dddd-dddd-dddddddddddd", "Name = xsitin",
                 "Height = 185.1", "Age = 19", "OtherPerson = " + string.Join($"{NewLine}\t\t", "Person",
@@ -131,7 +136,8 @@ namespace ObjectPrinterTests
         {
             var xsitin = new Person
                 {Name = "xsitin", Age = 19, Height = 185.1, Id = new Guid("dddddddddddddddddddddddddddddddd")};
-            Assert.Catch(() => xsitin.PrintToString(x => x.Printing(p => "").Using(s => "xsitin")));
+            new Action(() => xsitin.PrintToString(x => x.Printing(p => "").Using(s => "xsitin"))).Should()
+                .Throw<ArgumentException>();
         }
 
         [Test]

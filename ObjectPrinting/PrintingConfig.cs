@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,6 +11,9 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        protected internal readonly Dictionary<Type, CultureInfo> CulturesForProperties =
+            new Dictionary<Type, CultureInfo>();
+
         private readonly HashSet<string> excludedProperties = new HashSet<string>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
@@ -18,8 +22,6 @@ namespace ObjectPrinting
 
         protected internal readonly Dictionary<Type, Func<object, string>> TypeConverters =
             new Dictionary<Type, Func<object, string>>();
-
-        protected internal Dictionary<Type, CultureInfo> CulturesForProperties = new Dictionary<Type, CultureInfo>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -129,17 +131,19 @@ namespace ObjectPrinting
                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
 
-        private string GetSelectedPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private static string GetSelectedPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             CheckExpressionType(memberSelector.Body.NodeType);
             var propertySelection = memberSelector.Body.ToString();
             return propertySelection.Substring(propertySelection.LastIndexOf('.') + 1);
         }
 
-        private void CheckExpressionType(ExpressionType type)
+        private static void CheckExpressionType(ExpressionType type)
         {
             if (type != ExpressionType.MemberAccess)
                 throw new ArgumentException("Function should chose property of object");
+            if (!Enum.IsDefined(typeof(ExpressionType), type))
+                throw new InvalidEnumArgumentException(nameof(type), (int) type, typeof(ExpressionType));
         }
     }
 }
