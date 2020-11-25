@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.Serialization;
 using FluentAssertions;
@@ -8,6 +9,11 @@ namespace ObjectPrinting.Tests
 {
     public class ObjectPrinterAcceptanceTests
     {
+        private Person person;
+        private Person person2;
+        private Person person3;
+        private PrintingConfig<Person> printer;
+
         [SetUp]
         public void SetUp()
         {
@@ -18,11 +24,22 @@ namespace ObjectPrinting.Tests
                 Height = 1.85,
                 Surname = "Brown"
             };
+            person2 = new Person
+            {
+                Name = "Jame",
+                Age = 20,
+                Height = 1.92,
+                Surname = "Smith"
+            };
+            person3 = new Person
+            {
+                Name = "John",
+                Age = 14,
+                Height = 1.77,
+                Surname = "Muller"
+            };
             printer = ObjectPrinter.For<Person>();
         }
-
-        private Person person;
-        private PrintingConfig<Person> printer;
 
         [Test]
         public void PrintToString_PrintingAll_IfHasNoConfig()
@@ -34,7 +51,9 @@ namespace ObjectPrinting.Tests
                                                       $"\tHeight = {heightToString}\r\n" +
                                                       "\tAge = 19\r\n" +
                                                       "\tFriend = null\r\n" +
-                                                      "\tSurname = Brown\r\n");
+                                                      "\tFriend2 = null\r\n" +
+                                                      "\tSurname = Brown\r\n" +
+                                                      "\tCodes = null\r\n");
         }
 
         [Test]
@@ -113,13 +132,96 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_ThrowsSerializationException_IfCircularReferenceBetween3objects()
         {
-            var person2 = new Person();
-            var person3 = new Person();
             person.Friend = person2;
             person2.Friend = person3;
             person3.Friend = person;
             Action act = () => printer.PrintToString(person);
             act.Should().Throw<SerializationException>();
+        }
+
+        [Test]
+        public void PrintToString_NotThrowsSerializationException_IfObjectHasSameProperties()
+        {
+            person.Friend = person2;
+            person.Friend2 = person2;
+            Action act = () => printer.PrintToString(person);
+            act.Should().NotThrow<SerializationException>();
+        }
+
+        [Test]
+        public void PrintToString_NotThrowsSerializationException_IfListHasSameObjects()
+        {
+            var list = new List<Person> {person, person};
+            Action act = () => ObjectPrinter.For<List<Person>>().PrintToString(list);
+            act.Should().NotThrow<SerializationException>();
+        }
+
+        [Test]
+        public void PrintToString_NotThrowsSerializationException_IfDictHasSameObjects()
+        {
+            var dictionary = new Dictionary<Person, Person> {[person] = person};
+            Action act = () => ObjectPrinter.For<Dictionary<Person, Person>>().PrintToString(dictionary);
+            act.Should().NotThrow<SerializationException>();
+        }
+
+        [Test]
+        public void PrintToString_PrintingArray()
+        {
+            var array = new[] {0, 1};
+            var printer = ObjectPrinter.For<int[]>();
+            printer.PrintToString(array).Should().Be("Int32[]\r\n" +
+                                                     "{\r\n" +
+                                                     "\t0\r\n" +
+                                                     "\r\n" +
+                                                     "\t1\r\n" +
+                                                     "}\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintingList()
+        {
+            var list = new List<int> {0, 1};
+            var printer = ObjectPrinter.For<List<int>>();
+            printer.PrintToString(list).Should().Be("List`1\r\n" +
+                                                    "{\r\n" +
+                                                    "\t0\r\n" +
+                                                    "\r\n" +
+                                                    "\t1\r\n" +
+                                                    "}\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintingObjectWithCollection()
+        {
+            person.Codes = new List<int> {0, 1};
+            printer.PrintToString(person).Should().Contain("\r\n" +
+                                                           "\tCodes = List`1\r\n" +
+                                                           "\t{\r\n" +
+                                                           "\t\t0\r\n" +
+                                                           "\r\n" +
+                                                           "\t\t1\r\n" +
+                                                           "\t}\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintingDict()
+        {
+            var dictionary = new Dictionary<int, int>
+            {
+                [0] = 1,
+                [2] = 3
+            };
+            var printer = ObjectPrinter.For<Dictionary<int, int>>();
+            printer.PrintToString(dictionary).Should().Be("Dictionary`2\r\n" +
+                                                          "{\r\n" +
+                                                          "\tKeyValuePair`2\r\n" +
+                                                          "\t\tKey = 0\r\n" +
+                                                          "\t\tValue = 1\r\n" +
+                                                          "\r\n" +
+                                                          "\tKeyValuePair`2\r\n" +
+                                                          "\t\tKey = 2\r\n" +
+                                                          "\t\tValue = 3\r\n" +
+                                                          "}\r\n");
         }
     }
 }
