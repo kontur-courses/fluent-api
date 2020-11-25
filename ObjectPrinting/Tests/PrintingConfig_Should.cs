@@ -252,6 +252,34 @@ namespace ObjectPrinting.Tests
             }
         }
 
+        [Test]
+        public static void PrintArrays()
+        {
+            var persons = GetRandomBasicPersons().WithRandomArray();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString().Split('\n').ToList();
+
+                print.Should().Contain(s => s.Contains($"{nameof(Person.SomeArray)} = "));
+                var line = print.FindIndex(s => s.Contains($"{nameof(Person.SomeArray)} = ")) + 1;
+                for (var i = 0; i < person.SomeArray.Length; i++)
+                    print[line + i].Should().Contain(person.SomeArray[i].ToString());
+            }
+        }
+        
+        [Test]
+        public static void PrintDictionaries()
+        {
+            var persons = GetRandomBasicPersons().WithRandomDictionary();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                print.Should().Contain($"\n\t{nameof(Person.SomeDict)} = ");
+                foreach (var (key, value) in person.SomeDict)
+                    print.Should().Contain($"\n\t\t{key}: {value}");
+            }
+        }
+
         public static IEnumerable<Person> GetRandomBasicPersons(int count = 100)
         {
             for (var i = 0; i < count; i++)
@@ -298,11 +326,38 @@ namespace ObjectPrinting.Tests
         }
 
         public static IEnumerable<Person> WithNotRoundHeight(this IEnumerable<Person> persons)
-            => persons.Select(p => p.WithNotRoundHeight());
+            => persons.Select(WithNotRoundHeight);
 
         public static Person WithNotRoundHeight(this Person person)
         {
             person.Height += new Random().NextDouble();
+            return person;
+        }
+
+        public static IEnumerable<Person> WithRandomArray(this IEnumerable<Person> persons)
+            => persons.Select(WithRandomArray);
+        
+        public static Person WithRandomArray(this Person person)
+        {
+            var random = new Random();
+            var length = random.Next(10);
+            person.SomeArray = new int[length];
+            for (var i = 0; i < length; i++)
+                person.SomeArray[i] = random.Next(1000);
+            return person;
+        }
+        
+        public static IEnumerable<Person> WithRandomDictionary(this IEnumerable<Person> persons)
+            => persons.Select(WithRandomDictionary);
+        
+        public static Person WithRandomDictionary(this Person person)
+        {
+            var keys = new[] {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"};
+            var random = new Random();
+            var length = random.Next(10);
+            person.SomeDict = new Dictionary<string, int>();
+            for (var i = 0; i < length; i++)
+                person.SomeDict[keys[random.Next(keys.Length)]] = random.Next(1000);
             return person;
         }
     }
