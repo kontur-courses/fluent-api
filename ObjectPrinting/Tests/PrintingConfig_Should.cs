@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -94,17 +95,107 @@ namespace ObjectPrinting.Tests
                 TestForParents(print, person);
             }
 
-            void TestForParents(string print, Person person, int currentRecursionLevel = 0, int maxRecursionLevel = 3)
+            void TestForParents(string print, Person person, int recursionLevel = 0, int maxRecursionLevel = 3)
             {
-                if (currentRecursionLevel > maxRecursionLevel) return;
-                var identation = new string('\t', currentRecursionLevel + 1);
+                if (recursionLevel > maxRecursionLevel) return;
+                var identation = new string('\t', recursionLevel + 1);
                 
                 print.Should().Contain($"\n{identation}{nameof(Person.Name)} = {person.Name}");
                 print.Should().Contain($"\n{identation}{nameof(Person.Age)} = {person.Age}");
                 print.Should().Contain($"\n{identation}{nameof(Person.Height)} = {person.Height}");
                 
-                TestForParents(print, person.Father, currentRecursionLevel + 1);
-                TestForParents(print, person.Mother, currentRecursionLevel + 1);
+                TestForParents(print, person.Father, recursionLevel + 1);
+                TestForParents(print, person.Mother, recursionLevel + 1);
+            }
+        }
+
+        [Test]
+        public static void AllowCustomPrinting_ForTypes()
+        {
+            var persons = GetRandomBasicPersons();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customPrint = person.PrintToString(c => c
+                    .Printing<Guid>().As(g => g.ToString())
+                    .Printing<DateTime>().As(d => $"year: {d.Year}"));
+
+                print.Should().NotContain($"\n\t{nameof(Person.Id)} = {person.Id.ToString()}");
+                print.Should().NotContain($"\n\t{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                
+                customPrint.Should().Contain($"\n\t{nameof(Person.Id)} = {person.Id.ToString()}");
+                customPrint.Should().Contain($"\n\t{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+            }
+        }
+        
+        [Test]
+        public static void AllowCustomPrinting_ForMembers()
+        {
+            var persons = GetRandomBasicPersons();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customPrint = person.PrintToString(c => c
+                    .Printing(p => p.Id).As(g => g.ToString())
+                    .Printing(p => p.BirthDate).As(d => $"year: {d.Year}"));
+
+                print.Should().NotContain($"\n\t{nameof(Person.Id)} = {person.Id.ToString()}");
+                print.Should().NotContain($"\n\t{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                
+                customPrint.Should().Contain($"\n\t{nameof(Person.Id)} = {person.Id.ToString()}");
+                customPrint.Should().Contain($"\n\t{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+            }
+        }
+        
+        [Test]
+        public static void AllowCustomPrinting_ForTypes_WithRecursiveMembers()
+        {
+            var persons = GetRandomBasicPersons().WithRandomParents(3).WithRandomId();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customPrint = person.PrintToString(c => c
+                    .Printing<Guid>().As(g => g.ToString())
+                    .Printing<DateTime>().As(d => $"year: {d.Year}"));
+                TestForParents(print, customPrint, person);
+            }
+
+            void TestForParents(string print, string customPrint, Person person, int recursionLevel = 0, int maxRecursionLevel = 3)
+            {
+                if (recursionLevel > maxRecursionLevel) return;
+                var identation = new string('\t', recursionLevel + 1);
+                
+                print.Should().NotContain($"\n{identation}{nameof(Person.Id)} = {person.Id.ToString()}");
+                print.Should().NotContain($"\n{identation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                
+                customPrint.Should().Contain($"\n{identation}{nameof(Person.Id)} = {person.Id.ToString()}");
+                customPrint.Should().Contain($"\n{identation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                
+                TestForParents(print, customPrint, person.Father, recursionLevel + 1);
+                TestForParents(print, customPrint, person.Mother, recursionLevel + 1);
+            }
+        }
+        
+        [Test]
+        public static void AllowCustomPrinting_ForDeepMembers()
+        {
+            var persons = GetRandomBasicPersons().WithRandomParents(3);
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customPrint = person.PrintToString(c => c
+                    .Printing(p => p.Father.Mother.Father.Id).As(g => g.ToString())
+                    .Printing(p => p.Mother.Father.Mother.BirthDate).As(d => $"year: {d.Year}"));
+
+                print.Should().NotContain(
+                    $"\n\t\t\t\t{nameof(Person.Id)} = {person.Father.Mother.Father.Id.ToString()}");
+                print.Should().NotContain(
+                    $"\n\t\t\t\t{nameof(Person.BirthDate)} = year: {person.Mother.Father.Mother.BirthDate.Year}");
+                
+                customPrint.Should().Contain(
+                    $"\n\t\t\t\t{nameof(Person.Id)} = {person.Father.Mother.Father.Id.ToString()}");
+                customPrint.Should().Contain(
+                    $"\n\t\t\t\t{nameof(Person.BirthDate)} = year: {person.Mother.Father.Mother.BirthDate.Year}");
             }
         }
 
@@ -141,6 +232,15 @@ namespace ObjectPrinting.Tests
             var mother = GetRandomBasicPerson().WithRandomParents(maxRecursionLevel - 1);
             person.Father = father;
             person.Mother = mother;
+            return person;
+        }
+
+        public static IEnumerable<Person> WithRandomId(this IEnumerable<Person> persons)
+            => persons.Select(WithRandomId);
+
+        public static Person WithRandomId(this Person person)
+        {
+            person.Id = Guid.NewGuid();
             return person;
         }
     }
