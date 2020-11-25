@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -130,6 +131,33 @@ namespace Tests
             var personText = printer.PrintToString(person);
 
             personText.Should().NotContain("Ivan");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldContainFamily_DictionaryFamily()
+        {
+            var subPersons = new Dictionary<string, Person>();
+            subPersons.Add("Артем", new Person{Name = "Артем", Age = 63});
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Son).Exclude();
+            var person = new Person {Name = "Alexander", Age = 19, Height = 1.84, Family = subPersons};
+
+            var personText = printer.PrintToString(person);
+
+            personText.Should().Contain("Артем");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldContainFamilyNames_ListWithNames()
+        {
+            var subPersons = new List<string> {"Sergey", "Rodion"};
+            var printer = ObjectPrinter.For<Person>()
+                .Choose(o => o.Son).Exclude();
+            var person = new Person {Name = "Alexander", Age = 19, Height = 1.84, FamilyNames = subPersons};
+
+            var personText = printer.PrintToString(person);
+
+            personText.Should().Contain("Sergey");
         }
     }
 }

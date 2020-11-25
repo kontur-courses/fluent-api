@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -71,9 +72,50 @@ namespace ObjectPrinting
 
         private string Serialize(PropertyInfo propertyInfo, object element, int nestingLevel)
         {
+            if (propertyInfo.GetValue(element) is IDictionary dictionary)
+                return SerializeDictionary(dictionary, nestingLevel);
+            if (propertyInfo.GetValue(element) is ICollection enumerable)
+                return SerializeEnumerable(enumerable, nestingLevel);
             return SerializeProperty(propertyInfo, element) ?? (SerializeType(propertyInfo, element)
                                                                 ?? DefaultSerialization(propertyInfo, element,
                                                                     nestingLevel));
+        }
+
+        private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine + new string('\t', nestingLevel + 1) + '[' + Environment.NewLine);
+            
+            foreach (var element in enumerable)
+            {
+                sb.Append(new string('\t', nestingLevel + 2));
+                sb.Append(PrintToString(element, nestingLevel));
+            }
+
+            sb.Append(new string('\t', nestingLevel + 1) + ']');
+
+            sb.Append(Environment.NewLine);
+            return sb.ToString();
+        }
+        
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine + new string('\t',nestingLevel + 1) + '{' + Environment.NewLine);
+            
+            foreach (var key in dictionary.Keys)
+            {
+                sb.Append(new string('\t', nestingLevel + 1));
+                sb.Append(PrintToString(key, nestingLevel + 2));
+                sb.Append(": ");
+                sb.Append(PrintToString(dictionary[key], nestingLevel + 2));
+            }
+
+            sb.Append(new string('\t', nestingLevel + 1) + '}');
+
+            sb.Append(Environment.NewLine);
+            return sb.ToString();
         }
 
         private string SerializeProperty(PropertyInfo propertyInfo, object element)
@@ -92,5 +134,6 @@ namespace ObjectPrinting
         {
             return PrintToString(propertyInfo.GetValue(element), nestingLevel + 1);
         }
+        
     }
 }
