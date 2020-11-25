@@ -2,9 +2,9 @@
 
 namespace PrintingConfigTests.TestingModels
 {
-    public class ListContainingTestingClass
+    public class DictionaryContainingModel
     {
         public string String { get; set; }
-        public List<int> IntList { get; set; }
+        public Dictionary<int, string> Dictionary { get; set; }
     }
 }

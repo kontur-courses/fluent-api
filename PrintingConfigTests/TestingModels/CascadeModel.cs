@@ -1,9 +1,9 @@
 ﻿namespace PrintingConfigTests.TestingModels
 {
-    public class CascadeTestingClass
+    public class CascadeModel
     {
         public int Int32 { get; set; }
         public string String { get; set; }
-        public CascadeTestingClass Child { get; set; }
+        public CascadeModel Child { get; set; }
     }
 }

@@ -14,20 +14,20 @@ namespace PrintingConfigTests
         [Test]
         public void Array_SerializeEachItem()
         {
-            var subject = new ArrayContainingTestingClass
+            var subject = new ArrayContainingModel
             {
                 String = "abc",
                 IntArray = Enumerable.Range(0, 5).ToArray()
             };
 
-            result = ObjectPrinter.For<ArrayContainingTestingClass>()
+            result = ObjectPrinter.For<ArrayContainingModel>()
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .ContainAll(nameof(ArrayContainingTestingClass),
-                    $"{nameof(ArrayContainingTestingClass.String)} = {subject.String}",
-                    $"{nameof(ArrayContainingTestingClass.IntArray)} = [{subject.IntArray.Length}]",
+                .ContainAll(nameof(ArrayContainingModel),
+                    $"{nameof(ArrayContainingModel.String)} = {subject.String}",
+                    $"{nameof(ArrayContainingModel.IntArray)} = [{subject.IntArray.Length}]",
                     $"[0]:Int32 = {subject.IntArray[0]}",
                     $"[1]:Int32 = {subject.IntArray[1]}",
                     $"[2]:Int32 = {subject.IntArray[2]}",
@@ -38,20 +38,20 @@ namespace PrintingConfigTests
         [Test]
         public void List_SerializeEachItem()
         {
-            var subject = new ListContainingTestingClass
+            var subject = new ListContainingModel
             {
                 String = "abc",
                 IntList = Enumerable.Range(0, 5).ToList()
             };
 
-            result = ObjectPrinter.For<ListContainingTestingClass>()
+            result = ObjectPrinter.For<ListContainingModel>()
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .ContainAll(nameof(ListContainingTestingClass),
-                    $"{nameof(ListContainingTestingClass.String)} = {subject.String}",
-                    $"{nameof(ListContainingTestingClass.IntList)} = [{subject.IntList.Count}]",
+                .ContainAll(nameof(ListContainingModel),
+                    $"{nameof(ListContainingModel.String)} = {subject.String}",
+                    $"{nameof(ListContainingModel.IntList)} = [{subject.IntList.Count}]",
                     $"[0]:Int32 = {subject.IntList[0]}",
                     $"[1]:Int32 = {subject.IntList[1]}",
                     $"[2]:Int32 = {subject.IntList[2]}",
@@ -62,7 +62,7 @@ namespace PrintingConfigTests
         [Test]
         public void CustomCollection_SerializeEachItem()
         {
-            var subject = new CustomCollectionContainingTestingClass
+            var subject = new CustomCollectionContainingModel
             {
                 String = "abc",
                 IntCollection = new TestingCollection<int>()
@@ -71,14 +71,14 @@ namespace PrintingConfigTests
             for (var i = 0; i < 5; i++)
                 subject.IntCollection.Add(i);
 
-            result = ObjectPrinter.For<CustomCollectionContainingTestingClass>()
+            result = ObjectPrinter.For<CustomCollectionContainingModel>()
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .ContainAll(nameof(CustomCollectionContainingTestingClass),
-                    $"{nameof(CustomCollectionContainingTestingClass.String)} = {subject.String}",
-                    $"{nameof(CustomCollectionContainingTestingClass.IntCollection)} = [{subject.IntCollection.Count}]",
+                .ContainAll(nameof(CustomCollectionContainingModel),
+                    $"{nameof(CustomCollectionContainingModel.String)} = {subject.String}",
+                    $"{nameof(CustomCollectionContainingModel.IntCollection)} = [{subject.IntCollection.Count}]",
                     $"[0]:Int32 = {subject.IntCollection[0]}",
                     $"[1]:Int32 = {subject.IntCollection[1]}",
                     $"[2]:Int32 = {subject.IntCollection[2]}",
@@ -89,7 +89,7 @@ namespace PrintingConfigTests
         [Test]
         public void Dictionary_SerializeEachItem()
         {
-            var subject = new DictionaryContainingTestingClass
+            var subject = new DictionaryContainingModel
             {
                 String = "abc",
                 Dictionary = new Dictionary<int, string>
@@ -102,14 +102,14 @@ namespace PrintingConfigTests
                 }
             };
 
-            result = ObjectPrinter.For<DictionaryContainingTestingClass>()
+            result = ObjectPrinter.For<DictionaryContainingModel>()
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .ContainAll(nameof(DictionaryContainingTestingClass),
-                    $"{nameof(DictionaryContainingTestingClass.String)} = {subject.String}",
-                    $"{nameof(DictionaryContainingTestingClass.Dictionary)} = [{subject.Dictionary.Count}]",
+                .ContainAll(nameof(DictionaryContainingModel),
+                    $"{nameof(DictionaryContainingModel.String)} = {subject.String}",
+                    $"{nameof(DictionaryContainingModel.Dictionary)} = [{subject.Dictionary.Count}]",
                     $"[10:Int32]:String = {subject.Dictionary[10]}",
                     $"[20:Int32]:String = {subject.Dictionary[20]}",
                     $"[30:Int32]:String = {subject.Dictionary[30]}",

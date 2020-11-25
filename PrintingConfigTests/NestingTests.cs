@@ -17,15 +17,15 @@ namespace PrintingConfigTests
         {
             var subject = CreateNestingSubject();
 
-            result = ObjectPrinter.For<NestedContainingTestingClass>()
+            result = ObjectPrinter.For<NestedContainingModel>()
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
                 .ContainAll(nameof(TestingPropertiesClass),
-                    $"{nameof(NestedContainingTestingClass.Int)} = {subject.Int}",
-                    $"{nameof(NestedContainingTestingClass.String)} = {subject.String}",
-                    $"{nameof(NestedContainingTestingClass.Nested)} = {nameof(TestingPropertiesClass)}",
+                    $"{nameof(NestedContainingModel.Int)} = {subject.Int}",
+                    $"{nameof(NestedContainingModel.String)} = {subject.String}",
+                    $"{nameof(NestedContainingModel.Nested)} = {nameof(TestingPropertiesClass)}",
                     $"{nameof(TestingPropertiesClass.Double)} = {subject.Nested.Double}",
                     $"{nameof(TestingPropertiesClass.Int)} = {subject.Nested.Int}",
                     $"{nameof(TestingPropertiesClass.Guid)} = {subject.Nested.Guid}",
@@ -37,7 +37,7 @@ namespace PrintingConfigTests
         {
             var subject = CreateNestingSubject();
 
-            result = ObjectPrinter.For<NestedContainingTestingClass>()
+            result = ObjectPrinter.For<NestedContainingModel>()
                 .Choose(x => x.Nested.Guid)
                 .UseSerializer(g => $"ggg {g.ToString()}")
                 .Build()
@@ -52,7 +52,7 @@ namespace PrintingConfigTests
         {
             var subject = CreateNestingSubject();
 
-            result = ObjectPrinter.For<NestedContainingTestingClass>()
+            result = ObjectPrinter.For<NestedContainingModel>()
                 .Choose<int>()
                 .Exclude()
                 .Build()
@@ -60,7 +60,7 @@ namespace PrintingConfigTests
 
             result.Should().NotContainAny(
                 nameof(TestingPropertiesClass.Int),
-                nameof(NestedContainingTestingClass.Int),
+                nameof(NestedContainingModel.Int),
                 subject.Int.ToString(),
                 subject.Nested.Int.ToString());
         }
@@ -70,14 +70,14 @@ namespace PrintingConfigTests
         {
             var subject = CreateNestingSubject();
 
-            result = ObjectPrinter.For<NestedContainingTestingClass>()
+            result = ObjectPrinter.For<NestedContainingModel>()
                 .Choose(x => x.Nested.Int)
                 .UseSerializer(_ => "uip")
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .Contain($"{nameof(NestedContainingTestingClass.Int)} = {subject.Int}");
+                .Contain($"{nameof(NestedContainingModel.Int)} = {subject.Int}");
         }
 
         [Test]
@@ -85,14 +85,14 @@ namespace PrintingConfigTests
         {
             var subject = CreateNestingSubject();
 
-            result = ObjectPrinter.For<NestedContainingTestingClass>()
+            result = ObjectPrinter.For<NestedContainingModel>()
                 .Choose(x => x.Nested)
                 .UseSerializer(n => "q1w2e3")
                 .Build()
                 .PrintToString(subject);
 
             result.Should()
-                .Contain($"{nameof(NestedContainingTestingClass.Nested)} = q1w2e3")
+                .Contain($"{nameof(NestedContainingModel.Nested)} = q1w2e3")
                 .And
                 .NotContainAny(subject.Nested.String, 
                     subject.Nested.Double.ToString(), 
@@ -106,7 +106,7 @@ namespace PrintingConfigTests
             TestContext.Out.WriteLine(result);
         }
 
-        private static NestedContainingTestingClass CreateNestingSubject() => new NestedContainingTestingClass
+        private static NestedContainingModel CreateNestingSubject() => new NestedContainingModel
         {
             Int = 123,
             String = "abc",
