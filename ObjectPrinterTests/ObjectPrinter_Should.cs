@@ -200,6 +200,17 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void PrintToString_StringNotContainsInfoAboutCycle_WhenIdenticalInstancesAtSameNestingLevel()
+        {
+            var chief = new Employee {Name = "Ivan"};
+            var subordinate = new Employee {Name = "Victor", Chief = chief, Subordinate = chief};
+
+            var act = subordinate.PrintToString();
+
+            act.Should().NotContain("found a cyclic link");
+        }
+
+        [Test]
         public void PrintToString_SerializedInstances_WhenOnePrinterSerializeManyInstances()
         {
             var printer = ObjectPrinter.For<Employee>();

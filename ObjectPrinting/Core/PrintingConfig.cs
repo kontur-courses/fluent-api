@@ -15,7 +15,7 @@ namespace ObjectPrinting.Core
         private readonly Dictionary<ElementInfo, Delegate> _alternativeSerializationByElementsInfo;
         private readonly HashSet<Type> _excludingTypes;
         private readonly HashSet<ElementInfo> _excludingElements;
-        private readonly HashSet<object> _visitedInstances;
+        private readonly Dictionary<object, int> _visitedInstances;
 
         private static HashSet<Type> _finalTypes = new HashSet<Type>
         {
@@ -36,7 +36,7 @@ namespace ObjectPrinting.Core
             _alternativeSerializationByElementsInfo = new Dictionary<ElementInfo, Delegate>();
             _excludingTypes = new HashSet<Type>();
             _excludingElements = new HashSet<ElementInfo>();
-            _visitedInstances = new HashSet<object>();
+            _visitedInstances = new Dictionary<object, int>();
         }
 
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
@@ -75,7 +75,7 @@ namespace ObjectPrinting.Core
 
         public string PrintToString(TOwner obj)
         {
-            if (_visitedInstances.Contains(obj))
+            if (_visitedInstances.ContainsKey(obj))
                 ClearTempStoragesBeforeNewInstanceSerialization();
             return PrintToString(obj, 0);
         }
@@ -98,12 +98,19 @@ namespace ObjectPrinting.Core
             var type = obj.GetType();
             if (IsFinalType(type))
                 return obj + Environment.NewLine;
-            if (_visitedInstances.Contains(obj))
+            if (IsContainsCycle(obj, nestingLevel))
                 return $"Type = {type.Name}, Value = {obj} : found a cyclic link\r\n";
-            _visitedInstances.Add(obj);
+            if (!_visitedInstances.ContainsKey(obj))
+                _visitedInstances[obj] = nestingLevel;
             return typeof(ICollection).IsAssignableFrom(type)
                 ? GetSerializedCollection(obj, nestingLevel)
                 : GetSerializedMembers(obj, nestingLevel);
+        }
+
+        private bool IsContainsCycle(object currentObject, int currentNestingLevel)
+        {
+            return _visitedInstances.TryGetValue(currentObject, out var lastNestingLevel) &&
+                   lastNestingLevel < currentNestingLevel;
         }
 
         private static bool IsFinalType(Type type) => _finalTypes.Contains(type) || type.IsPrimitive;
