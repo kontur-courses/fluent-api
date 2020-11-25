@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -258,15 +257,13 @@ namespace ObjectPrintingTests
         {
             var obj = new ClassForTestingCyclicalRefs();
             obj.Reference = obj;
+            obj.TestStringSerialization = "Test";
             var serialization = obj.PrintToString();
             serialization.Should()
                 .Be(
-                    $"ClassForTestingCyclicalRefs{Environment.NewLine}\tReference = Cyclical reference{Environment.NewLine}");
-            var type = obj.GetType();
-            var propertiesNames = type.GetProperties().Select(property => property.Name);
-            foreach (var propertyName in propertiesNames) serialization.Should().Contain(propertyName);
-            var fieldsNames = type.GetFields().Select(field => field.Name);
-            foreach (var fieldName in fieldsNames) serialization.Should().Contain(fieldName);
+                    $"ClassForTestingCyclicalRefs{Environment.NewLine}\tReference = Cyclical reference{Environment.NewLine}" +
+                    $"\tTestStringSerialization = Test{Environment.NewLine}" +
+                    $"\tTestIntSerialization = 0{Environment.NewLine}");
         }
     }
 }
