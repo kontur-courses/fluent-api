@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -70,16 +71,15 @@ namespace ObjectPrinting.Solved
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (handledObjects == null)
-                handledObjects = new Dictionary<object, int>();
             var type = obj.GetType();
-            if (Parameters.typesToSerialize.ContainsKey(type))
+            if (Parameters.typesToSerialize.ContainsKey(type) && !Parameters.typesToExclude.Contains(type))
                 return Parameters.typesToSerialize[type](obj) + Environment.NewLine;
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
+            if (handledObjects == null)
+                handledObjects = new Dictionary<object, int>();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var members = GetFieldsAndProperties(type);
             if (handledObjects.ContainsKey(obj))
             {
                 sb.AppendLine($"{type.Name} Id = {handledObjects[obj]}");
@@ -87,18 +87,36 @@ namespace ObjectPrinting.Solved
             }
             sb.AppendLine($"{type.Name} Id = {id}");
             handledObjects.Add(obj, id);
-            foreach (var memberInfo in members
-                .Where(member => (member is PropertyInfo propertyInfo && !Parameters.typesToExclude.Contains(propertyInfo.PropertyType)
-                    || member is FieldInfo fieldInfo && !Parameters.typesToExclude.Contains(fieldInfo.FieldType))
-                                 && !Parameters.membersToExclude.Contains(member)))
+            if (obj is IEnumerable) SerializeEnumerable(obj, nestingLevel, id, handledObjects, sb, identation);
+            else SerializeProperties(obj, nestingLevel, id, handledObjects, type, sb, identation);
+            return sb.ToString();
+        }
+
+        private void SerializeEnumerable(object obj, int nestingLevel, int id, Dictionary<object, int> handledObjects, StringBuilder sb,
+            string identation)
+        {
+            foreach (var element in (IEnumerable) obj)
+            {
+                sb.Append(identation + PrintToString(element,
+                    nestingLevel + 1, id + 1, handledObjects));
+            }
+        }
+
+        private void SerializeProperties(object obj, int nestingLevel, int id, Dictionary<object, int> handledObjects, Type type,
+            StringBuilder sb, string identation)
+        {
+            foreach (var memberInfo in GetFieldsAndProperties(type)
+                .Where(member =>
+                    (member is PropertyInfo propertyInfo && !Parameters.typesToExclude.Contains(propertyInfo.PropertyType)
+                     || member is FieldInfo fieldInfo && !Parameters.typesToExclude.Contains(fieldInfo.FieldType))
+                    && !Parameters.membersToExclude.Contains(member)))
             {
                 sb.Append(identation + memberInfo.Name + " = " +
-                          (Parameters.membersToSerialize.ContainsKey(memberInfo) ?
-                              Parameters.membersToSerialize[memberInfo](GetObject(memberInfo, obj)) + Environment.NewLine :
-                          PrintToString(GetObject(memberInfo, obj),
-                              nestingLevel + 1, id + 1, handledObjects)));
+                          (Parameters.membersToSerialize.ContainsKey(memberInfo)
+                              ? Parameters.membersToSerialize[memberInfo](GetObject(memberInfo, obj)) + Environment.NewLine
+                              : PrintToString(GetObject(memberInfo, obj),
+                                  nestingLevel + 1, id + 1, handledObjects)));
             }
-            return sb.ToString();
         }
 
         private object GetObject(MemberInfo member, object obj)

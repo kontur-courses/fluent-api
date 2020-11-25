@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -131,14 +132,38 @@ namespace ObjectPrinting.Solved.Tests
             var serializedClass = printer.PrintToString(a);
             serializedClass.Should().Be($"A Id = 0\r\n\tbField = B Id = 1\r\n\t\taField = A Id = 0\r\n");
         }
-/*
+
         [Test]
         public void ObjectPrinter_ShouldSerializeArraysByElements()
         {
             var printer = ObjectPrinter.For<int[]>();
-            var a = new int[]{1, 2, 3, 4};
-            var serializedClass = printer.PrintToString(a);
-            serializedClass.Should().Be("int[] Id = 0");
-        }*/
+            var array = new []{1, 2, 3, 4};
+            var serializedClass = printer.PrintToString(array);
+            serializedClass.Should().Be("Int32[] Id = 0\r\n\t1\r\n\t2\r\n\t3\r\n\t4\r\n");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldSerializeListsByElements()
+        {
+            var printer = ObjectPrinter.For<List<int>>();
+            var list = new List<int>{ 1, 2, 3, 4 };
+            var serializedClass = printer.PrintToString(list);
+            serializedClass.Should().Be("List`1 Id = 0\r\n\t1\r\n\t2\r\n\t3\r\n\t4\r\n");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldSerializeDictionaryByElements()
+        {
+            var printer = ObjectPrinter.For<Dictionary<string, int>>()
+                .Printing<KeyValuePair<string, int>>().Using(pair => $"{pair.Key} : {pair.Value}");
+            var dictionary = new Dictionary<string, int>
+            {
+                { "abc", 256 },
+                { "po", 4 },
+                { "f", 9 }
+            };
+            var serializedClass = printer.PrintToString(dictionary);
+            serializedClass.Should().Be("Dictionary`2 Id = 0\r\n\tabc : 256\r\n\tpo : 4\r\n\tf : 9\r\n");
+        }
     }
 }
