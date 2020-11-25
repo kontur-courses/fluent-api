@@ -148,5 +148,39 @@ namespace ObjectPrintingTests
         }
 
         #endregion
+
+        #region Serializaton method that trims string properties
+
+        [Test]
+        public void PrintObject_PrintPersonWithTrimsStringTypes()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty<string>()
+                .TrimmedToLength(2);
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                $"{person.GetType().Name}{newLine}" +
+                $"\tId = {person.Id}{newLine}" +
+                $"\tName = {person.Name.Substring(0, 2)}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+        
+        [Test]
+        public void PrintObject_PrintPersonWithTrimsNameProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .PrintProperty(pers => pers.Name)
+                .TrimmedToLength(2);
+            var result = printer.PrintToString(person);
+
+            result.Should().Be(
+                $"{person.GetType().Name}{newLine}" +
+                $"\tId = {person.Id}{newLine}" +
+                $"\tName = {person.Name.Substring(0, 2)}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+
+        #endregion
     }
 }
