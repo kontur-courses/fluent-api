@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
@@ -44,8 +45,6 @@ namespace PrintingConfigTests
                 .Contain($"{nameof(CascadeTestingClass.Int32)} = {subject.Child.Int32}")
                 .And
                 .NotContain(subject.Int32.ToString());
-            
-            Assert.Fail("Ждем ответа от наставника");
         }
 
         [Test]
@@ -69,16 +68,13 @@ namespace PrintingConfigTests
             var subject = new CascadeTestingClass {Int32 = 1, String = "a"};
             subject.Child = subject;
 
-            result = ObjectPrinter.For<CascadeTestingClass>()
+            Action test = () => ObjectPrinter.For<CascadeTestingClass>()
                 .Build()
                 .PrintToString(subject);
 
-            result.Should()
-                .NotContainAny($"{nameof(CascadeTestingClass.Child)}")
-                .And
-                .ContainEquivalentOf(nameof(CascadeTestingClass.Int32), Exactly.Once())
-                .And
-                .ContainEquivalentOf(nameof(CascadeTestingClass.String), Exactly.Once());
+            test.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage($"Cyclic reference in {typeof(CascadeTestingClass)}");
         }
 
         [TearDown]

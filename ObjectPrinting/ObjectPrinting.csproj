@@ -7,8 +7,4 @@
     <Nullable>annotations</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Nodes\Nodes.csproj" />
-  </ItemGroup>
-
 </Project>

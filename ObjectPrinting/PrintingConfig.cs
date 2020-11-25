@@ -38,7 +38,7 @@ namespace ObjectPrinting
                 return obj.ToString() + Environment.NewLine;
 
             if (alreadySerialized.Contains(obj))
-                return string.Empty;
+                throw new InvalidOperationException($"Cyclic reference in {typeof(TOwner).FullName}");
             alreadySerialized.Add(obj);
 
             if (obj is IDictionary dictionary)
