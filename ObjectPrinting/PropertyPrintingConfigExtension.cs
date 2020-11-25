@@ -1,5 +1,4 @@
 ﻿using System;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -12,9 +11,10 @@ namespace ObjectPrinting
         
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig
-                .TrimForStringProperties[propConfig.MemberSelector] = maxLen;
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            var printingConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+                printingConfig.AddSerializationForProperty<string>(
+                    propConfig.MemberName, str => str.Substring(0, maxLen));
+            return printingConfig;
         }
     }
 }

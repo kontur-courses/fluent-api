@@ -7,34 +7,35 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public readonly Func<TOwner, TPropType> MemberSelector;
+        public readonly string MemberName;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Func<TOwner, TPropType> memberSelector)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberName)
         {
-            this.MemberSelector = memberSelector;
+            this.MemberName = memberName;
             this.printingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (MemberSelector is null)
+            if (MemberName is null)
             {
-                printingConfig.SerializationsForType[typeof(TPropType)] = print;
+                printingConfig.AddSerializationForType(typeof(TPropType), print);
             }
             else
             {
-                printingConfig.SerializationForProperty[MemberSelector] = print;
+                Console.WriteLine(MemberName);
+                printingConfig.AddSerializationForProperty(MemberName, print);
             }
             return printingConfig;
         }
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            printingConfig.Cultures.Add(typeof(TPropType), culture);
+            printingConfig.AddCultureForNumber(typeof(TPropType), culture);
             return printingConfig;
         }
         

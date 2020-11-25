@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using Microsoft.VisualBasic;
 
 namespace ObjectPrinting
 {
@@ -13,10 +14,9 @@ namespace ObjectPrinting
     {
         private readonly List<Type> excludedTypes = new List<Type>();
         private readonly List<Delegate> excludedFields = new List<Delegate>();
-        public readonly Dictionary<Type, CultureInfo> Cultures = new Dictionary<Type, CultureInfo>();
-        public readonly Dictionary<Type, Delegate> SerializationsForType = new Dictionary<Type, Delegate>();
-        public readonly Dictionary<Delegate, Delegate> SerializationForProperty = new Dictionary<Delegate, Delegate>();
-        public readonly Dictionary<Delegate, int> TrimForStringProperties = new Dictionary<Delegate, int>();
+        private readonly Dictionary<Type, CultureInfo> Cultures = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, Delegate> SerializationsForType = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<string, Delegate> SerializationForProperty = new Dictionary<string, Delegate>();
         private TOwner startObject;
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -24,6 +24,7 @@ namespace ObjectPrinting
             excludedFields.Add(memberSelector.Compile());
             return this;
         }
+
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
@@ -34,19 +35,36 @@ namespace ObjectPrinting
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
-        
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector.Compile());
+            //это пока не так работает, тут надо поправить
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector.Compile().GetMethodInfo().ReturnParameter.Name);
         }
-        
+
         public string PrintToString(TOwner obj)
         {
             startObject = obj;
-            return obj is IEnumerable collection ? PrintToStringIenumerable(collection) : PrintToString(obj, 0);
+            return obj is ICollection collection ? PrintToStringICollectable(collection) : PrintToString(obj, 0);
         }
-        
-        private readonly Type[] finalTypes =  new[]
+
+        public void AddSerializationForType<TPropType>(Type type, Func<TPropType, string> serializaton)
+        {
+            SerializationsForType[type] = serializaton;
+        }
+
+        public void AddSerializationForProperty<TPropType>(string propertyName, Func<TPropType, string> serialization)
+        {
+            SerializationForProperty[propertyName] = serialization;
+        }
+
+        public void AddCultureForNumber(Type type, CultureInfo culture)
+        {
+            Cultures[type] = culture;
+        }
+
+        private readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
@@ -61,12 +79,12 @@ namespace ObjectPrinting
             {
                 return "circle ref" + Environment.NewLine;
             }
-            
+
             if (SerializationsForType.TryGetValue(obj.GetType(), out var func))
             {
                 return func.DynamicInvoke(obj) + Environment.NewLine;
             }
-            
+
             if (finalTypes.Contains(obj.GetType()))
             {
                 return GetNumberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
@@ -88,19 +106,19 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                if (TryAddTrim(obj, propertyInfo, sb, identation) || 
-                    TryGetSerializationByProperty(obj, propertyInfo, sb, identation))
+                if (TryGetSerializationByProperty(obj, propertyInfo, sb, identation))
                 {
                     continue;
                 }
 
                 sb.Append(identation + propertyInfo.Name + " = ");
-                sb.Append(PrintToString(propertyInfo.GetValue(obj),nestingLevel + 1));
+                sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
+
             return sb.ToString();
         }
 
-        private string PrintToStringIenumerable(IEnumerable collection)
+        private string PrintToStringICollectable(IEnumerable collection)
         {
             var sb = new StringBuilder();
             var index = 0;
@@ -114,18 +132,16 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetSerializationByProperty(object obj, PropertyInfo propertyInfo, StringBuilder sb, string identation)
+        private bool TryGetSerializationByProperty(object obj, PropertyInfo propertyInfo, StringBuilder sb,
+            string identation)
         {
-            foreach (var memberSelector in SerializationForProperty.Keys)
+            if (SerializationForProperty.ContainsKey(propertyInfo.Name))
             {
-                var memberValue = memberSelector.DynamicInvoke(obj);
-                if (memberValue != null && memberValue.Equals(propertyInfo.GetValue(obj)))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = ");
-                    sb.Append(SerializationForProperty[memberSelector]
-                        .DynamicInvoke(propertyInfo.GetValue(obj)));
-                    return true;
-                }
+                sb.Append(identation + propertyInfo.Name + " = ");
+                sb.Append(SerializationForProperty[propertyInfo.Name]
+                    .DynamicInvoke(propertyInfo.GetValue(obj)));
+                sb.Append(Environment.NewLine);
+                return true;
             }
 
             return false;
@@ -135,15 +151,7 @@ namespace ObjectPrinting
         {
             if (Cultures.TryGetValue(obj.GetType(), out var culture))
             {
-                switch (obj)
-                {
-                    case int i:
-                        return i.ToString(culture) + Environment.NewLine;
-                    case double d:
-                        return d.ToString(culture) + Environment.NewLine;
-                    case float f:
-                        return f.ToString(culture) + Environment.NewLine;
-                }
+                return String.Format(culture, "{0}", obj);
             }
 
             return null;
@@ -156,26 +164,6 @@ namespace ObjectPrinting
                 if (func.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
                 {
                     return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool TryAddTrim(Object obj, PropertyInfo propertyInfo, StringBuilder sb, string identation)
-        {
-            if (propertyInfo.PropertyType == typeof(string))
-            {
-                foreach (var memberSelector in TrimForStringProperties.Keys)
-                {
-                    if (memberSelector.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
-                    {
-                        sb.Append(identation + propertyInfo.Name + " = ");
-                        sb.Append(propertyInfo.GetValue(obj)?.ToString()
-                            ?.Substring(0, TrimForStringProperties[memberSelector]));
-                        sb.Append(Environment.NewLine);
-                        return true;
-                    }
                 }
             }
 
