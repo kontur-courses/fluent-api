@@ -132,12 +132,12 @@ namespace Tests
 
             personText.Should().NotContain("Ivan");
         }
-        
+
         [Test]
         public void PrintToString_ShouldContainFamily_DictionaryFamily()
         {
             var subPersons = new Dictionary<string, Person>();
-            subPersons.Add("Артем", new Person{Name = "Артем", Age = 63});
+            subPersons.Add("Артем", new Person {Name = "Артем", Age = 63});
             var printer = ObjectPrinter.For<Person>()
                 .Choose(o => o.Son).Exclude();
             var person = new Person {Name = "Alexander", Age = 19, Height = 1.84, Family = subPersons};
@@ -146,7 +146,7 @@ namespace Tests
 
             personText.Should().Contain("Артем");
         }
-        
+
         [Test]
         public void PrintToString_ShouldContainFamilyNames_ListWithNames()
         {

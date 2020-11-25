@@ -85,7 +85,7 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             sb.Append(Environment.NewLine + new string('\t', nestingLevel + 1) + '[' + Environment.NewLine);
-            
+
             foreach (var element in enumerable)
             {
                 sb.Append(new string('\t', nestingLevel + 2));
@@ -97,13 +97,12 @@ namespace ObjectPrinting
             sb.Append(Environment.NewLine);
             return sb.ToString();
         }
-        
+
         private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
         {
-            
             var sb = new StringBuilder();
-            sb.Append(Environment.NewLine + new string('\t',nestingLevel + 1) + '{' + Environment.NewLine);
-            
+            sb.Append(Environment.NewLine + new string('\t', nestingLevel + 1) + '{' + Environment.NewLine);
+
             foreach (var key in dictionary.Keys)
             {
                 sb.Append(new string('\t', nestingLevel + 1));
@@ -134,6 +133,5 @@ namespace ObjectPrinting
         {
             return PrintToString(propertyInfo.GetValue(element), nestingLevel + 1);
         }
-        
     }
 }
