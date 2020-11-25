@@ -61,7 +61,8 @@ namespace ObjectPrinting
                 if (IsExclude(memberInfo))
                     continue;
 
-                sb.Append(indentation + memberInfo.Name + " = ");
+                sb.Append($"{indentation}{memberInfo.Name} = ");
+
                 var value = memberInfo.GetValue(obj);
                 var serializedObject = TryGetSpecialSerialize(memberInfo, out var specSerialize)
                     ? specSerialize.DynamicInvoke(value) + Environment.NewLine

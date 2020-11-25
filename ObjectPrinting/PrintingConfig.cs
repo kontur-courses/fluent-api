@@ -44,7 +44,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             _excludedTypes.Add(typeof(TPropType));
             return this;
@@ -53,7 +53,7 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             var s = new Serializer<TOwner>(this);
-            return s.Serialize(obj, 0);
+            return s.Serialize(obj);
         }
     }
 }
