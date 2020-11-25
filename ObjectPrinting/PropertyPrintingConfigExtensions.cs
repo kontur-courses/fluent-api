@@ -19,9 +19,11 @@ namespace ObjectPrinting
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
-            return ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
+            if (maxLength < 0)
+                throw new ArgumentException("maxLength must be non-negative");
+            return propConfig.Using(s => maxLength > s.Length ? s : s.Substring(0, maxLength));
         }
     }
 }

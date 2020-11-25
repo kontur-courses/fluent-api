@@ -15,14 +15,16 @@ namespace ObjectPrinting
         internal Dictionary<Type, CultureInfo> cultures;
         internal Dictionary<Type, Delegate> typePropertyConfigs;
         internal Dictionary<string, Delegate> namePropertyConfigs;
+        private readonly int maxNestingLevel;
 
-        public PrintingConfig()
+        public PrintingConfig(int maxNestingLevel = 10)
         {
             excludedTypes = new HashSet<Type>();
             exludedProperties = new HashSet<PropertyInfo>();
             cultures = new Dictionary<Type, CultureInfo>();
             typePropertyConfigs = new Dictionary<Type, Delegate>();
             namePropertyConfigs = new Dictionary<string, Delegate>();
+            this.maxNestingLevel = maxNestingLevel;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -33,10 +35,11 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            var func = memberSelector.Compile();
-            namePropertyConfigs[propInfo.Name] = func;
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var member = ((MemberExpression) memberSelector.Body).Member;
+            var propInfo = member as PropertyInfo;
+            if (propInfo == null)
+                throw new ArgumentException("Can't extract property from expression body");
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, member);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -52,6 +55,14 @@ namespace ObjectPrinting
             return this;
         }
 
+        public PrintingConfig<TOwner> TrimmedToLength(int maxLength)
+        {
+            if (maxLength < 0)
+                throw new ArgumentException("maxLength must be non-negative");
+            return Printing<string>()
+                .Using(s => maxLength > s.Length ? s : s.Substring(0, maxLength));
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -59,6 +70,8 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (nestingLevel > maxNestingLevel)
+                return "";
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -90,7 +103,9 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 var value = propertyInfo.GetValue(obj);
-                if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
+                if (namePropertyConfigs.ContainsKey(propertyInfo.Name))
+                    value = namePropertyConfigs[propertyInfo.Name].DynamicInvoke(value);
+                else if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
                     value = typePropertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(value,
