@@ -13,14 +13,16 @@ namespace ObjectPrinting
         private HashSet<Type> excludedTypes;
         private HashSet<PropertyInfo> exludedProperties;
         internal Dictionary<Type, CultureInfo> cultures;
-        internal Dictionary<Type, Delegate> propertyConfigs;
+        internal Dictionary<Type, Delegate> typePropertyConfigs;
+        internal Dictionary<string, Delegate> namePropertyConfigs;
 
         public PrintingConfig()
         {
             excludedTypes = new HashSet<Type>();
             exludedProperties = new HashSet<PropertyInfo>();
             cultures = new Dictionary<Type, CultureInfo>();
-            propertyConfigs = new Dictionary<Type, Delegate>();
+            typePropertyConfigs = new Dictionary<Type, Delegate>();
+            namePropertyConfigs = new Dictionary<string, Delegate>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -31,6 +33,9 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var propInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
+            var func = memberSelector.Compile();
+            namePropertyConfigs[propInfo.Name] = func;
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
@@ -85,8 +90,8 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
                 var value = propertyInfo.GetValue(obj);
-                if (propertyConfigs.ContainsKey(propertyInfo.PropertyType))
-                    value = propertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
+                if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
+                    value = typePropertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(value,
                               nestingLevel + 1));

@@ -15,7 +15,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingConfig.propertyConfigs[typeof(TPropType)] = print;
+            printingConfig.typePropertyConfigs[typeof(TPropType)] = print;
             return printingConfig;
         }
         

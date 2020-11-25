@@ -63,13 +63,24 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Point>()
                 .Printing<float>().UsingCulture(CultureInfo.GetCultureInfo("ru-Ru"));
 
-            Console.WriteLine(printer.PrintToString(point));
-
             printer.PrintToString(point).Should().Be(
                 $"Point{Environment.NewLine}" +
                 $"\tX = {point.X}{Environment.NewLine}" +
                 $"\tY = {point.Y}{Environment.NewLine}" +
                 $"\tZ = {point.Z.ToString(CultureInfo.GetCultureInfo("ru-Ru"))}{Environment.NewLine}");
+        }
+
+        [Test]
+        public void AlternativeSerializationForSpecificProperty()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Age).Using(age => (age * 2).ToString());
+
+            printer.PrintToString(person).Should().Be($"Person{Environment.NewLine}" +
+                                                      $"\tId = {person.Id}{Environment.NewLine}" +
+                                                      $"\tName = {person.Name}{Environment.NewLine}" +
+                                                      $"\tHeight = {person.Height}{Environment.NewLine}" +
+                                                      $"\tAge = {person.Age * 2}{Environment.NewLine}");
         }
     }
 }
