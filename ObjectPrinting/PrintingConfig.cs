@@ -15,19 +15,15 @@ namespace ObjectPrinting
         private HashSet<MemberInfo> exludedMembers;
         internal Dictionary<Type, Delegate> typeMemberConfigs;
         internal Dictionary<MemberInfo, Delegate> nameMemberConfigs;
+        private HashSet<object> alreadySerialized;
 
-        // internal Dictionary<Type, Delegate> typePropertyConfigs;
-        // internal Dictionary<string, Delegate> namePropertyConfigs;
-
-        private readonly int maxNestingLevel;
-
-        public PrintingConfig(int maxNestingLevel = 10)
+        public PrintingConfig()
         {
             excludedTypes = new HashSet<Type>();
             exludedMembers = new HashSet<MemberInfo>();
             typeMemberConfigs = new Dictionary<Type, Delegate>();
             nameMemberConfigs = new Dictionary<MemberInfo, Delegate>();
-            this.maxNestingLevel = maxNestingLevel;
+            alreadySerialized = new HashSet<object>();
         }
 
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -69,6 +65,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            alreadySerialized = new HashSet<object>();
             return PrintToString(obj, 0);
         }
 
@@ -174,11 +171,11 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (nestingLevel > maxNestingLevel)
+            if (alreadySerialized.Contains(obj))
                 return "";
             if (obj == null)
                 return "null" + Environment.NewLine;
-
+            alreadySerialized.Add(obj);
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
