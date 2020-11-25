@@ -50,7 +50,7 @@ namespace ObjectPrinting
                 _ => SerializeObjectState(obj, path, nestingLevel, type)
             };
 
-            currentlySerializing.Remove(obj); // To avoid
+            currentlySerializing.Remove(obj);
             return result;
         }
 
