@@ -6,25 +6,20 @@ namespace ObjectPrinting
 {
     public class Config
     {
-        public readonly List<Type> ExcludedTypes;
-        public readonly List<PropertyInfo> ExludedFields;
-        public readonly Dictionary<PropertyInfo, Delegate> FieldSerializers;
-        public readonly Dictionary<Type, Delegate> TypesSerializer;
+        internal readonly List<PropertyInfo> ExcludedFields = new List<PropertyInfo>();
+        internal readonly List<Type> ExcludedTypes = new List<Type>();
 
-        public Config()
-        {
-            ExcludedTypes = new List<Type>();
-            TypesSerializer = new Dictionary<Type, Delegate>();
-            ExludedFields = new List<PropertyInfo>();
+        internal readonly Dictionary<PropertyInfo, Delegate>
             FieldSerializers = new Dictionary<PropertyInfo, Delegate>();
-        }
 
-        public bool IsExcluded(PropertyInfo propertyInfo)
+        internal readonly Dictionary<Type, Delegate> TypesSerializer = new Dictionary<Type, Delegate>();
+
+        internal bool IsExcluded(PropertyInfo propertyInfo)
         {
-            return ExludedFields.Contains(propertyInfo) || ExcludedTypes.Contains(propertyInfo.PropertyType);
+            return ExcludedFields.Contains(propertyInfo) || ExcludedTypes.Contains(propertyInfo.PropertyType);
         }
 
-        public bool IsSpecialSerialize(PropertyInfo propertyInfo, object element, out string result)
+        internal bool IsSpecialSerialize(PropertyInfo propertyInfo, object element, out string result)
         {
             result = "";
             if (!FieldSerializers.ContainsKey(propertyInfo))
@@ -33,7 +28,7 @@ namespace ObjectPrinting
             return true;
         }
 
-        public bool IsSpecialSerialize(Type type, object element, out string result)
+        internal bool IsSpecialSerialize(Type type, object element, out string result)
         {
             result = "";
             if (!TypesSerializer.ContainsKey(type))

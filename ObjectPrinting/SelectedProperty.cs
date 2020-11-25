@@ -10,7 +10,7 @@ namespace ObjectPrinting
         private readonly PrintingConfig<TOwner> parent;
         private readonly PropertyInfo selectedProperty;
 
-        public SelectedProperty(PropertyInfo selectedProperty, PrintingConfig<TOwner> parent, Config config)
+        internal SelectedProperty(PropertyInfo selectedProperty, PrintingConfig<TOwner> parent, Config config)
         {
             this.selectedProperty = selectedProperty;
             this.parent = parent;
@@ -25,7 +25,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude()
         {
-            config.ExludedFields.Add(selectedProperty);
+            config.ExcludedFields.Add(selectedProperty);
             return parent;
         }
 

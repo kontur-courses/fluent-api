@@ -2,14 +2,14 @@
 
 namespace ObjectPrinting
 {
-    public static class ObjectExtensions
+    internal static class ObjectExtensions
     {
-        public static string PrintToString<T>(this T obj)
+        internal static string PrintToString<T>(this T obj)
         {
             return ObjectPrinter.For<T>().PrintToString(obj);
         }
 
-        public static string PrintToString<T>(this T obj,
+        internal static string PrintToString<T>(this T obj,
             Func<PrintingConfig<T>, PrintingConfig<T>> configPrinter)
         {
             var printer = configPrinter(ObjectPrinter.For<T>());
