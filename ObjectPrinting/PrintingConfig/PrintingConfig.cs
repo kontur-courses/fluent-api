@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -59,7 +58,7 @@ namespace ObjectPrinting.PrintingConfig
                     || excludedProperties.Contains(propInfo.Name)) continue;
                 var printedObject = PrintToString(
                     propInfo.GetValue(obj), nestingLevel + 1, propInfo);
-                sb.Append($"{identation}{printedObject}");
+                sb.Append($"{identation}{propInfo.Name} = {printedObject}");
             }
             
             return sb.ToString();
@@ -75,7 +74,7 @@ namespace ObjectPrinting.PrintingConfig
                 propertiesPrintingMethods.TryGetValue(propertyName, out printMethod))
                 return printMethod(obj);
             if (finalTypes.Contains(type))
-                return $"{propertyName} = {obj}";
+                return obj.ToString();
             return objectPrinting;
         }
 

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.PropertyPrintingConfig;
 using ObjectPrintingTests.TestModels;
 
 namespace ObjectPrintingTests
@@ -11,7 +13,7 @@ namespace ObjectPrintingTests
         [SetUp]
         public void SetUp()
         {
-            person = new Person { Id = Guid.NewGuid(), Name = "Alex", Age = 19 };
+            person = new Person { Id = Guid.NewGuid(), Name = "Alex", Age = 19};
             newLine = Environment.NewLine;
         }
 
@@ -71,7 +73,7 @@ namespace ObjectPrintingTests
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tId = {person.Id}{newLine}" +
-                $"\tString data: {person.Name}{newLine}" +
+                $"\tName = String data: {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
         
@@ -85,7 +87,7 @@ namespace ObjectPrintingTests
             
             result.Should().Be(
                 $"Person{newLine}" +
-                $"\tPerson id is {person.Id.ToString()}{newLine}" +
+                $"\tId = Person id is {person.Id.ToString()}{newLine}" +
                 $"\tName = {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
@@ -102,8 +104,8 @@ namespace ObjectPrintingTests
 
             result.Should().Be(
                 $"Person{newLine}" +
-                $"\tPerson id is {person.Id}{newLine}" +
-                $"\tPerson name is {person.Name}{newLine}" +
+                $"\tId = Person id is {person.Id}{newLine}" +
+                $"\tName = Person name is {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
 
@@ -119,11 +121,32 @@ namespace ObjectPrintingTests
             
             result.Should().Be(
                 $"Person{newLine}" +
-                $"\tNice guid - {person.Id}{newLine}" +
-                $"\tPerson name is {person.Name}{newLine}" +
+                $"\tId = Nice guid - {person.Id}{newLine}" +
+                $"\tName = Person name is {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
         
+        #endregion
+
+        #region Serizlization method with specified culure for type and property
+
+        [Test]
+        public void PrintObject_PrintPersonWithSpecialCultureForType()
+        {
+            var personWithWeight = new PersonWithWeight{Name = "Nik", Age = 54, Weight = 76.32};
+            var printer = ObjectPrinter.For<PersonWithWeight>()
+                .PrintProperty<double>()
+                .WithCulture(CultureInfo.CurrentCulture);
+            var result = printer.PrintToString(personWithWeight);
+            
+            result.Should().Be(
+                $"{personWithWeight.GetType().Name}{newLine}" +
+                $"\tId = {personWithWeight.Id}{newLine}" +
+                $"\tName = {personWithWeight.Name}{newLine}" +
+                $"\tAge = {personWithWeight.Age}{newLine}" +
+                $"\tWeight = {personWithWeight.Weight.ToString(null, CultureInfo.CurrentCulture)}{newLine}");
+        }
+
         #endregion
     }
 }

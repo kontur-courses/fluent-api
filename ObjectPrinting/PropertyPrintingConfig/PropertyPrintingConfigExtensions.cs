@@ -1,0 +1,17 @@
+﻿using System;
+using System.Globalization;
+using ObjectPrinting.PrintingConfig;
+
+namespace ObjectPrinting.PropertyPrintingConfig
+{
+    public static class PropertyPrintingConfigExtensions
+    {
+        public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(
+            this PropertyPrintingConfig<TOwner,TPropType> propPrintingConfig, CultureInfo culture)
+            where TPropType : IFormattable
+        {
+            propPrintingConfig.WithConfig(type => type.ToString(null, culture));
+            return propPrintingConfig.ParentConfig;
+        }
+    }
+}
