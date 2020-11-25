@@ -13,7 +13,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes;
         private readonly ChildedNode<IPropertyConfigurator> configurationRoot;
         private readonly IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators;
-        private readonly HashSet<object> alreadySerialized = new HashSet<object>();
+        private readonly HashSet<object> currentlySerializing = new HashSet<object>();
 
         public PrintingConfig(Type[] finalTypes, ChildedNode<IPropertyConfigurator> configurationRoot,
             IDictionary<Type, IPropertyConfigurator> groupAppliedConfigurators)
@@ -37,11 +37,11 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return obj.ToString() + Environment.NewLine;
 
-            if (alreadySerialized.Contains(obj))
+            if (currentlySerializing.Contains(obj))
                 throw new InvalidOperationException($"Cyclic reference in {typeof(TOwner).FullName}");
-            alreadySerialized.Add(obj);
+            currentlySerializing.Add(obj);
 
-            return obj switch
+            var result = obj switch
             {
                 IDictionary dictionary => $"[{dictionary.Count}]" + Environment.NewLine +
                                           SerializeDictionary(dictionary, path, nestingLevel + 1),
@@ -49,6 +49,9 @@ namespace ObjectPrinting
                                           SerializeCollection(collection, path, nestingLevel + 1),
                 _ => SerializeObjectState(obj, path, nestingLevel, type)
             };
+
+            currentlySerializing.Remove(obj); // To avoid
+            return result;
         }
 
         private string SerializeObjectState(object obj, string[] path, int nestingLevel, Type objType)

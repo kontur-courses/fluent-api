@@ -77,6 +77,23 @@ namespace PrintingConfigTests
                 .WithMessage($"Cyclic reference in {typeof(CascadeModel)}");
         }
 
+        [Test]
+        public void SameLinkInDifferentFields_NotThrow()
+        {
+            var subject = new SeveralNestedContainingModel
+            {
+                String = "A1",
+                M1 = new SeveralNestedContainingModel {String = "A2"}
+            };
+            subject.M2 = subject.M1;
+
+            Action test = () => ObjectPrinter.For<SeveralNestedContainingModel>()
+                .Build()
+                .PrintToString(subject);
+
+            test.Should().NotThrow();
+        }
+
         [TearDown]
         public void TearDown()
         {
