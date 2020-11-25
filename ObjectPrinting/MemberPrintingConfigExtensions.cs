@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public static class PropertyPrintingConfigExtensions
+    public static class MemberPrintingConfigExtensions
     {
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
@@ -11,7 +11,7 @@ namespace ObjectPrinting
         }
 
         public static PrintingConfig<TOwner> UsingCulture<TOwner, T>(
-            this PropertyPrintingConfig<TOwner, T> propConfig,
+            this MemberPrintingConfig<TOwner, T> propConfig,
             CultureInfo culture)
             where T : IFormattable
         {
@@ -19,7 +19,7 @@ namespace ObjectPrinting
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
+            this MemberPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
             if (maxLength < 0)
                 throw new ArgumentException("maxLength must be non-negative");

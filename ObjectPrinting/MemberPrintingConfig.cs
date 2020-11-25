@@ -6,12 +6,12 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class MemberPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         internal readonly MemberInfo memberInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo = null)
+        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo = null)
         {
             this.printingConfig = printingConfig;
             this.memberInfo = memberInfo;
@@ -26,10 +26,10 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public interface IMemberPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
     }

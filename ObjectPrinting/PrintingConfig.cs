@@ -30,12 +30,12 @@ namespace ObjectPrinting
             this.maxNestingLevel = maxNestingLevel;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new MemberPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var member = ((MemberExpression) memberSelector.Body).Member;
@@ -43,7 +43,7 @@ namespace ObjectPrinting
             var fieldInfo = member as FieldInfo;
             if (propInfo == null && fieldInfo == null)
                 throw new ArgumentException("Can't extract member from expression body");
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, member);
+            return new MemberPrintingConfig<TOwner, TPropType>(this, member);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
