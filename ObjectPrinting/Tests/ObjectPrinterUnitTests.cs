@@ -20,6 +20,8 @@ namespace ObjectPrinting.Tests
             new Animal("Bob", "Cat",
                 new Animal("Joe", "Monkey")));
 
+        private Computer computer = new Computer("4090-TI", 32, "I7-MEGACPU");
+
         [SetUp]
         public void SetUp()
         {
@@ -224,6 +226,18 @@ namespace ObjectPrinting.Tests
                                                        $"\t\tmath : 5{Environment.NewLine}" +
                                                        $"\t\tbiology : 3{Environment.NewLine}" +
                                                        $"\t\t]{Environment.NewLine}");
+        }
+
+        [Test]
+        public void FieldsSerialization()
+        {
+            var printer = ObjectPrinter.For<Computer>()
+                .Printing(printer => printer.GPUName).Using(s => s + "123");
+
+            printer.PrintToString(computer).Should().Be($"Computer{Environment.NewLine}" +
+                                                        $"\tCPUName = {computer.CPUName}{Environment.NewLine}" +
+                                                        $"\tGPUName = {computer.GPUName + "123"}{Environment.NewLine}" +
+                                                        $"\tRAM = {computer.RAM}{Environment.NewLine}");
         }
     }
 }
