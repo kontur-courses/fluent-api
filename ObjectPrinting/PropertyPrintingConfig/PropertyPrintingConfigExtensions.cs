@@ -20,5 +20,10 @@ namespace ObjectPrinting.PropertyPrintingConfig
             propPrintingConfig.WithConfig(str => str.Substring(0, maxLen));
             return propPrintingConfig.ParentConfig;
         }
+        
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        {
+            return config(ObjectPrinter.For<T>()).PrintToString(obj);
+        }
     }
 }

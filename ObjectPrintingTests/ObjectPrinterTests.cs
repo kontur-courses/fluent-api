@@ -3,6 +3,7 @@ using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.ObjectExtensions;
 using ObjectPrinting.PropertyPrintingConfig;
 using ObjectPrintingTests.TestModels;
 
@@ -179,6 +180,36 @@ namespace ObjectPrintingTests
                 $"\tId = {person.Id}{newLine}" +
                 $"\tName = {person.Name.Substring(0, 2)}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
+        }
+
+        #endregion
+
+        #region Default and configured serialization extension methods
+
+        [Test]
+        public void PrintObject_PrintPersonWithDefaultSerialization()
+        {
+            var result = person.PrintToString();
+
+            result.Should().Be(
+                $"{person.GetType().Name}{newLine}" +
+                $"\tId = {person.Id}{newLine}" +
+                $"\tName = {person.Name}{newLine}" +
+                $"\tAge = {person.Age}{newLine}");
+        }
+        
+        [Test]
+        public void PrintObject_PrintPersonWithConfiguredSerialization()
+        {
+            var result = person.PrintToString(config => config
+                .ExcludingProperty(pers => pers.Age)
+                .PrintProperty(pers => pers.Name)
+                .WithConfig(name => name.ToUpper()));
+
+            result.Should().Be(
+                $"{person.GetType().Name}{newLine}" +
+                $"\tId = {person.Id}{newLine}" +
+                $"\tName = {person.Name.ToUpper()}{newLine}");
         }
 
         #endregion
