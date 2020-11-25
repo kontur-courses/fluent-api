@@ -13,7 +13,6 @@ namespace ObjectPrinting
     {
         private HashSet<Type> excludedTypes;
         private HashSet<PropertyInfo> exludedProperties;
-        internal Dictionary<Type, CultureInfo> cultures;
         internal Dictionary<Type, Delegate> typePropertyConfigs;
         internal Dictionary<string, Delegate> namePropertyConfigs;
         private readonly int maxNestingLevel;
@@ -22,7 +21,6 @@ namespace ObjectPrinting
         {
             excludedTypes = new HashSet<Type>();
             exludedProperties = new HashSet<PropertyInfo>();
-            cultures = new Dictionary<Type, CultureInfo>();
             typePropertyConfigs = new Dictionary<Type, Delegate>();
             namePropertyConfigs = new Dictionary<string, Delegate>();
             this.maxNestingLevel = maxNestingLevel;
@@ -154,10 +152,9 @@ namespace ObjectPrinting
             var objType = obj.GetType();
             if (finalTypes.Contains(objType))
             {
-                if (!cultures.ContainsKey(objType) || !(obj is IFormattable formattable))
-                    return obj + Environment.NewLine;
-                var culture = cultures[objType];
-                return formattable.ToString(null, culture) + Environment.NewLine;
+                if (typePropertyConfigs.ContainsKey(objType))
+                    return typePropertyConfigs[objType].DynamicInvoke(obj) + Environment.NewLine;
+                return obj + Environment.NewLine;
             }
 
             if (obj is IEnumerable collection)
