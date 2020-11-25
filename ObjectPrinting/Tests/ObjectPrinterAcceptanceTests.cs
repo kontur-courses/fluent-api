@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -112,6 +113,30 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(person)
                 .Should().Be(
                     $"Person\r\n\tName = Test\r\n\tLastName = Test\r\n\tHeight = 140,37\r\n\tAge = 10\r\n\tField = {person.Field:X}\r\n");
+        }
+
+        [Test]
+        public void Should_SupportArray()
+        {
+            var arr = new[] {1, 2, 3, 4, 5};
+            var printer = ObjectPrinter.For<int[]>();
+            Console.WriteLine(printer.PrintToString(arr));
+        }
+
+        [Test]
+        public void Should_SupportList()
+        {
+            var list = new List<int> { 1, 2, 3, 4, 5 };
+            var printer = ObjectPrinter.For<List<int>>();
+            Console.WriteLine(printer.PrintToString(list));
+        }
+
+        [Test]
+        public void Should_SupportDictionary()
+        {
+            var dict = new Dictionary<int, string> {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {5, "Five"}};
+            var printer = ObjectPrinter.For<Dictionary<int, string>>();
+            Console.WriteLine(printer.PrintToString(dict));
         }
     }
 }
