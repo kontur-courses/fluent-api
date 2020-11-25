@@ -239,5 +239,23 @@ namespace ObjectPrinting.Tests
                                                         $"\tGPUName = {computer.GPUName + "123"}{Environment.NewLine}" +
                                                         $"\tRAM = {computer.RAM}{Environment.NewLine}");
         }
+
+        [Test]
+        public void SubFieldSerialization()
+        {
+            var student = new Student("Vasya");
+            var teacher = new Teacher("Ivan", "Professor", student);
+            var printer = ObjectPrinter.For<Teacher>()
+                .Printing(teacher => teacher.BestStudent.Name).TrimmedToLength(2);
+
+            printer.PrintToString(teacher).Should().Be($"Teacher{Environment.NewLine}" +
+                                                       $"\tName = {teacher.Name}{Environment.NewLine}" +
+                                                       $"\tPosition = {teacher.Position}{Environment.NewLine}" +
+                                                       $"\tBestStudent = Student{Environment.NewLine}" +
+                                                       $"\t\tName = Va{Environment.NewLine}" +
+                                                       $"\t\tFriends = null{Environment.NewLine}" +
+                                                       $"\t\tFavoriteRealValues = null{Environment.NewLine}" +
+                                                       $"\t\tMarks = null{Environment.NewLine}");
+        }
     }
 }
