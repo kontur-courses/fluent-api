@@ -8,21 +8,21 @@ using ObjectPrinting.PropertyPrintingConfig;
 using ObjectPrintingTests.TestModels;
 
 namespace ObjectPrintingTests
-{ 
+{
     public class ObjectPrinterTests
     {
         [SetUp]
         public void SetUp()
         {
-            person = new Person { Id = Guid.NewGuid(), Name = "Alex", Age = 19};
+            person = new Person {Id = Guid.NewGuid(), Name = "Alex", Age = 19};
             newLine = Environment.NewLine;
         }
 
         private Person person;
         private string newLine;
-        
+
         #region Excluding property with specified types and properties
-        
+
         [Test]
         public void PrintObject_PrintOnlyObjectType_WhenExcludedAllTypes()
         {
@@ -39,26 +39,26 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .ExcludingPropertyWithType<Guid>();
             var result = printer.PrintToString(person);
-            
+
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tName = {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         [Test]
         public void PrintObject_PrintPersonWithoutOneProperty_WhenExcludedOneProperty()
         {
             var printer = ObjectPrinter.For<Person>()
                 .ExcludingProperty(pers => pers.Id);
             var result = printer.PrintToString(person);
-            
+
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tName = {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         #endregion
 
         #region Alternative serialization method for specified type and property
@@ -70,14 +70,14 @@ namespace ObjectPrintingTests
                 .PrintProperty<string>()
                 .WithConfig(str => $"String data: {str}");
             var result = printer.PrintToString(person);
-            
+
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tId = {person.Id}{newLine}" +
                 $"\tName = String data: {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         [Test]
         public void PrintObject_PrintPersonWithAlternativeSerializationMethodForProperty()
         {
@@ -85,14 +85,14 @@ namespace ObjectPrintingTests
                 .PrintProperty(pers => pers.Id)
                 .WithConfig(guid => $"Person id is {guid.ToString()}");
             var result = printer.PrintToString(person);
-            
+
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tId = Person id is {person.Id.ToString()}{newLine}" +
                 $"\tName = {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         [Test]
         public void PrintObject_PrintPersonWithAlternativeSerializationMethod_ForTwoProperties()
         {
@@ -119,14 +119,14 @@ namespace ObjectPrintingTests
                 .PrintProperty(pers => pers.Name)
                 .WithConfig(name => $"Person name is {name}");
             var result = printer.PrintToString(person);
-            
+
             result.Should().Be(
                 $"Person{newLine}" +
                 $"\tId = Nice guid - {person.Id}{newLine}" +
                 $"\tName = Person name is {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         #endregion
 
         #region Serizlization method with specified culure for type and property
@@ -134,12 +134,12 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintObject_PrintPersonWithSpecialCultureForType()
         {
-            var personWithWeight = new PersonWithWeight{Name = "Nik", Age = 54, Weight = 76.32};
+            var personWithWeight = new PersonWithWeight {Name = "Nik", Age = 54, Weight = 76.32};
             var printer = ObjectPrinter.For<PersonWithWeight>()
                 .PrintProperty<double>()
                 .WithCulture(CultureInfo.CurrentCulture);
             var result = printer.PrintToString(personWithWeight);
-            
+
             result.Should().Be(
                 $"{personWithWeight.GetType().Name}{newLine}" +
                 $"\tId = {personWithWeight.Id}{newLine}" +
@@ -166,7 +166,7 @@ namespace ObjectPrintingTests
                 $"\tName = {person.Name.Substring(0, 2)}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         [Test]
         public void PrintObject_PrintPersonWithTrimsNameProperty()
         {
@@ -197,7 +197,7 @@ namespace ObjectPrintingTests
                 $"\tName = {person.Name}{newLine}" +
                 $"\tAge = {person.Age}{newLine}");
         }
-        
+
         [Test]
         public void PrintObject_PrintPersonWithConfiguredSerialization()
         {
@@ -210,6 +210,49 @@ namespace ObjectPrintingTests
                 $"{person.GetType().Name}{newLine}" +
                 $"\tId = {person.Id}{newLine}" +
                 $"\tName = {person.Name.ToUpper()}{newLine}");
+        }
+
+        #endregion
+
+        #region Loopback processing
+
+        [Test]
+        public void PrintObject_CorrectPrintNode_WhenHasSimpleLoopback()
+        {
+            var node1 = new Node();
+            var node2 = new Node {PreviousNode = node1};
+            node1.PreviousNode = node2;
+
+            var result = node1.PrintToString();
+            result.Should().Be(
+                $"{node1.GetType().Name}{newLine}" +
+                $"\tId = {node1.Id}{newLine}" +
+                $"\tPreviousNode = {node1.PreviousNode.GetType().Name}{newLine}" +
+                $"\t\tId = {node2.Id}{newLine}" +
+                $"\t\tPreviousNode = Loopback detected{newLine}");
+        }
+
+        [Test]
+        public void PrintObject_CorrectPrintNode_WhenHasDifficultLoopback()
+        {
+            var node1 = new Node {Id = 1};
+            var node2 = new Node {Id = 2, PreviousNode = node1};
+            var node3 = new Node {Id = 3, PreviousNode = node2};
+            var node4 = new Node {Id = 4, PreviousNode = node3};
+            node1.PreviousNode = node4;
+
+            var result = node1.PrintToString();
+            Console.WriteLine(result);
+            result.Should().Be(
+                $"{node1.GetType().Name}{newLine}" +
+                $"\tId = {node1.Id}{newLine}" +
+                $"\tPreviousNode = {node1.PreviousNode.GetType().Name}{newLine}" +
+                $"\t\tId = {node4.Id}{newLine}" +
+                $"\t\tPreviousNode = {node4.PreviousNode.GetType().Name}{newLine}" +
+                $"\t\t\tId = {node3.Id}{newLine}" +
+                $"\t\t\tPreviousNode = {node3.PreviousNode.GetType().Name}{newLine}" +
+                $"\t\t\t\tId = {node2.Id}{newLine}" +
+                $"\t\t\t\tPreviousNode = Loopback detected{newLine}");
         }
 
         #endregion

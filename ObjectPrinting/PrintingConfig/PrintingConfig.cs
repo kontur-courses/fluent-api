@@ -35,19 +35,24 @@ namespace ObjectPrinting.PrintingConfig
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private string PrintToString(object obj, int nestingLevel, PropertyInfo propertyInfo = null)
+        private string PrintToString(object obj, int nestingLevel, 
+            HashSet<object> printedObjects, PropertyInfo propertyInfo = null)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+            if (printedObjects.Contains(obj))
+                return "Loopback detected" + Environment.NewLine;
             
             var type = obj.GetType();
             var sb = new StringBuilder();
             var objectPrinting = GetPrintedObject(obj, type, propertyInfo);
             sb.Append(objectPrinting + Environment.NewLine);
-            
+
+            if (type.IsClass)
+                printedObjects.Add(obj);
             if (finalTypes.Contains(type))
                 return objectPrinting + Environment.NewLine;
             
@@ -57,7 +62,7 @@ namespace ObjectPrinting.PrintingConfig
                 if (excludedTypes.Contains(propInfo.PropertyType)
                     || excludedProperties.Contains(propInfo.Name)) continue;
                 var printedObject = PrintToString(
-                    propInfo.GetValue(obj), nestingLevel + 1, propInfo);
+                    propInfo.GetValue(obj), nestingLevel + 1, printedObjects, propInfo);
                 sb.Append($"{identation}{propInfo.Name} = {printedObject}");
             }
             
