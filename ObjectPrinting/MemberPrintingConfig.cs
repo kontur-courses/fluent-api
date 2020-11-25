@@ -4,17 +4,17 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class MemberPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         internal readonly MemberInfo Info = null;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, Expression<Func<TOwner, TPropType>> memberSelector)
         {
             this.printingConfig = printingConfig;
             Info = ((MemberExpression) memberSelector.Body).Member;
