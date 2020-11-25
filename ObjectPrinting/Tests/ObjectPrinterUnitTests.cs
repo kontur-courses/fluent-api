@@ -232,7 +232,7 @@ namespace ObjectPrinting.Tests
         public void FieldsSerialization()
         {
             var printer = ObjectPrinter.For<Computer>()
-                .Printing(printer => printer.GPUName).Using(s => s + "123");
+                .Printing(computer => computer.GPUName).Using(s => s + "123");
 
             printer.PrintToString(computer).Should().Be($"Computer{Environment.NewLine}" +
                                                         $"\tCPUName = {computer.CPUName}{Environment.NewLine}" +
@@ -241,7 +241,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void SubFieldSerialization()
+        public void SubFieldSerialization_ShouldNotAffectOtherFieldsWithTheSameName()
         {
             var student = new Student("Vasya");
             var teacher = new Teacher("Ivan", "Professor", student);
