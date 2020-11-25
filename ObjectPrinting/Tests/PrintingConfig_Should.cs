@@ -8,10 +8,10 @@ using NUnit.Framework;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    public static class PrintingConfig_Should
+    public class PrintingConfig_Should
     {
         [Test]
-        public static void PrintBasicProperties()
+        public void PrintBasicProperties()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -26,7 +26,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void PrintBasicFields_WhenFieldsNull()
+        public void PrintBasicFields_WhenFieldsNull()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -42,7 +42,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowExcludeTypes()
+        public void AllowExcludeTypes()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -64,7 +64,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowExcludeSpecificMembers()
+        public void AllowExcludeSpecificMembers()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -86,7 +86,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void PrintObject_WithRecursiveMembers()
+        public void PrintObject_WithRecursiveMembers()
         {
             var persons = GetRandomBasicPersons().WithRandomParents(3);
             foreach (var person in persons)
@@ -110,7 +110,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public static void AllowCustomPrinting_ForTypes()
+        public void AllowCustomPrinting_ForTypes()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -129,7 +129,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowCustomPrinting_ForMembers()
+        public void AllowCustomPrinting_ForMembers()
         {
             var persons = GetRandomBasicPersons();
             foreach (var person in persons)
@@ -148,7 +148,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowCustomPrinting_ForTypes_WithRecursiveMembers()
+        public void AllowCustomPrinting_ForTypes_WithRecursiveMembers()
         {
             var persons = GetRandomBasicPersons().WithRandomParents(3).WithRandomId();
             foreach (var person in persons)
@@ -177,7 +177,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowCustomPrinting_ForDeepMembers()
+        public void AllowCustomPrinting_ForDeepMembers()
         {
             var persons = GetRandomBasicPersons().WithRandomParents(3);
             foreach (var person in persons)
@@ -200,7 +200,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public static void AllowCustomCulture()
+        public void AllowCustomCulture()
         {
             var persons = GetRandomBasicPersons().WithNotRoundHeight();
             foreach (var person in persons)
@@ -227,7 +227,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void AllowCustomFormats()
+        public void AllowCustomFormats()
         {
             var persons = GetRandomBasicPersons().WithNotRoundHeight();
             foreach (var person in persons)
@@ -253,7 +253,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public static void PrintArrays()
+        public void PrintArrays()
         {
             var persons = GetRandomBasicPersons().WithRandomArray();
             foreach (var person in persons)
@@ -268,7 +268,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public static void PrintDictionaries()
+        public void PrintDictionaries()
         {
             var persons = GetRandomBasicPersons().WithRandomDictionary();
             foreach (var person in persons)
@@ -280,7 +280,7 @@ namespace ObjectPrinting.Tests
             }
         }
 
-        public static IEnumerable<Person> GetRandomBasicPersons(int count = 100)
+        public IEnumerable<Person> GetRandomBasicPersons(int count = 100)
             => ObjectPrinter_Should_Extensions.GetRandomBasicPersons(count);
     }
 }
