@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -199,6 +199,59 @@ namespace ObjectPrinting.Tests
             }
         }
 
+        [Test]
+        public static void AllowCustomCulture()
+        {
+            var persons = GetRandomBasicPersons().WithNotRoundHeight();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customCultures = new[]
+                {
+                    CultureInfo.CurrentCulture,
+                    CultureInfo.InvariantCulture,
+                    CultureInfo.CreateSpecificCulture("en-US"),
+                    CultureInfo.CreateSpecificCulture("nl-NL")
+                };
+
+                print.Should()
+                    .Contain($"\n\t{nameof(Person.Height)} = {person.Height.ToString(CultureInfo.CurrentCulture)}");
+                foreach (var customCulture in customCultures)
+                {
+                    var customPrint = person.PrintToString(c => c
+                        .Printing<double>().Using(customCulture));
+                    customPrint.Should()
+                        .Contain($"\n\t{nameof(Person.Height)} = {person.Height.ToString(customCulture)}");
+                }
+            }
+        }
+        
+        [Test]
+        public static void AllowCustomFormats()
+        {
+            var persons = GetRandomBasicPersons().WithNotRoundHeight();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customFormats = new[]
+                {
+                    "f5",
+                    "F10",
+                    "C"
+                };
+
+                print.Should()
+                    .Contain($"\n\t{nameof(Person.Height)} = {person.Height.ToString(null, CultureInfo.CurrentCulture)}");
+                foreach (var customFormat in customFormats)
+                {
+                    var customPrint = person.PrintToString(c => c
+                        .Printing<double>().Using(customFormat));
+                    customPrint.Should()
+                        .Contain($"\n\t{nameof(Person.Height)} = {person.Height.ToString(customFormat)}");
+                }
+            }
+        }
+
         public static IEnumerable<Person> GetRandomBasicPersons(int count = 100)
         {
             for (var i = 0; i < count; i++)
@@ -241,6 +294,15 @@ namespace ObjectPrinting.Tests
         public static Person WithRandomId(this Person person)
         {
             person.Id = Guid.NewGuid();
+            return person;
+        }
+
+        public static IEnumerable<Person> WithNotRoundHeight(this IEnumerable<Person> persons)
+            => persons.Select(p => p.WithNotRoundHeight());
+
+        public static Person WithNotRoundHeight(this Person person)
+        {
+            person.Height += new Random().NextDouble();
             return person;
         }
     }
