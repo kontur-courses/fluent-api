@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -68,6 +69,75 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
+        private string PrintCollectionToString(IEnumerable collection, int nestingLevel)
+        {
+            if (collection is IDictionary dictionary)
+                return SerializeDictionary(dictionary, nestingLevel);
+
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            var identation = new string('\t', nestingLevel + 1);
+            sb.Append(identation);
+            sb.AppendLine("[");
+            foreach (var item in collection)
+            {
+                sb.Append(identation);
+                sb.Append(PrintToString(item, nestingLevel + 1));
+            }
+
+            sb.Append(identation);
+            sb.AppendLine("]");
+            return sb.ToString();
+        }
+
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            var identation = new string('\t', nestingLevel + 1);
+            sb.Append(identation);
+            sb.AppendLine("[");
+            foreach (DictionaryEntry keyValuePair in dictionary)
+            {
+                var key = keyValuePair.Key;
+                var value = keyValuePair.Value;
+                sb.Append(identation);
+                sb.Append(PrintToString(key, nestingLevel + 1));
+                sb.Length -= Environment.NewLine.Length;
+                sb.Append(" : ");
+                sb.Append(PrintToString(value, 0));
+            }
+
+            sb.Append(identation);
+            sb.AppendLine("]");
+            return sb.ToString();
+        }
+
+        private string SerializeProperties(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder();
+            sb.AppendLine(type.Name);
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                var identation = new string('\t', nestingLevel + 1);
+                if (exludedProperties.Contains(propertyInfo))
+                    continue;
+                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                var value = propertyInfo.GetValue(obj);
+                if (namePropertyConfigs.ContainsKey(propertyInfo.Name))
+                    value = namePropertyConfigs[propertyInfo.Name].DynamicInvoke(value);
+                else if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
+                    value = typePropertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
+                sb.Append(identation + propertyInfo.Name + " = " +
+                          PrintToString(value,
+                              nestingLevel + 1));
+            }
+
+            return sb.ToString();
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (nestingLevel > maxNestingLevel)
@@ -90,29 +160,12 @@ namespace ObjectPrinting
                 return formattable.ToString(null, culture) + Environment.NewLine;
             }
 
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            if (obj is IEnumerable collection)
             {
-                if (exludedProperties.Contains(propertyInfo))
-                    continue;
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-                var value = propertyInfo.GetValue(obj);
-                if (namePropertyConfigs.ContainsKey(propertyInfo.Name))
-                    value = namePropertyConfigs[propertyInfo.Name].DynamicInvoke(value);
-                else if (typePropertyConfigs.ContainsKey(propertyInfo.PropertyType))
-                    value = typePropertyConfigs[propertyInfo.PropertyType].DynamicInvoke(value);
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(value,
-                              nestingLevel + 1));
+                return PrintCollectionToString(collection, nestingLevel);
             }
 
-            return sb.ToString();
+            return SerializeProperties(obj, nestingLevel);
         }
     }
 }
