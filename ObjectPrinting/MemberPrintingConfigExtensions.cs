@@ -15,7 +15,7 @@ namespace ObjectPrinting
             this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
         { 
             var config = (IPrintingConfig<TOwner>)((IMemberPrintingConfig<TOwner, string>)propConfig).ParentConfig;
-            return propConfig.Using(x => x.Substring(0, Math.Min(x.Length, maxLen)));
+            return propConfig.Using(x => x is null ? "null" : x.Substring(0, Math.Min(x.Length, maxLen)));
         }
 
         public static PrintingConfig<TOwner> Using<TOwner, TPropType>(

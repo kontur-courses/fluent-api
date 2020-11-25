@@ -9,28 +9,22 @@ namespace ObjectPrinting
     {
         public static object GetValue(this MemberInfo memberInfo, object forObject)
         {
-            switch (memberInfo.MemberType)
+            return memberInfo.MemberType switch
             {
-                case MemberTypes.Field:
-                    return ((FieldInfo) memberInfo).GetValue(forObject);
-                case MemberTypes.Property:
-                    return ((PropertyInfo) memberInfo).GetValue(forObject);
-                default:
-                    throw new NotImplementedException();
-            }
+                MemberTypes.Field => ((FieldInfo) memberInfo).GetValue(forObject),
+                MemberTypes.Property => ((PropertyInfo) memberInfo).GetValue(forObject),
+                _ => throw new NotImplementedException()
+            };
         }
 
-        public static object GetValueType(this MemberInfo memberInfo)
+        public static Type GetValueType(this MemberInfo memberInfo)
         {
-            switch (memberInfo.MemberType)
+            return memberInfo.MemberType switch
             {
-                case MemberTypes.Field:
-                    return ((FieldInfo)memberInfo).FieldType;
-                case MemberTypes.Property:
-                    return ((PropertyInfo)memberInfo).PropertyType;
-                default:
-                    throw new NotImplementedException();
-            }
+                MemberTypes.Field => ((FieldInfo) memberInfo).FieldType,
+                MemberTypes.Property => ((PropertyInfo) memberInfo).PropertyType,
+                _ => throw new NotImplementedException()
+            };
         }
     }
 }

@@ -7,9 +7,9 @@ namespace ObjectPrinting
 {
     public static class TypeExtensions
     {
-        public static IEnumerable<MemberInfo> GetFieldsAndProperties(this Type type, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+        public static IEnumerable<MemberInfo> GetFieldsAndProperties(this Type type)
         {
-            return type.GetFields(bindingFlags).Cast<MemberInfo>().Concat(type.GetProperties(bindingFlags));
+            return type.GetFields().Where(x => !x.IsStatic).Cast<MemberInfo>().Concat(type.GetProperties());
         }
     }
 }
