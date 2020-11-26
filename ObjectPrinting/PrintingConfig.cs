@@ -49,11 +49,6 @@ namespace ObjectPrinting
             serializer = new Serializer<TOwner>(this);
         }
 
-        public string PrintToString(TOwner obj)
-        {
-            return serializer.Serialize(obj);
-        }
-
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             return new PrintingConfig<TOwner>(this)
