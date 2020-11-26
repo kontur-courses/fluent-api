@@ -26,7 +26,6 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-         
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
@@ -37,6 +36,7 @@ namespace ObjectPrinting
             
             return this;
         }
+        
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             if(!configuration.ExcudedTypes.ContainsKey(typeof(TOwner)))
@@ -146,8 +146,12 @@ namespace ObjectPrinting
         private string HandleFinalType(object obj)
         {
             if (specialSerializeCulture.ContainsKey(obj.GetType()))
+            {
+                if (obj.GetType() == typeof(DateTime))
+                    return ((DateTime) obj).ToString(specialSerializeCulture[obj.GetType()]);
                 return string.Format(specialSerializeCulture[obj.GetType()], "{0}", obj) + Environment.NewLine;
-            
+            }
+
             if (specialSerializeTypes.ContainsKey(obj.GetType()))
                 return (string)specialSerializeTypes[obj.GetType()].DynamicInvoke(obj) + Environment.NewLine;
             
@@ -159,7 +163,6 @@ namespace ObjectPrinting
         
         private void FillConfiguration(object obj)
         {
-            
             if (configuration.TrimmingProperties.ContainsKey(obj.GetType()))
                 trimmingProperties = configuration.TrimmingProperties[obj.GetType()];
             
