@@ -22,6 +22,7 @@ namespace ObjectPrinting.Tests
                 Name = randomNames[random.Next(randomNames.Length)],
                 Age = random.Next(10, 80),
                 Height = random.Next(80, 180),
+                Id = Guid.NewGuid(),
                 SomeArray = null,
                 SomeDict = null,
                 Mother = null,
