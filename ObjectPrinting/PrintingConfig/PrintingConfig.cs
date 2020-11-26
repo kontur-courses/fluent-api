@@ -18,8 +18,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
 
