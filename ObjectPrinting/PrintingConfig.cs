@@ -24,14 +24,18 @@ namespace ObjectPrinting
         private ImmutableHashSet<MemberInfo> excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
         private ImmutableHashSet<Type> excludingTypes = ImmutableHashSet<Type>.Empty;
         private ImmutableDictionary<MemberInfo, int> memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
+        
+        private Serializer<TOwner> serializer;
 
         public PrintingConfig()
         {
+            serializer = new Serializer<TOwner>(this);
         }
         
         public PrintingConfig(IEnumerable<Type> finalTypes)
         {
             FinalTypes = finalTypes.ToImmutableHashSet();
+            serializer = new Serializer<TOwner>(this);
         }
 
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
@@ -42,11 +46,12 @@ namespace ObjectPrinting
             alternateTypeSerializers = oldPrintingConfig.alternateTypeSerializers;
             alternateMemberSerializers = oldPrintingConfig.alternateMemberSerializers;
             FinalTypes = oldPrintingConfig.FinalTypes;
+            serializer = new Serializer<TOwner>(this);
         }
 
         public string PrintToString(TOwner obj)
         {
-            return Serializer<TOwner>.Serialize(this, obj);
+            return serializer.Serialize(obj);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -88,13 +93,13 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetAlternateSerialize<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector,
-            Func<TPropType, string> serializer)
+            Func<TPropType, string> alternateSerializer)
         {
             var selectedMember = ((MemberExpression) memberSelector.Body).Member;
             return new PrintingConfig<TOwner>(this)
             {
                 alternateMemberSerializers =
-                    alternateMemberSerializers.AddOrSet(selectedMember, x => serializer((TPropType) x))
+                    alternateMemberSerializers.AddOrSet(selectedMember, x => alternateSerializer((TPropType) x))
             };
         }
 
@@ -110,10 +115,10 @@ namespace ObjectPrinting
             };
         }
 
-        public bool TryGetSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
+        public bool TryGetSerializer(MemberInfo memberInfo, out Func<object, string> alternateSerializer)
         {
-            return alternateMemberSerializers.TryGetValue(memberInfo, out serializer)
-                   || alternateTypeSerializers.TryGetValue(memberInfo.GetValueType(), out serializer);
+            return alternateMemberSerializers.TryGetValue(memberInfo, out alternateSerializer)
+                   || alternateTypeSerializers.TryGetValue(memberInfo.GetValueType(), out alternateSerializer);
         }
 
         public bool TryGetMemberLength(MemberInfo memberInfo, out int length)

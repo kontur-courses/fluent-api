@@ -8,24 +8,22 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public static class Serializer<T>
+    public class Serializer<T>
     {
-        private static readonly Type[] finalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        };
+        private readonly PrintingConfig<T> config;
+        private readonly Stack<object> serializedObjects = new Stack<object>();
 
-        public static string Serialize(PrintingConfig<T> config, T obj)
+        public Serializer(PrintingConfig<T> config)
         {
-            return PrintToString(obj, config, 0, new Stack<object>());
+            this.config = config;
         }
 
-        private static string PrintToString(
-            object obj,
-            PrintingConfig<T> config,
-            int nestingLevel,
-            Stack<object> serializedObjects)
+        public string Serialize(T obj)
+        {
+            return PrintToString(obj, 0);
+        }
+
+        private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return $"null{Environment.NewLine}";
@@ -37,34 +35,29 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
             if (obj is IEnumerable enumerable)
-                sb.Append(SerializeCollection(enumerable, config, nestingLevel, serializedObjects));
+                sb.Append(SerializeCollection(enumerable, nestingLevel));
             else
-                sb.Append(SerializeObject(obj, config, nestingLevel, serializedObjects));
+                sb.Append(SerializeObject(obj, nestingLevel));
             serializedObjects.Pop();
             return sb.ToString();
         }
 
-        private static string SerializeCollection(
-            object collection,
-            PrintingConfig<T> config,
-            int nestingLevel,
-            Stack<object> serializedObjects)
+        private string SerializeCollection(object collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var serializedElements = from object e in (IEnumerable) collection
-                select GetIndentation(nestingLevel + 1)
-                       + PrintToString(e, config, nestingLevel + 1, serializedObjects);
             sb.AppendLine(GetIndentation(nestingLevel) + "{");
-            sb.AppendJoin(Environment.NewLine, serializedElements);
+            var serializedElements = ((IEnumerable) collection)
+                .Cast<object>()
+                .Select(x => GetIndentation(nestingLevel + 1)
+                             + PrintToString(x, nestingLevel + 1));
+            foreach (var serializedElement in serializedElements) sb.Append(serializedElement);
             sb.AppendLine(GetIndentation(nestingLevel) + "}");
             return sb.ToString();
         }
 
-        private static string SerializeObject(
+        private string SerializeObject(
             object obj,
-            PrintingConfig<T> config,
-            int nestingLevel,
-            Stack<object> serializedObjects)
+            int nestingLevel)
         {
             var sb = new StringBuilder();
             foreach (var memberInfo in obj.GetType()
@@ -73,23 +66,19 @@ namespace ObjectPrinting
                 .Where(config.IsMemberNotExcluded))
             {
                 var memberValue = memberInfo.GetValue(obj);
-                var toPrint = TrySerializeMember(config, memberInfo, memberValue, out var serializedMember)
+                var toPrint = TrySerializeMember(memberInfo, memberValue, out var serializedMember)
                     ? serializedMember
                     : memberValue;
                 if (config.TryGetMemberLength(memberInfo, out var maxLength))
-                    toPrint = toPrint.ToString()?.Substring(0, maxLength);
-                var serializedObject = PrintToString(toPrint, config, nestingLevel + 1, serializedObjects);
+                    toPrint = toPrint?.ToString().Substring(0, maxLength);
+                var serializedObject = PrintToString(toPrint, nestingLevel + 1);
                 sb.Append($"{GetIndentation(nestingLevel + 1)}{memberInfo.Name} = {serializedObject}");
             }
 
             return sb.ToString();
         }
 
-        private static bool TrySerializeMember(
-            PrintingConfig<T> config,
-            MemberInfo memberInfo,
-            object value,
-            out string serializedMember)
+        private bool TrySerializeMember(MemberInfo memberInfo, object value, out string serializedMember)
         {
             if (config.TryGetSerializer(memberInfo, out var serializer))
             {
