@@ -22,6 +22,7 @@ namespace ObjectPrinting.Tests
     }
     public class TestClassExcluded
     {
+        public DateTime dataTime { get; set; }
         public string TestTextString { get; set; }
         public int TestTextInt { get; set; }
         public Person person { get; set; }
@@ -77,6 +78,29 @@ namespace ObjectPrinting.Tests
                                        + "\t" +" TestTextDouble = 2.3"
                                        +Environment.NewLine);
         }
+        [Test]
+        public void PrintToString_ReturnCorrectWord_WhenTypeSetCultureDataTime()
+        {
+            var testClass = new TestClassExcluded();
+            testClass.TestTextDouble = 2.3;
+            testClass.dataTime = DateTime.Today;
+            Console.WriteLine("1 dataTime = " + testClass.dataTime);
+
+            var printer = ObjectPrinter.For<TestClassExcluded>()
+                .Excluding<int>()
+                .Excluding<Person>()
+                .Excluding<string>()
+                .Excluding<double>()
+                .Printing<DateTime>().Using(CultureInfo.InvariantCulture);
+                
+            Console.WriteLine("2 dataTime = " + testClass.dataTime);
+            string s1 = printer.PrintToString(testClass);
+            Console.WriteLine("|"+s1+"|");
+
+            s1.Should().BeEquivalentTo("TestClassExcluded"
+                                       +Environment.NewLine
+                                       + "\t" +" dataTime = 11/26/2020 00:00:00");
+        }
         
         [Test]
         public void PrintToString_ReturnCurrent_WhenListProperty()
@@ -84,14 +108,7 @@ namespace ObjectPrinting.Tests
             var testClass = new TestClassExcludedList();
             testClass.listInt =new List<int>(){1,2};
             var printer = ObjectPrinter.For<TestClassExcludedList>();
-            
-            /*
-             |TestClassExcludedList
-	              listInt = 
-				             1
-				             2
-             */
-        
+
             string s1 = printer.PrintToString(testClass);
             Console.WriteLine("|"+s1+"|");
 
