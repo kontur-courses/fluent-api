@@ -15,7 +15,7 @@ namespace ObjectPrinting
                 => Apply(configSelector(CurrentConfig));
 
             public PrintingConfig<TOwner> As(Func<TMember, string> func)
-                => Apply(CurrentConfig.WithPrintFuncion(func));
+                => Apply(CurrentConfig.WithPrintFunction(func));
 
             protected abstract PrintingConfig<TOwner> Apply(PrintingConfig<TMember> config);
         }

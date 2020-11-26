@@ -22,7 +22,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TMember>(Expression<Func<TOwner, TMember>> member)
             => Printing(member).Using((PrintingConfig<TMember>) null);
 
-        private PrintingConfig<TOwner> WithPrintFuncion(Func<TOwner, string> printFunc)
+        private PrintingConfig<TOwner> WithPrintFunction(Func<TOwner, string> printFunc)
         {
             var result = (PrintingConfig<TOwner>) Copy();
             result.PrintFunc = (obj) => printFunc((TOwner) obj);

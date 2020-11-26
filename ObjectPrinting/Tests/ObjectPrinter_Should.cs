@@ -98,11 +98,11 @@ namespace ObjectPrinting.Tests
             void TestForParents(string print, Person person, int recursionLevel = 0, int maxRecursionLevel = 3)
             {
                 if (recursionLevel > maxRecursionLevel) return;
-                var identation = new string('\t', recursionLevel + 1);
+                var indentation = new string('\t', recursionLevel + 1);
                 
-                print.Should().Contain($"\n{identation}{nameof(Person.Name)} = {person.Name}");
-                print.Should().Contain($"\n{identation}{nameof(Person.Age)} = {person.Age}");
-                print.Should().Contain($"\n{identation}{nameof(Person.Height)} = {person.Height}");
+                print.Should().Contain($"\n{indentation}{nameof(Person.Name)} = {person.Name}");
+                print.Should().Contain($"\n{indentation}{nameof(Person.Age)} = {person.Age}");
+                print.Should().Contain($"\n{indentation}{nameof(Person.Height)} = {person.Height}");
                 
                 TestForParents(print, person.Father, recursionLevel + 1);
                 TestForParents(print, person.Mother, recursionLevel + 1);
@@ -163,13 +163,13 @@ namespace ObjectPrinting.Tests
             void TestForParents(string print, string customPrint, Person person, int recursionLevel = 0, int maxRecursionLevel = 3)
             {
                 if (recursionLevel > maxRecursionLevel) return;
-                var identation = new string('\t', recursionLevel + 1);
+                var indentation = new string('\t', recursionLevel + 1);
                 
-                print.Should().NotContain($"\n{identation}{nameof(Person.Id)} = {person.Id.ToString()}");
-                print.Should().NotContain($"\n{identation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                print.Should().NotContain($"\n{indentation}{nameof(Person.Id)} = {person.Id.ToString()}");
+                print.Should().NotContain($"\n{indentation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
                 
-                customPrint.Should().Contain($"\n{identation}{nameof(Person.Id)} = {person.Id.ToString()}");
-                customPrint.Should().Contain($"\n{identation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
+                customPrint.Should().Contain($"\n{indentation}{nameof(Person.Id)} = {person.Id.ToString()}");
+                customPrint.Should().Contain($"\n{indentation}{nameof(Person.BirthDate)} = year: {person.BirthDate.Year}");
                 
                 TestForParents(print, customPrint, person.Father, recursionLevel + 1);
                 TestForParents(print, customPrint, person.Mother, recursionLevel + 1);

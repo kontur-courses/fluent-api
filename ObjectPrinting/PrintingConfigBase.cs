@@ -99,8 +99,8 @@ namespace ObjectPrinting
 
         protected string PrintToString(object obj, int nestingLevel)
         {
-            var maxNexting = 5;
-            if (nestingLevel > maxNexting) return "...";
+            var maxNesting = 5;
+            if (nestingLevel > maxNesting) return "...";
             if (obj == null) return "null";
 
             if (PrintFunc != null) return PrintFunc(obj);
@@ -119,17 +119,17 @@ namespace ObjectPrinting
                 return $"{PrintToString(key, nestingLevel)}: {PrintToString(value, nestingLevel)}";
             }
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.Append(type.Name);
             if (obj is IEnumerable enumerable)
             {
-                if (nestingLevel >= maxNexting)
+                if (nestingLevel >= maxNesting)
                     return sb.Append(" [...]").ToString();
                 sb.AppendLine(" [");
                 foreach (var o in enumerable)
-                    sb.Append(identation).AppendLine(PrintChild(obj, o, nestingLevel));
+                    sb.Append(indentation).AppendLine(PrintChild(obj, o, nestingLevel));
                 sb.Append('\t', nestingLevel).Append("]");
             }
             else
@@ -179,8 +179,8 @@ namespace ObjectPrinting
             else if (config == null) return null;
             else config = config.WithParentTypeConfigs(TypeConfigs);
 
-            var identation = new string('\t', nestingLevel + 1);
-            return $"{identation}{member.Name} = {config.PrintToString(value, nestingLevel + 1)}";
+            var indentation = new string('\t', nestingLevel + 1);
+            return $"{indentation}{member.Name} = {config.PrintToString(value, nestingLevel + 1)}";
         }
     }
 }
