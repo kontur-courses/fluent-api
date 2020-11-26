@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
@@ -86,7 +85,7 @@ namespace ObjectPrintingTests
                             new Person {Name = "B", Age = 2},
                             new Person {Name = "C", Age = 3},
                         },
-                        "Person[]\n\tPerson\n\t\tName = A\n\t\tAge = 1\n\tPerson\n\t\tName = B\n\t\tAge = 2\n\tPerson\n\t\tName = C\n\t\tAge = 3\n"),
+                        "Person[]\n\tPerson\n\t\tAge = 1\n\t\tName = A\n\tPerson\n\t\tAge = 2\n\t\tName = B\n\tPerson\n\t\tAge = 3\n\t\tName = C\n"),
 
                     ("List of Persons",
                         ObjectPrinter.For<List<Person>>(),
@@ -96,7 +95,7 @@ namespace ObjectPrintingTests
                             new Person {Name = "B", Age = 2},
                             new Person {Name = "C", Age = 3},
                         },
-                        "List`1\n\tPerson\n\t\tName = A\n\t\tAge = 1\n\tPerson\n\t\tName = B\n\t\tAge = 2\n\tPerson\n\t\tName = C\n\t\tAge = 3\n"),
+                        "List`1\n\tPerson\n\t\tAge = 1\n\t\tName = A\n\tPerson\n\t\tAge = 2\n\t\tName = B\n\tPerson\n\t\tAge = 3\n\t\tName = C\n"),
 
                     ("Dictionary with int key, Person value",
                         ObjectPrinter.For<Dictionary<int, Person>>(),
@@ -106,7 +105,7 @@ namespace ObjectPrintingTests
                             {2, new Person {Name = "B", Age = 2}},
                             {3, new Person {Name = "C", Age = 3}},
                         },
-                        "Dictionary`2\n\tKeyValuePair`2\n\t\tKey = 1\n\t\tValue = Person\n\t\t\tName = A\n\t\t\tAge = 1\n\tKeyValuePair`2\n\t\tKey = 2\n\t\tValue = Person\n\t\t\tName = B\n\t\t\tAge = 2\n\tKeyValuePair`2\n\t\tKey = 3\n\t\tValue = Person\n\t\t\tName = C\n\t\t\tAge = 3\n"),
+                        "Dictionary`2\n\tKeyValuePair`2\n\t\tKey = 1\n\t\tValue = Person\n\t\t\tAge = 1\n\t\t\tName = A\n\tKeyValuePair`2\n\t\tKey = 2\n\t\tValue = Person\n\t\t\tAge = 2\n\t\t\tName = B\n\tKeyValuePair`2\n\t\tKey = 3\n\t\tValue = Person\n\t\t\tAge = 3\n\t\t\tName = C\n"),
 
                     ("Dictionary",
                         ObjectPrinter.For<Dictionary<Person, List<(Person, TimeSpan)>>[]>(),
@@ -148,54 +147,54 @@ namespace ObjectPrintingTests
 	Dictionary`2
 		KeyValuePair`2
 			Key = Person
-				Name = null
 				Age = 1
+				Name = null
 			Value = List`1
 				ValueTuple`2
 					Item1 = Person
-						Name = a
 						Age = 0
+						Name = a
 					Item2 = 00:00:00
 				ValueTuple`2
 					Item1 = Person
-						Name = c
 						Age = 0
+						Name = c
 					Item2 = -10675199.02:48:05.4775808
 	Dictionary`2
 		KeyValuePair`2
 			Key = Person
-				Name = null
 				Age = 2
+				Name = null
 			Value = List`1
 				ValueTuple`2
 					Item1 = Person
-						Name = b
 						Age = 0
+						Name = b
 					Item2 = 10675199.02:48:05.4775807
 		KeyValuePair`2
 			Key = Person
-				Name = null
 				Age = 3
+				Name = null
 			Value = List`1
 				ValueTuple`2
 					Item1 = Person
-						Name = c
 						Age = 0
+						Name = c
 					Item2 = -10675199.02:48:05.4775808
 				ValueTuple`2
 					Item1 = Person
-						Name = c
 						Age = 0
+						Name = c
 					Item2 = -10675199.02:48:05.4775808
 				ValueTuple`2
 					Item1 = Person
-						Name = c
 						Age = 0
+						Name = c
 					Item2 = -10675199.02:48:05.4775808
 				ValueTuple`2
 					Item1 = Person
-						Name = c
 						Age = 0
+						Name = c
 					Item2 = -10675199.02:48:05.4775808
 "
                     ),

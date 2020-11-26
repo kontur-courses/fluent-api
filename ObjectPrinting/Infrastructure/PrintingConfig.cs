@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,12 +11,28 @@ namespace ObjectPrinting.Infrastructure
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly IComparer<string> memberComparer;
         private readonly Dictionary<MemberInfo, Settings> membersSettings = new Dictionary<MemberInfo, Settings>();
         private readonly Dictionary<Type, Settings> typeSettings = new Dictionary<Type, Settings>();
         
         private readonly object[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)
         };
+
+        public PrintingConfig(IComparer<string> memberComparer)
+        {
+            this.memberComparer = memberComparer;
+        }
+        
+        public PrintingConfig(CultureInfo cultureInfo) : this(StringComparer.Create(cultureInfo, false))
+        {
+            
+        }
+
+        public PrintingConfig() : this(CultureInfo.InvariantCulture)
+        {
+            
+        }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -89,7 +106,8 @@ namespace ObjectPrinting.Infrastructure
         private string PrintMember(object obj, int nextLevel, Type type, StringBuilder sb)
         {
             var indentation = new string('\t', nextLevel);
-            foreach (var memberInfo in type.GetMembers())
+            foreach (var memberInfo in type.GetMembers()
+                .OrderBy(m => m.Name, memberComparer))
             {
                 if (IsExcluded(memberInfo))
                     continue;
