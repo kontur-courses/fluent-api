@@ -91,9 +91,7 @@ namespace ObjectPrinting
                 .Where(config.IsMemberNotExcluded))
             {
                 var memberValue = memberInfo.GetValue(obj);
-                var toPrint = TrySerializeMember(memberInfo, memberValue, out var serializedMember)
-                    ? serializedMember
-                    : memberValue;
+                var toPrint = GetSerializedOrInputValue(memberInfo, memberValue);
                 if (config.TryGetMemberLength(memberInfo, out var maxLength))
                     toPrint = toPrint?.ToString().Substring(0, maxLength);
                 var serializedObject = PrintToString(toPrint, nestingLevel + 1);
@@ -103,16 +101,11 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TrySerializeMember(MemberInfo memberInfo, object value, out string serializedMember)
+        private object GetSerializedOrInputValue(MemberInfo memberInfo, object value)
         {
-            if (config.TryGetSerializer(memberInfo, out var serializer))
-            {
-                serializedMember = serializer(value);
-                return true;
-            }
-
-            serializedMember = null;
-            return false;
+            return config.TryGetSerializer(memberInfo, out var serializer)
+                ? serializer(value)
+                : value;
         }
 
         private static string GetIndentation(int nestingLevel)
