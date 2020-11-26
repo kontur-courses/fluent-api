@@ -28,54 +28,54 @@ namespace ObjectPrintingTests
                     ("Cycle reference",
                         ObjectPrinter.For<Node>(),
                         GetCycleReferencedObject(),
-                        "Node\n\tNext = Node\n\t\tNext = [cycle]\n"),
+                        $"Node{Environment.NewLine}\tNext = Node{Environment.NewLine}\t\tNext = [cycle]{Environment.NewLine}"),
 
                     ("With String Shortening",
                         ObjectPrinter.For<Text>()
                             .Printing<string>()
                             .TrimmedToLength(2),
                         new Text {String = "1234"},
-                        "Text\n\tString = 12\n"),
+                        $"Text{Environment.NewLine}\tString = 12{Environment.NewLine}"),
 
                     ("Custom Property",
                         ObjectPrinter.For<Household>()
                             .Printing(p => p.Property)
                             .Using(p => "custom"),
                         new Household {Property = null},
-                        "Household\n\tProperty = custom\n"),
+                        $"Household{Environment.NewLine}\tProperty = custom{Environment.NewLine}"),
 
                     ("Culture setting",
                         ObjectPrinter.For<Number>()
                             .Printing<double>()
                             .Using(CultureInfo.GetCultureInfo("sv-SE")),
                         new Number() {Double = 1.1},
-                        "Number\n\tDouble = 1,1\n"),
+                        $"Number{Environment.NewLine}\tDouble = 1,1{Environment.NewLine}"),
 
                     ("Selected field formatted",
                         ObjectPrinter.For<Index>()
                             .Printing(p => p.Integer)
                             .Using(i => "i"),
                         new Index(),
-                        "Index\n\tInteger = i\n"),
+                        $"Index{Environment.NewLine}\tInteger = i{Environment.NewLine}"),
 
                     ("Selected type formatted",
                         ObjectPrinter.For<Index>()
                             .Printing<int>()
                             .Using(i => "i"),
                         new Index(),
-                        "Index\n\tInteger = i\n"),
+                        $"Index{Environment.NewLine}\tInteger = i{Environment.NewLine}"),
 
                     ("Excluding By Type",
                         ObjectPrinter.For<Person>()
                             .Excluding<int>(),
                         new Person {Name = "name", Age = 10},
-                        "Person\n\tName = name\n"),
+                        $"Person{Environment.NewLine}\tName = name{Environment.NewLine}"),
 
                     ("Excluding By Field",
                         ObjectPrinter.For<Person>()
                             .Excluding(p => p.Age),
                         new Person {Name = "name", Age = 10},
-                        "Person\n\tName = name\n"),
+                        $"Person{Environment.NewLine}\tName = name{Environment.NewLine}"),
 
                     ("Array of Persons",
                         ObjectPrinter.For<Person[]>(),
@@ -85,7 +85,7 @@ namespace ObjectPrintingTests
                             new Person {Name = "B", Age = 2},
                             new Person {Name = "C", Age = 3},
                         },
-                        "Person[]\n\tPerson\n\t\tAge = 1\n\t\tName = A\n\tPerson\n\t\tAge = 2\n\t\tName = B\n\tPerson\n\t\tAge = 3\n\t\tName = C\n"),
+                        $"Person[]{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 1{Environment.NewLine}\t\tName = A{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 2{Environment.NewLine}\t\tName = B{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 3{Environment.NewLine}\t\tName = C{Environment.NewLine}"),
 
                     ("List of Persons",
                         ObjectPrinter.For<List<Person>>(),
@@ -95,7 +95,7 @@ namespace ObjectPrintingTests
                             new Person {Name = "B", Age = 2},
                             new Person {Name = "C", Age = 3},
                         },
-                        "List`1\n\tPerson\n\t\tAge = 1\n\t\tName = A\n\tPerson\n\t\tAge = 2\n\t\tName = B\n\tPerson\n\t\tAge = 3\n\t\tName = C\n"),
+                        $"List`1{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 1{Environment.NewLine}\t\tName = A{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 2{Environment.NewLine}\t\tName = B{Environment.NewLine}\tPerson{Environment.NewLine}\t\tAge = 3{Environment.NewLine}\t\tName = C{Environment.NewLine}"),
 
                     ("Dictionary with int key, Person value",
                         ObjectPrinter.For<Dictionary<int, Person>>(),
@@ -105,7 +105,7 @@ namespace ObjectPrintingTests
                             {2, new Person {Name = "B", Age = 2}},
                             {3, new Person {Name = "C", Age = 3}},
                         },
-                        "Dictionary`2\n\tKeyValuePair`2\n\t\tKey = 1\n\t\tValue = Person\n\t\t\tAge = 1\n\t\t\tName = A\n\tKeyValuePair`2\n\t\tKey = 2\n\t\tValue = Person\n\t\t\tAge = 2\n\t\t\tName = B\n\tKeyValuePair`2\n\t\tKey = 3\n\t\tValue = Person\n\t\t\tAge = 3\n\t\t\tName = C\n"),
+                        $"Dictionary`2{Environment.NewLine}\tKeyValuePair`2{Environment.NewLine}\t\tKey = 1{Environment.NewLine}\t\tValue = Person{Environment.NewLine}\t\t\tAge = 1{Environment.NewLine}\t\t\tName = A{Environment.NewLine}\tKeyValuePair`2{Environment.NewLine}\t\tKey = 2{Environment.NewLine}\t\tValue = Person{Environment.NewLine}\t\t\tAge = 2{Environment.NewLine}\t\t\tName = B{Environment.NewLine}\tKeyValuePair`2{Environment.NewLine}\t\tKey = 3{Environment.NewLine}\t\tValue = Person{Environment.NewLine}\t\t\tAge = 3{Environment.NewLine}\t\t\tName = C{Environment.NewLine}"),
 
                     ("Dictionary",
                         ObjectPrinter.For<Dictionary<Person, List<(Person, TimeSpan)>>[]>(),
@@ -205,15 +205,9 @@ namespace ObjectPrintingTests
                 yield return new TestCaseData(
                         config,
                         toPrint,
-                        GetSystemIndependent(expectedRaw))
+                        expectedRaw)
                     {TestName = testName};
             }
-        }
-
-        private static string GetSystemIndependent(string text)
-        {
-            text = text.Replace("\r\n", Environment.NewLine);
-            return text.Replace("\n", Environment.NewLine);
         }
 
         private static Node GetCycleReferencedObject()
