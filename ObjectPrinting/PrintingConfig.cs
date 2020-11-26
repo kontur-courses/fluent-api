@@ -10,20 +10,21 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> typesToDefaultSerialize = new HashSet<Type>
+        private readonly List<Type> typesToDefaultSerialize = new List<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(bool),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
-        private readonly HashSet<MemberInfo> membersToExclude = new HashSet<MemberInfo>();
+        private readonly List<Type> typesToExclude = new List<Type>();
+        private readonly List<MemberInfo> membersToExclude = new List<MemberInfo>();
+        private readonly List<object> serializingMembers = new List<object>();
 
         internal Dictionary<Type, Delegate> AlternativeSerializersForTypes = new Dictionary<Type, Delegate>();
         internal Dictionary<MemberInfo, Delegate> AlternativeSerializersForMembers =
             new Dictionary<MemberInfo, Delegate>(); 
 
-        private string PrintToString(object obj, int nestingLevel, int maxNestingDepth, MemberInfo info)
+        private string PrintToString(object obj, int nestingLevel, MemberInfo info)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -32,24 +33,27 @@ namespace ObjectPrinting
                 return SerializeValue(obj, info);
 
             if (obj is IEnumerable enumerable)
-                return SerializeEnumerable(enumerable, nestingLevel, maxNestingDepth);
+                return SerializeEnumerable(enumerable, nestingLevel);
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
-            foreach (var member in GetMembersToSerialize(type))
+            foreach (var member in GetMembersToSerialize(obj))
             {
-                var value = member.MemberType == MemberTypes.Property
-                    ? (member as PropertyInfo)?.GetValue(obj)
-                    : (member as FieldInfo)?.GetValue(obj);
+                if (serializingMembers.Contains(member.value))
+                {
+                    sb.Append($"{identation}{member.info.Name} = [Cyclic reference detected]{Environment.NewLine}");
+                    serializingMembers.Remove(member.value);
+                    continue;
+                }
 
-                var serializedValue = (nestingLevel + 1 > maxNestingDepth && type == value?.GetType())
-                    ? "Reached maximal level of nesting" + Environment.NewLine
-                    : $"{PrintToString(value, nestingLevel + 1, maxNestingDepth, member)}";
+                serializingMembers.Add(member.value);
+                var serializedValue = $"{PrintToString(member.value, nestingLevel + 1, member.info)}";
 
-                sb.Append($"{identation}{member.Name} = {serializedValue}");
+                sb.Append($"{identation}{member.info.Name} = {serializedValue}");
+                serializingMembers.Remove(member.value);
             }
 
             return sb.ToString();
@@ -59,34 +63,36 @@ namespace ObjectPrinting
         {
             var type = obj.GetType();
 
-            if (info != null && AlternativeSerializersForMembers.ContainsKey(info))
-                return AlternativeSerializersForMembers[info].DynamicInvoke(obj) + Environment.NewLine;
+            if (info != null && AlternativeSerializersForMembers.TryGetValue(info, out var serializer))
+                return serializer.DynamicInvoke(obj) + Environment.NewLine;
 
-            if (AlternativeSerializersForTypes.ContainsKey(type))
-                return AlternativeSerializersForTypes[type].DynamicInvoke(obj) + Environment.NewLine;
+            if (AlternativeSerializersForTypes.TryGetValue(type, out var typeSerializer))
+                return typeSerializer.DynamicInvoke(obj) + Environment.NewLine;
 
             return obj + Environment.NewLine;
         }
 
-        private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel, int maxNestingDepth)
+        private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
         {
-            var sb = new StringBuilder($"{enumerable.GetType().Name}\r\n");
+            var sb = new StringBuilder($"{enumerable.GetType().Name}{Environment.NewLine}");
             var identation = new string('\t', nestingLevel + 1);
-            sb.Append($"{new string('\t', nestingLevel)}{{\r\n");
+            sb.Append($"{new string('\t', nestingLevel)}{{{Environment.NewLine}");
             var startLength = sb.Length;
 
             foreach (var obj in enumerable)
-                sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1, maxNestingDepth, null)}");
+                sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1, null)}");
 
             if (sb.Length == startLength)
                 sb.Append("Empty");
-            sb.Append($"{new string('\t', nestingLevel)}}}\r\n");
+            sb.Append($"{new string('\t', nestingLevel)}}}{Environment.NewLine}");
             
             return sb.ToString();
         }
 
-        private IEnumerable<MemberInfo> GetMembersToSerialize(Type type)
+        private IEnumerable<(MemberInfo info, object value)> GetMembersToSerialize(object obj)
         {
+            var type = obj.GetType();
+
             foreach (var member in type.GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (membersToExclude.Contains(member))
@@ -94,17 +100,18 @@ namespace ObjectPrinting
 
                 if (member is FieldInfo fi)
                     if (!typesToExclude.Contains(fi.FieldType))
-                        yield return fi;
+                        yield return (fi, fi.GetValue(obj));
 
                 if(member is PropertyInfo pi)
                     if (!typesToExclude.Contains(pi.PropertyType))
-                        yield return pi;
+                        yield return (pi, pi.GetValue(obj));
             }
         }
 
-        public string PrintToString(TOwner obj, int maxNestingDepth = 5)
+        public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, maxNestingDepth, null);
+            serializingMembers.Add(obj);
+            return PrintToString(obj, 0, null);
         }
 
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
