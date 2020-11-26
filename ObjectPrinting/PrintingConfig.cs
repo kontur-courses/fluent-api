@@ -64,7 +64,10 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
+
+            if (obj.GetType() == typeof(Guid))
+                return obj.ToString() + Environment.NewLine;
+
             if (nestingLevel == 50)
                 return "Nesting level overhead" + Environment.NewLine;
             
@@ -87,26 +90,81 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+            
+            sb.Append(HandlePropertyAndFields(type, obj, indention, nestingLevel));
 
-            foreach (var propertyInfo in type.GetProperties())
+            return sb.ToString();
+        }
+        
+        private string HandlePropertyAndFields(Type type, object obj, string indention, int nestingLevel)
+        {
+            var stringBuilder = new StringBuilder();
+            var allTypes = GetAllTypes(type);
+            var allNames = GetAllName(type);
+            var allValues = GetAllValues(type, obj);
+          
+            for(var i =0; i<allTypes.Count; i++)
             {
-                var value = propertyInfo.GetValue(obj);
+                var value = allValues[i];
 
-                if (IsReferenceCycle(obj, propertyInfo))
+                if (IsReferenceCycle(obj, allTypes[i],value))
                 {
-                    sb.Append($"{indention}reference cycle {obj.GetType()}");
+                    stringBuilder.Append($"{indention}reference cycle {obj.GetType()}");
                     continue;
                 }
                 
-                if (IsExcluded(propertyInfo))
+                if (IsExcluded(allTypes[i], allNames[i]))
                     continue;
-
-                sb.Append($"{indention} {propertyInfo.Name} = {PrintToString(GetFormattedValue(value, propertyInfo), nestingLevel + 1)}");
-            }
             
-            return sb.ToString();
+                var result = ($"{indention} {allNames[i]} = " +
+                              $"{PrintToString(GetFormattedValue(value, allNames[i]), nestingLevel + 1)}");
+                if (result != stringBuilder.ToString())
+                    stringBuilder.Append(result);
+            }
+
+            return stringBuilder.ToString();
         }
 
+        private List<object> GetAllValues(Type type, object obj)
+        {
+            var allValues = new List<object>();
+            
+            var propertyValues = type.GetProperties().Select(x => x.GetValue(obj)).ToList();
+
+            var fieldValues = type.GetFields().Select(x => x.GetValue(obj)).ToList();
+
+            allValues.AddRange(fieldValues);
+            allValues.AddRange(propertyValues);
+            return allValues;
+        }
+        
+        private List<string> GetAllName(Type type)
+        {
+            var allNames = new List<string>();
+
+            var propertyNames = type.GetProperties().Select(x => x.Name).ToList();
+      
+            var fieldNames = type.GetFields().Select(x => x.Name).ToList();
+
+            allNames.AddRange(fieldNames);
+            allNames.AddRange(propertyNames);
+
+            return allNames;
+        }
+        
+        private List<Type> GetAllTypes(Type type)
+        {
+            var allTypes = new List<Type>();
+            
+            var propertyTypes = type.GetProperties().Select(x => x.PropertyType).ToList();
+            var fieldTypes = type.GetFields().Select(x => x.FieldType).ToList();
+
+            allTypes.AddRange(fieldTypes);
+            allTypes.AddRange(propertyTypes);
+
+            return allTypes;
+        }
+        
         private string HandleCollection(ICollection collection, int nestingLevel, StringBuilder sb, string indention)
         {
             sb.Append(Environment.NewLine);
@@ -115,34 +173,34 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool IsReferenceCycle(object obj, PropertyInfo propertyInfo)
+        private bool IsReferenceCycle(object obj, Type type, object value)
         {
-            if (propertyInfo.PropertyType == obj.GetType() && referenceCount == 1)
+            if (type == obj.GetType() && referenceCount == 1)
                 return true;
 
-            if (propertyInfo.PropertyType == obj.GetType() &&
-                ReferenceEquals(propertyInfo.GetValue(obj), obj))
+            if (type == obj.GetType() &&
+                ReferenceEquals(value, obj))
                 referenceCount++;
             return false;
         }
-        
-        private bool IsExcluded(PropertyInfo propertyInfo)
-        {
-            return excludedType.Contains(propertyInfo.PropertyType) || 
-                   excludedProperties.Contains(propertyInfo.Name);
-        }
 
-        private object GetFormattedValue(object value, PropertyInfo propertyInfo)
+        private bool IsExcluded(Type type, string name)
         {
-            if (trimmingProperties.ContainsKey(propertyInfo.Name))
-                value = (string) trimmingProperties[propertyInfo.Name].DynamicInvoke(value);
+            return excludedType.Contains(type) || 
+                   excludedProperties.Contains(name);
+        }
+               
+        private object GetFormattedValue(object value, string name)
+        {
+            if (trimmingProperties.ContainsKey(name))
+                value = (string) trimmingProperties[name].DynamicInvoke(value);
      
-            if(specialSerializeProperties.ContainsKey(propertyInfo.Name)) 
-                value = (string)specialSerializeProperties[propertyInfo.Name].DynamicInvoke(value);
+            if(specialSerializeProperties.ContainsKey(name)) 
+                value = (string)specialSerializeProperties[name].DynamicInvoke(value);
             
             return value ;
         }
-        
+
         private string HandleFinalType(object obj)
         {
             if (specialSerializeCulture.ContainsKey(obj.GetType()))

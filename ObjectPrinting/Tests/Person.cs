@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace ObjectPrinting.Tests
 {
@@ -21,6 +22,14 @@ namespace ObjectPrinting.Tests
         
         public Dictionary<int, int> Dictionary { get; set; }
 
+    }
+
+    public class PersonField
+    {
+        public string Name;
+        public int Age;
+        public DateTime DateTime;
+        public double Money;
     }
     
 }

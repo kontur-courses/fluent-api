@@ -22,16 +22,38 @@ namespace ObjectPrinting.Tests
     }
     public class TestClassExcluded
     {
-        public DateTime dataTime { get; set; }
         public string TestTextString { get; set; }
         public int TestTextInt { get; set; }
         public Person person { get; set; }
         
         public Double TestTextDouble { get; set; }
     }
+    
+    public class TestClassCultureDataTime
+    {
+        public DateTime dataTime { get; set; }
+    }
+    
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+        [Test]
+        public void DemoField()
+        {
+            var personField = new PersonField(){DateTime = DateTime.Today, Age = 19, Money = 2.2, Name = "name"};
+
+            Console.WriteLine(DateTime.Today);
+            var printer = ObjectPrinter.For<PersonField>()
+                //.Excluding<string>();
+                .Printing<int>().Using(i => i + "Ы")
+                .Printing(x => x.Name).Using(y => y + "@@@")
+                .Printing<DateTime>().Using(CultureInfo.InvariantCulture);
+
+            string s1 = printer.PrintToString(personField);
+            Console.WriteLine(s1);
+        }
+
+
         [Test]
         public void Demo()
         {
@@ -81,23 +103,16 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_ReturnCorrectWord_WhenTypeSetCultureDataTime()
         {
-            var testClass = new TestClassExcluded();
-            testClass.TestTextDouble = 2.3;
+            var testClass = new TestClassCultureDataTime();
             testClass.dataTime = DateTime.Today;
-            Console.WriteLine("1 dataTime = " + testClass.dataTime);
 
-            var printer = ObjectPrinter.For<TestClassExcluded>()
-                .Excluding<int>()
-                .Excluding<Person>()
-                .Excluding<string>()
-                .Excluding<double>()
+            var printer = ObjectPrinter.For<TestClassCultureDataTime>()
                 .Printing<DateTime>().Using(CultureInfo.InvariantCulture);
-                
-            Console.WriteLine("2 dataTime = " + testClass.dataTime);
+
             string s1 = printer.PrintToString(testClass);
             Console.WriteLine("|"+s1+"|");
 
-            s1.Should().BeEquivalentTo("TestClassExcluded"
+            s1.Should().BeEquivalentTo("TestClassCultureDataTime"
                                        +Environment.NewLine
                                        + "\t" +" dataTime = 11/26/2020 00:00:00");
         }
