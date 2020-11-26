@@ -113,12 +113,12 @@ namespace ObjectPrinting.Tests
             printer = printer.SetTrimming(x => x.Name, 4);
             printer.PrintToString(person).Should().Contain($"{nameof(person.Name)} = Alex\r\n");
         }
-        
+
         [Test]
         public void PrintToString_NotThrowsNullReferenceException_IfPropertyIsNull()
         {
             printer = printer
-                .SetAlternateSerialize(x=>x.Name, x=>null)
+                .SetAlternateSerialize(x => x.Name, x => null)
                 .SetTrimming(x => x.Name, 4);
             Action act = () => printer.PrintToString(person);
             act.Should().NotThrow<NullReferenceException>();
@@ -210,11 +210,11 @@ namespace ObjectPrinting.Tests
                                                            "\t\t1\r\n" +
                                                            "\t]\r\n");
         }
-        
+
         [Test]
         public void PrintToString_PrintingObjectWithDictionary()
         {
-            person.Passwords = new Dictionary<int, int>{[0]= 1};
+            person.Passwords = new Dictionary<int, int> {[0] = 1};
             printer.PrintToString(person).Should().Contain("\r\n" +
                                                            "\tPasswords = Dictionary`2\r\n" +
                                                            "\t[\r\n" +
@@ -246,13 +246,13 @@ namespace ObjectPrinting.Tests
                                                           "\t}\r\n" +
                                                           "]\r\n");
         }
-        
+
         [Test]
         public void PrintToString_PrintingDictWithNotFinalType()
         {
             var dictionary = new Dictionary<Person, Person>
             {
-                [person] = person2,
+                [person] = person2
             };
             var printer = ObjectPrinter.For<Dictionary<Person, Person>>();
             printer.PrintToString(dictionary).Should().Contain("\r\n" +

@@ -46,6 +46,7 @@ namespace ObjectPrinting
                     sb.Append(SerializeObject(obj, nestingLevel));
                     break;
             }
+
             serializedObjects.Pop();
             return sb.ToString();
         }
@@ -54,7 +55,7 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             sb.AppendLine(GetIndentation(nestingLevel) + "[");
-            foreach (var e in collection) 
+            foreach (var e in collection)
                 sb.Append(GetIndentation(nestingLevel + 1)
                           + PrintToString(e, nestingLevel + 1));
             sb.AppendLine(GetIndentation(nestingLevel) + "]");

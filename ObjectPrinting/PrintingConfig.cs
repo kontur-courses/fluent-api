@@ -24,18 +24,14 @@ namespace ObjectPrinting
         private ImmutableHashSet<MemberInfo> excludingMembers = ImmutableHashSet<MemberInfo>.Empty;
         private ImmutableHashSet<Type> excludingTypes = ImmutableHashSet<Type>.Empty;
         private ImmutableDictionary<MemberInfo, int> memberLengths = ImmutableDictionary<MemberInfo, int>.Empty;
-        
-        private Serializer<TOwner> serializer;
 
         public PrintingConfig()
         {
-            serializer = new Serializer<TOwner>(this);
         }
-        
+
         public PrintingConfig(IEnumerable<Type> finalTypes)
         {
             FinalTypes = finalTypes.ToImmutableHashSet();
-            serializer = new Serializer<TOwner>(this);
         }
 
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
@@ -46,7 +42,6 @@ namespace ObjectPrinting
             alternateTypeSerializers = oldPrintingConfig.alternateTypeSerializers;
             alternateMemberSerializers = oldPrintingConfig.alternateMemberSerializers;
             FinalTypes = oldPrintingConfig.FinalTypes;
-            serializer = new Serializer<TOwner>(this);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
