@@ -53,7 +53,8 @@ namespace ObjectPrinting.Tests
                                                       "\tFriend = null\r\n" +
                                                       "\tFriend2 = null\r\n" +
                                                       "\tSurname = Brown\r\n" +
-                                                      "\tCodes = null\r\n");
+                                                      "\tCodes = null\r\n" +
+                                                      "\tPasswords = null\r\n");
         }
 
         [Test]
@@ -180,10 +181,10 @@ namespace ObjectPrinting.Tests
             var array = new[] {0, 1};
             var printer = ObjectPrinter.For<int[]>();
             printer.PrintToString(array).Should().Be("Int32[]\r\n" +
-                                                     "{\r\n" +
+                                                     "[\r\n" +
                                                      "\t0\r\n" +
                                                      "\t1\r\n" +
-                                                     "}\r\n");
+                                                     "]\r\n");
         }
 
         [Test]
@@ -192,10 +193,10 @@ namespace ObjectPrinting.Tests
             var list = new List<int> {0, 1};
             var printer = ObjectPrinter.For<List<int>>();
             printer.PrintToString(list).Should().Be("List`1\r\n" +
-                                                    "{\r\n" +
+                                                    "[\r\n" +
                                                     "\t0\r\n" +
                                                     "\t1\r\n" +
-                                                    "}\r\n");
+                                                    "]\r\n");
         }
 
         [Test]
@@ -204,10 +205,24 @@ namespace ObjectPrinting.Tests
             person.Codes = new List<int> {0, 1};
             printer.PrintToString(person).Should().Contain("\r\n" +
                                                            "\tCodes = List`1\r\n" +
-                                                           "\t{\r\n" +
+                                                           "\t[\r\n" +
                                                            "\t\t0\r\n" +
                                                            "\t\t1\r\n" +
-                                                           "\t}\r\n");
+                                                           "\t]\r\n");
+        }
+        
+        [Test]
+        public void PrintToString_PrintingObjectWithDictionary()
+        {
+            person.Passwords = new Dictionary<int, int>{[0]= 1};
+            printer.PrintToString(person).Should().Contain("\r\n" +
+                                                           "\tPasswords = Dictionary`2\r\n" +
+                                                           "\t[\r\n" +
+                                                           "\t\t{\r\n" +
+                                                           "\t\t\tKey = 0\r\n" +
+                                                           "\t\t\tValue = 1\r\n" +
+                                                           "\t\t}\r\n" +
+                                                           "\t]\r\n");
         }
 
         [Test]
@@ -220,14 +235,29 @@ namespace ObjectPrinting.Tests
             };
             var printer = ObjectPrinter.For<Dictionary<int, int>>();
             printer.PrintToString(dictionary).Should().Be("Dictionary`2\r\n" +
-                                                          "{\r\n" +
-                                                          "\tKeyValuePair`2\r\n" +
+                                                          "[\r\n" +
+                                                          "\t{\r\n" +
                                                           "\t\tKey = 0\r\n" +
                                                           "\t\tValue = 1\r\n" +
-                                                          "\tKeyValuePair`2\r\n" +
+                                                          "\t}\r\n" +
+                                                          "\t{\r\n" +
                                                           "\t\tKey = 2\r\n" +
                                                           "\t\tValue = 3\r\n" +
-                                                          "}\r\n");
+                                                          "\t}\r\n" +
+                                                          "]\r\n");
+        }
+        
+        [Test]
+        public void PrintToString_PrintingDictWithNotFinalType()
+        {
+            var dictionary = new Dictionary<Person, Person>
+            {
+                [person] = person2,
+            };
+            var printer = ObjectPrinter.For<Dictionary<Person, Person>>();
+            printer.PrintToString(dictionary).Should().Contain("\r\n" +
+                                                               "\t\t\tAge = 19\r\n" +
+                                                               "\t\t\tFriend = null\r\n");
         }
     }
 }

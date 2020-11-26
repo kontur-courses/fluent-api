@@ -13,5 +13,6 @@ namespace ObjectPrinting.Tests
         public Person Friend { get; set; }
         public Person Friend2 { get; set; }
         public List<int> Codes;
+        public Dictionary<int, int> Passwords;
     }
 }

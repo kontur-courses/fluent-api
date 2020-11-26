@@ -34,24 +34,48 @@ namespace ObjectPrinting
             serializedObjects.Push(obj);
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
-            if (obj is IEnumerable enumerable)
-                sb.Append(SerializeCollection(enumerable, nestingLevel));
-            else
-                sb.Append(SerializeObject(obj, nestingLevel));
+            switch (obj)
+            {
+                case IDictionary dictionary:
+                    sb.Append(SerializeDictionary(dictionary, nestingLevel));
+                    break;
+                case IEnumerable enumerable:
+                    sb.Append(SerializeCollection(enumerable, nestingLevel));
+                    break;
+                default:
+                    sb.Append(SerializeObject(obj, nestingLevel));
+                    break;
+            }
             serializedObjects.Pop();
             return sb.ToString();
         }
 
-        private string SerializeCollection(object collection, int nestingLevel)
+        private string SerializeCollection(IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(GetIndentation(nestingLevel) + "{");
-            var serializedElements = ((IEnumerable) collection)
-                .Cast<object>()
-                .Select(x => GetIndentation(nestingLevel + 1)
-                             + PrintToString(x, nestingLevel + 1));
-            foreach (var serializedElement in serializedElements) sb.Append(serializedElement);
-            sb.AppendLine(GetIndentation(nestingLevel) + "}");
+            sb.AppendLine(GetIndentation(nestingLevel) + "[");
+            foreach (var e in collection) 
+                sb.Append(GetIndentation(nestingLevel + 1)
+                          + PrintToString(e, nestingLevel + 1));
+            sb.AppendLine(GetIndentation(nestingLevel) + "]");
+            return sb.ToString();
+        }
+
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(GetIndentation(nestingLevel) + "[");
+            foreach (DictionaryEntry e in dictionary)
+            {
+                sb.AppendLine(GetIndentation(nestingLevel + 1) + "{");
+                sb.Append(GetIndentation(nestingLevel + 2) +
+                          $"Key = {PrintToString(e.Key, nestingLevel + 2)}");
+                sb.Append(GetIndentation(nestingLevel + 2) +
+                          $"Value = {PrintToString(e.Value, nestingLevel + 2)}");
+                sb.AppendLine(GetIndentation(nestingLevel + 1) + "}");
+            }
+
+            sb.AppendLine(GetIndentation(nestingLevel) + "]");
             return sb.ToString();
         }
 
