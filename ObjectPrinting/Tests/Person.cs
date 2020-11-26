@@ -21,6 +21,8 @@ namespace ObjectPrinting.Tests
             ["c"] = 7
         };
 
+        public List<Guid> SomeList;
+
         public int Age
         {
             get => (DateTime.Now - BirthDate).Days / 365;

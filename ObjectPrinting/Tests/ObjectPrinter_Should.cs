@@ -279,6 +279,28 @@ namespace ObjectPrinting.Tests
                     print.Should().Contain($"\n\t\t{key}: {value}");
             }
         }
+        
+        [Test]
+        public void PrintLists_OfCustomTypes()
+        {
+            var persons = GetRandomBasicPersons().WithRandomList();
+            foreach (var person in persons)
+            {
+                var print = person.PrintToString();
+                var customPrint = person.PrintToString(c => c
+                    .Printing<Guid>().As(g => g.ToString()));
+                var lines = print.Split('\n').ToList();
+                var customLines = customPrint.Split('\n').ToList();
+
+                customLines.Should().Contain(s => s.Contains($"{nameof(Person.SomeList)} = "));
+                var line = customLines.FindIndex(s => s.Contains($"{nameof(Person.SomeList)} = ")) + 1;
+                for (var i = 0; i < person.SomeList.Count; i++)
+                {
+                    lines[line + i].Should().NotContain(person.SomeList[i].ToString());
+                    customLines[line + i].Should().Contain(person.SomeList[i].ToString());
+                }
+            }
+        }
 
         public IEnumerable<Person> GetRandomBasicPersons(int count = 100)
             => ObjectPrinter_Should_Extensions.GetRandomBasicPersons(count);

@@ -73,6 +73,19 @@ namespace ObjectPrinting.Tests
             return person;
         }
         
+        public static IEnumerable<Person> WithRandomList(this IEnumerable<Person> persons)
+            => persons.Select(WithRandomList);
+        
+        public static Person WithRandomList(this Person person)
+        {
+            var random = new Random();
+            var length = random.Next(10);
+            person.SomeList = new List<Guid>();
+            for (var i = 0; i < length; i++)
+                person.SomeList.Add(Guid.NewGuid());
+            return person;
+        }
+        
         public static IEnumerable<Person> WithRandomDictionary(this IEnumerable<Person> persons)
             => persons.Select(WithRandomDictionary);
         
