@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -8,11 +9,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
+        public readonly ImmutableHashSet<Type> FinalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        };
+        }.ToImmutableHashSet();
 
         private ImmutableDictionary<MemberInfo, Func<object, string>> alternateMemberSerializers =
             ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
@@ -27,6 +28,11 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
         }
+        
+        public PrintingConfig(IEnumerable<Type> finalTypes)
+        {
+            FinalTypes = finalTypes.ToImmutableHashSet();
+        }
 
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
         {
@@ -35,6 +41,7 @@ namespace ObjectPrinting
             memberLengths = oldPrintingConfig.memberLengths;
             alternateTypeSerializers = oldPrintingConfig.alternateTypeSerializers;
             alternateMemberSerializers = oldPrintingConfig.alternateMemberSerializers;
+            FinalTypes = oldPrintingConfig.FinalTypes;
         }
 
         public string PrintToString(TOwner obj)
