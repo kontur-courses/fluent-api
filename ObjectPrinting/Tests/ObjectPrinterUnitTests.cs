@@ -98,14 +98,14 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(animal).Should().Be($"Animal{Environment.NewLine}" +
                                                       $"\tName = {animal.Name.Substring(0, 2)}{Environment.NewLine}" +
-                                                      $"\tKind = {animal.Kind}{Environment.NewLine}" +
                                                       $"\tParent = Animal{Environment.NewLine}" +
                                                       $"\t\tName = {animal.Parent.Name.Substring(0, 2)}{Environment.NewLine}" +
-                                                      $"\t\tKind = {animal.Parent.Kind}{Environment.NewLine}" +
                                                       $"\t\tParent = Animal{Environment.NewLine}" +
                                                       $"\t\t\tName = {animal.Parent.Parent.Name.Substring(0, 2)}{Environment.NewLine}" +
+                                                      $"\t\t\tParent = null{Environment.NewLine}" +
                                                       $"\t\t\tKind = {animal.Parent.Parent.Kind}{Environment.NewLine}" +
-                                                      $"\t\t\tParent = null{Environment.NewLine}");
+                                                      $"\t\tKind = {animal.Parent.Kind}{Environment.NewLine}" +
+                                                      $"\tKind = {animal.Kind}{Environment.NewLine}");
         }
 
         [Test]
@@ -116,14 +116,14 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(animal).Should().Be($"Animal{Environment.NewLine}" +
                                                       $"\tName = {animal.Name.Substring(0, 2)}{Environment.NewLine}" +
-                                                      $"\tKind = {animal.Kind.Substring(0, 2)}{Environment.NewLine}" +
                                                       $"\tParent = Animal{Environment.NewLine}" +
                                                       $"\t\tName = {animal.Parent.Name.Substring(0, 2)}{Environment.NewLine}" +
-                                                      $"\t\tKind = {animal.Parent.Kind.Substring(0, 2)}{Environment.NewLine}" +
                                                       $"\t\tParent = Animal{Environment.NewLine}" +
                                                       $"\t\t\tName = {animal.Parent.Parent.Name.Substring(0, 2)}{Environment.NewLine}" +
+                                                      $"\t\t\tParent = null{Environment.NewLine}" +
                                                       $"\t\t\tKind = {animal.Parent.Parent.Kind.Substring(0, 2)}{Environment.NewLine}" +
-                                                      $"\t\t\tParent = null{Environment.NewLine}");
+                                                      $"\t\tKind = {animal.Parent.Kind.Substring(0, 2)}{Environment.NewLine}" +
+                                                      $"\tKind = {animal.Kind.Substring(0, 2)}{Environment.NewLine}");
         }
 
         [Test]
@@ -134,8 +134,13 @@ namespace ObjectPrinting.Tests
             cyclicAnimal1.Parent = cyclicAnimal2;
             cyclicAnimal2.Parent = cyclicAnimal1;
             var printer = ObjectPrinter.For<Animal>();
-
-            Assert.DoesNotThrow(() => printer.PrintToString(cyclicAnimal1));
+            printer.PrintToString(cyclicAnimal1).Should().Be($"Animal{Environment.NewLine}" +
+                                                             $"\tName = {cyclicAnimal1.Name}{Environment.NewLine}" +
+                                                             $"\tParent = Animal{Environment.NewLine}" +
+                                                             $"\t\tName = {cyclicAnimal2.Name}{Environment.NewLine}" +
+                                                             $"\t\tParent = {Environment.NewLine}" +
+                                                             $"\t\tKind = {cyclicAnimal2.Kind}{Environment.NewLine}" +
+                                                             $"\tKind = {cyclicAnimal1.Kind}{Environment.NewLine}");
         }
 
         [Test]

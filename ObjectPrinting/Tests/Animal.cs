@@ -10,7 +10,8 @@
         }
 
         public string Name { get; set; }
-        public string Kind { get; set; }
         public Animal Parent { get; set; }
+        public string Kind { get; set; }
+        
     }
 }
