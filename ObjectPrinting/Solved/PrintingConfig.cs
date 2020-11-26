@@ -135,18 +135,5 @@ namespace ObjectPrinting.Solved
             foreach (var fields in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 yield return fields;
         }
-
-        private Guid GetGuid(IEnumerable<MemberInfo> members, object obj)
-        {
-            var guidType = typeof(Guid);
-            foreach (var member in members)
-            {
-                if (member is PropertyInfo property && property.PropertyType == guidType)
-                    return (Guid)property.GetValue(obj)!;
-                if (member is FieldInfo field && field.FieldType == guidType)
-                    return (Guid)field.GetValue(obj)!;
-            }
-            return Guid.NewGuid();
-        }
     }
 }
