@@ -15,7 +15,7 @@ namespace ObjectPrinting
         private HashSet<MemberInfo> exludedMembers;
         internal Dictionary<Type, Delegate> typeMemberConfigs;
         internal Dictionary<MemberInfo, Delegate> nameMemberConfigs;
-        private HashSet<object> alreadySerialized;
+        private HashSet<object> serializingNow;
 
         public PrintingConfig()
         {
@@ -23,7 +23,7 @@ namespace ObjectPrinting
             exludedMembers = new HashSet<MemberInfo>();
             typeMemberConfigs = new Dictionary<Type, Delegate>();
             nameMemberConfigs = new Dictionary<MemberInfo, Delegate>();
-            alreadySerialized = new HashSet<object>();
+            serializingNow = new HashSet<object>(new ReferenceComparer());
         }
 
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -42,10 +42,14 @@ namespace ObjectPrinting
             return new MemberPrintingConfig<TOwner, TPropType>(this, member);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var propInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            exludedMembers.Add(propInfo);
+            var member = ((MemberExpression) memberSelector.Body).Member;
+            var propInfo = member as PropertyInfo;
+            var fieldInfo = member as FieldInfo;
+            if (propInfo == null && fieldInfo == null)
+                throw new ArgumentException("Can't extract member from expression body");
+            exludedMembers.Add(member);
             return this;
         }
 
@@ -65,7 +69,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            alreadySerialized = new HashSet<object>();
+            serializingNow = new HashSet<object>(new ReferenceComparer());
             return PrintToString(obj, 0);
         }
 
@@ -171,11 +175,11 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (alreadySerialized.Contains(obj))
-                return Environment.NewLine;
             if (obj == null)
                 return "null" + Environment.NewLine;
-            alreadySerialized.Add(obj);
+            if (serializingNow.Contains(obj))
+                return Environment.NewLine;
+            serializingNow.Add(obj);
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -185,17 +189,23 @@ namespace ObjectPrinting
             var objType = obj.GetType();
             if (finalTypes.Contains(objType))
             {
+                serializingNow.Remove(obj);
                 if (typeMemberConfigs.ContainsKey(objType))
                     return typeMemberConfigs[objType].DynamicInvoke(obj) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
 
+            string result;
             if (obj is IEnumerable collection)
             {
-                return PrintCollectionToString(collection, nestingLevel);
+                result = PrintCollectionToString(collection, nestingLevel);
+                serializingNow.Remove(obj);
+                return result;
             }
 
-            return SerializeMembers(obj, nestingLevel);
+            result = SerializeMembers(obj, nestingLevel);
+            serializingNow.Remove(obj);
+            return result;
         }
     }
 }
