@@ -29,11 +29,6 @@ namespace ObjectPrinting
         {
         }
 
-        public PrintingConfig(IEnumerable<Type> finalTypes)
-        {
-            this.finalTypes = finalTypes.ToImmutableHashSet();
-        }
-
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
         {
             excludingTypes = oldPrintingConfig.excludingTypes;
