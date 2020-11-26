@@ -42,8 +42,7 @@ namespace ObjectPrinting
             out PrintingConfig<TMember> config)
         {
             var members = GetMembersChain(member).ToArray();
-            PrintingConfigBase resultConfig;
-            var result = WithConfigForMemberOrDefault(members, new PrintingConfig<TMember>(), out resultConfig);
+            var result = WithConfigForMemberOrDefault(members, new PrintingConfig<TMember>(), out var resultConfig);
             config = ToGeneric<TMember>(resultConfig);
             return (PrintingConfig<TOwner>) result;
         }
