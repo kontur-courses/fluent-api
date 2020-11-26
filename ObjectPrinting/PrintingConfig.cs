@@ -78,13 +78,13 @@ namespace ObjectPrinting
 
             if (obj is IDictionary dictionary)
             {
-                sb.Append(EqualsSymbol);
+                sb.Append(" ");
                 sb.AppendLine(PrintDictionary(dictionary));
                 return sb.ToString();
             }
             if (obj is IEnumerable enumerable)
             {
-                sb.Append(EqualsSymbol);
+                sb.Append(" ");
                 sb.AppendLine(PrintEnumerable(enumerable));
                 return sb.ToString();
             }

@@ -178,6 +178,16 @@ namespace ObjectPrintingTests
             AssertPrinting(printed, expectedStrings, new string[0]);
         }
 
+        [Test]
+        public void NullShouldBePrintCorrect()
+        {
+            var config = new PrintingConfig<Dictionary<int, int>>();
+
+            var printed = config.PrintToString(null);
+
+            AssertPrinting(printed, new[] { "null" }, new string[0]);
+        }
+
         private void AssertPrinting(string text, IEnumerable<string> contains, IEnumerable<string> notContains)
         {
             foreach (var item in contains)
