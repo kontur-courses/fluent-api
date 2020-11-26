@@ -5,6 +5,7 @@
         private static int _id;
         public int Id { get; set; }
         public Node PreviousNode { get; set; }
+        public Node NextNode { get; set; }
 
         public Node()
         {

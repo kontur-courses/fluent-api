@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -38,7 +39,7 @@ namespace ObjectPrinting.PrintingConfig
 
         public PrintingConfig<TOwner> ExcludingProperty<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
         {
-            excludedProperties.Add(GetPropertyName(memberSelector));
+            excludedProperties.Add(GetMemberName(memberSelector));
             return this;
         }
 
@@ -57,7 +58,7 @@ namespace ObjectPrinting.PrintingConfig
         public PropertyPrintingConfig<TOwner, TPropType> PrintProperty<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyName(memberSelector));
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetMemberName(memberSelector));
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> PrintProperty<TPropType>()
@@ -85,7 +86,7 @@ namespace ObjectPrinting.PrintingConfig
 
             if (type.IsClass)
                 printedObjects.Add(obj);
-            if (finalTypes.Contains(type))
+            if (type.IsPrimitive || finalTypes.Contains(type))
                 return objectPrinting + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
@@ -95,9 +96,9 @@ namespace ObjectPrinting.PrintingConfig
                 foreach (var propInfo in type.GetProperties())
                 {
                     if (excludedTypes.Contains(propInfo.PropertyType)
-                        || excludedProperties.Contains(propInfo.Name)) continue;
+                        || excludedProperties.Contains(GetFullMemberName(propInfo))) continue;
                     var printedObject = PrintToString(
-                        propInfo.GetValue(obj), nestingLevel + 1, printedObjects, propInfo);
+                        propInfo.GetValue(obj), nestingLevel + 1, printedObjects.ToHashSet(), propInfo);
                     sb.Append($"{indentation}{propInfo.Name} = {printedObject}");
                 }
 
@@ -106,16 +107,15 @@ namespace ObjectPrinting.PrintingConfig
 
         private string GetPrintedObject(object obj, Type type, PropertyInfo propertyInfo)
         {
-            var objectPrinting = type.Name;
-            var propertyName = propertyInfo?.Name;
             if (typesPrintingMethods.TryGetValue(type, out var printMethod))
                 return printMethod(obj);
+            var propertyName = GetFullMemberName(propertyInfo);
             if (propertyInfo != null &&
                 propertiesPrintingMethods.TryGetValue(propertyName, out printMethod))
                 return printMethod(obj);
-            if (finalTypes.Contains(type))
+            if (type.IsPrimitive || finalTypes.Contains(type))
                 return obj.ToString();
-            return objectPrinting;
+            return type.Name;
         }
 
         private string GetPrintedEnumerableObj(IEnumerable obj, int nestingLevel, HashSet<object> printedObjects)
@@ -136,7 +136,7 @@ namespace ObjectPrinting.PrintingConfig
             var count = 0;
             foreach (var element in obj)
                 sb.Append($"{indentation}{count++}: " +
-                          $"{PrintToString(element, nestingLevel + 1, printedObjects)}");
+                          $"{PrintToString(element, nestingLevel + 1, printedObjects.ToHashSet())}");
         }
 
         private void AddPrintingDictPairs(IDictionary dict, StringBuilder sb, 
@@ -146,14 +146,20 @@ namespace ObjectPrinting.PrintingConfig
             foreach (DictionaryEntry pair in dict)
                 sb.Append(
                     $"{indentation}{pair.Key}: " +
-                    $"{PrintToString(pair.Value, nestingLevel + 1, printedObjects)}");
+                    $"{PrintToString(pair.Value, nestingLevel + 1, printedObjects.ToHashSet())}");
         }
 
-        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private string GetMemberName<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo =
-                ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
-            return propertyInfo?.Name;
+            if (memberSelector.Body is MemberExpression expression)
+                return GetFullMemberName(expression.Member);
+
+            throw new ArgumentException("Member selector body must be MemberExpression type");
+        }
+
+        private string GetFullMemberName(MemberInfo memberInfo)
+        {
+            return $"{memberInfo?.DeclaringType?.FullName}.{memberInfo?.Name}";
         }
     }
 }

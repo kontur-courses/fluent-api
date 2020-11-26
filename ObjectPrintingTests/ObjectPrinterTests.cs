@@ -84,7 +84,7 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>()
                 .PrintProperty(pers => pers.Id)
-                .WithConfig(guid => $"Person id is {guid.ToString()}");
+                .WithConfig(guid => $"Person id is {guid}");
             var result = printer.PrintToString(person);
 
             result.Should().Be(
@@ -99,7 +99,7 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>()
                 .PrintProperty(pers => pers.Id)
-                .WithConfig(guid => $"Person id is {guid.ToString()}")
+                .WithConfig(guid => $"Person id is {guid}")
                 .PrintProperty(pers => pers.Name)
                 .WithConfig(str => $"Person name is {str}");
             var result = printer.PrintToString(person);
@@ -224,13 +224,25 @@ namespace ObjectPrintingTests
             var node2 = new Node {PreviousNode = node1};
             node1.PreviousNode = node2;
 
-            var result = node1.PrintToString();
+            var result = node1.PrintToString(
+                conf => conf.ExcludingProperty(node => node.NextNode));
+            
             result.Should().Be(
                 $"{node1.GetType().Name}{newLine}" +
                 $"\tId = {node1.Id}{newLine}" +
                 $"\tPreviousNode = {node1.PreviousNode.GetType().Name}{newLine}" +
                 $"\t\tId = {node2.Id}{newLine}" +
                 $"\t\tPreviousNode = Loopback detected{newLine}");
+        }
+        
+        [Test]
+        public void PrintObject_PrintWithoutLoopback()
+        {
+            var node1 = new Node();
+            var node2 = new Node { PreviousNode = node1, NextNode = node1 };
+
+            var result = node2.PrintToString();
+            result.Should().NotContain("Loopback detected");
         }
 
         [Test]
@@ -242,8 +254,9 @@ namespace ObjectPrintingTests
             var node4 = new Node {Id = 4, PreviousNode = node3};
             node1.PreviousNode = node4;
 
-            var result = node1.PrintToString();
-            Console.WriteLine(result);
+            var result = node1.PrintToString(
+                conf => conf.ExcludingProperty(node => node.NextNode));
+
             result.Should().Be(
                 $"{node1.GetType().Name}{newLine}" +
                 $"\tId = {node1.Id}{newLine}" +
@@ -337,5 +350,18 @@ namespace ObjectPrintingTests
         }
 
         #endregion
+
+        [Test]
+        public void PrintObject_PrintPersonWithPersonProperty()
+        {
+            var person1 = new Person1 { Name = "Greetings", Friend = new Person { Name = "Hello" } };
+            
+            var printer = ObjectPrinter.For<Person1>()
+                .PrintProperty(b => b.Friend.Name)
+                .TrimmedToLength(2);
+            var actual = printer.PrintToString(person1);
+            
+            actual.Should().Contain("Greetings");
+        }
     }
 }
