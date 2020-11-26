@@ -241,8 +241,8 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(computer).Should().Be($"Computer{Environment.NewLine}" +
                                                         $"\tCPUName = {computer.CPUName}{Environment.NewLine}" +
-                                                        $"\tGPUName = {computer.GPUName + "123"}{Environment.NewLine}" +
-                                                        $"\tRAM = {computer.RAM}{Environment.NewLine}");
+                                                        $"\tRAM = {computer.RAM}{Environment.NewLine}" +
+                                                        $"\tGPUName = {computer.GPUName + "123"}{Environment.NewLine}");
         }
 
         [Test]
@@ -261,6 +261,66 @@ namespace ObjectPrinting.Tests
                                                        $"\t\tFriends = null{Environment.NewLine}" +
                                                        $"\t\tFavoriteRealValues = null{Environment.NewLine}" +
                                                        $"\t\tMarks = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void ExcludingFields()
+        {
+            var printer = ObjectPrinter.For<Computer>()
+                .Excluding(computer => computer.RAM);
+
+            printer.PrintToString(computer).Should().Be($"Computer{Environment.NewLine}" +
+                                                        $"\tCPUName = {computer.CPUName}{Environment.NewLine}" +
+                                                        $"\tGPUName = {computer.GPUName}{Environment.NewLine}");
+        }
+
+
+        [Test]
+        public void StringsWithTheSameValue_ShouldNotBeTreatedAsCyclicReference()
+        {
+            var teacher = new Teacher("Ivan", "Ivan", new Student("Ivan"));
+            var printer = ObjectPrinter.For<Teacher>();
+
+            printer.PrintToString(teacher).Should().Be($"Teacher{Environment.NewLine}" +
+                                                       $"\tName = Ivan{Environment.NewLine}" +
+                                                       $"\tPosition = Ivan{Environment.NewLine}" +
+                                                       $"\tBestStudent = Student{Environment.NewLine}" +
+                                                       $"\t\tName = Ivan{Environment.NewLine}" +
+                                                       $"\t\tFriends = null{Environment.NewLine}" +
+                                                       $"\t\tFavoriteRealValues = null{Environment.NewLine}" +
+                                                       $"\t\tMarks = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void SameObjectOnTheSameNestingLevel_ShouldNotBeTreatedAsCyclicReference()
+        {
+            var human1 = new Human("Richard", null, null);
+            var human2 = new Human("Lie", human1, human1);
+            var printer = ObjectPrinter.For<Human>();
+
+            printer.PrintToString(human2).Should().Be($"Human{Environment.NewLine}" +
+                                                      $"\tName = {human2.Name}{Environment.NewLine}" +
+                                                      $"\tBestFriend = Human{Environment.NewLine}" +
+                                                      $"\t\tName = {human1.Name}{Environment.NewLine}" +
+                                                      $"\t\tBestFriend = null{Environment.NewLine}" +
+                                                      $"\t\tFriend = null{Environment.NewLine}" +
+                                                      $"\tFriend = Human{Environment.NewLine}" +
+                                                      $"\t\tName = {human1.Name}{Environment.NewLine}" +
+                                                      $"\t\tBestFriend = null{Environment.NewLine}" +
+                                                      $"\t\tFriend = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void OverridenEquals_ShouldNotCauseFalseCyclicReferenceDetection()
+        {
+            var foo = new Foo {Name = "Hello", Next = new Foo {Name = "Hello"}};
+            var printer = ObjectPrinter.For<Foo>();
+            var actual = printer.PrintToString(foo);
+            actual.Should().Be($"Foo{Environment.NewLine}" +
+                               $"\tName = Hello{Environment.NewLine}" +
+                               $"\tNext = Foo{Environment.NewLine}" +
+                               $"\t\tName = Hello{Environment.NewLine}" +
+                               $"\t\tNext = null{Environment.NewLine}");
         }
     }
 }
