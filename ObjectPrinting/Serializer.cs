@@ -42,7 +42,7 @@ namespace ObjectPrinting
 
             _serializedObjects.Add(obj);
 
-            return obj is IEnumerable enumerable
+            return obj is ICollection enumerable
                 ? SerializeEnumerable(enumerable, nestingLevel + 1)
                 : SerializeMember(obj, nestingLevel);
         }
@@ -84,7 +84,7 @@ namespace ObjectPrinting
             foreach (var element in enumerable)
                 sb.Append($"{GetIndentation('\t', nestingLevel + 1)}{Serialize(element, nestingLevel + 1)}");
 
-            sb.Append($"{GetIndentation('\t', nestingLevel)}]{Environment.NewLine}"); sb.Append(']'); sb.Append(Environment.NewLine);
+            sb.Append($"{GetIndentation('\t', nestingLevel)}]{Environment.NewLine}");
             
             return sb.ToString();
         }
