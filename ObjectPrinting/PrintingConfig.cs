@@ -172,7 +172,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (alreadySerialized.Contains(obj))
-                return "";
+                return Environment.NewLine;
             if (obj == null)
                 return "null" + Environment.NewLine;
             alreadySerialized.Add(obj);
