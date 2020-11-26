@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Printer;
@@ -14,51 +11,53 @@ namespace ObjectPrintingTests
     [TestFixture]
     public class PrintingConfigTests
     {
-        private readonly Person person = new Person()
-        {
-            Id = 22,
-            Age = 12,
-            Name = "Jeff",
-            Width = 99,
-            Height = 33.4, 
-        };
-        private readonly PathNode pathNodeWithRecursiveLinks = new PathNode()
-        {
-            Id = 1
-        };
-        private readonly PathNode pathNode = new PathNode()
-        {
-            Id = 100
-        };
-
-
-        private CultureInfo specificCulture;
-
         [SetUp]
         public void SetUp()
         {
             specificCulture = new CultureInfo("ru-RU")
             {
-                NumberFormat = new NumberFormatInfo()
+                NumberFormat = new NumberFormatInfo
                 {
                     NaNSymbol = "https://habr.com/ru/news/t/526412/"
                 }
             };
 
-            var node = new PathNode()
+            var node = new PathNode
             {
                 Id = 2
             };
             pathNodeWithRecursiveLinks.Right = node;
             node.Right = pathNodeWithRecursiveLinks;
 
-            node = new PathNode()
+            node = new PathNode
             {
                 Id = 101
             };
             pathNode.Right = node;
             pathNode.Left = node;
         }
+
+        private readonly Person person = new Person
+        {
+            Id = 22,
+            Age = 12,
+            Name = "Jeff",
+            Width = 99,
+            Height = 33.4
+        };
+
+        private readonly PathNode pathNodeWithRecursiveLinks = new PathNode
+        {
+            Id = 1
+        };
+
+        private readonly PathNode pathNode = new PathNode
+        {
+            Id = 100
+        };
+
+
+        private CultureInfo specificCulture;
 
         [Test]
         public void ExcludePropertyByType()
@@ -68,7 +67,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "Name", "SleptToday" }, new[] { "Age", "Id" });
+            AssertPrinting(printed, new[] {"Name", "SleptToday"}, new[] {"Age", "Id"});
         }
 
         [Test]
@@ -80,7 +79,7 @@ namespace ObjectPrintingTests
             person.Height = double.NaN;
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "https://habr.com/ru/news/t/526412/" }, new string[0]);
+            AssertPrinting(printed, new[] {"https://habr.com/ru/news/t/526412/"}, new string[0]);
         }
 
         [Test]
@@ -91,7 +90,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "This is int:" }, new string[0]);
+            AssertPrinting(printed, new[] {"This is int:"}, new string[0]);
         }
 
         [Test]
@@ -103,7 +102,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "Secret number", "Around 33" }, new[] { "99" });
+            AssertPrinting(printed, new[] {"Secret number", "Around 33"}, new[] {"99"});
         }
 
         [Test]
@@ -114,7 +113,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "Id" }, new[] { "Age" });
+            AssertPrinting(printed, new[] {"Id"}, new[] {"Age"});
         }
 
         [Test]
@@ -125,7 +124,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(person);
 
-            AssertPrinting(printed, new[] { "Je" }, new[] { "ff" });
+            AssertPrinting(printed, new[] {"Je"}, new[] {"ff"});
         }
 
         [Test]
@@ -135,7 +134,7 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(pathNodeWithRecursiveLinks);
 
-            AssertPrinting(printed, new[] { "Recursive link" }, new string[0]);
+            AssertPrinting(printed, new[] {"Recursive link"}, new string[0]);
         }
 
         [Test]
@@ -145,7 +144,38 @@ namespace ObjectPrintingTests
 
             var printed = config.PrintToString(pathNode);
 
-            AssertPrinting(printed, new string[0], new[] { "Recursive link" });
+            AssertPrinting(printed, new string[0], new[] {"Recursive link"});
+        }
+
+        [Test]
+        public void CanBePrintEnumerable()
+        {
+            var config = new PrintingConfig<List<int>>();
+            var list = new List<int>() { 1, 99, 2 };
+            var expectedString = "[ 1, 99, 2 ]";
+
+            var printed = config.PrintToString(list);
+
+            AssertPrinting(printed, new[] { expectedString }, new string[0]);
+        }
+
+        [Test]
+        public void CanBePrintDictionary()
+        {
+            var config = new PrintingConfig<Dictionary<string, string>>();
+            var dictionary = new Dictionary<string, string>()
+            {
+                { "hello", "world" },
+                { "1", "2" }
+            };
+            var expectedStrings = new List<string>()
+            {
+                "{ hello: world }", "{ 1: 2 }"
+            };
+
+            var printed = config.PrintToString(dictionary);
+
+            AssertPrinting(printed, expectedStrings, new string[0]);
         }
 
         private void AssertPrinting(string text, IEnumerable<string> contains, IEnumerable<string> notContains)

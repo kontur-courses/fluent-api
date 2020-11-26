@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Linq;
 using ObjectPrinting.Printer;
 
 namespace ObjectPrinting
@@ -11,6 +13,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private const string RecursiveMessage = "[Recursive link]";
+        private const string EqualsSymbol = " = ";
 
         protected readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -69,9 +72,24 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            sb.Append(type.Name);
             if (parents.Contains(obj))
                 return RecursiveMessage + Environment.NewLine;
+
+            if (obj is IDictionary dictionary)
+            {
+                sb.Append(EqualsSymbol);
+                sb.AppendLine(PrintDictionary(dictionary));
+                return sb.ToString();
+            }
+            if (obj is IEnumerable enumerable)
+            {
+                sb.Append(EqualsSymbol);
+                sb.AppendLine(PrintEnumerable(enumerable));
+                return sb.ToString();
+            }
+
+            sb.AppendLine();
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (ExcludingTypes.Contains(propertyInfo.PropertyType))
@@ -88,11 +106,46 @@ namespace ObjectPrinting
                     result = PrintToString(value, nestingLevel + 1, parents);
                     parents.Remove(obj);
                 }
-                sb.Append(identation + propertyInfo.Name + " = " + result);
-                
+                sb.Append(identation + propertyInfo.Name + EqualsSymbol + result);
             }
 
             return sb.ToString();
+        }
+
+        private string PrintEnumerable(IEnumerable enumerable)
+        {
+            var builder = new StringBuilder();
+            builder.Append("[ ");
+            var first = true;
+            foreach (var item in enumerable)
+            {
+                if (!first)
+                    builder.Append(", ");
+                builder.Append(item);
+                first = false;
+            }
+
+            builder.Append(" ]");
+            return builder.ToString();
+        }
+
+        private string PrintDictionary(IDictionary dictionary)
+        {
+            var builder = new StringBuilder();
+            builder.Append("{ ");
+            var first = true;
+            var keyEnumerator = dictionary.Keys.GetEnumerator();
+            var valueEnumerator = dictionary.Values.GetEnumerator();
+            while (keyEnumerator.MoveNext() && valueEnumerator.MoveNext())
+            {
+                if (!first)
+                    builder.Append(", ");
+                builder.Append("{ " + keyEnumerator.Current + ": " + valueEnumerator.Current + " }");
+                first = false;
+            }
+
+            builder.Append(" }");
+            return builder.ToString();
         }
 
         private string FormatFinalType(Type type, object obj)
