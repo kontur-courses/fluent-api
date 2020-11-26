@@ -112,6 +112,16 @@ namespace ObjectPrinting.Tests
             printer = printer.SetTrimming(x => x.Name, 4);
             printer.PrintToString(person).Should().Contain($"{nameof(person.Name)} = Alex\r\n");
         }
+        
+        [Test]
+        public void PrintToString_NotThrowsNullReferenceException_IfPropertyIsNull()
+        {
+            printer = printer
+                .SetAlternateSerialize(x=>x.Name, x=>null)
+                .SetTrimming(x => x.Name, 4);
+            Action act = () => printer.PrintToString(person);
+            act.Should().NotThrow<NullReferenceException>();
+        }
 
         [Test]
         public void PrintToString_PrintingTrimmedField()
@@ -172,7 +182,6 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(array).Should().Be("Int32[]\r\n" +
                                                      "{\r\n" +
                                                      "\t0\r\n" +
-                                                     "\r\n" +
                                                      "\t1\r\n" +
                                                      "}\r\n");
         }
@@ -185,7 +194,6 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(list).Should().Be("List`1\r\n" +
                                                     "{\r\n" +
                                                     "\t0\r\n" +
-                                                    "\r\n" +
                                                     "\t1\r\n" +
                                                     "}\r\n");
         }
@@ -198,7 +206,6 @@ namespace ObjectPrinting.Tests
                                                            "\tCodes = List`1\r\n" +
                                                            "\t{\r\n" +
                                                            "\t\t0\r\n" +
-                                                           "\r\n" +
                                                            "\t\t1\r\n" +
                                                            "\t}\r\n");
         }
@@ -217,7 +224,6 @@ namespace ObjectPrinting.Tests
                                                           "\tKeyValuePair`2\r\n" +
                                                           "\t\tKey = 0\r\n" +
                                                           "\t\tValue = 1\r\n" +
-                                                          "\r\n" +
                                                           "\tKeyValuePair`2\r\n" +
                                                           "\t\tKey = 2\r\n" +
                                                           "\t\tValue = 3\r\n" +
