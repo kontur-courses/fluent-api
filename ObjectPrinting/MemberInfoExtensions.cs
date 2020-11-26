@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -11,8 +9,8 @@ namespace ObjectPrinting
         {
             return memberInfo.MemberType switch
             {
-                MemberTypes.Field => ((FieldInfo) memberInfo).GetValue(forObject),
-                MemberTypes.Property => ((PropertyInfo) memberInfo).GetValue(forObject),
+                MemberTypes.Field => ((FieldInfo)memberInfo).GetValue(forObject),
+                MemberTypes.Property => ((PropertyInfo)memberInfo).GetValue(forObject),
                 _ => throw new NotImplementedException()
             };
         }
@@ -21,8 +19,8 @@ namespace ObjectPrinting
         {
             return memberInfo.MemberType switch
             {
-                MemberTypes.Field => ((FieldInfo) memberInfo).FieldType,
-                MemberTypes.Property => ((PropertyInfo) memberInfo).PropertyType,
+                MemberTypes.Field => ((FieldInfo)memberInfo).FieldType,
+                MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType,
                 _ => throw new NotImplementedException()
             };
         }

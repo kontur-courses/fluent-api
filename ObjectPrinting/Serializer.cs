@@ -4,13 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework;
 
 namespace ObjectPrinting
 {
     public class Serializer<TOwner>
     {
-        private readonly Type[] _finalTypes = new Type[]
+        private readonly Type[] _finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(char), typeof(Guid), typeof(bool)
@@ -36,7 +35,7 @@ namespace ObjectPrinting
 
             if (IsFinalType(objType) || objType.IsPrimitive)
                 return obj + Environment.NewLine;
-            
+
             if (IsLoop(obj))
                 return $"{objType.Name}. Here's a loop." + Environment.NewLine;
 
@@ -85,7 +84,7 @@ namespace ObjectPrinting
                 sb.Append($"{GetIndentation('\t', nestingLevel + 1)}{Serialize(element, nestingLevel + 1)}");
 
             sb.Append($"{GetIndentation('\t', nestingLevel)}]{Environment.NewLine}");
-            
+
             return sb.ToString();
         }
 

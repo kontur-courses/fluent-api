@@ -42,8 +42,8 @@ namespace ObjectPrinting.Tests
 
             var stringMembersNames = person.GetType().GetFieldsAndProperties()
                 .Where(x => x.GetValueType() == typeof(string))
-                .Select(x=>x.Name);
-          
+                .Select(x => x.Name);
+
             printer.PrintToString(person).Should().NotContainAll(stringMembersNames);
         }
 
@@ -93,10 +93,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PringToString_Correct_WhenUseCultureForDateTime()
         {
-            person.Birthday = new DateTime(2001, 11,27);
+            person.Birthday = new DateTime(2001, 11, 27);
 
             printer.Printing<DateTime>().Using(new CultureInfo("ru-RU"));
-            
+
             printer.PrintToString(person).Should().Contain("27.11.2001 0:00:00");
         }
 
@@ -110,7 +110,7 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).Should()
                 .ContainAll($"Name = aAaaA{Environment.NewLine}",
-                $"Nickname = bBbb{Environment.NewLine}");
+                    $"Nickname = bBbb{Environment.NewLine}");
         }
 
         [Test]

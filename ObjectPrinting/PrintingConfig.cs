@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -17,24 +15,27 @@ namespace ObjectPrinting
 
         HashSet<MemberInfo> IPrintingConfig<TOwner>.ExcludedMembers => _excludedMembers;
 
-        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.SpecialSerializationTypes { get; } = new Dictionary<Type, Delegate>();
+        Dictionary<Type, Delegate> IPrintingConfig<TOwner>.SpecialSerializationTypes { get; } =
+            new Dictionary<Type, Delegate>();
 
-        Dictionary<MemberInfo, Delegate> IPrintingConfig<TOwner>.SpecialSerializationMembers { get; } = new Dictionary<MemberInfo, Delegate>();
+        Dictionary<MemberInfo, Delegate> IPrintingConfig<TOwner>.SpecialSerializationMembers { get; } =
+            new Dictionary<MemberInfo, Delegate>();
 
         public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new MemberPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
+            var member = ((MemberExpression) memberSelector.Body).Member;
             return new MemberPrintingConfig<TOwner, TPropType>(this, member);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
+            var member = ((MemberExpression) memberSelector.Body).Member;
             _excludedMembers.Add(member);
             return this;
         }

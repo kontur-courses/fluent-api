@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class MemberPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType> 
+    public class MemberPrintingConfig<TOwner, TPropType> : IMemberPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo _member;
 
         public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member = null)
-        { 
+        {
             this.printingConfig = printingConfig;
             _member = member;
         }
