@@ -9,6 +9,13 @@ namespace ObjectPrinterTests.ForSerialization
         public static readonly Dictionary<List<int>, int[]> Collection = new Dictionary<List<int>, int[]>
             {[new List<int> {1, 2, 3}] = new[] {5, 7}, [new List<int> {7, 9}] = new[] {10}};
 
+        public static readonly Employee EmployeeWithFewSubordinated = new Employee
+        {
+            Name = "Ivan",
+            Subordinate = new Employee
+                {Name = "Jack", Subordinate = new Employee {Name = "Kate", Subordinate = new Employee {Name = "Danil"}}}
+        };
+
         public static readonly Employee EmployeeWithManySubordinates = new Employee
         {
             Name = "1",

@@ -128,6 +128,16 @@ namespace ObjectPrinterTests
         }
 
         [Test]
+        public void TrimmedToLength_ThrowException_WhenMaxLengthOfCroppedStringNotPositive()
+        {
+            var act = new Action(() => _personPrinter
+                .Printing<string>()
+                .TrimmedToLength(0));
+
+            act.Should().Throw<Exception>();
+        }
+
+        [Test]
         public void PrintToString_StringWithTrimmedStringMembers_WhenStringMembersAreTruncated()
         {
             var act = _personPrinter
@@ -144,13 +154,22 @@ namespace ObjectPrinterTests
         }
 
         [Test]
-        public void TrimmedToLength_ThrowException_WhenMaxLengthOfCroppedStringNotPositive()
+        public void PrintToString_StringWithTrimmedCertainMember_WhenSpecificStringMemberIsTruncated()
         {
-            var act = new Action(() => _personPrinter
-                .Printing<string>()
-                .TrimmedToLength(0));
+            var printer = ObjectPrinter.For<Employee>();
 
-            act.Should().Throw<Exception>();
+            var act = printer
+                .Printing(employee => employee.Subordinate.Subordinate.Subordinate.Name)
+                .TrimmedToLength(3)
+                .PrintToString(Instances.EmployeeWithFewSubordinated);
+
+            act.Should()
+                .Contain(Instances.EmployeeWithFewSubordinated.Subordinate.Subordinate.Subordinate.Name.Substring(0, 3))
+                .And.NotContain(Instances.EmployeeWithFewSubordinated.Subordinate.Subordinate.Name.Substring(0, 3) +
+                                Environment.NewLine)
+                .And.NotContain(Instances.EmployeeWithFewSubordinated.Subordinate.Name.Substring(0, 3) +
+                                Environment.NewLine)
+                .And.NotContain(Instances.EmployeeWithFewSubordinated.Name.Substring(0, 3) + Environment.NewLine);
         }
 
         [Test]

@@ -6,19 +6,19 @@ namespace ObjectPrinting.Core
     public class MemberPrintingConfig<TOwner, TMemberType> : IMemberPrintingConfig<TOwner>
     {
         private readonly PrintingConfig<TOwner> _parentConfig;
-        private readonly ElementInfo _elementInfo;
+        private readonly string _memberFullName;
         PrintingConfig<TOwner> IMemberPrintingConfig<TOwner>.ParentConfig => _parentConfig;
 
-        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, ElementInfo elementInfo = null)
+        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, string memberFullName = null)
         {
             _parentConfig = parentConfig;
-            _elementInfo = elementInfo;
+            _memberFullName = memberFullName;
         }
 
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> print)
         {
-            if (_elementInfo != null)
-                ((IPrintingConfig) _parentConfig).AlternativeSerializationByElementsInfo[_elementInfo] =
+            if (_memberFullName != null)
+                ((IPrintingConfig) _parentConfig).AlternativeSerializationByFullName[_memberFullName] =
                     print;
             else
                 ((IPrintingConfig) _parentConfig).AlternativeSerializationByTypes[typeof(TMemberType)]

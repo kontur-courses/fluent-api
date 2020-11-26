@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 using ObjectPrinting.Interfaces;
 
 namespace ObjectPrinting.Core
@@ -12,9 +12,9 @@ namespace ObjectPrinting.Core
     public class PrintingConfig<TOwner> : IPrintingConfig
     {
         private readonly Dictionary<Type, Delegate> _alternativeSerializationByTypes;
-        private readonly Dictionary<ElementInfo, Delegate> _alternativeSerializationByElementsInfo;
+        private readonly Dictionary<string, Delegate> _alternativeSerializationByFullName;
         private readonly HashSet<Type> _excludingTypes;
-        private readonly HashSet<ElementInfo> _excludingElements;
+        private readonly HashSet<string> _excludingMemberNames;
         private readonly Dictionary<object, int> _visitedInstances;
 
         private static HashSet<Type> _finalTypes = new HashSet<Type>
@@ -27,15 +27,15 @@ namespace ObjectPrinting.Core
         Dictionary<Type, Delegate> IPrintingConfig.AlternativeSerializationByTypes =>
             _alternativeSerializationByTypes;
 
-        Dictionary<ElementInfo, Delegate> IPrintingConfig.AlternativeSerializationByElementsInfo
-            => _alternativeSerializationByElementsInfo;
+        Dictionary<string, Delegate> IPrintingConfig.AlternativeSerializationByFullName
+            => _alternativeSerializationByFullName;
 
         public PrintingConfig()
         {
             _alternativeSerializationByTypes = new Dictionary<Type, Delegate>();
-            _alternativeSerializationByElementsInfo = new Dictionary<ElementInfo, Delegate>();
+            _alternativeSerializationByFullName = new Dictionary<string, Delegate>();
             _excludingTypes = new HashSet<Type>();
-            _excludingElements = new HashSet<ElementInfo>();
+            _excludingMemberNames = new HashSet<string>();
             _visitedInstances = new Dictionary<object, int>();
         }
 
@@ -49,20 +49,15 @@ namespace ObjectPrinting.Core
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new Exception("Expression type must be MemberExpression");
-            if (memberExpression.Member is PropertyInfo propertyInfo)
-                return new MemberPrintingConfig<TOwner, TMemberType>(this, new ElementInfo(propertyInfo));
             return new MemberPrintingConfig<TOwner, TMemberType>(this,
-                new ElementInfo(memberExpression.Member as FieldInfo));
+                $"{memberExpression.GetFullNestedName()}.{memberExpression.Member.Name}");
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new Exception("Expression type must be MemberExpression");
-            if (memberExpression.Member is PropertyInfo propertyInfo)
-                _excludingElements.Add(new ElementInfo(propertyInfo));
-            else
-                _excludingElements.Add(new ElementInfo(memberExpression.Member as FieldInfo));
+            _excludingMemberNames.Add($"{memberExpression.GetFullNestedName()}.{memberExpression.Member.Name}");
             return this;
         }
 
@@ -77,19 +72,19 @@ namespace ObjectPrinting.Core
         {
             if (_visitedInstances.ContainsKey(obj))
                 ClearTempStoragesBeforeNewInstanceSerialization();
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, "");
         }
 
         private void ClearTempStoragesBeforeNewInstanceSerialization()
         {
             _alternativeSerializationByTypes.Clear();
-            _alternativeSerializationByElementsInfo.Clear();
+            _alternativeSerializationByFullName.Clear();
             _visitedInstances.Clear();
-            _excludingElements.Clear();
+            _excludingMemberNames.Clear();
             _excludingTypes.Clear();
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, string partName)
         {
             if (nestingLevel > MaxNestingLevel)
                 return "Nesting level exceeded\r\n";
@@ -104,7 +99,7 @@ namespace ObjectPrinting.Core
                 _visitedInstances[obj] = nestingLevel;
             return typeof(ICollection).IsAssignableFrom(type)
                 ? GetSerializedCollection(obj, nestingLevel)
-                : GetSerializedMembers(obj, nestingLevel);
+                : GetSerializedMembers(obj, nestingLevel, partName.Length == 0 ? type.Name : partName);
         }
 
         private bool IsContainsCycle(object currentObject, int currentNestingLevel)
@@ -121,40 +116,32 @@ namespace ObjectPrinting.Core
             var result = new StringBuilder().AppendLine(obj.GetType().Name);
             var collection = (IEnumerable) obj;
             foreach (var element in collection)
-                result.Append(indentation + PrintToString(element, nestingLevel + 1));
+                result.Append(indentation + PrintToString(element, nestingLevel + 1, ""));
             return result.ToString();
         }
 
-        private string GetSerializedMembers(object obj, int nestingLevel)
+        private string GetSerializedMembers(object obj, int nestingLevel, string partName)
         {
             var serialized = new StringBuilder().AppendLine(obj.GetType().Name);
-            foreach (var elementInfo in GetElementsInfo(obj).Where(IsNotExcludingMember))
+            foreach (var elementInfo in obj.GetElementsInfo(partName).Where(IsNotExcludingMember))
                 serialized.Append(GetSerializedMember(obj, elementInfo, nestingLevel));
             return serialized.ToString();
-        }
-
-        private static IEnumerable<ElementInfo> GetElementsInfo(object obj)
-        {
-            var objectType = obj.GetType();
-            foreach (var propertyInfo in objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                yield return new ElementInfo(propertyInfo);
-            foreach (var fieldInfo in objectType.GetFields(BindingFlags.Public | BindingFlags.Instance))
-                yield return new ElementInfo(fieldInfo);
         }
 
         private bool IsNotExcludingMember(ElementInfo elementInfo)
         {
             return !_excludingTypes.Contains(elementInfo.ElementType) &&
-                   !_excludingElements.Contains(elementInfo);
+                   !_excludingMemberNames.Contains(elementInfo.FullName);
         }
 
         private string GetSerializedMember(object obj, ElementInfo elementInfo, int nestingLevel)
         {
             var member = new StringBuilder();
-            var partResult = new string('\t', nestingLevel + 1) + elementInfo.ElementName + " = ";
+            var partResult = new string('\t', nestingLevel + 1) + elementInfo.Name + " = ";
             var elementValue = elementInfo.GetValue(obj);
             if (elementValue != null &&
-                _alternativeSerializationByElementsInfo.TryGetValue(elementInfo, out var certainMemberSerialization))
+                _alternativeSerializationByFullName.TryGetValue(elementInfo.FullName,
+                    out var certainMemberSerialization))
             {
                 var serializationResult = (string) certainMemberSerialization
                     .DynamicInvoke(elementValue);
@@ -168,7 +155,7 @@ namespace ObjectPrinting.Core
                     .DynamicInvoke(elementValue);
                 member.Append(partResult + serializationResult + Environment.NewLine);
             }
-            else member.Append(partResult + PrintToString(elementValue, nestingLevel + 1));
+            else member.Append(partResult + PrintToString(elementValue, nestingLevel + 1, elementInfo.FullName));
 
             return member.ToString();
         }

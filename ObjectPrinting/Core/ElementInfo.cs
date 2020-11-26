@@ -6,38 +6,26 @@ namespace ObjectPrinting.Core
     public class ElementInfo
     {
         public readonly Type ElementType;
-        public readonly string ElementName;
+        public readonly string FullName;
+        public readonly string Name;
         private readonly Func<object, object> _getValueFunc;
-        private readonly MemberInfo _memberInfo;
 
         public object GetValue(object instance) => _getValueFunc(instance);
 
-        public ElementInfo(PropertyInfo propertyInfo)
+        public ElementInfo(PropertyInfo propertyInfo, string fullName)
         {
             ElementType = propertyInfo.PropertyType;
-            ElementName = propertyInfo.Name;
+            FullName = $"{fullName}.{propertyInfo.Name}";
+            Name = propertyInfo.Name;
             _getValueFunc = propertyInfo.GetValue;
-            _memberInfo = propertyInfo;
         }
 
-        public ElementInfo(FieldInfo fieldInfo)
+        public ElementInfo(FieldInfo fieldInfo, string fullName)
         {
             ElementType = fieldInfo.FieldType;
-            ElementName = fieldInfo.Name;
+            FullName = $"{fullName}.{fieldInfo.Name}";
+            Name = fieldInfo.Name;
             _getValueFunc = fieldInfo.GetValue;
-            _memberInfo = fieldInfo;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj != null && obj is ElementInfo elementInfo)
-                return elementInfo._memberInfo == _memberInfo;
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return _memberInfo.GetHashCode();
         }
     }
 }
