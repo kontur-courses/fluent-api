@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Globalization;
-using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        public readonly string MemberName;
+        private readonly string memberName;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
@@ -16,34 +14,30 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberName)
         {
-            this.MemberName = memberName;
+            this.memberName = memberName;
             this.printingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (MemberName is null)
+            if (memberName is null)
             {
                 printingConfig.AddSerializationForType(typeof(TPropType), print);
             }
             else
             {
-                Console.WriteLine(MemberName);
-                printingConfig.AddSerializationForProperty(MemberName, print);
+                printingConfig.AddSerializationForProperty(memberName, print);
             }
             return printingConfig;
         }
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            printingConfig.AddCultureForNumber(typeof(TPropType), culture);
-            return printingConfig;
-        }
-        
+
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        string  IPropertyPrintingConfig<TOwner, TPropType>.MemberName => memberName;
     }
     
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
+        string MemberName { get; }
     }
 }

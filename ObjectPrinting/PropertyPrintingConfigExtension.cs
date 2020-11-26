@@ -11,10 +11,11 @@ namespace ObjectPrinting
         
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var printingConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-                printingConfig.AddSerializationForProperty<string>(
-                    propConfig.MemberName, str => str.Substring(0, maxLen));
-            return printingConfig;
+            Func<string, string> trim = 
+                str => (maxLen > str.Length) ? str : str.Substring(0, maxLen);
+            var iPropConfig = (IPropertyPrintingConfig<TOwner, string>) propConfig;
+            iPropConfig.ParentConfig.AddSerializationForProperty(iPropConfig.MemberName, trim);
+            return iPropConfig.ParentConfig;
         }
     }
 }

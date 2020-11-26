@@ -4,24 +4,22 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
-using Microsoft.VisualBasic;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly List<Delegate> excludedFields = new List<Delegate>();
-        private readonly Dictionary<Type, CultureInfo> Cultures = new Dictionary<Type, CultureInfo>();
-        private readonly Dictionary<Type, Delegate> SerializationsForType = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<string, Delegate> SerializationForProperty = new Dictionary<string, Delegate>();
+        private readonly List<string> excludedFields = new List<string>();
+        private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
+        private readonly Dictionary<Type, Delegate> serializationsForType = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<string, Delegate> serializationForProperty = new Dictionary<string, Delegate>();
         private TOwner startObject;
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedFields.Add(memberSelector.Compile());
+            excludedFields.Add(((MemberExpression)memberSelector.Body).Member.Name);
             return this;
         }
 
@@ -39,8 +37,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            //это пока не так работает, тут надо поправить
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSelector.Compile().GetMethodInfo().ReturnParameter.Name);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this,((MemberExpression) memberSelector.Body).Member.Name);
         }
 
         public string PrintToString(TOwner obj)
@@ -48,20 +45,20 @@ namespace ObjectPrinting
             startObject = obj;
             return obj is ICollection collection ? PrintToStringICollectable(collection) : PrintToString(obj, 0);
         }
-
+        
         public void AddSerializationForType<TPropType>(Type type, Func<TPropType, string> serializaton)
         {
-            SerializationsForType[type] = serializaton;
+            serializationsForType[type] = serializaton;
         }
 
         public void AddSerializationForProperty<TPropType>(string propertyName, Func<TPropType, string> serialization)
         {
-            SerializationForProperty[propertyName] = serialization;
+            serializationForProperty[propertyName] = serialization;
         }
 
         public void AddCultureForNumber(Type type, CultureInfo culture)
         {
-            Cultures[type] = culture;
+            cultures[type] = culture;
         }
 
         private readonly Type[] finalTypes = new[]
@@ -80,11 +77,6 @@ namespace ObjectPrinting
                 return "circle ref" + Environment.NewLine;
             }
 
-            if (SerializationsForType.TryGetValue(obj.GetType(), out var func))
-            {
-                return func.DynamicInvoke(obj) + Environment.NewLine;
-            }
-
             if (finalTypes.Contains(obj.GetType()))
             {
                 return GetNumberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
@@ -95,29 +87,38 @@ namespace ObjectPrinting
 
         private string PrintObject(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType) || IsExcludedField(obj, propertyInfo))
-                {
-                    continue;
-                }
+                PrintMember(propertyInfo.Name, propertyInfo.GetValue(obj), propertyInfo.PropertyType, sb, nestingLevel);
+            }
 
-                if (TryGetSerializationByProperty(obj, propertyInfo, sb, identation))
-                {
-                    continue;
-                }
-
-                sb.Append(identation + propertyInfo.Name + " = ");
-                sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+            foreach (var fieldInfo in type.GetFields())
+            {
+                PrintMember(fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType, sb, nestingLevel);
             }
 
             return sb.ToString();
         }
 
+        private void PrintMember(string name, object value, Type type, StringBuilder sb, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            if (excludedTypes.Contains(type) || excludedFields.Contains(name))
+            {
+                return;
+            }
+            
+            sb.Append(identation + name + " = ");
+            if (TryGetSerializationForMember(value, name, sb) | TryGetSerializationByType(value, type, sb))
+            {
+                return;
+            }
+            sb.Append(PrintToString(value, nestingLevel + 1));
+        }
+        
         private string PrintToStringICollectable(IEnumerable collection)
         {
             var sb = new StringBuilder();
@@ -132,14 +133,23 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetSerializationByProperty(object obj, PropertyInfo propertyInfo, StringBuilder sb,
-            string identation)
+        private bool TryGetSerializationForMember<TPropType>(TPropType value, string name, StringBuilder sb)
         {
-            if (SerializationForProperty.ContainsKey(propertyInfo.Name))
+            if (serializationForProperty.ContainsKey(name))
             {
-                sb.Append(identation + propertyInfo.Name + " = ");
-                sb.Append(SerializationForProperty[propertyInfo.Name]
-                    .DynamicInvoke(propertyInfo.GetValue(obj)));
+                sb.Append(serializationForProperty[name].DynamicInvoke(value));
+                sb.Append(Environment.NewLine);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetSerializationByType(object value, Type type, StringBuilder sb)
+        {
+            if (serializationsForType.TryGetValue(type, out var func))
+            {
+                sb.Append(func.DynamicInvoke(value));
                 sb.Append(Environment.NewLine);
                 return true;
             }
@@ -149,25 +159,12 @@ namespace ObjectPrinting
 
         private string GetNumberWithCultureOrNull(object obj)
         {
-            if (Cultures.TryGetValue(obj.GetType(), out var culture))
+            if (cultures.TryGetValue(obj.GetType(), out var culture))
             {
                 return String.Format(culture, "{0}", obj);
             }
 
             return null;
-        }
-
-        private bool IsExcludedField(object obj, PropertyInfo propertyInfo)
-        {
-            foreach (var func in excludedFields)
-            {
-                if (func.DynamicInvoke(obj) == propertyInfo.GetValue(obj))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

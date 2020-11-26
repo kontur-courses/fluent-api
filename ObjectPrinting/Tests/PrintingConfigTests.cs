@@ -10,10 +10,10 @@ namespace ObjectPrinting.Tests
         private PrintingConfig<Person> printer;
         
         private static readonly Person MyParent = 
-            new Person() {Age = 40, Height = 200.001, Id = Guid.Empty, Name = "Anthony", Surname = "Smit"};
+            new Person() {Age = 40, Height = 200.001, Name = "Anthony", Surname = "Smit"};
         
         private static readonly Person Me =
-            new Person() {Age = 20, Height = 150.5, Id = Guid.Empty, Name = "Natasha", Parent = MyParent, Surname = "Smit"};
+            new Person() {Age = 20, Height = 150.5, Name = "Natasha", Parent = MyParent, Surname = "Smit"};
 
         [SetUp]
         public void SetUp()
@@ -27,7 +27,6 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(Me).Should()
                 .Contain("Age = 20")
                 .And.Contain("Height = 150,5")
-                .And.Contain("Id =")
                 .And.Contain("Name = Natasha")
                 .And.Contain("Surname = Smit")
                 .And.Contain("Parent = ")
@@ -113,8 +112,7 @@ namespace ObjectPrinting.Tests
                 .Contain("Parent = circle ref")
                 .And.Contain("Name = Natasha")
                 .And.Contain("Age = 20")
-                .And.Contain("Height = 150,5")
-                .And.Contain("Id =");
+                .And.Contain("Height = 150,5");
         }
 
         [Test]
@@ -122,6 +120,27 @@ namespace ObjectPrinting.Tests
         {
             MyParent.Parent = Me;
             printer.PrintToString(Me).Should().Contain("Parent = circle ref");
+        }
+
+        [Test]
+        public void ShouldAddSerializationByPropertyAndByType()
+        {
+            printer.Printing<string>().Using(str => str.ToUpper());
+            printer.Printing(p => p.Name)
+                .Using(str => str.Substring(1));
+            printer.PrintToString(Me).Should()
+                .Contain("SMIT")
+                .And.Contain("ATASHA")
+                .And.Contain("NTHONY");
+        }
+
+        [Test]
+        public void ShouldAddCulture_ToDateTime()
+        {
+            var dataPrinter = ObjectPrinter.For<DateTime>();
+            dataPrinter.Printing<DateTime>().Using(CultureInfo.InvariantCulture);
+            dataPrinter.PrintToString(new DateTime(2020, 11, 11)).Should()
+                .Contain("11/11/2020");
         }
     }
 }
