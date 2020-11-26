@@ -27,7 +27,7 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return $"null{Environment.NewLine}";
-            if (config.FinalTypes.Contains(obj.GetType()))
+            if (config.IsTypeFinal(obj.GetType()))
                 return $"{obj}{Environment.NewLine}";
             if (serializedObjects.Contains(obj))
                 throw new SerializationException("Circular reference");

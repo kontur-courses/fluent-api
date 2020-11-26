@@ -9,7 +9,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public readonly ImmutableHashSet<Type> FinalTypes = new[]
+        private readonly ImmutableHashSet<Type> finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
@@ -31,7 +31,7 @@ namespace ObjectPrinting
 
         public PrintingConfig(IEnumerable<Type> finalTypes)
         {
-            FinalTypes = finalTypes.ToImmutableHashSet();
+            this.finalTypes = finalTypes.ToImmutableHashSet();
         }
 
         private PrintingConfig(PrintingConfig<TOwner> oldPrintingConfig)
@@ -41,7 +41,7 @@ namespace ObjectPrinting
             memberLengths = oldPrintingConfig.memberLengths;
             alternateTypeSerializers = oldPrintingConfig.alternateTypeSerializers;
             alternateMemberSerializers = oldPrintingConfig.alternateMemberSerializers;
-            FinalTypes = oldPrintingConfig.FinalTypes;
+            finalTypes = oldPrintingConfig.finalTypes;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -119,6 +119,11 @@ namespace ObjectPrinting
         public bool IsMemberNotExcluded(MemberInfo memberInfo)
         {
             return !excludingMembers.Contains(memberInfo) && !excludingTypes.Contains(memberInfo.GetValueType());
+        }
+
+        public bool IsTypeFinal(Type type)
+        {
+            return finalTypes.Contains(type);
         }
     }
 }
