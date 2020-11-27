@@ -12,7 +12,9 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var serializer = new Func<string, string>(x => x.Length > maxLen && maxLen >= 0 ? x.Substring(0, maxLen) : x);
+            if (maxLen < 0)
+                throw new ArgumentException("Max length can not be less than zero");
+            var serializer = new Func<string, string>(x => x.Length > maxLen ? x.Substring(0, maxLen) : x);
             var config = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
 
             if (propConfig.Info is null)

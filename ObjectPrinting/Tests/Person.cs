@@ -12,5 +12,6 @@ namespace ObjectPrinting.Tests
         public DateTime DateOfBirth { get; set; }
         public int Field;
         public Person Father { get; set; }
+        public Person Mother { get; set; }
     }
 }

@@ -10,15 +10,15 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly List<Type> typesToDefaultSerialize = new List<Type>
+        private readonly HashSet<Type> typesToDefaultSerialize = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(bool),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        private readonly List<Type> typesToExclude = new List<Type>();
-        private readonly List<MemberInfo> membersToExclude = new List<MemberInfo>();
-        private readonly List<object> serializingMembers = new List<object>();
+        private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
+        private readonly HashSet<MemberInfo> membersToExclude = new HashSet<MemberInfo>();
+        private readonly HashSet<object> serializingMembersCache = new HashSet<object>();
 
         internal Dictionary<Type, Delegate> AlternativeSerializersForTypes = new Dictionary<Type, Delegate>();
         internal Dictionary<MemberInfo, Delegate> AlternativeSerializersForMembers =
@@ -42,18 +42,17 @@ namespace ObjectPrinting
 
             foreach (var member in GetMembersToSerialize(obj))
             {
-                if (serializingMembers.Contains(member.value))
+                if (serializingMembersCache.Contains(member.value))
                 {
-                    sb.Append($"{identation}{member.info.Name} = [Cyclic reference detected]{Environment.NewLine}");
-                    serializingMembers.Remove(member.value);
+                    sb.Append($"{identation}{member.info.Name} = [Cyclic reference detected]{Environment.NewLine}"); 
                     continue;
                 }
 
-                serializingMembers.Add(member.value);
+                serializingMembersCache.Add(member.value);
                 var serializedValue = $"{PrintToString(member.value, nestingLevel + 1, member.info)}";
 
                 sb.Append($"{identation}{member.info.Name} = {serializedValue}");
-                serializingMembers.Remove(member.value);
+                serializingMembersCache.Remove(member.value);
             }
 
             return sb.ToString();
@@ -110,7 +109,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            serializingMembers.Add(obj);
+            serializingMembersCache.Add(obj);
             return PrintToString(obj, 0, null);
         }
 

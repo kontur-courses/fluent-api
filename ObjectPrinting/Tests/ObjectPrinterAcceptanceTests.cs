@@ -19,9 +19,9 @@ namespace ObjectPrinting.Tests
                 .Excluding<string>();
 
             printer.PrintToString(person)
-                .Should().NotContain("Name")
-                .And.NotContain("LastName")
-                .And.NotContain("Height");
+                .Should().NotContain($"{nameof(person.Name)}")
+                .And.NotContain($"{nameof(person.LastName)}")
+                .And.NotContain($"{nameof(person.Height)}");
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().Using(x => x.Length.ToString());
 
             printer.PrintToString(person)
-                .Should().Contain("Name = 4");
+                .Should().Contain($"{nameof(person.Name)} = 4");
         }
 
         [Test]
@@ -43,7 +43,7 @@ namespace ObjectPrinting.Tests
                 .Printing<DateTime>().UsingCulture(CultureInfo.InvariantCulture);
 
             printer.PrintToString(person)
-                .Should().Contain($"DateOfBirth = {person.DateOfBirth.ToString(CultureInfo.InvariantCulture)}");
+                .Should().Contain($"{nameof(person.DateOfBirth)} = {person.DateOfBirth.ToString(CultureInfo.InvariantCulture)}");
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace ObjectPrinting.Tests
                 .Printing(x => x.Name).Using(x => x.ToUpper());
 
             printer.PrintToString(person)
-                .Should().Contain($"Name = {person.Name.ToUpper()}");
+                .Should().Contain($"{nameof(person.Name)} = {person.Name.ToUpper()}");
         }
 
         [Test]
@@ -65,8 +65,8 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().TrimmedToLength(4);
 
             printer.PrintToString(person)
-                .Should().Contain("Name = Test")
-                .And.Contain("LastName = Test");
+                .Should().NotContain("TestToTrim")
+                .And.Contain("Test");
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace ObjectPrinting.Tests
                 .Excluding(x => x.LastName);
 
             printer.PrintToString(person)
-                .Should().NotContain($"LastName = {person.LastName}");
+                .Should().NotContain($"{nameof(person.LastName)} = {person.LastName}");
 
         }
 
@@ -112,7 +112,24 @@ namespace ObjectPrinting.Tests
             
             result
                 .Should().Contain("Cyclic reference detected")
-                .And.Contain($"Name = {person.Father.Name}");
+                .And.Contain($"{nameof(person.Name)} = {person.Father.Name}");
+
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void Should_MarkReferenceToSelf_AsCyclic_OnEachLevel()
+        {
+            var person = new Person
+                {Name = "Tester", Father = new Person {Name = "Father"}, Mother = new Person {Name = "Father"}};
+            person.Father.Father = person;
+            person.Mother = person;
+            var printer = ObjectPrinter.For<Person>();
+            var result = printer.PrintToString(person);
+
+            result
+                .Should().Contain($"{nameof(person.Father)} = [Cyclic reference detected]")
+                .And.Contain($"{nameof(person.Mother)} = [Cyclic reference detected]");
 
             Console.WriteLine(result);
         }
@@ -127,7 +144,7 @@ namespace ObjectPrinting.Tests
                 .Printing(x => x.Field).Using(x => x.ToString("X"));
 
             printer.PrintToString(person)
-                .Should().Contain($"Field = {person.Field:X}");
+                .Should().Contain($"{nameof(person.Field)} = {person.Field:X}");
         }
 
         [Test]
