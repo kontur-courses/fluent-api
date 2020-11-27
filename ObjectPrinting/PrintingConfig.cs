@@ -56,7 +56,7 @@ namespace ObjectPrinting
             serializationForProperty[propertyName] = serialization;
         }
 
-        public void AddCultureForNumber(Type type, CultureInfo culture)
+        public void AddCultureForMember(Type type, CultureInfo culture)
         {
             cultures[type] = culture;
         }
@@ -79,7 +79,7 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(obj.GetType()))
             {
-                return GetNumberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
+                return GetMemberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
             }
 
             return PrintObject(obj, nestingLevel);
@@ -92,30 +92,41 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                PrintMember(propertyInfo.Name, propertyInfo.GetValue(obj), propertyInfo.PropertyType, sb, nestingLevel);
+                PrintMember(propertyInfo.Name, propertyInfo.GetValue(obj),propertyInfo.PropertyType,
+                    obj, sb, nestingLevel);
             }
 
             foreach (var fieldInfo in type.GetFields())
             {
-                PrintMember(fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType, sb, nestingLevel);
+                PrintMember(fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType,
+                    obj, sb, nestingLevel);
             }
 
             return sb.ToString();
         }
 
-        private void PrintMember(string name, object value, Type type, StringBuilder sb, int nestingLevel)
+        private void PrintMember(string name, object value, Type type, object parent, StringBuilder sb, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
-            if (excludedTypes.Contains(type) || excludedFields.Contains(name))
+            if (excludedTypes.Contains(type) || (parent is TOwner && excludedFields.Contains(name)))
             {
                 return;
             }
             
+            var identation = new string('\t', nestingLevel + 1);
             sb.Append(identation + name + " = ");
-            if (TryGetSerializationForMember(value, name, sb) | TryGetSerializationByType(value, type, sb))
+            
+            if (parent is TOwner && serializationForProperty.TryGetValue(name, out var serializator))
             {
+                sb.Append(serializator.DynamicInvoke(value) + Environment.NewLine);
                 return;
             }
+            
+            if (serializationsForType.TryGetValue(type, out var func))
+            {
+                sb.Append(func.DynamicInvoke(value) + Environment.NewLine);
+                return;
+            }
+
             sb.Append(PrintToString(value, nestingLevel + 1));
         }
         
@@ -133,31 +144,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool TryGetSerializationForMember<TPropType>(TPropType value, string name, StringBuilder sb)
-        {
-            if (serializationForProperty.ContainsKey(name))
-            {
-                sb.Append(serializationForProperty[name].DynamicInvoke(value));
-                sb.Append(Environment.NewLine);
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool TryGetSerializationByType(object value, Type type, StringBuilder sb)
-        {
-            if (serializationsForType.TryGetValue(type, out var func))
-            {
-                sb.Append(func.DynamicInvoke(value));
-                sb.Append(Environment.NewLine);
-                return true;
-            }
-
-            return false;
-        }
-
-        private string GetNumberWithCultureOrNull(object obj)
+        private string GetMemberWithCultureOrNull(object obj)
         {
             if (cultures.TryGetValue(obj.GetType(), out var culture))
             {

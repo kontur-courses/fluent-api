@@ -130,8 +130,8 @@ namespace ObjectPrinting.Tests
                 .Using(str => str.Substring(1));
             printer.PrintToString(Me).Should()
                 .Contain("SMIT")
-                .And.Contain("ATASHA")
-                .And.Contain("NTHONY");
+                .And.Contain(" atasha")
+                .And.Contain(" nthony");
         }
 
         [Test]
@@ -139,8 +139,18 @@ namespace ObjectPrinting.Tests
         {
             var dataPrinter = ObjectPrinter.For<DateTime>();
             dataPrinter.Printing<DateTime>().Using(CultureInfo.InvariantCulture);
-            dataPrinter.PrintToString(new DateTime(2020, 11, 11)).Should()
-                .Contain("11/11/2020");
+            dataPrinter.PrintToString(new DateTime(2020, 11, 27)).Should()
+                .Contain("11/27/2020");
+        }
+
+        [Test]
+        public void ShouldSerializePropertyWithCorrectParent()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Printing(p => p.Name).Using(str => str.ToUpper());
+            printer.PrintToString(Me).Should()
+                .Contain("NATASHA")
+                .And.Contain("Cat");
         }
     }
 }

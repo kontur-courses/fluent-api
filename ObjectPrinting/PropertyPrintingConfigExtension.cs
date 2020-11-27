@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -16,6 +17,33 @@ namespace ObjectPrinting
             var iPropConfig = (IPropertyPrintingConfig<TOwner, string>) propConfig;
             iPropConfig.ParentConfig.AddSerializationForProperty(iPropConfig.MemberName, trim);
             return iPropConfig.ParentConfig;
+        }
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)
+        {
+            var propertyConfig = (IPropertyPrintingConfig<TOwner, int>) propConfig;
+            propertyConfig.ParentConfig.AddCultureForMember(typeof(int), culture);
+            return propertyConfig.ParentConfig;
+        }
+        
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        {
+            var propertyConfig = (IPropertyPrintingConfig<TOwner, double>) propConfig;
+            propertyConfig.ParentConfig.AddCultureForMember(typeof(double), culture);
+            return propertyConfig.ParentConfig;
+        }
+        
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture)
+        {
+            var propertyConfig = (IPropertyPrintingConfig<TOwner, float>) propConfig;
+            propertyConfig.ParentConfig.AddCultureForMember(typeof(float), culture);
+            return propertyConfig.ParentConfig;
+        }
+        
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, DateTime> propConfig, CultureInfo culture)
+        {
+            var propertyConfig = (IPropertyPrintingConfig<TOwner, DateTime>) propConfig;
+            propertyConfig.ParentConfig.AddCultureForMember(typeof(DateTime), culture);
+            return propertyConfig.ParentConfig;
         }
     }
 }
