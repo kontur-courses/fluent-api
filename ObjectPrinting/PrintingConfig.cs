@@ -15,7 +15,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> serializationsForType = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Delegate> serializationForProperty = new Dictionary<string, Delegate>();
-        private TOwner startObject;
+        private List<object> serializedObjects = new List<object>();
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -42,7 +42,6 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            startObject = obj;
             return obj is ICollection collection ? PrintToStringICollectable(collection) : PrintToString(obj, 0);
         }
         
@@ -72,7 +71,7 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (obj is TOwner && ReferenceEquals(obj, startObject) && nestingLevel > 0)
+            if (MemberIsAlreadySerilized(obj))
             {
                 return "circle ref" + Environment.NewLine;
             }
@@ -81,7 +80,8 @@ namespace ObjectPrinting
             {
                 return GetMemberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
             }
-
+            
+            serializedObjects.Add(obj);
             return PrintObject(obj, nestingLevel);
         }
 
@@ -152,6 +152,19 @@ namespace ObjectPrinting
             }
 
             return null;
+        }
+
+        private bool MemberIsAlreadySerilized(object obj)
+        {
+            foreach (var serilizedObj in serializedObjects)
+            {
+                if (ReferenceEquals(obj, serilizedObj))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
