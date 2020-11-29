@@ -205,5 +205,15 @@ namespace ObjectPrinting.Tests
                 .Contain("Natasha")
                 .And.NotContain("Cat");
         }
+
+        [Test]
+        public void ShouldNotFindCircleRef_OnOneLevelEqualObjects()
+        {
+            Me.Parent = MyParent;
+            Me.PersonPet = new Pet(){Name = "Dog"};
+            Me.AnotherPet = Me.PersonPet;
+            printer.PrintToString(Me).Should()
+                .NotContain("circle ref");
+        }
     }
 }

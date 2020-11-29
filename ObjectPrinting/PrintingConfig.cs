@@ -16,7 +16,6 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> serializationsForType = new Dictionary<Type, Delegate>();
         private readonly Dictionary<string, Dictionary<Type, Delegate>> serializationForProperty =
             new Dictionary<string, Dictionary<Type, Delegate>>();
-        private List<object> serializedObjects = new List<object>();
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -54,7 +53,9 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return obj is ICollection collection ? PrintToStringICollectable(collection) : PrintToString(obj, 0);
+            return obj is ICollection collection ? 
+                PrintToStringICollectable(collection) : 
+                PrintToString(obj, 0, new List<object>());
         }
         
         public void AddSerializationForType<TPropType>(Type type, Func<TPropType, string> serializaton)
@@ -83,12 +84,12 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, List<object> serializedObjects)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (MemberIsAlreadySerilized(obj))
+            if (MemberIsAlreadySerilized(obj, serializedObjects))
             {
                 return "circle ref" + Environment.NewLine;
             }
@@ -98,11 +99,12 @@ namespace ObjectPrinting
                 return GetMemberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
             }
             
-            serializedObjects.Add(obj);
-            return PrintObject(obj, nestingLevel);
+            var copyList = new List<object>(serializedObjects);
+            copyList.Add(obj);
+            return PrintObject(obj, nestingLevel, copyList);
         }
 
-        private string PrintObject(object obj, int nestingLevel)
+        private string PrintObject(object obj, int nestingLevel, List<object> serilizedObjects)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -110,22 +112,22 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 PrintMember(propertyInfo.Name, propertyInfo.GetValue(obj),propertyInfo.PropertyType,
-                    obj, sb, nestingLevel);
+                    obj, sb, nestingLevel, serilizedObjects);
             }
 
             foreach (var fieldInfo in type.GetFields())
             {
                 PrintMember(fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType,
-                    obj, sb, nestingLevel);
+                    obj, sb, nestingLevel, serilizedObjects);
             }
 
             return sb.ToString();
         }
 
-        private void PrintMember(string name, object value, Type type, object parent, StringBuilder sb, int nestingLevel)
+        private void PrintMember(string name, object value, Type type, object parent, StringBuilder sb,
+            int nestingLevel, List<object> serilizedObjects)
         {
-            if (excludedTypes.Contains(type) || 
-                (excludedFields.ContainsKey(name) && excludedFields[name].Contains(parent.GetType())))
+            if (IsExcludedMember(type, name, parent))
             {
                 return;
             }
@@ -133,8 +135,7 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             sb.Append(identation + name + " = ");
             
-            if (serializationForProperty.ContainsKey(name) && 
-                serializationForProperty[name].ContainsKey(parent.GetType()))
+            if (MemberHasSpecialSerialization(name, parent))
             {
                 var serializator = serializationForProperty[name][parent.GetType()];
                 sb.Append(serializator.DynamicInvoke(value) + Environment.NewLine);
@@ -147,7 +148,7 @@ namespace ObjectPrinting
                 return;
             }
 
-            sb.Append(PrintToString(value, nestingLevel + 1));
+            sb.Append(PrintToString(value, nestingLevel + 1, serilizedObjects));
         }
         
         private string PrintToStringICollectable(IEnumerable collection)
@@ -157,11 +158,23 @@ namespace ObjectPrinting
             foreach (var obj in collection)
             {
                 sb.Append(index + ": ");
-                sb.Append(PrintToString(obj, 1));
+                sb.Append(PrintToString(obj, 1, new List<object>()));
                 index++;
             }
 
             return sb.ToString();
+        }
+
+        private bool IsExcludedMember(Type type, string name, object parent)
+        {
+            return excludedTypes.Contains(type) ||
+                   (excludedFields.ContainsKey(name) && excludedFields[name].Contains(parent.GetType()));
+        }
+
+        private bool MemberHasSpecialSerialization(string name, object parent)
+        {
+            return serializationForProperty.ContainsKey(name) &&
+                   serializationForProperty[name].ContainsKey(parent.GetType());
         }
 
         private string GetMemberWithCultureOrNull(object obj)
@@ -174,7 +187,7 @@ namespace ObjectPrinting
             return null;
         }
 
-        private bool MemberIsAlreadySerilized(object obj)
+        private bool MemberIsAlreadySerilized(object obj, List<object> serializedObjects)
         {
             foreach (var serilizedObj in serializedObjects)
             {
