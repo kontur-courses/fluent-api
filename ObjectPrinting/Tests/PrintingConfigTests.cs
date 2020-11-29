@@ -209,11 +209,34 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ShouldNotFindCircleRef_OnOneLevelEqualObjects()
         {
+            MyParent.Parent = null;
             Me.Parent = MyParent;
             Me.PersonPet = new Pet(){Name = "Dog"};
             Me.AnotherPet = Me.PersonPet;
             printer.PrintToString(Me).Should()
                 .NotContain("circle ref");
+        }
+
+        [Test]
+        public void ShouldNotFindCircleRef_InDifferentObjects()
+        {
+            MyParent.Parent = null;
+            Me.Parent = MyParent;
+            Me.PersonPet = new Pet() {Name = "Dog"};
+            Me.PersonPet.Owner = MyParent;
+            printer.PrintToString(Me).Should()
+                .NotContain("circle ref");
+        }
+        
+        [Test]
+        public void ShouldFindCircleRef_TwoStepsDown()
+        {
+            Me.Parent = MyParent;
+            Me.PersonPet = new Pet() {Name = "Dog"};
+            Me.PersonPet.Owner = MyParent;
+            MyParent.Parent = Me;
+            printer.PrintToString(Me).Should()
+                .Contain("circle ref");
         }
     }
 }

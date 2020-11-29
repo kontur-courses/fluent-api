@@ -3,5 +3,6 @@
     public class Pet
     {
         public string Name;
+        public Person Owner;
     }
 }
