@@ -15,7 +15,7 @@ namespace ObjectPrinting
             Func<string, string> trim = 
                 str => (maxLen > str.Length) ? str : str.Substring(0, maxLen);
             var iPropConfig = (IPropertyPrintingConfig<TOwner, string>) propConfig;
-            iPropConfig.ParentConfig.AddSerializationForProperty(iPropConfig.MemberName, trim);
+            iPropConfig.ParentConfig.AddSerializationForProperty(iPropConfig.MemberName, trim, iPropConfig.DeclaringType);
             return iPropConfig.ParentConfig;
         }
         public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, int> propConfig, CultureInfo culture)

@@ -144,13 +144,66 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ShouldSerializePropertyWithCorrectParent()
+        public void ShouldSerializePropertyWithCorrectParent_ParentIsTOwner()
         {
             Me.PersonPet = new Pet(){Name = "Cat"};
             printer.Printing(p => p.Name).Using(str => str.ToUpper());
             printer.PrintToString(Me).Should()
                 .Contain("NATASHA")
                 .And.Contain("Cat");
+        }
+        
+        [Test]
+        public void ShouldSerializePropertyWithCorrectParent_ParentIsNotTOwner()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Printing(p => p.PersonPet.Name).Using(str => str.ToUpper());
+            printer.PrintToString(Me).Should()
+                .Contain("Natasha")
+                .And.Contain("CAT");
+        }
+        
+        [Test]
+        public void ShouldSerializePropertyWithCorrectParent_DifferentParents()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Printing(p => p.PersonPet.Name).Using(str => str.ToUpper());
+            printer.Printing(p => p.Name).Using(str => str.ToLower());
+            printer.PrintToString(Me).Should()
+                .Contain("natasha")
+                .And.Contain("CAT");
+        }
+
+        [Test]
+        public void ShouldExcludePropertyWithCorrectParent_ParentIsTOwner()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Excluding(p => p.Name);
+            printer.PrintToString(Me).Should()
+                .Contain("Cat")
+                .And.NotContain("Natasha");
+        }
+        
+        [Test]
+        public void ShouldExcludePropertyWithCorrectParent_DifferentParents()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Excluding(p => p.Name);
+            printer.Excluding(p => p.PersonPet.Name);
+            printer.PrintToString(Me).Should()
+                .NotContain("Cat")
+                .And.NotContain("Natasha");
+        }
+        
+        
+        [Test]
+        public void ShouldExcludePropertyWithCorrectParent_ParentIsNotTOwner()
+        {
+            Me.PersonPet = new Pet(){Name = "Cat"};
+            printer.Excluding(p => p.PersonPet.Name);
+            printer.PrintToString(Me).Should()
+                .Contain("Natasha")
+                .And.NotContain("Cat");
         }
     }
 }

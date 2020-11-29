@@ -11,15 +11,25 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly List<string> excludedFields = new List<string>();
+        private readonly Dictionary<string, List<Type>> excludedFields = new Dictionary<string, List<Type>>();
         private readonly Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
         private readonly Dictionary<Type, Delegate> serializationsForType = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<string, Delegate> serializationForProperty = new Dictionary<string, Delegate>();
+        private readonly Dictionary<string, Dictionary<Type, Delegate>> serializationForProperty =
+            new Dictionary<string, Dictionary<Type, Delegate>>();
         private List<object> serializedObjects = new List<object>();
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedFields.Add(((MemberExpression)memberSelector.Body).Member.Name);
+            var name = ((MemberExpression) memberSelector.Body).Member.Name;
+            var declaringType = ((MemberExpression) memberSelector.Body).Member.DeclaringType;
+            if (excludedFields.ContainsKey(name))
+            {
+                excludedFields[name].Add(declaringType);
+            }
+            else
+            {
+                excludedFields[name] = new List<Type>(){declaringType};
+            }
             return this;
         }
 
@@ -37,7 +47,9 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this,((MemberExpression) memberSelector.Body).Member.Name);
+            var name = ((MemberExpression) memberSelector.Body).Member.Name;
+            var declaringType = ((MemberExpression) memberSelector.Body).Member.DeclaringType;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, name, declaringType);
         }
 
         public string PrintToString(TOwner obj)
@@ -50,9 +62,14 @@ namespace ObjectPrinting
             serializationsForType[type] = serializaton;
         }
 
-        public void AddSerializationForProperty<TPropType>(string propertyName, Func<TPropType, string> serialization)
+        public void AddSerializationForProperty<TPropType>(string propertyName, Func<TPropType, string> serialization,
+            Type declaringType)
         {
-            serializationForProperty[propertyName] = serialization;
+            if (!serializationForProperty.ContainsKey(propertyName))
+            {
+                serializationForProperty[propertyName] = new Dictionary<Type, Delegate>();
+            }
+            serializationForProperty[propertyName][declaringType] = serialization;
         }
 
         public void AddCultureForMember(Type type, CultureInfo culture)
@@ -107,7 +124,8 @@ namespace ObjectPrinting
 
         private void PrintMember(string name, object value, Type type, object parent, StringBuilder sb, int nestingLevel)
         {
-            if (excludedTypes.Contains(type) || (parent is TOwner && excludedFields.Contains(name)))
+            if (excludedTypes.Contains(type) || 
+                (excludedFields.ContainsKey(name) && excludedFields[name].Contains(parent.GetType())))
             {
                 return;
             }
@@ -115,8 +133,10 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             sb.Append(identation + name + " = ");
             
-            if (parent is TOwner && serializationForProperty.TryGetValue(name, out var serializator))
+            if (serializationForProperty.ContainsKey(name) && 
+                serializationForProperty[name].ContainsKey(parent.GetType()))
             {
+                var serializator = serializationForProperty[name][parent.GetType()];
                 sb.Append(serializator.DynamicInvoke(value) + Environment.NewLine);
                 return;
             }
