@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -22,13 +23,9 @@ namespace ObjectPrinting
             var name = ((MemberExpression) memberSelector.Body).Member.Name;
             var declaringType = ((MemberExpression) memberSelector.Body).Member.DeclaringType;
             if (excludedFields.ContainsKey(name))
-            {
                 excludedFields[name].Add(declaringType);
-            }
             else
-            {
                 excludedFields[name] = new List<Type>(){declaringType};
-            }
             return this;
         }
 
@@ -55,7 +52,7 @@ namespace ObjectPrinting
         {
             return obj is ICollection collection ? 
                 PrintToStringICollectable(collection) : 
-                PrintToString(obj, 0, new List<object>());
+                PrintToString(obj, 0, new HashSet<object>());
         }
         
         public void AddSerializationForType<TPropType>(Type type, Func<TPropType, string> serializaton)
@@ -84,7 +81,7 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private string PrintToString(object obj, int nestingLevel, List<object> serializedObjects)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> serializedObjects)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -98,57 +95,52 @@ namespace ObjectPrinting
             {
                 return GetMemberWithCultureOrNull(obj) ?? obj + Environment.NewLine;
             }
-            
-            var copyList = new List<object>(serializedObjects);
-            copyList.Add(obj);
+
+            var copyList = new HashSet<object>(serializedObjects) {obj};
             return PrintObject(obj, nestingLevel, copyList);
         }
 
-        private string PrintObject(object obj, int nestingLevel, List<object> serilizedObjects)
+        private string PrintObject(object obj, int nestingLevel, HashSet<object> serilizedObjects)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                PrintMember(propertyInfo.Name, propertyInfo.GetValue(obj),propertyInfo.PropertyType,
-                    obj, sb, nestingLevel, serilizedObjects);
+                PrintMember(propertyInfo, obj, sb, nestingLevel, serilizedObjects);
             }
 
             foreach (var fieldInfo in type.GetFields())
             {
-                PrintMember(fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType,
-                    obj, sb, nestingLevel, serilizedObjects);
+                PrintMember(fieldInfo, obj, sb, nestingLevel, serilizedObjects);
             }
 
             return sb.ToString();
         }
 
-        private void PrintMember(string name, object value, Type type, object parent, StringBuilder sb,
-            int nestingLevel, List<object> serilizedObjects)
+        private void PrintMember(MemberInfo info, object parent, StringBuilder sb, int nestingLevel,
+            HashSet<object> serilizedObjects)
         {
-            if (IsExcludedMember(type, name, parent))
-            {
+            if (IsExcludedMember(info.Type(), info.Name, parent))
                 return;
-            }
             
             var identation = new string('\t', nestingLevel + 1);
-            sb.Append(identation + name + " = ");
+            sb.Append(identation + info.Name + " = ");
             
-            if (MemberHasSpecialSerialization(name, parent))
+            if (MemberHasSpecialSerialization(info.Name, parent))
             {
-                var serializator = serializationForProperty[name][parent.GetType()];
-                sb.Append(serializator.DynamicInvoke(value) + Environment.NewLine);
+                var serializator = serializationForProperty[info.Name][parent.GetType()];
+                sb.Append(serializator.DynamicInvoke(info.Value(parent)) + Environment.NewLine);
                 return;
             }
             
-            if (serializationsForType.TryGetValue(type, out var func))
+            if (serializationsForType.TryGetValue(info.Type(), out var func))
             {
-                sb.Append(func.DynamicInvoke(value) + Environment.NewLine);
+                sb.Append(func.DynamicInvoke(info.Value(parent)) + Environment.NewLine);
                 return;
             }
 
-            sb.Append(PrintToString(value, nestingLevel + 1, serilizedObjects));
+            sb.Append(PrintToString(info.Value(parent), nestingLevel + 1, serilizedObjects));
         }
         
         private string PrintToStringICollectable(IEnumerable collection)
@@ -158,7 +150,7 @@ namespace ObjectPrinting
             foreach (var obj in collection)
             {
                 sb.Append(index + ": ");
-                sb.Append(PrintToString(obj, 1, new List<object>()));
+                sb.Append(PrintToString(obj, 1, new HashSet<object>()));
                 index++;
             }
 
@@ -179,25 +171,14 @@ namespace ObjectPrinting
 
         private string GetMemberWithCultureOrNull(object obj)
         {
-            if (cultures.TryGetValue(obj.GetType(), out var culture))
-            {
-                return String.Format(culture, "{0}", obj);
-            }
-
-            return null;
+            return cultures.TryGetValue(obj.GetType(), out var culture) 
+                ? string.Format(culture, "{0}", obj) 
+                : null;
         }
 
-        private bool MemberIsAlreadySerilized(object obj, List<object> serializedObjects)
+        private static bool MemberIsAlreadySerilized(object obj, HashSet<object> serializedObjects)
         {
-            foreach (var serilizedObj in serializedObjects)
-            {
-                if (ReferenceEquals(obj, serilizedObj))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return serializedObjects.Any(serilizedObj => ReferenceEquals(obj, serilizedObj));
         }
     }
 }
