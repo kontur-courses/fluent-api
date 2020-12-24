@@ -11,7 +11,7 @@ namespace ObjectPrinting
     {
         private PrintingConfig<TOwner> config;
         private HashSet<object> printedObject;
-        private Type[] finalTypes = new[]
+        private HashSet<Type> finalTypes = new HashSet<Type>()
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
