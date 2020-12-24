@@ -49,12 +49,12 @@ namespace ObjectPrinting
 
         private string PrintObject(object obj, int nestingLevel)
         {
-            var resultString = new StringBuilder().Append($"{obj.GetType().Name}\n");
+            var resultString = new StringBuilder().Append($"{obj.GetType().Name}{Environment.NewLine}");
             printedObject.Add(obj);
             resultString.Append(PrintFields(obj, nestingLevel));
             resultString.Append(PrintProperties(obj, nestingLevel));
 
-            return resultString.ToString().TrimEnd('\n');
+            return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
         private string PrintProperties(object obj, int nestingLevel)
@@ -65,10 +65,10 @@ namespace ObjectPrinting
             {
                 if (!config.State.ExcludedProperties.Contains(property) 
                     && !config.State.ExcludedTypes.Contains(property.PropertyType))
-                    resultString.Append(PrintProperty(property, obj, nestingLevel)).Append("\n");
+                    resultString.Append(PrintProperty(property, obj, nestingLevel)).Append(Environment.NewLine);
             }
 
-            return resultString.ToString().TrimEnd('\n');
+            return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
         private string PrintProperty(PropertyInfo property, object obj, int nestingLevel)
@@ -89,10 +89,10 @@ namespace ObjectPrinting
             foreach (var field in fields)
             {
                 if (!config.State.ExcludedTypes.Contains(field.FieldType))
-                    resultString.Append(PrintField(field, obj, nestingLevel)).Append("\n");
+                    resultString.Append(PrintField(field, obj, nestingLevel)).Append(Environment.NewLine);
             }
 
-            return resultString.ToString().TrimEnd('\n');
+            return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
         private string PrintField(FieldInfo field, object obj, int nestingLevel)
@@ -130,16 +130,16 @@ namespace ObjectPrinting
 
         private string PrintEnumerable(object obj, int nestingLevel)
         {
-            var resultString = new StringBuilder().Append(obj.GetType().Name).Append("\n");
+            var resultString = new StringBuilder().Append(obj.GetType().Name).Append(Environment.NewLine);
             var indentation = GetIndentation(nestingLevel);
             printedObject.Add(obj);
             foreach (var subObj in (IEnumerable)obj)
             {
                 resultString.Append(indentation);
-                resultString.Append(PrintToString(subObj, nestingLevel + 1)).Append("\n");
+                resultString.Append(PrintToString(subObj, nestingLevel + 1)).Append(Environment.NewLine);
             }
 
-            return resultString.ToString().TrimEnd('\n');
+            return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
         private string PrintFinalType(object obj)

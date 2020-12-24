@@ -9,6 +9,8 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+        private readonly string nl = Environment.NewLine;
+
         [Test]
         public void Demo()
         {
@@ -42,7 +44,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -55,7 +57,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris");
+            result.Should().Be($"Cat{nl}\tName = Boris");
         }
 
         [Test]
@@ -67,7 +69,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWeight = 5,123");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123");
         }
 
         [Test]
@@ -80,7 +82,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris");
+            result.Should().Be($"Cat{nl}\tName = Boris");
         }
 
         [Test]
@@ -93,7 +95,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris");
+            result.Should().Be($"Cat{nl}\tName = Boris");
         }
 
         [Test]
@@ -107,7 +109,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat");
+            result.Should().Be($"Cat");
         }
 
         [Test]
@@ -119,7 +121,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWeight = 5,123kg\n\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123kg{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -132,7 +134,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWeight = 5,123\n\tWhiskersCount = 10 whiskers");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10 whiskers");
         }
 
         [Test]
@@ -145,7 +147,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWeight = 5,123");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123");
         }
 
         [Test]
@@ -160,7 +162,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Boris\n\tWeight = 5.123\n\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5.123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -173,7 +175,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be("Cat\n\tName = Bor\n\tWeight = 5,123\n\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tName = Bor{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -188,13 +190,13 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(person);
 
-            var expexted = "Person" +
-                           "\n\tName = Alex" +
-                           "\n\tCar = Car" +
-                           "\n\t\tBrand = Lada" +
-                           "\n\t\tColor = Black" +
-                           "\n\t\tLicensePlateNumber = Т808ОС" +
-                           "\n\t\tReleaseDate = 12.10.2006 0:00:00";
+            var expexted = $"Person" +
+                           $"{nl}\tName = Alex" + 
+                           $"{nl}\tCar = Car" +
+                           $"{nl}\t\tBrand = Lada" +
+                           $"{nl}\t\tColor = Black" +
+                           $"{nl}\t\tLicensePlateNumber = Т808ОС" +
+                           $"{nl}\t\tReleaseDate = 12.10.2006 0:00:00";
             result.Should().Be(expexted);
         }
 
@@ -210,15 +212,15 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(person);
 
-            var expexted = "Person" +
-                           "\n\tName = Alex" +
-                           "\n\tChildrenArray = Person[]" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Tom" +
-                           "\n\t\t\tChildrenArray = null" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Max" +
-                           "\n\t\t\tChildrenArray = null";
+            var expexted = $"Person" +
+                           $"{nl}\tName = Alex" +
+                           $"{nl}\tChildrenArray = Person[]" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Tom" +
+                           $"{nl}\t\t\tChildrenArray = null" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Max" +
+                           $"{nl}\t\t\tChildrenArray = null";
             result.Should().Be(expexted);
         }
 
@@ -234,13 +236,13 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(person);
 
-            var expexted = "Person" +
-                           "\n\tName = Alex" +
-                           "\n\tChildrenDict = Dictionary`2" +
-                           "\n\t\tKeyValuePair`2" +
-                           "\n\t\t\tKey = Tom" +
-                           "\n\t\tKeyValuePair`2" +
-                           "\n\t\t\tKey = Max";
+            var expexted = $"Person" +
+                           $"{nl}\tName = Alex" +
+                           $"{nl}\tChildrenDict = Dictionary`2" +
+                           $"{nl}\t\tKeyValuePair`2" +
+                           $"{nl}\t\t\tKey = Tom" +
+                           $"{nl}\t\tKeyValuePair`2" +
+                           $"{nl}\t\t\tKey = Max";
             result.Should().Be(expexted);
         }
 
@@ -256,15 +258,15 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(person);
 
-            var expexted = "Person" +
-                           "\n\tName = Alex" +
-                           "\n\tChildren = List`1" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Tom" +
-                           "\n\t\t\tChildren = List`1" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Max" +
-                           "\n\t\t\tChildren = List`1";
+            var expexted = $"Person" +
+                           $"{nl}\tName = Alex" +
+                           $"{nl}\tChildren = List`1" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Tom" +
+                           $"{nl}\t\t\tChildren = List`1" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Max" +
+                           $"{nl}\t\t\tChildren = List`1";
             result.Should().Be(expexted);
         }
 
@@ -279,18 +281,18 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(person);
 
-            var expexted = "Person" +
-                           "\n\tName = Alex" +
-                           "\n\tChildren = List`1" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Tom" +
-                           "\n\t\t\tChildren = List`1" +
-                           "\n\t\t\tParent = Person (Looped)" +
-                           "\n\t\tPerson" +
-                           "\n\t\t\tName = Max" +
-                           "\n\t\t\tChildren = List`1" +
-                           "\n\t\t\tParent = Person (Looped)" +
-                           "\n\tParent = null";
+            var expexted = $"Person" +
+                           $"{nl}\tName = Alex" +
+                           $"{nl}\tChildren = List`1" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Tom" +
+                           $"{nl}\t\t\tChildren = List`1" +
+                           $"{nl}\t\t\tParent = Person (Looped)" +
+                           $"{nl}\t\tPerson" +
+                           $"{nl}\t\t\tName = Max" +
+                           $"{nl}\t\t\tChildren = List`1" +
+                           $"{nl}\t\t\tParent = Person (Looped)" +
+                           $"{nl}\tParent = null";
             result.Should().Be(expexted);
         }
 
