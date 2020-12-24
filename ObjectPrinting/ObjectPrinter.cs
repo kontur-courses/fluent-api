@@ -9,7 +9,7 @@ namespace ObjectPrinting
 {
     public class ObjectPrinter<TOwner>
     {
-        private PrintingConfig<TOwner> config;
+        private IPrintingConfig config;
         private HashSet<object> printedObject;
         private HashSet<Type> finalTypes = new HashSet<Type>()
         {
@@ -63,7 +63,8 @@ namespace ObjectPrinting
             var properties = obj.GetType().GetProperties();
             foreach (var property in properties)
             {
-                if (!config.ExcludedProperties.Contains(property) && !config.ExcludedTypes.Contains(property.PropertyType))
+                if (!config.State.ExcludedProperties.Contains(property) 
+                    && !config.State.ExcludedTypes.Contains(property.PropertyType))
                     resultString.Append(PrintProperty(property, obj, nestingLevel)).Append("\n");
             }
 
@@ -87,7 +88,7 @@ namespace ObjectPrinting
             var fields = obj.GetType().GetFields();
             foreach (var field in fields)
             {
-                if (!config.ExcludedTypes.Contains(field.FieldType))
+                if (!config.State.ExcludedTypes.Contains(field.FieldType))
                     resultString.Append(PrintField(field, obj, nestingLevel)).Append("\n");
             }
 
@@ -107,7 +108,7 @@ namespace ObjectPrinting
 
         private bool TryGetAltSerializerFor(PropertyInfo property, out Delegate serializer)
         {
-            if (config.AltSerializerForProperty.TryGetValue(property, out serializer)
+            if (config.State.AltSerializerForProperty.TryGetValue(property, out serializer)
                 || TryGetAltSerializerFor(property.PropertyType, out serializer))
                 return true;
 
@@ -117,9 +118,9 @@ namespace ObjectPrinting
 
         private bool TryGetAltSerializerFor(Type type, out Delegate serializer)
         {
-            if (config.AltSerializerForType.ContainsKey(type))
+            if (config.State.AltSerializerForType.ContainsKey(type))
             {
-                serializer = config.AltSerializerForType[type];
+                serializer = config.State.AltSerializerForType[type];
                 return true;
             }
 
@@ -144,7 +145,7 @@ namespace ObjectPrinting
         private string PrintFinalType(object obj)
         {
             var resultString = new StringBuilder();
-            resultString.Append(config.CultureForType.TryGetValue(obj.GetType(), out var culture)
+            resultString.Append(config.State.CultureForType.TryGetValue(obj.GetType(), out var culture)
                 ? ((IFormattable)obj).ToString("N", culture)
                 : obj.ToString());
             return resultString.ToString();
