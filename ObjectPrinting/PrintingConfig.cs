@@ -60,6 +60,7 @@ namespace ObjectPrinting
         }
 
         public PrintingConfig<TOwner> SetCultureFor<T>(CultureInfo culture)
+            where T : IFormattable
         {
             if (typeof(IFormattable).IsAssignableFrom(typeof(T)))
             {
