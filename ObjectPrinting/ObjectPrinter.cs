@@ -10,7 +10,7 @@ namespace ObjectPrinting
     public class ObjectPrinter<TOwner>
     {
         private IPrintingConfig config;
-        private HashSet<object> printedObject;
+        private Stack<object> visitedObjects;
         private HashSet<Type> finalTypes = new HashSet<Type>()
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -20,7 +20,7 @@ namespace ObjectPrinting
         public ObjectPrinter(PrintingConfig<TOwner> config)
         {
             this.config = config;
-            printedObject = new HashSet<object>();
+            visitedObjects = new Stack<object>();
         }
 
         public static PrintingConfig<TOwner> Should()
@@ -38,8 +38,9 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null";
             var objType = obj.GetType();
-            if (printedObject.Contains(obj))
+            if (visitedObjects.Contains(obj))
                 return $"{obj.GetType().Name} (Looped)";
+            visitedObjects.Push(obj);
             if (finalTypes.Contains(objType))
                 return PrintFinalType(obj);
             if (typeof(IEnumerable).IsAssignableFrom(objType))
@@ -50,10 +51,9 @@ namespace ObjectPrinting
         private string PrintObject(object obj, int nestingLevel)
         {
             var resultString = new StringBuilder().Append($"{obj.GetType().Name}{Environment.NewLine}");
-            printedObject.Add(obj);
             resultString.Append(PrintFields(obj, nestingLevel));
             resultString.Append(PrintProperties(obj, nestingLevel));
-
+            visitedObjects.Pop();
             return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
@@ -137,13 +137,13 @@ namespace ObjectPrinting
         {
             var resultString = new StringBuilder().Append(obj.GetType().Name).Append(Environment.NewLine);
             var indentation = GetIndentation(nestingLevel);
-            printedObject.Add(obj);
             foreach (var subObj in (IEnumerable)obj)
             {
                 resultString.Append(indentation);
                 resultString.Append(PrintToString(subObj, nestingLevel + 1)).Append(Environment.NewLine);
             }
-
+            
+            visitedObjects.Pop();
             return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
         }
 
@@ -153,6 +153,7 @@ namespace ObjectPrinting
             resultString.Append(config.State.CultureForType.TryGetValue(obj.GetType(), out var culture)
                 ? ((IFormattable)obj).ToString("N", culture)
                 : obj.ToString());
+            visitedObjects.Pop();
             return resultString.ToString();
         }
 
