@@ -5,6 +5,7 @@
         public string Name { get; set; }
         public double Weight { get; set; }
         public int WhiskersCount { get; set; }
+        public readonly string SomeField = "SomeValue";
 
         public Cat(string name, double weight, int whiskersCount)
         {

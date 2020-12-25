@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter<Person>.Should()
                 .Exclude(x => x.Parent)
-                .ForProperty(x => x.Name)
+                .ForMember(x => x.Name)
                 .SetSerializer(x => x + "...")
                 .Build();
 
@@ -44,7 +44,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris");
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris{nl}\tWeight = 5,123");
         }
 
         [Test]
@@ -82,7 +82,19 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris");
+        }
+
+        [Test]
+        public void PrintingConfig_SupportsExcludingFields()
+        {
+            var cat = GetCat();
+            var result = ObjectPrinter<Cat>.Should()
+                .Exclude(x => x.SomeField)
+                .Build()
+                .PrintToString(cat);
+
+            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -95,7 +107,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris");
         }
 
         [Test]
@@ -121,7 +133,8 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123kg{nl}\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris" +
+                               $"{nl}\tWeight = 5,123kg{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -129,12 +142,27 @@ namespace ObjectPrinting.Tests
         {
             var cat = GetCat();
             var result = ObjectPrinter<Cat>.Should()
-                .ForProperty(x => x.WhiskersCount)
+                .ForMember(x => x.WhiskersCount)
                 .SetSerializer(str => $"{str} whiskers")
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10 whiskers");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris" +
+                               $"{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10 whiskers");
+        }
+
+        [Test]
+        public void PrintingConfig_SupportsSettingSerializerForFields()
+        {
+            var cat = GetCat();
+            var result = ObjectPrinter<Cat>.Should()
+                .ForMember(x => x.SomeField)
+                .SetSerializer(str => $"{str}OfField")
+                .Build()
+                .PrintToString(cat);
+
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValueOfField{nl}\tName = Boris" +
+                               $"{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -147,7 +175,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5,123");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris{nl}\tWeight = 5,123");
         }
 
         [Test]
@@ -162,7 +190,7 @@ namespace ObjectPrinting.Tests
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Boris{nl}\tWeight = 5.123{nl}\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Boris{nl}\tWeight = 5.123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
@@ -170,12 +198,12 @@ namespace ObjectPrinting.Tests
         {
             var cat = GetCat();
             var result = ObjectPrinter<Cat>.Should()
-                .ForProperty(x => x.Name)
+                .ForMember(x => x.Name)
                 .TrimmedToLength(3)
                 .Build()
                 .PrintToString(cat);
 
-            result.Should().Be($"Cat{nl}\tName = Bor{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10");
+            result.Should().Be($"Cat{nl}\tSomeField = SomeValue{nl}\tName = Bor{nl}\tWeight = 5,123{nl}\tWhiskersCount = 10");
         }
 
         [Test]
