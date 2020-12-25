@@ -63,7 +63,7 @@ namespace ObjectPrinting
             var properties = obj.GetType().GetProperties();
             foreach (var property in properties)
             {
-                if (!config.State.ExcludedProperties.Contains(property) 
+                if (!config.State.ExcludedMembers.Contains(property) 
                     && !config.State.ExcludedTypes.Contains(property.PropertyType))
                     resultString.Append(PrintProperty(property, obj, nestingLevel)).Append(Environment.NewLine);
             }
@@ -88,28 +88,33 @@ namespace ObjectPrinting
             var fields = obj.GetType().GetFields();
             foreach (var field in fields)
             {
-                if (!config.State.ExcludedTypes.Contains(field.FieldType))
+                if (!config.State.ExcludedMembers.Contains(field) 
+                    && !config.State.ExcludedTypes.Contains(field.FieldType))
                     resultString.Append(PrintField(field, obj, nestingLevel)).Append(Environment.NewLine);
             }
 
-            return resultString.ToString().TrimEnd(Environment.NewLine.ToCharArray());
+            return resultString.ToString();
         }
 
         private string PrintField(FieldInfo field, object obj, int nestingLevel)
         {
             var propertyString = new StringBuilder().Append(GetIndentation(nestingLevel))
                 .Append($"{field.Name} = ");
-            if (TryGetAltSerializerFor(field.FieldType, out var serializer))
+            if (TryGetAltSerializerFor(field, out var serializer))
                 propertyString.Append((string)serializer.DynamicInvoke(field.GetValue(obj)));
             else
                 propertyString.Append(PrintToString(field.GetValue(obj), nestingLevel + 1));
             return propertyString.ToString();
         }
 
-        private bool TryGetAltSerializerFor(PropertyInfo property, out Delegate serializer)
+        private bool TryGetAltSerializerFor(MemberInfo member, out Delegate serializer)
         {
-            if (config.State.AltSerializerForProperty.TryGetValue(property, out serializer)
-                || TryGetAltSerializerFor(property.PropertyType, out serializer))
+            if (config.State.AltSerializerForMember.TryGetValue(member, out serializer))
+                return true;
+            var memberType = member is PropertyInfo prop
+                ? prop.PropertyType
+                : ((FieldInfo) member).FieldType;
+            if (TryGetAltSerializerFor(memberType, out serializer))
                 return true;
 
             serializer = null;

@@ -32,11 +32,11 @@ namespace ObjectPrinting
             return newConfig;
         }
 
-        public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> property)
+        public PrintingConfig<TOwner> Exclude<TMember>(Expression<Func<TOwner, TMember>> member)
         {
             var newConfig = new PrintingConfig<TOwner>(this);
-            var propertyInfo = ((MemberExpression)property.Body).Member as PropertyInfo;
-            newConfig.state.ExcludedProperties = state.ExcludedProperties.Add(propertyInfo);
+            var memberInfo = ((MemberExpression)member.Body).Member;
+            newConfig.state.ExcludedMembers = state.ExcludedMembers.Add(memberInfo);
             return newConfig;
         }
 
@@ -60,10 +60,10 @@ namespace ObjectPrinting
             throw new ArgumentException("Невозможно установить культуру для данного типа");
         }
 
-        public PropertyPrintingConfig<TOwner, TProperty> ForProperty<TProperty>(Expression<Func<TOwner, TProperty>> property)
+        public MemberPrintingConfig<TOwner, TMember> ForMember<TMember>(Expression<Func<TOwner, TMember>> member)
         {
-            var propertyInfo = ((MemberExpression) property.Body).Member as PropertyInfo;
-            return new PropertyPrintingConfig<TOwner, TProperty>(propertyInfo, this);
+            var memberInfo = ((MemberExpression)member.Body).Member;
+            return new MemberPrintingConfig<TOwner, TMember>(memberInfo, this);
         }
     }
 

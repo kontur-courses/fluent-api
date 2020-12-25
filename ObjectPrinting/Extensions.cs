@@ -18,14 +18,14 @@ namespace ObjectPrinting
     public static class PropertyPrintingConfigExtensions
     {
         public static PrintingConfig<TOwner> SetCulture<TOwner, TProperty>(
-            this PropertyPrintingConfig<TOwner, TProperty> propConfig, CultureInfo culture)
+            this MemberPrintingConfig<TOwner, TProperty> propConfig, CultureInfo culture)
             where TProperty : IFormattable
         {
             return propConfig.SetSerializer(x => ((IFormattable)x).ToString("N", culture));
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
+            this MemberPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
             return propConfig.SetSerializer(str => str.Substring(0, Math.Min(str.Length, maxLength)));
         }

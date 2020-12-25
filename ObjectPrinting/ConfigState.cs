@@ -10,26 +10,26 @@ namespace ObjectPrinting
     public class ConfigState
     {
         public ImmutableHashSet<Type> ExcludedTypes { get; set; }
-        public ImmutableHashSet<PropertyInfo> ExcludedProperties { get; set; }
+        public ImmutableHashSet<MemberInfo> ExcludedMembers { get; set; }
         public ImmutableDictionary<Type, Delegate> AltSerializerForType { get; set; }
-        public ImmutableDictionary<PropertyInfo, Delegate> AltSerializerForProperty { get; set; }
+        public ImmutableDictionary<MemberInfo, Delegate> AltSerializerForMember { get; set; }
         public ImmutableDictionary<Type, CultureInfo> CultureForType { get; set; }
 
         public ConfigState()
         {
             ExcludedTypes = ImmutableHashSet.Create<Type>();
-            ExcludedProperties = ImmutableHashSet.Create<PropertyInfo>();
+            ExcludedMembers = ImmutableHashSet.Create<MemberInfo>();
             AltSerializerForType = ImmutableDictionary.Create<Type, Delegate>();
-            AltSerializerForProperty = ImmutableDictionary.Create<PropertyInfo, Delegate>();
+            AltSerializerForMember = ImmutableDictionary.Create<MemberInfo, Delegate>();
             CultureForType = ImmutableDictionary.Create<Type, CultureInfo>();
         }
 
         public ConfigState(ConfigState previousState)
         {
             ExcludedTypes = previousState.ExcludedTypes;
-            ExcludedProperties = previousState.ExcludedProperties;
+            ExcludedMembers = previousState.ExcludedMembers;
             AltSerializerForType = previousState.AltSerializerForType;
-            AltSerializerForProperty = previousState.AltSerializerForProperty;
+            AltSerializerForMember = previousState.AltSerializerForMember;
             CultureForType = previousState.CultureForType;
         }
     }
