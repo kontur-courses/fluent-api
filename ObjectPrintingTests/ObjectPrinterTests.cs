@@ -1,61 +1,138 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Extensions;
 
 namespace ObjectPrintingTests
 {
-    public class Tests
+    public class ObjectPrintingTests
     {
-        [SetUp]
-        public void Setup()
+        private Person person;
+        private string newLine;
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
+            person = new Person { Name = "Alex", Age = 19, Height = 170.1, Id = Guid.NewGuid()};
+            newLine = Environment.NewLine;
         }
 
         [Test]
         public void AcceptanceTest()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 170.13};
-
             var printer = ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
-                //4. Настроить сериализацию конкретного свойства
                 .Printing(x => x.Height).Using(i => i.ToString("P"))
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
             var s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             var s2 = person.PrintToString();
-
-            //8. ...с конфигурированием
             var s3 = person.PrintToString(s => s.Excluding(p => p.Age).Excluding(p => p.Name));
+
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
         }
 
         [Test]
-        public void Test()
+        public void ShouldExcludeMember_WhenItsTypeExcluded()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 170.13 };
-            var dictionary = new Dictionary<string, Person>
-            {
-                {"a", person},
-                {"b", person}
-            };
-            var str = dictionary.PrintToString();
-            Console.WriteLine(str);
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>();
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}");
+        }
+
+        [Test]
+        public void ShouldExcludeMember_WhenItsPathExcluded()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Name);
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseCustomTypeSerializer_WhenSpecifiedSerializerForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<int>()
+                .Using(x => x.ToString("X"));
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseCustomMemberSerializer_WhenSpecifiedSerializerForMember()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Age)
+                .Using(x => x.ToString("X"));
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseCustomTypeCulture_WhenSpecifiedCultureForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>()
+                .Using(CultureInfo.GetCultureInfo("en-US"));
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseCustomMemberCulture_WhenSpecifiedCultureForMember()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Height)
+                .Using(CultureInfo.GetCultureInfo("en-US"));
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseTrimming_WhenItsSpecifiedForType()
+        {
+            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = Guid.NewGuid() };
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>()
+                .TrimmedToLength(10);
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
+        }
+
+        [Test]
+        public void ShouldUseTrimming_WhenItsSpecifiedForMember()
+        {
+            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = Guid.NewGuid() };
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(x => x.Name)
+                .TrimmedToLength(10);
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
         }
     }
 }

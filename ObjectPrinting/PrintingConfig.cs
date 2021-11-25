@@ -98,7 +98,7 @@ namespace ObjectPrinting
                     ? output
                     : PrintToString(memberInfo.GetMemberValue(obj), nestingLevel + 1);
 
-                sb.Append($"{indentation}{memberInfo.Name} =  {serializedMember}");
+                sb.Append($"{indentation}{memberInfo.Name} = {serializedMember}");
             }
 
             return sb.ToString();
