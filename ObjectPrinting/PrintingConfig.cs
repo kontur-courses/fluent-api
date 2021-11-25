@@ -1,56 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Collections.Immutable;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public record PrintingConfig
     {
-        private readonly List<Type> finalTypes = new()
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
+        public ImmutableHashSet<Type> ExcludingTypes { get; init; } = ImmutableHashSet<Type>.Empty;
+        public ImmutableHashSet<PropertyInfo> ExcludingProperties { get; init; } = ImmutableHashSet<PropertyInfo>.Empty;
+        public ImmutableDictionary<Type, Func<object, string>> TypePrinting { get; init; } =
+            ImmutableDictionary<Type, Func<object, string>>.Empty;
+        public ImmutableDictionary<PropertyInfo, Func<PropertyInfo, string>> PropertyPrinting { get; init; } =
+            ImmutableDictionary<PropertyInfo, Func<PropertyInfo, string>>.Empty;
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
-        {
-            return this;
-        }
-
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            
-            return BuildObjectString(obj, nestingLevel);
-        }
-
-        private string BuildObjectString(object obj, int nestingLevel)
-        {
-            var indentation = new string('\t', nestingLevel + 1);
-            var builder = new StringBuilder();
-            var type = obj.GetType();
-            builder.AppendLine(type.Name);
-
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                builder.Append(indentation
-                               + propertyInfo.Name
-                               + " = "
-                               + PrintToString(propertyInfo.GetValue(obj),
-                                   nestingLevel + 1));
-            }
-
-            return builder.ToString();
-        }
+        public List<Type> FinalTypes { get; init; } = new();
     }
 }
