@@ -1,3 +1,6 @@
+using System;
+using System.Reflection;
+
 namespace ObjectPrinting
 {
     public class ObjectPrinter
