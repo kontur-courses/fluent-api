@@ -1,6 +1,6 @@
 using System;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -8,11 +8,5 @@ namespace ObjectPrinting
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
-
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
-        {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
-        }
-
     }
 }
