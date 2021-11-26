@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,23 +8,38 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
+
+        private readonly HashSet<string> membersToExclude = new HashSet<string>();
+
+        private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+            membersToExclude.Add(memberInfo.Name);
+
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            typesToExclude.Add(typeof(TPropType));
             return this;
         }
 
@@ -34,29 +50,53 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (IsObjectFinalType(obj))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+            var indentation = new string('\t', nestingLevel + 1);
+            var builder = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            builder.AppendLine(type.Name);
+
+            foreach (var memberInfo in type.GetPropertiesAndFields())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (!memberInfo.IsFieldOrProperty())
+                    continue;
+
+                if (ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType()))
+                    continue;
+
+                if (ShouldExcludeMemberByName(memberInfo.Name))
+                    continue;
+
+                builder
+                    .Append(indentation)
+                    .Append(memberInfo.Name)
+                    .Append(" = ")
+                    .Append(PrintToString(memberInfo.GetValue(obj), nestingLevel + 1))
+                    .Append("\r\n");
             }
-            return sb.ToString();
+
+            return builder.ToString();
+        }
+
+        private bool ShouldExcludeMemberByName(string memberName)
+        {
+            return membersToExclude.Contains(memberName);
+        }
+
+        private bool IsObjectFinalType(object obj)
+        {
+            return finalTypes.Contains(obj.GetType());
+        }
+
+        private bool ShouldExcludeMemberByType(Type memberType)
+        {
+            return typesToExclude.Contains(memberType);
         }
     }
 }
