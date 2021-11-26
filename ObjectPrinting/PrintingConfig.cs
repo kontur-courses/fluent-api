@@ -11,21 +11,23 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers = new();
-        private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<Type> finalTypes = new()
+        private static readonly HashSet<Type> FinalTypes = new()
         {
             typeof(int),
             typeof(double),
             typeof(float),
             typeof(string),
             typeof(DateTime),
-            typeof(TimeSpan)
+            typeof(TimeSpan),
+            typeof(Guid)
         };
 
-        private Dictionary<object, int> visited;
+        private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers = new();
+        private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
+        private readonly HashSet<Type> excludedTypes = new();
+
+        private HashSet<object> visited;
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -52,7 +54,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            visited = new Dictionary<object, int>();
+            visited = new HashSet<object>();
             return PrintToString(obj, 0);
         }
 
@@ -71,18 +73,23 @@ namespace ObjectPrinting
             if (obj == null)
                 return $"null{Environment.NewLine}";
 
-            if (visited.ContainsKey(obj) && visited[obj] < nestingLevel)
+            if (visited.Contains(obj))
                 return $"Cyclic Reference{Environment.NewLine}";
 
-            visited[obj] = nestingLevel;
+            visited.Add(obj);
 
-            if (finalTypes.Contains(obj.GetType()))
-                return $"{obj}{Environment.NewLine}";
+            string result;
 
-            if (obj is IEnumerable collection)
-                return $"{PrintCollection(collection, nestingLevel)}{Environment.NewLine}";
+            if (FinalTypes.Contains(obj.GetType()))
+                result = $"{obj}{Environment.NewLine}";
+            else if (obj is IEnumerable collection)
+                result = $"{PrintCollection(collection, nestingLevel)}{Environment.NewLine}";
+            else
+                result = PrintMembers(obj, nestingLevel);
 
-            return PrintMembers(obj, nestingLevel);
+            visited.Remove(obj);
+
+            return result;
         }
 
         private string PrintMembers(object obj, int nestingLevel)

@@ -15,7 +15,7 @@ namespace ObjectPrintingTests
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            person = new Person { Name = "Alex", Age = 19, Height = 170.1, Id = Guid.NewGuid()};
+            person = new Person { Name = "Alex", Age = 19, Height = 170.1, Id = new Guid("c76d3d06-3ab9-4d55-85e7-9f62d4f49466") };
             newLine = Environment.NewLine;
         }
 
@@ -47,7 +47,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}");
         }
 
         [Test]
@@ -58,7 +58,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alex{newLine}\tHeight = 170,1{newLine}\tAge = 13{newLine}");
         }
 
         [Test]
@@ -94,7 +94,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
         }
 
         [Test]
@@ -106,33 +106,33 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alex{newLine}\tHeight = 170.1{newLine}\tAge = 19{newLine}");
         }
 
         [Test]
         public void ShouldUseTrimming_WhenItsSpecifiedForType()
         {
-            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = Guid.NewGuid() };
+            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = new Guid("c76d3d06-3ab9-4d55-85e7-9f62d4f49466") };
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>()
                 .TrimmedToLength(10);
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
         }
 
         [Test]
         public void ShouldUseTrimming_WhenItsSpecifiedForMember()
         {
-            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = Guid.NewGuid() };
+            var person = new Person { Name = "Alexalexalex", Age = 19, Height = 170.1, Id = new Guid("c76d3d06-3ab9-4d55-85e7-9f62d4f49466") };
             var printer = ObjectPrinter.For<Person>()
                 .Printing(x => x.Name)
                 .TrimmedToLength(10);
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Be($"Person{newLine}\tId = Guid{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
+            actual.Should().Be($"Person{newLine}\tId = c76d3d06-3ab9-4d55-85e7-9f62d4f49466{newLine}\tName = Alexalexal{newLine}\tHeight = 170,1{newLine}\tAge = 19{newLine}");
         }
     }
 }
