@@ -4,8 +4,9 @@ namespace ObjectPrinting.Solved.TestData
 {
     public class Person
     {
-        public double SomeField;
+        public Person Parent;
 
+        public double SomeField;
         public Guid Id { get; set; }
         public string Name { get; set; }
         public double Height { get; set; }

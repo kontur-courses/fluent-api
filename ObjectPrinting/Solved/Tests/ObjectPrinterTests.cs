@@ -6,7 +6,14 @@ namespace ObjectPrinting.Solved.Tests
 {
     public class ObjectPrinterTests
     {
-        private readonly Person person = Person.GetInstance();
+        private Person person;
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            person = Person.GetInstance();
+            person.Parent = Person.GetInstance();
+        }
 
         [Test]
         public void ObjPrinter_ShouldExcludeSpecificType()

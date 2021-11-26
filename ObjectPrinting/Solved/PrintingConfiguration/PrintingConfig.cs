@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using ObjectPrinting.Solved.Extensions;
 
@@ -49,7 +50,7 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLvl)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -57,37 +58,21 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             if (IsObjectFinalType(obj))
                 return obj + Environment.NewLine;
 
-            var indentation = new string('\t', nestingLevel + 1);
             var builder = new StringBuilder();
             var type = obj.GetType();
 
             builder.AppendLine(type.Name);
 
-            foreach (var memberInfo in type.GetPropertiesAndFields())
+            foreach (var member in type.GetPropertiesAndFields())
             {
-                if (!memberInfo.IsFieldOrProperty())
+                if (ShouldIgnoreMember(member))
                     continue;
 
-                if (ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType()))
-                    continue;
-
-                if (ShouldExcludeMemberByName(memberInfo.Name))
-                    continue;
-
-                builder
-                    .Append(indentation)
-                    .Append(memberInfo.Name)
-                    .Append(" = ")
-                    .Append(PrintToString(memberInfo.GetValue(obj), nestingLevel + 1))
-                    .Append("\r\n");
+                var memberValue = PrintToString(member.GetValue(obj), nestingLvl + 1);
+                builder.AppendNextMember(member, memberValue, GetIndent(nestingLvl));
             }
 
             return builder.ToString();
-        }
-
-        private bool ShouldExcludeMemberByName(string memberName)
-        {
-            return membersToExclude.Contains(memberName);
         }
 
         private bool IsObjectFinalType(object obj)
@@ -95,9 +80,33 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return finalTypes.Contains(obj.GetType());
         }
 
+        private bool ShouldIgnoreMember(MemberInfo memberInfo)
+        {
+            if (!memberInfo.IsFieldOrProperty())
+                return true;
+
+            if (ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType()))
+                return true;
+
+            if (ShouldExcludeMemberByName(memberInfo.Name))
+                return true;
+
+            return false;
+        }
+
         private bool ShouldExcludeMemberByType(Type memberType)
         {
             return typesToExclude.Contains(memberType);
+        }
+
+        private bool ShouldExcludeMemberByName(string memberName)
+        {
+            return membersToExclude.Contains(memberName);
+        }
+
+        private string GetIndent(int nestingLvl)
+        {
+            return new string('\t', nestingLvl + 1);
         }
     }
 }
