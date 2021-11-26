@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Solved.PrintingConfiguration
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
@@ -12,6 +12,8 @@ namespace ObjectPrinting.Solved
             this.printingConfig = printingConfig;
         }
 
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             return printingConfig;
@@ -21,8 +23,6 @@ namespace ObjectPrinting.Solved
         {
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>

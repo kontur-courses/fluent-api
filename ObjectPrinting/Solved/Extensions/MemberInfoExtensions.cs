@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Solved.Extensions
 {
     public static class MemberInfoExtensions
     {

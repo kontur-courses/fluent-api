@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using ObjectPrinting.Solved.Extensions;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Solved.PrintingConfiguration
 {
     public class PrintingConfig<TOwner>
     {
