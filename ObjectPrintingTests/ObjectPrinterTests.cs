@@ -5,6 +5,8 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Contexts;
+using ObjectPrintingTests.Helpers;
+using ObjectPrintingTests.Persons;
 
 namespace ObjectPrintingTests
 {
@@ -29,11 +31,11 @@ namespace ObjectPrintingTests
 
             personPrinter = ObjectPrinter.For<Person>();
 
-            personDesc = new ObjectDescription("Person");
-            id = "Id = Guid";
-            name = "Name = Alex";
-            height = "Height = 2,1";
-            age = "Age = 19";
+            personDesc = new ObjectDescription(nameof(Person));
+            id = $"{nameof(Person.Id)} = 00000000-0000-0000-0000-000000000000";
+            name = $"{nameof(Person.Name)} = Alex";
+            height = $"{nameof(Person.Height)} = 2,1";
+            age = $"{nameof(Person.Age)} = 19";
         }
 
         [Test]
@@ -43,15 +45,15 @@ namespace ObjectPrintingTests
                 //1 Исключение из сериализации свойства/поля определенного типа
                 .Excluding<Guid>()
                 //2 Альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString())
+                .Printing<string>().Using(s => s + "!!!")
                 //3 Для всех типов, имеющих культуру, есть возможность ее указать
-                .FormatFor<double>(CultureInfo.InvariantCulture)
+                .FormatFor<int>("X", CultureInfo.InvariantCulture)
                 //4 Настройка сериализации конкретного свойства/поля
-                .Printing(p => p.Height).Using(propInfo => propInfo.Name)
+                .Printing(p => p.Height).Using(memberInfo => memberInfo.Module.Name)
                 //5 Возможность обрезания строк
                 .MaxStringLength(10)
                 //6 Исключение из сериализации конкретного свойства/поля
-                .Excluding(p => p.Age)
+                .Excluding(p => p.Name)
                 .PrintToString(person);
         }
 
@@ -61,7 +63,7 @@ namespace ObjectPrintingTests
             var expectedWithType = personDesc.WithFields(id, name, height, "Age = CustomInt").ToString();
             var expectedWithProp = personDesc.WithFields(id, name, height, "Age").ToString();
 
-            var withCustomType = personPrinter.Printing<int>().Using(i => "CustomInt");
+            var withCustomType = personPrinter.Printing<int>().Using(_ => "CustomInt");
             var withCustomProp = personPrinter.Printing(p => p.Age).Using(prop => prop.Name);
 
             withCustomType.PrintToString(person).Should().Be(expectedWithType);
@@ -87,7 +89,7 @@ namespace ObjectPrintingTests
                 .WithFields(new ObjectDescription("Child = Person")
                     .WithFields(id, name, height, age))
                 .WithFields(
-                    "Id = Guid",
+                    id,
                     "Name = Mike",
                     "Height = 2,2",
                     "Age = 99")
@@ -108,7 +110,49 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Excluding_Types()
+        public void PrintToString_IgnorePrivateFields()
+        {
+            var expected = new ObjectDescription(nameof(PrivatePerson))
+                .WithFields(id)
+                .ToString();
+
+            var printer = ObjectPrinter.For<PrivatePerson>();
+
+            printer.PrintToString(new PrivatePerson())
+                .Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_WithCycleReference_DontThrowException()
+        {
+            var cyclePerson = new NestedPerson {Age = 99, Height = 9.9, Name = "Mike", Id = Guid.Empty};
+            cyclePerson.Child = cyclePerson;
+
+
+            ObjectPrinter.For<NestedPerson>()
+                .PrintToString(cyclePerson);
+        }
+
+        [Test]
+        public void PrintToString_WorkWithTime()
+        {
+            var birthDay = new DateTime(1000, 10, 20);
+            var weekWorkTime = new TimeSpan(987);
+            var expected = new ObjectDescription(nameof(TimePerson))
+                .WithFields(
+                    $"{nameof(TimePerson.BirthDay)} = {birthDay.ToString()}",
+                    $"{nameof(TimePerson.WeekWorkTime)} = {weekWorkTime.ToString()}")
+                .ToString();
+
+            var timePerson = new TimePerson(birthDay, weekWorkTime);
+            var printer = ObjectPrinter.For<TimePerson>();
+
+            printer.PrintToString(timePerson)
+                .Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_Excluding_Types()
         {
             var expected = personDesc
                 .WithFields(id, age)
@@ -123,7 +167,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Excluding_Properties()
+        public void PrintToString_Excluding_Properties()
         {
             var expected = personDesc
                 .WithFields(id, name)
@@ -138,7 +182,17 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Printing_UsingCustomTypeSerialization()
+        public void Excluding_ThrowsException_IfFunctionMemberSelected()
+        {
+            Assert.That(() =>
+            {
+                ObjectPrinter.For<FuncPerson>()
+                    .Excluding(p => p.GetAge());
+            }, Throws.InstanceOf<ArgumentException>());
+        }
+
+        [Test]
+        public void PrintToString_Printing_UsingCustomTypeSerialization()
         {
             var expected = personDesc
                 .WithFields(id, name, height, "Age = My int 19")
@@ -152,21 +206,21 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Printing_FormatFor()
+        public void PrintToString_Printing_SetFormatForFormattable()
         {
             var expected = personDesc
-                .WithFields(id, name, "Height = 2.1", age)
+                .WithFields(id, name, height, $"{nameof(person.Age)} = 13")
                 .ToString();
 
             var printer = personPrinter
-                .FormatFor<double>(CultureInfo.InvariantCulture);
+                .FormatFor<int>("X", CultureInfo.InvariantCulture);
 
             printer.PrintToString(person)
                 .Should().Be(expected);
         }
 
         [Test]
-        public void Printing_UsingCustomPropertySerialization()
+        public void PrintToString_Printing_UsingCustomPropertySerialization()
         {
             var expected = personDesc
                 .WithFields(id, "Name!", height, age)
@@ -179,8 +233,34 @@ namespace ObjectPrintingTests
                 .Should().Be(expected);
         }
 
+        [Test]
+        public void Printing_ThrowsException_IfFunctionMemberSelected()
+        {
+            Assert.That(() =>
+            {
+                ObjectPrinter.For<FuncPerson>()
+                    .Printing(p => p.GetAge());
+            }, Throws.InstanceOf<ArgumentException>());
+        }
+
+        [Test]
+        public void PrintToString_AlsoWorkWithFields()
+        {
+            var expected = new ObjectDescription(nameof(FieldPerson))
+                .WithFields("Height", id, name)
+                .ToString();
+
+            var filedPerson = new FieldPerson(Guid.Empty, "Alex", 2.1, 19);
+            var printer = ObjectPrinter.For<FieldPerson>()
+                .Printing(p => p.Height).Using(propInfo => propInfo.Name)
+                .Excluding(p => p.Age);
+
+            printer.PrintToString(filedPerson)
+                .Should().Be(expected);
+        }
+
         [TestCaseSource(nameof(TrimStringsCases))]
-        public string TrimStrings(string input, int length)
+        public string PrintToString_TrimStrings(string input, int length)
         {
             var printer = ObjectPrinter.For<string>()
                 .MaxStringLength(length);

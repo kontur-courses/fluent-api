@@ -2,7 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace ObjectPrintingTests
+namespace ObjectPrintingTests.Helpers
 {
     public class ObjectDescriptionTests
     {

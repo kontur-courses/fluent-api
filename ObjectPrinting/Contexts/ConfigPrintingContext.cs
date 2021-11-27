@@ -21,10 +21,10 @@ namespace ObjectPrinting.Contexts
 
         public ConfigPrintingContext<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            var propertyInfo = (PropertyInfo)((MemberExpression)propertySelector.Body).Member;
+            var memberInfo = ValidateSelectedMember(propertySelector);
             return new ConfigPrintingContext<TOwner>(config with
             {
-                ExcludingProperties = config.ExcludingProperties.Add(propertyInfo)
+                ExcludingMembers = config.ExcludingMembers.Add(memberInfo)
             });
         }
 
@@ -32,17 +32,16 @@ namespace ObjectPrinting.Contexts
 
         public PropertyPrintingContext<TOwner> Printing<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            var propertyInfo = (PropertyInfo)((MemberExpression)propertySelector.Body).Member;
-            var propertyConfig = new PropertyPrintingContext<TOwner>(config, propertyInfo);
-            return propertyConfig;
+            var memberInfo = ValidateSelectedMember(propertySelector);
+            return new PropertyPrintingContext<TOwner>(config, memberInfo);
         }
 
-        public ConfigPrintingContext<TOwner> FormatFor<TPropType>(IFormatProvider format)
+        public ConfigPrintingContext<TOwner> FormatFor<TPropType>(string format, IFormatProvider formatProvider)
             where TPropType : IFormattable =>
             new(config with
             {
                 TypePrinting =
-                config.TypePrinting.SetItem(typeof(TPropType), obj => ((TPropType)obj).ToString("", format))
+                config.TypePrinting.SetItem(typeof(TPropType), obj => ((TPropType)obj).ToString(format, formatProvider))
             });
 
         public ConfigPrintingContext<TOwner> MaxStringLength(int maxLength)
@@ -63,5 +62,15 @@ namespace ObjectPrinting.Contexts
         }
 
         public string PrintToString(TOwner obj) => new ObjectPrinter<TOwner>(config).PrintToString(obj);
+
+        private MemberInfo ValidateSelectedMember<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var memberInfo = (memberSelector.Body as MemberExpression)?.Member;
+            if (memberInfo == null || !config.PrintingMemberFactory.CanConvert(memberInfo))
+                throw new ArgumentException(
+                    $"Selected member must be one of: {string.Join(", ", config.PrintingMemberFactory.SupportedTypes)}.");
+
+            return memberInfo;
+        }
     }
 }

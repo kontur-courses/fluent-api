@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace ObjectPrintingTests
+namespace ObjectPrintingTests.Helpers
 {
     public class ObjectDescription
     {

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using ObjectPrinting.Contexts;
+using ObjectPrinting.PrintingMembers;
 
 namespace ObjectPrinting
 {
@@ -11,11 +13,11 @@ namespace ObjectPrinting
     {
         public static ConfigPrintingContext<T> For<T>() => new(new PrintingConfig
         {
-            FinalTypes = new List<Type>
+            FinalTypes = ImmutableList.CreateRange(new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            }
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            })
         });
     }
 
@@ -28,55 +30,62 @@ namespace ObjectPrinting
             this.config = config;
         }
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj) => BuildObjectString(obj, 0).ToString();
 
-        private string PrintToString(object obj, int nestingLevel) =>
+        private StringBuilder BuildObjectString(object obj, int nestingLevel) =>
             TryGetTypeString(obj, out var typeString)
-                ? typeString
-                : GetObjectString(obj, nestingLevel);
+                ? new StringBuilder(typeString)
+                : BuildComplexObjectString(obj, nestingLevel);
 
-        private string GetObjectString(object obj, int nestingLevel)
+        private StringBuilder BuildComplexObjectString(object obj, int nestingLevel)
         {
             var builder = new StringBuilder();
             var type = obj.GetType();
             builder.AppendLine(type.Name);
 
-            AppendProperties(builder, obj, nestingLevel);
+            builder.Append(GetPropertiesBuilder(obj, nestingLevel));
 
-            return builder.ToString();
+            return builder;
         }
 
-        private void AppendProperties(StringBuilder builder, object obj, int nestingLevel)
+        private StringBuilder GetPropertiesBuilder(object obj, int nestingLevel)
         {
+            var builder = new StringBuilder();
             var indentation = new string('\t', nestingLevel + 1);
-            foreach (var propertyInfo in ExcludeProperties(obj.GetType().GetProperties()))
+            foreach (var objMember in GetSuitableObjectMembers(obj))
             {
                 builder.Append(indentation);
-                if (TryGetPropertyString(obj, propertyInfo, out var propString))
-                {
-                    builder.Append(propString);
-                    continue;
-                }
-
-                builder.Append(propertyInfo.Name + " = ");
-                if (TryGetTypeString(obj, out var typeString))
-                {
-                    builder.Append(typeString);
-                    continue;
-                }
-
-                builder.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                builder.Append(BuildMemberString(obj, objMember, nestingLevel));
             }
+
+            return builder;
         }
 
-        private IEnumerable<PropertyInfo> ExcludeProperties(IEnumerable<PropertyInfo> properties) =>
-            properties
-                .Where(propInfo => !config.ExcludingTypes.Contains(propInfo.PropertyType))
-                .Where(propInfo => !config.ExcludingProperties.Contains(propInfo));
-
-        private bool TryGetPropertyString(object obj, PropertyInfo propertyInfo, out string propString)
+        private IEnumerable<PrintingMember> GetSuitableObjectMembers(object obj)
         {
-            if (config.PropertyPrinting.TryGetValue(propertyInfo, out var printProperty))
+            var type = obj.GetType();
+            var members = type.GetMembers()
+                .Where(config.PrintingMemberFactory.CanConvert)
+                .Select(config.PrintingMemberFactory.Convert);
+
+            return members
+                .Where(objMember => !config.ExcludingTypes.Contains(objMember.Type))
+                .Where(objMember => !config.ExcludingMembers.Contains(objMember.MemberInfo));
+        }
+
+        private StringBuilder BuildMemberString(object obj, PrintingMember objMember, int nestingLevel)
+        {
+            if (TryGetMemberString(objMember.MemberInfo, out var propString))
+                return new StringBuilder(propString);
+
+            var builder = new StringBuilder(objMember.Name + " = ");
+            builder.Append(BuildValueString(obj, objMember, nestingLevel));
+            return builder;
+        }
+
+        private bool TryGetMemberString(MemberInfo propertyInfo, out string propString)
+        {
+            if (config.MemberPrinting.TryGetValue(propertyInfo, out var printProperty))
             {
                 propString = printProperty(propertyInfo) + Environment.NewLine;
                 return true;
@@ -86,29 +95,39 @@ namespace ObjectPrinting
             return false;
         }
 
+        private StringBuilder BuildValueString(object obj, PrintingMember objMember, int nestingLevel)
+        {
+            if (TryGetTypeString(obj, out var typeString))
+                return new StringBuilder(typeString);
+
+            if (nestingLevel >= 100)
+                return new StringBuilder("...");
+
+            return BuildObjectString(objMember.GetValue(obj), nestingLevel + 1);
+        }
+
         private bool TryGetTypeString(object obj, out string typeString)
         {
-            if (obj == null)
-            {
-                typeString = "null" + Environment.NewLine;
-                return true;
-            }
-
-            var type = obj.GetType();
-            if (config.TypePrinting.TryGetValue(type, out var printType))
-            {
-                typeString = printType(obj) + Environment.NewLine;
-                return true;
-            }
-
-            if (config.FinalTypes.Contains(type))
-            {
-                typeString = obj + Environment.NewLine;
-                return true;
-            }
-
             typeString = null;
-            return false;
+
+            if (obj == null)
+                typeString = "null";
+            else if (!TrySerializeType(obj, obj.GetType(), out typeString))
+                return false;
+
+            typeString += Environment.NewLine;
+            return true;
+        }
+
+        private bool TrySerializeType(object obj, Type type, out string typeString)
+        {
+            typeString = null;
+            if (config.TypePrinting.TryGetValue(type, out var printType))
+                typeString = printType(obj);
+            else if (config.FinalTypes.Contains(type))
+                typeString = obj.ToString();
+
+            return typeString != null;
         }
     }
 }

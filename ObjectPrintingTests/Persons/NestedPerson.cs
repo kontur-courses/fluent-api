@@ -1,4 +1,4 @@
-﻿namespace ObjectPrintingTests
+﻿namespace ObjectPrintingTests.Persons
 {
     public class NestedPerson : Person
     {
