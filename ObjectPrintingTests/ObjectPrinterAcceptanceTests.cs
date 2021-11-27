@@ -3,6 +3,7 @@ using NUnit.Framework;
 using ObjectPrinting;
 using System;
 using System.Globalization;
+using System.Linq;
 
 namespace ObjectPrintingTests;
 
@@ -29,7 +30,11 @@ Integer convallis, eros ut iaculis fringilla, ligula neque varius urna, a blandi
 Vivamus mollis ante et condimentum tempus. Praesent iaculis elit sed bibendum varius. 
 Morbi elementum turpis turpis, sed sollicitudin mi sagittis non. Quisque id facilisis tortor. 
 Ut dapibus neque non nisl condimentum efficitur. Etiam id libero eget purus rhoncus ultricies. 
-Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis."
+Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
+            Dates = new(){
+                [DateTime.Now]="today",
+                [DateTime.Now-TimeSpan.FromDays(10)]="10 days ago"
+            }
         };
     }
 
@@ -57,6 +62,16 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis."
         result = printer.PrintToString(testObject);
 
         Assert.Pass();
+    }
+
+    [Test]
+    public void Should_PrintCollections()
+    {
+        testObject.Name = "Really long Name";
+
+        result = ObjectPrinter.For<Person>().WithSerializer<Guid>(x => x.ToString()).PrintToString(testObject);
+
+        result.Should().ContainAll(testObject.OtherPersons.Select(x => x.ToString()));
     }
 
     [Test]

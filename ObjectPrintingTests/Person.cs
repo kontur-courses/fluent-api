@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrintingTests;
 
@@ -10,6 +11,8 @@ public class Person
     public int Age { get; set; }
 
     public Guid[] OtherPersons { get; set; }
+
+    public Dictionary<DateTime,string> Dates { get; set; }
 
     public string Biography { get; set; }
 
