@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -20,7 +19,5 @@ namespace ObjectPrinting
             printingConfig.AddCustomMemberSerializer(selectedMember, serializer);
             return printingConfig;
         }
-
-        PrintingConfig<TOwner> IInnerPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
 }
