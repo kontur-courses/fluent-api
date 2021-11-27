@@ -196,14 +196,13 @@ public class PrintingConfig<TOwner>
     private string PrintDictionary(IDictionary dictionary, int nestingLevel)
     {
         var indentation = new string('\t', nestingLevel + 1);
-        var itemIndentation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder($":{Environment.NewLine}");
 
         foreach (var key in dictionary.Keys)
         {
             var keyStr = PrintToString(key, nestingLevel + 1);
             var valueStr = PrintToString(dictionary[key], nestingLevel + 1);
-            sb.Append($"{indentation}- key: {keyStr}{itemIndentation}  value: {valueStr}");
+            sb.Append($"{indentation}- key: {keyStr}{indentation}  value: {valueStr}");
         }
 
         return sb.ToString();
