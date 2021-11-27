@@ -27,7 +27,7 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<MemberInfo> excludedMembers = new();
     private readonly HashSet<Type> excludedTypes = new();
 
-    private string cyclicReferenceMessage;
+    private string cyclicReferenceMessage = "Cyclic reference";
     private bool throwOnCyclicReference = true;
     private HashSet<object> visited;
 
@@ -89,9 +89,11 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> UseCyclicReferenceMessage(string message)
+    public PrintingConfig<TOwner> UseCyclicReferenceMessage(string message = null)
     {
-        cyclicReferenceMessage = message;
+        if (message != null)
+            cyclicReferenceMessage = message;
+
         throwOnCyclicReference = false;
         return this;
     }

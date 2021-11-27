@@ -30,7 +30,7 @@ public class ObjectPrintingTests
         var printer = ObjectPrinter.For<Person>()
             .Excluding<Guid>()
             .Printing<int>().Using(i => i.ToString("X"))
-            .Printing<double>().Using(CultureInfo.InvariantCulture)
+            .Printing<double>().Using(cultureInfo: CultureInfo.InvariantCulture)
             .Printing(x => x.Height).Using(i => i.ToString("P"))
             .Printing(p => p.Name).TrimmedToLength(10)
             .Excluding(p => p.Age)
@@ -129,7 +129,7 @@ public class ObjectPrintingTests
     {
         var printer = ObjectPrinter.For<Person>()
             .Printing<double>()
-            .Using(CultureInfo.GetCultureInfo("en-US"));
+            .Using(cultureInfo: CultureInfo.GetCultureInfo("en-US"));
 
         var actual = printer.PrintToString(person);
 
@@ -141,7 +141,7 @@ public class ObjectPrintingTests
     {
         var printer = ObjectPrinter.For<Person>()
             .Printing(x => x.Height)
-            .Using(CultureInfo.GetCultureInfo("en-US"));
+            .Using(cultureInfo: CultureInfo.GetCultureInfo("en-US"));
 
         var actual = printer.PrintToString(person);
 
@@ -181,13 +181,13 @@ public class ObjectPrintingTests
     {
         var action = () => ObjectPrinter.For<Person>()
             .Printing(x => x.Name)
-            .TrimmedToLength(-1); ;
+            .TrimmedToLength(-1);
 
-        action.Should().Throw<ArgumentException>().WithMessage("Maximum length cannot be negative");
+        action.Should().Throw<ArgumentException>().WithMessage("Maximum length cannot be negative, but was -1");
     }
 
     [Test]
-    public void ShouldThrowOnCyclicReference_WhenOtherBehaviorIsNotSpecified()
+    public void ShouldThrowOnCyclicReference_WhenBehaviorIsNotSpecified()
     {
         var action = () => personWithCyclicReference.PrintToString();
 
@@ -199,17 +199,17 @@ public class ObjectPrintingTests
     {
         var objectWithReferenceOnItself = new PersonWithParent();
         objectWithReferenceOnItself.Parent = objectWithReferenceOnItself;
-        
+
         var action = () => personWithCyclicReference.PrintToString();
 
         action.Should().Throw<InvalidOperationException>("Cyclic reference detected");
     }
 
     [Test]
-    public void ShouldUseCyclicReferenceMessage_WhenItsSpecified()
+    public void ShouldUseCyclicReferenceMessage_WhenSpecified()
     {
         var printer = ObjectPrinter.For<PersonWithParent>()
-            .UseCyclicReferenceMessage("Cyclic reference");
+            .UseCyclicReferenceMessage();
 
         var actual = printer.PrintToString(personWithCyclicReference);
 
@@ -220,7 +220,7 @@ public class ObjectPrintingTests
     public void ShouldThrowOnCyclicReference_WhenCyclicReferenceMessageOverridenByThrowing()
     {
         var printer = ObjectPrinter.For<PersonWithParent>()
-            .UseCyclicReferenceMessage("Cyclic reference")
+            .UseCyclicReferenceMessage()
             .ThrowOnCyclicReference();
 
         var action = () => printer.PrintToString(personWithCyclicReference);
@@ -238,7 +238,7 @@ public class ObjectPrintingTests
         obj.AddLast(innerObj);
 
         var actual = obj.PrintToString();
-        
+
         actual.Should().Be($":{newLine}\t- :{newLine}\t\t- 1{newLine}\t- :{newLine}\t\t- 1{newLine}");
     }
 
@@ -256,6 +256,7 @@ public class ObjectPrintingTests
     public void ShouldSerializeCorrectly_WhenArgumentIsCollectionWithObject()
     {
         var list = new List<Person> { person, person };
+
         var printer = ObjectPrinter.For<List<Person>>()
             .Excluding<double>()
             .Excluding<Guid>();
@@ -288,7 +289,8 @@ public class ObjectPrintingTests
     [Test]
     public void ShouldSerializeCorrectly_WhenArgumentIsDictionaryWithObjects()
     {
-        var dictionary = new Dictionary<Person, Person> { { person, person }};
+        var dictionary = new Dictionary<Person, Person> { { person, person } };
+
         var printer = ObjectPrinter.For<Dictionary<Person, Person>>()
             .Excluding<double>()
             .Excluding<Guid>();
@@ -306,5 +308,19 @@ public class ObjectPrintingTests
         var actual = dictionary.PrintToString();
 
         actual.Should().Be($":{newLine}");
+    }
+
+    private class Person
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public double Height { get; set; }
+        public int Age { get; set; }
+    }
+
+    private class PersonWithParent
+    {
+        public string Name { get; set; }
+        public PersonWithParent Parent { get; set; }
     }
 }
