@@ -31,5 +31,22 @@ namespace ObjectPrintingUnitTest
 
             printer.PrintToString(person).Should().Be("Person\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21\r\n");
         }
+
+        [Test]
+        public void PrintToString_AlternativeMethodSerialization_Double_ShouldBeNumberWithAAA()
+        {
+            var printer = ObjectPrinter.For<double>().Printing<double>().Using(i => i + "AAA");
+
+            printer.PrintToString(1.9992929292).Should().Be("1,9992929292AAA\r\n");
+        }
+
+        [Test]
+        public void PrintToString_AlternativeMethodSerialization_Member_ShouldBeModified()
+        {
+            var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i + " years old");
+
+            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21 years old\r\n\t");
+        }
+
     }
 }
