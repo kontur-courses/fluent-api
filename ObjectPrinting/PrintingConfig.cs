@@ -10,8 +10,27 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-        private HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+
+        private  Dictionary<MemberInfo, Func<object, string>> memberConverters =
+            new Dictionary<MemberInfo, Func<object, string>>();
+
+        private Dictionary<Type, Func<object, string>> typeConverters =
+            new Dictionary<Type, Func<object, string>>();
+
+        public Dictionary<MemberInfo, Func<object, string>> MemberConverters
+        {
+            get => memberConverters;
+            set => memberConverters = value;
+        }
+
+        public Dictionary<Type, Func<object, string>> TypeConverters
+        {
+            get => typeConverters;
+            set => typeConverters = value;
+        }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -20,7 +39,8 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var selectedProp = (PropertyInfo)((MemberExpression)memberSelector.Body).Member;
+            return new PropertyPrintingConfig<TOwner, TPropType>(selectedProp, this);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -53,7 +73,14 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(obj.GetType()))
+            {
+                if (typeConverters.ContainsKey(obj.GetType()))
+                {
+                    var value = typeConverters[obj.GetType()].Invoke(obj);
+                    return value + Environment.NewLine;
+                }
                 return obj + Environment.NewLine;
+            }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -66,6 +93,15 @@ namespace ObjectPrinting
 
                 if (excludedMembers.Contains(propertyInfo))
                     continue;
+
+                if (typeConverters.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var value = typeConverters[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj));
+
+                    sb.Append(identation + propertyInfo.Name + " = " + value);
+
+                    continue;
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
