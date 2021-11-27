@@ -12,7 +12,7 @@ public class Person
 
     public Guid[] OtherPersons { get; set; }
 
-    public Dictionary<DateTime,string> Dates { get; set; }
+    public Dictionary<DateTime, string> Dates { get; set; }
 
     public string Biography { get; set; }
 

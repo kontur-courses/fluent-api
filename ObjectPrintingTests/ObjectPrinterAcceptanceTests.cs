@@ -31,9 +31,10 @@ Vivamus mollis ante et condimentum tempus. Praesent iaculis elit sed bibendum va
 Morbi elementum turpis turpis, sed sollicitudin mi sagittis non. Quisque id facilisis tortor. 
 Ut dapibus neque non nisl condimentum efficitur. Etiam id libero eget purus rhoncus ultricies. 
 Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
-            Dates = new(){
-                [DateTime.Now]="today",
-                [DateTime.Now-TimeSpan.FromDays(10)]="10 days ago"
+            Dates = new()
+            {
+                [DateTime.Now] = "today",
+                [DateTime.Now - TimeSpan.FromDays(10)] = "10 days ago"
             }
         };
     }
@@ -62,6 +63,17 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         result = printer.PrintToString(testObject);
 
         Assert.Pass();
+    }
+
+    [Test]
+    public void Should_PrintDictionaries()
+    {
+        testObject.Name = "Really long Name";
+
+        result = ObjectPrinter.Print(testObject);
+
+        result.Should().ContainAll(testObject.Dates.Select(x => x.Key.ToString()))
+            .And.ContainAll(testObject.Dates.Select(x => x.Value.ToString()));
     }
 
     [Test]
