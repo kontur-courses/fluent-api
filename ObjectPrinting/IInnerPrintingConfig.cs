@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public interface IInnerPrintingConfig<TOwner, TPropType>
 {
-    public interface IInnerPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> Using(Func<TPropType, string> serializer);
-    }
+    PrintingConfig<TOwner> Using(Func<TPropType, string> serializer);
 }
