@@ -10,7 +10,7 @@ using ObjectPrintingTests.Persons;
 
 namespace ObjectPrintingTests
 {
-    public class ObjectPrinterTests
+    public class ObjectSerializerTests
     {
         private Person person;
         private NestedPerson nestedPerson;
@@ -32,10 +32,7 @@ namespace ObjectPrintingTests
             personPrinter = ObjectPrinter.For<Person>();
 
             personDesc = new ObjectDescription(nameof(Person));
-            id = $"{nameof(Person.Id)} = 00000000-0000-0000-0000-000000000000";
-            name = $"{nameof(Person.Name)} = Alex";
-            height = $"{nameof(Person.Height)} = 2,1";
-            age = $"{nameof(Person.Age)} = 19";
+            (id, name, height, age) = GetPersonDescription(person);
         }
 
         [Test]
@@ -87,7 +84,8 @@ namespace ObjectPrintingTests
         {
             var expected = new ObjectDescription("NestedPerson")
                 .WithFields(new ObjectDescription("Child = Person")
-                    .WithFields(id, name, height, age))
+                    .WithFields(id, name, height, age)
+                    .WithOffset("Child = ".Length))
                 .WithFields(
                     id,
                     "Name = Mike",
@@ -96,9 +94,10 @@ namespace ObjectPrintingTests
                 .ToString();
 
             var printer = ObjectPrinter.For<NestedPerson>();
+            var actual = printer.PrintToString(nestedPerson);
+            Console.WriteLine(actual);
 
-            printer.PrintToString(nestedPerson)
-                .Should().Be(expected);
+            actual.Should().Be(expected);
         }
 
         [Test]
@@ -107,6 +106,22 @@ namespace ObjectPrintingTests
             ObjectPrinter.For<Person>()
                 .PrintToString(null)
                 .Should().Be("null" + Environment.NewLine);
+        }
+
+        [Test]
+        public void PrintToString_AlsoWorkWithFields()
+        {
+            var expected = new ObjectDescription(nameof(FieldPerson))
+                .WithFields("Height", id, name)
+                .ToString();
+
+            var filedPerson = new FieldPerson(Guid.Empty, "Alex", 2.1, 19);
+            var printer = ObjectPrinter.For<FieldPerson>()
+                .Printing(p => p.Height).Using(propInfo => propInfo.Name)
+                .Excluding(p => p.Age);
+
+            printer.PrintToString(filedPerson)
+                .Should().Be(expected);
         }
 
         [Test]
@@ -149,6 +164,17 @@ namespace ObjectPrintingTests
 
             printer.PrintToString(timePerson)
                 .Should().Be(expected);
+        }
+
+        [TestCaseSource(nameof(PrintToStringWorkWithCollectionsCases))]
+        public void PrintToString_WorkWithCollections(ArrayPerson arrayPerson, string expected)
+        {
+            var printer = ObjectPrinter.For<ArrayPerson>();
+
+            var actual = printer.PrintToString(arrayPerson);
+            Console.WriteLine(actual);
+
+            actual.Should().Contain(expected);
         }
 
         [Test]
@@ -243,22 +269,6 @@ namespace ObjectPrintingTests
             }, Throws.InstanceOf<ArgumentException>());
         }
 
-        [Test]
-        public void PrintToString_AlsoWorkWithFields()
-        {
-            var expected = new ObjectDescription(nameof(FieldPerson))
-                .WithFields("Height", id, name)
-                .ToString();
-
-            var filedPerson = new FieldPerson(Guid.Empty, "Alex", 2.1, 19);
-            var printer = ObjectPrinter.For<FieldPerson>()
-                .Printing(p => p.Height).Using(propInfo => propInfo.Name)
-                .Excluding(p => p.Age);
-
-            printer.PrintToString(filedPerson)
-                .Should().Be(expected);
-        }
-
         [TestCaseSource(nameof(TrimStringsCases))]
         public string PrintToString_TrimStrings(string input, int length)
         {
@@ -282,6 +292,43 @@ namespace ObjectPrintingTests
                 ExpectedResult = new string('a', 10) + Environment.NewLine,
                 TestName = "Don't add ellipsis if string short"
             };
+        }
+
+        private static IEnumerable<TestCaseData> PrintToStringWorkWithCollectionsCases()
+        {
+            var person = new Person {Name = "Alex", Age = 19, Height = 2.1};
+            yield return new TestCaseData(
+                    new ArrayPerson {ChildrenArray = new[] {person, person}},
+                    GetExpectedForPrintToStringWorkWithCollections(nameof(ArrayPerson.ChildrenArray), person))
+                {TestName = "With Array"};
+
+            yield return new TestCaseData(
+                    new ArrayPerson {ChildrenList = new List<Person> {person, person}},
+                    GetExpectedForPrintToStringWorkWithCollections(nameof(ArrayPerson.ChildrenList), person))
+                {TestName = "With List"};
+        }
+
+        private static string GetExpectedForPrintToStringWorkWithCollections(string fillCollectionName, Person person)
+        {
+            var (id, name, height, age) = GetPersonDescription(person);
+            return new ObjectDescription("")
+                .WithFields(
+                    new ObjectDescription($"{fillCollectionName} = [0]: {nameof(Person)}")
+                        .WithFields(id, name, height, age)
+                        .WithOffset($"{fillCollectionName} = [0]: ".Length),
+                    new ObjectDescription(new string(' ', $"{fillCollectionName} = ".Length) + $"[1]: {nameof(Person)}")
+                        .WithFields(id, name, height, age)
+                        .WithOffset($"{fillCollectionName} = [1]: ".Length))
+                .ToString();
+        }
+
+        private static (string, string, string, string) GetPersonDescription(Person person)
+        {
+            var id = $"{nameof(Person.Id)} = {person.Id}";
+            var name = $"{nameof(Person.Name)} = {person.Name}";
+            var height = $"{nameof(Person.Height)} = {person.Height}";
+            var age = $"{nameof(Person.Age)} = {person.Age}";
+            return (id, name, height, age);
         }
     }
 }

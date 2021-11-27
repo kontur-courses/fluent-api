@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting.Contexts
 {
@@ -61,7 +62,7 @@ namespace ObjectPrinting.Contexts
             });
         }
 
-        public string PrintToString(TOwner obj) => new ObjectPrinter<TOwner>(config).PrintToString(obj);
+        public string PrintToString(TOwner obj) => new ObjectSerializer(config).Serialize(obj).ToString();
 
         private MemberInfo ValidateSelectedMember<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
