@@ -10,48 +10,48 @@ using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
-    public interface ITypeConfig
-    {
-        public Type GetType()
-        {
-            return null;
-        }
-        
-        public bool Print { get; }
-        public Func<Type, string> SerializeMethod { get; }
-    }
+    // public interface ITypeConfig
+    // {
+    //     public Type GetType()
+    //     {
+    //         return null;
+    //     }
+    //     
+    //     public bool Print { get; }
+    //     public Func<Type, string> SerializeMethod { get; }
+    // }
     
-    public class TypeConfig<T> : ITypeConfig
-    {
-        public Type GetType()
-        {
-            return typeof(T);
-        }
-        
-        public bool Print { get; }
-        public Func<T, string> SerializeMethod { get; }
-    }
+    // public class TypeConfig<T> : ITypeConfig
+    // {
+    //     public Type GetType()
+    //     {
+    //         return typeof(T);
+    //     }
+    //     
+    //     public bool Print { get; }
+    //     public Func<T, string> SerializeMethod { get; }
+    // }
     
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Func<PropertyInfo, bool>> excludingMemberExtractors = new HashSet<Func<PropertyInfo, bool>>();
-        private readonly Dictionary<string, ITypeConfig> configs;
+        private readonly HashSet<Func<PropertyInfo, bool>> excludingMemberExtractors = new();
+        // private readonly Dictionary<string, ITypeConfig> configs;
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
         
-        public PrintingConfig<TOwner> Exclude<T>()
+        public PrintingConfig<TOwner> Ignore<T>()
         {
             return Exclude(x => x.PropertyType == typeof(T));
         }
         
-        public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> excludingMemberExtractor)
-        {
-            // Console.WriteLine(excludingMemberExtractor.ToString().Split('.').Last().ToString());
-            return Exclude(x => x.Name == excludingMemberExtractor.ToString().Split('.').Last().Split(',').First());
-        }
+        // public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> excludingMemberExtractor)
+        // {
+        //     // Console.WriteLine(excludingMemberExtractor.ToString().Split('.').Last().ToString());
+        //     return Exclude(x => x.Name == excludingMemberExtractor.ToString().Split('.').Last().Split(',').First());
+        // }
         
         public PrintingConfig<TOwner> Exclude(Func<PropertyInfo, bool> excludingMemberExtractor)
         {
@@ -95,10 +95,10 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public PrintingConfig<TOwner> WithSerialize<T>(Func<T, string> func)
-        {
-            configs.TryAdd(typeof(T), new TypeConfig<T>() as ITypeConfig);
-        }
+        // public PrintingConfig<TOwner> WithSerialize<T>(Func<T, string> func)
+        // {
+        //     configs.TryAdd(typeof(T), new TypeConfig<T>() as ITypeConfig);
+        // }
 
         public PrintingConfig<TOwner> SetCultureAttributeFor<T>(CultureInfo currentCulture)
         {

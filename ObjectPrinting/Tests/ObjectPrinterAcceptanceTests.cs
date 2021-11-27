@@ -14,12 +14,15 @@ namespace ObjectPrinting.Tests
             // 1.0d.ToString(CultureInfo.InvariantCulture);
             var printer = ObjectPrinter
                 .For<Person>()
-                .Exclude<int>()
-                .WithSerialize<Guid>(x => x.ToString())
+                .Ignore<int>() // 
                 .SetCultureAttributeFor<double>(CultureInfo.CurrentCulture);
                 // .Exclude(p => p.Name == nameof(person.Id));
                 // .Include(p => p.Name == nameof(person.Age))
                 // .With(CultureInfo.CurrentCulture);
+                
+                
+                
+                
             //1. Исключить из сериализации свойства определенного типа
                 //2. Указать альтернативный способ сериализации для определенного типа
                 //3. Для числовых типов указать культуру
