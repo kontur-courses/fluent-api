@@ -18,7 +18,7 @@ namespace ObjectPrinting.Extensions
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this IInnerPrintingConfig<TOwner, string> config, int maxLen)
         {
             if (maxLen < 0)
-                throw new ArgumentException("Length cannot be negative");
+                throw new ArgumentException("Maximum length cannot be negative");
 
             return config.Using(str => str[..Math.Min(str.Length, maxLen)]);
         }
