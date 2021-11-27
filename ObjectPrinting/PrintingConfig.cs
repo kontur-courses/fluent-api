@@ -27,6 +27,8 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly HashSet<Type> excludedTypes = new();
 
+        private string cyclicReferenceMessage = null;
+        private bool throwOnCyclicReference = true;
         private HashSet<object> visited;
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -68,13 +70,29 @@ namespace ObjectPrinting
             customMemberSerializers[member] = serializer;
         }
 
+        public void ThrowOnCyclicReference()
+        {
+            throwOnCyclicReference = true;
+        }
+
+        public void UseCyclicReferenceMessage(string message)
+        {
+            cyclicReferenceMessage = message;
+            throwOnCyclicReference = false;
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return $"null{Environment.NewLine}";
 
             if (visited.Contains(obj))
-                return $"Cyclic Reference{Environment.NewLine}";
+            {
+                if (throwOnCyclicReference)
+                    throw new InvalidOperationException("Cyclic link detected");
+
+                return $"{cyclicReferenceMessage}{Environment.NewLine}";
+            }
 
             visited.Add(obj);
 
