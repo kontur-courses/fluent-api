@@ -240,9 +240,9 @@ public partial class PrintingConfig<TOwner>
     private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation)
     {
         var sb = new StringBuilder($"{{{Environment.NewLine}");
-        foreach (var obj in dictionary)
+        foreach (DictionaryEntry obj in dictionary)
         {
-            sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1)} : {PrintToString(dictionary[obj], nestingLevel)},{Environment.NewLine}");
+            sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1)} : {PrintToString(obj.Value, nestingLevel + 1)},{Environment.NewLine}");
         }
 
         sb.Append($"{Environment.NewLine}{identation}}}");
@@ -261,7 +261,7 @@ public partial class PrintingConfig<TOwner>
 
         if (obj is string)
         {
-            serialized = $"{ToTrimmedString((obj as string)!, stringTrimLength)}...";
+            serialized = ToTrimmedString((obj as string)!, stringTrimLength);
             return true;
         }
 
@@ -297,7 +297,7 @@ public partial class PrintingConfig<TOwner>
 
         if (memberTrimLengths.TryGetValue(memberInfo, out var trimLength))
         {
-            serialized = $"{ToTrimmedString((obj as string)!, trimLength)}...";
+            serialized = ToTrimmedString((obj as string)!, trimLength);
             return true;
         }
 
@@ -310,7 +310,7 @@ public partial class PrintingConfig<TOwner>
             return str;
         if (trimLength < 0)
             throw new InvalidOperationException($"TrimLength, set for type or member, is invalid: {trimLength}");
-        return str[..trimLength];
+        return $"{str[..trimLength]}...";
     }
 
     private static string ToStringAsFormattable(object obj, CultureInfo culture)
