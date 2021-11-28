@@ -108,7 +108,16 @@ namespace ObjectPrinting
                     var value = typeConverters[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj));
 
                     sb.Append(identation + propertyInfo.Name + " = " + value);
+                    sb.Append(Environment.NewLine);
+                    continue;
+                }
 
+                if (memberConverters.ContainsKey(propertyInfo))
+                {
+                    var value = memberConverters[propertyInfo].Invoke(propertyInfo.GetValue(obj));
+
+                    sb.Append(identation + propertyInfo.Name + " = " + value);
+                    sb.Append(Environment.NewLine);
                     continue;
                 }
 
