@@ -63,6 +63,22 @@ namespace ObjectPrintingUnitTest
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(3);
 
             printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Max\r\n\tHeight = 180,2\r\n\tAge = 21\r\n");
+        [Test]
+        public void PrintToString_ShouldNotThrow_CyclicReference()
+        {
+            var anotherPerson = new Person
+            {
+                Name = "Maxim",
+                Age = 21,
+                Height = 180.2,
+                AnotherPerson = person
+            };
+
+            person.AnotherPerson = anotherPerson;
+
+            Action act = () => Console.WriteLine(ObjectPrinter.For<Person>().PrintToString(person));
+
+            act.Should().NotThrow();
         }
 
     }
