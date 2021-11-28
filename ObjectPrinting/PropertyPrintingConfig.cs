@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
@@ -24,19 +23,20 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if (memberName != null)
-                printingConfig.MemberConverters[memberName] = obj => print.Invoke((TPropType)obj);
+            {
+                PrintingConfig.MemberConverters[memberName] = obj => print.Invoke((TPropType)obj);
+            }
             else
-                printingConfig.TypeConverters[typeof(TPropType)] = obj => print.Invoke((TPropType)obj);
+            {
+                PrintingConfig.TypeConverters[typeof(TPropType)] = obj => print.Invoke((TPropType)obj);
+            }
 
-            return printingConfig;
+            return PrintingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            return printingConfig;
-        }
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => PrintingConfig;
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        public PrintingConfig<TOwner> PrintingConfig => printingConfig;
     }
 
     public interface IPropertyPrintingConfig<TOwner, TPropType>
