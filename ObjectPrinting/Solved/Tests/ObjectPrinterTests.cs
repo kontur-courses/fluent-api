@@ -1,78 +1,87 @@
 ﻿using System;
+using System.Text.RegularExpressions;
+using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Solved.PrintingConfiguration;
 using ObjectPrinting.Solved.TestData;
 
 namespace ObjectPrinting.Solved.Tests
 {
     public class ObjectPrinterTests
     {
-        private Person person;
+        private readonly Person person = Person.GetTestInstance();
+        private PrintingConfig<Person> printer;
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
+        [SetUp]
+        public void SetUp()
         {
-            person = Person.GetInstance();
-            person.Parent = Person.GetInstance();
+            printer = ObjectPrinter.For<Person>();
         }
 
         [Test]
         public void ObjPrinter_ShouldExcludeSpecificType()
         {
-            var printer = ObjectPrinter.For<Person>();
-
             printer.Excluding<Guid>();
 
-            Console.WriteLine(printer.PrintToString(person));
+            var result = printer.PrintToString(person);
+
+            var regex = new Regex(@"\s*Id\s*=\s*[\d\w\-]+[\d\w]{1}");
+            regex.Match(result).Success.Should().BeFalse();
         }
 
         [Test]
         public void ObjPrinter_ShouldExcludeSpecificProperty()
         {
-            var printer = ObjectPrinter.For<Person>();
-
             printer.Excluding(p => p.Age);
 
-            Console.WriteLine(printer.PrintToString(person));
+            var result = printer.PrintToString(person);
+
+            var regex = new Regex(@"\s*Age\s*=\s*\d+");
+            regex.Match(result).Success.Should().BeFalse();
         }
 
         [Test]
         public void ObjPrinter_ShouldExcludeSpecificField()
         {
-            var printer = ObjectPrinter.For<Person>();
+            printer.Excluding(p => p.Weight);
 
-            printer.Excluding(p => p.SomeField);
+            var result = printer.PrintToString(person);
 
-            Console.WriteLine(printer.PrintToString(person));
+            var regex = new Regex(@"\s*Weight\s*=\d+}");
+            regex.Match(result).Success.Should().BeFalse();
         }
 
         [Test]
         public void ObjPrinter_ShouldUseAlternativeScenario_WithField()
         {
-            var printer = ObjectPrinter.For<Person>();
+            printer.PrintingMember(p => p.Weight).Using(weight => $"Weight is {weight}");
 
-            printer.PrintingMember(p => p.SomeField).Using(d => $"Some field is {d}");
+            var result = printer.PrintToString(person);
 
-            Console.WriteLine(printer.PrintToString(person));
+            var regex = new Regex($"\\s*Weight is {person.Weight}");
+            regex.Match(result).Success.Should().BeTrue();
         }
 
         [Test]
         public void ObjPrinter_ShouldUseAlternativeScenario_WithProperty()
         {
-            var printer = ObjectPrinter.For<Person>();
-
             printer.PrintingMember(p => p.Age).Using(a => $"The age is {a}");
 
-            Console.WriteLine(printer.PrintToString(person));
+            var result = printer.PrintToString(person);
+
+            var regex = new Regex($"\\s*The age is {person.Age}");
+            regex.Match(result).Success.Should().BeTrue();
         }
 
         [Test]
         public void ObjPrinter_ShouldUseAlternativeScenario_WithType()
         {
-            var printer = ObjectPrinter.For<Person>();
-
             printer.PrintingType<Guid>().Using(g => $"The guid is {g}");
 
-            Console.WriteLine(printer.PrintToString(person));
+            var result = printer.PrintToString(person);
+
+            var regex = new Regex($"\\s*The guid is {person.Id}");
+            regex.Match(result).Success.Should().BeTrue();
         }
     }
 }

@@ -13,6 +13,7 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
         private readonly HashSet<string> membersToExclude = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> typeScenarios = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
+        private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
         public TypePrintingConfig<TOwner, TMemberType> PrintingType<TMemberType>()
         {
@@ -24,16 +25,6 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
         {
             var memberName = ((MemberExpression)memberSelector.Body).Member.Name;
             return new MemberPrintingConfig<TOwner, TMemberType>(this, memberName);
-        }
-
-        public void AddSerializingScenario<TMemberType>(string memberName, Func<TMemberType, string> scenario)
-        {
-            memberScenarios[memberName] = scenario;
-        }
-
-        public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
-        {
-            typeScenarios[type] = scenario;
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(
@@ -51,6 +42,16 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return this;
         }
 
+        public void AddSerializingScenario<TMemberType>(string memberName, Func<TMemberType, string> scenario)
+        {
+            memberScenarios[memberName] = scenario;
+        }
+
+        public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
+        {
+            typeScenarios[type] = scenario;
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -64,8 +65,12 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             if (FinalTypesKeeper.IsFinalType(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var builder = new StringBuilder();
+            if (visitedObjects.Contains(obj))
+                return "[cyclic reference detected]";
+
+            visitedObjects.Add(obj);
             var type = obj.GetType();
+            var builder = new StringBuilder();
 
             builder.AppendLine(type.Name);
 
@@ -74,11 +79,26 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
                 if (ShouldIgnoreMember(member))
                     continue;
 
-                var value = GetMemberValue(obj, member, nestingLvl);
-                builder.AppendNextMember(member, value, GetIndent(nestingLvl));
+                builder.AppendNextMember(member, GetMemberValue(obj, member, nestingLvl), GetIndent(nestingLvl));
             }
 
             return builder.ToString();
+        }
+
+        private bool ShouldIgnoreMember(MemberInfo memberInfo)
+        {
+            return ShouldExcludeMemberByName(memberInfo.Name)
+                   || ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType());
+        }
+
+        private bool ShouldExcludeMemberByType(Type memberType)
+        {
+            return typesToExclude.Contains(memberType);
+        }
+
+        private bool ShouldExcludeMemberByName(string memberName)
+        {
+            return membersToExclude.Contains(memberName);
         }
 
         private string GetMemberValue(object obj, MemberInfo member, int nestingLvl)
@@ -86,15 +106,6 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return IsMemberHasAlternateScenario(member) || IsMemberTypeHasAlternateScenario(member)
                 ? GetValueFromScenario(obj, member)
                 : PrintToString(member.GetValue(obj), nestingLvl + 1);
-        }
-
-        private string GetValueFromScenario(object obj, MemberInfo member)
-        {
-            var scenario = IsMemberHasAlternateScenario(member)
-                ? memberScenarios[member.Name]
-                : typeScenarios[member.GetMemberInstanceType()];
-
-            return (string)scenario.DynamicInvoke(member.GetValue(obj));
         }
 
         private bool IsMemberHasAlternateScenario(MemberInfo member)
@@ -107,28 +118,13 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return typeScenarios.ContainsKey(member.GetMemberInstanceType());
         }
 
-        private bool ShouldIgnoreMember(MemberInfo memberInfo)
+        private string GetValueFromScenario(object obj, MemberInfo member)
         {
-            if (!memberInfo.IsFieldOrProperty())
-                return true;
+            var scenario = IsMemberHasAlternateScenario(member)
+                ? memberScenarios[member.Name]
+                : typeScenarios[member.GetMemberInstanceType()];
 
-            if (ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType()))
-                return true;
-
-            if (ShouldExcludeMemberByName(memberInfo.Name))
-                return true;
-
-            return false;
-        }
-
-        private bool ShouldExcludeMemberByType(Type memberType)
-        {
-            return typesToExclude.Contains(memberType);
-        }
-
-        private bool ShouldExcludeMemberByName(string memberName)
-        {
-            return membersToExclude.Contains(memberName);
+            return (string)scenario.DynamicInvoke(member.GetValue(obj));
         }
 
         private static string GetIndent(int nestingLvl)

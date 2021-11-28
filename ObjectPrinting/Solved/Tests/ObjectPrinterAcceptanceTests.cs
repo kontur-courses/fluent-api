@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting.Solved.Extensions;
+using ObjectPrinting.Solved.PrintingConfiguration;
 using ObjectPrinting.Solved.TestData;
 
 namespace ObjectPrinting.Solved.Tests
@@ -8,36 +10,51 @@ namespace ObjectPrinting.Solved.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
-        public void Demo()
+        [SetUp]
+        public void SetUp()
         {
-            //var person = new Person { Name = "Alex", Age = 19 };
-            var person = Person.GetInstance();
+            printer = ObjectPrinter.For<Person>();
+        }
 
-            var printer = ObjectPrinter.For<Person>()
-                //1.Исключить из сериализации свойства определенного типа
-                //.Excluding<Guid>()
-                //2.Указать альтернативный способ сериализации для определенного типа
-                //.PrintingType<int>().Using(i => i.ToString("X"))
-                //3.Для числовых типов указать культуру
-                //.PrintingType<double>().Using(CultureInfo.InvariantCulture)
-                //4.Настроить сериализацию конкретного свойства
-                .PrintingType<Guid>().Using(guid => "Abracadabra")
-                .PrintingMember(p => p.Name).Using(name => name[0].ToString())
-                //5.Настроить обрезание строковых свойств(метод должен быть виден только для строковых свойств)
-                .PrintingType<string>().TrimmedToLength(3);
-            //6.Исключить из сериализации конкретного свойства
-            //.Excluding(p => p.Age);
+        private readonly Person person = Person.GetTestInstance();
+        private PrintingConfig<Person> printer;
 
-            var s1 = printer.PrintToString(person);
-            //7.Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            var s2 = person.PrintToString();
+        [Test]
+        public void AcceptanceTest_ExcludeMembersAndTypes()
+        {
+            printer
+                .Excluding<Guid>()
+                .Excluding(p => p.Surname);
 
-            //8. ...с конфигурированием
-            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
+            Console.WriteLine(printer.PrintToString(person));
+        }
+
+        [Test]
+        public void AcceptanceTest_SpecifyAlternateScenarios()
+        {
+            printer
+                .PrintingType<Guid>().Using(g => g.ToString().Substring(0, 8))
+                .PrintingMember(p => p.Height).Using(height => (height / 100).ToString("#.##m"));
+
+            Console.WriteLine(printer.PrintToString(person));
+        }
+
+        [Test]
+        public void AcceptanceTest_SpecifyCultureInfo()
+        {
+            printer
+                .PrintingType<double>().Using(CultureInfo.GetCultureInfo("RU-ru"));
+
+            Console.WriteLine(printer.PrintToString(person));
+        }
+
+        [Test]
+        public void AcceptanceTest_SpecifyStringMembersLength()
+        {
+            printer
+                .PrintingMember(p => p.Name).TrimmedToLength(3);
+
+            Console.WriteLine(printer.PrintToString(person));
         }
     }
 }
