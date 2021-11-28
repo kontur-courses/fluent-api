@@ -8,8 +8,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
-            var printer = ObjectPrinter.For<Person>();
+            var person = PersonFactory.Get();
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Exclude<int>();
             printer.PrintToString(person);
         }
     }
