@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace ObjectPrinting
 {
-
     public class PrintingConfig<TOwner> : BasePrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new();
@@ -18,10 +16,10 @@ namespace ObjectPrinting
             if (obj == null)
                 return $"null{Environment.NewLine}";
             var type = obj.GetType();
-            
+
             if (typeTransformers.ContainsKey(type))
                 return typeTransformers[type](obj);
-            
+
             if (FinalTypes.Contains(type))
                 return $"{obj}{Environment.NewLine}";
 
@@ -29,11 +27,9 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties().Where(t => !excludedTypes.Contains(t.PropertyType)))
-            {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
-            }
             return sb.ToString();
         }
 
@@ -48,17 +44,8 @@ namespace ObjectPrinting
             typeTransformers[typeof(TType)] = obj => transformer((TType)obj);
             return this;
         }
-        
-        public PrintingConfig<TOwner> UseFormat<TType>(IFormatProvider formatProvider) 
-            where TType : IFormattable
-        {
-            typeTransformers[typeof(TType)] = obj =>((TType)obj).ToString(null, formatProvider);
-            return this;
-        }
 
         public NestingPrintingConfig<TType> When<TType>() => new(this);
-        
-        
 
         public class NestingPrintingConfig<TType>
         {
