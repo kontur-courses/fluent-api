@@ -13,10 +13,11 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<object, string>> typeTransformers = new();
         private readonly Dictionary<MemberInfo, Func<object, string>> memberTransformers = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
+        private bool isAllowCycleReference;
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0, new List<object>());
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, List<object> usedObjects)
         {
             if (obj == null)
                 return $"null{Environment.NewLine}";
@@ -29,6 +30,7 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(type))
                 return $"{obj}{Environment.NewLine}";
 
+            usedObjects.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -36,17 +38,29 @@ namespace ObjectPrinting
                 .GetPropertiesAndFields()
                 .Where(memberInfo => !excludedTypes.Contains(memberInfo.GetMemberType()))
                 .Where(memberInfo => !excludedMembers.Contains(memberInfo));
-            foreach (var memberInfo in members) sb.Append($"{identation}{PrintMember(memberInfo, obj, nestingLevel)}");
+            foreach (var memberInfo in members)
+                sb.Append($"{identation}{PrintMember(memberInfo, obj, nestingLevel, usedObjects)}");
             return sb.ToString();
         }
 
-        private string PrintMember(MemberInfo memberInfo, object obj, int nestingLevel)
+        private string PrintMember(MemberInfo memberInfo, object obj, int nestingLevel, List<object> usedObjects) =>
+            $"{memberInfo.Name} = {ToString(memberInfo, obj, nestingLevel, usedObjects)}";
+
+        private string ToString(MemberInfo memberInfo, object obj, int nestingLevel, List<object> usedObjects)
         {
             var memberValue = memberInfo.GetValue(obj);
-            var value = memberTransformers.TryGetValue(memberInfo, out var transformer)
-                ? transformer(memberValue) + Environment.NewLine
-                : PrintToString(memberValue, nestingLevel + 1);
-            return $"{memberInfo.Name} = {value}";
+            if (!memberInfo.GetMemberType().IsValueType)
+            {
+                if (usedObjects.Exists(o => ReferenceEquals(o, memberValue)))
+                    return !isAllowCycleReference
+                        ? throw new InvalidOperationException("Unexpected cycle reference")
+                        : $"{{...}}{Environment.NewLine}";
+                usedObjects.Add(memberValue);
+            }
+
+            return memberTransformers.TryGetValue(memberInfo, out var transformer)
+                ? $"{transformer(memberValue)}{Environment.NewLine}"
+                : PrintToString(memberValue, nestingLevel + 1, usedObjects);
         }
 
         public PrintingConfig<TOwner> Exclude<TType>()
@@ -77,6 +91,12 @@ namespace ObjectPrinting
 
         public NestingPropertyPrintingConfig<TType> When<TType>(Expression<Func<TOwner, TType>> memberSelector) =>
             new(this, SelectMember(memberSelector));
+
+        public PrintingConfig<TOwner> SetAllowCycleReference(bool allow)
+        {
+            isAllowCycleReference = allow;
+            return this;
+        }
 
         public class NestingPropertyPrintingConfig<TType> : INestingPrintingConfig<TOwner, TType>
         {

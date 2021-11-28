@@ -106,7 +106,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void When_UseSubstring_ShouldExcludeMember()
+        public void Exclude_ShouldExcludeMember()
         {
             var person = PersonFactory.Get();
             var config = ObjectPrinter.For<Person>()
@@ -115,6 +115,34 @@ namespace ObjectPrinting.Tests
             var serializedPerson = config.PrintToString(person);
 
             serializedPerson.Should().NotContain($"{nameof(Person.Name)} = {person.Country}");
+        }
+        
+        [Test]
+        public void SetAllowCycleReference_ShouldFormatCycleReference_WhenAllow()
+        {
+            var person = PersonFactory.Get();
+            var house = HouseFactory.Get();
+            person.House = house;
+            house.Owner = person;
+            var config = ObjectPrinter.For<Person>()
+                .SetAllowCycleReference(true);
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(House.Owner)} = {{...}}");
+        }
+        
+        [Test]
+        public void SetAllowCycleReference_ShouldThrowException_WhenNotAllow()
+        {
+            var person = PersonFactory.Get();
+            var house = HouseFactory.Get();
+            person.House = house;
+            house.Owner = person;
+            var config = ObjectPrinter.For<Person>()
+                .SetAllowCycleReference(false);
+
+            Assert.Throws<InvalidOperationException>(() => config.PrintToString(person));
         }
     }
 }
