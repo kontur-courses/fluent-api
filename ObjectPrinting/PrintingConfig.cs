@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -89,8 +90,33 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
+
+            //if (obj is IDictionary dictionary)
+            //    return PrintDictionary(sb, dictionary, indentation, nestingLevel);
+            if (obj is IEnumerable collection)
+                return PrintCollection(sb, collection, indentation, nestingLevel);
+
             PrintProperties(sb, type, obj, indentation, nestingLevel);
             PrintFields(sb, type, obj, indentation, nestingLevel);
+            return sb.ToString();
+        }
+
+        private string PrintCollection(StringBuilder sb, 
+            IEnumerable collection, 
+            string indentation,
+            int nestingLevel)
+        {
+            foreach (var item in collection)
+            {
+                sb.Append(indentation)
+                    .Append(PrintToString(item, nestingLevel));
+                //.Append("Key = ")
+                //.Append(PrintToString(key, nestingLevel))
+                //.Append(indentation)
+                //.Append("Value = ")
+                //.Append(PrintToString(collection[key], nestingLevel));
+            }
+
             return sb.ToString();
         }
 
@@ -128,6 +154,7 @@ namespace ObjectPrinting
         {
             if (typeSerializers.TryGetValue(property.PropertyType, out var serializer))
                 return serializer.DynamicInvoke(property.GetValue(obj)) + Environment.NewLine;
+            
             return propertySerializers.TryGetValue(property, out serializer)
                 ? serializer.DynamicInvoke(property.GetValue(obj)) + Environment.NewLine
                 : PrintToString(property.GetValue(obj), nestingLevel + 1);
@@ -137,6 +164,7 @@ namespace ObjectPrinting
         {
             if (typeSerializers.TryGetValue(field.FieldType, out var serializer))
                 return serializer.DynamicInvoke(field.GetValue(obj)) + Environment.NewLine;
+            
             return fieldSerializers.TryGetValue(field, out serializer)
                 ? serializer.DynamicInvoke(field.GetValue(obj)) + Environment.NewLine
                 : PrintToString(field.GetValue(obj), nestingLevel + 1);
