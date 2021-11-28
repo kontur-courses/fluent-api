@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -10,28 +9,27 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        };
-
         private readonly HashSet<string> membersToExclude = new HashSet<string>();
 
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            //typesToExclude.Add(typeof(TMemberType));
+            return new MemberPrintingConfig<TOwner, TMemberType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+            membersToExclude.Add(memberInfo.Name);
+
+            return new MemberPrintingConfig<TOwner, TMemberType>(this);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> Excluding<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             var memberInfo = ((MemberExpression)memberSelector.Body).Member;
             membersToExclude.Add(memberInfo.Name);
@@ -39,9 +37,9 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TMemberType>()
         {
-            typesToExclude.Add(typeof(TPropType));
+            typesToExclude.Add(typeof(TMemberType));
             return this;
         }
 
@@ -55,7 +53,7 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (IsObjectFinalType(obj))
+            if (FinalTypesKeeper.IsFinalType(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var builder = new StringBuilder();
@@ -73,11 +71,6 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             }
 
             return builder.ToString();
-        }
-
-        private bool IsObjectFinalType(object obj)
-        {
-            return finalTypes.Contains(obj.GetType());
         }
 
         private bool ShouldIgnoreMember(MemberInfo memberInfo)
@@ -104,7 +97,7 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return membersToExclude.Contains(memberName);
         }
 
-        private string GetIndent(int nestingLvl)
+        private static string GetIndent(int nestingLvl)
         {
             return new string('\t', nestingLvl + 1);
         }

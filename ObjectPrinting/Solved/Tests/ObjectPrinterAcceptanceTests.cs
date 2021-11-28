@@ -28,7 +28,6 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Age);
 
             var s1 = printer.PrintToString(person);
-
             //7.Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             var s2 = person.PrintToString();
 
