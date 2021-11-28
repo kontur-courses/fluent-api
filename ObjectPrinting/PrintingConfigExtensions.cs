@@ -2,7 +2,8 @@
 
 namespace ObjectPrinting
 {
-    public static class PrintingConfigExtensions {
+    public static class PrintingConfigExtensions
+    {
         public static PrintingConfig<TOwner> Use<TOwner, TType>(
             this INestingPrintingConfig<TOwner, TType> nestingConfig, IFormatProvider provider)
             where TType : IFormattable

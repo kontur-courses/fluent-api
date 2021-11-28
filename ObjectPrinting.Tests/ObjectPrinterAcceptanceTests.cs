@@ -21,7 +21,7 @@ namespace ObjectPrinting.Tests
                 .When<double>().Use(culture)
                 .When(p => p.Money).Use(money => $"{money}$")
                 .When<string>().UseSubstring(..2);
-            
+
             var serialized = printer.PrintToString(person);
 
 

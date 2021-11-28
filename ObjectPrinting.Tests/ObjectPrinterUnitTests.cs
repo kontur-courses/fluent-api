@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Globalization;
-using NUnit.Framework;
 using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
     public class ObjectPrinterUnitTests
     {
-
         [Test]
         public void Exclude_ShouldExcludeIntPropertiesAndFields_WhenIntGeneric()
         {
@@ -18,11 +17,11 @@ namespace ObjectPrinting.Tests
                 .Exclude<int>();
 
             var serializedPerson = config.PrintToString(person);
-            
+
             serializedPerson.Should().NotContain($"{nameof(Person.Money)}");
             serializedPerson.Should().NotContain($"{nameof(Person.Age)}");
         }
-        
+
         [Test]
         public void Exclude_ShouldExcludeStringProperties_WhenStringGeneric()
         {
@@ -32,7 +31,7 @@ namespace ObjectPrinting.Tests
                 .Exclude<string>();
 
             var serializedPerson = config.PrintToString(person);
-            
+
             serializedPerson.Should().NotContain($"{nameof(Person.Name)}");
         }
 
@@ -46,10 +45,10 @@ namespace ObjectPrinting.Tests
                 .Use(value => $"{value}{value}{Environment.NewLine}");
 
             var serializedPerson = config.PrintToString(person);
-            
+
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name}{person.Name}");
         }
-        
+
         [Test]
         public void When_Use_ShouldApplyCultureFormattingOfType()
         {
@@ -61,7 +60,7 @@ namespace ObjectPrinting.Tests
                 .Use(culture);
 
             var serializedPerson = config.PrintToString(person);
-            
+
             serializedPerson.Should().Contain($"{nameof(Person.Height)} = {person.Height.ToString(culture)}");
         }
 
@@ -78,7 +77,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Age)} = {person.Age} years");
         }
-        
+
         [Test]
         public void When_Use_ShouldApplyMemberFormatting()
         {
@@ -92,7 +91,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Money)} = {person.Money} RUB");
         }
-        
+
         [Test]
         public void When_UseSubstring_ShouldTakeSubstring()
         {
