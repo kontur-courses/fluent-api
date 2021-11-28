@@ -13,17 +13,24 @@ namespace ObjectPrinting.Tests
         public void Demo()
         {
             var person = PersonFactory.Get();
-            var house = new House { Owner = person, Address = "New-York" };
+            var house = HouseFactory.Get();
+            house.Owner = person;
             person.House = house;
             var culture = new CultureInfo("en-GB");
-            var printer = ObjectPrinter
-                .For<Person>()
+            var printer = ObjectPrinter.For<Person>()
+                // 1. Исключение из сериализации свойства/поля определенного типа
                 .Exclude<Guid>()
+                // 2. Альтернативный способ сериализации для определенного типа
                 .When<int>().Use(value => $"~{value}~")
+                // 3. Для всех типов, имеющих культуру, есть возможность ее указать
                 .When<double>().Use(culture)
+                // 4. Настройка сериализации конкретного свойства/поля
                 .When(p => p.Money).Use(money => $"{money}$")
+                // 5. Возможность обрезания строк
                 .When<string>().UseSubstring(..2)
+                // 6. Исключение из сериализации конкретного свойства/поля
                 .Exclude(x => x.Country)
+                // 7. Корректная обработка циклических ссылок между объектами (не должны приводить к `StackOverflowException`)
                 .SetAllowCycleReference(true);
 
             var serialized = printer.PrintToString(person);

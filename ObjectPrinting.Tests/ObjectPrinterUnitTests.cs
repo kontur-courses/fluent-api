@@ -39,10 +39,8 @@ namespace ObjectPrinting.Tests
         public void When_Use_ShouldApplyFormattingOfType()
         {
             var person = PersonFactory.Get();
-            var config = ObjectPrinter
-                .For<Person>()
-                .When<string>()
-                .Use(value => $"{value}{value}{Environment.NewLine}");
+            var config = ObjectPrinter.For<Person>()
+                .When<string>().Use(value => $"{value}{value}");
 
             var serializedPerson = config.PrintToString(person);
 
@@ -54,10 +52,8 @@ namespace ObjectPrinting.Tests
         {
             var culture = new CultureInfo("en-GB");
             var person = PersonFactory.Get();
-            var config = ObjectPrinter
-                .For<Person>()
-                .When<double>()
-                .Use(culture);
+            var config = ObjectPrinter.For<Person>()
+                .When<double>().Use(culture);
 
             var serializedPerson = config.PrintToString(person);
 
@@ -68,10 +64,8 @@ namespace ObjectPrinting.Tests
         public void When_Use_ShouldApplyPropertyFormatting()
         {
             var person = PersonFactory.Get();
-            var config = ObjectPrinter
-                .For<Person>()
-                .When(p => p.Age)
-                .Use(age => $"{age} years");
+            var config = ObjectPrinter.For<Person>()
+                .When(p => p.Age).Use(age => $"{age} years");
 
             var serializedPerson = config.PrintToString(person);
 
@@ -82,10 +76,8 @@ namespace ObjectPrinting.Tests
         public void When_Use_ShouldApplyMemberFormatting()
         {
             var person = PersonFactory.Get();
-            var config = ObjectPrinter
-                .For<Person>()
-                .When(p => p.Money)
-                .Use(money => $"{money} RUB");
+            var config = ObjectPrinter.For<Person>()
+                .When(p => p.Money).Use(money => $"{money} RUB");
 
             var serializedPerson = config.PrintToString(person);
 
@@ -104,7 +96,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[range]}");
         }
-        
+
         [Test]
         public void Exclude_ShouldExcludeMember()
         {
@@ -116,7 +108,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().NotContain($"{nameof(Person.Name)} = {person.Country}");
         }
-        
+
         [Test]
         public void SetAllowCycleReference_ShouldFormatCycleReference_WhenAllow()
         {
@@ -131,7 +123,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(House.Owner)} = {{...}}");
         }
-        
+
         [Test]
         public void SetAllowCycleReference_ShouldThrowException_WhenNotAllow()
         {
@@ -143,6 +135,22 @@ namespace ObjectPrinting.Tests
                 .SetAllowCycleReference(false);
 
             Assert.Throws<InvalidOperationException>(() => config.PrintToString(person));
+        }
+
+        [Test]
+        public void When_Use_ShouldApplyPropertyFormattingInsteadOfTypeFormatting()
+        {
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter.For<Person>()
+                .When<int>().Use(n => $"-{n}")
+                .When(p => p.Money).Use(money => $"{money}RUB");
+
+            var serializedObject = config.PrintToString(person);
+
+            serializedObject.Should()
+                .Contain($"{nameof(Person.Age)} = -{person.Age}")
+                .And
+                .Contain($"{nameof(Person.Money)} = {person.Money}RUB");
         }
     }
 }
