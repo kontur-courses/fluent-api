@@ -46,6 +46,13 @@ namespace ObjectPrintingUnitTest
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i + " years old");
 
             printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21 years old\r\n\t");
+
+        [Test]
+        public void PrintToString_SetCulture_ShouldBe_DoubleWithDot()
+        {
+            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture)
+                .PrintToString(person).Should()
+                .Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180.2\r\n\tAge = 21\r\n");
         }
 
     }
