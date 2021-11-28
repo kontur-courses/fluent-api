@@ -71,6 +71,7 @@ namespace ObjectPrinting
         }
 
         private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> objectsCashe)
         {
             //TODO apply configurations
             if (obj == null)
@@ -82,6 +83,8 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(obj.GetType()))
+            if (objectsCashe.Contains(obj))
+                return "circular references" + Environment.NewLine;
             {
                 if (typeConverters.ContainsKey(obj.GetType()))
                 {
@@ -91,6 +94,7 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             }
 
+            objectsCashe.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
