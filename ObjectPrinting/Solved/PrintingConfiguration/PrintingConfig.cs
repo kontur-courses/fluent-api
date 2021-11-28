@@ -9,23 +9,31 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly Dictionary<string, Delegate> memberScenarios = new Dictionary<string, Delegate>();
         private readonly HashSet<string> membersToExclude = new HashSet<string>();
-
+        private readonly Dictionary<Type, Delegate> typeScenarios = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
 
-        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
+        public TypePrintingConfig<TOwner, TMemberType> PrintingType<TMemberType>()
         {
-            //typesToExclude.Add(typeof(TMemberType));
-            return new MemberPrintingConfig<TOwner, TMemberType>(this);
+            return new TypePrintingConfig<TOwner, TMemberType>(this, typeof(TMemberType));
         }
 
-        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
+        public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
-            membersToExclude.Add(memberInfo.Name);
+            var memberName = ((MemberExpression)memberSelector.Body).Member.Name;
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberName);
+        }
 
-            return new MemberPrintingConfig<TOwner, TMemberType>(this);
+        public void AddSerializingScenario<TMemberType>(string memberName, Func<TMemberType, string> scenario)
+        {
+            memberScenarios[memberName] = scenario;
+        }
+
+        public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
+        {
+            typeScenarios[type] = scenario;
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(
@@ -66,11 +74,37 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
                 if (ShouldIgnoreMember(member))
                     continue;
 
-                var memberValue = PrintToString(member.GetValue(obj), nestingLvl + 1);
-                builder.AppendNextMember(member, memberValue, GetIndent(nestingLvl));
+                var value = GetMemberValue(obj, member, nestingLvl);
+                builder.AppendNextMember(member, value, GetIndent(nestingLvl));
             }
 
             return builder.ToString();
+        }
+
+        private string GetMemberValue(object obj, MemberInfo member, int nestingLvl)
+        {
+            return IsMemberHasAlternateScenario(member) || IsMemberTypeHasAlternateScenario(member)
+                ? GetValueFromScenario(obj, member)
+                : PrintToString(member.GetValue(obj), nestingLvl + 1);
+        }
+
+        private string GetValueFromScenario(object obj, MemberInfo member)
+        {
+            var scenario = IsMemberHasAlternateScenario(member)
+                ? memberScenarios[member.Name]
+                : typeScenarios[member.GetMemberInstanceType()];
+
+            return (string)scenario.DynamicInvoke(member.GetValue(obj));
+        }
+
+        private bool IsMemberHasAlternateScenario(MemberInfo member)
+        {
+            return memberScenarios.ContainsKey(member.Name);
+        }
+
+        private bool IsMemberTypeHasAlternateScenario(MemberInfo member)
+        {
+            return typeScenarios.ContainsKey(member.GetMemberInstanceType());
         }
 
         private bool ShouldIgnoreMember(MemberInfo memberInfo)

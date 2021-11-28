@@ -16,7 +16,7 @@ namespace ObjectPrinting.Solved.Extensions
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return ((IMemberPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return ((IChildPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
     }
 }

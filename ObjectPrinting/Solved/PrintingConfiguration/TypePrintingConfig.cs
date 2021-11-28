@@ -3,23 +3,22 @@ using System.Globalization;
 
 namespace ObjectPrinting.Solved.PrintingConfiguration
 {
-    public class MemberPrintingConfig<TOwner, TMemberType>
+    public class TypePrintingConfig<TOwner, TMemberType>
         : IChildPrintingConfig<TOwner, TMemberType>
     {
-        private readonly string memberName;
+        private readonly Type type;
 
-        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberName)
+        public TypePrintingConfig(PrintingConfig<TOwner> parentConfig, Type type)
         {
-            ParentConfig = printingConfig;
-            this.memberName = memberName;
+            ParentConfig = parentConfig;
+            this.type = type;
         }
 
         public PrintingConfig<TOwner> ParentConfig { get; }
 
-
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> scenario)
         {
-            ParentConfig.AddSerializingScenario(memberName, scenario);
+            ParentConfig.AddSerializingScenario(type, scenario);
             return ParentConfig;
         }
 

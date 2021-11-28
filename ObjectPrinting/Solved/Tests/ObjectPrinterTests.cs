@@ -44,5 +44,35 @@ namespace ObjectPrinting.Solved.Tests
 
             Console.WriteLine(printer.PrintToString(person));
         }
+
+        [Test]
+        public void ObjPrinter_ShouldUseAlternativeScenario_WithField()
+        {
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.PrintingMember(p => p.SomeField).Using(d => $"Some field is {d}");
+
+            Console.WriteLine(printer.PrintToString(person));
+        }
+
+        [Test]
+        public void ObjPrinter_ShouldUseAlternativeScenario_WithProperty()
+        {
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.PrintingMember(p => p.Age).Using(a => $"The age is {a}");
+
+            Console.WriteLine(printer.PrintToString(person));
+        }
+
+        [Test]
+        public void ObjPrinter_ShouldUseAlternativeScenario_WithType()
+        {
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.PrintingType<Guid>().Using(g => $"The guid is {g}");
+
+            Console.WriteLine(printer.PrintToString(person));
+        }
     }
 }
