@@ -11,7 +11,9 @@ namespace ObjectPrinting.Tests
             var person = PersonFactory.Get();
             var printer = ObjectPrinter
                 .For<Person>()
-                .Exclude<int>();
+                .Exclude<int>()
+                .When<int>()
+                    .Use(value => $"~{value}~");
             printer.PrintToString(person);
         }
     }

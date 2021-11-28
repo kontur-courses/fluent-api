@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using FluentAssertions;
 
 namespace ObjectPrinting.Tests
@@ -31,6 +32,18 @@ namespace ObjectPrinting.Tests
 
             config.PrintToString(person).Should().NotMatch($"{nameof(Person.Name)}");
         }
-        
+
+        [Test]
+        public void When_Use_ShouldApplyFormattingOfType()
+        {
+            var person = PersonFactory.Get();
+
+            var config = ObjectPrinter
+                .For<Person>()
+                .When<string>()
+                .Use(value => $"{value}{value}{Environment.NewLine}");
+
+            config.PrintToString(person).Should().Contain($"{nameof(Person.Name)} = {person.Name}{person.Name}");
+        }
     }
 }
