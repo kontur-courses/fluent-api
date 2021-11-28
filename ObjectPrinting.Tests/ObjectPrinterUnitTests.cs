@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using NUnit.Framework;
 using FluentAssertions;
 
@@ -47,6 +48,21 @@ namespace ObjectPrinting.Tests
             var serializedPerson = config.PrintToString(person);
             
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name}{person.Name}");
+        }
+        
+        [Test]
+        public void When_Use_ShouldApplyCultureFormattingOfType()
+        {
+            var culture = new CultureInfo("en-GB");
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter
+                .For<Person>()
+                .When<double>()
+                .Use(culture);
+
+            var serializedPerson = config.PrintToString(person);
+            
+            serializedPerson.Should().Contain($"{nameof(Person.Height)} = {person.Height.ToString(culture)}");
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -47,8 +48,17 @@ namespace ObjectPrinting
             typeTransformers[typeof(TType)] = obj => transformer((TType)obj);
             return this;
         }
+        
+        public PrintingConfig<TOwner> UseFormat<TType>(IFormatProvider formatProvider) 
+            where TType : IFormattable
+        {
+            typeTransformers[typeof(TType)] = obj =>((TType)obj).ToString(null, formatProvider);
+            return this;
+        }
 
         public NestingPrintingConfig<TType> When<TType>() => new(this);
+        
+        
 
         public class NestingPrintingConfig<TType>
         {

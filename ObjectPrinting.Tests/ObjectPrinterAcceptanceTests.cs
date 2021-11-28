@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System.Globalization;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
@@ -11,9 +12,11 @@ namespace ObjectPrinting.Tests
             var person = PersonFactory.Get();
             var printer = ObjectPrinter
                 .For<Person>()
-                .Exclude<int>()
+                .Exclude<string>()
                 .When<int>()
-                    .Use(value => $"~{value}~");
+                    .Use(value => $"~{value}~")
+                .When<double>()
+                    .Use(new CultureInfo("en-GB"));
             printer.PrintToString(person);
         }
     }
