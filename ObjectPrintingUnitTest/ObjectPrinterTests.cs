@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -13,7 +14,7 @@ namespace ObjectPrintingUnitTest
         [SetUp]
         public void SetUp()
         {
-            person = new Person { Id = Guid.NewGuid(), Name = "Maxim", Age = 21, Height = 180.0};
+            person = new Person { Id = Guid.NewGuid(), Name = "Maxim", Age = 21, Height = 180.2};
         }
 
         [Test]
@@ -21,7 +22,7 @@ namespace ObjectPrintingUnitTest
         {
             var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
 
-            printer.PrintToString(person).Should().Be("Person\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21\r\n");
+            printer.PrintToString(person).Should().Be("Person\r\n\tName = Maxim\r\n\tHeight = 180,2\r\n\tAge = 21\r\n");
         }
 
         [Test]
@@ -29,7 +30,7 @@ namespace ObjectPrintingUnitTest
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Id);
 
-            printer.PrintToString(person).Should().Be("Person\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21\r\n");
+            printer.PrintToString(person).Should().Be("Person\r\n\tName = Maxim\r\n\tHeight = 180,2\r\n\tAge = 21\r\n");
         }
 
         [Test]
@@ -45,7 +46,8 @@ namespace ObjectPrintingUnitTest
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i + " years old");
 
-            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180\r\n\tAge = 21 years old\r\n\t");
+            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180,2\r\n\tAge = 21 years old\r\n");
+        }
 
         [Test]
         public void PrintToString_SetCulture_ShouldBe_DoubleWithDot()
