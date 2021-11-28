@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using ObjectPrinting.PrintingMembers;
 
@@ -9,15 +8,15 @@ namespace ObjectPrinting.Serializers
 {
     public record Nesting
     {
-        public int Level { get; set; }
-        public int Offset { get; set; }
-        public char IndentationSymbol { get; set; } = '\t';
-        public string Indentation => new string(IndentationSymbol, Level) + new string(' ', Offset);
+        public int Level { get; init; }
+        public int Offset { get; init; }
+        public string Indentation => new string(indentationSymbol, Level) + new string(' ', Offset);
 
-        public Nesting(int level = 0, int offset = 0)
+        private readonly char indentationSymbol;
+
+        public Nesting(char indentationSymbol = '\t')
         {
-            Level = level;
-            Offset = offset;
+            this.indentationSymbol = indentationSymbol;
         }
     }
 
@@ -25,52 +24,47 @@ namespace ObjectPrinting.Serializers
     {
         private readonly PrintingConfig config;
         private readonly List<ISerializer> serializers;
-        private readonly List<ICollectionSerializer> collectionSerializers;
 
         public ObjectSerializer(PrintingConfig config)
         {
             this.config = config;
             serializers = new List<ISerializer>
             {
-                new PrimitiveSerializer()
-            };
-
-            collectionSerializers = new List<ICollectionSerializer>
-            {
-                new ArraySerializer(this)
+                new PrimitiveSerializer(),
+                new ArraySerializer(this),
+                new DictionarySerializer(this)
             };
         }
 
-        public StringBuilder Serialize(object obj) => Serialize(obj, new Nesting());
-
         public bool CanSerialize(object obj) => true;
 
-        public StringBuilder Serialize(object obj, Nesting nesting) =>
-            TryGetTypeString(obj, nesting, out var typeBuilder)
-                ? typeBuilder
-                : BuildComplexObjectString(obj, nesting);
+        public StringBuilder Serialize(object obj) => Serialize(obj, new Nesting());
 
-        private StringBuilder BuildComplexObjectString(object obj, Nesting nesting)
+        public StringBuilder Serialize(object obj, Nesting nesting) =>
+            TrySerializeType(obj, nesting, out var typeBuilder)
+                ? typeBuilder
+                : SerializeObject(obj, nesting);
+
+        private StringBuilder SerializeObject(object obj, Nesting nesting)
         {
             var builder = new StringBuilder();
             var type = obj.GetType();
             builder.AppendLine(type.Name);
 
-            builder.Append(GetPropertiesBuilder(obj, nesting with {Level = nesting.Level + 1}));
-
+            builder.Append(SerializeMembers(obj, nesting with {Level = nesting.Level + 1}));
             return builder;
         }
 
-        private StringBuilder GetPropertiesBuilder(object obj, Nesting nesting)
+        private StringBuilder SerializeMembers(object obj, Nesting nesting)
         {
-            var builder = new StringBuilder();
-            foreach (var objMember in GetSuitableObjectMembers(obj))
-            {
-                builder.Append(nesting.Indentation);
-                builder.Append(BuildMemberString(obj, objMember, nesting));
-            }
+            var members = GetSuitableObjectMembers(obj).Select(
+                objMember =>
+                {
+                    var builder = new StringBuilder(nesting.Indentation);
+                    return builder.Append(SerializeMember(obj, objMember, nesting));
+                });
 
-            return builder;
+            return new StringBuilder().AppendJoin(Environment.NewLine, members);
         }
 
         private IEnumerable<PrintingMember> GetSuitableObjectMembers(object obj)
@@ -85,31 +79,19 @@ namespace ObjectPrinting.Serializers
                 .Where(objMember => !config.ExcludingMembers.Contains(objMember.MemberInfo));
         }
 
-        private StringBuilder BuildMemberString(object obj, PrintingMember objMember, Nesting nesting)
+        private StringBuilder SerializeMember(object obj, PrintingMember objMember, Nesting nesting)
         {
-            if (TryGetMemberString(objMember.MemberInfo, out var propString))
-                return new StringBuilder(propString);
+            if (config.MemberPrinting.TryGetValue(objMember.MemberInfo, out var printProperty))
+                return new StringBuilder(printProperty(objMember.MemberInfo));
 
             var builder = new StringBuilder(objMember.Name + " = ");
-            builder.Append(BuildValueString(obj, objMember, nesting with {Offset = nesting.Offset + builder.Length}));
-            return builder;
+            return builder.Append(
+                SerializeValue(obj, objMember, nesting with {Offset = nesting.Offset + builder.Length}));
         }
 
-        private bool TryGetMemberString(MemberInfo propertyInfo, out string propString)
+        private StringBuilder SerializeValue(object obj, PrintingMember objMember, Nesting nesting)
         {
-            if (config.MemberPrinting.TryGetValue(propertyInfo, out var printProperty))
-            {
-                propString = printProperty(propertyInfo) + Environment.NewLine;
-                return true;
-            }
-
-            propString = null;
-            return false;
-        }
-
-        private StringBuilder BuildValueString(object obj, PrintingMember objMember, Nesting nesting)
-        {
-            if (TryGetTypeString(obj, nesting, out var typeBuilder))
+            if (TrySerializeType(obj, nesting, out var typeBuilder))
                 return typeBuilder;
 
             if (nesting.Level >= 100)
@@ -118,21 +100,7 @@ namespace ObjectPrinting.Serializers
             return Serialize(objMember.GetValue(obj), nesting);
         }
 
-        private bool TryGetTypeString(object obj, Nesting nesting, out StringBuilder typeBuilder)
-        {
-            typeBuilder = null;
-            if (TrySerializeSingleType(obj, nesting, out typeBuilder))
-            {
-                typeBuilder.Append(Environment.NewLine);
-                return true;
-            }
-
-            TrySerializeCollection(obj, nesting, out typeBuilder);
-
-            return typeBuilder != null;
-        }
-
-        private bool TrySerializeSingleType(object obj, Nesting nesting, out StringBuilder typeBuilder)
+        private bool TrySerializeType(object obj, Nesting nesting, out StringBuilder typeBuilder)
         {
             if (obj == null)
             {
@@ -151,22 +119,6 @@ namespace ObjectPrinting.Serializers
                 ?.Serialize(obj, nesting);
 
             return typeBuilder != null;
-        }
-
-        private bool TrySerializeCollection(object obj, Nesting nesting, out StringBuilder typeBuilder)
-        {
-            typeBuilder = null;
-
-            var serializer = collectionSerializers.Find(serializer => serializer.CanSerialize(obj));
-            if (serializer == null)
-                return false;
-
-            var builder = new StringBuilder();
-            var items = serializer.SerializeItems(obj, nesting);
-            builder.AppendJoin(nesting.Indentation, items);
-
-            typeBuilder = builder;
-            return true;
         }
     }
 }

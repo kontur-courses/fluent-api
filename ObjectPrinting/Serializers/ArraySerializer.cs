@@ -1,66 +1,35 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ObjectPrinting.Serializers
 {
-    public interface ICollectionSerializer : ISerializer
+    public class ArraySerializer : CollectionSerializer<IList>
     {
-        public IEnumerable<StringBuilder> SerializeItems(object obj, Nesting nesting);
-    }
+        public ArraySerializer(ISerializer objectSerializer) : base(objectSerializer) { }
 
-    public class ArraySerializer : ICollectionSerializer
-    {
-        private readonly ISerializer objectSerializer;
-
-        public ArraySerializer(ISerializer objectSerializer)
+        public static (StringBuilder Value, Nesting Nesting) SerializeArrayIndexer(object key, Nesting nesting)
         {
-            this.objectSerializer = objectSerializer ?? throw new ArgumentNullException(nameof(objectSerializer));
+            var indexMarker = new StringBuilder("[");
+            indexMarker.Append(key);
+            indexMarker.Append("]: ");
+            return (indexMarker, nesting with {Offset = nesting.Offset + indexMarker.Length});
         }
 
-        public IEnumerable<StringBuilder> SerializeItems(object obj, Nesting nesting)
+        protected override (StringBuilder Value, Nesting Nesting) SerializeIndexer(object key, Nesting nesting) =>
+            SerializeArrayIndexer(key, nesting);
+
+        protected override string GetHeader(IList list)
         {
-            ValidateObject(obj);
-
-            var index = 0;
-            foreach (var item in (IEnumerable)obj)
-            {
-                var builder = new StringBuilder();
-                builder.Append($"[{index}]: ");
-                builder.Append(
-                    objectSerializer.Serialize(item, nesting with {Offset = nesting.Offset + builder.Length}));
-
-                yield return builder;
-                index++;
-            }
+            var type = list.GetType();
+            var count = list.Count;
+            return type.IsArray ? $"Array[{count}]" : $"List[{count}]";
         }
 
-        public StringBuilder Serialize(object obj) => Serialize(obj, new Nesting());
-
-        public StringBuilder Serialize(object obj, Nesting nesting)
+        protected override IEnumerable<KeyValuePair<object, object>> GetKeyValues(IList list)
         {
-            var builder = new StringBuilder();
-            foreach (var item in SerializeItems(obj, nesting))
-                builder.Append(item);
-
-            return builder;
-        }
-
-        public bool CanSerialize(object obj)
-        {
-            var type = obj.GetType();
-            return type.IsArray
-                   || type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
-        }
-
-        private void ValidateObject(object obj)
-        {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-
-            if (!CanSerialize(obj))
-                throw new ArgumentException($"Can't serialize {nameof(obj)}", nameof(obj));
+            for (var i = 0; i < list.Count; i++)
+                yield return new KeyValuePair<object, object>(i, list[i]);
         }
     }
 }

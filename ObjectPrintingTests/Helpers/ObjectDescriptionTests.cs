@@ -19,7 +19,7 @@ namespace ObjectPrintingTests.Helpers
             actual.Should().Be($"Person{n}"
                                + $"\tAge{n}"
                                + $"\tName{n}"
-                               + $"\tId{n}");
+                               + "\tId");
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace ObjectPrintingTests.Helpers
                                + $"\t\tStreet{n}"
                                + $"\t\tZip{n}"
                                + $"\tName{n}"
-                               + $"\tId{n}");
+                               + "\tId");
         }
 
         [Test]
@@ -49,7 +49,7 @@ namespace ObjectPrintingTests.Helpers
 
             descriptionWithId.ToString()
                 .Should().Be($"Person{n}"
-                             + $"\tId{n}");
+                             + "\tId");
         }
     }
 }

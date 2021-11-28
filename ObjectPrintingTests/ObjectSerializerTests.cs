@@ -13,7 +13,6 @@ namespace ObjectPrintingTests
     public class ObjectSerializerTests
     {
         private Person person;
-        private NestedPerson nestedPerson;
 
         private ConfigPrintingContext<Person> personPrinter;
 
@@ -26,13 +25,10 @@ namespace ObjectPrintingTests
         [SetUp]
         public void SetUp()
         {
-            person = new Person {Name = "Alex", Age = 19, Height = 2.1};
-            nestedPerson = new NestedPerson {Name = "Mike", Age = 99, Height = 2.2, Child = person};
-
+            person = new Person();
             personPrinter = ObjectPrinter.For<Person>();
-
             personDesc = new ObjectDescription(nameof(Person));
-            (id, name, height, age) = GetPersonDescription(person);
+            (id, name, height, age) = PersonDescription.GetPersonFields(person);
         }
 
         [Test]
@@ -55,6 +51,33 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_Overview()
+        {
+            var collectionPerson = new CollectionPerson();
+            var nestedPerson = new NestedPerson {Child = person};
+
+            collectionPerson.ChildrenArray = new[] {nestedPerson, person};
+            collectionPerson.ChildrenList = new List<Person>();
+            collectionPerson.ChildrenDictionary = new Dictionary<int, Person> {[1] = new()};
+
+            var dictionaryPerson = new DictionaryPerson
+            {
+                Persons = new Dictionary<NestedPerson, CollectionPerson>
+                {
+                    [nestedPerson] = collectionPerson
+                }
+            };
+
+            var actual = ObjectPrinter.For<DictionaryPerson>()
+                .Excluding<int>()
+                .Printing<double>().Using(value => value + "!!!")
+                .FormatFor<Guid>("X", CultureInfo.InvariantCulture)
+                .PrintToString(dictionaryPerson);
+
+            Console.WriteLine(actual);
+        }
+
+        [Test]
         public void ObjectPrinter_IsImmutable()
         {
             var expectedWithType = personDesc.WithFields(id, name, height, "Age = CustomInt").ToString();
@@ -70,10 +93,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_WithoutConfigOneNestingLevel()
         {
-            var expected = personDesc
-                .WithFields(id, name, height, age)
-                .ToString();
-
+            var expected = PersonDescription.GetDefaultDescription(person).ToString();
 
             personPrinter.PrintToString(person)
                 .Should().Be(expected);
@@ -93,20 +113,19 @@ namespace ObjectPrintingTests
                     "Age = 99")
                 .ToString();
 
+            var nestedPerson = new NestedPerson {Name = "Mike", Age = 99, Height = 2.2, Child = person};
             var printer = ObjectPrinter.For<NestedPerson>();
             var actual = printer.PrintToString(nestedPerson);
-            Console.WriteLine(actual);
 
             actual.Should().Be(expected);
+            Console.WriteLine(actual);
         }
 
         [Test]
-        public void PrintToString_Null()
-        {
+        public void PrintToString_Null() =>
             ObjectPrinter.For<Person>()
                 .PrintToString(null)
-                .Should().Be("null" + Environment.NewLine);
-        }
+                .Should().Be("null");
 
         [Test]
         public void PrintToString_AlsoWorkWithFields()
@@ -143,7 +162,6 @@ namespace ObjectPrintingTests
             var cyclePerson = new NestedPerson {Age = 99, Height = 9.9, Name = "Mike", Id = Guid.Empty};
             cyclePerson.Child = cyclePerson;
 
-
             ObjectPrinter.For<NestedPerson>()
                 .PrintToString(cyclePerson);
         }
@@ -164,17 +182,6 @@ namespace ObjectPrintingTests
 
             printer.PrintToString(timePerson)
                 .Should().Be(expected);
-        }
-
-        [TestCaseSource(nameof(PrintToStringWorkWithCollectionsCases))]
-        public void PrintToString_WorkWithCollections(ArrayPerson arrayPerson, string expected)
-        {
-            var printer = ObjectPrinter.For<ArrayPerson>();
-
-            var actual = printer.PrintToString(arrayPerson);
-            Console.WriteLine(actual);
-
-            actual.Should().Contain(expected);
         }
 
         [Test]
@@ -208,14 +215,12 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Excluding_ThrowsException_IfFunctionMemberSelected()
-        {
+        public void Excluding_ThrowsException_IfFunctionMemberSelected() =>
             Assert.That(() =>
             {
                 ObjectPrinter.For<FuncPerson>()
                     .Excluding(p => p.GetAge());
             }, Throws.InstanceOf<ArgumentException>());
-        }
 
         [Test]
         public void PrintToString_Printing_UsingCustomTypeSerialization()
@@ -253,20 +258,10 @@ namespace ObjectPrintingTests
                 .ToString();
 
             var printer = personPrinter
-                .Printing(p => p.Name).Using(propertyInfo => propertyInfo.Name + "!");
+                .Printing(p => p.Name).Using(memberInfo => memberInfo.Name + "!");
 
             printer.PrintToString(person)
                 .Should().Be(expected);
-        }
-
-        [Test]
-        public void Printing_ThrowsException_IfFunctionMemberSelected()
-        {
-            Assert.That(() =>
-            {
-                ObjectPrinter.For<FuncPerson>()
-                    .Printing(p => p.GetAge());
-            }, Throws.InstanceOf<ArgumentException>());
         }
 
         [TestCaseSource(nameof(TrimStringsCases))]
@@ -278,57 +273,74 @@ namespace ObjectPrintingTests
             return printer.PrintToString(input);
         }
 
+        [TestCaseSource(nameof(PrintToStringWorkWithCollectionsCases))]
+        public void PrintToString_WorkWithCollections(CollectionPerson collectionPerson, string expected)
+        {
+            var printer = ObjectPrinter.For<CollectionPerson>();
+
+            var actual = printer.PrintToString(collectionPerson);
+
+            actual.Should().Contain(expected);
+            Console.WriteLine(actual);
+        }
+
         private static IEnumerable<TestCaseData> TrimStringsCases()
         {
             const char ellipsis = '\u2026';
             yield return new TestCaseData(new string('a', 10), 5)
             {
-                ExpectedResult = new string('a', 5) + ellipsis + Environment.NewLine,
+                ExpectedResult = new string('a', 5) + ellipsis,
                 TestName = "Should add ellipsis if string long"
             };
 
             yield return new TestCaseData(new string('a', 10), 20)
             {
-                ExpectedResult = new string('a', 10) + Environment.NewLine,
+                ExpectedResult = new string('a', 10),
                 TestName = "Don't add ellipsis if string short"
             };
         }
 
         private static IEnumerable<TestCaseData> PrintToStringWorkWithCollectionsCases()
         {
-            var person = new Person {Name = "Alex", Age = 19, Height = 2.1};
-            yield return new TestCaseData(
-                    new ArrayPerson {ChildrenArray = new[] {person, person}},
-                    GetExpectedForPrintToStringWorkWithCollections(nameof(ArrayPerson.ChildrenArray), person))
-                {TestName = "With Array"};
+            var personWithArray = new CollectionPerson {ChildrenArray = new Person[] {new(), new()}};
+            yield return new TestCaseData(personWithArray,
+                    GetExpectedForPrintToStringWorkWithCollections("Array",
+                        nameof(CollectionPerson.ChildrenArray), 2))
+                {TestName = "Array"};
 
-            yield return new TestCaseData(
-                    new ArrayPerson {ChildrenList = new List<Person> {person, person}},
-                    GetExpectedForPrintToStringWorkWithCollections(nameof(ArrayPerson.ChildrenList), person))
-                {TestName = "With List"};
+            var personWithList = new CollectionPerson {ChildrenList = new List<Person> {new(), new()}};
+            yield return new TestCaseData(personWithList,
+                    GetExpectedForPrintToStringWorkWithCollections("List",
+                        nameof(CollectionPerson.ChildrenList), 2))
+                {TestName = "List"};
+
+
+            var personWithDictionary = new CollectionPerson
+                {ChildrenDictionary = new Dictionary<int, Person> {[0] = new(), [1] = new()}};
+
+            yield return new TestCaseData(personWithDictionary,
+                    GetExpectedForPrintToStringWorkWithCollections("Dictionary",
+                        nameof(CollectionPerson.ChildrenDictionary), 2))
+                {TestName = "Dictionary"};
         }
 
-        private static string GetExpectedForPrintToStringWorkWithCollections(string fillCollectionName, Person person)
+        private static string GetExpectedForPrintToStringWorkWithCollections(string header, string collectionName,
+            int count)
         {
-            var (id, name, height, age) = GetPersonDescription(person);
-            return new ObjectDescription("")
-                .WithFields(
-                    new ObjectDescription($"{fillCollectionName} = [0]: {nameof(Person)}")
+            var (id, name, height, age) = PersonDescription.GetPersonFields(new Person());
+            var fields = new List<ObjectDescription>();
+            for (var i = 0; i < count; i++)
+            {
+                fields.Add(
+                    new ObjectDescription(
+                            new string(' ', $"{collectionName} = ".Length) + $"[{i}]: {nameof(Person)}")
                         .WithFields(id, name, height, age)
-                        .WithOffset($"{fillCollectionName} = [0]: ".Length),
-                    new ObjectDescription(new string(' ', $"{fillCollectionName} = ".Length) + $"[1]: {nameof(Person)}")
-                        .WithFields(id, name, height, age)
-                        .WithOffset($"{fillCollectionName} = [1]: ".Length))
+                        .WithOffset($"{collectionName} = [{i}]: ".Length));
+            }
+
+            return new ObjectDescription($"{header}[{count}]")
+                .WithFields(fields.ToArray())
                 .ToString();
-        }
-
-        private static (string, string, string, string) GetPersonDescription(Person person)
-        {
-            var id = $"{nameof(Person.Id)} = {person.Id}";
-            var name = $"{nameof(Person.Name)} = {person.Name}";
-            var height = $"{nameof(Person.Height)} = {person.Height}";
-            var age = $"{nameof(Person.Age)} = {person.Age}";
-            return (id, name, height, age);
         }
     }
 }

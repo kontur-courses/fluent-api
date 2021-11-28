@@ -11,35 +11,39 @@ namespace ObjectPrintingTests.Helpers
         private readonly string description;
         private readonly ImmutableList<ObjectDescription> childrenFields = ImmutableList<ObjectDescription>.Empty;
         private readonly int offset;
+        private readonly int extraIndentation;
 
-        public ObjectDescription(string description)
+        public ObjectDescription(string description = "")
         {
             this.description = description;
         }
 
-        private ObjectDescription(string description, IEnumerable<ObjectDescription> fields, int offset)
+        private ObjectDescription(string description, IEnumerable<ObjectDescription> fields, int offset,
+            int extraIndentation)
         {
             this.description = description;
             childrenFields = ImmutableList.CreateRange(fields);
             this.offset = offset;
+            this.extraIndentation = extraIndentation;
         }
 
         public ObjectDescription WithFields(params string[] fields)
         {
             var newChildren = childrenFields.AddRange(fields.Select(field => new ObjectDescription(field)));
-            return new ObjectDescription(description, newChildren, offset);
+            return new ObjectDescription(description, newChildren, offset, extraIndentation);
         }
 
         public ObjectDescription WithFields(params ObjectDescription[] fields)
         {
             var newChildren = childrenFields.AddRange(fields);
-            return new ObjectDescription(description, newChildren, offset);
+            return new ObjectDescription(description, newChildren, offset, extraIndentation);
         }
 
-        public ObjectDescription WithOffset(int offset)
-        {
-            return new ObjectDescription(description, childrenFields, offset);
-        }
+        public ObjectDescription WithOffset(int newOffset) =>
+            new(description, childrenFields, newOffset, extraIndentation);
+
+        public ObjectDescription WithExtraIndentation(int indentation)
+            => new(description, childrenFields, offset, indentation);
 
         public override string ToString() => ToString(this, 1);
 
@@ -47,11 +51,15 @@ namespace ObjectPrintingTests.Helpers
         {
             var builder = new StringBuilder();
             if (!string.IsNullOrEmpty(objectDescription.description))
-                builder.Append(objectDescription.description + Environment.NewLine);
+            {
+                builder.Append(new string('\t', objectDescription.extraIndentation));
+                builder.Append(objectDescription.description);
+            }
 
             foreach (var field in objectDescription.childrenFields)
             {
-                builder.Append(new string('\t', nestingLevel));
+                builder.Append(Environment.NewLine);
+                builder.Append(new string('\t', nestingLevel + objectDescription.extraIndentation));
                 builder.Append(new string(' ', objectDescription.offset));
                 builder.Append(ToString(field, nestingLevel + 1));
             }

@@ -23,33 +23,34 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Constructor_ThrowException_IfObjectSerializerIsNull()
-        {
+        public void Constructor_ThrowException_IfObjectSerializerIsNull() =>
             Assert.That(() => new ArraySerializer(null), Throws.InstanceOf<ArgumentException>());
-        }
 
-        [TestCaseSource(nameof(CanSerializeCases))]
-        public bool CanSerialize(object obj) => serializer.CanSerialize(obj);
+        [TestCaseSource(nameof(CanSerializeTrueCases))]
+        public void CanSerialize_True(object obj) => 
+            serializer.CanSerialize(obj).Should().BeTrue();
+
+        [Test]
+        public void CanSerialize_False_WithObject() =>
+            serializer.CanSerialize(new object()).Should().BeFalse();
 
         [TestCase(1, TestName = "Not List")]
         [TestCase(null, TestName = "null")]
-        public void Serialize_ThrowsException_IfObject(object obj)
-        {
+        public void Serialize_ThrowsException_IfObject(object obj) =>
             Assert.That(() => serializer.Serialize(obj), Throws.InstanceOf<ArgumentException>());
-        }
-
 
         [Test]
-        public void Serialize_Work_WithInt()
+        public void Serialize_Work_WithReadonlyList()
         {
-            var list = Enumerable.Range(1, 10).ToList();
-            var expected = string.Join(Environment.NewLine, list.Select(i => $"[{i - 1}]: {i}").ToArray())
-                           + Environment.NewLine;
+            var list = Enumerable.Range(1, 10).ToList().AsReadOnly();
+            var expected = string.Join(Environment.NewLine,
+                new[] {"List[10]"}
+                    .Concat(list.Select(i => $"[{i - 1}]: {i}")));
 
             var actual = serializer.Serialize(list).ToString();
 
-            Console.WriteLine(actual);
             actual.Should().Be(expected);
+            Console.WriteLine(actual);
         }
 
         [Test]
@@ -57,29 +58,25 @@ namespace ObjectPrintingTests
         {
             var person = new Person {Name = "Alex", Age = 19, Height = 2.1};
             var list = new List<Person> {person, person};
-            var personDesc = new ObjectDescription(nameof(Person))
-                .WithFields(
-                    $"{nameof(Person.Id)} = 00000000-0000-0000-0000-000000000000",
-                    $"{nameof(Person.Name)} = Alex",
-                    $"{nameof(Person.Height)} = 2,1",
-                    $"{nameof(Person.Age)} = 19"
-                )
-                .WithOffset("[i]: ".Length)
-                .ToString();
+            var personDesc = PersonDescription.GetDefaultDescription(new Person())
+                .WithOffset("[i]: ".Length);
 
-            var expected = $"[0]: {personDesc}[1]: {personDesc}";
+            var expected = string.Join(Environment.NewLine,
+                "List[2]",
+                $"[0]: {personDesc}",
+                $"[1]: {personDesc}");
 
             var actual = serializer.Serialize(list).ToString();
 
-            Console.WriteLine(actual);
             actual.Should().Be(expected);
+            Console.WriteLine(actual);
         }
 
-        private static IEnumerable<TestCaseData> CanSerializeCases()
+        private static IEnumerable<TestCaseData> CanSerializeTrueCases()
         {
-            yield return new TestCaseData(new List<int>()) {ExpectedResult = true, TestName = "True with List"};
-            yield return new TestCaseData(new int[1]) {ExpectedResult = true, TestName = "True with Array"};
-            yield return new TestCaseData(new object()) {ExpectedResult = false, TestName = "False with object"};
+            yield return new TestCaseData(new List<int>()) {TestName = "List"};
+            yield return new TestCaseData(new int[1]) {TestName = "Array"};
+            yield return new TestCaseData(new List<int>().AsReadOnly()) {TestName = "ReadOnlyList"};
         }
     }
 }
