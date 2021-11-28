@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -13,6 +13,9 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+
+        private  Dictionary<Type, CultureInfo> culturesProperties =
+            new Dictionary<Type, CultureInfo>();
 
         private  Dictionary<MemberInfo, Func<object, string>> memberConverters =
             new Dictionary<MemberInfo, Func<object, string>>();
@@ -30,6 +33,12 @@ namespace ObjectPrinting
         {
             get => typeConverters;
             set => typeConverters = value;
+        }
+
+        public Dictionary<Type, CultureInfo> CulturesProperties
+        {
+            get => culturesProperties;
+            set => culturesProperties = value;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
