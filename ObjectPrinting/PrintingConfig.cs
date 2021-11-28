@@ -7,6 +7,10 @@ using System.Text;
 
 namespace ObjectPrinting
 {
+    public interface INestingPrintingConfig<TOwner, out TType>
+    {
+        PrintingConfig<TOwner> Use(Func<TType, string> transformer);
+    }
     public class PrintingConfig<TOwner> : BasePrintingConfig
     {
         private readonly HashSet<Type> excludedTypes = new();
@@ -105,7 +109,7 @@ namespace ObjectPrinting
             return new NestingPropertyPrintingConfig<TType>(this, memberInfo);
         }
 
-        public class NestingPropertyPrintingConfig<TType>
+        public class NestingPropertyPrintingConfig<TType> : INestingPrintingConfig<TOwner, TType>
         {
             private readonly PrintingConfig<TOwner> parent;
             private readonly MemberInfo memberInfo;
@@ -120,7 +124,7 @@ namespace ObjectPrinting
                 parent.UseTransform(memberInfo, transformer);
         }
 
-        public class NestingPrintingConfig<TType>
+        public class NestingPrintingConfig<TType> : INestingPrintingConfig<TOwner, TType>
         {
             private readonly PrintingConfig<TOwner> parent;
 

@@ -92,5 +92,18 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Money)} = {person.Money} RUB");
         }
+        
+        [Test]
+        public void When_UseSubstring_ShouldTakeSubstring()
+        {
+            var range = 1..2;
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter.For<Person>()
+                .When<string>().UseSubstring(range);
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[range]}");
+        }
     }
 }
