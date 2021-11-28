@@ -1,8 +1,10 @@
-﻿using System;
+﻿using NUnit.Framework;
+using ObjectPrinting;
+using ObjectPrinting.Solved.Tests;
+using System;
 using System.Globalization;
-using NUnit.Framework;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingUnitTest
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -26,10 +28,10 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-            
+
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();
-            
+
             //8. ...с конфигурированием
             string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
             Console.WriteLine(s1);
