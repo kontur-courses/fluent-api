@@ -188,7 +188,9 @@ namespace ObjectPrintingTests
             };
 
             dict.PrintToString().Should()
-                .ContainAll("Key = 1", "Value = 1", "Key = 2", "Value = 2", "Key = 3", "Value = 3");
+                .ContainAll("Key = 1", "Value = 1", 
+                    "Key = 2", "Value = 2", 
+                    "Key = 3", "Value = 3");
         }
 
         [Test]

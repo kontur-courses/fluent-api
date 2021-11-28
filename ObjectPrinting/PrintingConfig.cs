@@ -90,9 +90,7 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-
-            //if (obj is IDictionary dictionary)
-            //    return PrintDictionary(sb, dictionary, indentation, nestingLevel);
+            
             if (obj is IEnumerable collection)
                 return PrintCollection(sb, collection, indentation, nestingLevel);
 
@@ -110,11 +108,6 @@ namespace ObjectPrinting
             {
                 sb.Append(indentation)
                     .Append(PrintToString(item, nestingLevel));
-                //.Append("Key = ")
-                //.Append(PrintToString(key, nestingLevel))
-                //.Append(indentation)
-                //.Append("Value = ")
-                //.Append(PrintToString(collection[key], nestingLevel));
             }
 
             return sb.ToString();
