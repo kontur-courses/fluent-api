@@ -57,5 +57,13 @@ namespace ObjectPrintingUnitTest
                 .Be("Person\r\n\tId = Guid\r\n\tName = Maxim\r\n\tHeight = 180.2\r\n\tAge = 21\r\n");
         }
 
+        [Test]
+        public void PrintToString_TrimString_ShouldBe_StringLenghtOne()
+        {
+            var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(3);
+
+            printer.PrintToString(person).Should().Be("Person\r\n\tId = Guid\r\n\tName = Max\r\n\tHeight = 180,2\r\n\tAge = 21\r\n");
+        }
+
     }
 }
