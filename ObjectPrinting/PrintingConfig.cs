@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -14,10 +13,20 @@ namespace ObjectPrinting
 
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
 
-        private  Dictionary<Type, CultureInfo> culturesProperties =
+        private HashSet<Type> finalTypes = new()
+        {
+            typeof(int),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(DateTime),
+            typeof(TimeSpan)
+        };
+
+        private Dictionary<Type, CultureInfo> culturesProperties =
             new Dictionary<Type, CultureInfo>();
 
-        private  Dictionary<MemberInfo, Func<object, string>> memberConverters =
+        private Dictionary<MemberInfo, Func<object, string>> memberConverters =
             new Dictionary<MemberInfo, Func<object, string>>();
 
         private Dictionary<Type, Func<object, string>> typeConverters =
@@ -67,31 +76,20 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private string PrintToString(object obj, int nestingLevel)
         private string PrintToString(object obj, int nestingLevel, HashSet<object> objectsCashe)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
             if (objectsCashe.Contains(obj))
                 return "circular references" + Environment.NewLine;
+
+            if (finalTypes.Contains(obj.GetType()) || excludedTypes.Contains(obj.GetType()))
             {
-                if (typeConverters.ContainsKey(obj.GetType()))
-                {
-                    var value = typeConverters[obj.GetType()].Invoke(obj);
-                    return value + Environment.NewLine;
-                }
-                return obj + Environment.NewLine;
+                return SerializeFinalTypes(obj);
             }
 
             objectsCashe.Add(obj);
@@ -101,25 +99,16 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
 
-                if (excludedMembers.Contains(propertyInfo))
-                    continue;
-
-                if (typeConverters.ContainsKey(propertyInfo.PropertyType))
+                if (excludedMembers.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType))
                 {
-                    var value = typeConverters[propertyInfo.PropertyType].Invoke(propertyInfo.GetValue(obj));
-
-                    sb.Append(identation + propertyInfo.Name + " = " + value);
-                    sb.Append(Environment.NewLine);
                     continue;
                 }
 
-                if (memberConverters.ContainsKey(propertyInfo))
-                {
-                    var value = memberConverters[propertyInfo].Invoke(propertyInfo.GetValue(obj));
+                var value = SerializeType(obj) ?? SerializeMember(propertyInfo, obj);
 
+                if (!string.IsNullOrEmpty(value))
+                {
                     sb.Append(identation + propertyInfo.Name + " = " + value);
                     sb.Append(Environment.NewLine);
                     continue;
@@ -127,9 +116,39 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                              nestingLevel + 1, objectsCashe));
             }
             return sb.ToString();
+        }
+
+        private string SerializeFinalTypes(object obj)
+        {
+            if (typeConverters.ContainsKey(obj.GetType()))
+            {
+                var value = typeConverters[obj.GetType()].Invoke(obj);
+                return value + Environment.NewLine;
+            }
+            return obj + Environment.NewLine;
+        }
+
+        private string SerializeType(object obj)
+        {
+            if (typeConverters.ContainsKey(obj.GetType()))
+            {
+                return typeConverters[obj.GetType()].Invoke(obj);
+            }
+
+            return null;
+        }
+
+        private string SerializeMember(PropertyInfo propertyInfo, object obj)
+        {
+            if (memberConverters.ContainsKey(propertyInfo))
+            {
+                return memberConverters[propertyInfo].Invoke(propertyInfo.GetValue(obj));
+            }
+
+            return null;
         }
     }
 }
