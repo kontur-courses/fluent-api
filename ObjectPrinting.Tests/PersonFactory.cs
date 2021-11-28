@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
                 Id = Guid.NewGuid(),
                 Name = "Alex",
                 Age = 19,
-                Height = 123,
+                Height = 123.5f,
                 Money = 9871
             };
     }

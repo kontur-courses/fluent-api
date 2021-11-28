@@ -64,5 +64,33 @@ namespace ObjectPrinting.Tests
             
             serializedPerson.Should().Contain($"{nameof(Person.Height)} = {person.Height.ToString(culture)}");
         }
+
+        [Test]
+        public void When_Use_ShouldApplyPropertyFormatting()
+        {
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter
+                .For<Person>()
+                .When(p => p.Age)
+                .Use(age => $"{age} years");
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(Person.Age)} = {person.Age} years");
+        }
+        
+        [Test]
+        public void When_Use_ShouldApplyMemberFormatting()
+        {
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter
+                .For<Person>()
+                .When(p => p.Money)
+                .Use(money => $"{money} RUB");
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(Person.Money)} = {person.Money} RUB");
+        }
     }
 }
