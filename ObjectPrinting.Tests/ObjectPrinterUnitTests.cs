@@ -104,5 +104,17 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[range]}");
         }
+        
+        [Test]
+        public void When_UseSubstring_ShouldExcludeMember()
+        {
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter.For<Person>()
+                .Exclude(p => p.Country);
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().NotContain($"{nameof(Person.Name)} = {person.Country}");
+        }
     }
 }

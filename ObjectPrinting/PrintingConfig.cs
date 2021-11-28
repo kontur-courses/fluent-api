@@ -12,6 +12,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new();
         private readonly Dictionary<Type, Func<object, string>> typeTransformers = new();
         private readonly Dictionary<MemberInfo, Func<object, string>> memberTransformers = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
@@ -33,7 +34,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             var members = type
                 .GetPropertiesAndFields()
-                .Where(x => !excludedTypes.Contains(x.GetMemberType()));
+                .Where(memberInfo => !excludedTypes.Contains(memberInfo.GetMemberType()))
+                .Where(memberInfo => !excludedMembers.Contains(memberInfo));
             foreach (var memberInfo in members) sb.Append($"{identation}{PrintMember(memberInfo, obj, nestingLevel)}");
             return sb.ToString();
         }
@@ -50,6 +52,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Exclude<TType>()
         {
             excludedTypes.Add(typeof(TType));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TType>(Expression<Func<TOwner, TType>> memberSelector)
+        {
+            excludedMembers.Add(SelectMember(memberSelector));
             return this;
         }
 

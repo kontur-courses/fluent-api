@@ -9,5 +9,6 @@ namespace ObjectPrinting.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public int Money;
+        public string Country { get; set; }
     }
 }

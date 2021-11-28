@@ -20,7 +20,8 @@ namespace ObjectPrinting.Tests
                 .When<int>().Use(value => $"~{value}~")
                 .When<double>().Use(culture)
                 .When(p => p.Money).Use(money => $"{money}$")
-                .When<string>().UseSubstring(..2);
+                .When<string>().UseSubstring(..2)
+                .Exclude(x => x.Country);
 
             var serialized = printer.PrintToString(person);
 

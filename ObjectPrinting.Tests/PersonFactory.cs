@@ -9,6 +9,7 @@ namespace ObjectPrinting.Tests
             {
                 Id = Guid.NewGuid(),
                 Name = "Alex",
+                Country = "USA",
                 Age = 19,
                 Height = 123.5f,
                 Money = 9871
