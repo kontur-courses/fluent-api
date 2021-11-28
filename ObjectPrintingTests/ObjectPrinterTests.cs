@@ -43,7 +43,7 @@ namespace ObjectPrintingTests
         public void Should_ExcludeMember()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Excluding(x => x.Name);
+                .Excluding(p => p.Name);
 
             printer.PrintToString(person)
                 .Should().NotContain(person.Name)
@@ -54,7 +54,7 @@ namespace ObjectPrintingTests
         public void Should_UseTypeSerializer()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing<string>().Using(x => x.Length.ToString());
+                .Printing<string>().Using(value => value.Length.ToString());
 
             printer.PrintToString(person)
                 .Should().Contain($"{nameof(person.Name)} = {person.Name.Length}")
@@ -65,7 +65,7 @@ namespace ObjectPrintingTests
         public void Should_UseMemberSerializer()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Printing(x => x.Name).Using(x => x.ToUpper());
+                .Printing(p => p.Name).Using(name => name.ToUpper());
 
             printer.PrintToString(person)
                 .Should().Contain($"{nameof(person.Name)} = {person.Name.ToUpper()}")
@@ -73,11 +73,22 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void Should_UseCulture()
+        public void Should_UseTypeCulture()
         {
             var culture = CultureInfo.CreateSpecificCulture("fr-FR");
             var printer = ObjectPrinter.For<Person>()
                 .Printing<DateTime>().Using(culture);
+
+            printer.PrintToString(person)
+                .Should().Contain(person.Birthdate.ToString(culture));
+        }
+
+        [Test]
+        public void Should_UseMemberCulture()
+        {
+            var culture = CultureInfo.CreateSpecificCulture("fr-FR");
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Birthdate).Using(culture);
 
             printer.PrintToString(person)
                 .Should().Contain(person.Birthdate.ToString(culture));
@@ -106,6 +117,18 @@ namespace ObjectPrintingTests
                 .Should().NotContain(person.Name)
                 .And.Contain("Ser")
                 .And.Contain(person.Surname);
+        }
+
+        [Test]
+        public void Should_ThrowOnNegtiveTrimLength()
+        {
+            Assert.Throws<ArgumentException>(
+                () =>
+            {
+                ObjectPrinter.For<Person>()
+                   .Printing(p => p.Name)
+                   .TrimmedToLength(-3);
+            });
         }
 
         [Test]
@@ -143,11 +166,11 @@ namespace ObjectPrintingTests
         [Test]
         public void Should_SerializeArray()
         {
-            var arr = new[] { 3, 2, 1 };
+            var array = new[] { 3, 2, 1 };
             var printer = ObjectPrinter.For<int[]>();
 
-            printer.PrintToString(arr).Should()
-                .ContainAll(arr.Select(x => x.ToString()));
+            printer.PrintToString(array).Should()
+                .ContainAll(array.Select(element => element.ToString()));
         }
 
         [Test]
@@ -157,17 +180,17 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<List<int>>();
 
             printer.PrintToString(list).Should()
-                .ContainAll(list.Select(x => x.ToString()));
+                .ContainAll(list.Select(element => element.ToString()));
         }
 
         [Test]
         public void Should_SerializeDictionary()
         {
-            var dict = new Dictionary<int, string> { { 1, "3" }, { 2, "2" }, { 3, "1" } };
+            var dictionary = new Dictionary<int, string> { { 1, "3" }, { 2, "2" }, { 3, "1" } };
             var printer = ObjectPrinter.For<Dictionary<int, string>>();
-            printer.PrintToString(dict).Should()
-                .ContainAll(dict.Keys.Select(x => x.ToString()))
-                .And.ContainAll(dict.Values.Select(x => x.ToString()));
+            printer.PrintToString(dictionary).Should()
+                .ContainAll(dictionary.Keys.Select(key => key.ToString()))
+                .And.ContainAll(dictionary.Values.Select(value => value.ToString()));
         }
 
         [Test]

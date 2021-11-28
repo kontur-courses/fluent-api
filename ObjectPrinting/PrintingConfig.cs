@@ -59,6 +59,7 @@ namespace ObjectPrinting
             if (TryOtherSerializations(obj, nestingLevel, info, out var result))
                 return result;
 
+            serializedCache.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var builder = new StringBuilder();
             builder.AppendLine(obj.GetType().Name);
