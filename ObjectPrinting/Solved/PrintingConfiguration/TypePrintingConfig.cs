@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting.Solved.PrintingConfiguration
 {
@@ -19,11 +18,6 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> scenario)
         {
             ParentConfig.AddSerializingScenario(type, scenario);
-            return ParentConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
             return ParentConfig;
         }
     }
