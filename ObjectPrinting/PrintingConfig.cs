@@ -92,8 +92,11 @@ namespace ObjectPrinting
 
         public NestingPrintingConfig<TType> When<TType>() => new(this);
 
-        public NestingPropertyPrintingConfig<TType> When<TType>(Expression<Func<TOwner, TType>> memberSelector) =>
-            new(this, SelectMember(memberSelector));
+        public NestingPropertyPrintingConfig<TType> When<TType>(Expression<Func<TOwner, TType>> memberSelector)
+        {
+            if (memberSelector == null) throw new ArgumentNullException(nameof(memberSelector));
+            return new NestingPropertyPrintingConfig<TType>(this, SelectMember(memberSelector));
+        }
 
         public PrintingConfig<TOwner> SetAllowCycleReference(bool allow)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -8,6 +9,28 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterUnitTests
     {
+        [Test]
+        public void Default_ShouldPrintDefaultValues()
+        {
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter
+                .For<Person>();
+
+            var serializedPerson = config.PrintToString(person);
+
+            var expected = new StringBuilder()
+                .AppendLine($"{nameof(Person)}")
+                .AppendLine($"\t{nameof(Person.Id)} = {nameof(Guid)}")
+                .AppendLine($"\t{nameof(Person.Name)} = {person.Name}")
+                .AppendLine($"\t{nameof(Person.Height)} = {person.Height}")
+                .AppendLine($"\t{nameof(Person.Age)} = {person.Age}")
+                .AppendLine($"\t{nameof(Person.Country)} = {person.Country}")
+                .AppendLine($"\t{nameof(Person.House)} = null")
+                .AppendLine($"\t{nameof(Person.Money)} = {person.Money}")
+                .ToString();
+            serializedPerson.Should().Be(expected);
+        }
+        
         [Test]
         public void Exclude_ShouldExcludeIntPropertiesAndFields_WhenIntGeneric()
         {
