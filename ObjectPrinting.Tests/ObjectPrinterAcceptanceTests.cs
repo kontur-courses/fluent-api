@@ -27,7 +27,7 @@ namespace ObjectPrinting.Tests
                 // 4. Настройка сериализации конкретного свойства/поля
                 .When(p => p.Money).Use(money => $"{money}$")
                 // 5. Возможность обрезания строк
-                .When<string>().UseSubstring(..2)
+                .When<string>().UseTrimming(2)
                 // 6. Исключение из сериализации конкретного свойства/поля
                 .Exclude(x => x.Country)
                 // 7. Корректная обработка циклических ссылок между объектами (не должны приводить к `StackOverflowException`)

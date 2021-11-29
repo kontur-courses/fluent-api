@@ -13,12 +13,13 @@ namespace ObjectPrinting
             return nestingConfig.Use(value => value.ToString(null, provider));
         }
 
-        public static PrintingConfig<TOwner> UseSubstring<TOwner>(Range range) => UseSubstring<TOwner>(null, range);
-
-        public static PrintingConfig<TOwner> UseSubstring<TOwner>(
-            this INestingPrintingConfig<TOwner, string> nestingConfig, Range range)
+        public static PrintingConfig<TOwner> UseTrimming<TOwner>(
+            this INestingPrintingConfig<TOwner, string> nestingConfig, int maxLength)
         {
-            return nestingConfig.Use(value => value[range]);
+            if (nestingConfig == null) throw new ArgumentNullException(nameof(nestingConfig));
+            if (maxLength < 0)
+                throw new ArgumentException($"Expected {nameof(maxLength)} non negative, bug actual {maxLength}");
+            return nestingConfig.Use(value => value[..Math.Min(maxLength, value.Length)]);
         }
     }
 }

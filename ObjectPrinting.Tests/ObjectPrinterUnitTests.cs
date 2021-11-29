@@ -97,14 +97,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void When_UseSubstring_ShouldTakeSubstring()
         {
-            var range = 1..2;
+            const int maxLength = 2;
             var person = PersonFactory.Get();
             var config = ObjectPrinter.For<Person>()
-                .When<string>().UseSubstring(range);
+                .When<string>().UseTrimming(maxLength);
 
             var serializedPerson = config.PrintToString(person);
 
-            serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[range]}");
+            serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[..maxLength]}");
         }
 
 
@@ -118,6 +118,43 @@ namespace ObjectPrinting.Tests
             var serializedPerson = config.PrintToString(person);
 
             serializedPerson.Should().NotContain($"{nameof(Person.Name)} = {person.Country}");
+        }
+
+
+        [Test]
+        public void When_UseSubstring_ShouldTakeSubstring_WhenTrimmingLengthIsLonger()
+        {
+            const int range = 10000;
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter.For<Person>()
+                .When<string>().UseTrimming(range);
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name}");
+        }
+        
+        [Test]
+        public void When_UseSubstring_ShouldTakeSubstring_WhenTrimmingLengthIsZero()
+        {
+            const int range = 0;
+            var person = PersonFactory.Get();
+            var config = ObjectPrinter.For<Person>()
+                .When<string>().UseTrimming(range);
+
+            var serializedPerson = config.PrintToString(person);
+
+            serializedPerson.Should().Contain($"{nameof(Person.Name)} = {Environment.NewLine}");
+        }
+
+        [Test]
+        public void When_UseSubstring_ShouldThrowException_WhenTrimmingLengthIsNegative()
+        {
+            Assert.Throws<ArgumentException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When<string>().UseTrimming(-1);
+            });
         }
 
         [Test]
