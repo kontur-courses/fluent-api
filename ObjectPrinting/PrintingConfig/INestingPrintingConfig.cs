@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfig
 {
     public interface INestingPrintingConfig<TOwner, out TType>
     {

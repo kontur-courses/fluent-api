@@ -4,8 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfig
 {
     public class PrintingConfig<TOwner> : BasePrintingConfig
     {

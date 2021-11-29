@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class ReflectExtensions
     {
