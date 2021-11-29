@@ -1,14 +1,16 @@
-﻿using FluentAssertions;
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Solved.Tests;
-using System;
-using System.Globalization;
+
 namespace ObjectPrintingUnitTest
 {
     public class ObjectPrinterTests
     {
         private Person person;
+
         [SetUp]
         public void SetUp()
         {
@@ -56,7 +58,7 @@ namespace ObjectPrintingUnitTest
         }
 
         [Test]
-        public void PrintToString_TrimString_ShouldBe_StringLenghtOne()
+        public void PrintToString_TrimString_ShouldBe_StringLenghtThree()
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(3);
 
@@ -71,7 +73,7 @@ namespace ObjectPrintingUnitTest
                 Name = "Maxim",
                 Age = 21,
                 Height = 180.2,
-                AnotherPerson = person
+                AnotherPerson = person,
             };
 
             person.AnotherPerson = anotherPerson;
@@ -80,6 +82,5 @@ namespace ObjectPrintingUnitTest
 
             act.Should().NotThrow();
         }
-
     }
 }

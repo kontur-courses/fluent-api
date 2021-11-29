@@ -9,28 +9,28 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<Type> excludedTypes = new ();
 
-        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+        private readonly HashSet<MemberInfo> excludedMembers = new ();
 
-        private HashSet<Type> finalTypes = new()
+        private HashSet<Type> finalTypes = new ()
         {
             typeof(int),
             typeof(double),
             typeof(float),
             typeof(string),
             typeof(DateTime),
-            typeof(TimeSpan)
+            typeof(TimeSpan),
         };
 
         private Dictionary<Type, CultureInfo> culturesProperties =
-            new Dictionary<Type, CultureInfo>();
+            new ();
 
         private Dictionary<MemberInfo, Func<object, string>> memberConverters =
-            new Dictionary<MemberInfo, Func<object, string>>();
+            new ();
 
         private Dictionary<Type, Func<object, string>> typeConverters =
-            new Dictionary<Type, Func<object, string>>();
+            new ();
 
         public Dictionary<MemberInfo, Func<object, string>> MemberConverters
         {
@@ -82,10 +82,14 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel, HashSet<object> objectsCashe)
         {
             if (obj == null)
+            {
                 return "null" + Environment.NewLine;
+            }
 
             if (objectsCashe.Contains(obj))
+            {
                 return "circular references" + Environment.NewLine;
+            }
 
             if (finalTypes.Contains(obj.GetType()) || excludedTypes.Contains(obj.GetType()))
             {
@@ -99,7 +103,6 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-
                 if (excludedMembers.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType))
                 {
                     continue;
@@ -115,9 +118,11 @@ namespace ObjectPrinting
                 }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
+                          PrintToString(
+                              propertyInfo.GetValue(obj),
                               nestingLevel + 1, objectsCashe));
             }
+
             return sb.ToString();
         }
 
@@ -128,6 +133,7 @@ namespace ObjectPrinting
                 var value = typeConverters[obj.GetType()].Invoke(obj);
                 return value + Environment.NewLine;
             }
+
             return obj + Environment.NewLine;
         }
 
