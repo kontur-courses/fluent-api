@@ -10,6 +10,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new();
+        private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
@@ -17,9 +18,22 @@ namespace ObjectPrinting
             return this;
         }
 
+        public INestedPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
+        {
+            return new TypePrintingConfig<TOwner, TMemberType>(this);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        internal void AddCustomTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
+        {
+            if (customTypeSerializers.ContainsKey(type))
+                customTypeSerializers[type] = serializer;
+            else
+                customTypeSerializers.Add(type, serializer);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -42,11 +56,27 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var memberInfo in type.GetPublicPropertiesAndFields().Where(p => !excludedTypes.Contains(p.GetMemberType())))
             {
+                var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
                 sb.Append(identation + memberInfo.Name + " = " +
-                          PrintToString(memberInfo.GetMemberValue(obj),
-                              nestingLevel + 1));
+                          (!isCustomSerialization 
+                              ? PrintToString(memberInfo.GetMemberValue(obj),
+                              nestingLevel + 1) 
+                              : customSerialization));
             }
             return sb.ToString();
+        }
+
+        private bool TryUseCustomSerialization(MemberInfo member, object obj, out string customSerialization)
+        {
+            var memberType = member.GetMemberType();
+            if (customTypeSerializers.ContainsKey(memberType))
+            {
+                customSerialization = customTypeSerializers[memberType].DynamicInvoke(member.GetMemberValue(obj)) + Environment.NewLine;
+                return true;
+            }
+
+            customSerialization = null;
+            return false;
         }
     }
 }
