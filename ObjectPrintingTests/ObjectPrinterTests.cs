@@ -143,6 +143,24 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintingFormattableType_ShouldBeAbleToChooseCultureAndFormat()
+        {
+            var person = new Person { Height = 177.5, Weight = 64.1 };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<string>()
+                .Excluding<Person>()
+                .Excluding<Guid>()
+                .Printing<double>().Using(CultureInfo.InvariantCulture, "P");
+
+            printer.PrintToString(person).Should()
+                .Be($"{nameof(Person)}{newLine}" +
+                    $"\tHeight = 17,750.00 %{newLine}" +
+                    $"\tWeight = 6,410.00 %{newLine}");
+        }
+
+        [Test]
         public void PrintingString_ShouldBeAbleToTrimToLength()
         {
             var person = new Person { Name = "Alexey Surname Should Be Trimmed"};
@@ -252,6 +270,46 @@ namespace ObjectPrintingTests
             Action act = () => printer.Printing(p => 2);
 
             act.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void ForCycles_Throw_ShouldThrows_WhenCyclesDetected()
+        {
+            var person = new Person { Name = "Alexey" };
+            var brother = new Person { Name = "Ivan", Brother = person };
+            person.Brother = brother;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding(p => p.Friend)
+                .ForCycles().Throw();
+            Action act = () => printer.PrintToString(person);
+
+            act.Should().Throw<InvalidOperationException>();
+        }
+
+        [Test]
+        public void ForCycles_ShowMessage_ShouldShowMessage_WhenCyclesDetected()
+        {
+            var person = new Person { Name = "Alexey" };
+            var brother = new Person { Name = "Ivan", Brother = person };
+            person.Brother = brother;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding(p => p.Friend)
+                .ForCycles().ShowMessage("Brother was here");
+
+            printer.PrintToString(person).Should()
+                .Be($"{nameof(Person)}{newLine}" +
+                    $"\tName = {person.Name}{newLine}" +
+                    $"\tBrother = {nameof(Person)}{newLine}" +
+                    $"\t\tName = {brother.Name}{newLine}" +
+                    $"\t\tBrother = Brother was here{newLine}");
         }
 
         [Test]

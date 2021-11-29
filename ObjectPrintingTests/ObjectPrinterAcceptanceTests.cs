@@ -33,7 +33,8 @@ namespace ObjectPrintingTests
                 .Printing<int>().Using(i => i.ToString("X"))
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 .Printing(p => p.Name).TrimToLength(10)
-                .Excluding(p => p.Age);
+                .Excluding(p => p.Age)
+                .ForCycles().ShowMessage("Brother is upper");
 
             string s1 = printer.PrintToString(person);
             string s2 = person.PrintToString();

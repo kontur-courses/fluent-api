@@ -1,16 +1,18 @@
 using System;
 using System.Collections;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        static readonly HashSet<Type> finalTypes = new HashSet<Type>
+        private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
             typeof(int), 
             typeof(double), 
@@ -20,32 +22,31 @@ namespace ObjectPrinting
             typeof(TimeSpan),
             typeof(Guid)
         };
-        private readonly HashSet<Type> excludedTypes;
-        private readonly HashSet<PropertyInfo> excludedProperties;
-        private readonly HashSet<FieldInfo> excludedFields;
-        private readonly Dictionary<Type, Delegate> typeSerializers;
-        private readonly Dictionary<PropertyInfo, Delegate> propertySerializers;
-        private readonly Dictionary<FieldInfo, Delegate> fieldSerializers;
+        private ImmutableHashSet<Type> excludedTypes;
+        private ImmutableHashSet<MemberInfo> excludedMembers;
+        private readonly ImmutableDictionary<Type, Delegate> typeSerializers;
+        private readonly ImmutableDictionary<MemberInfo, Delegate> memberSerializers;
         private HashSet<object> visited;
+
+        private bool shouldSkipCycles = true;
+        private bool shouldCyclesThrow = false;
+        private bool shouldShowMessage = false;
+        private string cycleReferenceMessage = "Cycle reference";
 
         public PrintingConfig()
         {
-           excludedTypes = new HashSet<Type>();
-           excludedProperties = new HashSet<PropertyInfo>();
-           excludedFields = new HashSet<FieldInfo>();
-           typeSerializers = new Dictionary<Type, Delegate>();
-           propertySerializers = new Dictionary<PropertyInfo, Delegate>();
-           fieldSerializers = new Dictionary<FieldInfo, Delegate>();
+           excludedTypes = ImmutableHashSet.Create<Type>();
+           excludedMembers = ImmutableHashSet.Create<MemberInfo>();
+           typeSerializers = ImmutableDictionary.Create<Type, Delegate>();
+           memberSerializers = ImmutableDictionary.Create<MemberInfo, Delegate>();
         }
 
         private PrintingConfig(PrintingConfig<TOwner> config)
         {
             excludedTypes = config.excludedTypes;
-            excludedProperties = config.excludedProperties;
-            excludedFields = config.excludedFields;
+            excludedMembers = config.excludedMembers;
+            memberSerializers = config.memberSerializers;
             typeSerializers = config.typeSerializers;
-            propertySerializers = config.propertySerializers;
-            fieldSerializers = config.fieldSerializers;
             visited = config.visited;
         }
         
@@ -53,21 +54,26 @@ namespace ObjectPrinting
             Type type,
             Delegate serializer) : this(config)
         {
-            typeSerializers.Add(type, serializer);
+            typeSerializers = config.typeSerializers.Add(type, serializer);
         }
 
         internal PrintingConfig(PrintingConfig<TOwner> config,
-            PropertyInfo propertyInfo,
+            MemberInfo memberInfo,
             Delegate serializer) : this(config)
         {
-            propertySerializers.Add(propertyInfo, serializer);
+            memberSerializers = config.memberSerializers.Add(memberInfo, serializer);
         }
 
         internal PrintingConfig(PrintingConfig<TOwner> config,
-            FieldInfo fieldInfo,
-            Delegate serializer) : this(config)
+            bool shouldSkipCycles = false,
+            bool shouldCyclesThrow = false,
+            bool shouldShowMessage = false,
+            string message = "Cycle reference") : this(config)
         {
-            fieldSerializers.Add(fieldInfo, serializer);
+            this.shouldCyclesThrow = shouldCyclesThrow;
+            this.shouldShowMessage = shouldShowMessage;
+            this.shouldSkipCycles = shouldSkipCycles;
+            cycleReferenceMessage = message;
         }
 
         public string PrintToString(TOwner obj)
@@ -82,11 +88,15 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            if (finalTypes.Contains(type))
+            if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             if (visited.Contains(obj))
-                return "Cyclic reference";
+            {
+                if (shouldCyclesThrow)
+                    throw new InvalidOperationException($"Cycle reference detected on {obj}");
+                return cycleReferenceMessage + Environment.NewLine;
+            }
 
             visited.Add(obj);
             var indentation = new string('\t', nestingLevel + 1);
@@ -96,12 +106,40 @@ namespace ObjectPrinting
             if (obj is IEnumerable collection)
                 return PrintCollection(sb, collection, indentation, nestingLevel);
 
-            PrintProperties(sb, type, obj, indentation, nestingLevel);
-            PrintFields(sb, type, obj, indentation, nestingLevel);
+            PrintMembers(sb, type, obj, indentation, nestingLevel);
 
             visited.Remove(obj);
 
             return sb.ToString();
+        }
+
+        private void PrintMembers(StringBuilder sb, Type type, object obj, string indentation, int nestingLevel)
+        {
+            var members = type.GetMembers()
+                .Where(member => member.MemberType == MemberTypes.Field 
+                                 || member.MemberType == MemberTypes.Property)
+                .Where(member => !excludedMembers.Contains(member)
+                                && !excludedTypes.Contains(member.GetMemberType()));
+            foreach (var memberInfo in members)
+            {
+                var tabulation = indentation + memberInfo.Name + " = ";
+                var memberValue = memberInfo.GetValue(obj);
+                if (visited.Contains(memberValue) && shouldSkipCycles)
+                    continue;
+
+                sb.Append(tabulation)
+                    .Append(PrintMember(memberInfo, memberValue, nestingLevel));
+            }
+        }
+
+        private string PrintMember(MemberInfo memberInfo, object memberValue, int nestingLevel)
+        {
+            if (typeSerializers.TryGetValue(memberInfo.GetMemberType(), out var serializer))
+                return serializer.DynamicInvoke(memberValue) + Environment.NewLine;
+
+            return memberSerializers.TryGetValue(memberInfo, out serializer)
+                ? serializer.DynamicInvoke(memberValue) + Environment.NewLine
+                : PrintToString(memberValue, nestingLevel + 1);
         }
 
         private string PrintCollection(StringBuilder sb, 
@@ -118,72 +156,22 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private void PrintFields(StringBuilder sb, Type type, object obj, string indentation, int nestingLevel)
-        {
-                var fields = type.GetFields()
-                .Where(field => !excludedFields.Contains(field)
-                                && !excludedTypes.Contains(field.FieldType));
-            foreach (var fieldInfo in fields)
-            {
-                var tabulation = indentation + fieldInfo.Name + " = ";
-                sb.Append(tabulation)
-                    .Append(PrintField(fieldInfo, obj, nestingLevel));
-            }
-        }
-
-        private void PrintProperties(StringBuilder sb, Type type, object obj, string indentation, int nestingLevel)
-        {
-            var properties = type.GetProperties()
-                .Where(property => !excludedProperties.Contains(property)
-                                && !excludedTypes.Contains(property.PropertyType));
-            foreach (var propertyInfo in properties)
-            {
-                var tabulation = indentation + propertyInfo.Name + " = ";
-                if (visited.Contains(propertyInfo.GetValue(obj)))
-                    continue;
-                sb.Append(tabulation)
-                    .Append(PrintProperty(propertyInfo, obj, nestingLevel));
-            }
-        }
-
-        private string PrintProperty(PropertyInfo property, object obj, int nestingLevel)
-        {
-            if (typeSerializers.TryGetValue(property.PropertyType, out var serializer))
-                return serializer.DynamicInvoke(property.GetValue(obj)) + Environment.NewLine;
-            
-            return propertySerializers.TryGetValue(property, out serializer)
-                ? serializer.DynamicInvoke(property.GetValue(obj)) + Environment.NewLine
-                : PrintToString(property.GetValue(obj), nestingLevel + 1);
-        }
-
-        private string PrintField(FieldInfo field, object obj, int nestingLevel)
-        {
-            if (typeSerializers.TryGetValue(field.FieldType, out var serializer))
-                return serializer.DynamicInvoke(field.GetValue(obj)) + Environment.NewLine;
-            
-            return fieldSerializers.TryGetValue(field, out serializer)
-                ? serializer.DynamicInvoke(field.GetValue(obj)) + Environment.NewLine
-                : PrintToString(field.GetValue(obj), nestingLevel + 1);
-        }
-
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            excludedTypes.Add(typeof(T));
-            return this;
+            excludedTypes = excludedTypes.Add(typeof(T));
+            return new PrintingConfig<TOwner>(this);
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpr))
-                throw new ArgumentException($"This is not member expression {memberSelector}");
-            var propertyInfo = memberExpr.Member as PropertyInfo;
-            if (propertyInfo != null)
-                excludedProperties.Add(propertyInfo);
-            else if (memberExpr.Member is FieldInfo fieldInfo)
-                excludedFields.Add(fieldInfo);
-            else
-                throw new ArgumentException($"Wrong member selector {memberExpr}");
-            return this;
+            var memberInfo = memberSelector.GetMemberInfoFromExpression();
+            excludedMembers = excludedMembers.Add(memberInfo);
+            return new PrintingConfig<TOwner>(this);
+        }
+
+        public CycleReferencePrintingConfig<TOwner> ForCycles()
+        {
+            return new CycleReferencePrintingConfig<TOwner>(this);
         }
 
         public IMemberPrintingConfig<TOwner, T> Printing<T>()
@@ -193,15 +181,8 @@ namespace ObjectPrinting
 
         public IMemberPrintingConfig<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpr))
-                throw new ArgumentException($"This is not member expression {memberSelector}");
-            var propertyInfo = memberExpr.Member as PropertyInfo;
-            var fieldInfo = memberExpr.Member as FieldInfo;
-            if (propertyInfo == null && fieldInfo == null)
-                throw new ArgumentException($"Wrong member selector {memberExpr}");
-            return propertyInfo == null 
-                ? (IMemberPrintingConfig<TOwner, T>) new FieldPrintingConfig<TOwner, T>(this, fieldInfo)
-                : new PropertyPrintingConfig<TOwner, T>(this, propertyInfo);
+            var memberInfo = memberSelector.GetMemberInfoFromExpression();
+            return new MemberPrintingConfig<TOwner, T>(this, memberInfo);
         }
     }
 }

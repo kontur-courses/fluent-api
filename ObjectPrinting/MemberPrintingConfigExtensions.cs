@@ -7,9 +7,9 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<TOwner> Using<TOwner, T>(
             this IMemberPrintingConfig<TOwner, T> config,
-            CultureInfo cultureInfo) where T : IFormattable
+            CultureInfo cultureInfo, string format = null) where T : IFormattable
         {
-            return config.Using(prop => prop.ToString(null, cultureInfo));
+            return config.Using(prop => prop.ToString(format, cultureInfo));
         }
 
         public static PrintingConfig<TOwner> TrimToLength<TOwner>(
