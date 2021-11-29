@@ -1,7 +1,9 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -46,6 +48,10 @@ namespace ObjectPrinting.Tests
                 .Printing<int>().Using(i => i.ToString("F"))
                 .PrintToString(person);
             Console.WriteLine(specifiedTypeSerialization);
+            var customCultureResult = personPrinter
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .PrintToString(person);
+            Console.WriteLine(customCultureResult);
         }
 
         [Test]
@@ -96,6 +102,28 @@ namespace ObjectPrinting.Tests
             result.Should()
                 .Be(
                     $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21,00{newLine}\tHeight = 170,5{newLine}");
+        }
+
+        [Test]
+        public void UseCustomCulture_WhenSpecifiedForType()
+        {
+            var result = personPrinter
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .PrintToString(person);
+            result.Should()
+                .Be(
+                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170.5{newLine}");
+        }
+
+        [Test]
+        public void UseLastSpecifiedCustomSerialization()
+        {
+            var result = personPrinter
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<double>().Using(n => n.ToString(null, new CultureInfo("ru-ru")))
+                .PrintToString(person);
+            result.Should()
+                .Be(defaultPersonSerialization);
         }
 
         private class Person
