@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -38,7 +39,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ExcludingProperty_ShouldExcludeOneProperty()
+        public void ExcludingProperty_ShouldExcludeThisProperty()
         {
             var pet = new Pet { Name = "Bob", Age = 5, Owner = null };
             var printer = ObjectPrinter.For<Pet>()
@@ -108,7 +109,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ExcludingAndPrinting_ShouldBeFluent()
+        public void ExcludingAndUsing_ShouldReturnsOneConfig()
         {
             var pet = new Pet { Name = "Bob", Age = 5, Owner = null };
 
@@ -124,9 +125,9 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrintingFromattableType_ShouldBeAbleToChooseCulture()
+        public void PrintingFormattableType_ShouldBeAbleToChooseCulture()
         {
-            var person = new Person() {Height = 177.5, Weight = 64.1};
+            var person = new Person {Height = 177.5, Weight = 64.1};
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>()
@@ -144,7 +145,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintingString_ShouldBeAbleToTrimToLength()
         {
-            var person = new Person() { Name = "Alexey Surname Should Be Trimmed"};
+            var person = new Person { Name = "Alexey Surname Should Be Trimmed"};
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>()
@@ -159,11 +160,48 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintingString_ShouldThrowsArgumentException_WhenLengthNegative()
+        {
+            var person = new Person { Name = "Alexey Surname Should Be Trimmed" };
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Person>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Printing<string>().TrimToLength(-1);
+
+            Action act = () => printer.PrintToString(person);
+            act.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
         public void PrintToString_ShouldSkipCyclicReferences()
         {
             var person = new Person { Name = "Alexey" };
             var brother = new Person {Name = "Ivan", Brother = person};
             person.Brother = brother;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding(p => p.Friend);
+
+            printer.PrintToString(person).Should()
+                .Be($"{nameof(Person)}{newLine}" +
+                    $"\tName = {person.Name}{newLine}" +
+                    $"\tBrother = {nameof(Person)}{newLine}" +
+                    $"\t\tName = {brother.Name}{newLine}");
+        }
+
+        [Test]
+        public void PrintToString_ShouldNotIgnoreDifferentProperties_WithOneReference()
+        {
+            var person = new Person { Name = "Alexey" };
+            var brother = new Person {Name = "Ivan", Brother = person};
+            person.Brother = brother;
+            person.Friend = brother;
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>()
@@ -174,7 +212,27 @@ namespace ObjectPrintingTests
                 .Be($"{nameof(Person)}{newLine}" +
                     $"\tName = {person.Name}{newLine}" +
                     $"\tBrother = {nameof(Person)}{newLine}" +
+                    $"\t\tName = {brother.Name}{newLine}" +
+                    $"\tFriend = {nameof(Person)}{newLine}" +
                     $"\t\tName = {brother.Name}{newLine}");
+        }
+
+        [Test]
+        public void Printing_ShouldThrows_WhenArgumentNotMemberExpression()
+        {
+            var person = new Person { Name = "Alexey" };
+            var brother = new Person { Name = "Ivan", Brother = person };
+            person.Brother = brother;
+            person.Friend = brother;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Guid>()
+                .Excluding<double>();
+
+            Action act = () => printer.Printing(p => 2);
+
+            act.Should().Throw<ArgumentException>();
         }
 
         [Test]
@@ -198,9 +256,9 @@ namespace ObjectPrintingTests
         {
             var list = new List<Pet>
             {
-                new Pet {Age = 1, Name = "Bob"},
-                new Pet {Age = 2, Name = "Bars"},
-                new Pet {Age = 3, Name = "Mars"}
+                new() {Age = 1, Name = "Bob"},
+                new() {Age = 2, Name = "Bars"},
+                new() {Age = 3, Name = "Mars"}
             };
 
             list.PrintToString().Should()

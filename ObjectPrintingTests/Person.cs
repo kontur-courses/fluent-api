@@ -2,7 +2,7 @@
 
 namespace ObjectPrintingTests
 {
-    public class Person
+    internal class Person
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
@@ -11,5 +11,6 @@ namespace ObjectPrintingTests
         public int Age { get; set; }
         public int Salary { get; set; }
         public Person Brother { get; set; }
+        public Person Friend { get; set; }
     }
 }
