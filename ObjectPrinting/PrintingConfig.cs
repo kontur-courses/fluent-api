@@ -26,7 +26,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> typeSerializers;
         private readonly Dictionary<PropertyInfo, Delegate> propertySerializers;
         private readonly Dictionary<FieldInfo, Delegate> fieldSerializers;
-        private readonly HashSet<object> visited;
+        private HashSet<object> visited;
 
         public PrintingConfig()
         {
@@ -36,10 +36,9 @@ namespace ObjectPrinting
            typeSerializers = new Dictionary<Type, Delegate>();
            propertySerializers = new Dictionary<PropertyInfo, Delegate>();
            fieldSerializers = new Dictionary<FieldInfo, Delegate>();
-           visited = new HashSet<object>();
         }
 
-        internal PrintingConfig(PrintingConfig<TOwner> config)
+        private PrintingConfig(PrintingConfig<TOwner> config)
         {
             excludedTypes = config.excludedTypes;
             excludedProperties = config.excludedProperties;
@@ -49,7 +48,7 @@ namespace ObjectPrinting
             fieldSerializers = config.fieldSerializers;
             visited = config.visited;
         }
-
+        
         internal PrintingConfig(PrintingConfig<TOwner> config,
             Type type,
             Delegate serializer) : this(config)
@@ -73,18 +72,21 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            visited = new HashSet<object>();
             return PrintToString(obj, 0);
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
+
+            if (visited.Contains(obj))
+                return "Cyclic reference";
 
             visited.Add(obj);
             var indentation = new string('\t', nestingLevel + 1);
@@ -96,6 +98,9 @@ namespace ObjectPrinting
 
             PrintProperties(sb, type, obj, indentation, nestingLevel);
             PrintFields(sb, type, obj, indentation, nestingLevel);
+
+            visited.Remove(obj);
+
             return sb.ToString();
         }
 
@@ -115,14 +120,12 @@ namespace ObjectPrinting
 
         private void PrintFields(StringBuilder sb, Type type, object obj, string indentation, int nestingLevel)
         {
-            var fields = type.GetFields()
+                var fields = type.GetFields()
                 .Where(field => !excludedFields.Contains(field)
                                 && !excludedTypes.Contains(field.FieldType));
             foreach (var fieldInfo in fields)
             {
                 var tabulation = indentation + fieldInfo.Name + " = ";
-                if (visited.Contains(fieldInfo.GetValue(obj)))
-                    continue;
                 sb.Append(tabulation)
                     .Append(PrintField(fieldInfo, obj, nestingLevel));
             }

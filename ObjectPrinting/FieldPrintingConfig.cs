@@ -7,17 +7,17 @@ namespace ObjectPrinting
     {
         private readonly FieldInfo fieldInfo;
 
-        public PrintingConfig<TOwner> ParentConfig { get; }
+        private PrintingConfig<TOwner> parentConfig;
 
         public FieldPrintingConfig(PrintingConfig<TOwner> parentConfig, FieldInfo fieldInfo)
         {
-            ParentConfig = parentConfig;
+            this.parentConfig = parentConfig;
             this.fieldInfo = fieldInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TField, string> serializationRule)
         {
-            return new PrintingConfig<TOwner>(ParentConfig, fieldInfo, serializationRule);
+            return new PrintingConfig<TOwner>(parentConfig, fieldInfo, serializationRule);
         }
     }
 }

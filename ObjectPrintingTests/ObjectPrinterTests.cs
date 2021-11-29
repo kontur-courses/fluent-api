@@ -169,9 +169,9 @@ namespace ObjectPrintingTests
                 .Excluding<Person>()
                 .Excluding<Guid>()
                 .Excluding<double>()
-                .Printing<string>().TrimToLength(-1);
+                .Printing<string>();
 
-            Action act = () => printer.PrintToString(person);
+            Action act = () => printer.TrimToLength(-1);
             act.Should().Throw<ArgumentException>();
         }
 
@@ -196,6 +196,23 @@ namespace ObjectPrintingTests
         }
 
         [Test]
+        public void PrintToString_ShouldDetectCyclicReference_WhenObjectReferencesItself()
+        {
+            var person = new Person { Name = "Alexey" };
+            person.Brother = person;
+
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<int>()
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding(p => p.Friend);
+
+            printer.PrintToString(person).Should()
+                .Be($"{nameof(Person)}{newLine}" +
+                    $"\tName = {person.Name}{newLine}");
+        }
+
+        [Test]
         public void PrintToString_ShouldNotIgnoreDifferentProperties_WithOneReference()
         {
             var person = new Person { Name = "Alexey" };
@@ -213,8 +230,10 @@ namespace ObjectPrintingTests
                     $"\tName = {person.Name}{newLine}" +
                     $"\tBrother = {nameof(Person)}{newLine}" +
                     $"\t\tName = {brother.Name}{newLine}" +
+                    $"\t\tFriend = null{newLine}" +
                     $"\tFriend = {nameof(Person)}{newLine}" +
-                    $"\t\tName = {brother.Name}{newLine}");
+                    $"\t\tName = {brother.Name}{newLine}" +
+                    $"\t\tFriend = null{newLine}");
         }
 
         [Test]

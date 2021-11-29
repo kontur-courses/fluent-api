@@ -16,6 +16,8 @@ namespace ObjectPrinting
             this IMemberPrintingConfig<TOwner, string> config, 
             int trimLength)
         {
+            if (trimLength < 0)
+                throw new ArgumentException($"Trim length should be positive, but was {trimLength}");
             return config.Using(s => s[..Math.Min(trimLength, s.Length)]);
         }
     }
