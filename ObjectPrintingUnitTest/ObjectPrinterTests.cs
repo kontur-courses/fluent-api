@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -81,6 +82,29 @@ namespace ObjectPrintingUnitTest
             Action act = () => Console.WriteLine(ObjectPrinter.For<Person>().PrintToString(person));
 
             act.Should().NotThrow();
+        }
+
+        [Test]
+        public void PrintToString_ShouldBeCorrect_IfCollection()
+        {
+            var persons = new List<Person>();
+
+            var anotherPerson = new Person
+            {
+                Name = "Maxim",
+                Age = 21,
+                Height = 180.2,
+                AnotherPerson = person,
+            };
+
+            persons.Add(person);
+
+            persons.Add(anotherPerson);
+
+            ObjectPrinter.For<List<Person>>()
+                         .PrintToString(persons)
+                         .Should()
+                         .Be("\tList`1\r\n\t0 Person\r\n\t\tId = Guid\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = null\r\n\t1 Person\r\n\t\tId = Guid\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = circular references\r\n");
         }
     }
 }
