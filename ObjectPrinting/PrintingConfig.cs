@@ -27,7 +27,7 @@ namespace ObjectPrinting
             typeof(Guid)
         };
 
-        private readonly Dictionary<Type, Delegate> alternativeDeserializingFunctions =
+        private readonly Dictionary<Type, Delegate> customTypesDeserializing =
             new();
 
         private readonly Dictionary<MemberInfo, Delegate> customPropertyDeserializing =
@@ -102,8 +102,8 @@ namespace ObjectPrinting
             var memberType = memberInfo.GetMemberType();
             var memberValue = memberInfo.GetMemberValue(obj);
 
-            if (alternativeDeserializingFunctions.ContainsKey(memberType))
-                return alternativeDeserializingFunctions[memberType]
+            if (customTypesDeserializing.ContainsKey(memberType))
+                return customTypesDeserializing[memberType]
                     .DynamicInvoke(memberValue)?.ToString();
 
             if (cultureInfos.ContainsKey(memberType)) return ToStringWithCulture(memberValue);
@@ -161,7 +161,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using<TPropType>(Func<TPropType, string> function)
         {
-            alternativeDeserializingFunctions[typeof(TPropType)] = function;
+            customTypesDeserializing[typeof(TPropType)] = function;
 
             return this;
         }
