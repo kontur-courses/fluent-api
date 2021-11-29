@@ -102,6 +102,11 @@ namespace ObjectPrinting
                 return SerializeCollection(collection, nestingLevel, objectsCashe);
             }
 
+            if (obj is IDictionary dictionary)
+            {
+                return SerializeDictionary(dictionary, nestingLevel, objectsCashe);
+            }
+
             objectsCashe.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -153,6 +158,24 @@ namespace ObjectPrinting
             {
                 var value = PrintToString(item, nestingLevel + 1, objectsCashe);
                 sb.AppendFormat("{0}{1} {2}", identation, index, value);
+                index++;
+            }
+
+            return sb.ToString();
+        }
+
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, HashSet<object> objectsCashe)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var index = 0;
+            sb.Append(identation + dictionary.GetType().Name + Environment.NewLine);
+            foreach (var key in dictionary.Keys)
+            {
+                var value = PrintToString(key, nestingLevel + 1, objectsCashe);
+                sb.AppendFormat("{0}Key{1} {2}", identation, index, value);
+                value = PrintToString(dictionary[key], nestingLevel + 1, objectsCashe);
+                sb.AppendFormat("{0}Value{1} {2}", identation, index, value);
                 index++;
             }
 
