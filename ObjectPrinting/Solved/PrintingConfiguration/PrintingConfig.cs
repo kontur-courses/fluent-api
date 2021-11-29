@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -63,15 +64,26 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
                 return "null" + Environment.NewLine;
 
             if (FinalTypesKeeper.IsFinalType(obj.GetType()))
-                return obj + Environment.NewLine;
+                return obj.ToString();
 
             if (visitedObjects.Contains(obj))
                 return "[cyclic reference detected]";
 
             visitedObjects.Add(obj);
-            var type = obj.GetType();
-            var builder = new StringBuilder();
 
+            var type = obj.GetType();
+
+            if (type.GetInterface(nameof(ICollection)) != null)
+                return type.GetInterface(nameof(IDictionary)) == null
+                    ? GetItemsFromCollection((ICollection)obj, nestingLvl)
+                    : GetItemsFromDictionary((IDictionary)obj, nestingLvl);
+
+            return PrintMembersOfObject(obj, type, nestingLvl);
+        }
+
+        private string PrintMembersOfObject(object obj, Type type, int nestingLvl)
+        {
+            var builder = new StringBuilder();
             builder.AppendLine(type.Name);
 
             foreach (var member in type.GetPropertiesAndFields())
@@ -106,6 +118,36 @@ namespace ObjectPrinting.Solved.PrintingConfiguration
             return IsMemberHasAlternateScenario(member) || IsMemberTypeHasAlternateScenario(member)
                 ? GetValueFromScenario(obj, member)
                 : PrintToString(member.GetValue(obj), nestingLvl + 1);
+        }
+
+        private string GetItemsFromDictionary(IDictionary dictionary, int nestingLvl)
+        {
+            var builder = new StringBuilder();
+            builder.Append("[");
+
+            foreach (var key in dictionary.Keys)
+            {
+                var keyToString = PrintToString(key, nestingLvl + 1);
+                var valueToString = PrintToString(dictionary[key], nestingLvl + 1);
+                builder.AppendKeyValuePair(GetIndent(nestingLvl + 1), keyToString, valueToString);
+            }
+
+            builder.Append(Environment.NewLine).Append(GetIndent(nestingLvl)).Append("]");
+
+            return builder.ToString();
+        }
+
+        private string GetItemsFromCollection(ICollection collection, int nestingLvl)
+        {
+            var builder = new StringBuilder();
+            builder.Append("[");
+
+            foreach (var item in collection)
+                builder.Append(PrintToString(item, nestingLvl + 1)).Append(", ");
+
+            builder.Remove(builder.Length - 2, 2).Append("]");
+
+            return builder.ToString();
         }
 
         private bool IsMemberHasAlternateScenario(MemberInfo member)

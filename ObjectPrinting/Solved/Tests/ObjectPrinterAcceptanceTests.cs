@@ -56,5 +56,11 @@ namespace ObjectPrinting.Solved.Tests
 
             Console.WriteLine(printer.PrintToString(person));
         }
+
+        [Test]
+        public void AcceptanceTest_PrintingCollections()
+        {
+            Console.WriteLine(printer.PrintToString(person));
+        }
     }
 }

@@ -19,5 +19,18 @@ namespace ObjectPrinting.Solved.Extensions
                 .Append(memberValue)
                 .Append(Environment.NewLine);
         }
+
+        public static StringBuilder AppendKeyValuePair(
+            this StringBuilder builder,
+            string indent, string key, string value,
+            string keyValueDelimiter = " : ")
+        {
+            return builder
+                .Append(Environment.NewLine)
+                .Append(indent)
+                .Append(key)
+                .Append(keyValueDelimiter)
+                .Append(value);
+        }
     }
 }
