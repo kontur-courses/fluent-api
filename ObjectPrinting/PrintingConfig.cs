@@ -64,6 +64,22 @@ namespace ObjectPrinting
             memberSerializers = config.memberSerializers.Add(memberInfo, serializer);
         }
 
+        private PrintingConfig(PrintingConfig<TOwner> config,
+            MemberInfo memberInfo, bool isAdding = true) : this(config)
+        {
+            excludedMembers = isAdding 
+                ? config.excludedMembers.Add(memberInfo) 
+                : config.excludedMembers.Remove(memberInfo);
+        }
+
+        private PrintingConfig(PrintingConfig<TOwner> config,
+            Type type, bool isAdding = true) : this(config)
+        {
+            excludedTypes = isAdding
+                ? config.excludedTypes.Add(type)
+                : config.excludedTypes.Remove(type);
+        }
+
         internal PrintingConfig(PrintingConfig<TOwner> config,
             bool shouldSkipCycles = false,
             bool shouldCyclesThrow = false,
@@ -158,15 +174,13 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            excludedTypes = excludedTypes.Add(typeof(T));
-            return new PrintingConfig<TOwner>(this);
+            return new PrintingConfig<TOwner>(this, typeof(T));
         }
 
         public PrintingConfig<TOwner> Excluding<T>(Expression<Func<TOwner, T>> memberSelector)
         {
             var memberInfo = memberSelector.GetMemberInfoFromExpression();
-            excludedMembers = excludedMembers.Add(memberInfo);
-            return new PrintingConfig<TOwner>(this);
+            return new PrintingConfig<TOwner>(this, memberInfo);
         }
 
         public CycleReferencePrintingConfig<TOwner> ForCycles()
@@ -183,6 +197,17 @@ namespace ObjectPrinting
         {
             var memberInfo = memberSelector.GetMemberInfoFromExpression();
             return new MemberPrintingConfig<TOwner, T>(this, memberInfo);
+        }
+
+        public PrintingConfig<TOwner> Including<T>()
+        {
+            return new PrintingConfig<TOwner>(this, typeof(T), false);
+        }
+
+        public PrintingConfig<TOwner> Including<T>(Expression<Func<TOwner, T>> memberSelector)
+        {
+            var memberInfo = memberSelector.GetMemberInfoFromExpression();
+            return new PrintingConfig<TOwner>(this, memberInfo, false);
         }
     }
 }

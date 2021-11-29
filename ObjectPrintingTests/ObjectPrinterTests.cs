@@ -94,7 +94,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrintingFiledWithUsing_ShouldAddSerializerForThisField()
+        public void PrintingFieldWithUsing_ShouldAddSerializerForThisField()
         {
             var pet = new Pet { Name = "Bob", Age = 5, Owner = null };
 
@@ -342,6 +342,49 @@ namespace ObjectPrintingTests
                 .ContainAll("Pet", $"Age = {list[0].Age}", $"Name = {list[0].Name}",
                     $"Age = {list[1].Age}", $"Name = {list[1].Name}",
                     $"Age = {list[2].Age}", $"Name = {list[2].Name}");
+        }
+
+        [Test]
+        public void IncludingType_ShouldIncludeThisType()
+        {
+            var pet1 = new Pet { Name = "Bob", Age = 5, Owner = null };
+            var pet2 = new Pet {Name = "Dog", Age = 3, Owner = null}; 
+
+            var printer1 = ObjectPrinter.For<Pet>()
+                .Excluding<Person>()
+                .Excluding<string>();
+            var printer2 = printer1.Including<string>();
+
+            printer1.PrintToString(pet1).Should()
+                .Be($"{nameof(Pet)}{newLine}" +
+                    $"\tAge = {pet1.Age}{newLine}");
+            printer2.PrintToString(pet2).Should()
+                .Be($"{nameof(Pet)}{newLine}" +
+                    $"\tAge = {pet2.Age}{newLine}" +
+                    $"\tName = {pet2.Name}{newLine}");
+
+        }
+
+        [Test]
+        public void IncludingMember_ShouldIncludeThisMember()
+        {
+            var pet1 = new Pet { Name = "Bob", Age = 5, Owner = null };
+            var pet2 = new Pet { Name = "Dog", Age = 3, Owner = null };
+
+            var printer1 = ObjectPrinter.For<Pet>()
+                .Excluding<Person>()
+                .Excluding(p => p.Name);
+
+            var printer2 = printer1.Including(p => p.Name);
+
+            printer1.PrintToString(pet1).Should()
+                .Be($"{nameof(Pet)}{newLine}" +
+                    $"\tAge = {pet1.Age}{newLine}");
+            printer2.PrintToString(pet2).Should()
+                .Be($"{nameof(Pet)}{newLine}" +
+                    $"\tAge = {pet2.Age}{newLine}" +
+                    $"\tName = {pet2.Name}{newLine}");
+
         }
     }
 }
