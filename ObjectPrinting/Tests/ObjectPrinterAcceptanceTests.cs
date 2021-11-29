@@ -22,7 +22,9 @@ namespace ObjectPrinting.Tests
                 Name = "Kostya",
                 Age = 28,
                 Height = 80,
-                Id = new Guid(11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+                Id = new Guid(11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1),
+                Parent = null,
+                Surname = null
             }
         };
 
@@ -35,16 +37,6 @@ namespace ObjectPrinting.Tests
             Surname = "Alexovich"
         };
 
-        private readonly ObjectWithEnumerable objectWithList = new()
-        {
-            Collection = new List<int> { 1, 2, 3 }
-        };
-
-        private readonly ObjectWithEnumerable objectWithHashSet = new()
-        {
-            Collection = new HashSet<int> { 1, 2, 3 }
-        };
-
         private readonly ObjectWithDictionary objectWithDictionary = new()
         {
             Dictionary = new Dictionary<string, int>
@@ -54,6 +46,27 @@ namespace ObjectPrinting.Tests
                 { "Three", 3 }
             }
         };
+
+        private static IEnumerable<TestCaseData> GetTestsWithObjectsWithEnumerable()
+        {
+            yield return new TestCaseData(
+                new ObjectWithEnumerable
+                {
+                    Collection = new List<int> { 1, 2, 3 }
+                }).SetName("List case");
+
+            yield return
+                new TestCaseData(new ObjectWithEnumerable
+                {
+                    Collection = new HashSet<int> { 1, 2, 3 }
+                }).SetName("HashSet case");
+
+            yield return
+                new TestCaseData(new ObjectWithEnumerable
+                {
+                    Collection = new[] { 1, 2, 3 }
+                }).SetName("Array case");
+        }
 
         private static PersonWithParent[] GetPersonsWithParentWithCycleLink()
         {
@@ -126,10 +139,10 @@ namespace ObjectPrinting.Tests
             var actual = printer.PrintToString(person);
 
             actual.Should().BeEquivalentTo("Person" +
-                                           "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                                           "\r\n\tName = Alex" +
-                                           "\r\n\tHeight = 70,5" +
-                                           "\r\n\tSurname = Alexovich" +
+                                           $"\r\n\tId = {person.Id.ToString()}" +
+                                           $"\r\n\tName = {person.Name}" +
+                                           $"\r\n\tHeight = {person.Height}" +
+                                           $"\r\n\tSurname = {person.Surname}" +
                                            "\r\n");
         }
 
@@ -143,11 +156,11 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "Person" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tName = Alex" +
+                $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
+                $"\r\n\tName = {person.Name.GetStringValueOrDefault()}" +
                 "\r\n\tHeight = I'm a propertyInfo" +
-                "\r\n\tAge = 19" +
-                "\r\n\tSurname = Alexovich" +
+                $"\r\n\tAge = {person.Age.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
@@ -161,11 +174,11 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "Person" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tName = Alex" +
-                "\r\n\tHeight = 70.5" +
-                "\r\n\tAge = 19" +
-                "\r\n\tSurname = Alexovich" +
+                $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
+                $"\r\n\tName = {person.Name.GetStringValueOrDefault()}" +
+                $"\r\n\tHeight = {person.Height.GetStringValueOrDefault(CultureInfo.InvariantCulture)}" +
+                $"\r\n\tAge = {person.Age.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
@@ -179,11 +192,11 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "Person" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
+                $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
                 "\r\n\tName = It's my name" +
-                "\r\n\tHeight = 70,5" +
-                "\r\n\tAge = 19" +
-                "\r\n\tSurname = Alexovich" +
+                $"\r\n\tHeight = {person.Height.GetStringValueOrDefault()}" +
+                $"\r\n\tAge = {person.Age.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
@@ -197,11 +210,11 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "Person" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tName = Al" +
-                "\r\n\tHeight = 70,5" +
-                "\r\n\tAge = 19" +
-                "\r\n\tSurname = Al" +
+                $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
+                $"\r\n\tName = {person.Name.GetStringValueOrDefault()[..Math.Min(2, person.Name.Length)]}" +
+                $"\r\n\tHeight = {person.Height.GetStringValueOrDefault()}" +
+                $"\r\n\tAge = {person.Age.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()[..Math.Min(2, person.Surname.Length)]}" +
                 "\r\n");
         }
 
@@ -214,10 +227,10 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "Person" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tHeight = 70,5" +
-                "\r\n\tAge = 19" +
-                "\r\n\tSurname = Alexovich" +
+                $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
+                $"\r\n\tHeight = {person.Height.GetStringValueOrDefault()}" +
+                $"\r\n\tAge = {person.Age.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
@@ -230,16 +243,16 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "PersonWithParent" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tName = Alex" +
-                "\r\n\tHeight = 70,5" +
+                $"\r\n\tId = {personWithParent.Id.GetStringValueOrDefault()}" +
+                $"\r\n\tName = {personWithParent.Name.GetStringValueOrDefault()}" +
+                $"\r\n\tHeight = {personWithParent.Height.GetStringValueOrDefault()}" +
                 "\r\n\tParent = PersonWithParent" +
-                "\r\n\t\tId = 0000000b-000a-0009-0807-060504030201" +
-                "\r\n\t\tName = Kostya" +
-                "\r\n\t\tHeight = 80" +
-                "\r\n\t\tParent = null" +
-                "\r\n\t\tSurname = null" +
-                "\r\n\tSurname = Seshovich" +
+                $"\r\n\t\tId = {personWithParent.Parent.Id.GetStringValueOrDefault()}" +
+                $"\r\n\t\tName = {personWithParent.Parent.Name.GetStringValueOrDefault()}" +
+                $"\r\n\t\tHeight = {personWithParent.Parent.Height.GetStringValueOrDefault()}" +
+                $"\r\n\t\tParent = {personWithParent.Parent.Parent.GetStringValueOrDefault()}" +
+                $"\r\n\t\tSurname = {personWithParent.Parent.Surname.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {personWithParent.Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
@@ -253,11 +266,11 @@ namespace ObjectPrinting.Tests
             var actual = printer.PrintToString(person);
 
             actual.Should().BeEquivalentTo("Person" +
-                                           "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
+                                           $"\r\n\tId = {person.Id.GetStringValueOrDefault()}" +
                                            "\r\n\tName = Hi" +
-                                           "\r\n\tHeight = 70,5" +
+                                           $"\r\n\tHeight = {person.Height.GetStringValueOrDefault()}" +
                                            "\r\n\tAge = Int" +
-                                           "\r\n\tSurname = Alexovich" +
+                                           $"\r\n\tSurname = {person.Surname.GetStringValueOrDefault()}" +
                                            "\r\n");
         }
 
@@ -287,45 +300,30 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo(
                 "PersonWithParent" +
-                "\r\n\tId = 00000001-0002-0003-0405-060708090a0b" +
-                "\r\n\tName = Alex" +
-                "\r\n\tHeight = 70,5" +
-                "\r\n\tAge = 19" +
+                $"\r\n\tId = {persons[0].Id.GetStringValueOrDefault()}" +
+                $"\r\n\tName = {persons[0].Name.GetStringValueOrDefault()}" +
+                $"\r\n\tHeight = {persons[0].Height.GetStringValueOrDefault()}" +
+                $"\r\n\tAge = {persons[0].Age.GetStringValueOrDefault()}" +
                 "\r\n\tParent = PersonWithParent" +
-                "\r\n\t\tId = 0000000b-000a-0009-0807-060504030201" +
-                "\r\n\t\tName = Kostya" +
-                "\r\n\t\tHeight = 80" +
-                "\r\n\t\tAge = 28" +
+                $"\r\n\t\tId = {persons[1].Id.GetStringValueOrDefault()}" +
+                $"\r\n\t\tName = {persons[1].Name.GetStringValueOrDefault()}" +
+                $"\r\n\t\tHeight = {persons[1].Height.GetStringValueOrDefault()}" +
+                $"\r\n\t\tAge = {persons[1].Age.GetStringValueOrDefault()}" +
                 "\r\n\t\tParent = This object was printed already" +
-                "\r\n\t\tSurname = Seshovich" +
-                "\r\n\tSurname = Seshovich" +
+                $"\r\n\t\tSurname = {persons[1].Surname.GetStringValueOrDefault()}" +
+                $"\r\n\tSurname = {persons[0].Surname.GetStringValueOrDefault()}" +
                 "\r\n");
         }
 
-        [Test]
-        public void PrintToString_ShouldPrintPropertyWithTypeOfList()
+        [TestCaseSource(nameof(GetTestsWithObjectsWithEnumerable))]
+        public void PrintToString_ShouldPrintPropertyWithTypeOfIEnumerable(ObjectWithEnumerable objectWithEnumerable)
         {
-            var actual = objectWithList.PrintToString();
+            var actual = objectWithEnumerable.PrintToString();
 
             actual.Should().BeEquivalentTo("ObjectWithEnumerable" +
                                            "\r\n\tCollection = IEnumerable" +
-                                           "\r\n\t\t1" +
-                                           "\r\n\t\t2" +
-                                           "\r\n\t\t3" +
-                                           "\r\n");
-        }
-
-        [Test]
-        public void PrintToString_ShouldPrintPropertyWithTypeOfHashSet()
-        {
-            var actual = objectWithHashSet.PrintToString();
-
-            actual.Should().BeEquivalentTo("ObjectWithEnumerable" +
-                                           "\r\n\tCollection = IEnumerable" +
-                                           "\r\n\t\t1" +
-                                           "\r\n\t\t2" +
-                                           "\r\n\t\t3" +
-                                           "\r\n");
+                                           objectWithEnumerable.Collection
+                                               .GetStringValueOrDefault(new string('\t', 2)));
         }
 
         [Test]
@@ -334,10 +332,8 @@ namespace ObjectPrinting.Tests
             var actual = objectWithDictionary.PrintToString();
 
             actual.Should().BeEquivalentTo("ObjectWithDictionary\r\n\tDictionary = IDictionary" +
-                                           "\r\n\t\tOne : 1" +
-                                           "\r\n\t\tTwo : 2" +
-                                           "\r\n\t\tThree : 3" +
-                                           "\r\n");
+                                           objectWithDictionary.Dictionary
+                                               .GetStringValueOrDefault(new string('\t', 2)));
         }
     }
 }

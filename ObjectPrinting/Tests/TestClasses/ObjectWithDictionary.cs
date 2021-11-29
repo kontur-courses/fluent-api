@@ -1,9 +1,9 @@
-﻿using System.Collections;
+﻿using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests.TestClasses
 {
     public class ObjectWithDictionary
     {
-        public IDictionary Dictionary { get; set; }
+        public Dictionary<string, int> Dictionary { get; set; }
     }
 }

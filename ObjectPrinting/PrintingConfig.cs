@@ -51,91 +51,6 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (nestingLevel > maxNesting)
-                return "Reached max level nesting\n";
-
-            if (printedObjects.Contains(obj))
-                return "This object was printed already\n";
-
-            if (obj == null)
-                return "null\n";
-
-            if (finalTypes.Contains(obj.GetType()))
-                return obj.ToString();
-
-            var indent = new string('\t', nestingLevel + 1);
-
-            return obj switch
-            {
-                IDictionary dictionary => ConvertDictionaryToString(dictionary, indent, nestingLevel),
-                IEnumerable enumerable => ConvertEnumerableToString(enumerable, indent, nestingLevel),
-                _ => ConvertObjectToString(obj, indent)
-            };
-        }
-
-        private string ConvertObjectToString(object obj, string indent)
-        {
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-
-            foreach (var propertyInfo in type.GetPropertiesAndFields()
-                .Where(prop => !IsExcluded(prop)))
-            {
-                sb.AppendLine($"{indent}{propertyInfo.Name} = {ConvertToString(propertyInfo, obj).Trim()}");
-
-                printedObjects.Add(obj);
-            }
-
-            return sb.ToString();
-        }
-
-        private bool IsExcluded(MemberInfo memberInfo)
-        {
-            return excludedTypes.Contains(memberInfo.GetMemberType()) || excludedProperties.Contains(memberInfo);
-        }
-
-        private string ConvertToString(MemberInfo memberInfo, object obj)
-        {
-            var memberType = memberInfo.GetMemberType();
-            var memberValue = memberInfo.GetMemberValue(obj);
-
-            if (customTypesDeserializing.ContainsKey(memberType))
-                return customTypesDeserializing[memberType]
-                    .DynamicInvoke(memberValue)?.ToString();
-
-            if (cultureInfos.ContainsKey(memberType)) return ToStringWithCulture(memberValue);
-
-            if (customPropertyDeserializing.ContainsKey(memberInfo))
-                return customPropertyDeserializing[memberInfo].DynamicInvoke(memberValue)?.ToString();
-
-            return PrintToString(memberValue, 1);
-        }
-
-        private string ConvertEnumerableToString(IEnumerable enumerable, string indent, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("IEnumerable");
-
-            foreach (var element in enumerable)
-                sb.AppendLine($"{indent}{PrintToString(element, nestingLevel + 1)}");
-
-            return sb.ToString();
-        }
-
-        private string ConvertDictionaryToString(IDictionary dictionary, string indent, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("IDictionary");
-
-            foreach (var element in dictionary.Keys)
-                sb.AppendLine(
-                    $"{indent + PrintToString(element, nestingLevel + 1)} : {PrintToString(dictionary[element], nestingLevel + 1)}");
-
-            return sb.ToString();
-        }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
@@ -182,6 +97,87 @@ namespace ObjectPrinting
             return this;
         }
 
+        private string PrintToString(object obj, int nestingLevel)
+        {
+            if (nestingLevel > maxNesting)
+                return "Reached max level nesting\n";
+
+            if (printedObjects.Contains(obj))
+                return "This object was printed already\n";
+
+            if (obj == null)
+                return "null\n";
+
+            if (finalTypes.Contains(obj.GetType()))
+                return obj.ToString();
+
+            var indent = new string('\t', nestingLevel + 1);
+
+            return obj switch
+            {
+                IDictionary dictionary => ConvertDictionaryToString(dictionary, indent, nestingLevel),
+                IEnumerable enumerable => ConvertEnumerableToString(enumerable, indent, nestingLevel),
+                _ => ConvertObjectToString(obj, indent)
+            };
+        }
+
+        private string ConvertObjectToString(object obj, string indent)
+        {
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.AppendLine(type.Name);
+
+            foreach (var propertyInfo in type.GetPropertiesAndFields()
+                .Where(prop => !IsExcluded(prop)))
+            {
+                sb.AppendLine($"{indent}{propertyInfo.Name} = {ConvertToString(propertyInfo, obj).Trim()}");
+
+                printedObjects.Add(obj);
+            }
+
+            return sb.ToString();
+        }
+
+        private string ConvertToString(MemberInfo memberInfo, object obj)
+        {
+            var memberType = memberInfo.GetMemberType();
+            var memberValue = memberInfo.GetMemberValue(obj);
+
+            if (customTypesDeserializing.ContainsKey(memberType))
+                return customTypesDeserializing[memberType]
+                    .DynamicInvoke(memberValue)?.ToString();
+
+            if (cultureInfos.ContainsKey(memberType)) return ToStringWithCulture(memberValue);
+
+            if (customPropertyDeserializing.ContainsKey(memberInfo))
+                return customPropertyDeserializing[memberInfo].DynamicInvoke(memberValue)?.ToString();
+
+            return PrintToString(memberValue, 1);
+        }
+
+        private string ConvertEnumerableToString(IEnumerable enumerable, string indent, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("IEnumerable");
+
+            foreach (var element in enumerable)
+                sb.AppendLine($"{indent}{PrintToString(element, nestingLevel + 1)}");
+
+            return sb.ToString();
+        }
+
+        private string ConvertDictionaryToString(IDictionary dictionary, string indent, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("IDictionary");
+
+            foreach (var element in dictionary.Keys)
+                sb.AppendLine(
+                    $"{indent + PrintToString(element, nestingLevel + 1)} : {PrintToString(dictionary[element], nestingLevel + 1)}");
+
+            return sb.ToString();
+        }
+
         private string ToStringWithCulture<T>(T obj)
         {
             return Convert.ToString(obj, cultureInfos[obj.GetType()]);
@@ -195,6 +191,11 @@ namespace ObjectPrinting
                 memberInfoList.Add(memberInfo.Member);
 
             return memberInfoList;
+        }
+
+        private bool IsExcluded(MemberInfo memberInfo)
+        {
+            return excludedTypes.Contains(memberInfo.GetMemberType()) || excludedProperties.Contains(memberInfo);
         }
     }
 }
