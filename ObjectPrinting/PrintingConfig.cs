@@ -1,20 +1,20 @@
-﻿using ObjectPrinting.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Dictionary<Type, Delegate> alternativeTypeSerializators = new();
-        private readonly Dictionary<MemberInfo, Delegate> alternativeMemberSerializators = new();
-        private readonly Dictionary<object, int> visitedMembers = new();
-        private readonly HashSet<Type> excludingTypes = new();
+        private readonly Dictionary<MemberInfo, Delegate> alternativeMemberSerializers = new();
+        private readonly Dictionary<Type, Delegate> alternativeTypeSerializers = new();
         private readonly HashSet<MemberInfo> excludingMembers = new();
+        private readonly HashSet<Type> excludingTypes = new();
+
         private readonly HashSet<Type> finalTypes = new()
         {
             typeof(int),
@@ -26,14 +26,16 @@ namespace ObjectPrinting
             typeof(Guid)
         };
 
-        public void AddAlternativeTypeSerializator<TPropType>(Type type, Func<TPropType, string> serializator)
+        private readonly Dictionary<object, int> visitedMembers = new();
+
+        public void AddAlternativeTypeSerializer<TPropType>(Type type, Func<TPropType, string> serializer)
         {
-            alternativeTypeSerializators.TryAdd(type, serializator);
+            alternativeTypeSerializers.TryAdd(type, serializer);
         }
 
-        public void AddAlternativeMemberSerializator<TPropType>(MemberInfo memberInfo, Func<TPropType, string> serializator)
+        public void AddAlternativeMemberSerializer<TPropType>(MemberInfo memberInfo, Func<TPropType, string> serializer)
         {
-            alternativeMemberSerializators.TryAdd(memberInfo, serializator);
+            alternativeMemberSerializers.TryAdd(memberInfo, serializer);
         }
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -41,7 +43,8 @@ namespace ObjectPrinting
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, GetMemberInfo(memberSelector));
         }
@@ -69,8 +72,8 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (visitedMembers.TryGetValue(obj, out int level) && nestingLevel > level)
-                return $"Обнаружена циклическая ссылка";
+            if (visitedMembers.TryGetValue(obj, out var level) && nestingLevel > level)
+                return "Обнаружена циклическая ссылка";
 
             visitedMembers.Add(obj, nestingLevel);
 
@@ -87,11 +90,12 @@ namespace ObjectPrinting
                 .Where(x => !excludingTypes.Contains(x.GetMemberType()))
                 .Where(x => !excludingMembers.Contains(x)))
             {
-                TryGetAlternativeSerializator(memberInfo, out Delegate serializator);
-                var serialized = serializator?.DynamicInvoke(memberInfo.GetValue(obj))
-                    ?? PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
+                TryGetAlternativeSerializer(memberInfo, out var serializer);
+                var serialized = serializer?.DynamicInvoke(memberInfo.GetValue(obj))
+                                 ?? PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
                 sb.Append(identation + memberInfo.Name + " = " + serialized);
             }
+
             return sb.ToString();
         }
 
@@ -101,17 +105,16 @@ namespace ObjectPrinting
             return memberExpression?.Member;
         }
 
-        private bool TryGetAlternativeSerializator(MemberInfo memberInfo, out Delegate serializator)
+        private bool TryGetAlternativeSerializer(MemberInfo memberInfo, out Delegate serializer)
         {
-
-            if (alternativeMemberSerializators.TryGetValue(memberInfo, out serializator))
+            if (alternativeMemberSerializers.TryGetValue(memberInfo, out serializer))
                 return true;
 
             var memberType = memberInfo.GetMemberType();
-            if (alternativeTypeSerializators.TryGetValue(memberType, out serializator))
+            if (alternativeTypeSerializers.TryGetValue(memberType, out serializer))
                 return true;
 
-            serializator = null;
+            serializer = null;
             return false;
         }
     }

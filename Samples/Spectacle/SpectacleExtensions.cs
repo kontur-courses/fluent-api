@@ -14,6 +14,7 @@ namespace SpectacleSample
                     Console.Write(ch);
                     Thread.Sleep(50);
                 }
+
                 Console.WriteLine();
             });
             return spectacle;

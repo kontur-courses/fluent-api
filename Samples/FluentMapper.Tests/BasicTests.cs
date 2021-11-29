@@ -9,13 +9,13 @@ namespace FluentMapping.Tests
         public void BasicMapping()
         {
             var mapper = FluentMapper
-                    .ThatMaps<Target>()
-                    .From<Source>()
-                    .Create();
+                .ThatMaps<Target>()
+                .From<Source>()
+                .Create();
 
             Assert.That(mapper, Is.Not.Null);
 
-            var source = new Source { Str = "a value", Num = 123 };
+            var source = new Source {Str = "a value", Num = 123};
 
             var target = mapper.Map(source);
 

@@ -9,10 +9,8 @@ using ObjectPrintingTests.TestingSource;
 namespace ObjectPrintingTests
 {
     [TestFixture]
-    public class ObjectPriterShould
+    public class ObjectPrinterShould
     {
-        private Person person;
-
         [OneTimeSetUp]
         public void SetUp()
         {
@@ -25,6 +23,8 @@ namespace ObjectPrintingTests
             };
         }
 
+        private Person person;
+
         [Test]
         public void AcceptanceTest()
         {
@@ -35,9 +35,9 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Name).TrimmedToLength(6)
                 .Excluding(p => p.Age);
 
-            string s1 = printer.PrintToString(person);
-            string s2 = person.PrintToString();
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            var s1 = printer.PrintToString(person);
+            var s2 = person.PrintToString();
+            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
@@ -53,7 +53,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void UseAlternativeTypeSerializator_WhenItAppointed()
+        public void UseAlternativeTypeSerializer_WhenItAppointed()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => i.ToString("X"));
@@ -67,11 +67,12 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            printer.PrintToString(person).Should().Contain($"Height = {person.Height.ToString(CultureInfo.InvariantCulture)}");
+            printer.PrintToString(person).Should()
+                .Contain($"Height = {person.Height.ToString(CultureInfo.InvariantCulture)}");
         }
 
         [Test]
-        public void UseAlternativeMemberSerializator_WhenItAppointed()
+        public void UseAlternativeMemberSerializer_WhenItAppointed()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Age).Using(i => i.ToString("X"));
@@ -84,13 +85,13 @@ namespace ObjectPrintingTests
         {
             var length = 6;
             var printer = ObjectPrinter.For<Person>()
-                 .Printing(p => p.Name).TrimmedToLength(length);
+                .Printing(p => p.Name).TrimmedToLength(length);
 
             printer.PrintToString(person).Should().Contain($"Name = {person.Name.Substring(0, length)}");
         }
 
         [Test]
-        public void ExcludeMember_WhenMemberExludingAppointed()
+        public void ExcludeMember_WhenMemberExcludingAppointed()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Age);
@@ -110,8 +111,7 @@ namespace ObjectPrintingTests
             };
             person.Parent = person;
 
-            var expected = "циклическая ссылка";
-            person.PrintToString().ToLower().Should().Contain(expected);
+            person.PrintToString().ToLower().Should().Contain("циклическая ссылка");
         }
 
         [Test]

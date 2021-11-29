@@ -1,5 +1,5 @@
-﻿using NUnit.Framework;
-using System.Linq;
+﻿using System.Linq;
+using NUnit.Framework;
 
 namespace FluentMapping.Tests.Unit
 {
@@ -12,7 +12,7 @@ namespace FluentMapping.Tests.Unit
             var spec = new TypeMappingSpec<Target, Source>();
 
             var testee = spec.ThatSets(tgt => tgt.TargetProp)
-                as ISetterSpecProperties<Target, Source>
+                    as ISetterSpecProperties<Target, Source>
                 ;
 
             Assert.That(testee.Spec, Is.SameAs(spec));
@@ -25,20 +25,20 @@ namespace FluentMapping.Tests.Unit
         public void From_Creates_Mapping()
         {
             var result = new TypeMappingSpec<Target, Source>()
-                .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
-                as ITypeMappingSpecProperties<Target, Source>
+                        .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
+                    as ITypeMappingSpecProperties<Target, Source>
                 ;
 
             Assert.That(
                 result.SourceProperties,
-                Is.EqualTo(new[] { typeof(Source).GetProperty(nameof(Source.MatchingProp)) }));
+                Is.EqualTo(new[] {typeof(Source).GetProperty(nameof(Source.MatchingProp))}));
             Assert.That(
                 result.TargetProperties,
-                Is.EqualTo(new[] { typeof(Target).GetProperty(nameof(Target.MatchingProp)) }));
+                Is.EqualTo(new[] {typeof(Target).GetProperty(nameof(Target.MatchingProp))}));
             Assert.That(result.MappingActions.Count(), Is.EqualTo(1));
 
             var target = new Target();
-            var source = new Source { SourceProp = "value" };
+            var source = new Source {SourceProp = "value"};
 
             result.MappingActions.Single()(target, source);
             Assert.That(target.TargetProp, Is.EqualTo(source.SourceProp));
@@ -48,16 +48,16 @@ namespace FluentMapping.Tests.Unit
         public void MultipleMappings()
         {
             var result = new TypeMappingSpec<Target, Source>()
-                .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
-                .ThatSets(tgt => tgt.MatchingProp).From(src => src.MatchingProp)
-                as ITypeMappingSpecProperties<Target, Source>
+                        .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
+                        .ThatSets(tgt => tgt.MatchingProp).From(src => src.MatchingProp)
+                    as ITypeMappingSpecProperties<Target, Source>
                 ;
 
             Assert.That(result.SourceProperties, Is.Empty);
             Assert.That(result.TargetProperties, Is.Empty);
             Assert.That(result.MappingActions.Count(), Is.EqualTo(2));
 
-            var source = new Source { MatchingProp = 7 };
+            var source = new Source {MatchingProp = 7};
             var target = new Target();
 
             foreach (var action in result.MappingActions)

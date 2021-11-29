@@ -1,5 +1,5 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
+using NUnit.Framework;
 
 namespace FluentMapping.Tests
 {
@@ -10,9 +10,9 @@ namespace FluentMapping.Tests
         public void DefaultBehavior()
         {
             var mapper = FluentMapper
-                    .ThatMaps<Target>()
-                    .From<Source>()
-                    .Create();
+                .ThatMaps<Target>()
+                .From<Source>()
+                .Create();
 
             var ex = Assert.Throws<ArgumentNullException>(() =>
             {
@@ -20,18 +20,18 @@ namespace FluentMapping.Tests
             });
 
             Assert.That(ex.Message, Does.StartWith("Cannot map instance of Target from " +
-                "null instance of Source."));
+                                                   "null instance of Source."));
         }
 
         [Test]
         public void ReturnNull()
         {
             var mapper = FluentMapper
-                    .ThatMaps<Target>()
-                    .From<Source>()
-                    .WithNullSource()
-                        .ReturnNull()
-                    .Create();
+                .ThatMaps<Target>()
+                .From<Source>()
+                .WithNullSource()
+                .ReturnNull()
+                .Create();
 
             var target = mapper.Map(null);
 
@@ -46,17 +46,17 @@ namespace FluentMapping.Tests
         public void CreateEmptyObject()
         {
             var mapper = FluentMapper
-                    .ThatMaps<Target>()
-                    .From<Source>()
-                    .WithNullSource()
-                        .CreateEmpty()
-                    .Create();
+                .ThatMaps<Target>()
+                .From<Source>()
+                .WithNullSource()
+                .CreateEmpty()
+                .Create();
 
             var target = mapper.Map(null);
 
             Assert.That(target, Is.Not.Null);
 
-            target = mapper.Map(new Source { Num = 7 });
+            target = mapper.Map(new Source {Num = 7});
 
             Assert.That(target, Is.Not.Null);
             Assert.That(target.Num, Is.EqualTo(7));

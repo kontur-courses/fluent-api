@@ -7,7 +7,7 @@ namespace FluentMapping
         public TTgt Assemble(TSrc source, Action<TTgt, TSrc> mappingAction)
         {
             if (source == null)
-                return default(TTgt);
+                return default;
 
             return DefaultAssembler<TTgt, TSrc>.Assemble(source, mappingAction);
         }

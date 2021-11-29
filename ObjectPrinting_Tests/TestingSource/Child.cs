@@ -2,6 +2,6 @@
 {
     public class Child : Person
     {
-        public Person Parent;
+        public Person Parent { get; set; }
     }
 }
