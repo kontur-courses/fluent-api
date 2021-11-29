@@ -8,8 +8,12 @@ namespace ObjectPrinting
             this INestingPrintingConfig<TOwner, TType> nestingConfig, IFormatProvider provider)
             where TType : IFormattable
         {
+            if (nestingConfig == null) throw new ArgumentNullException(nameof(nestingConfig));
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
             return nestingConfig.Use(value => value.ToString(null, provider));
         }
+
+        public static PrintingConfig<TOwner> UseSubstring<TOwner>(Range range) => UseSubstring<TOwner>(null, range);
 
         public static PrintingConfig<TOwner> UseSubstring<TOwner>(
             this INestingPrintingConfig<TOwner, string> nestingConfig, Range range)

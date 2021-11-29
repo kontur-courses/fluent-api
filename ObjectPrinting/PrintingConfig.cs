@@ -71,18 +71,21 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<TType>(Expression<Func<TOwner, TType>> memberSelector)
         {
+            if (memberSelector == null) throw new ArgumentNullException(nameof(memberSelector));
             excludedMembers.Add(SelectMember(memberSelector));
             return this;
         }
 
         private PrintingConfig<TOwner> UseTransform<TType>(Func<TType, string> transformer)
         {
+            if (transformer == null) throw new ArgumentNullException(nameof(transformer));
             typeTransformers[typeof(TType)] = obj => transformer((TType)obj);
             return this;
         }
 
         private PrintingConfig<TOwner> UseTransform<TType>(MemberInfo memberInfo, Func<TType, string> transformer)
         {
+            if (transformer == null) throw new ArgumentNullException(nameof(transformer));
             memberTransformers[memberInfo] = obj => transformer((TType)obj);
             return this;
         }
@@ -109,8 +112,11 @@ namespace ObjectPrinting
                 this.memberInfo = memberInfo;
             }
 
-            public PrintingConfig<TOwner> Use(Func<TType, string> transformer) =>
-                parent.UseTransform(memberInfo, transformer);
+            public PrintingConfig<TOwner> Use(Func<TType, string> transformer)
+            {
+                if (transformer == null) throw new ArgumentNullException(nameof(transformer));
+                return parent.UseTransform(memberInfo, transformer);
+            }
         }
 
         public class NestingPrintingConfig<TType> : INestingPrintingConfig<TOwner, TType>
@@ -122,7 +128,11 @@ namespace ObjectPrinting
                 this.parent = parent;
             }
 
-            public PrintingConfig<TOwner> Use(Func<TType, string> transformer) => parent.UseTransform(transformer);
+            public PrintingConfig<TOwner> Use(Func<TType, string> transformer)
+            {
+                if (transformer == null) throw new ArgumentNullException(nameof(transformer));
+                return parent.UseTransform(transformer);
+            }
         }
 
         private static MemberInfo SelectMember<TType>(Expression<Func<TOwner, TType>> memberSelector)

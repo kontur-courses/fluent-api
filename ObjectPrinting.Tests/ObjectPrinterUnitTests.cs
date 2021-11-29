@@ -61,6 +61,16 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void When_Use_ShouldThrowException_WhenUseCultureFormattingOfType()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When<double>().Use((IFormatProvider)null);
+            });
+        }
+
+        [Test]
         public void When_Use_ShouldApplyPropertyFormatting()
         {
             var person = PersonFactory.Get();
@@ -96,6 +106,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[range]}");
         }
+
 
         [Test]
         public void Exclude_ShouldExcludeMember()
@@ -151,6 +162,66 @@ namespace ObjectPrinting.Tests
                 .Contain($"{nameof(Person.Age)} = -{person.Age}")
                 .And
                 .Contain($"{nameof(Person.Money)} = {person.Money}RUB");
+        }
+
+        [Test]
+        public void When_Use_FormattingType_ShouldThrowException_WhenNullTransformer()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When<int>().Use(null);
+            });
+        }
+
+        [Test]
+        public void When_Use_FormattingProperty_ShouldThrowException_WhenNullTransformer()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When(p => p.Age).Use(null);
+            });
+        }
+
+        [Test]
+        public void When_SelectProperty_ShouldThrowException_WhenNullSelector()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When<string>(null);
+            });
+        }
+
+        [Test]
+        public void Exclude_ShouldThrowException_WhenNullSelector()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .Exclude<string>(null);
+            });
+        }
+
+        [Test]
+        public void When_SelectProperty_ShouldThrowException_WhenIncorrectExpression()
+        {
+            Assert.Throws<ArgumentException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .When(p => p.GetType());
+            });
+        }
+
+        [Test]
+        public void Exclude_SelectProperty_ShouldThrowException_WhenIncorrectExpression()
+        {
+            Assert.Throws<ArgumentException>(() =>
+            {
+                ObjectPrinter.For<Person>()
+                    .Exclude(p => p.GetType());
+            });
         }
     }
 }
