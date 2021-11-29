@@ -53,9 +53,13 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             Console.WriteLine(customCultureResult);
             var specifiedPropertySerialization = personPrinter
-                .Printing(p => p.Name).Using(p => p[0].ToString())
+                .Printing(p => p.Name).Using(p => p[0..3].ToString())
                 .PrintToString(person);
             Console.WriteLine(specifiedPropertySerialization);
+            var trimmedString = personPrinter
+                .Printing(p => p.Name).TrimmedToLength(2)
+                .PrintToString(person);
+            Console.WriteLine(trimmedString);
         }
 
         [Test]
@@ -139,6 +143,27 @@ namespace ObjectPrinting.Tests
             result.Should()
                 .Be(
                     $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = ALEX{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+        }
+
+        [Test]
+        public void TrimString_WhenSpecifiedForStringMember()
+        {
+            var result = personPrinter
+                .Printing(p => p.Name).TrimmedToLength(2)
+                .PrintToString(person);
+            result.Should()
+                .Be($"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Al{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+        }
+
+        [Test]
+        public void Throw_WhenTrimLengthIsNegative()
+        {
+            Action act = () =>
+            {
+                personPrinter
+                    .Printing(p => p.Name).TrimmedToLength(-1);
+            };
+            act.Should().Throw<ArgumentException>();
         }
 
         private class Person

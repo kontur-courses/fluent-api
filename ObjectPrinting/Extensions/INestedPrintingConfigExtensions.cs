@@ -11,5 +11,12 @@ namespace ObjectPrinting.Extensions
         {
             return config.Using(item => item.ToString(format, culture));
         }
+
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this INestedPrintingConfig<TOwner,
+            string> config, int length)
+        {
+            if (length < 0) throw new ArgumentException($"{nameof(length)} is negative, but should be not", nameof(length));
+            return config.Using(str => str[..Math.Min(length, str.Length)]);
+        }
     }
 }
