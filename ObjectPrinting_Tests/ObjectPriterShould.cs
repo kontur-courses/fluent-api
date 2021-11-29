@@ -11,17 +11,23 @@ namespace ObjectPrintingTests
     [TestFixture]
     public class ObjectPriterShould
     {
+        private Person person;
+
+        [OneTimeSetUp]
+        public void SetUp()
+        {
+            person = new Person
+            {
+                Name = "Thomas Anderson",
+                Age = 119,
+                Height = 180.4,
+                Id = Guid.NewGuid()
+            };
+        }
+
         [Test]
         public void AcceptanceTest()
         {
-            var person = new Person 
-            { 
-                Name = "Thomas Anderson", 
-                Age = 119, 
-                Height = 180.4, 
-                Id = Guid.NewGuid() 
-            };
-
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<Guid>()
                 .Printing<int>().Using(i => i.ToString("X"))
@@ -35,6 +41,61 @@ namespace ObjectPrintingTests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+        }
+
+        [Test]
+        public void ExcludeMember_WhenItsTypeExcluded()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>();
+
+            printer.PrintToString(person).Should().NotContain("Id = ");
+        }
+
+        [Test]
+        public void UseAlternativeTypeSerializator_WhenItAppointed()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<int>().Using(i => i.ToString("X"));
+
+            printer.PrintToString(person).Should().Contain($"Age = {person.Age:X}");
+        }
+
+        [Test]
+        public void UseAlternativeCulture_WhenItAppointed()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(CultureInfo.InvariantCulture);
+
+            printer.PrintToString(person).Should().Contain($"Height = {person.Height.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        [Test]
+        public void UseAlternativeMemberSerializator_WhenItAppointed()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Age).Using(i => i.ToString("X"));
+
+            printer.PrintToString(person).Should().Contain($"Age = {person.Age:X}");
+        }
+
+        [Test]
+        public void TrimStrings_WhenTrimAppointed()
+        {
+            var length = 6;
+            var printer = ObjectPrinter.For<Person>()
+                 .Printing(p => p.Name).TrimmedToLength(length);
+
+            printer.PrintToString(person).Should().Contain($"Name = {person.Name.Substring(0, length)}");
+        }
+
+        [Test]
+        public void ExcludeMember_WhenMemberExludingAppointed()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Age);
+
+            printer.PrintToString(person).Should().NotContain($"Age = {person.Age}");
         }
 
         [Test]
