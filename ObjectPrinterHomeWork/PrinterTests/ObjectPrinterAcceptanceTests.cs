@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Tests;
@@ -11,6 +12,11 @@ namespace PrinterTests
     {
         private Person person;
 
+        private static readonly string[] Cultures =
+        {
+            "ru", "fi", "ar", "da", "en", "zh", "es", "de", "el"
+        };
+
         [SetUp]
         public void PersonCreator()
         {
@@ -18,8 +24,9 @@ namespace PrinterTests
             {
                 Name = "Alex",
                 Age = 19,
-                Height = 180,
-                Id = Guid.Empty
+                Height = 164.6,
+                Id = Guid.Parse("936DA01F-9ABD-4d9d-80C7-02AF85C822A8"),
+                BirthDate = DateTime.Parse("02.11.1996", NumberFormatInfo.InvariantInfo)
             };
         }
 
@@ -44,28 +51,86 @@ namespace PrinterTests
             //8. ...с конфигурированием
         }
 
-        [TestCase(typeof(Guid))]
-        public void Without_Should_ExcludeExpectedTypes(Type type)
+        [Test]
+        public void Exclude_Should_ExcludeExpectedTypes()
         {
-            var printer = ObjectPrinter.For<Person>()
-                .Exclude<Guid>();
+            var printingPerson = ObjectPrinter.For<Person>()
+                .Exclude<Guid>().PrintToString(person);
 
-            printer.PrintToString(person).Should().Be("Person\n" +
-                                                      "\tName = Alex\n" +
-                                                      "\tHeight = 180\n" +
-                                                      "\tAge = 19\n");
+            printingPerson.Replace("\r", "").Should().Be("Person\n" +
+                                                         "\tName = Alex\n" +
+                                                         "\tHeight = 164.6\n" +
+                                                         "\tAge = 19\n");
         }
 
         [Test]
         public void StringOf_Should_BeExpected()
         {
-            var printer = ObjectPrinter.For<Person>()
-                .StringOf<Person>(g => $"{g.Age}");
+            var expectedSerialisedPerson = "Person\n" +
+                                           "\tId = change Guid\n" +
+                                           "\tName = change string\n" +
+                                           "\tHeight = change double\n" +
+                                           "\tAge = change int\n" +
+                                           "\tBirthDate = change DateTime\n";
             
-            var s= printer.PrintToString(person);
-            printer.PrintToString(person).Should().Be("19");
+            var printer = ObjectPrinter.For<Person>()
+                .StringOf<string>(s => "change string")
+                .StringOf<int>(i=>"change int")
+                .StringOf<DateTime>(d=>"change DateTime")
+                .StringOf<double>(d=>"change double")
+                .StringOf<Guid>(g=>"change Guid");
 
+
+            printer.PrintToString(person).Replace("\r","").ToLowerInvariant()
+                .Should()
+                .Be(expectedSerialisedPerson.ToLowerInvariant());
         }
 
+        [TestCaseSource(nameof(Cultures))]
+        public void WithCulture_forGlobalChangeCulture_shouldChangeAllObjects(string cultureTag)
+        {
+            var culture = new CultureInfo(cultureTag);
+
+            var expectedHeight = person.Height.ToString(culture);
+            var expectedBirthDate = person.BirthDate.ToString(culture);
+            var expectedSerialisedPerson = "Person\n" +
+                                           "\tId = 936DA01F-9ABD-4d9d-80C7-02AF85C822A8\n" +
+                                           "\tName = Alex\n" +
+                                           $"\tHeight = {expectedHeight}\n" +
+                                           "\tAge = 19\n" +
+                                           $"\tBirthDate = {expectedBirthDate}\n";
+
+            var actualSerialisedPerson = ObjectPrinter
+                .For<Person>()
+                .WithCulture(culture)
+                .PrintToString(person);
+
+            actualSerialisedPerson.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerialisedPerson.ToLowerInvariant());
+        }
+
+        [TestCaseSource(nameof(Cultures))]
+        public void WithCulture_forChangeCultureOnlyBirthDate_shouldNotChangeCultureForAnother(string cultureTag)
+        {
+            var culture = new CultureInfo(cultureTag);
+
+            var expectedBirthDate = person.BirthDate.ToString(culture);
+            var expectedSerialisedPerson = "Person\n" +
+                                           "\tId = 936DA01F-9ABD-4d9d-80C7-02AF85C822A8\n" +
+                                           "\tName = Alex\n" +
+                                           "\tHeight = 164.6\n" +
+                                           "\tAge = 19\n" +
+                                           $"\tBirthDate = {expectedBirthDate}\n";
+
+            var actualSerialisedPerson = ObjectPrinter
+                .For<Person>()
+                .WithCultureFor<DateTime>(culture)
+                .PrintToString(person);
+
+            actualSerialisedPerson.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerialisedPerson.ToLowerInvariant());
+        }
     }
 }
