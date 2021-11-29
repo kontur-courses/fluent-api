@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrintingTests
+namespace ObjectPrintingTests.TestingSource
 {
     public class Person
     {

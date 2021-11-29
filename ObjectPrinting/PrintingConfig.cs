@@ -12,6 +12,7 @@ namespace ObjectPrinting
     {
         private readonly Dictionary<Type, Delegate> alternativeTypeSerializators = new();
         private readonly Dictionary<MemberInfo, Delegate> alternativeMemberSerializators = new();
+        private readonly Dictionary<object, int> visitedMembers = new();
         private readonly HashSet<Type> excludingTypes = new();
         private readonly HashSet<MemberInfo> excludingMembers = new();
         private readonly HashSet<Type> finalTypes = new()
@@ -67,6 +68,11 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            if (visitedMembers.TryGetValue(obj, out int level) && nestingLevel > level)
+                return $"Обнаружена циклическая ссылка";
+
+            visitedMembers.Add(obj, nestingLevel);
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Extensions;
+using ObjectPrintingTests.TestingSource;
 
 namespace ObjectPrintingTests
 {
@@ -33,6 +35,38 @@ namespace ObjectPrintingTests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+        }
+
+        [Test]
+        public void NotifyAboutCyclicReference()
+        {
+            var person = new Child
+            {
+                Name = "Thomas Anderson",
+                Age = 119,
+                Height = 180.4,
+                Id = Guid.NewGuid()
+            };
+            person.Parent = person;
+
+            var expected = "циклическая ссылка";
+            person.PrintToString().ToLower().Should().Contain(expected);
+        }
+
+        [Test]
+        public void NotThrowStackOverflow_OnCyclicReference()
+        {
+            var person = new Child
+            {
+                Name = "Thomas Anderson",
+                Age = 119,
+                Height = 180.4,
+                Id = Guid.NewGuid()
+            };
+            person.Parent = person;
+
+            Action act = () => person.PrintToString();
+            act.Should().NotThrow<StackOverflowException>();
         }
     }
 }
