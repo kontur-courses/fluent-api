@@ -96,6 +96,11 @@ namespace ObjectPrinting
                 return SerializeFinalTypes(obj);
             }
 
+            if (obj is ICollection collection)
+            {
+                return SerializeCollection(collection, nestingLevel, objectsCashe);
+            }
+
             objectsCashe.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -135,6 +140,22 @@ namespace ObjectPrinting
             }
 
             return obj + Environment.NewLine;
+        }
+
+        private string SerializeCollection(ICollection collection, int nestingLevel, HashSet<object> objectsCashe)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var index = 0;
+            sb.Append(identation + collection.GetType().Name + Environment.NewLine);
+            foreach (var item in collection)
+            {
+                var value = PrintToString(item, nestingLevel + 1, objectsCashe);
+                sb.AppendFormat("{0}{1} {2}", identation, index, value);
+                index++;
+            }
+
+            return sb.ToString();
         }
 
         private string SerializeType(object obj)
