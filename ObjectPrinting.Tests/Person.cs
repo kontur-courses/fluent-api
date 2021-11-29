@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -11,5 +12,7 @@ namespace ObjectPrinting.Tests
         public int Money;
         public string Country { get; set; }
         public House House { get; set; }
+        public string[] Languages { get; set; }
+        public Dictionary<string, int> Currency { get; set; }
     }
 }

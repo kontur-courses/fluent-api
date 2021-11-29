@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using ObjectPrinting.PrintingConfig;
 
 namespace ObjectPrinting.Extensions
@@ -22,5 +25,13 @@ namespace ObjectPrinting.Extensions
                 throw new ArgumentException($"Expected {nameof(maxLength)} non negative, bug actual {maxLength}");
             return nestingConfig.Use(value => value[..Math.Min(maxLength, value.Length)]);
         }
+
+        public static string PrintToString<TOwner>(this PrintingConfig<TOwner> config,
+            IEnumerable<TOwner> collection) =>
+            new StringBuilder()
+                .AppendLine("[")
+                .Append(string.Concat(collection.Select(config.PrintToString)))
+                .AppendLine("]")
+                .ToString();
     }
 }

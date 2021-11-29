@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -20,6 +21,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 // 1. Исключение из сериализации свойства/поля определенного типа
                 .Exclude<Guid>()
+                .Exclude<string[]>()
                 // 2. Альтернативный способ сериализации для определенного типа
                 .When<int>().Use(value => $"~{value}~")
                 // 3. Для всех типов, имеющих культуру, есть возможность ее указать

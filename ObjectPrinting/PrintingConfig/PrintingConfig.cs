@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -31,6 +32,11 @@ namespace ObjectPrinting.PrintingConfig
             if (FinalTypes.Contains(type))
                 return $"{obj}{Environment.NewLine}";
 
+            if (typeof(ICollection).IsAssignableFrom(type))
+            {
+                return PrintCollection((ICollection)obj, nestingLevel, usedObjects);
+            }
+            
             usedObjects.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -44,13 +50,29 @@ namespace ObjectPrinting.PrintingConfig
             return sb.ToString();
         }
 
+        private string PrintCollection(ICollection collection, int nestingLevel, List<object> usedObjects)
+        {
+            if (collection.Count == 0) return $"[]{Environment.NewLine}";
+            var identation = new string('\t', nestingLevel);
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            sb.AppendLine($"{identation}[");
+            foreach (var el in collection)
+            {
+                sb.Append(identation + "\t" + PrintToString(el, nestingLevel + 1, usedObjects));
+            }
+            sb.AppendLine($"{identation}]");
+
+            return sb.ToString();
+        }
+
         private string PrintMember(MemberInfo memberInfo, object obj, int nestingLevel, List<object> usedObjects) =>
             $"{memberInfo.Name} = {ToString(memberInfo, obj, nestingLevel, usedObjects)}";
 
         private string ToString(MemberInfo memberInfo, object obj, int nestingLevel, List<object> usedObjects)
         {
             var memberValue = memberInfo.GetValue(obj);
-            if (!memberInfo.GetMemberType().IsValueType)
+            if (!memberInfo.GetMemberType().IsValueType && memberValue is not null)
             {
                 if (usedObjects.Exists(o => ReferenceEquals(o, memberValue)))
                     return !isAllowCycleReference

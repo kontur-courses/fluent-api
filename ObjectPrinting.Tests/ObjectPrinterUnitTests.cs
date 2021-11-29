@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -26,11 +28,12 @@ namespace ObjectPrinting.Tests
                 .AppendLine($"\t{nameof(Person.Age)} = {person.Age}")
                 .AppendLine($"\t{nameof(Person.Country)} = {person.Country}")
                 .AppendLine($"\t{nameof(Person.House)} = null")
+                .AppendLine($"\t{nameof(Person.Languages)} = null")
                 .AppendLine($"\t{nameof(Person.Money)} = {person.Money}")
                 .ToString();
             serializedPerson.Should().Be(expected);
         }
-        
+
         [Test]
         public void Exclude_ShouldExcludeIntPropertiesAndFields_WhenIntGeneric()
         {
@@ -156,7 +159,7 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name}");
         }
-        
+
         [Test]
         public void When_UseSubstring_ShouldTakeSubstring_WhenTrimmingLengthIsZero()
         {
@@ -282,6 +285,60 @@ namespace ObjectPrinting.Tests
                 ObjectPrinter.For<Person>()
                     .Exclude(p => p.GetType());
             });
+        }
+
+        [Test]
+        public void PrintToObject_ShouldWorkWithArrays()
+        {
+            var person = PersonFactory.Get();
+            person.Languages = new[] { "ru", "en" };
+            var config = ObjectPrinter.For<Person>();
+
+            var serializedObject = config.PrintToString(person);
+
+            serializedObject.Should()
+                .ContainAll($"{nameof(Person.Languages)} = ", "[", "ru", "en", "]");
+        }
+
+        [Test]
+        public void PrintToObject_ShouldWorkWithArraysAsProperty_WhenArrayIsEmpty()
+        {
+            var person = PersonFactory.Get();
+            person.Languages = Array.Empty<string>();
+            var config = ObjectPrinter.For<Person>();
+
+            var serializedObject = config.PrintToString(person);
+
+            serializedObject.Should().Contain($"{nameof(Person.Languages)} = []");
+        }
+
+        [Test]
+        public void PrintToObject_ShouldWorkWithDictionary()
+        {
+            var person = PersonFactory.Get();
+            person.Currency = new Dictionary<string, int>
+            {
+                ["USD"] = 10,
+                ["RUB"] = 20
+            };
+            var config = ObjectPrinter.For<Person>();
+
+            var serializedObject = config.PrintToString(person);
+
+            serializedObject.Should().ContainAll($"{nameof(Person.Currency)} = ", "[", "KeyValuePair`2", "Key = USD",
+                "Value = 10", "KeyValuePair`2", "Key = RUB", "Value = 20", "]");
+        }
+
+        [Test]
+        public void PrintToObject_ShouldWorkWithDictionary_WhenEmpty()
+        {
+            var person = PersonFactory.Get();
+            person.Currency = new Dictionary<string, int>(0);
+            var config = ObjectPrinter.For<Person>();
+
+            var serializedObject = config.PrintToString(person);
+
+            serializedObject.Should().Contain($"{nameof(Person.Currency)} = []");
         }
     }
 }
