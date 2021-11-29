@@ -107,7 +107,7 @@ namespace ObjectPrinting
             if (alternativeMemberSerializators.TryGetValue(memberInfo, out serializator))
                 return true;
 
-            var memberType = memberInfo.GetType();
+            var memberType = memberInfo.GetMemberType();
             if (alternativeTypeSerializators.TryGetValue(memberType, out serializator))
                 return true;
 

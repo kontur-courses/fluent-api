@@ -12,9 +12,9 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> serializator)
         {
-            printingConfig.AddAlternativeTypeSerializator(typeof(TPropType), print);
+            printingConfig.AddAlternativeTypeSerializator(typeof(TPropType), serializator);
             return printingConfig;
         }       
     }
