@@ -52,6 +52,10 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 .PrintToString(person);
             Console.WriteLine(customCultureResult);
+            var specifiedPropertySerialization = personPrinter
+                .Printing(p => p.Name).Using(p => p[0].ToString())
+                .PrintToString(person);
+            Console.WriteLine(specifiedPropertySerialization);
         }
 
         [Test]
@@ -124,6 +128,17 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             result.Should()
                 .Be(defaultPersonSerialization);
+        }
+
+        [Test]
+        public void UseCustomSerializer_WhenSpecifiedForMember()
+        {
+            var result = personPrinter
+                .Printing(p => p.Name).Using(n => n.ToUpper())
+                .PrintToString(person);
+            result.Should()
+                .Be(
+                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = ALEX{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
         }
 
         private class Person
