@@ -17,7 +17,7 @@ namespace ObjectPrinting.Tests
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            person = new()
+            person = new Person
             {
                 Name = "Alex",
                 Age = 21,
@@ -60,6 +60,10 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Name).TrimmedToLength(2)
                 .PrintToString(person);
             Console.WriteLine(trimmedString);
+            var excludingMember = personPrinter
+                .Excluding(p => p.Age)
+                .PrintToString(person);
+            Console.WriteLine(excludingMember);
         }
 
         [Test]
@@ -164,6 +168,16 @@ namespace ObjectPrinting.Tests
                     .Printing(p => p.Name).TrimmedToLength(-1);
             };
             act.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void ExcludeSpecifiedMember()
+        {
+            var result = personPrinter
+                .Excluding(p => p.Id)
+                .PrintToString(person);
+            result.Should()
+                .Be($"Person{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
         }
 
         private class Person

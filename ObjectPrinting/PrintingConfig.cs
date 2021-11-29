@@ -11,13 +11,21 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
         private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers = new();
 
 
-        public PrintingConfig<TOwner> Excluding<T>()
+        public PrintingConfig<TOwner> Excluding<TMember>()
         {
-            excludedTypes.Add(typeof(T));
+            excludedTypes.Add(typeof(TMember));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TMember>(Expression<Func<TOwner, TMember>> memberSelector)
+        {
+            var member = GetMemberInfoFromSelector(memberSelector);
+            excludedMembers.Add(member);
             return this;
         }
 
@@ -67,7 +75,7 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var memberInfo in type.GetPublicPropertiesAndFields().Where(p => !excludedTypes.Contains(p.GetMemberType())))
+            foreach (var memberInfo in type.GetPublicPropertiesAndFields().Where(m => !IsExcluded(m)))
             {
                 var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
                 sb.Append(identation + memberInfo.Name + " = " +
@@ -99,6 +107,11 @@ namespace ObjectPrinting
             }
             customSerialization = null;
             return false;
+        }
+
+        private bool IsExcluded(MemberInfo member)
+        {
+            return excludedMembers.Contains(member) || excludedTypes.Contains(member.GetMemberType());
         }
 
         private static MemberInfo GetMemberInfoFromSelector<TMember>(Expression<Func<TOwner, TMember>> memberSelector)
