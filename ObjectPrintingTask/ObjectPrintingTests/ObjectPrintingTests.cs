@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
-using ObjectPrinting.Solved.PrintingConfiguration;
-using ObjectPrinting.Solved.TestData;
+using ObjectPrintingTask;
+using ObjectPrintingTask.PrintingConfiguration;
+using ObjectPrintingTests.TestData;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingTests
 {
     public class ObjectPrinterTests
     {

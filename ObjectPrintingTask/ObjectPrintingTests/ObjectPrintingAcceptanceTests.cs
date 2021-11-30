@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
-using ObjectPrinting.Solved.Extensions;
-using ObjectPrinting.Solved.PrintingConfiguration;
-using ObjectPrinting.Solved.TestData;
+using ObjectPrintingTask;
+using ObjectPrintingTask.Extensions;
+using ObjectPrintingTask.PrintingConfiguration;
+using ObjectPrintingTests.TestData;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests

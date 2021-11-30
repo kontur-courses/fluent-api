@@ -1,6 +1,6 @@
-using ObjectPrinting.Solved.PrintingConfiguration;
+﻿using ObjectPrintingTask.PrintingConfiguration;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrintingTask
 {
     public class ObjectPrinter
     {

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Solved.Extensions;
+using ObjectPrintingTask.Extensions;
 
-namespace ObjectPrinting.Solved.PrintingConfiguration
+namespace ObjectPrintingTask.PrintingConfiguration
 {
     public class PrintingConfig<TOwner>
     {

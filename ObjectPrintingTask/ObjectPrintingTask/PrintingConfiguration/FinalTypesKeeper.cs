@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace ObjectPrinting.Solved.PrintingConfiguration
+namespace ObjectPrintingTask.PrintingConfiguration
 {
     public static class FinalTypesKeeper
     {

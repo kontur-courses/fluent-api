@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting.Solved.PrintingConfiguration
+namespace ObjectPrintingTask.PrintingConfiguration
 {
     public class MemberPrintingConfig<TOwner, TMemberType>
         : IChildPrintingConfig<TOwner, TMemberType>

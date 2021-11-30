@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting.Solved.Extensions
+namespace ObjectPrintingTask.Extensions
 {
     public static class StringBuilderExtensions
     {

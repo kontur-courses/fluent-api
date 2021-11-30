@@ -1,8 +1,8 @@
 using System;
 using System.Globalization;
-using ObjectPrinting.Solved.PrintingConfiguration;
+using ObjectPrintingTask.PrintingConfiguration;
 
-namespace ObjectPrinting.Solved.Extensions
+namespace ObjectPrintingTask.Extensions
 {
     public static class ChildPrintingConfigExtensions
     {
