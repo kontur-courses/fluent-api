@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -91,12 +92,16 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+            if (obj is IDictionary dictionary)
+                return PrintDictionary(dictionary, nestingLevel);
+            if (obj is IEnumerable collection)
+                return PrintCollection(collection, nestingLevel);
             if (visited.Contains(obj))
                 return TryPrintCycleMember(obj);
             visited.Add(obj);
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+            var identation = new string('\t', nestingLevel + 1);
             sb.AppendLine(type.Name);
             foreach (var memberInfo in type.GetPublicPropertiesAndFields().Where(m => !IsExcluded(m)))
             {
@@ -109,6 +114,36 @@ namespace ObjectPrinting
                               : customSerialization));
             }
             visited.Clear();
+            return sb.ToString();
+        }
+
+        private string PrintCollection(IEnumerable collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var bracketIdentation = new string('\t', nestingLevel);
+            sb.AppendLine(Environment.NewLine + bracketIdentation + "{");
+            foreach (var item in collection)
+            {
+                sb.Append(identation + PrintToString(item, nestingLevel + 1));
+            }
+
+            sb.Append(bracketIdentation + "}" + Environment.NewLine);
+            return sb.ToString();
+        }
+
+        private string PrintDictionary(IDictionary dict, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var bracketIdentation = new string('\t', nestingLevel);
+            sb.AppendLine(Environment.NewLine + bracketIdentation + "{");
+            foreach (var key in dict.Keys)
+            {
+                sb.Append(identation + "key:" + PrintToString(key, nestingLevel + 1));
+                sb.AppendLine(identation + "value:" + PrintToString(dict[key], nestingLevel));
+            }
+            sb.AppendLine(bracketIdentation + "}");
             return sb.ToString();
         }
 

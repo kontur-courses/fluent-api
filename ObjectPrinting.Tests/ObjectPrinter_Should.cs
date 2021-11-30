@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using FluentAssertions;
@@ -226,6 +228,39 @@ namespace ObjectPrinting.Tests
             act.Should().Throw<Exception>();
         }
 
+        [Test]
+        public void PrintCollections()
+        {
+            var container = new Container();
+            var printer = ObjectPrinter.For<Container>();
+            var result = printer
+                .Excluding<Guid>()
+                .Excluding<int>()
+                .Excluding<double>()
+                .Excluding(p => p.Age)
+                .PrintToString(container);
+            result.Should().Be("Container\r\n\tPersons = \r\n\t{\r\n\t\tPerson\r\n\t\t\tName = Alex\r\n\t\tPerson\r\n\t\t\tName = Riki\r\n\t\tPerson\r\n\t\t\tName = John\r\n\t}\r\n\tNumbers = \r\n\t{\r\n\t\t1\r\n\t\t2\r\n\t\t3\r\n\t\t4\r\n\t\t5\r\n\t\t6\r\n\t}\r\n");
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void PrintDictionary()
+        {
+            var container = new Container();
+            var printer = ObjectPrinter.For<Container>();
+            var result = printer
+                .Excluding<Guid>()
+                .Excluding<int>()
+                .Excluding<double>()
+                .Excluding(p => p.Persons)
+                .Excluding(p => p.Numbers)
+                .PrintToString(container);
+            result.Should()
+                .Be(
+                    "Container\r\n\tAge = \r\n\t{\r\n\t\tkey:Person\r\n\t\t\tName = Alex\r\n\t\tvalue:19\r\n\r\n\t\tkey:Person\r\n\t\t\tName = Riki\r\n\t\tvalue:21\r\n\r\n\t}\r\n");
+            Console.WriteLine(result);
+        }
+
         private class Person
         {
             public Guid Id { get; set; }
@@ -235,20 +270,27 @@ namespace ObjectPrinting.Tests
             public double Height;
         }
 
-        private class PersonWithPet : Person
-        {
-            public Pet Pet { get; set; }
-        }
-
         private class PersonWithFriend : Person
         {
             public PersonWithFriend Friend { get; set; }
-
         }
 
-        private class Pet
+        private class Container
         {
-            public string Name { get; set; }
+            public List<Person> Persons => new()
+            {
+                new Person() {Name = "Alex"},
+                new Person() {Name = "Riki"},
+                new Person() {Name = "John"}
+            };
+
+            public int[] Numbers => new[] {1, 2, 3, 4, 5, 6};
+
+            public Dictionary<Person, int> Age => new()
+            {
+                [new Person() {Name = "Alex"}] = 19,
+                [new Person() {Name = "Riki"}] = 21,
+            };
         }
     }
 }
