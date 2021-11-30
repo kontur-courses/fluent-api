@@ -33,10 +33,8 @@ namespace ObjectPrinting.PrintingConfig
                 return $"{obj}{Environment.NewLine}";
 
             if (typeof(ICollection).IsAssignableFrom(type))
-            {
                 return PrintCollection((ICollection)obj, nestingLevel, usedObjects);
-            }
-            
+
             usedObjects.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -58,9 +56,7 @@ namespace ObjectPrinting.PrintingConfig
             sb.AppendLine();
             sb.AppendLine($"{identation}[");
             foreach (var el in collection)
-            {
                 sb.Append(identation + "\t" + PrintToString(el, nestingLevel + 1, usedObjects));
-            }
             sb.AppendLine($"{identation}]");
 
             return sb.ToString();
