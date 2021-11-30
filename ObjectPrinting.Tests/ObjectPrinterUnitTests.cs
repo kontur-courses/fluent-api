@@ -134,7 +134,6 @@ namespace ObjectPrinting.Tests
             serializedPerson.Should().Contain($"{nameof(Person.Name)} = {person.Name[..maxLength]}");
         }
 
-
         [Test]
         public void Exclude_ShouldExcludeMember()
         {
@@ -146,7 +145,6 @@ namespace ObjectPrinting.Tests
 
             serializedPerson.Should().NotContain($"{nameof(Person.Name)} = {person.Country}");
         }
-
 
         [Test]
         public void When_UseSubstring_ShouldTakeSubstring_WhenTrimmingLengthIsLonger()
