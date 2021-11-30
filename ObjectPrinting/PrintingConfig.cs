@@ -84,18 +84,27 @@ namespace ObjectPrinting
             }
 
             printedObjects.Add(obj);
+
+            string serializedObj;
             
             var type = obj.GetType();
 
             if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
-
-            if (obj is IEnumerable enumerable)
             {
-                return PrintEnumerable(enumerable, nestingLevel + 1);
+                serializedObj = obj + Environment.NewLine;
             }
+            else if (obj is IEnumerable enumerable)
+            {
+                serializedObj =  PrintEnumerable(enumerable, nestingLevel + 1);
+            }
+            else
+            {
+                serializedObj = PrintComplexObject(obj, nestingLevel + 1);
+            }
+            
+            printedObjects.Remove(obj);
 
-            return PrintComplexObject(obj, nestingLevel + 1);
+            return serializedObj;
         }
         
         private static Type GetMemberType(MemberInfo memberInfo)
