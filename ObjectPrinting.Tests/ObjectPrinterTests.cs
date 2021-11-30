@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using FluentAssertions;
@@ -171,6 +172,67 @@ namespace ObjectPrinting.Tests
                 .UseCycleReference();
 
             Assert.Throws<Exception>(() => personPrinter.PrintToString(person));
+        }
+
+        [Test]
+        public void Should_PrintArray()
+        {
+            var cities = new[] {"Moscow", "Rio", "Zurich"};
+            var expected = new StringBuilder()
+                .AppendLine("[")
+                .AppendLine("\tMoscow")
+                .AppendLine("\tRio")
+                .AppendLine("\tZurich")
+                .AppendLine("]")
+                .ToString();
+            
+            var printedArray = ObjectPrinter.For<string[]>()
+                .PrintToString(cities);
+
+            printedArray.Should().Be(expected);
+        }
+
+        [Test]
+        public void Should_PrintList()
+        {
+            var cities = new List<string> {"Moscow", "Rio", "Zurich"};
+            var expected = new StringBuilder()
+                .AppendLine("[")
+                .AppendLine("\tMoscow")
+                .AppendLine("\tRio")
+                .AppendLine("\tZurich")
+                .AppendLine("]")
+                .ToString();
+            
+            var printedArray = ObjectPrinter.For<List<string>>()
+                .PrintToString(cities);
+
+            printedArray.Should().Be(expected);
+        }
+
+        [Test]
+        public void Should_PrintDictionary()
+        {
+            var currencies = new Dictionary<string, int>
+            {
+                {"RUB", 70},
+                {"USD", 100}
+            };
+            var expected = new StringBuilder()
+                .AppendLine("[")
+                .AppendLine("\tKeyValuePair`2")
+                .AppendLine("\t\tKey = RUB")
+                .AppendLine("\t\tValue = 70")
+                .AppendLine("\tKeyValuePair`2")
+                .AppendLine("\t\tKey = USD")
+                .AppendLine("\t\tValue = 100")
+                .AppendLine("]")
+                .ToString();
+            
+            var printedArray = ObjectPrinter.For<Dictionary<string, int>>()
+                .PrintToString(currencies);
+
+            printedArray.Should().Be(expected);
         }
     }
 }

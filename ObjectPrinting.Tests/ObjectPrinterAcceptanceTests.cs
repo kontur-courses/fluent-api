@@ -38,7 +38,7 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Exclude(x => x.Age)
                 //7. Детект циклических ссылок
-                .UseCycleReference();
+                .UseCycleReference(true);
             
             var printedObject = printer.PrintToString(person);
             printedObject.Should().Be(expectedResult);
