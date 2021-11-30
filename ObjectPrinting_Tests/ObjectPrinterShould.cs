@@ -130,18 +130,5 @@ namespace ObjectPrintingTests
             Action act = () => person.PrintToString();
             act.Should().NotThrow<StackOverflowException>();
         }
-        
-        [Test]
-        public void SerializeDictionary()
-        {
-            var dict = new Dictionary<int, string>()
-            {
-                {1, "one"},
-                {2, "two"},
-                {3, "three"}
-            };
-            var s1 = dict.PrintToString();
-            Console.WriteLine(s1);
-        }
     }
 }
