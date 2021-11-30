@@ -118,11 +118,11 @@ namespace ObjectPrinting
             {
                 IDictionary dictionary => ConvertDictionaryToString(dictionary, indent, nestingLevel),
                 IEnumerable enumerable => ConvertEnumerableToString(enumerable, indent, nestingLevel),
-                _ => ConvertObjectToString(obj, indent)
+                _ => ConvertObjectToString(obj, indent, nestingLevel)
             };
         }
 
-        private string ConvertObjectToString(object obj, string indent)
+        private string ConvertObjectToString(object obj, string indent, int nestingLevel)
         {
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -131,7 +131,8 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetPropertiesAndFields()
                 .Where(prop => !IsExcluded(prop)))
             {
-                sb.AppendLine($"{indent}{propertyInfo.Name} = {ConvertToString(propertyInfo, obj).Trim()}");
+                sb.AppendLine(
+                    $"{indent}{propertyInfo.Name} = {ConvertToString(propertyInfo, obj, nestingLevel).Trim()}");
 
                 printedObjects.Add(obj);
             }
@@ -139,7 +140,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string ConvertToString(MemberInfo memberInfo, object obj)
+        private string ConvertToString(MemberInfo memberInfo, object obj, int nestingLevel)
         {
             var memberType = memberInfo.GetMemberType();
             var memberValue = memberInfo.GetMemberValue(obj);
@@ -153,7 +154,7 @@ namespace ObjectPrinting
             if (customPropertyDeserializing.ContainsKey(memberInfo))
                 return customPropertyDeserializing[memberInfo].DynamicInvoke(memberValue)?.ToString();
 
-            return PrintToString(memberValue, 1);
+            return PrintToString(memberValue, nestingLevel + 1);
         }
 
         private string ConvertEnumerableToString(IEnumerable enumerable, string indent, int nestingLevel)
@@ -162,7 +163,7 @@ namespace ObjectPrinting
             sb.AppendLine("IEnumerable");
 
             foreach (var element in enumerable)
-                sb.AppendLine($"{indent}{PrintToString(element, nestingLevel + 1)}");
+                sb.AppendLine($"{indent}{PrintToString(element, nestingLevel + 1).Trim()}");
 
             return sb.ToString();
         }

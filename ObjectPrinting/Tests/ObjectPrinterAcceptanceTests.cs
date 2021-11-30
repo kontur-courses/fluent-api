@@ -100,6 +100,32 @@ namespace ObjectPrinting.Tests
             return persons;
         }
 
+        private PersonWithTwoParents GetPersonWithTwoParentsReferenceAtOneObject()
+        {
+            var personWithTwoParents = new PersonWithTwoParents
+            {
+                Name = "Alex",
+                FirstParent = new PersonWithTwoParents
+                {
+                    Name = "Kostya"
+                },
+                SecondParent = new PersonWithTwoParents
+                {
+                    Name = "Nastya"
+                }
+            };
+
+            var sharedParent = new PersonWithTwoParents
+            {
+                Name = "General"
+            };
+
+            personWithTwoParents.FirstParent.FirstParent = sharedParent;
+            personWithTwoParents.SecondParent.FirstParent = sharedParent;
+
+            return personWithTwoParents;
+        }
+
         [Test]
         public void Demo()
         {
@@ -335,6 +361,53 @@ namespace ObjectPrinting.Tests
             actual.Should().BeEquivalentTo("ObjectWithDictionary\r\n\tDictionary = IDictionary" +
                                            objectWithDictionary.Dictionary
                                                .GetStringValueOrDefault(new string('\t', 2)));
+        }
+
+        [Test]
+        public void PrintToString_ShouldNotPrintObjectTwice()
+        {
+            var personWithSameNestingObject = GetPersonWithTwoParentsReferenceAtOneObject();
+
+            var actual = personWithSameNestingObject.PrintToString();
+
+            actual.Should()
+                .BeEquivalentTo("PersonWithTwoParents" +
+                                $"\r\n\tName = {personWithSameNestingObject.Name.GetStringValueOrDefault()}" +
+                                "\r\n\tFirstParent = PersonWithTwoParents" +
+                                $"\r\n\t\tName = {personWithSameNestingObject.FirstParent.Name.GetStringValueOrDefault()}" +
+                                "\r\n\t\tFirstParent = PersonWithTwoParents" +
+                                $"\r\n\t\t\tName = {personWithSameNestingObject.FirstParent.FirstParent.Name.GetStringValueOrDefault()}" +
+                                $"\r\n\t\t\tFirstParent = {personWithSameNestingObject.FirstParent.FirstParent.FirstParent.GetStringValueOrDefault()}" +
+                                $"\r\n\t\t\tSecondParent = {personWithSameNestingObject.FirstParent.FirstParent.SecondParent.GetStringValueOrDefault()}" +
+                                "\r\n\t\tSecondParent = null" +
+                                "\r\n\tSecondParent = PersonWithTwoParents" +
+                                $"\r\n\t\tName = {personWithSameNestingObject.SecondParent.Name.GetStringValueOrDefault()}" +
+                                "\r\n\t\tFirstParent = This object was printed already" +
+                                "\r\n\t\tSecondParent = null" +
+                                "\r\n");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintNestingCollectionCorrectly()
+        {
+            var objectWithNestingList = new ObjectWithNestingEnumerable
+            {
+                Collection = new List<List<int>>
+                {
+                    new() { 1, 2, 3 },
+                    new() { 4, 5, 6 },
+                    new() { 7, 8, 9 }
+                }
+            };
+
+            var actual = objectWithNestingList.PrintToString();
+
+            actual.Should().BeEquivalentTo("ObjectWithNestingEnumerable" +
+                                           "\r\n\tCollection = IEnumerable" +
+                                           objectWithNestingList.Collection
+                                               .GetStringValueOrDefault(
+                                                   new string('\t', 2),
+                                                   new string('\t', 3)));
         }
     }
 }
