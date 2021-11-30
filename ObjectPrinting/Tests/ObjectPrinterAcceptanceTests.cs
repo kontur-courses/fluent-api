@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 using ObjectPrinting.Tests.TestClasses;
 
 namespace ObjectPrinting.Tests
