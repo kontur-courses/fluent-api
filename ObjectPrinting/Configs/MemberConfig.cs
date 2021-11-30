@@ -16,9 +16,10 @@ namespace ObjectPrinting.Configs
 
         public PrintingConfig<TOwner> With(Func<TMember, string> serializer)
         {
-            if (serializer != null)
-                config.AddMemberSerializer(memberInfo, serializer);
+            if (serializer == null)
+                throw new ArgumentNullException(nameof(serializer));
 
+            config.AddMemberSerializer(memberInfo, serializer);
             return config;
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -23,9 +24,9 @@ namespace ObjectPrinting.Configs
         private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly HashSet<Type> excludedTypes = new();
 
-        private List<object> visited = new();
-
         private bool isCycleReferencesAllowed;
+
+        private List<object> visited = new();
 
         public string PrintToString(TOwner obj)
         {
@@ -56,7 +57,7 @@ namespace ObjectPrinting.Configs
 
         public TypeConfig<TOwner, TMember> Use<TMember>() => new(this);
 
-        public PrintingConfig<TOwner> UseCycleReference(bool cycleReferencesAllowed = true)
+        public PrintingConfig<TOwner> UseCycleReference(bool cycleReferencesAllowed = false)
         {
             isCycleReferencesAllowed = cycleReferencesAllowed;
             return this;
@@ -80,6 +81,9 @@ namespace ObjectPrinting.Configs
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            if (obj is ICollection collection) 
+                return PrintCollection(collection, nestingLevel);
+
             visited.Add(obj);
             var indentation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
@@ -88,15 +92,28 @@ namespace ObjectPrinting.Configs
 
             var printedMembers = GetFieldsAndProperties(type)
                 .Where(x => !IsExcluded(x))
-                .Select(x => $"{indentation}{Print(x, obj, nestingLevel + 1)}");
+                .Select(x => $"{indentation}{PrintMember(x, obj, nestingLevel + 1)}");
 
             return sb.AppendCollection(printedMembers).ToString();
         }
 
-        private string Print(MemberInfo memberInfo, object obj, int nestingLevel)
-            =>  $"{memberInfo.Name} = {PrintMember(memberInfo, obj, nestingLevel)}";
+        private string PrintCollection(ICollection collection, int nestingLevel)
+        {
+            if (collection.Count == 0)
+                return $"[]{Environment.NewLine}";
+            var indentation = new string('\t', nestingLevel);
+            var sb = new StringBuilder();
+            sb.AppendLine($"{indentation}[");
+            foreach (var el in collection) sb.Append(indentation + "\t" + PrintToString(el, nestingLevel + 1));
+            sb.AppendLine($"{indentation}]");
+
+            return sb.ToString();
+        }
 
         private string PrintMember(MemberInfo memberInfo, object obj, int nestingLevel)
+            => $"{memberInfo.Name} = {Print(memberInfo, obj, nestingLevel)}";
+
+        private string Print(MemberInfo memberInfo, object obj, int nestingLevel)
         {
             var memberValue = memberInfo.GetValue(obj);
 
@@ -124,7 +141,7 @@ namespace ObjectPrinting.Configs
             type.GetFields()
                 .Cast<MemberInfo>()
                 .Concat(type.GetProperties());
-        
+
         private MemberInfo SelectMember<TType>(Expression<Func<TOwner, TType>> memberSelector)
         {
             if (memberSelector.Body is not MemberExpression memberExpression)
