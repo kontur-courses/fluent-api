@@ -75,25 +75,22 @@ namespace ObjectPrinting
 
             if (visitedMembers.Any(m => ReferenceEquals(m, obj)))
                 return $"Cyclic reference detected{Environment.NewLine}";
-                        
+
             visitedMembers.Add(obj);
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
+            if (obj is IEnumerable collection)
+                return PrintCollection(obj, collection);
+
+            return PrintMember(obj, nestingLevel);
+        }
+
+        private string PrintMember(object obj, int nestingLevel)
+        {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-
-            if (obj is IEnumerable collection)
-            {
-                var builder = new StringBuilder($"{obj.GetType().Name}{Environment.NewLine}");
-                foreach (var member in collection)
-                {
-                    builder.Append(member.PrintToString());
-                }
-
-                return builder.ToString();
-            }
 
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -103,13 +100,23 @@ namespace ObjectPrinting
                 .Where(x => !excludingTypes.Contains(x.GetMemberType()))
                 .Where(x => !excludingMembers.Contains(x)))
             {
-                var serialized = TryGetAlternativeSerializer(memberInfo, out var serializer) 
+                var serialized = TryGetAlternativeSerializer(memberInfo, out var serializer)
                     ? serializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine
                     : PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
+
                 sb.Append(identation + memberInfo.Name + " = " + serialized);
             }
 
             return sb.ToString();
+        }
+
+        private static string PrintCollection(object obj, IEnumerable collection)
+        {
+            var builder = new StringBuilder($"{obj.GetType().Name}{Environment.NewLine}");
+            foreach (var member in collection)
+                builder.Append(member.PrintToString());
+
+            return builder.ToString();
         }
 
         private static MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
