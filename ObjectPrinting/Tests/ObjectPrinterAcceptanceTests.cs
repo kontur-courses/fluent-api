@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
@@ -18,10 +21,105 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //6. Исключить из сериализации конкретного свойства
             
-            string s1 = printer.PrintToString(person);
+            string result = printer.PrintToString(person);
+
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+
+        
+        [Test]
+        public void SerializationExcludeInt()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().ExcludedType<int>();
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n");
+        }
+
+        [Test]
+        public void SerializationExcludeString()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().ExcludedType<string>();
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+        }
+
+        [Test]
+        public void SerializationExcludeOneField()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().ExcludedField("Id");
+            var result = printer.PrintToString(person);
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+        }
+
+        [Test]
+        public void SerializationExcludeManyFields()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>()
+                .ExcludedField("Id").ExcludedField("Name").ExcludedField("Age");
+            var result = printer.PrintToString(person);
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tHeight = 0\r\n");
+        }
+
+        [Test]
+        public void SerializationWithTypeModification()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var printer = ObjectPrinter.For<Person>().SpecialSerializationType<int>(x => (100 - x).ToString());
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 81\r\n");
+        }
+
+        [Test]
+        public void SerializationWithFieldModification()
+        {
+            var person = new Person { Name = "Alex", Height = 17, Age = 19 };
+
+            var printer = ObjectPrinter.For<Person>()
+                .SpecialSerializationField<double>("Height", x => (100 - x)
+                    .ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationField<int>("Age", x => (-1.5).ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationField<Guid>("Id", x => "0");
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 0\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
+        }
+
+        
+        [Test]
+        public void Cyclic()
+        {
+            var person = new Person {Name = "Alex", Height = 180, Age = 15};
+            var person1 = new Person {Name = "John", Father = person, Height = 190, Age = 39};
+            person.Father = person1;
+            var printer = ObjectPrinter.For<Person>();
+            Action action = () => printer.PrintToString(person);
+            action.Should().NotThrow<StackOverflowException>();
+        }
+        
+
+        [Test]
+        public void SerializationWithSpecialCulture()
+        {
+            var person = new Person { Name = "Alex", Height = 180.9, Age = 15 };
+            var printer = ObjectPrinter.For<Person>().SetCulture(new CultureInfo("ru-RU"));
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 180,9\r\n\tAge = 15\r\n");
+        }
+
+        [Test]
+        public void SerializationWithTrim()
+        {
+            var person = new Person { Name = "Alex", Height = 180, Age = 15 };
+            var printer = ObjectPrinter.For<Person>().Trim(10, 80);
+            var result = printer.PrintToString(person);
+            result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 180\r\n\tAge ");
         }
     }
 }
