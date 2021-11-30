@@ -17,7 +17,7 @@ namespace ObjectPrinting.Extensions
             return config.With(x => x.ToString(null, cultureInfo));
         }
 
-        public static PrintingConfig<TOwner> With<TOwner>(this INestedPrintingConfig<TOwner, string> config,
+        public static PrintingConfig<TOwner> WithTrimming<TOwner>(this INestedPrintingConfig<TOwner, string> config,
             int maxLength)
         {
             if (config == null)

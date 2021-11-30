@@ -144,7 +144,7 @@ namespace ObjectPrinting.Tests
             var person = PersonFactory.CreateDefaultPerson();
 
             var printedPerson = ObjectPrinter.For<Person>()
-                .Use(x => x.FirstName).With(3)
+                .Use(x => x.FirstName).WithTrimming(3)
                 .PrintToString(person);
 
             printedPerson.Should()
