@@ -103,9 +103,9 @@ namespace ObjectPrinting
                 .Where(x => !excludingTypes.Contains(x.GetMemberType()))
                 .Where(x => !excludingMembers.Contains(x)))
             {
-                TryGetAlternativeSerializer(memberInfo, out var serializer);
-                var serialized = serializer?.DynamicInvoke(memberInfo.GetValue(obj))
-                                 ?? PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
+                var serialized = TryGetAlternativeSerializer(memberInfo, out var serializer) 
+                    ? serializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine
+                    : PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
                 sb.Append(identation + memberInfo.Name + " = " + serialized);
             }
 
