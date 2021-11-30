@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -82,6 +83,18 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
+
+            if (obj is IEnumerable collection)
+            {
+                var builder = new StringBuilder($"{obj.GetType().Name}{Environment.NewLine}");
+                foreach (var member in collection)
+                {
+                    builder.Append(member.PrintToString());
+                }
+
+                return builder.ToString();
+            }
+
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
