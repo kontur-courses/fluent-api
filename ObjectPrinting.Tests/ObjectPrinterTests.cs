@@ -113,6 +113,20 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void MemberCustomSerializer_HasMorePriority_Than_TypeCustomSerializer()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Use<string>().With(x => $"not cool {x}")
+                .Use(x => x.FirstName).With(x => $"cool {x}")
+                .PrintToString(person);
+
+            printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}")
+                .And.Contain($"{nameof(person.LastName)} = not cool {person.LastName}");
+        }
+
+        [Test]
         public void Should_Support_CustomTypeCulture()
         {
             var culture = new CultureInfo("en-GB");
