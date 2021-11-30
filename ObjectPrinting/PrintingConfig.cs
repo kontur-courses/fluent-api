@@ -45,7 +45,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        public INestedPrintingConfig<TOwner,TMember> Printing<TMember>()
+        public INestedPrintingConfig<TOwner, TMember> Printing<TMember>()
         {
             return new TypePrintingConfig<TOwner, TMember>(this);
         }
@@ -70,7 +70,7 @@ namespace ObjectPrinting
         {
             if (!customTypeSerializers.TryAdd(type, serializer))
                 customTypeSerializers[type] = serializer;
-            
+
         }
 
         internal void AddCustomMemberSerializer<TMember>(MemberInfo memberInfo, Func<TMember, string> serializer)
@@ -108,9 +108,9 @@ namespace ObjectPrinting
                 var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
                 var memberValue = memberInfo.GetMemberValue(obj);
                 sb.Append(identation + memberInfo.Name + " = " +
-                          (!isCustomSerialization 
+                          (!isCustomSerialization
                               ? PrintToString(memberValue,
-                                  nestingLevel + 1) 
+                                  nestingLevel + 1)
                               : customSerialization));
             }
             visited.Clear();
@@ -171,7 +171,7 @@ namespace ObjectPrinting
             {
                 customSerialization = customMemberSerializers[member]
                     .DynamicInvoke(member.GetMemberValue(obj))
-                    +Environment.NewLine;
+                    + Environment.NewLine;
                 return true;
             }
             customSerialization = null;

@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -26,7 +24,7 @@ namespace ObjectPrinting.Tests
                 Height = 170.5,
             };
             newLine = Environment.NewLine;
-            defaultPersonSerialization = 
+            defaultPersonSerialization =
                 $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}";
         }
 
@@ -279,17 +277,17 @@ namespace ObjectPrinting.Tests
         {
             public List<Person> Persons => new()
             {
-                new Person() {Name = "Alex"},
-                new Person() {Name = "Riki"},
-                new Person() {Name = "John"}
+                new Person() { Name = "Alex" },
+                new Person() { Name = "Riki" },
+                new Person() { Name = "John" }
             };
 
-            public int[] Numbers => new[] {1, 2, 3, 4, 5, 6};
+            public int[] Numbers => new[] { 1, 2, 3, 4, 5, 6 };
 
             public Dictionary<Person, int> Age => new()
             {
-                [new Person() {Name = "Alex"}] = 19,
-                [new Person() {Name = "Riki"}] = 21,
+                [new Person() { Name = "Alex" }] = 19,
+                [new Person() { Name = "Riki" }] = 21,
             };
         }
     }
