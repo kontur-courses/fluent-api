@@ -245,7 +245,7 @@ public partial class PrintingConfig<TOwner>
             sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1)} : {PrintToString(obj.Value, nestingLevel + 1)},{Environment.NewLine}");
         }
 
-        sb.Append($"{Environment.NewLine}{identation}}}");
+        sb.Append($"{identation}}}");
         return sb.ToString();
 
     }
