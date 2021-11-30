@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfiguration
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IInnerPrintingConfig<TOwner, TPropType>
     {

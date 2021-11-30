@@ -1,4 +1,5 @@
 using System;
+using ObjectPrinting.PrintingConfiguration;
 
 namespace ObjectPrinting.Extensions
 {
