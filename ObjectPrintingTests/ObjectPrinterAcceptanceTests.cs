@@ -214,23 +214,21 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         result.Should().NotContain(testObject.Name);
     }
 
-    //[Test]
-    //public void Demo()
-    //{
-    //    var person = new Person { Name = "Alex", Age = 19 };
+    [Test]
+    public void SyntaxShowCase()
+    {
+        var person = new Person { Name = "Alex", Age = 19 };
 
-    //    var printer = ObjectPrinter.For<Person>()
-    //                               .Exclude<int>()
-    //                               .Exclude(x => x.Height)
-    //                               .Exclude(person => person.Id)
-    //                               .ForProperties<double>(x => x.WithCulture(CultureInfo.InvariantCulture))
-    //                               .ForProperties<string>(x => x.Trimmed(10))
-    //                               .ForProperty(person => person.Name, config => config.WithSerailizer(x => x.ToString()));
+        var printer = ObjectPrinter.For<Person>()
+                                   .Exclude<int>()
+                                   .Exclude(x => x.Height)
+                                   .ForProperties<double>(x => x.WithCulture(CultureInfo.InvariantCulture))
+                                   .ForProperties<string>(x => x.WithTrimLength(10))
+                                   .ForProperty(person => person.Name, config => config.WithSerializer(x => x.ToString()))
+                                   .ForProperty(person=>person.Id, config=>config.WithCulture(CultureInfo.InvariantCulture));
 
-    //    string s1 = printer.PrintToString(person);
+        result = printer.PrintToString(person);
 
-    //    //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-    //    //8. ...с конфигурированием
-    //    person.Should();
-    //}
+        Assert.Pass();
+    }
 }
