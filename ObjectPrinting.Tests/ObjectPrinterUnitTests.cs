@@ -29,6 +29,7 @@ namespace ObjectPrinting.Tests
                 .AppendLine($"\t{nameof(Person.Country)} = {person.Country}")
                 .AppendLine($"\t{nameof(Person.House)} = null")
                 .AppendLine($"\t{nameof(Person.Languages)} = null")
+                .AppendLine($"\t{nameof(Person.Currency)} = null")
                 .AppendLine($"\t{nameof(Person.Money)} = {person.Money}")
                 .ToString();
             serializedPerson.Should().Be(expected);

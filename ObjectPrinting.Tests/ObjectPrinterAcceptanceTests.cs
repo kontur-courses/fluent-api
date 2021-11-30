@@ -10,7 +10,8 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test, Timeout(3_000)]
+        [Test]
+        [Timeout(3_000)]
         public void Demo()
         {
             var person = PersonFactory.Get();
@@ -46,6 +47,7 @@ namespace ObjectPrinting.Tests
                 .AppendLine($"\t{nameof(Person.House)} = {nameof(House)}")
                 .AppendLine($"\t\t{nameof(House.Owner)} = {{...}}")
                 .AppendLine($"\t\t{nameof(House.Address)} = {person.House.Address[..2]}")
+                .AppendLine($"\t{nameof(Person.Currency)} = null")
                 .AppendLine($"\t{nameof(Person.Money)} = {person.Money}$")
                 .ToString();
             serialized.Should().Be(expected);
