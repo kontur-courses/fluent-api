@@ -27,7 +27,7 @@ namespace ObjectPrinting
             typeof(Guid)
         };
 
-        private readonly Dictionary<object, int> visitedMembers = new();
+        private readonly HashSet<object> visitedMembers = new();
 
         public void AddAlternativeTypeSerializer<TPropType>(Type type, Func<TPropType, string> serializer)
         {
@@ -73,10 +73,10 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (visitedMembers.TryGetValue(obj, out var level) && nestingLevel > level)
-                return "Обнаружена циклическая ссылка";
-
-            visitedMembers.Add(obj, nestingLevel);
+            if (visitedMembers.Any(m => ReferenceEquals(m, obj)))
+                return $"Cyclic reference detected{Environment.NewLine}";
+                        
+            visitedMembers.Add(obj);
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;

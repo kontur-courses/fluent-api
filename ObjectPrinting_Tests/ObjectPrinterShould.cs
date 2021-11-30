@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -112,7 +111,7 @@ namespace ObjectPrintingTests
             };
             person.Parent = person;
 
-            person.PrintToString().ToLower().Should().Contain("циклическая ссылка");
+            person.PrintToString().ToLower().Should().Contain("cyclic reference");
         }
 
         [Test]
@@ -129,19 +128,6 @@ namespace ObjectPrintingTests
 
             Action act = () => person.PrintToString();
             act.Should().NotThrow<StackOverflowException>();
-        }
-        
-        [Test]
-        public void SerializeDictionary()
-        {
-            var dict = new Dictionary<int, string>()
-            {
-                {1, "one"},
-                {2, "two"},
-                {3, "three"}
-            };
-            var s1 = dict.PrintToString();
-            Console.WriteLine(s1);
         }
     }
 }
