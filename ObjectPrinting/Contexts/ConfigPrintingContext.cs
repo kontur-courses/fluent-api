@@ -31,29 +31,29 @@ namespace ObjectPrinting.Contexts
 
         public TypePrintingContext<TOwner, TPropType> Printing<TPropType>() => new(config);
 
-        public PropertyPrintingContext<TOwner> Printing<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
+        public PropertyPrintingContext<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var memberInfo = ValidateSelectedMember(propertySelector);
-            return new PropertyPrintingContext<TOwner>(config, memberInfo);
+            return new PropertyPrintingContext<TOwner, TPropType>(config, memberInfo);
         }
 
-        public ConfigPrintingContext<TOwner> FormatFor<TPropType>(string format, IFormatProvider formatProvider)
-            where TPropType : IFormattable =>
+        public ConfigPrintingContext<TOwner> FormatFor<TPropType>(IFormatProvider formatProvider)
+            where TPropType : IConvertible =>
             new(config with
             {
                 TypePrinting =
-                config.TypePrinting.SetItem(typeof(TPropType), obj => ((TPropType)obj).ToString(format, formatProvider))
+                config.TypePrinting.SetItem(typeof(TPropType), obj => ((TPropType)obj).ToString(formatProvider))
             });
 
         public ConfigPrintingContext<TOwner> MaxStringLength(int maxLength)
         {
-            var ellipsis = '\u2026'.ToString();
             Func<object, string> trim = obj =>
             {
                 var line = (string)obj;
                 return line.Length <= maxLength
                     ? line
-                    : line[..maxLength] + ellipsis;
+                    : line[..maxLength] + "…";
             };
 
             return new ConfigPrintingContext<TOwner>(config with
@@ -62,7 +62,8 @@ namespace ObjectPrinting.Contexts
             });
         }
 
-        public string PrintToString(TOwner obj) => new ObjectSerializer(config).Serialize(obj).ToString();
+        public string PrintToString(TOwner obj) =>
+            ((ISerializer)new ObjectSerializer(config)).Serialize(obj).ToString();
 
         private MemberInfo ValidateSelectedMember<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {

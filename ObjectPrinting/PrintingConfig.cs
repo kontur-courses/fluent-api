@@ -14,8 +14,8 @@ namespace ObjectPrinting
         public ImmutableDictionary<Type, Func<object, string>> TypePrinting { get; init; } =
             ImmutableDictionary<Type, Func<object, string>>.Empty;
 
-        public ImmutableDictionary<MemberInfo, Func<MemberInfo, string>> MemberPrinting { get; init; } =
-            ImmutableDictionary<MemberInfo, Func<MemberInfo, string>>.Empty;
+        public ImmutableDictionary<MemberInfo, Func<object, string>> MemberPrinting { get; init; } =
+            ImmutableDictionary<MemberInfo, Func<object, string>>.Empty;
 
         public IPrintingMemberFactory PrintingMemberFactory { get; init; } = new DefaultPrintingMemberFactory();
     }

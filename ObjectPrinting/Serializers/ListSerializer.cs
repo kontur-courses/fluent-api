@@ -4,9 +4,9 @@ using System.Text;
 
 namespace ObjectPrinting.Serializers
 {
-    public class ArraySerializer : CollectionSerializer<IList>
+    public class ListSerializer : KeyValueSerializer<IList>
     {
-        public ArraySerializer(ISerializer objectSerializer) : base(objectSerializer) { }
+        public ListSerializer(ISerializer objectSerializer) : base(objectSerializer) { }
 
         public static (StringBuilder Value, Nesting Nesting) SerializeArrayIndexer(object key, Nesting nesting)
         {

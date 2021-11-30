@@ -10,24 +10,24 @@ using ObjectPrintingTests.Persons;
 
 namespace ObjectPrintingTests
 {
-    public class ArraySerializerTests
+    public class ListSerializerTests
     {
-        private ObjectSerializer objectSerializer;
-        private ArraySerializer serializer;
+        private ISerializer objectSerializer;
+        private ISerializer serializer;
 
         [SetUp]
         public void SetUp()
         {
             objectSerializer = new ObjectSerializer(new PrintingConfig());
-            serializer = new ArraySerializer(objectSerializer);
+            serializer = new ListSerializer(objectSerializer);
         }
 
         [Test]
         public void Constructor_ThrowException_IfObjectSerializerIsNull() =>
-            Assert.That(() => new ArraySerializer(null), Throws.InstanceOf<ArgumentException>());
+            Assert.That(() => new ListSerializer(null), Throws.InstanceOf<ArgumentException>());
 
         [TestCaseSource(nameof(CanSerializeTrueCases))]
-        public void CanSerialize_True(object obj) => 
+        public void CanSerialize_True(object obj) =>
             serializer.CanSerialize(obj).Should().BeTrue();
 
         [Test]

@@ -40,9 +40,9 @@ namespace ObjectPrintingTests
                 //2 Альтернативный способ сериализации для определенного типа
                 .Printing<string>().Using(s => s + "!!!")
                 //3 Для всех типов, имеющих культуру, есть возможность ее указать
-                .FormatFor<int>("X", CultureInfo.InvariantCulture)
+                .FormatFor<int>(CultureInfo.InvariantCulture)
                 //4 Настройка сериализации конкретного свойства/поля
-                .Printing(p => p.Height).Using(memberInfo => memberInfo.Module.Name)
+                .Printing(p => p.Height).Using(value => $"Height is {value}")
                 //5 Возможность обрезания строк
                 .MaxStringLength(10)
                 //6 Исключение из сериализации конкретного свойства/поля
@@ -70,8 +70,8 @@ namespace ObjectPrintingTests
 
             var actual = ObjectPrinter.For<DictionaryPerson>()
                 .Excluding<int>()
-                .Printing<double>().Using(value => value + "!!!")
-                .FormatFor<Guid>("X", CultureInfo.InvariantCulture)
+                .Printing<string>().Using(value => value + "!!!")
+                .FormatFor<double>(CultureInfo.InvariantCulture)
                 .PrintToString(dictionaryPerson);
 
             Console.WriteLine(actual);
@@ -84,7 +84,7 @@ namespace ObjectPrintingTests
             var expectedWithProp = personDesc.WithFields(id, name, height, "Age").ToString();
 
             var withCustomType = personPrinter.Printing<int>().Using(_ => "CustomInt");
-            var withCustomProp = personPrinter.Printing(p => p.Age).Using(prop => prop.Name);
+            var withCustomProp = personPrinter.Printing(p => p.Age).Using(value => "Age");
 
             withCustomType.PrintToString(person).Should().Be(expectedWithType);
             withCustomProp.PrintToString(person).Should().Be(expectedWithProp);
@@ -130,13 +130,13 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_AlsoWorkWithFields()
         {
+            var filedPerson = new FieldPerson(Guid.Empty, "Alex", 2.1, 19);
             var expected = new ObjectDescription(nameof(FieldPerson))
-                .WithFields("Height", id, name)
+                .WithFields($"Height is: {filedPerson.Height}", id, name)
                 .ToString();
 
-            var filedPerson = new FieldPerson(Guid.Empty, "Alex", 2.1, 19);
             var printer = ObjectPrinter.For<FieldPerson>()
-                .Printing(p => p.Height).Using(propInfo => propInfo.Name)
+                .Printing(p => p.Height).Using(value => $"Height is: {value}")
                 .Excluding(p => p.Age);
 
             printer.PrintToString(filedPerson)
@@ -240,11 +240,11 @@ namespace ObjectPrintingTests
         public void PrintToString_Printing_SetFormatForFormattable()
         {
             var expected = personDesc
-                .WithFields(id, name, height, $"{nameof(person.Age)} = 13")
+                .WithFields(id, name, "Height = 2.1", age)
                 .ToString();
 
             var printer = personPrinter
-                .FormatFor<int>("X", CultureInfo.InvariantCulture);
+                .FormatFor<double>(CultureInfo.InvariantCulture);
 
             printer.PrintToString(person)
                 .Should().Be(expected);
@@ -254,11 +254,11 @@ namespace ObjectPrintingTests
         public void PrintToString_Printing_UsingCustomPropertySerialization()
         {
             var expected = personDesc
-                .WithFields(id, "Name!", height, age)
+                .WithFields(id, "Name is: Alex!", height, age)
                 .ToString();
 
             var printer = personPrinter
-                .Printing(p => p.Name).Using(memberInfo => memberInfo.Name + "!");
+                .Printing(p => p.Name).Using(value => $"Name is: {value}!");
 
             printer.PrintToString(person)
                 .Should().Be(expected);
@@ -286,10 +286,9 @@ namespace ObjectPrintingTests
 
         private static IEnumerable<TestCaseData> TrimStringsCases()
         {
-            const char ellipsis = '\u2026';
             yield return new TestCaseData(new string('a', 10), 5)
             {
-                ExpectedResult = new string('a', 5) + ellipsis,
+                ExpectedResult = new string('a', 5) + "…",
                 TestName = "Should add ellipsis if string long"
             };
 

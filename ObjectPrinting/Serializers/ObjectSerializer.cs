@@ -6,20 +6,6 @@ using ObjectPrinting.PrintingMembers;
 
 namespace ObjectPrinting.Serializers
 {
-    public record Nesting
-    {
-        public int Level { get; init; }
-        public int Offset { get; init; }
-        public string Indentation => new string(indentationSymbol, Level) + new string(' ', Offset);
-
-        private readonly char indentationSymbol;
-
-        public Nesting(char indentationSymbol = '\t')
-        {
-            this.indentationSymbol = indentationSymbol;
-        }
-    }
-
     public class ObjectSerializer : ISerializer
     {
         private readonly PrintingConfig config;
@@ -31,15 +17,13 @@ namespace ObjectPrinting.Serializers
             serializers = new List<ISerializer>
             {
                 new PrimitiveSerializer(),
-                new ArraySerializer(this),
+                new ListSerializer(this),
                 new DictionarySerializer(this)
             };
         }
 
         public bool CanSerialize(object obj) => true;
-
-        public StringBuilder Serialize(object obj) => Serialize(obj, new Nesting());
-
+        
         public StringBuilder Serialize(object obj, Nesting nesting) =>
             TrySerializeType(obj, nesting, out var typeBuilder)
                 ? typeBuilder
@@ -82,7 +66,7 @@ namespace ObjectPrinting.Serializers
         private StringBuilder SerializeMember(object obj, PrintingMember objMember, Nesting nesting)
         {
             if (config.MemberPrinting.TryGetValue(objMember.MemberInfo, out var printProperty))
-                return new StringBuilder(printProperty(objMember.MemberInfo));
+                return new StringBuilder(printProperty(objMember.GetValue(obj)));
 
             var builder = new StringBuilder(objMember.Name + " = ");
             return builder.Append(

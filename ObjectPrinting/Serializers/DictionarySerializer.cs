@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ObjectPrinting.Serializers
 {
-    public class DictionarySerializer : CollectionSerializer<IDictionary>
+    public class DictionarySerializer : KeyValueSerializer<IDictionary>
     {
         public DictionarySerializer(ISerializer objectSerializer) : base(objectSerializer) { }
 
@@ -23,7 +23,7 @@ namespace ObjectPrinting.Serializers
             var indexer = objectSerializer.Serialize(key, nesting with {Level = nesting.Level + 1});
             return IsMultiline(indexer)
                 ? GetMultilineMarker(indexer, nesting)
-                : ArraySerializer.SerializeArrayIndexer(indexer, nesting);
+                : ListSerializer.SerializeArrayIndexer(indexer, nesting);
         }
 
         private static bool IsMultiline(StringBuilder indexer)

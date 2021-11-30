@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.Contexts
 {
-    public class PropertyPrintingContext<TOwner>
+    public class PropertyPrintingContext<TOwner, TPropType>
     {
         private readonly PrintingConfig config;
         private readonly MemberInfo propertyInfo;
@@ -14,10 +14,11 @@ namespace ObjectPrinting.Contexts
             this.propertyInfo = propertyInfo;
         }
 
-        public ConfigPrintingContext<TOwner> Using(Func<MemberInfo, string> serializeProperty) =>
+        public ConfigPrintingContext<TOwner> Using(Func<TPropType, string> serializeProperty) =>
             new ConfigPrintingContext<TOwner>(config with
             {
-                MemberPrinting = config.MemberPrinting.SetItem(propertyInfo, serializeProperty)
+                MemberPrinting =
+                config.MemberPrinting.SetItem(propertyInfo, value => serializeProperty((TPropType)value))
             });
     }
 }

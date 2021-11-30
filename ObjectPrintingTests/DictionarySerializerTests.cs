@@ -12,7 +12,7 @@ namespace ObjectPrintingTests
 {
     public class DictionarySerializerTests
     {
-        private DictionarySerializer serializer;
+        private ISerializer serializer;
 
         [SetUp]
         public void SetUp()
