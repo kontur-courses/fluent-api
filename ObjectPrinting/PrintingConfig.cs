@@ -144,7 +144,7 @@ public partial class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propertyAccess)
+    public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> propertyAccess)
     {
         return Exclude(GetMemberInfo(propertyAccess));
     }
