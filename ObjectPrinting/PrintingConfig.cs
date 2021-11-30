@@ -10,10 +10,19 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly Type[] FinalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
+        private readonly HashSet<object> visited = new();
         private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
         private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers = new();
+        private readonly Dictionary<Type, Delegate> customCycleMembersSerializers = new();
+
+        private bool throwIfCycleReference = false;
 
 
         public PrintingConfig<TOwner> Excluding<TMember>()
@@ -29,6 +38,12 @@ namespace ObjectPrinting
             return this;
         }
 
+        public PrintingConfig<TOwner> ThrowingIfCycleReference(bool isConfirmed)
+        {
+            throwIfCycleReference = isConfirmed;
+            return this;
+        }
+
         public INestedPrintingConfig<TOwner,TMember> Printing<TMember>()
         {
             return new TypePrintingConfig<TOwner, TMember>(this);
@@ -39,9 +54,15 @@ namespace ObjectPrinting
             return new MemberPrintingConfig<TOwner, TMember>(this, GetMemberInfoFromSelector(memberSelector));
         }
 
+        public INestedPrintingConfig<TOwner, TMember> PrintingCycleMember<TMember>()
+        {
+            return new CycleMemberConfig<TOwner, TMember>(this);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+
         }
 
         internal void AddCustomTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
@@ -57,20 +78,22 @@ namespace ObjectPrinting
                 customMemberSerializers[memberInfo] = serializer;
         }
 
+        internal void AddCustomCycleMemberSerializer<TMember>(Type type, Func<TMember, string> serializer)
+        {
+            if (!customCycleMembersSerializers.TryAdd(type, serializer))
+                customMemberSerializers[type] = serializer;
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
+            if (visited.Contains(obj))
+                return TryPrintCycleMember(obj);
+            visited.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -78,13 +101,24 @@ namespace ObjectPrinting
             foreach (var memberInfo in type.GetPublicPropertiesAndFields().Where(m => !IsExcluded(m)))
             {
                 var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
+                var memberValue = memberInfo.GetMemberValue(obj);
                 sb.Append(identation + memberInfo.Name + " = " +
                           (!isCustomSerialization 
-                              ? PrintToString(memberInfo.GetMemberValue(obj),
-                              nestingLevel + 1) 
+                              ? PrintToString(memberValue,
+                                  nestingLevel + 1) 
                               : customSerialization));
             }
+            visited.Clear();
             return sb.ToString();
+        }
+
+        private string TryPrintCycleMember(object obj)
+        {
+            if (throwIfCycleReference) throw new Exception($"Member with type {obj.GetType()} has cycle reference");
+            var objType = obj.GetType();
+            return !customCycleMembersSerializers.ContainsKey(objType)
+                ? $"cycle link detected{Environment.NewLine}"
+                : customCycleMembersSerializers[objType].DynamicInvoke(obj) + Environment.NewLine;
         }
 
         private bool TryUseCustomSerialization(MemberInfo member, object obj, out string customSerialization)
