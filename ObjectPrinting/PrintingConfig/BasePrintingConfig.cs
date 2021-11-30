@@ -13,5 +13,7 @@ namespace ObjectPrinting.PrintingConfig
             typeof(DateTime),
             typeof(TimeSpan)
         };
+
+        protected static readonly string NewLine = Environment.NewLine;
     }
 }
