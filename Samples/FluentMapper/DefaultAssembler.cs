@@ -10,7 +10,7 @@ namespace FluentMapping
         }
 
         public static TTgt Assemble(TSrc source, Action<TTgt, TSrc> mappingAction)
-        { 
+        {
             if (source == null)
                 throw new ArgumentNullException("source", $"Cannot map instance of {typeof(TTgt).Name}" +
                     $" from null instance of {typeof(TSrc).Name}.");

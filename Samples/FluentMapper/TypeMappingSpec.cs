@@ -162,7 +162,7 @@ namespace FluentMapping
             return new SetterSpec<TTgt, TSrc, TProp>(this, (PropertyInfo)memberInfo);
         }
 
-        public TypeMappingSpec<TTgt, TSrc> 
+        public TypeMappingSpec<TTgt, TSrc>
             IgnoringTargetProperty<T>(Expression<Func<TTgt, T>> propertyExpression)
         {
             var propInfo = GetPropertyInfo(propertyExpression, nameof(IgnoringTargetProperty), "tgt");

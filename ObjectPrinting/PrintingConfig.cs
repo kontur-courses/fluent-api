@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -13,10 +14,9 @@ namespace ObjectPrinting
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Int32), typeof(Int64),
+            typeof(Int16), typeof(Double)
         };
-
         private readonly HashSet<object> serializedMembers = new HashSet<object>();
-
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
@@ -37,13 +37,14 @@ namespace ObjectPrinting
         {
 
             if (serializedMembers.Contains(obj))
-                return ((nestingLevel != 0) ? "this (parentObj)" 
+                return ((nestingLevel != 0) ? "this (parentObj)"
                     : GetTrimString(new StringBuilder("this (parentObj)"))) + "\r\n";
 
             var sb = new StringBuilder();
 
             if (obj == null)
                 return "null" + Environment.NewLine;
+
             var objType = obj.GetType();
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
@@ -57,31 +58,39 @@ namespace ObjectPrinting
             sb.AppendLine(objType.Name);
             var fields =
                 objType.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
-            var props = objType.GetProperties().Cast<MemberInfo>();
+            var props =
+                objType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
             var fieldsAndProperties = fields.Union(props);
 
             foreach (var memberInfo in fieldsAndProperties)
             {
                 SerializationMemberInfo memberSerialization;
-
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
                     object value;
-
                     var indexParameters = propertyInfo.GetIndexParameters();
                     if (indexParameters.Length != 0)
                     {
-                        for (int index = 0; index < indexParameters.Length; index++)
+                        var cast = obj as ICollection;
+                        if (cast == null)
+                            sb.Append(propertyInfo.Name);
+                        else
                         {
-                            value = propertyInfo.GetValue(obj, new object[] {index});
-                            sb.Append(identation + propertyInfo.Name + "[" + value + "]" + " = " + indexParameters[index] + "\r\n");
+                            var counter = 0;
+                            sb.Append(identation + propertyInfo.Name + " =\r\n");
+                            foreach (var parameter in cast)
+                            {
+                                value = parameter.ToString();
+                                sb.Append(identation + "\t" + "Index " + counter + " = " + value + "\r\n");
+                                counter++;
+                            }
                         }
                         continue;
                     }
                     value = propertyInfo.GetValue(obj);
-                    memberSerialization = 
-                        new SerializationMemberInfo(propertyInfo.Name, 
-                            propertyInfo.PropertyType, 
+                    memberSerialization =
+                        new SerializationMemberInfo(propertyInfo.Name,
+                            propertyInfo.PropertyType,
                             value);
                 }
                 else if (memberInfo is FieldInfo fieldInfo)
@@ -129,12 +138,11 @@ namespace ObjectPrinting
 
         private string GetTrimString(StringBuilder resultString)
         {
-            var a = resultString.ToString()
-                [resultStartIndex..Math.Min(resultLength, resultString.Length)];
-            return a;
+            return resultString.ToString()
+                [resultStartIndex..Math.Min(resultLength, resultString.Length)]; ;
         }
 
-    public PrintingConfig<TOwner> ExcludedType<T>()
+        public PrintingConfig<TOwner> ExcludedType<T>()
         {
             excludedTypes.Add(typeof(T));
             return this;

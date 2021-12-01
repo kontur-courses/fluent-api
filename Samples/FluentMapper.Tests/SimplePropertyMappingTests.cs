@@ -31,7 +31,8 @@ namespace FluentMapping.Tests
                 .ThatSets(tgt => tgt.Num).From(src => src.ID)
                 .Create();
 
-            var source = new Source {
+            var source = new Source
+            {
                 ID = 7,
                 Name = "Bob"
             };

@@ -15,7 +15,7 @@ namespace FluentMapping.Tests.Unit
             var testee = new TypeMappingSpec<Target, Source>()
                 as ITypeMappingSpecProperties<Target, Source>
                 ;
-            
+
             Assert.That(
                 testee.SourceProperties.Count(),
                 Is.EqualTo(2),
@@ -54,7 +54,7 @@ namespace FluentMapping.Tests.Unit
         [Test]
         public void PropertiesSubset_ViaCtor()
         {
-            var testee = 
+            var testee =
                     new TypeMappingSpec<Target, Source>().Transforms()
                 .WithTargetProperties(
                     typeof(Target).GetProperties().Where(x => x.Name != "Prop3")
@@ -81,7 +81,7 @@ namespace FluentMapping.Tests.Unit
             var testee = new TypeMappingSpec<Target, Source>()
                 .Transforms().WithSourceProperties(new PropertyInfo[0])
                 .Transforms().WithTargetProperties(new PropertyInfo[0])
-                .Transforms().WithMappingActions(new [] { action })
+                .Transforms().WithMappingActions(new[] { action })
                 .Properties();
 
             Assert.That(testee.MappingActions, Is.EqualTo(new[] { action }));
@@ -98,7 +98,7 @@ namespace FluentMapping.Tests.Unit
             var testee = new TypeMappingSpec<Target, Source>()
                 .Transforms().WithTargetProperties(new PropertyInfo[0])
                 .Transforms().WithSourceProperties(new PropertyInfo[0])
-                .Transforms().WithMappingActions(new[] {action})
+                .Transforms().WithMappingActions(new[] { action })
                 ;
             var mapper = testee.Create();
 
