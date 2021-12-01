@@ -88,14 +88,14 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private string PrintToString(object obj, int nestingLevel, HashSet<object> objectsCashe)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> objectCashe)
         {
             if (obj == null)
             {
                 return "null" + Environment.NewLine;
             }
 
-            if (objectsCashe.Contains(obj))
+            if (objectCashe.Contains(obj))
             {
                 return "circular references" + Environment.NewLine;
             }
@@ -107,15 +107,15 @@ namespace ObjectPrinting
 
             if (obj is ICollection collection)
             {
-                return SerializeCollection(collection, nestingLevel, objectsCashe);
+                return SerializeCollection(collection, nestingLevel, objectCashe);
             }
 
             if (obj is IDictionary dictionary)
             {
-                return SerializeDictionary(dictionary, nestingLevel, objectsCashe);
+                return SerializeDictionary(dictionary, nestingLevel, objectCashe);
             }
 
-            objectsCashe.Add(obj);
+            objectCashe.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -139,7 +139,7 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(
                               propertyInfo.GetValue(obj),
-                              nestingLevel + 1, objectsCashe));
+                              nestingLevel + 1, objectCashe));
             }
 
             return sb.ToString();
@@ -156,7 +156,7 @@ namespace ObjectPrinting
             return obj + Environment.NewLine;
         }
 
-        private string SerializeCollection(ICollection collection, int nestingLevel, HashSet<object> objectsCashe)
+        private string SerializeCollection(ICollection collection, int nestingLevel, HashSet<object> objectCashe)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -164,7 +164,7 @@ namespace ObjectPrinting
             sb.Append(identation + collection.GetType().Name + Environment.NewLine);
             foreach (var item in collection)
             {
-                var value = PrintToString(item, nestingLevel + 1, objectsCashe);
+                var value = PrintToString(item, nestingLevel + 1, objectCashe);
                 sb.AppendFormat("{0}{1} {2}", identation, index, value);
                 index++;
             }
@@ -172,7 +172,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, HashSet<object> objectsCashe)
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, HashSet<object> objectCashe)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -180,9 +180,9 @@ namespace ObjectPrinting
             sb.Append(identation + dictionary.GetType().Name + Environment.NewLine);
             foreach (var key in dictionary.Keys)
             {
-                var value = PrintToString(key, nestingLevel + 1, objectsCashe);
+                var value = PrintToString(key, nestingLevel + 1, objectCashe);
                 sb.AppendFormat("{0}Key{1} {2}", identation, index, value);
-                value = PrintToString(dictionary[key], nestingLevel + 1, objectsCashe);
+                value = PrintToString(dictionary[key], nestingLevel + 1, objectCashe);
                 sb.AppendFormat("{0}Value{1} {2}", identation, index, value);
                 index++;
             }
