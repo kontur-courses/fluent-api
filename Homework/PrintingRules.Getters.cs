@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace Homework
 {
     internal partial class PrintingRules
     {

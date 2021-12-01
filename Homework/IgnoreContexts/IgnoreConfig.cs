@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 
-namespace ObjectPrinting
+namespace Homework.IgnoreContexts
 {
     public class IgnoreConfig<TOwner>
     {

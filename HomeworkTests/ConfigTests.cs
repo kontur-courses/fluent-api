@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Globalization;
 using FluentAssertions;
+using Homework;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 
-namespace ObjectPrinting.Tests
+namespace HomeworkTests
 {
     [TestFixture]
     public class ConfigTests

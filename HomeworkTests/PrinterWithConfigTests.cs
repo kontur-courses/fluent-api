@@ -3,21 +3,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using FluentAssertions;
+using Homework;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 
-namespace ObjectPrinting.Tests
+namespace HomeworkTests
 {
-    public class PrintIfFailure : Attribute
-    {
-        
-    }
-    
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        private string actual;
-        private Person person;
+        private string? actual;
+        private Person? person;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -37,6 +33,7 @@ namespace ObjectPrinting.Tests
         public void TearDown()
         {
             var context = TestContext.CurrentContext;
+            if (context.Test.MethodName == null) return;
             var methodAttr = typeof(ObjectPrinterAcceptanceTests)
                 .GetMethod(context.Test.MethodName)
                 ?.GetCustomAttributes(true)
@@ -192,7 +189,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void CollectionsDemo()
         {
-            var personDemo = new PersonWithList
+            var personDemo = new PersonWithCollections
             {
                 List = new List<int>{2, 1, 4, 6, 23, 234},
                 Dict = new Dictionary<string, float>
@@ -212,7 +209,7 @@ namespace ObjectPrinting.Tests
             personDemo.Guids.Enqueue(Guid.NewGuid());
             personDemo.Guids.Enqueue(Guid.NewGuid());
             
-            var printerDemo = Config<PersonWithList>.CreateConfig()
+            var printerDemo = Config<PersonWithCollections>.CreateConfig()
                 .SetAlternativeSerialisation().For<Guid>().WithMethod(g => g.ToString("B"))
                 .SetAlternativeSerialisation().For<string>().WithMethod(s => s.ToUpper())
                 .SetAlternativeSerialisation().For<KeyValuePair<string, float>>().WithMethod(p => $"[{p.Key}] = {p.Value}")

@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting
+﻿namespace Homework.IgnoreContexts
 {
     public class IgnoreTypeConfig<TOwner, TType> : Config<TOwner>
     {

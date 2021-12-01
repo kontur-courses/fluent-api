@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace Homework.CultureContexts
 {
     public class CultureConfig<TOwner>
     {

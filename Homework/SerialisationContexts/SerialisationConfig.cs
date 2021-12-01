@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting
+namespace Homework.SerialisationContexts
 {
     public class SerialisationConfig<TOwner, TType>
     {

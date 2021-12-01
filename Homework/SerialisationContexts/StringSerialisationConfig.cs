@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ObjectPrinting
+﻿namespace Homework.SerialisationContexts
 {
     public class StringSerialisationConfig<TOwner> : SerialisationIntermediateConfig<TOwner>
     {

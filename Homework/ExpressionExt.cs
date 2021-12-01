@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ObjectPrinting
+namespace Homework
 {
     public static class ExpressionExt
     {

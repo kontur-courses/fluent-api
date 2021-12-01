@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting
+﻿namespace Homework.SerialisationContexts
 {
     public class SerialisationIntermediateConfig<TOwner> : Config<TOwner>
     {

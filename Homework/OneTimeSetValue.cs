@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting
+namespace Homework
 {
     public class OneTimeSetValue<TValue>
     {
@@ -21,10 +21,6 @@ namespace ObjectPrinting
         public OneTimeSetValue(TValue defaultValue)
         {
             value = defaultValue;
-        }
-        
-        public OneTimeSetValue()
-        {
         }
     }
 }

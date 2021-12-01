@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting
+namespace Homework
 {
     public class PrinterWithConfig<TOwner>
     {
