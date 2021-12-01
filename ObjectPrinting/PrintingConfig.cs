@@ -18,6 +18,7 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(Guid)
         };
+
         private readonly HashSet<object> serializedMembers = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
@@ -45,112 +46,140 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-
             if (serializedMembers.Contains(obj))
-                return ((nestingLevel != 0) ? "this (parentObj)"
-                    : GetTrimString(new StringBuilder("this (parentObj)"))) + "\r\n";
+               return ReturnWhenCyclic(nestingLevel);
 
             var sb = new StringBuilder();
-
             if (obj == null)
                 return NullToString + Environment.NewLine;
 
             var objType = obj.GetType();
+            
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
-            {
+                return ReturnWhenFinal(obj);
 
-                if (obj is IFormattable formattable)
-                    return formattable.ToString(null, culture) + Environment.NewLine;
-                return obj + Environment.NewLine;
-            }
 
             var identation = new string('\t', nestingLevel + 1);
             sb.AppendLine(objType.Name);
+            var fieldsAndProperties = GetFieldsAndProperties(objType);
+
+            foreach (var memberInfo in fieldsAndProperties)
+            {
+                PrintMemberInformation(memberInfo, obj, sb, nestingLevel, identation);
+            }
+            return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
+        }
+
+        private Delegate MakeSerializeDelegate(SerializationMemberInfo memberSerialization)
+        {
+            if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization.MemberName))
+                return specialSerializationsForFieldsProperties[memberSerialization.MemberName];
+            if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
+                return specialSerializationsForTypes[memberSerialization.MemberType];
+            return null;
+        }
+
+        private void PrintMemberInformation(MemberInfo memberInfo, object obj, StringBuilder sb, int nestingLevel, string identation)
+        {
+            SerializationMemberInfo memberSerialization = default;
+            if (memberInfo is PropertyInfo propertyInfo)
+            {
+                var indexParameters = propertyInfo.GetIndexParameters();
+                if (indexParameters.Length != 0)
+                {
+                    PrintIndexes(obj, sb, identation, propertyInfo.Name);
+                    return;
+                }
+                memberSerialization =
+                    new SerializationMemberInfo(propertyInfo, obj);
+            }
+            else if (memberInfo is FieldInfo fieldInfo)
+            {
+                memberSerialization =
+                    new SerializationMemberInfo(fieldInfo, obj);
+            }
+
+
+            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType)
+                                            || excludedFieldsProperties.Contains(memberSerialization.MemberName))
+                return;
+
+            var serializeDelegate = MakeSerializeDelegate(memberSerialization);
+            serializedMembers.Add(obj);
+
+            if (serializeDelegate != null)
+                sb.Append(FormSerializeDelegateString(identation, nestingLevel, memberSerialization,
+                    serializeDelegate));
+            else
+                sb.Append(FormSerializeString(identation, nestingLevel, memberSerialization));
+        }
+
+        private string FormSerializeDelegateString(string identation, int nestingLevel,
+            SerializationMemberInfo memberSerialization, Delegate serializeDelegate)
+        {
+            return identation + memberSerialization.MemberName + " = " + 
+                   PrintToString(serializeDelegate.DynamicInvoke(memberSerialization.MemberValue), 
+                       nestingLevel + 1);
+        }
+
+        private string FormSerializeString(string identation, int nestingLevel,
+            SerializationMemberInfo memberSerialization)
+        {
+            return identation + memberSerialization.MemberName + " = " +
+                   PrintToString(memberSerialization.MemberValue,
+                       nestingLevel + 1);
+        }
+
+        private static IEnumerable<MemberInfo> GetFieldsAndProperties(Type objType)
+        {
             var fields =
                 objType.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
             var props =
                 objType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
-            var fieldsAndProperties = fields.Union(props);
-
-            foreach (var memberInfo in fieldsAndProperties)
-            {
-                SerializationMemberInfo memberSerialization = default;
-                if (memberInfo is PropertyInfo propertyInfo)
-                {
-                    object value;
-                    var indexParameters = propertyInfo.GetIndexParameters();
-                    if (indexParameters.Length != 0)
-                    {
-                        if (!(obj is ICollection cast))
-                            sb.Append(propertyInfo.Name);
-                        else
-                        {
-                            var counter = 0;
-                            sb.Append(identation + propertyInfo.Name + " =\r\n");
-                            foreach (var parameter in cast)
-                            {
-                                value = parameter.ToString();
-                                sb.Append(identation + "\t" + "Index " + counter + " = " + value + "\r\n");
-                                counter++;
-                            }
-                        }
-                        continue;
-                    }
-                    value = propertyInfo.GetValue(obj);
-                    memberSerialization =
-                        new SerializationMemberInfo(propertyInfo.Name,
-                            propertyInfo.PropertyType,
-                            value);
-                }
-                else if (memberInfo is FieldInfo fieldInfo)
-                {
-                    memberSerialization =
-                        new SerializationMemberInfo(fieldInfo.Name,
-                            fieldInfo.FieldType,
-                            fieldInfo.GetValue(obj));
-                }
-
-
-
-                if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType)
-                    || excludedFieldsProperties.Contains(memberSerialization.MemberName))
-                    continue;
-
-
-
-                Delegate serializeDelegate = null;
-
-                if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization.MemberName))
-                    serializeDelegate = specialSerializationsForFieldsProperties[memberSerialization.MemberName];
-
-                else if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
-                    serializeDelegate = specialSerializationsForTypes[memberSerialization.MemberType];
-
-                serializedMembers.Add(obj);
-
-                if (serializeDelegate != null)
-                {
-                    sb.Append(identation + memberSerialization.MemberName + " = " +
-                              PrintToString(serializeDelegate.DynamicInvoke(memberSerialization.MemberValue),
-                                  nestingLevel + 1));
-                }
-                else
-                {
-                    sb.Append(identation + memberSerialization.MemberName + " = " +
-                              PrintToString(memberSerialization.MemberValue,
-                                  nestingLevel + 1));
-                }
-            }
-            return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
+            return fields.Union(props);
         }
 
         private string GetTrimString(StringBuilder resultString)
         {
             return resultString.ToString()
                 [resultStartIndex..Math.Min(resultLength, resultString.Length)];
-        } 
-        
+        }
+
+        private string ReturnWhenCyclic(int nestingLevel)
+        {
+            return ((nestingLevel != 0) ? "this (parentObj)"
+                : GetTrimString(new StringBuilder("this (parentObj)"))) + "\r\n";
+        }
+
+        private string ReturnWhenFinal(object obj)
+        {
+            if (obj is IFormattable formattable)
+                return formattable.ToString(null, culture) + Environment.NewLine;
+            return obj + Environment.NewLine;
+        }
+
+        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name)
+        {
+            if (!(obj is ICollection cast))
+                sb.Append(name);
+            else
+            {
+                var counter = 0;
+                sb.Append(identation + name + " =\r\n");
+                foreach (var parameter in cast)
+                {
+                    var value = parameter.ToString();
+                    sb.Append(identation + "\t" + "Index " + counter + " = " + value + "\r\n");
+                    counter++;
+                }
+            }
+        }
+
+
+
+
+
         public PrintingConfig<TOwner> ExcludedType<TExType>()
         {
             excludedTypes.Add(typeof(TExType));
@@ -206,5 +235,6 @@ namespace ObjectPrinting
             resultLength = length;
             return this;
         }
+        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -12,6 +13,19 @@ namespace ObjectPrinting
             MemberName = memberName;
             MemberType = memberType;
             MemberValue = memberValue;
+        }
+
+        public SerializationMemberInfo(PropertyInfo property, object obj)
+        {
+            MemberName = property.Name;
+            MemberType = property.PropertyType;
+            MemberValue = property.GetValue(obj);
+        }
+        public SerializationMemberInfo(FieldInfo field, object obj)
+        {
+            MemberName = field.Name;
+            MemberType = field.FieldType;
+            MemberValue = field.GetValue(obj);
         }
     }
 }
