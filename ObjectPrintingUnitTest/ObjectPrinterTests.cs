@@ -106,7 +106,7 @@ namespace ObjectPrintingUnitTest
             ObjectPrinter.For<List<Person>>()
                          .PrintToString(persons)
                          .Should()
-                         .Be("\tList`1\r\n\t0 Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = null\r\n\t1 Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = circular references\r\n");
+                         .Be("\t0 Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = null\r\n\t1 Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Maxim\r\n\t\tHeight = 180,2\r\n\t\tAge = 21\r\n\t\tAnotherPerson = circular references\r\n");
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace ObjectPrintingUnitTest
 
             persons.Add(2, anotherPerson);
 
-            ObjectPrinter.For<Dictionary<int,Person>>().PrintToString(persons).Should().Be("\tDictionary`2\r\n\t0 KeyValuePair`2\r\n\t\tKey = 1\r\n\t\tValue = Person\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\tName = Maxim\r\n\t\t\tHeight = 180,2\r\n\t\t\tAge = 21\r\n\t\t\tAnotherPerson = null\r\n\t1 KeyValuePair`2\r\n\t\tKey = 2\r\n\t\tValue = Person\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\tName = Maxim\r\n\t\t\tHeight = 180,2\r\n\t\t\tAge = 21\r\n\t\t\tAnotherPerson = circular references\r\n");
+            ObjectPrinter.For<Dictionary<int,Person>>().PrintToString(persons).Should().Be("\t0 KeyValuePair`2\r\n\t\tKey = 1\r\n\t\tValue = Person\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\tName = Maxim\r\n\t\t\tHeight = 180,2\r\n\t\t\tAge = 21\r\n\t\t\tAnotherPerson = null\r\n\t1 KeyValuePair`2\r\n\t\tKey = 2\r\n\t\tValue = Person\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\tName = Maxim\r\n\t\t\tHeight = 180,2\r\n\t\t\tAge = 21\r\n\t\t\tAnotherPerson = circular references\r\n");
         }
     }
 }

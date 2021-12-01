@@ -161,7 +161,6 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var index = 0;
-            sb.Append(identation + collection.GetType().Name + Environment.NewLine);
             foreach (var item in collection)
             {
                 var value = PrintToString(item, nestingLevel + 1, objectCashe);
@@ -177,7 +176,6 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var index = 0;
-            sb.Append(identation + dictionary.GetType().Name + Environment.NewLine);
             foreach (var key in dictionary.Keys)
             {
                 var value = PrintToString(key, nestingLevel + 1, objectCashe);
