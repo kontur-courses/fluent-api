@@ -42,6 +42,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            var typeWithCulture = typeof(TPropType);
+            try
+            {
+                typeWithCulture.GetMethod("ToString", new Type[] { typeof(CultureInfo) });
+            } catch(Exception e)
+            {
+                throw new Exception(e.Message + 
+                    "\nGiven type has no ToString() overload with parameter of type CultureInfo!");
+            }
             return _printingConfig;
         }
 

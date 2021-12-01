@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,15 +10,13 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> _excludedPropertiesTypes;
-        private readonly HashSet<Type> _excludedFieldsTypes;
         public Dictionary<Type, Func<PropertyInfo, object, string>> serWay;
+        public Dictionary<Type, CultureInfo> typesCulture;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
-            _excludedPropertiesTypes = new HashSet<Type>();
-            _excludedFieldsTypes = new HashSet<Type>();
+            typesCulture = new Dictionary<Type, CultureInfo>();
             serWay = new Dictionary<Type, Func<PropertyInfo, object, string>>();
         }
 
@@ -57,7 +56,7 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
-            // дублирование 
+
             foreach (var fieldInfo in type.GetFields())
             {
                 if (fieldInfo.FieldType.Module.ScopeName == BuiltInScope)

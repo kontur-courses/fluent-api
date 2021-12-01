@@ -23,6 +23,7 @@ namespace ObjectPrinting.Tests
             var expectedSerialization = "Person" + NewLine +
                 $"\tId = {person.Id}" + NewLine +
                 $"\tAge = {person.Age}" + NewLine +
+                $"\tNonCulturable = null" + NewLine +
                 $"\tweight = {person.weight}" + NewLine +
                 $"\tsecondName = {person.secondName}" + NewLine;
 
@@ -54,6 +55,7 @@ namespace ObjectPrinting.Tests
                 $"\tName = {person.Name}" + NewLine +
                 $"\tHeight = {person.Height}" + NewLine +
                 $"\t{person.Age} is not my real age!" + NewLine +
+                $"\tNonCulturable = null" + NewLine +
                 $"\tweight = {person.weight}" + NewLine +
                 $"\tsecondName = {person.secondName}" + NewLine;
 
