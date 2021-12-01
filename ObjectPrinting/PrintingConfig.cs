@@ -22,6 +22,17 @@ namespace ObjectPrinting
             typeof(string),
             typeof(DateTime),
             typeof(TimeSpan),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(short),
+            typeof(ushort),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(decimal),
+            typeof(char),
+            typeof(bool),
+            typeof(Guid),
         };
 
         private Dictionary<Type, CultureInfo> culturesProperties =
