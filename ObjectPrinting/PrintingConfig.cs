@@ -1,27 +1,53 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private List<string> excludedProperties = new List<string>();
-        private List<Type> excludedTypes = new List<Type>();
+        private readonly HashSet<PropertyInfo> excludedProperties = new();
+        private readonly HashSet<Type> excludedTypes = new();
+        public readonly Dictionary<Type, Delegate> TypeToPrinting = new();
+        public readonly Dictionary<Type, CultureInfo> TypeToCultureInfo = new();
+        public readonly Dictionary<PropertyInfo, Delegate> PropertyToPrinting = new();
+        public readonly Dictionary<PropertyInfo, int> StringPropertyToLength = new();
+        private readonly HashSet<object> printedObjects = new();
 
-        private Dictionary<Type, Func<object, string>>
-            typeRepresentation = new Dictionary<Type, Func<object, string>>();
+        private readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(bool), typeof(Guid)
+        };
 
-        private Dictionary<string, Func<object, string>> propertyRepresentation =
-            new Dictionary<string, Func<object, string>>();
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        }
 
-        private CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var propertyInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            excludedProperties.Add(((MemberExpression)memberSelector.Body).Member as PropertyInfo);
+            return this;
+        }
+
+        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            excludedTypes.Add(typeof(TPropType));
+            return this;
+        }
 
         public string PrintToString(TOwner obj)
         {
@@ -30,84 +56,78 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            /*if (finalTypes.Contains(obj.GetType()))
-                return Convert.ToString(obj, cultureInfo) + Environment.NewLine;*/
+            return GetRepresentation(obj, nestingLevel);
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+        private string GetRepresentation(object obj, int nestingLevel)
+        {
             var type = obj.GetType();
+
+            if (finalTypes.Contains(type))
+            {
+                return GetFinalTypeRepresentation(obj);
+            }
+
+            if (printedObjects.Contains(obj))
+                return "!already printed!";
+            printedObjects.Add(obj);
+
+            if (obj is IEnumerable enumerable)
+            {
+                return GetEnumerableRepresentation(enumerable, nestingLevel);
+            }
+
+            var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedProperties.Contains(propertyInfo.Name)) continue;
-                if (excludedTypes.Contains(propertyInfo.PropertyType)) continue;
-
-
-                sb.Append(GetPropertyRepresentaion(obj, propertyInfo, identation, nestingLevel));
+                if (excludedProperties.Contains(propertyInfo)
+                    || excludedTypes.Contains(propertyInfo.PropertyType)) continue;
+                sb.Append(GetPropertyRepresentation(obj, nestingLevel, propertyInfo));
             }
 
             return sb.ToString();
         }
 
-        private string GetPropertyRepresentaion(object obj, PropertyInfo propertyInfo, string identation,
-            int nestingLevel)
+        private string GetPropertyRepresentation(object obj, int nestingLevel, PropertyInfo propertyInfo)
         {
-            if (typeRepresentation.ContainsKey(propertyInfo.PropertyType))
+            var propertyValue = propertyInfo.GetValue(obj);
+            if (StringPropertyToLength.TryGetValue(propertyInfo, out var length))
             {
-                return identation + typeRepresentation[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
+                propertyValue = ((string)propertyValue)?[..length];
             }
 
-            if (propertyRepresentation.ContainsKey(propertyInfo.Name))
+            var identation = new string('\t', nestingLevel + 1);
+
+            if (PropertyToPrinting.TryGetValue(propertyInfo, out var propertyPrinting))
             {
-                return identation + propertyRepresentation[propertyInfo.Name](propertyInfo.GetValue(obj));
+                return identation + propertyPrinting.DynamicInvoke(propertyValue) + Environment.NewLine;
             }
 
-            return identation + propertyInfo.Name + " = " +
-                   PrintToString(propertyInfo.GetValue(obj),
-                       nestingLevel + 1);
+            if (TypeToPrinting.TryGetValue(propertyInfo.PropertyType, out var typePrinting))
+            {
+                return identation + propertyInfo.Name + " = " + typePrinting.DynamicInvoke(propertyValue);
+            }
+
+            return identation + propertyInfo.Name + " = " + PrintToString(propertyValue, nestingLevel + 1) +
+                   Environment.NewLine;
         }
 
-        /*public PrintingConfig<TOwner> Excluding(Expression<Func<TOw>>)
+        private string GetFinalTypeRepresentation(object obj)
         {
-            excludedProperties.Add(propertyName);
-            return this;
-        }*/
-
-        public PrintingConfig<TOwner> Excluding(Type propertyName)
-        {
-            excludedTypes.Add(propertyName);
-            return this;
+            return TypeToCultureInfo.TryGetValue(obj.GetType(), out var culture)
+                ? ((IFormattable)obj).ToString(null, culture)
+                : obj.ToString();
         }
 
-        public PrintingConfig<TOwner> SetTypeSerialization<T>(Func<T, string> func)
+        private string GetEnumerableRepresentation(IEnumerable enumerable, int nestingLevel)
         {
-            string Converted(object x) => func((T)x);
-            typeRepresentation.Add(typeof(T), Converted);
-            return this;
-        }
-
-        public PrintingConfig<TOwner> SetCultureInfo(CultureInfo cultureInfo)
-        {
-            this.cultureInfo = cultureInfo;
-            return this;
-        }
-
-        public PrintingConfig<TOwner> SetPropertySerialization<TResult>(Func<TOwner, TResult> getProperty,
-            Func<TResult, string> serializationFunc)
-        {
-            var propName = typeof(TResult).Name;
-            var objectSerialization = serializationFunc as Func<object, string>;
-            propertyRepresentation[propName] = objectSerialization;
-            return this;
+            var arr = enumerable as object[] ?? enumerable.Cast<object>().ToArray();
+            var stringValues = arr.Select(e => PrintToString(e, nestingLevel + 1));
+            return "[" + string.Join(" ", stringValues) + "]";
         }
     }
 }
