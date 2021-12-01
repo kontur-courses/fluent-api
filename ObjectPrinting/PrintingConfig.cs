@@ -22,6 +22,8 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
 
+        private string pinnedPropertyName;
+
         private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
             new Dictionary<Type, Delegate>();
 
@@ -33,6 +35,7 @@ namespace ObjectPrinting
         private CultureInfo culture = CultureInfo.InvariantCulture;
         private int resultStartIndex;
         private int resultLength = int.MaxValue;
+
 
 
         public string PrintToString(TOwner obj)
@@ -56,6 +59,30 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
+                /*
+                Delegate serializeDelegate = null;
+                if (specialSerializationsForFieldsProperties.ContainsKey(objectName))
+                    serializeDelegate = specialSerializationsForFieldsProperties[objectName];
+
+                else if (specialSerializationsForTypes.ContainsKey(objType))
+                    serializeDelegate = specialSerializationsForTypes[objType];
+
+                
+                if (serializeDelegate != null)
+                {
+                    if (obj is IFormattable formattable)
+                        return serializeDelegate.DynamicInvoke(formattable.ToString(null, culture)) + Environment.NewLine;
+                    return serializeDelegate.DynamicInvoke() + Environment.NewLine;
+                }
+                else
+                {
+                    if (obj is IFormattable formattable)
+                        return formattable.ToString(null, culture) + Environment.NewLine;
+                    return obj + Environment.NewLine;
+                }
+                */
+                //return obj + Environment.NewLine;
+
                 if (obj is IFormattable formattable)
                     return formattable.ToString(null, culture) + Environment.NewLine;
                 return obj + Environment.NewLine;
@@ -138,7 +165,9 @@ namespace ObjectPrinting
                               PrintToString(memberSerialization.MemberValue,
                                   nestingLevel + 1));
                 }
-            } 
+            }
+
+            var a = sb.ToString();
             return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
         }
 
@@ -161,18 +190,37 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> SpecialSerializationField
-            <TType>(string fieldName, Func<TType, string> serialization)
+        public PrintingConfig<TOwner> SpecialSerializationField<TFieldType>(Func<TFieldType, string> serialization)
         {
             //var function = serialization as Func<object, string>;
-            specialSerializationsForFieldsProperties[fieldName] = serialization;
+            //var fieldName = "Id";
+
+            if (pinnedPropertyName != null)
+            {
+                specialSerializationsForFieldsProperties[pinnedPropertyName] = serialization;
+                pinnedPropertyName = null;
+            }
+            else
+            {
+                foreach (var propertyName in specialSerializationsForFieldsProperties.Keys)
+                {
+                    specialSerializationsForFieldsProperties[propertyName] = serialization;
+                }
+            }
+
+            //var result = serialization;
+
+            //specialSerializationsForFieldsProperties[fieldName] = serialization;
+            //specialSerializationsForFieldsProperties[fieldName] = result;
+
+
             return this;
         }
 
-        public PrintingConfig<TOwner> ExcludedField(Expression<Func<TOwner, string>> fieldNameExpression)
+        public PrintingConfig<TOwner> ExcludedProperty(Expression<Func<TOwner, string>> propertyNameExpression)
         {
 
-            excludedFieldsProperties.Add(((ConstantExpression)fieldNameExpression.Body).Value.ToString());
+            excludedFieldsProperties.Add(((ConstantExpression)propertyNameExpression.Body).Value.ToString());
             return this;
         }
 
@@ -180,6 +228,12 @@ namespace ObjectPrinting
         {
             var cultureName = ((NewExpression)inputCulture.Body).Arguments.First().ToString();
             culture = new CultureInfo(cultureName[1..^1]);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, string>> propertyNameExpression)
+        {
+            pinnedPropertyName = ((ConstantExpression)propertyNameExpression.Body).Value.ToString();
             return this;
         }
 

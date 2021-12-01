@@ -55,7 +55,7 @@ namespace ObjectPrinting.Tests
         public void SerializationExcludeOneField()
         {
             var person = new Person { Name = "Rick", Age = 70 };
-            var printer = ObjectPrinter.For<Person>().ExcludedField(pr => "Age");
+            var printer = ObjectPrinter.For<Person>().ExcludedProperty(pr => "Age");
             var result = printer.PrintToString(person);
             result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Rick\r\n\tHeight = 0\r\n");
         }
@@ -65,7 +65,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Gregory", Age = 49 };
             var printer = ObjectPrinter.For<Person>()
-                .ExcludedField(pr => "Id").ExcludedField(pr => "Name").ExcludedField(pr => "Age");
+                .ExcludedProperty(pr => "Id").ExcludedProperty(pr => "Name").ExcludedProperty(pr => "Age");
             var result = printer.PrintToString(person);
             result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tHeight = 0\r\n");
         }
@@ -77,9 +77,10 @@ namespace ObjectPrinting.Tests
 
             var printer = ObjectPrinter.For<Person>()
                 .SpecialSerializationType<int>(value => (100 - value).ToString())
-                .SpecialSerializationType<double>(value => (-1 * value).ToString(CultureInfo.InvariantCulture));
+                .SpecialSerializationType<double>(value => (-1 * value).ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationType<Guid>(value => "2");
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = 2\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
         }
 
         [Test]
@@ -88,12 +89,12 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                .SpecialSerializationField<double>(("Height", x) => (100 - x)
-                    .ToString(CultureInfo.InvariantCulture))
-                .SpecialSerializationField<int>( ("Age",x) => (-1.5).ToString(CultureInfo.InvariantCulture))
-                .SpecialSerializationField<Guid>(("Id", x) => "0");
+                .PinProperty(pr => "Height").SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
+                .PinProperty(pr => "Age").SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
+                .PinProperty(pr => "Id").SpecialSerializationField<Guid>(x => "1");
+
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 0\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
         }
 
 
