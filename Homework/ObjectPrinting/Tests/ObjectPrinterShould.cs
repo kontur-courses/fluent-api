@@ -22,13 +22,14 @@ namespace ObjectPrinting.Tests
             };
             var expectedSerialization = "Person" + NewLine +
                 $"\tId = {person.Id}" + NewLine +
-                $"\tHeight = {person.Height}" + NewLine +
-                $"\tweight = {person.weight}" + NewLine;
+                $"\tAge = {person.Age}" + NewLine +
+                $"\tweight = {person.weight}" + NewLine +
+                $"\tsecondName = {person.secondName}" + NewLine;
 
             var printer = ObjectPrinter
                 .For<Person>()
-                .ExcludePropertiesTypes(typeof(string), typeof(int))
-                .ExcludeFieldsTypes(typeof(string), typeof(int));
+                .Excluding<string>()
+                .Excluding<double>();
             string serializedPerson = printer.PrintToString(person);
 
             serializedPerson.Should().Be(expectedSerialization);
