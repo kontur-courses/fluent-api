@@ -11,9 +11,16 @@ namespace ObjectPrinting
             this.rules = rules;
         }
         
-        public SerialisationConfig<TOwner, T> For<T>(Expression<Func<TOwner, T>> extractor) 
-            => new(rules, extractor.GetPropertyName());
-        public SerialisationConfig<TOwner, T> For<T>() 
-            => new(rules);
+        public SerialisationConfig<TOwner, T> For<T>(Expression<Func<TOwner, T>> extractor)
+        {
+            rules.CheckForInvalidOperations(extractor.GetPropertyName(), typeof(T));
+            return new SerialisationConfig<TOwner, T>(rules, extractor.GetPropertyName());
+        }
+
+        public SerialisationConfig<TOwner, T> For<T>()
+        {
+            rules.CheckForInvalidOperations(type: typeof(T));
+            return new SerialisationConfig<TOwner, T>(rules);
+        }
     }
 }

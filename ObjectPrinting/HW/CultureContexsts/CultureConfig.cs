@@ -15,6 +15,7 @@ namespace ObjectPrinting
         public CultureIntermediateConfig<TOwner> For<TType>(CultureInfo currentCulture)
             where TType : IConvertible
         {
+            rules.CheckForInvalidOperations(type: typeof(TType));
             if (!rules.TrySetCulture(typeof(TType), currentCulture))
                 throw new InvalidOperationException($"culture for type {nameof(TType)} already setted");
             return new CultureIntermediateConfig<TOwner>(rules);

@@ -20,7 +20,7 @@ namespace ObjectPrinting
         
         private SerialisationRule SetMethod<T>(Func<T, string> serialisationMethod)
         {
-            var serialisationRule = new SerialisationRule(o => serialisationMethod((T)o!));
+            var serialisationRule = new SerialisationRule(typeof(T), o => serialisationMethod((T)o!));
             
             if (propertyName is null)
             {

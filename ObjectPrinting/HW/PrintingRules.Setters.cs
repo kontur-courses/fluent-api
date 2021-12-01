@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace ObjectPrinting
 {
@@ -48,6 +49,21 @@ namespace ObjectPrinting
             if (ignoredTypes.ContainsKey(type)) 
                 throw new InvalidOperationException($"type {type.Name} already ignored");
             return cultures.TryAdd(type, culture);
+        }
+
+        public void CheckForInvalidOperations(string? name = null, Type? type = null)
+        {
+            if (name is not null && ignoredProperties.Contains(name)
+                || type is not null && ignoredTypes.ContainsKey(type))
+                throw new InvalidOperationException($"{type} {name} already ignored");
+            
+            if (type is not null && cultures.ContainsKey(type))
+                throw new InvalidOperationException($"culture for {type} {name} already setted");
+            
+            if (name is not null && serialisationMethodByProperty.ContainsKey(name)
+                || type is not null && (serialisationMethodByType.ContainsKey(type) 
+                                        || serialisationMethodByProperty.Any(x => x.Value.Type == type)))
+                throw new InvalidOperationException($"printing for {type} {name} already setted");
         }
     }
 }

@@ -8,14 +8,16 @@ namespace ObjectPrinting
 
         private Func<object?, string> Method { get; }
 
+        public Type Type { get; set; }
         public int CharsLimit
         {
             get => charsLimit.Value;
             set => charsLimit.Value = value;
         }
 
-        public SerialisationRule(Func<object?, string> method)
+        public SerialisationRule(Type type, Func<object?, string> method)
         {
+            Type = type;
             Method = method;
             charsLimit = new OneTimeSetValue<int>(-1);
         }
