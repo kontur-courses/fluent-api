@@ -23,7 +23,8 @@ namespace ObjectPrintingTests
                 Height = 185.5,
                 Age = 19,
                 Money = 300.99,
-                Family = new List<Person>()
+                Family = new List<Person>(),
+                Type = PersonType.SecondType
             };
         }
 
@@ -118,7 +119,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_PrintsEnumerableCorrectly_WhenPrintingArray()
         {
-            var array = new int[] { 1, 2, 3 };
+            var array = new[] { 1, 2, 3 };
             var printer = ObjectPrinter.For<int[]>();
 
             var result = printer.PrintToString(array);
@@ -159,7 +160,49 @@ namespace ObjectPrintingTests
 
             result.Should()
                 .Contain(
-                    $"{nameof(person.Family)} = {Environment.NewLine}{identation}This object has already been printed");
+                    $"{nameof(person.Family)} = {Environment.NewLine}{identation}Cyclic reference");
+        }
+
+        [Test]
+        public void PrintToString_WorksCorrectly_WhenConfigClonned()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => person.Name)
+                .Excluding(p => p.Age);
+            var clonnedConfig = (Config)printer.Clone();
+            var printerWithClonnedConfig = ObjectPrinter.For<Person>(clonnedConfig);
+
+            var defaultPrinterResult = printer.PrintToString(person);
+            var clonnedPrinterResult = printerWithClonnedConfig.PrintToString(person);
+
+            clonnedPrinterResult.Should().Be(defaultPrinterResult);
+        }
+
+        [Test]
+        public void PrintToString_WorksCorrectly_WhenBaseConfigChangedAfterClonning()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(p => person.Name)
+                .Excluding(p => p.Age);
+            var clonnedConfig = (Config)printer.Clone();
+            var printerWithClonnedConfig = ObjectPrinter.For<Person>(clonnedConfig);
+            printer.Excluding(p => p.Money);
+
+            var basePrinterResult = printer.PrintToString(person);
+            var clonnedPrinterResult = printerWithClonnedConfig.PrintToString(person);
+
+            clonnedPrinterResult.Should().Contain($"{nameof(person.Money)} = {person.Money}");
+            basePrinterResult.Should().NotContain($"{nameof(person.Money)} = {person.Money}");
+        }
+
+        [Test]
+        public void PrintToString_PrintsEnumCorrectly_WhenPrintingEnum()
+        {
+            var printer = ObjectPrinter.For<Person>();
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Contain($"{nameof(person.Type)} = SecondType");
         }
     }
 }
