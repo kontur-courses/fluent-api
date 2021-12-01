@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -41,11 +38,9 @@ namespace ObjectPrinting
                 if (alternativeSerializations.ContainsKey(propType))
                 {
                     var serialize = alternativeSerializations[propType];
-                    var serializatedProperty = serialize(propValue); 
-                    var serializationResult = serializatedProperty == ""
-                        ? ""
-                        : indentation + serializatedProperty;
-                    sb.Append(serializationResult);
+                    var serializatedProperty = serialize(propValue);
+                    var line = GetSerializatedLine(indentation, serializatedProperty);
+                    sb.Append(line);
                 }
                 else if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
@@ -73,6 +68,13 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+        private static string GetSerializatedLine(string indentation, string serializatedProperty)
+        {
+            return serializatedProperty == ""
+                ? serializatedProperty
+                : indentation + serializatedProperty;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
