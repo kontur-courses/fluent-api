@@ -52,52 +52,53 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
+            var fields =
+                type.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
             var props = type.GetProperties().Cast<MemberInfo>();
             var fieldsAndProperties = fields.Union(props);
 
             foreach (var memberInfo in fieldsAndProperties)
             {
-                string memberName;
-                Type memberType;
-                object memberValue;
+                SerializationMemberInfo memberSerialization;
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
-                    memberName = propertyInfo.Name;
-                    memberType = propertyInfo.PropertyType;
-                    memberValue = propertyInfo.GetValue(obj);
+                    memberSerialization =
+                        new SerializationMemberInfo(propertyInfo.Name, 
+                            propertyInfo.PropertyType,
+                            propertyInfo.GetValue(obj));
                 }
                 else if (memberInfo is FieldInfo fieldInfo)
                 {
-                    memberName = fieldInfo.Name;
-                    memberType = fieldInfo.FieldType;
-                    memberValue = fieldInfo.GetValue(obj);
+                    memberSerialization =
+                        new SerializationMemberInfo(fieldInfo.Name,
+                            fieldInfo.FieldType,
+                            fieldInfo.GetValue(obj));
                 }
                 else
                     throw new ArgumentException();
 
-                if (excludedTypes.Contains(memberType)
-                    || excludedFieldsProperties.Contains(memberName))
+                if (excludedTypes.Contains(memberSerialization.MemberType)
+                    || excludedFieldsProperties.Contains(memberSerialization.MemberName))
                     continue;
 
                 Delegate serializeDelegate = null;
 
-                if (specialSerializationsForFieldsProperties.ContainsKey(memberName))
-                    serializeDelegate = specialSerializationsForFieldsProperties[memberName];
+                if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization.MemberName))
+                    serializeDelegate = specialSerializationsForFieldsProperties[memberSerialization.MemberName];
 
-                else if (specialSerializationsForTypes.ContainsKey(memberType))
-                    serializeDelegate = specialSerializationsForTypes[memberType];
+                else if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
+                    serializeDelegate = specialSerializationsForTypes[memberSerialization.MemberType];
 
                 if (serializeDelegate != null)
                 {
-                    sb.Append(identation + memberName + " = " +
-                              PrintToString(serializeDelegate.DynamicInvoke(memberValue),
+                    sb.Append(identation + memberSerialization.MemberName + " = " +
+                              PrintToString(serializeDelegate.DynamicInvoke(memberSerialization.MemberValue),
                                   nestingLevel + 1));
                 }
                 else
                 {
-                    sb.Append(identation + memberName + " = " +
-                              PrintToString(memberValue,
+                    sb.Append(identation + memberSerialization.MemberName + " = " +
+                              PrintToString(memberSerialization.MemberValue,
                                   nestingLevel + 1));
                 }
             }
@@ -107,7 +108,7 @@ namespace ObjectPrinting
         private string GetTrimString(StringBuilder resultString)
         {
             var a = resultString.ToString()
-                .Substring(resultStartIndex, Math.Min(resultLength, resultString.Length)-resultStartIndex);
+                [resultStartIndex..Math.Min(resultLength, resultString.Length)];
             return a;
         }
 
