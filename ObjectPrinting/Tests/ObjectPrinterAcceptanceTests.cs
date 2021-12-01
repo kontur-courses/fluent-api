@@ -77,5 +77,26 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>().Exclude(p => p.Id);
             printer.PrintToString(person).Should().Be(expected);
         }
+
+        [Test]
+        public void AllPossibleParameters_OnPerson_ShouldWork()
+        {
+            var expected = "Person\r\n\tName = Ale\r\n\tHeight = 100,10223\r\n";
+            var person = new Person { Name = "Alex", Age = 10, Height = 100.10223 };
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Exclude(p => p.Id)
+                .Printing(p => p.Name)
+                .CropToLength(3)
+                .Printing<Guid>()
+                .Using(x => x.ToString() + " нули хехе")
+                .Printing<double>()
+                .Using(CultureInfo.InstalledUICulture)
+                .Printing<int>()
+                .Using(x => ((int)x + 5).ToString())
+                .Exclude<int>();
+
+            printer.PrintToString(person).Should().Be(expected);
+        }
     }
 }
