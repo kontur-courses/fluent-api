@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -34,54 +33,24 @@ namespace ObjectPrinting
         private string GetSerializedObject(object obj, MemberInfo member, int nestingLevel, Type type)
         {
             var identation = new string('\t', nestingLevel + 1);
-
+            
             if (finalTypes.Contains(type))
-                return GetFinal(obj, type, member);
+                return GetLineWithEnd(obj.ToString());
 
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             if (complexObjects.Contains(obj))
-                sb.Append(identation + "The reference is cyclical" + Environment.NewLine);
+                return GetLineWithEnd("The reference is cyclical");
+            complexObjects.Add(obj);
+
+            if (obj is IEnumerable enumerable)
+                AppendEnumerable(enumerable, nestingLevel, identation, sb);
             else
-            {
-                complexObjects.Add(obj);
-                if (obj is IEnumerable enumerable)
-                    AppendCollection(enumerable, nestingLevel, identation, sb);
-                else
-                    AppendProperties(obj, nestingLevel, type, identation, sb);
-            }
+                AppendProperties(obj, nestingLevel, type, identation, sb);
             return sb.ToString();
         }
-
-        private string GetFinal(object obj, Type type, MemberInfo member)
-        {
-            if (member == null) 
-                return obj + Environment.NewLine;
-            var culture = config.DefaultCulture;
-            if (config.Cultures.ContainsKey(member))
-                return GetFinalIFormattable(obj, config.Cultures[member]);
-            if (culture != null && obj is IFormattable)
-                return GetFinalIFormattable(obj, culture);
-
-            if (type == typeof(string)) 
-                return GetFinalString(obj, member);
-            return obj + Environment.NewLine;
-        }
-
-        private string GetFinalIFormattable(object obj, CultureInfo culture)
-            => (obj as IFormattable)?.ToString(null, culture) ?? 
-               throw new ArgumentException("You try to Get Final IFormattable with no IFormattable");
-
-        private string GetFinalString(object obj, MemberInfo member)
-        {
-            var final = obj.ToString();
-            var cutLength = config.CutLengths.ContainsKey(member) ?
-                config.CutLengths[member] : config.DefaultCutLength;
-            return final.Substring(0, cutLength > final.Length ? final.Length : cutLength)
-                   + Environment.NewLine;
-        }
-
-        private void AppendCollection
+        
+        private void AppendEnumerable
             (IEnumerable enumerable, int nestingLevel, string identation, StringBuilder sb)
         {
             var count = 0;
@@ -89,11 +58,12 @@ namespace ObjectPrinting
             {
                 count++;
                 var serialized = GetSerializedObject(element, null, nestingLevel + 2, element.GetType());
-                sb.Append($"{identation}\t{serialized}");
+                sb.Append(identation);
+                sb.Append(serialized);
                 if (count <= 100) 
                     continue;
-                sb.Append($"{identation}\tIEnumerable probably endless! " +
-                          $"Serializing for this enumerable stopped.{Environment.NewLine}");
+                sb.Append(GetLineWithEnd
+                    ("IEnumerable probably endless! Serializing for this enumerable stopped."));
                 return;
             }
         }
@@ -118,12 +88,15 @@ namespace ObjectPrinting
             MemberInfo memberInfo)
         {
             var value = memberInfo.GetValue(obj);
-            sb.Append(identation + memberInfo.Name + " = ");
+            sb.Append($"{identation}{memberInfo.Name} = ");
             if (config.AlternativeMemberSerializations.ContainsKey(memberInfo))
                 sb.Append(config.AlternativeMemberSerializations[memberInfo]
                     .Invoke(value) + Environment.NewLine);
             else
                 sb.Append(PrintToString(value, memberInfo, nestingLevel + 1));
         }
+
+        private string GetLineWithEnd(string serialized)
+            => $"{serialized}{Environment.NewLine}";
     }
 }

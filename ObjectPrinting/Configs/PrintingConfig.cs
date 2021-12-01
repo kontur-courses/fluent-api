@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using ObjectPrinting.Extensions;
@@ -12,19 +11,10 @@ namespace ObjectPrinting.Configs
     {
         internal GlobalConfig Config = new GlobalConfig();
 
-        public PrintingConfig()
-        {
-            Config.FinalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
-        }
-
         public PrintingConfig<TOwner> Excluding<TType>()
         {
             GetAllMembersOfType<TType>()
-                .ForEach(m => Config.ExcludedMembers.Add(m));
+                .ForEach(m => Config.AddExcludedMember(m));
             return this;
         }
 
@@ -32,7 +22,7 @@ namespace ObjectPrinting.Configs
             (Expression<Func<TOwner, TMember>> selector)
         {
             var member = TryGetMemberInfo(selector);
-            Config.ExcludedMembers.Add(member);
+            Config.AddExcludedMember(member);
             return this;
         }
 
@@ -46,18 +36,6 @@ namespace ObjectPrinting.Configs
         {
             var member = TryGetMemberInfo(selector);
             return new MemberPrintingConfig<TOwner, TMember>(this, member);
-        }
-
-        public PrintingConfig<TOwner> WithDefaultCutToLength(int length)
-        {
-            Config.DefaultCutLength = length;
-            return this;
-        }
-
-        public PrintingConfig<TOwner> WithDefaultCulture(CultureInfo culture)
-        {
-            Config.DefaultCulture =  culture;
-            return this;
         }
 
         public string PrintToString(TOwner obj) 
@@ -90,7 +68,7 @@ namespace ObjectPrinting.Configs
                 return;
             if (type == typeof(TType))
                 members.Add(member);
-            if (((IList) Config.FinalTypes).Contains(type))
+            if (((IList)Config.FinalTypes).Contains(type))
                 return;
             foreach (var m in type.GetSerializedMembers())
                 AddMembers<TType>(m, members);

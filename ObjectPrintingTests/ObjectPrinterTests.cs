@@ -26,7 +26,7 @@ namespace ObjectPrintingTests
             };
             keyWords = new List<string>
             {
-                "Alex", "Smith", "19", "180,2", defaultGuid.ToString(),
+                "Alex", "Smith", "19", "180,2", "60,5", defaultGuid.ToString(),
                 "Public", "92"
             };
         }
@@ -46,13 +46,11 @@ namespace ObjectPrintingTests
         public void PrinterShould_PrintSameStrings_FromExtensionAndObjPrinter_WhenUseSameConfigs()
         {
             var printer = ObjectPrinter.For<Person>()
-                .Excluding(p => p.Field)
-                .WithDefaultCulture(CultureInfo.InvariantCulture);
+                .Excluding(p => p.Field);
 
             var fromPrinter = printer.PrintToString(person);
             var fromExtension = person.PrintToString(printer => printer
-                .Excluding(p => p.Field)
-                .WithDefaultCulture(CultureInfo.InvariantCulture));
+                .Excluding(p => p.Field));
 
             fromExtension.Should().Be(fromPrinter);
         }
@@ -225,28 +223,9 @@ namespace ObjectPrintingTests
 
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
-
+        
         [Test]
-        public void PrinterShould_UseDefaultCulture()
-        {
-            var removedWords = new List<string>
-            {
-                "180,2",
-                "60,5"
-            };
-            keyWords = keyWords.Except(removedWords).ToList();
-            keyWords.Add("180.2");
-            keyWords.Add("60.5");
-            var printer = ObjectPrinter.For<Person>()
-                .WithDefaultCulture(CultureInfo.InvariantCulture);
-
-            var res = printer.PrintToString(person);
-
-            CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
-        }
-
-        [Test]
-        public void PrinterShould_UseSelectedCulture()
+        public void PrinterShould_UseCultureSelectedByMember()
         {
             var removedWords = new List<string>
             {
@@ -263,17 +242,18 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrinterShould_UseDefaultAndSelectedCultureBoth()
+        public void PrinterShould_UseCultureSelectedByType()
         {
             var removedWords = new List<string>
             {
+                "180,2",
                 "60,5"
             };
             keyWords = keyWords.Except(removedWords).ToList();
+            keyWords.Add("180.2");
             keyWords.Add("60.5");
             var printer = ObjectPrinter.For<Person>()
-                .WithDefaultCulture(CultureInfo.InvariantCulture)
-                .Printing(p => p.Height).Using(CultureInfo.CurrentCulture);
+                .Printing<double>().Using(CultureInfo.InvariantCulture);
 
             var res = printer.PrintToString(person);
 
@@ -281,7 +261,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrinterShould_TrimMemberToLen()
+        public void PrinterShould_TrimAllMembersToLen_WhenTrimByType()
         {
             var removedWords = new List<string>
             {
@@ -294,7 +274,7 @@ namespace ObjectPrintingTests
             keyWords.Add("Sm");
             keyWords.Add("Pu");
             var printer = ObjectPrinter.For<Person>()
-                .WithDefaultCutToLength(2);
+                .Printing<string>().TrimmedToLength(2);
 
             var res = printer.PrintToString(person);
 
@@ -302,7 +282,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrinterShould_TrimAllMembersToLen_WhenUseDefaultTrim()
+        public void PrinterShould_TrimMemberToLen_WhenTrimByMemeber()
         {
             var removedWords = new List<string>
             {
@@ -320,7 +300,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrinterShould_TrimMembersToDefaultAndSelectedLenBoth()
+        public void PrinterShould_TrimMembersToTypeAndSelectedLenBoth()
         {
             var removedWords = new List<string>
             {
@@ -333,11 +313,12 @@ namespace ObjectPrintingTests
             keyWords.Add("Smit");
             keyWords.Add("Pu");
             var printer = ObjectPrinter.For<Person>()
+                .Printing<string>()
+                .TrimmedToLength(2)
                 .Printing(p => p.FullName.Name)
                 .TrimmedToLength(1)
                 .Printing(p => p.FullName.Surname)
-                .TrimmedToLength(4)
-                .WithDefaultCutToLength(2);
+                .TrimmedToLength(4);
 
             var res = printer.PrintToString(person);
 
