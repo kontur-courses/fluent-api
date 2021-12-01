@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -16,13 +15,7 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan), typeof(Int32), typeof(Int64),
         };
 
-
-        /*
-        private readonly Dictionary<string, Type> attachForbiddenNames = new Dictionary<string, Type>
-        {
-            ["SyncRoot"] = typeof(Int32[]),
-        };
-        */
+        private readonly HashSet<object> serializedMembers = new HashSet<object>();
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
@@ -42,18 +35,16 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+
+            if (serializedMembers.Contains(obj))
+                return ((nestingLevel != 0) ? "this (parentObj)" 
+                    : GetTrimString(new StringBuilder("this (parentObj)"))) + "\r\n";
+
             var sb = new StringBuilder();
-
-
-            if (nestingLevel >= 100)
-                return GetTrimString(sb);
 
             if (obj == null)
                 return "null" + Environment.NewLine;
             var objType = obj.GetType();
-
-
-
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
@@ -63,7 +54,6 @@ namespace ObjectPrinting
             }
 
             var identation = new string('\t', nestingLevel + 1);
-            var type = obj.GetType();
             sb.AppendLine(objType.Name);
             var fields =
                 objType.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
@@ -73,13 +63,6 @@ namespace ObjectPrinting
             foreach (var memberInfo in fieldsAndProperties)
             {
                 SerializationMemberInfo memberSerialization;
-                /*
-                if (attachForbiddenNames.ContainsKey(memberInfo.Name))
-                {
-                    sb.Append(identation + memberInfo.Name + " = " + Environment.NewLine);
-                    continue;
-                }
-                */
 
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
@@ -125,6 +108,8 @@ namespace ObjectPrinting
 
                 else if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
                     serializeDelegate = specialSerializationsForTypes[memberSerialization.MemberType];
+
+                serializedMembers.Add(obj);
 
                 if (serializeDelegate != null)
                 {

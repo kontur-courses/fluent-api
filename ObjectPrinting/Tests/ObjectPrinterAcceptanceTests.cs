@@ -144,7 +144,7 @@ namespace ObjectPrinting.Tests
             var dataList = new [] {1,2,3,4};
             var result = printer.PrintToString(dataList);
             result.Should().Be("Int32[]\r\n\tLength = 4\r\n\tLongLength = 4\r\n\tRank = 1\r\n\t"+
-                               "SyncRoot = System.Int32[]\r\n\tIsReadOnly = Boolean\r\n\t"+
+                               "SyncRoot = this (parentObj)\r\n\tIsReadOnly = Boolean\r\n\t" +
                                "IsFixedSize = Boolean\r\n\tIsSynchronized = Boolean\r\n");
         }
     }
