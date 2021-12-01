@@ -39,6 +39,11 @@ namespace ObjectPrinting
             return new PrintingConfig<T>(new ObjectPrinter());
         }
 
+        public PrintingConfig<T> ConfigureFor<T>()
+        {
+            return new PrintingConfig<T>(this);
+        }
+
         public string PrintToString(object obj)
         {
             return PrintToString(obj, 0);
