@@ -1,22 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ObjectPrintingTests;
-
-public class Person
+namespace ObjectPrintingTests
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-    public double Height { get; set; }
-    public int Age { get; set; }
+    public enum PersonType
+    {
+        Child,
+        Adult
+    }
 
-    public Guid[] OtherPersons { get; set; }
+    public class Person
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public double Height { get; set; }
+        public int Age { get; set; }
 
-    public Dictionary<DateTime, string> Dates { get; set; }
+        public Guid[] OtherPersons { get; set; }
 
-    public string Biography { get; set; }
+        public Dictionary<DateTime, string> Dates { get; set; }
 
-    public Person Parent { get; set; }
+        public string Biography { get; set; }
 
-    public Person Child { get; set; }
+        public Person Parent { get; set; }
+
+        public Person Child { get; set; }
+
+        public PersonType PersonType { get; set; }
+    }
 }

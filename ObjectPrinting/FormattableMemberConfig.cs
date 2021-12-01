@@ -2,18 +2,16 @@
 using System.Globalization;
 using System.Reflection;
 
-namespace ObjectPrinting;
-
-public partial class PrintingConfig<TOwner>
+namespace ObjectPrinting
 {
-    public class FormattableMemberConfig<T> : BasicMemberConfig<T>
-        where T : IFormattable
+    public class FormattableMemberConfig<T, TOwner> : BasicMemberConfig<T, TOwner>
+            where T : IFormattable
     {
         internal FormattableMemberConfig(PrintingConfig<TOwner> container, MemberInfo member) : base(container, member)
         {
         }
 
-        public FormattableMemberConfig<T> WithCulture(CultureInfo cultureInfo)
+        public FormattableMemberConfig<T, TOwner> WithCulture(CultureInfo cultureInfo)
         {
             Container.WithCulture<T>(member, cultureInfo);
             return this;

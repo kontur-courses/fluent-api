@@ -1,10 +1,11 @@
-﻿namespace ObjectPrinting;
-
-public static class Extensions
+﻿namespace ObjectPrinting
 {
-    public static PrintingConfig<TOwner>.BasicTypeConfig<string> WithTrimLength<TOwner>(this PrintingConfig<TOwner>.BasicTypeConfig<string> config, int length)
+    public static class Extensions
     {
-        config.Container.WithTrimLength(length);
-        return config;
+        public static BasicTypeConfig<string, TOwner> WithTrimLength<TOwner>(this BasicTypeConfig<string, TOwner> config, int length)
+        {
+            config.Container.WithTrimLength(length);
+            return config;
+        }
     }
 }

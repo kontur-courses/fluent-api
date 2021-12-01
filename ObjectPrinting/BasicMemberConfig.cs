@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting;
-
-public partial class PrintingConfig<TOwner>
+namespace ObjectPrinting
 {
-    public class BasicMemberConfig<TProperty>
+    public class BasicMemberConfig<TProperty, TOwner>
     {
-        internal readonly PrintingConfig<TOwner> Container;
+        internal readonly IPrintingConfig<TOwner> Container;
         protected readonly MemberInfo member;
 
-        internal BasicMemberConfig(PrintingConfig<TOwner> container, MemberInfo member)
+        internal BasicMemberConfig(IPrintingConfig<TOwner> container, MemberInfo member)
         {
             Container = container;
             this.member = member;
@@ -21,7 +19,7 @@ public partial class PrintingConfig<TOwner>
             Container.Exclude(member);
         }
 
-        public BasicMemberConfig<TProperty> WithSerializer(Func<TProperty, string> serializer)
+        public BasicMemberConfig<TProperty, TOwner> WithSerializer(Func<TProperty, string> serializer)
         {
             Container.WithSerializer(member, serializer);
             return this;
