@@ -30,9 +30,8 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => $"_{i}_");
             var actual = printer.PrintToString(person);
-
-            var expected = $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n\tAge = _{person.Age}_\r\n";
-            actual.Should().Be(expected);
+            
+            actual.Should().Contain($"{nameof(person.Age)} = _{person.Age}_");
         }
         
         [Test]
@@ -43,9 +42,8 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(CultureInfo.InvariantCulture);
             var actual = printer.PrintToString(person);
-
-            var expected = $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height.ToString(CultureInfo.InvariantCulture)}\r\n\tAge = 20\r\n";
-            actual.Should().Be(expected);
+            
+            actual.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.InvariantCulture)}");
         }
         
         [Test]
@@ -57,8 +55,7 @@ namespace ObjectPrintingTests
                 .Printing(p=> p.Age).Using(x => $"!{x}!");
             var actual = printer.PrintToString(person);
 
-            var expected = $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n\tAge = !{person.Age}!\r\n";
-            actual.Should().Be(expected);
+            actual.Should().Contain($"{nameof(person.Age)} = !{person.Age}!");
         }
         
         [Test]
@@ -69,9 +66,8 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(3);
             var actual = printer.PrintToString(person);
-
-            var expected = $"Person\r\n\tName = Iva\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n";
-            actual.Should().Be(expected);
+            
+            actual.Should().Contain($"{nameof(person.Name)} = Iva");
         }
         
         [Test]
@@ -83,8 +79,7 @@ namespace ObjectPrintingTests
                 .Excluding(p => p.Name);
             var actual = printer.PrintToString(person);
 
-            var expected = $"Person\r\n\tHeight = {person.Height}\r\n\tAge = {person.Age}\r\n";
-            actual.Should().Be(expected);
+            actual.Should().NotContain($"{nameof(person.Name)}");
         }
         
         [Test]
@@ -113,6 +108,15 @@ namespace ObjectPrintingTests
                     () => printer.PrintToString(classWithCycleReference))
                 .Should().Throw<Exception>()
                 .WithMessage("Unexpected cycle reference");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldThrowException_WhenTrimmedANegativeMaxLenght()
+        {
+            FluentActions.Invoking(
+                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                        .Printing<string>().TrimmedToLength(-1))
+                .Should().Throw<ArgumentException>();
         }
     }
 }
