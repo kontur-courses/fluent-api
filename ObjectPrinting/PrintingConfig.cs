@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework.Constraints;
 
 namespace ObjectPrinting
 {
@@ -15,14 +14,15 @@ namespace ObjectPrinting
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Int32), typeof(Int64),
-
-            
         };
 
+
+        /*
         private readonly Dictionary<string, Type> attachForbiddenNames = new Dictionary<string, Type>
         {
             ["SyncRoot"] = typeof(Int32[]),
         };
+        */
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
@@ -51,7 +51,6 @@ namespace ObjectPrinting
 
 
             var objType = obj.GetType();
-            //|| finalCollectionTypes.Contains(objType)
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
                 if (obj is IFormattable formattable)
@@ -69,19 +68,30 @@ namespace ObjectPrinting
             foreach (var memberInfo in fieldsAndProperties)
             {
                 SerializationMemberInfo memberSerialization;
+                /*
+                if (attachForbiddenNames.ContainsKey(memberInfo.Name))
+                {
+                    sb.Append(identation + memberInfo.Name + " = " + Environment.NewLine);
+                    continue;
+                }
+                */
+
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
-                    object value;
-                    try
-                    {
-                        value = propertyInfo.GetValue(obj);
-                    }
-                    catch (TargetParameterCountException e)
-                    {
-                        value = null;
-                    }
+                    var a = propertyInfo.GetIndexParameters();
+                    object value = null;
 
-
+                    var indexParameters = propertyInfo.GetIndexParameters();
+                    if (indexParameters.Length != 0)
+                    {
+                        for (int index = 0; index < indexParameters.Length; index++)
+                        {
+                            value = propertyInfo.GetValue(obj, new object[] {index});
+                            sb.Append(identation + propertyInfo.Name + "[" + value + "]" + " = " + indexParameters[index] + "\r\n");
+                        }
+                        continue;
+                    }
+                    value = propertyInfo.GetValue(obj);
                     memberSerialization = 
                         new SerializationMemberInfo(propertyInfo.Name, 
                             propertyInfo.PropertyType, 
@@ -108,23 +118,6 @@ namespace ObjectPrinting
 
                 else if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
                     serializeDelegate = specialSerializationsForTypes[memberSerialization.MemberType];
-
-                if (attachForbiddenNames.ContainsKey(memberSerialization.MemberName))
-                {
-                    if (serializeDelegate != null)
-                    {
-                        sb.Append(identation + memberSerialization.MemberName + " = " +
-                                  serializeDelegate.DynamicInvoke(memberSerialization.MemberValue) +
-                                  Environment.NewLine);
-                    }
-                    else
-                    {
-                        sb.Append(identation + memberSerialization.MemberName + " = " +
-                                  memberSerialization.MemberValue + Environment.NewLine);
-                    }
-
-                    continue;
-                }
 
                 if (serializeDelegate != null)
                 {

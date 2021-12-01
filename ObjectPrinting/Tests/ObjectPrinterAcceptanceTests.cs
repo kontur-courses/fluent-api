@@ -134,7 +134,7 @@ namespace ObjectPrinting.Tests
                 1, 2, 3, 4
             };
             var result = printer.PrintToString(dataList);
-            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItem = null\r\n");
+            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItem[1] = Int32 index\r\n");
         }
 
         [Test]
