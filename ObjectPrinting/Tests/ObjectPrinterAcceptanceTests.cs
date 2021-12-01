@@ -9,6 +9,7 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+        private const string ZeroGuid = "00000000-0000-0000-0000-000000000000";
         [Test]
         public void Demo()
         {
@@ -24,7 +25,7 @@ namespace ObjectPrinting.Tests
 
             string result = printer.PrintToString(person);
 
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
@@ -35,9 +36,10 @@ namespace ObjectPrinting.Tests
         public void SerializationExcludeInt()
         {
             var person = new Person { Name = "Peter", Age = 38 };
+            //var printer = ObjectPrinter.For<Person>().ExcludedType(x => typeof(int));
             var printer = ObjectPrinter.For<Person>().ExcludedType<int>();
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Peter\r\n\tHeight = 0\r\n");
+            result.Should().Be($"Person\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Peter\r\n\tHeight = 0\r\n");
         }
 
         [Test]
@@ -46,16 +48,16 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "John", Age = 59, Height = 175.5 };
             var printer = ObjectPrinter.For<Person>().ExcludedType<string>();
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tHeight = 175.5\r\n\tAge = 59\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tHeight = 175.5\r\n\tAge = 59\r\n");
         }
 
         [Test]
         public void SerializationExcludeOneField()
         {
             var person = new Person { Name = "Rick", Age = 70 };
-            var printer = ObjectPrinter.For<Person>().ExcludedField("Age");
+            var printer = ObjectPrinter.For<Person>().ExcludedField(pr => "Age");
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Rick\r\n\tHeight = 0\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Rick\r\n\tHeight = 0\r\n");
         }
 
         [Test]
@@ -63,7 +65,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Gregory", Age = 49 };
             var printer = ObjectPrinter.For<Person>()
-                .ExcludedField("Id").ExcludedField("Name").ExcludedField("Age");
+                .ExcludedField(pr => "Id").ExcludedField(pr => "Name").ExcludedField(pr => "Age");
             var result = printer.PrintToString(person);
             result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tHeight = 0\r\n");
         }
@@ -74,10 +76,10 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Nick", Height = 190.8, Age = 26 };
 
             var printer = ObjectPrinter.For<Person>()
-                .SpecialSerializationType<int>(x => (100 - x).ToString())
-                .SpecialSerializationType<double>(x => (-1 * x).ToString(CultureInfo.InvariantCulture));
+                .SpecialSerializationType<int>(value => (100 - value).ToString())
+                .SpecialSerializationType<double>(value => (-1 * value).ToString(CultureInfo.InvariantCulture));
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
         }
 
         [Test]
@@ -86,10 +88,10 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                .SpecialSerializationField<double>("Height", x => (100 - x)
+                .SpecialSerializationField<double>(("Height", x) => (100 - x)
                     .ToString(CultureInfo.InvariantCulture))
-                .SpecialSerializationField<int>("Age", x => (-1.5).ToString(CultureInfo.InvariantCulture))
-                .SpecialSerializationField<Guid>("Id", x => "0");
+                .SpecialSerializationField<int>( ("Age",x) => (-1.5).ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationField<Guid>(("Id", x) => "0");
             var result = printer.PrintToString(person);
             result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 0\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
         }
@@ -111,9 +113,9 @@ namespace ObjectPrinting.Tests
         public void SerializationWithSpecialCulture()
         {
             var person = new Person { Name = "Scarlett", Height = 180.9, Age = 17 };
-            var printer = ObjectPrinter.For<Person>().SetCulture(new CultureInfo("ru-RU"));
+            var printer = ObjectPrinter.For<Person>().SetCulture(p => new CultureInfo("ru-RU"));
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
         }
 
         [Test]
@@ -122,7 +124,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Height = 170, Age = 14 };
             var printer = ObjectPrinter.For<Person>().Trim(10, 80);
             var result = printer.PrintToString(person);
-            result.Should().Be("d2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge ");
+            result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tN");
         }
 
         [Test]

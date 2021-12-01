@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -10,19 +11,25 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public const string NullToString = "null";
+
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Int32), typeof(Int64),
-            typeof(Int16), typeof(Double)
+            typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(Guid)
         };
         private readonly HashSet<object> serializedMembers = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
+
         private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
             new Dictionary<Type, Delegate>();
+
+
         private readonly Dictionary<string, Delegate> specialSerializationsForFieldsProperties =
             new Dictionary<string, Delegate>();
+
+
         private CultureInfo culture = CultureInfo.InvariantCulture;
         private int resultStartIndex;
         private int resultLength = int.MaxValue;
@@ -43,7 +50,7 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
 
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return NullToString + Environment.NewLine;
 
             var objType = obj.GetType();
 
@@ -64,7 +71,7 @@ namespace ObjectPrinting
 
             foreach (var memberInfo in fieldsAndProperties)
             {
-                SerializationMemberInfo memberSerialization;
+                SerializationMemberInfo memberSerialization = default;
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
                     object value;
@@ -100,8 +107,7 @@ namespace ObjectPrinting
                             fieldInfo.FieldType,
                             fieldInfo.GetValue(obj));
                 }
-                else
-                    throw new ArgumentException();
+
 
 
                 if (excludedTypes.Contains(memberSerialization.MemberType)
@@ -132,7 +138,7 @@ namespace ObjectPrinting
                               PrintToString(memberSerialization.MemberValue,
                                   nestingLevel + 1));
                 }
-            }
+            } 
             return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
         }
 
@@ -140,40 +146,47 @@ namespace ObjectPrinting
         {
             return resultString.ToString()
                 [resultStartIndex..Math.Min(resultLength, resultString.Length)]; ;
-        }
-
-        public PrintingConfig<TOwner> ExcludedType<T>()
+        } 
+        
+        public PrintingConfig<TOwner> ExcludedType<TExType>()
         {
-            excludedTypes.Add(typeof(T));
+            excludedTypes.Add(typeof(TExType));
             return this;
         }
 
-        public PrintingConfig<TOwner> SpecialSerializationType<T>(Func<T, string> serialization)
+        public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
         {
-            specialSerializationsForTypes[typeof(T)] = serialization;
+            //var function = specialSerializationForType as Func<Type, string>;
+            specialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
             return this;
         }
 
-        public PrintingConfig<TOwner> SpecialSerializationField<T>(string fieldName, Func<T, string> serialization)
+        public PrintingConfig<TOwner> SpecialSerializationField
+            <TType>(string fieldName, Func<TType, string> serialization)
         {
+            //var function = serialization as Func<object, string>;
             specialSerializationsForFieldsProperties[fieldName] = serialization;
             return this;
         }
 
-        public PrintingConfig<TOwner> ExcludedField(string name)
+        public PrintingConfig<TOwner> ExcludedField(Expression<Func<TOwner, string>> fieldNameExpression)
         {
-            excludedFieldsProperties.Add(name);
+
+            excludedFieldsProperties.Add(((ConstantExpression)fieldNameExpression.Body).Value.ToString());
             return this;
         }
 
-        public PrintingConfig<TOwner> SetCulture(CultureInfo inputCulture)
+        public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner,CultureInfo>> inputCulture)
         {
-            culture = inputCulture;
+            var cultureName = ((NewExpression)inputCulture.Body).Arguments.First().ToString();
+            culture = new CultureInfo(cultureName[1..^1]);
             return this;
         }
 
-        public PrintingConfig<TOwner> Trim(int start = 0, int length = int.MaxValue) //nuint ?
+        public PrintingConfig<TOwner> Trim(int start = 0, int length = int.MaxValue)
         {
+            if (start < 0 || length < 0)
+                throw new ArgumentException();
             resultStartIndex = start;
             resultLength = length;
             return this;
