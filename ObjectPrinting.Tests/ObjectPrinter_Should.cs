@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace ObjectPrinting.Tests
 {
@@ -25,7 +25,11 @@ namespace ObjectPrinting.Tests
             };
             newLine = Environment.NewLine;
             defaultPersonSerialization =
-                $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}";
+                $"Person{newLine}" +
+                $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                $"\tName = Alex{newLine}" +
+                $"\tAge = 21{newLine}" +
+                $"\tHeight = 170,5{newLine}";
         }
 
         [SetUp]
@@ -80,8 +84,12 @@ namespace ObjectPrinting.Tests
             var result = personPrinter
                 .Excluding<Guid>()
                 .PrintToString(person);
-            result.Should()
-                .Be($"Person{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+            result
+                .Should()
+                .Be($"Person{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
         }
 
         [Test]
@@ -90,9 +98,11 @@ namespace ObjectPrinting.Tests
             var result = personPrinter
                 .Excluding<double>()
                 .PrintToString(person);
-            result.Should()
-                .Be(
-                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21{newLine}");
+            result
+                .Should()
+                .Be($"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = Alex{newLine}\tAge = 21{newLine}");
         }
 
         [Test]
@@ -112,8 +122,11 @@ namespace ObjectPrinting.Tests
                 .Printing<int>().Using(n => n.ToString("F"))
                 .PrintToString(person);
             result.Should()
-                .Be(
-                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21,00{newLine}\tHeight = 170,5{newLine}");
+                .Be($"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 21,00{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
         }
 
         [Test]
@@ -124,7 +137,11 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             result.Should()
                 .Be(
-                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170.5{newLine}");
+                    $"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170.5{newLine}");
         }
 
         [Test]
@@ -145,8 +162,11 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Name).Using(n => n.ToUpper())
                 .PrintToString(person);
             result.Should()
-                .Be(
-                    $"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = ALEX{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+                .Be($"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = ALEX{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
         }
 
         [Test]
@@ -156,7 +176,11 @@ namespace ObjectPrinting.Tests
                 .Printing(p => p.Name).TrimmedToLength(2)
                 .PrintToString(person);
             result.Should()
-                .Be($"Person{newLine}\tId = 00000000-0000-0000-0000-000000000000{newLine}\tName = Al{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+                .Be($"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = Al{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
         }
 
         [Test]
@@ -177,7 +201,10 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Id)
                 .PrintToString(person);
             result.Should()
-                .Be($"Person{newLine}\tName = Alex{newLine}\tAge = 21{newLine}\tHeight = 170,5{newLine}");
+                .Be($"Person{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
         }
 
         [Test]
@@ -191,7 +218,15 @@ namespace ObjectPrinting.Tests
                 .Excluding<Guid>()
                 .PrintToString(alex);
             result.Should()
-                .Be("PersonWithFriend\r\n\tFriend = PersonWithFriend\r\n\t\tFriend = cycle link detected\r\n\t\tName = John\r\n\t\tAge = 19\r\n\t\tHeight = 0\r\n\tName = Alex\r\n\tAge = 19\r\n\tHeight = 0\r\n");
+                .Be($"PersonWithFriend{newLine}" +
+                    $"\tFriend = PersonWithFriend{newLine}" +
+                    $"\t\tFriend = cycle link detected{newLine}" +
+                    $"\t\tName = John{newLine}" +
+                    $"\t\tAge = 19{newLine}" +
+                    $"\t\tHeight = 0{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 19{newLine}" +
+                    $"\tHeight = 0{newLine}");
             Console.WriteLine(result);
         }
 
@@ -207,7 +242,15 @@ namespace ObjectPrinting.Tests
                 .Excluding<Guid>()
                 .PrintToString(alex);
             result.Should()
-                .Be("PersonWithFriend\r\n\tFriend = PersonWithFriend\r\n\t\tFriend = Alex\r\n\t\tName = John\r\n\t\tAge = 19\r\n\t\tHeight = 0\r\n\tName = Alex\r\n\tAge = 19\r\n\tHeight = 0\r\n");
+                .Be($"PersonWithFriend{newLine}" +
+                    $"\tFriend = PersonWithFriend{newLine}" +
+                    $"\t\tFriend = Alex{newLine}" +
+                    $"\t\tName = John{newLine}" +
+                    $"\t\tAge = 19{newLine}" +
+                    $"\t\tHeight = 0{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 19{newLine}" +
+                    $"\tHeight = 0{newLine}");
         }
 
         [Test]
@@ -237,7 +280,25 @@ namespace ObjectPrinting.Tests
                 .Excluding<double>()
                 .Excluding(p => p.Age)
                 .PrintToString(container);
-            result.Should().Be("Container\r\n\tPersons = \r\n\t{\r\n\t\tPerson\r\n\t\t\tName = Alex\r\n\t\tPerson\r\n\t\t\tName = Riki\r\n\t\tPerson\r\n\t\t\tName = John\r\n\t}\r\n\tNumbers = \r\n\t{\r\n\t\t1\r\n\t\t2\r\n\t\t3\r\n\t\t4\r\n\t\t5\r\n\t\t6\r\n\t}\r\n");
+            result.Should().Be($"Container{newLine}" +
+                               $"\tPersons = {newLine}" +
+                               $"\t{{{newLine}" +
+                               $"\t\tPerson{newLine}" +
+                               $"\t\t\tName = Alex{newLine}" +
+                               $"\t\tPerson{newLine}" +
+                               $"\t\t\tName = Riki{newLine}" +
+                               $"\t\tPerson{newLine}" +
+                               $"\t\t\tName = John{newLine}" +
+                               $"\t}}{newLine}" +
+                               $"\tNumbers = {newLine}" +
+                               $"\t{{{newLine}" +
+                               $"\t\t1{newLine}" +
+                               $"\t\t2{newLine}" +
+                               $"\t\t3{newLine}" +
+                               $"\t\t4{newLine}" +
+                               $"\t\t5{newLine}" +
+                               $"\t\t6{newLine}" +
+                               $"\t}}{newLine}");
             Console.WriteLine(result);
         }
 
@@ -254,8 +315,16 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Numbers)
                 .PrintToString(container);
             result.Should()
-                .Be(
-                    "Container\r\n\tAge = \r\n\t{\r\n\t\tkey:Person\r\n\t\t\tName = Alex\r\n\t\tvalue:19\r\n\r\n\t\tkey:Person\r\n\t\t\tName = Riki\r\n\t\tvalue:21\r\n\r\n\t}\r\n");
+                .Be($"Container{newLine}" +
+                    $"\tAge = {newLine}" +
+                    $"\t{{{newLine}" +
+                    $"\t\tkey:Person{newLine}" +
+                    $"\t\t\tName = Alex{newLine}" +
+                    $"\t\tvalue:19{newLine}{newLine}" +
+                    $"\t\tkey:Person{newLine}" +
+                    $"\t\t\tName = Riki{newLine}" +
+                    $"\t\tvalue:21{newLine}{newLine}" +
+                    $"\t}}{newLine}");
             Console.WriteLine(result);
         }
 
