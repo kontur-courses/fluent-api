@@ -13,6 +13,7 @@ namespace ObjectPrinting.Extensions
             if (dictionary == null)
                 sb.AppendLine("null");
             else
+            {
                 foreach (var key in dictionary.Keys)
                 {
                     var indent = new string('\t', indentLevel);
@@ -27,6 +28,7 @@ namespace ObjectPrinting.Extensions
                         sb.AppendLine($"{indent}{key} : {dictionary[key]}");
                     }
                 }
+            }
 
             return sb.ToString();
         }

@@ -12,7 +12,7 @@ namespace ObjectPrinting.Extensions
 
         public static string GetStringValueOrDefault(this object obj)
         {
-            return obj == null ? "null" : obj.ToString();
+            return obj?.ToString() ?? "null";
         }
 
         public static string GetStringValueOrDefault(this object obj, CultureInfo cultureInfo)

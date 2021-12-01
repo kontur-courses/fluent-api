@@ -14,8 +14,10 @@ namespace ObjectPrinting.Extensions
             if (enumerable == null)
                 sb.AppendLine("null");
             else
+            {
                 foreach (var element in enumerable)
                     sb.AppendLine($"{indent}{element}");
+            }
 
             return sb.ToString();
         }
@@ -28,6 +30,7 @@ namespace ObjectPrinting.Extensions
             if (nestingEnumerable == null)
                 sb.AppendLine("null");
             else
+            {
                 foreach (var enumerable in nestingEnumerable)
                 {
                     if (enumerable == null)
@@ -38,8 +41,10 @@ namespace ObjectPrinting.Extensions
 
                     sb.AppendLine($"{indentForNested}IEnumerable");
 
-                    foreach (var element in enumerable) sb.AppendLine($"{indentForElements}{element}");
+                    foreach (var element in enumerable)
+                        sb.AppendLine($"{indentForElements}{element}");
                 }
+            }
 
             return sb.ToString();
         }
