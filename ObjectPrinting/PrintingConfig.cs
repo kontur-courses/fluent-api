@@ -11,6 +11,8 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludingTypes;
+        private readonly HashSet<MemberInfo> excludingMembers;
+        private readonly HashSet<object> serializedObjects;
         private readonly Dictionary<Type, Delegate> typeSerializers;
         private readonly Dictionary<MemberInfo, Delegate> memberSerializers;
         private readonly Type[] finalTypes;
@@ -18,6 +20,8 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
             excludingTypes = new HashSet<Type>();
+            excludingMembers = new HashSet<MemberInfo>();
+            serializedObjects = new HashSet<object>();
             typeSerializers = new Dictionary<Type, Delegate>();
             memberSerializers = new Dictionary<MemberInfo, Delegate>();
             finalTypes = new[]
@@ -32,19 +36,27 @@ namespace ObjectPrinting
             };
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TMemType>()
         {
-            excludingTypes.Add(typeof(TPropType));
+            excludingTypes.Add(typeof(TMemType));
             return this;
         }
 
-        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-            => new MemberPrintingConfig<TOwner, TPropType>(this, null);
-
-        public MemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector
+        public PrintingConfig<TOwner> Excluding<TMemType>(
+            Expression<Func<TOwner, TMemType>> memberSelector
         )
-            => new MemberPrintingConfig<TOwner, TPropType>(
+        {
+            excludingMembers.Add((memberSelector.Body as MemberExpression)?.Member);
+            return this;
+        }
+
+        public MemberPrintingConfig<TOwner, TMemType> Printing<TMemType>()
+            => new MemberPrintingConfig<TOwner, TMemType>(this, null);
+
+        public MemberPrintingConfig<TOwner, TMemType> Printing<TMemType>(
+            Expression<Func<TOwner, TMemType>> memberSelector
+        )
+            => new MemberPrintingConfig<TOwner, TMemType>(
                 this,
                 (memberSelector.Body as MemberExpression)?.Member
             );
@@ -54,25 +66,33 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        public void AddTypeSerializer(Type type, Delegate typeSerializeFunc)
+        internal void AddTypeSerializer(Type type, Delegate typeSerializeFunc)
         {
             typeSerializers[type] = typeSerializeFunc;
         }
 
-        public void AddMemberSerializer(MemberInfo memberInfo, Delegate memberSerializeFunc)
+        internal void AddMemberSerializer(MemberInfo memberInfo, Delegate memberSerializeFunc)
         {
             memberSerializers[memberInfo] = memberSerializeFunc;
         }
 
         private string SerializeMember(object obj, int nestingLevel)
         {
+            if (serializedObjects.Contains(obj))
+                return "already printed :)" + Environment.NewLine;
+            serializedObjects.Add(obj);
+            
             var sb = new StringBuilder();
             var indentation = new string('\t', nestingLevel + 1);
 
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
-            foreach (var memberInfo in members.Where(x => !excludingTypes.Contains(x.GetMemberType())))
+            foreach (
+                var memberInfo in members
+                    .Where(x => !excludingTypes.Contains(x.GetMemberType()))
+                    .Where(x => !excludingMembers.Contains(x))
+            )
             {
                 var serializedObject = TryGetSerializer(memberInfo, out var serializer)
                     ? serializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine
@@ -95,7 +115,6 @@ namespace ObjectPrinting
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
-
             var type = obj.GetType();
             if (typeSerializers.ContainsKey(type))
                 obj = typeSerializers[type].DynamicInvoke(obj);

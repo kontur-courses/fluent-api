@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Tests
+﻿namespace ObjectPrintingTests
 {
     public class Rectangle
     {

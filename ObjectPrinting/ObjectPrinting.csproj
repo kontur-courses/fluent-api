@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>preview</LangVersion>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <TargetFramework>net48</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

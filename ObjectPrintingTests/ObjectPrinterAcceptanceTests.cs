@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Globalization;
-using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
+using FluentAssertions;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -30,14 +31,19 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Alex", Age = 19};
 
-            var printer = ObjectPrinter.For<Person>();
-            //1. Исключить из сериализации свойства определенного типа
-            //2. Указать альтернативный способ сериализации для определенного типа
-            //3. Для числовых типов указать культуру
-            //4. Настроить сериализацию конкретного свойства
-            //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            //6. Исключить из сериализации конкретного свойства
-
+            var printer = ObjectPrinter.For<Person>()
+                //1. Исключить из сериализации свойства определенного типа
+                .Excluding<int>()
+                //2. Указать альтернативный способ сериализации для определенного типа
+                .Printing<double>().Using(x => $"{x + 1}")
+                //3. Для числовых типов указать культуру
+                .Printing<Guid>().Using(CultureInfo.CurrentCulture)
+                //4. Настроить сериализацию конкретного свойства
+                .Printing(x => x.Height).Using(x => $"{x + 1}")
+                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                .Printing(x => x.Name).TrimmedToLength(1)
+                //6. Исключить из сериализации конкретного свойства
+                .Excluding(p => p.Age);
             string s1 = printer.PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
@@ -106,6 +112,42 @@ namespace ObjectPrinting.Tests
                 .Should()
                 .Contain("Height = 123")
                 .And.Contain("Width = 4");
+        }
+
+        [TestCase("Present", 1)]
+        [TestCase("Past", 3)]
+        [TestCase("Future", 5)]
+        public void Printing_TrimmedToLength_ShouldCutStrings(string name, int length)
+        {
+            var title = new Title(name);
+            var titlePrinter = ObjectPrinter.For<Title>();
+            titlePrinter
+                .Printing(t => t.Name)
+                .TrimmedToLength(length)
+                .PrintToString(title)
+                .Should()
+                .Contain(name.Substring(0, length))
+                .And.NotContain(name);
+        }
+
+        [Test]
+        public void Excluding_ShouldExcludeSpecificMembers()
+        {
+            printer
+                .Excluding(p => p.Age)
+                .PrintToString(person)
+                .Should()
+                .NotContain("Age")
+                .And.NotContain($"{person.Age}");
+        }
+
+        [Test]
+        public void PrintToString_ShouldWorkCorrectWithCyclicalLinks_WithoutStackOverflowException()
+        {
+            var robot = new Robot("Cycle");
+            var robotPrinter = ObjectPrinter.For<Robot>();
+            Action act = () => robotPrinter.PrintToString(robot);
+            act.Should().NotThrow<StackOverflowException>();
         }
     }
 }
