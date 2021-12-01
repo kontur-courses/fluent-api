@@ -13,7 +13,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> finalTypes;
         private readonly HashSet<object> printedObjects;
         private readonly Config config;
-        
+
         public PrintingConfig()
         {
             config = new Config();
@@ -21,7 +21,7 @@ namespace ObjectPrinting
             finalTypes = new HashSet<Type>
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(long)
             };
         }
 
@@ -40,7 +40,7 @@ namespace ObjectPrinting
         {
             if (!(memberSelector.Body is MemberExpression expression))
                 throw new InvalidCastException("Expression must be a MemberExpression");
-            
+
             var memberInfo = expression.Member;
             return new MemberPrintingConfig<TOwner, TMemberType>(this, memberInfo);
         }
@@ -50,12 +50,12 @@ namespace ObjectPrinting
             config.ExcludedTypes.Add(typeof(TMemberType));
             return this;
         }
-        
+
         public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression expression))
                 throw new InvalidCastException("Expression must be a MemberExpression");
-            
+
             var memberInfo = expression.Member;
             config.ExcludedMembers.Add(memberInfo);
             return this;
@@ -66,7 +66,7 @@ namespace ObjectPrinting
             config.AltTypeSerializers[type] = customPrint;
             return this;
         }
-        
+
         public PrintingConfig<TOwner> AddAltMemberSerializer(MemberInfo member, Func<object, string> customPrint)
         {
             config.AltMemberSerializers[member] = customPrint;
@@ -86,7 +86,7 @@ namespace ObjectPrinting
             printedObjects.Add(obj);
 
             string serializedObj;
-            
+
             var type = obj.GetType();
 
             if (finalTypes.Contains(type))
@@ -95,18 +95,18 @@ namespace ObjectPrinting
             }
             else if (obj is IEnumerable enumerable)
             {
-                serializedObj =  PrintEnumerable(enumerable, nestingLevel + 1);
+                serializedObj = PrintEnumerable(enumerable, nestingLevel + 1);
             }
             else
             {
                 serializedObj = PrintComplexObject(obj, nestingLevel + 1);
             }
-            
+
             printedObjects.Remove(obj);
 
             return serializedObj;
         }
-        
+
         private static Type GetMemberType(MemberInfo memberInfo)
         {
             switch (memberInfo)
@@ -119,7 +119,7 @@ namespace ObjectPrinting
                     throw new ArgumentException("Member is not a property or a field");
             }
         }
-        
+
         private static object GetMemberValue(MemberInfo memberInfo, object obj)
         {
             switch (memberInfo)
@@ -151,7 +151,7 @@ namespace ObjectPrinting
             }
 
             sb.Append(Environment.NewLine);
-            
+
             foreach (var obj in objects)
             {
                 sb.Append(identation + PrintToString(obj, nestingLevel + 1));
@@ -166,14 +166,14 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
             var identation = new string('\t', nestingLevel + 1);
-            
+
             var objFieldsAndProperties = type.GetMembers().Where(info => info is PropertyInfo || info is FieldInfo);
             foreach (var memberInfo in objFieldsAndProperties)
             {
                 if (!IsExcluded(memberInfo))
                 {
                     var altSerializer = TryGetAltSerializer(memberInfo);
-                    
+
                     if (altSerializer == null)
                     {
                         sb.Append(identation + memberInfo.Name + " = " +
@@ -181,12 +181,12 @@ namespace ObjectPrinting
                     }
                     else
                     {
-                        sb.Append(identation + memberInfo.Name + " = " + 
+                        sb.Append(identation + memberInfo.Name + " = " +
                                   altSerializer.Invoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine);
                     }
                 }
             }
-            
+
             return sb.ToString();
         }
 

@@ -13,7 +13,7 @@ namespace ObjectPrinting
             this.printingConfig = printingConfig;
             this.selectedMember = selectedMember;
         }
-        
+
         public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
@@ -31,7 +31,7 @@ namespace ObjectPrinting
             {
                 printingConfig.AddAltMemberSerializer(selectedMember, altSerializer);
             }
-            
+
             return printingConfig;
         }
     }

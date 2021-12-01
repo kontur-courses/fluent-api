@@ -10,7 +10,7 @@ namespace ObjectPrinting.Extensions
         {
             if (maxLength < 0)
                 throw new ArgumentException($"{nameof(maxLength)} must be a positive number");
-            
+
             return memberConfig.Using(str => str.Substring(0, Math.Min(str.Length, maxLength)));
         }
 

@@ -13,9 +13,9 @@ namespace ObjectPrintingTests
         {
             var person = new Person
             {
-                Name = "Alex", 
-                Surname = "Ivanov", 
-                Age = 19, 
+                Name = "Alex",
+                Surname = "Ivanov",
+                Age = 19,
                 Height = 185,
                 Money = 300
             };
@@ -33,7 +33,7 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Surname).TrimmedToLength(4)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Height);
-            
+
             string s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
 

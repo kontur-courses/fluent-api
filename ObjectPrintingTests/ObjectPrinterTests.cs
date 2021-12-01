@@ -11,7 +11,7 @@ namespace ObjectPrintingTests
     public class ObjectPrinterTests
     {
         private Person person;
-        
+
         [SetUp]
         public void SetUp()
         {
@@ -43,7 +43,7 @@ namespace ObjectPrintingTests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => person.Name);
-            
+
             var result = printer.PrintToString(person);
 
             result.Should().NotContain($"{nameof(person.Name)} = {person.Name}");
@@ -60,7 +60,7 @@ namespace ObjectPrintingTests
             result.Should().ContainAll($"{nameof(person.Name)} = {person.Name.ToUpper()}",
                 $"{nameof(person.Surname)} = {person.Surname.ToUpper()}");
         }
-        
+
         [Test]
         public void PrintToString_UsesAlternativeMemberSerializer_WhenSerializerDefined()
         {
@@ -71,7 +71,7 @@ namespace ObjectPrintingTests
 
             result.Should().Contain($"{nameof(person.Money)} = {person.Money} dollars");
         }
-        
+
         [Test]
         public void PrintToString_UsesCultureForFormattableTypes_WhenCultureDefined()
         {
@@ -83,7 +83,7 @@ namespace ObjectPrintingTests
             result.Should().ContainAll($"{nameof(person.Height)} = 185,5",
                 $"{nameof(person.Money)} = 300,99");
         }
-        
+
         [Test]
         public void PrintToString_TrimsStringProperties_WhenTrimmedToLengthUsed()
         {
@@ -114,7 +114,7 @@ namespace ObjectPrintingTests
 
             result.Should().ContainAll("a", "b", "c");
         }
-        
+
         [Test]
         public void PrintToString_PrintsEnumerableCorrectly_WhenPrintingArray()
         {
@@ -123,11 +123,9 @@ namespace ObjectPrintingTests
 
             var result = printer.PrintToString(array);
 
-            Console.WriteLine(result);
-
             result.Should().ContainAll("1", "2", "3");
         }
-        
+
         [Test]
         public void PrintToString_PrintsEnumerableCorrectly_WhenPrintingDictionary()
         {
@@ -138,7 +136,7 @@ namespace ObjectPrintingTests
 
             result.Should().ContainAll("Key = 1", "Value = Alex", "Key = 2", "Value = Sam", "Key = 3", "Value = Dan");
         }
-        
+
         [Test]
         public void PrintToString_PrintsEnumerableCorrectly_WhenEnumerableEmpty()
         {
@@ -148,11 +146,11 @@ namespace ObjectPrintingTests
 
             result.Should().Contain($"{nameof(person.Family)} = Empty collection");
         }
-        
+
         [Test]
         public void PrintToString_CorrectlyProcessingCyclicReferences_WhenTheyAppear()
         {
-            var newPerson = new Person() { Family = new List<Person>() {person } };
+            var newPerson = new Person() { Family = new List<Person>() { person } };
             person.Family.Add(newPerson);
             var identation = new string('\t', 8);
             var printer = ObjectPrinter.For<Person>();
