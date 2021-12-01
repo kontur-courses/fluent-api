@@ -41,8 +41,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ApplyTypeAlternativeSerializationCorrect()
         {
-            Func<int, string> intConfig = x => x.ToString() + " is not my real age!" + NewLine;
-            Func<Guid, string> guidConfig = x => "guid imitation" + NewLine;
+            Func<int, string> intConfig = x => x.ToString() + " is not my real age!";
+            Func<Guid, string> guidConfig = x => "guid imitation";
             var expectedSerialization = "Person" + NewLine +
                 $"\tguid imitation" + NewLine +
                 $"\tName = {_vasya.Name}" + NewLine +
@@ -59,7 +59,6 @@ namespace ObjectPrinting.Tests
 
             var serializatedPerson = printer.PrintToString(_vasya);
             serializatedPerson.Should().BeEquivalentTo(expectedSerialization);
-            Console.WriteLine(serializatedPerson);
         }
 
         [Test]
@@ -85,6 +84,49 @@ namespace ObjectPrinting.Tests
                 .For<DoubleWrapper>()
                 .Printing<double>().Using(culture);
             var serializationResult = doublePrinter.PrintToString(doubleWrapper);
+
+            serializationResult.Should().BeEquivalentTo(expectedSerialization);
+        }
+
+        [Test]
+        public void ToExcludePropertiesByName()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding(p => p.Name)
+                .Excluding(p => p.Id)
+                .Excluding(p => p.Age);
+            var expectedSerialization = "Person" + NewLine +
+                $"\tHeight = {_vasya.Height}" + NewLine + 
+                $"\tNonCulturable = null" + NewLine + 
+                $"\tweight = {_vasya.weight}" + NewLine + 
+                $"\tsecondName = {_vasya.secondName}" + NewLine;
+
+            var serializationResult = printer.PrintToString(_vasya);
+
+            serializationResult.Should().BeEquivalentTo(expectedSerialization);
+        }
+
+        [Test]
+        public void ApplyPropertyNameSerialization()
+        {
+            Func<double, string> heightSerialization = h => "height alternative serialization";
+            Func<NonCulturable, string> nonCulturableSerialization = nc => 
+                "nonculturable alternative serialization";
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Printing(p => p.Height).Using(heightSerialization)
+                .Printing(p => p.NonCulturable).Using(nonCulturableSerialization);
+            var expectedSerialization = "Person" + NewLine +
+                $"\tId = {_vasya.Id}" + NewLine +
+                $"\tName = {_vasya.Name}" + NewLine +
+                $"\theight alternative serialization" + NewLine +
+                $"\tAge = {_vasya.Age}" + NewLine +
+                $"\tnonculturable alternative serialization" + NewLine +
+                $"\tweight = {_vasya.weight}" + NewLine +
+                $"\tsecondName = {_vasya.secondName}" + NewLine;
+
+            var serializationResult = printer.PrintToString(_vasya);
 
             serializationResult.Should().BeEquivalentTo(expectedSerialization);
         }

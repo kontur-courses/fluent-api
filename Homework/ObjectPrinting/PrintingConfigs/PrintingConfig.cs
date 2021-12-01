@@ -1,20 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public Dictionary<Type, Func<object, string>> alternativeSerializations;
+        public HashSet<Type> ExcludedTypes;
+        public HashSet<string> ExcludedNames;
+        public Dictionary<Type, Func<object, string>> typeAlterSerializations;
         public Dictionary<Type, Func<object, string>> culturedSerializations;
+        public Dictionary<string, Func<object, string>> nameAlterSerializations;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
+            ExcludedTypes = new HashSet<Type>();
+            ExcludedNames = new HashSet<string>();
             culturedSerializations = new Dictionary<Type, Func<object, string>>();
-            alternativeSerializations = new Dictionary<Type, Func<object, string>>();
+            typeAlterSerializations = new Dictionary<Type, Func<object, string>>();
+            nameAlterSerializations = new Dictionary<string, Func<object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -35,12 +43,17 @@ namespace ObjectPrinting
             {
                 var propType = propertyInfo.PropertyType;
                 var propValue = propertyInfo.GetValue(obj);
-                if (alternativeSerializations.ContainsKey(propType))
+                if (IsPropertyExcluded(propertyInfo, propType))
+                    continue;
+                if (typeAlterSerializations.ContainsKey(propType))
                 {
-                    var serialize = alternativeSerializations[propType];
-                    var serializatedProperty = serialize(propValue);
-                    var line = GetSerializatedLine(indentation, serializatedProperty);
-                    sb.Append(line);
+                    var serialize = typeAlterSerializations[propType];
+                    sb.AppendLine(indentation + serialize(propValue));
+                }
+                else if (nameAlterSerializations.ContainsKey(propertyInfo.Name))
+                {
+                    var serialize = nameAlterSerializations[propertyInfo.Name];
+                    sb.AppendLine(indentation + serialize(propValue));
                 }
                 else if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
@@ -70,11 +83,16 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private static string GetSerializatedLine(string indentation, string serializatedProperty)
+        private bool IsPropertyExcluded(PropertyInfo propertyInfo, Type propType)
         {
-            return serializatedProperty == ""
-                ? serializatedProperty
-                : indentation + serializatedProperty;
+            return ExcludedNames.Contains(propertyInfo.Name) || ExcludedTypes.Contains(propType);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propInfo);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -84,7 +102,15 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            alternativeSerializations[typeof(TPropType)] = value => ""; 
+            ExcludedTypes.Add(typeof(TPropType)); 
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var propInfo = ((MemberExpression) memberSelector.Body).Member as PropertyInfo;
+            ExcludedNames.Add(propInfo.Name);
             return this;
         }
     }

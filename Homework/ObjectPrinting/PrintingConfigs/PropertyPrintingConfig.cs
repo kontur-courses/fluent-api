@@ -9,13 +9,14 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> _printingConfig;
-        private readonly Expression<Func<TOwner, TPropType>> _memberSelector;
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
-            Expression<Func<TOwner, TPropType>> memberSelector)
+        private readonly PropertyInfo _propInfo;
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propInfo)
         {
             _printingConfig = printingConfig;
-            _memberSelector = memberSelector;
+            _propInfo = propInfo;
         }
+
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
@@ -28,46 +29,48 @@ namespace ObjectPrinting
             {
                 return print((TPropType)value);
             };
-            _printingConfig.alternativeSerializations[typeof(TPropType)] = printWrapper;
+            ChooseDictToUpdate(printWrapper);
             return _printingConfig;
+        }
+
+        private void ChooseDictToUpdate(Func<object, string> printWrapper)
+        {
+            if (_propInfo == null)
+                _printingConfig.typeAlterSerializations[typeof(TPropType)] = printWrapper;
+            else
+                _printingConfig.nameAlterSerializations[_propInfo.Name] = printWrapper;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             var typeToCheck = typeof(TPropType);
             var toString = GetToStringWithCulture(typeToCheck);
-            Func<object, string> serializeWithCulture = 
-                BuildSerializationWithCulture(culture, typeToCheck, toString);
+            var serializeWithCulture = GetSerializationWithCulture(culture, typeToCheck, toString);
             _printingConfig.culturedSerializations[typeToCheck] = serializeWithCulture;
             return _printingConfig;
         }
 
-        private Func<object, string> BuildSerializationWithCulture(
+        private Func<object, string> GetSerializationWithCulture(
             CultureInfo culture, Type typeToCheck, MethodInfo toString)
         {
             return value =>
             {
                 var serializedValue = toString.Invoke(value, new object[] { culture });
-                if (_printingConfig.alternativeSerializations.ContainsKey(typeToCheck))
+                if (_printingConfig.typeAlterSerializations.ContainsKey(typeToCheck))
                 {
-                    var serializeLike = _printingConfig.alternativeSerializations[typeToCheck];
-                    serializedValue = serializeLike(serializedValue);
+                    var serializeLike = _printingConfig.typeAlterSerializations[typeToCheck];
+                    serializedValue = serializeLike.DynamicInvoke(serializedValue);
                 }
                 return (string)serializedValue;
             };
         }
 
         private static MethodInfo GetToStringWithCulture(Type typeToCheck)
-        {
-            return typeToCheck.GetMethod("ToString", new Type[] { typeof(CultureInfo) })
-                ?? throw new Exception("\nGiven type has no customizing culture!");
+        { 
+            return typeToCheck.GetMethod("ToString", new Type[] { typeof(CultureInfo) }) 
+                   ?? throw new Exception("\nGiven type has no customizing culture!");
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }
