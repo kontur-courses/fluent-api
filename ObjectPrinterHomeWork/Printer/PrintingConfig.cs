@@ -9,51 +9,26 @@ namespace Printer
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Dictionary<Type, Func<object, string>> customSerializers = new();
+        private readonly Dictionary<Type, Func<object, string>> typeCustomSerializers = new();
+        private readonly Dictionary<FieldInfo, Func<FieldInfo, string, string>> fieldCustomSerializers = new();
+        private readonly Dictionary<PropertyInfo, Func<PropertyInfo, string, string>> propertyCustomSerializers = new();
+
+
         private readonly List<Type> excludedTypes = new();
-        private CultureInfo commonFormatProvider = CultureInfo.InvariantCulture;
+        private readonly HashSet<MemberInfo> excludedMembers = new();
+
+        private CultureInfo globalCulture = CultureInfo.CurrentCulture;
         private readonly Dictionary<Type, (CultureInfo formatProvider, string format)> formatProviders = new();
 
         private static readonly Type[] FinalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid), null
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(Enum)
         };
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel, int recursionLimit = 50)
-        {
-            if (nestingLevel >= recursionLimit)
-            {
-                return string.Empty;
-            }
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-
-            sb.AppendLine(type.Name);
-            if (customSerializers.ContainsKey(type))
-            {
-                sb.Append(identation + customSerializers[type](obj));
-                return sb.ToString();
-            }
-
-            if (FinalTypes.Contains(obj.GetType()))
-            {
-                return Serialize(obj);
-            }
-
-            foreach (var propertyInfo in type.GetProperties().Where(x => !excludedTypes.Contains(x.PropertyType)))
-            {
-                sb.Append(identation + Serialize(propertyInfo, obj, nestingLevel));
-            }
-
-            return sb.ToString();
         }
 
         public PrintingConfig<TOwner> Exclude<T>()
@@ -64,7 +39,7 @@ namespace Printer
 
         public PrintingConfig<TOwner> StringOf<T>(Func<T, string> serializer)
         {
-            customSerializers[typeof(T)] = e => serializer((T)e);
+            typeCustomSerializers[typeof(T)] = e => serializer((T)e);
             return this;
         }
 
@@ -77,36 +52,178 @@ namespace Printer
 
         public PrintingConfig<TOwner> WithCulture(CultureInfo formatProvider)
         {
-            commonFormatProvider = formatProvider;
+            globalCulture = formatProvider;
             return this;
         }
 
-        private string Serialize(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        public PrintingConfig<TOwner> ExcludeProperty(string propertyName)
         {
-            if (customSerializers.ContainsKey(propertyInfo.PropertyType))
+            var property = typeof(TOwner).GetProperty(propertyName);
+
+            if (property != null)
             {
-                return propertyInfo.Name + " = " +
-                       customSerializers[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) + Environment.NewLine;
+                excludedMembers.Add(property);
             }
 
-            return propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> ExcludeField(string fieldName)
+        {
+            var field = typeof(TOwner).GetField(fieldName);
+
+            if (field != null)
+            {
+                excludedMembers.Add(field);
+            }
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> StringOfField(string fieldName, Func<FieldInfo, string, string> serializer)
+        {
+            var field = typeof(TOwner).GetField(fieldName);
+
+            if (field != null)
+            {
+                fieldCustomSerializers[field] = serializer;
+            }
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> StringOfProperty(string propertyName,
+            Func<PropertyInfo, string, string> serializer)
+        {
+            var property = typeof(TOwner).GetProperty(propertyName);
+
+            if (property != null)
+            {
+                propertyCustomSerializers[property] = serializer;
+            }
+
+            return this;
+        }
+
+        private string PrintToString(object obj, int nestingLevel, int recursionLimit = 50)
+        {
+            if (obj is null)
+            {
+                return "null";
+            }
+
+            if (nestingLevel >= recursionLimit)
+            {
+                return string.Empty;
+            }
+
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+
+            sb.AppendLine(type.Name);
+            if (typeCustomSerializers.ContainsKey(type))
+            {
+                sb.Append(identation + typeCustomSerializers[type](obj));
+                return sb.ToString();
+            }
+
+            if (FinalTypes.Contains(obj.GetType()))
+            {
+                return Serialize(obj);
+            }
+
+
+            foreach (var memberInfo
+                in type.GetMembers().Where(member => member.MemberType is MemberTypes.Field or MemberTypes.Property))
+            {
+                if (IsNotExcludedMember(memberInfo, obj, nestingLevel, out var result))
+                {
+                    sb.Append(identation + result + Environment.NewLine);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private bool IsNotExcludedMember(MemberInfo memberInfo, object obj, int nestingLevel, out string result)
+        {
+            if (excludedMembers.Contains(memberInfo))
+            {
+                result = string.Empty;
+
+                return false;
+            }
+
+            switch (memberInfo)
+            {
+                case PropertyInfo propertyInfo:
+                    return IsNotExcludedMember(propertyInfo, obj, nestingLevel, out result);
+
+                case FieldInfo fieldInfo:
+                    return IsNotExcludedMember(fieldInfo, obj, nestingLevel, out result);
+
+                default:
+                    throw new Exception();
+            }
+        }
+
+        private bool IsNotExcludedMember(FieldInfo fieldInfo, object obj, int nestingLevel, out string serializeField)
+        {
+            if (excludedTypes.Contains(fieldInfo.FieldType))
+            {
+                serializeField = string.Empty;
+                return false;
+            }
+
+            var fieldType = fieldInfo.FieldType;
+            
+            var serializedTypeValue = typeCustomSerializers.ContainsKey(fieldType) 
+                ? typeCustomSerializers[fieldType](fieldInfo.GetValue(obj))
+                : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1);
+
+            serializeField = fieldCustomSerializers.ContainsKey(fieldInfo)
+                ? fieldCustomSerializers[fieldInfo](fieldInfo, serializedTypeValue):
+                fieldInfo.Name + " = " + serializedTypeValue;
+
+            return true;
+        }
+
+        private bool IsNotExcludedMember(PropertyInfo propertyInfo, object obj, int nestingLevel, out string serializedProperty)
+        {
+            if (excludedTypes.Contains(propertyInfo.PropertyType))
+            {
+                serializedProperty = string.Empty;
+                return false;
+            }
+
+            var propertyType = propertyInfo.PropertyType;
+            
+            var serializedTypeValue = typeCustomSerializers.ContainsKey(propertyType) 
+                ? typeCustomSerializers[propertyType](propertyInfo.GetValue(obj))
+                : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+
+             serializedProperty = propertyCustomSerializers.ContainsKey(propertyInfo)
+                ? propertyCustomSerializers[propertyInfo](propertyInfo, serializedTypeValue):
+                propertyInfo.Name + " = " + serializedTypeValue;
+
+            return true;
         }
 
         private string Serialize(object obj)
         {
             if (obj is not IFormattable formattable)
             {
-                return obj + Environment.NewLine;
+                return obj.ToString();
             }
 
             var type = formattable.GetType();
             if (formatProviders.ContainsKey(type))
             {
-                return formattable.ToString(formatProviders[type].format, formatProviders[type].formatProvider)
-                       + Environment.NewLine;
+                return formattable.ToString(formatProviders[type].format, formatProviders[type].formatProvider);
             }
 
-            return formattable.ToString(null, commonFormatProvider) + Environment.NewLine;
+            return formattable.ToString(null, globalCulture);
         }
     }
 }

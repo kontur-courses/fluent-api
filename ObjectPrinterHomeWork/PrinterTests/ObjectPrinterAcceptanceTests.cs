@@ -4,6 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Tests;
 using Printer;
+using AutoFixture;
 
 namespace PrinterTests
 {
@@ -11,6 +12,7 @@ namespace PrinterTests
     public class ObjectPrinterAcceptanceTests
     {
         private Person person;
+        private readonly Fixture fixture = new();
 
         private static readonly string[] Cultures =
         {
@@ -20,92 +22,142 @@ namespace PrinterTests
         [SetUp]
         public void PersonCreator()
         {
-            person = new Person
-            {
-                Name = "Alex",
-                Age = 19,
-                Height = 164.6,
-                Id = Guid.Parse("936DA01F-9ABD-4d9d-80C7-02AF85C822A8"),
-                BirthDate = DateTime.Parse("02.11.1996", NumberFormatInfo.InvariantInfo)
-            };
+            person = fixture.Create<Person>();
         }
 
         [Test]
-        public void Demo()
+        public void Exclude_should_excludeExpectedTypes()
         {
-            person = new Person { Name = "Alex", Age = 19 };
+            var sut = ObjectPrinter.For<Person>()
+                .Exclude<Guid>()
+                .Exclude<DateTime>()
+                .PrintToString(person);
 
-            var printer = ObjectPrinter.For<Person>()
-                .StringOf<int>(x => "re");
-            printer.PrintToString(person);
-            //1. Исключить из сериализации свойства определенного типа
-            //2. Указать альтернативный способ сериализации для определенного типа
-            //3. Для числовых типов указать культуру
-            //4. Настроить сериализацию конкретного свойства
-            //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            //6. Исключить из сериализации конкретного свойства
-
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+            sut.Replace("\r", "").Should().Be("Person\n" +
+                                              $"\tName = {person.Name}\n" +
+                                              $"\tHeight = {person.Height}\n" +
+                                              $"\tAge = {person.Age}\n");
         }
 
         [Test]
-        public void Exclude_Should_ExcludeExpectedTypes()
+        public void ExcludeField_should_excludeExpectedFields()
         {
-            var printingPerson = ObjectPrinter.For<Person>()
-                .Exclude<Guid>().PrintToString(person);
+            var sut = ObjectPrinter.For<Person>()
+                .ExcludeField(nameof(Person.Id))
+                .PrintToString(person);
 
-            printingPerson.Replace("\r", "").Should().Be("Person\n" +
-                                                         "\tName = Alex\n" +
-                                                         "\tHeight = 164.6\n" +
-                                                         "\tAge = 19\n");
+            var expectedSerialisedPerson = "Person\n" +
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge = {person.Age}\n" +
+                                           $"\tBirthDate = {person.BirthDate}\n";
+
+            sut.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerialisedPerson.ToLowerInvariant());
         }
 
         [Test]
-        public void StringOf_Should_BeExpected()
+        public void ExcludeProperty_should_excludeExpectedProperty()
+        {
+            var sut = ObjectPrinter.For<Person>()
+                .ExcludeProperty(nameof(Person.BirthDate))
+                .PrintToString(person);
+
+            var expectedSerialisedPerson = "Person\n" +
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge = {person.Age}\n" +
+                                           $"\tId = {person.Id}\n";
+
+            sut.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerialisedPerson.ToLowerInvariant());
+        }
+
+        [Test]
+        public void StringOf_should_changeTypeSerialization()
         {
             var expectedSerialisedPerson = "Person\n" +
-                                           "\tId = change Guid\n" +
                                            "\tName = change string\n" +
                                            "\tHeight = change double\n" +
                                            "\tAge = change int\n" +
-                                           "\tBirthDate = change DateTime\n";
-            
-            var printer = ObjectPrinter.For<Person>()
-                .StringOf<string>(s => "change string")
-                .StringOf<int>(i=>"change int")
-                .StringOf<DateTime>(d=>"change DateTime")
-                .StringOf<double>(d=>"change double")
-                .StringOf<Guid>(g=>"change Guid");
+                                           "\tBirthDate = change DateTime\n" +
+                                           "\tId = change Guid\n";
+
+            var sut = ObjectPrinter.For<Person>()
+                .StringOf<string>(_ => "change string")
+                .StringOf<int>(_ => "change int")
+                .StringOf<DateTime>(_ => "change DateTime")
+                .StringOf<double>(_ => "change double")
+                .StringOf<Guid>(_ => "change Guid")
+                .PrintToString(person);
 
 
-            printer.PrintToString(person).Replace("\r","").ToLowerInvariant()
+            sut.Replace("\r", "").ToLowerInvariant()
                 .Should()
                 .Be(expectedSerialisedPerson.ToLowerInvariant());
+        }
+
+        [Test]
+        public void StringOfField_should_changeFieldSerialization()
+        {
+            var expectedSerializedPerson = "Person\n" +
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge = {person.Age}\n" +
+                                           $"\tBirthDate = {person.BirthDate}\n" +
+                                           $"\tId(Guid) = {person.Id}\n";
+
+            var sut = ObjectPrinter.For<Person>()
+                .StringOfField(nameof(Person.Id), (fi, res) => $"{fi.Name}({fi.FieldType.Name}) = {res}")
+                .PrintToString(person);
+
+            sut.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerializedPerson.ToLowerInvariant());
+        }
+
+        [Test]
+        public void StringOfProperty_should_changePropertySerialization()
+        {
+            var expectedSerializedPerson = "Person\n" +
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge(int32) = {person.Age}\n" +
+                                           $"\tBirthDate = {person.BirthDate}\n" +
+                                           $"\tId = {person.Id}\n";
+
+            var sut = ObjectPrinter.For<Person>()
+                .StringOfProperty(nameof(Person.Age), 
+                    (pi, val) => $"{pi.Name}({pi.PropertyType.Name}) = {val}")
+                .PrintToString(person);
+
+            sut.ToLowerInvariant().Replace("\r", "")
+                .Should()
+                .Be(expectedSerializedPerson.ToLowerInvariant());
         }
 
         [TestCaseSource(nameof(Cultures))]
         public void WithCulture_forGlobalChangeCulture_shouldChangeAllObjects(string cultureTag)
         {
             var culture = new CultureInfo(cultureTag);
-
+            person.Height = 170.5;
             var expectedHeight = person.Height.ToString(culture);
             var expectedBirthDate = person.BirthDate.ToString(culture);
             var expectedSerialisedPerson = "Person\n" +
-                                           "\tId = 936DA01F-9ABD-4d9d-80C7-02AF85C822A8\n" +
-                                           "\tName = Alex\n" +
+                                           $"\tName = {person.Name}\n" +
                                            $"\tHeight = {expectedHeight}\n" +
-                                           "\tAge = 19\n" +
-                                           $"\tBirthDate = {expectedBirthDate}\n";
+                                           $"\tAge = {person.Age.ToString(culture)}\n" +
+                                           $"\tBirthDate = {expectedBirthDate}\n" +
+                                           $"\tId = {person.Id}\n";
 
-            var actualSerialisedPerson = ObjectPrinter
+            var sut = ObjectPrinter
                 .For<Person>()
                 .WithCulture(culture)
                 .PrintToString(person);
 
-            actualSerialisedPerson.ToLowerInvariant().Replace("\r", "")
+            sut.ToLowerInvariant().Replace("\r", "")
                 .Should()
                 .Be(expectedSerialisedPerson.ToLowerInvariant());
         }
@@ -114,21 +166,21 @@ namespace PrinterTests
         public void WithCulture_forChangeCultureOnlyBirthDate_shouldNotChangeCultureForAnother(string cultureTag)
         {
             var culture = new CultureInfo(cultureTag);
-
+            person.Height = 170.5;
             var expectedBirthDate = person.BirthDate.ToString(culture);
             var expectedSerialisedPerson = "Person\n" +
-                                           "\tId = 936DA01F-9ABD-4d9d-80C7-02AF85C822A8\n" +
-                                           "\tName = Alex\n" +
-                                           "\tHeight = 164.6\n" +
-                                           "\tAge = 19\n" +
-                                           $"\tBirthDate = {expectedBirthDate}\n";
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge = {person.Age}\n" +
+                                           $"\tBirthDate = {expectedBirthDate}\n" +
+                                           $"\tId = {person.Id}\n";
 
-            var actualSerialisedPerson = ObjectPrinter
+            var sut = ObjectPrinter
                 .For<Person>()
                 .WithCultureFor<DateTime>(culture)
                 .PrintToString(person);
 
-            actualSerialisedPerson.ToLowerInvariant().Replace("\r", "")
+            sut.ToLowerInvariant().Replace("\r", "")
                 .Should()
                 .Be(expectedSerialisedPerson.ToLowerInvariant());
         }
