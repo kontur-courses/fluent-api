@@ -7,36 +7,36 @@ namespace ObjectPrinting
 {
     public interface IPropertyConfig
     {
-        Func<object, string> func { get; set; }
-        public IPrintingConfig father { get; set; }
-        public Type type { get; set; }
-        public string propertyName { get; set; }
+        Func<object, string> Func { get; set; }
+        public IPrintingConfig Father { get; }
+        public Type Type { get; }
+        public string PropertyName { get; }
     }
     public class PropertyConfig<TOwner, T> : IPropertyConfig
     {
-        public string propertyName { get; set; }
-        public IPrintingConfig father { get; set; }
-        public Type type { get; set; }
-        public Func<object, string> func { get; set; }
+        public string PropertyName { get; }
+        public IPrintingConfig Father { get; }
+        public Type Type { get; }
+        public Func<object, string> Func { get; set; }
 
         public PrintingConfig<TOwner> Using(Func<object, string> func)
         {
-            this.func = func;
-            return (PrintingConfig<TOwner>)father;
+            this.Func = func;
+            return (PrintingConfig<TOwner>)Father;
         }
 
         public PropertyConfig(PrintingConfig<TOwner> father)
         {
-            this.father = father;
-            this.type = typeof(T);
+            this.Father = father;
+            this.Type = typeof(T);
         }
 
         public PropertyConfig(PrintingConfig<TOwner> father, Expression<Func<TOwner, T>> expression)
         {
-            this.father = father;
-            this.type = typeof(T);
+            this.Father = father;
+            this.Type = typeof(T);
             var strExpressionSplitted = expression.Body.ToString().Split('.');
-            this.propertyName = strExpressionSplitted[strExpressionSplitted.Length - 1];
+            this.PropertyName = strExpressionSplitted[^1];
         }
     }
 }

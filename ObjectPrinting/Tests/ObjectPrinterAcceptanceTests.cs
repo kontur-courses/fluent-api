@@ -98,5 +98,26 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(person).Should().Be(expected);
         }
+
+        [Test]
+        public void Double_OnRussianCulture_ShouldBeRussian()
+        {
+            var num = 1.2d;
+            var printer = ObjectPrinter.For<double>()
+                .Printing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("ru-ru"));
+
+            printer.PrintToString(num).Should().Be("1,2\r\n");
+        }
+
+        [Test]
+        public void Double_OnAmericanCulture_ShouldBeAmerican()
+        {
+            var num = 1.2d;
+            var printer = ObjectPrinter.For<double>()
+                .Printing<double>().Using(CultureInfo.GetCultureInfoByIetfLanguageTag("en-us"));
+
+            printer.PrintToString(num).Should().Be("1.2\r\n");
+        }
+
     }
 }

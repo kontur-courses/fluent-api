@@ -8,8 +8,8 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<TOwner> CropToLength<TOwner, T>(this PropertyConfig<TOwner, T> aboba, int length)
         {
-            aboba.func = (x) => ((string)x).Substring(0, length);
-            return (PrintingConfig<TOwner>)aboba.father;
+            aboba.Func = (x) => ((string)x).Substring(0, length);
+            return (PrintingConfig<TOwner>)aboba.Father;
         }
     }
 }
