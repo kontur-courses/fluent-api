@@ -59,29 +59,6 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
-                /*
-                Delegate serializeDelegate = null;
-                if (specialSerializationsForFieldsProperties.ContainsKey(objectName))
-                    serializeDelegate = specialSerializationsForFieldsProperties[objectName];
-
-                else if (specialSerializationsForTypes.ContainsKey(objType))
-                    serializeDelegate = specialSerializationsForTypes[objType];
-
-                
-                if (serializeDelegate != null)
-                {
-                    if (obj is IFormattable formattable)
-                        return serializeDelegate.DynamicInvoke(formattable.ToString(null, culture)) + Environment.NewLine;
-                    return serializeDelegate.DynamicInvoke() + Environment.NewLine;
-                }
-                else
-                {
-                    if (obj is IFormattable formattable)
-                        return formattable.ToString(null, culture) + Environment.NewLine;
-                    return obj + Environment.NewLine;
-                }
-                */
-                //return obj + Environment.NewLine;
 
                 if (obj is IFormattable formattable)
                     return formattable.ToString(null, culture) + Environment.NewLine;
@@ -105,8 +82,7 @@ namespace ObjectPrinting
                     var indexParameters = propertyInfo.GetIndexParameters();
                     if (indexParameters.Length != 0)
                     {
-                        var cast = obj as ICollection;
-                        if (cast == null)
+                        if (!(obj is ICollection cast))
                             sb.Append(propertyInfo.Name);
                         else
                         {
@@ -137,7 +113,7 @@ namespace ObjectPrinting
 
 
 
-                if (excludedTypes.Contains(memberSerialization.MemberType)
+                if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType)
                     || excludedFieldsProperties.Contains(memberSerialization.MemberName))
                     continue;
 
@@ -166,15 +142,13 @@ namespace ObjectPrinting
                                   nestingLevel + 1));
                 }
             }
-
-            var a = sb.ToString();
             return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
         }
 
         private string GetTrimString(StringBuilder resultString)
         {
             return resultString.ToString()
-                [resultStartIndex..Math.Min(resultLength, resultString.Length)]; ;
+                [resultStartIndex..Math.Min(resultLength, resultString.Length)];
         } 
         
         public PrintingConfig<TOwner> ExcludedType<TExType>()
@@ -185,16 +159,12 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
         {
-            //var function = specialSerializationForType as Func<Type, string>;
             specialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
             return this;
         }
 
         public PrintingConfig<TOwner> SpecialSerializationField<TFieldType>(Func<TFieldType, string> serialization)
         {
-            //var function = serialization as Func<object, string>;
-            //var fieldName = "Id";
-
             if (pinnedPropertyName != null)
             {
                 specialSerializationsForFieldsProperties[pinnedPropertyName] = serialization;
@@ -203,17 +173,8 @@ namespace ObjectPrinting
             else
             {
                 foreach (var propertyName in specialSerializationsForFieldsProperties.Keys)
-                {
                     specialSerializationsForFieldsProperties[propertyName] = serialization;
-                }
             }
-
-            //var result = serialization;
-
-            //specialSerializationsForFieldsProperties[fieldName] = serialization;
-            //specialSerializationsForFieldsProperties[fieldName] = result;
-
-
             return this;
         }
 
