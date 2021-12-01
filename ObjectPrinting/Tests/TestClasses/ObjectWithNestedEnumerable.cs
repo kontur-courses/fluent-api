@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests.TestClasses
 {
-    public class ObjectWithNestingEnumerable
+    public class ObjectWithNestedEnumerable
     {
         public IEnumerable<IEnumerable> Collection { get; set; }
     }

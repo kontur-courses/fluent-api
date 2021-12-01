@@ -100,7 +100,7 @@ namespace ObjectPrinting.Tests
             return persons;
         }
 
-        private PersonWithTwoParents GetPersonWithTwoParentsReferenceAtOneObject()
+        private static PersonWithTwoParents GetPersonWithTwoParentsReferenceAtOneObject()
         {
             var personWithTwoParents = new PersonWithTwoParents
             {
@@ -360,7 +360,7 @@ namespace ObjectPrinting.Tests
 
             actual.Should().BeEquivalentTo("ObjectWithDictionary\r\n\tDictionary = IDictionary" +
                                            objectWithDictionary.Dictionary
-                                               .GetStringValueOrDefault(new string('\t', 2)));
+                                               .GetStringValueOrDefault(2));
         }
 
         [Test]
@@ -388,9 +388,9 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldPrintNestingCollectionCorrectly()
+        public void PrintToString_ShouldPrintNestedCollectionCorrectly()
         {
-            var objectWithNestingList = new ObjectWithNestingEnumerable
+            var objectWithNestedList = new ObjectWithNestedEnumerable
             {
                 Collection = new List<List<int>>
                 {
@@ -400,14 +400,46 @@ namespace ObjectPrinting.Tests
                 }
             };
 
-            var actual = objectWithNestingList.PrintToString();
+            var actual = objectWithNestedList.PrintToString();
 
-            actual.Should().BeEquivalentTo("ObjectWithNestingEnumerable" +
+            actual.Should().BeEquivalentTo("ObjectWithNestedEnumerable" +
                                            "\r\n\tCollection = IEnumerable" +
-                                           objectWithNestingList.Collection
+                                           objectWithNestedList.Collection
                                                .GetStringValueOrDefault(
                                                    new string('\t', 2),
                                                    new string('\t', 3)));
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintNestedDictionaryCorrectly()
+        {
+            var objectWithNestedDictionary = new ObjectWithNestedDictionary
+            {
+                Dictionary = new Dictionary<string, Dictionary<string, int>>
+                {
+                    {
+                        "First", new Dictionary<string, int>
+                        {
+                            { "NestedFirst", 1 },
+                            { "NestedSecond", 2 }
+                        }
+                    },
+                    {
+                        "Second", new Dictionary<string, int>
+                        {
+                            { "NestedFirst", 3 },
+                            { "NestedSecond", 4 }
+                        }
+                    }
+                }
+            };
+
+            var actual = objectWithNestedDictionary.PrintToString();
+
+            actual.Should().BeEquivalentTo("ObjectWithNestedDictionary" +
+                                           "\r\n\tDictionary = IDictionary" +
+                                           objectWithNestedDictionary.Dictionary
+                                               .GetStringValueOrDefault(2));
         }
     }
 }

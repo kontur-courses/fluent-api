@@ -175,7 +175,7 @@ namespace ObjectPrinting
 
             foreach (var element in dictionary.Keys)
                 sb.AppendLine(
-                    $"{indent + PrintToString(element, nestingLevel + 1)} : {PrintToString(dictionary[element], nestingLevel + 1)}");
+                    $"{indent + PrintToString(element, nestingLevel + 1)} : {PrintToString(dictionary[element], nestingLevel + 1).Trim()}");
 
             return sb.ToString();
         }

@@ -6,7 +6,7 @@ namespace ObjectPrinting.Extensions
 {
     public static class DictionaryExtensions
     {
-        public static string GetStringValueOrDefault(this IDictionary dictionary, string indent)
+        public static string GetStringValueOrDefault(this IDictionary dictionary, int indentLevel)
         {
             var sb = new StringBuilder(Environment.NewLine);
 
@@ -14,7 +14,19 @@ namespace ObjectPrinting.Extensions
                 sb.AppendLine("null");
             else
                 foreach (var key in dictionary.Keys)
-                    sb.AppendLine($"{indent}{key} : {dictionary[key]}");
+                {
+                    var indent = new string('\t', indentLevel);
+
+                    if (dictionary[key] is IDictionary dict)
+                    {
+                        sb.Append($"{indent}{key} : IDictionary");
+                        sb.AppendLine(dict.GetStringValueOrDefault(indentLevel + 1).TrimEnd());
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{indent}{key} : {dictionary[key]}");
+                    }
+                }
 
             return sb.ToString();
         }
