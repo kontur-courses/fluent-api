@@ -1,7 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
+    public class PersonWithList
+    {
+        public List<int> List { get; set; }
+        public int Number { get; set; } = 12378;
+        public Dictionary<string, float> Dict { get; set; }
+        public Queue<Guid> Guids { get; set; }
+    }
+    
     public class Person
     {
         public Guid Id { get; set; }
