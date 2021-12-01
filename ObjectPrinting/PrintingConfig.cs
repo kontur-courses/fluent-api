@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -79,7 +80,7 @@ namespace ObjectPrinting
         private string SerializeMember(object obj, int nestingLevel)
         {
             if (serializedObjects.Contains(obj))
-                return "already printed :)" + Environment.NewLine;
+                return "cyclical link" + Environment.NewLine;
             serializedObjects.Add(obj);
             
             var sb = new StringBuilder();
@@ -111,6 +112,14 @@ namespace ObjectPrinting
             return typeSerializers.TryGetValue(type, out serializer);
         }
 
+        private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var serializedEnumerable = enumerable
+                .Cast<object>()
+                .Select(x => PrintToString(x, nestingLevel + 1));
+            return "(" + string.Join("\t", serializedEnumerable) + ")";
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj is null)
@@ -120,7 +129,9 @@ namespace ObjectPrinting
                 obj = typeSerializers[type].DynamicInvoke(obj);
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
-
+            if (obj is IEnumerable enumerable)
+                return SerializeEnumerable(enumerable, nestingLevel);
+            
             return type.Name
                    + Environment.NewLine
                    + SerializeMember(obj, nestingLevel);

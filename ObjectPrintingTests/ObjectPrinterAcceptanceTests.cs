@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -148,6 +149,106 @@ namespace ObjectPrintingTests
             var robotPrinter = ObjectPrinter.For<Robot>();
             Action act = () => robotPrinter.PrintToString(robot);
             act.Should().NotThrow<StackOverflowException>();
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_Array()
+        {
+            var nums = new []{1, 2, 3};
+            var arrayPrinter = ObjectPrinter.For<int[]>();
+            arrayPrinter
+                .PrintToString(nums)
+                .Should()
+                .Contain("1")
+                .And.Contain("2")
+                .And.Contain("3");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_ObjectArray()
+        {
+            var robots = new []
+            {
+                new Robot("r1"),
+                new Robot("r2"),
+                new Robot("r3") 
+            };
+            var arrayPrinter = ObjectPrinter.For<Robot[]>();
+            arrayPrinter
+                .PrintToString(robots)
+                .Should()
+                .Contain("Robot")
+                .And.Contain("Name = r1")
+                .And.Contain("Name = r2")
+                .And.Contain("Name = r3");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_List()
+        {
+            var strList = new List<string>{"ab", "o", "ba"};
+            var listPrinter = ObjectPrinter.For<List<string>>();
+            listPrinter
+                .PrintToString(strList)
+                .Should()
+                .Contain("ab")
+                .And.Contain("o")
+                .And.Contain("ba");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_ObjectList()
+        {
+            var robots = new List<Robot>
+            {
+                new Robot("r1"),
+                new Robot("r2"),
+                new Robot("r3") 
+            };
+            var arrayPrinter = ObjectPrinter.For<List<Robot>>();
+            arrayPrinter
+                .PrintToString(robots)
+                .Should()
+                .Contain("Robot")
+                .And.Contain("Name = r1")
+                .And.Contain("Name = r2")
+                .And.Contain("Name = r3");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_Dictionary()
+        {
+            var dict = new Dictionary<string, string>
+            {
+                {"a", "b"},
+                {"b", "c"}
+            };
+            var listPrinter = ObjectPrinter.For<Dictionary<string, string>>();
+            listPrinter
+                .PrintToString(dict)
+                .Should()
+                .Contain("a")
+                .And.Contain("b")
+                .And.Contain("c");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldSerialize_ObjectDictionary()
+        {
+            var robots = new Dictionary<string, Robot>
+            {
+                {"a", new Robot("r1") },
+                {"b", new Robot("r2") }
+            };
+            var arrayPrinter = ObjectPrinter.For<Dictionary<string, Robot>>();
+            arrayPrinter
+                .PrintToString(robots)
+                .Should()
+                .Contain("Robot")
+                .And.Contain("Name = r1")
+                .And.Contain("Name = r2")
+                .And.Contain("a")
+                .And.Contain("b");
         }
     }
 }
