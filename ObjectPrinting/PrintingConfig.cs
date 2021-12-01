@@ -86,7 +86,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> WithTrimLength(int trimLength)
         {
             if (trimLength < -1)
-                throw new ArgumentOutOfRangeException("Length supposed to be non-negative to trim or -1 to ignoe trim", nameof(trimLength));
+                throw new ArgumentOutOfRangeException(nameof(trimLength), "Length supposed to be non-negative to trim or -1 to ignoe trim");
             Config.StringTrimLength = trimLength;
             return this;
         }
@@ -94,7 +94,7 @@ namespace ObjectPrinting
         protected PrintingConfig<TOwner> WithTrimLength(MemberInfo member, int trimLength)
         {
             if (trimLength < -1)
-                throw new ArgumentOutOfRangeException("Length supposed to be non-negative to trim or -1 to ignoe trim", nameof(trimLength));
+                throw new ArgumentOutOfRangeException(nameof(trimLength), "Length supposed to be non-negative to trim or -1 to ignoe trim");
             Config.MemberTrimLengths[member] = trimLength;
             return this;
         }
