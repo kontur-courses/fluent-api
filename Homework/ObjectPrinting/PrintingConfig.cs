@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 
 namespace ObjectPrinting
 {
@@ -10,12 +11,14 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> _excludedPropertiesTypes;
         private readonly HashSet<Type> _excludedFieldsTypes;
+        public Dictionary<Type, Func<PropertyInfo, object, string>> serWay;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
             _excludedPropertiesTypes = new HashSet<Type>();
             _excludedFieldsTypes = new HashSet<Type>();
+            serWay = new Dictionary<Type, Func<PropertyInfo, object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -36,6 +39,12 @@ namespace ObjectPrinting
             {
                 if (_excludedPropertiesTypes.Contains(propertyInfo.PropertyType))
                     continue;
+                if (serWay.ContainsKey(propertyInfo.PropertyType))
+                {
+                    var config = serWay[propertyInfo.PropertyType];
+                    sb.Append(identation + config(propertyInfo, obj));
+                    continue;
+                }
                 if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
@@ -62,6 +71,11 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public PrintingConfig<TOwner> ExcludeFieldsTypes(params Type[] types)
