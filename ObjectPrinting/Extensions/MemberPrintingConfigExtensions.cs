@@ -2,8 +2,9 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using ObjectPrinting.Configs;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class MemberPrintingConfigExtensions
     {

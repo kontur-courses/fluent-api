@@ -1,9 +1,12 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Configs
 {
     public class PrintingConfig<TOwner>
     {
@@ -18,31 +21,31 @@ namespace ObjectPrinting
             };
         }
 
-        public PrintingConfig<TOwner> Excluding<TExcluded>()
+        public PrintingConfig<TOwner> Excluding<TType>()
         {
-            TypeExtensions.GetAllMembersOfType<TOwner, TExcluded>(Config.FinalTypes)
+            GetAllMembersOfType<TType>()
                 .ForEach(m => Config.ExcludedMembers.Add(m));
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TExcluded>
-            (Expression<Func<TOwner, TExcluded>> selector)
+        public PrintingConfig<TOwner> Excluding<TMember>
+            (Expression<Func<TOwner, TMember>> selector)
         {
             var member = TryGetMemberInfo(selector);
             Config.ExcludedMembers.Add(member);
             return this;
         }
 
-        public TypePrintingConfig<TOwner, TPrinted> Printing<TPrinted>()
+        public TypePrintingConfig<TOwner, TType> Printing<TType>()
         {
-            return new TypePrintingConfig<TOwner, TPrinted>(this);
+            return new TypePrintingConfig<TOwner, TType>(this, GetAllMembersOfType<TType>());
         }
 
-        public MemberPrintingConfig<TOwner, TPrinted> Printing<TPrinted>
-            (Expression<Func<TOwner, TPrinted>> selector)
+        public MemberPrintingConfig<TOwner, TMember> Printing<TMember>
+            (Expression<Func<TOwner, TMember>> selector)
         {
             var member = TryGetMemberInfo(selector);
-            return new MemberPrintingConfig<TOwner, TPrinted>(this, member);
+            return new MemberPrintingConfig<TOwner, TMember>(this, member);
         }
 
         public PrintingConfig<TOwner> WithDefaultCutToLength(int length)
@@ -69,6 +72,28 @@ namespace ObjectPrinting
             if(!member.IsSerializedMemberType())
                 throw new InvalidCastException("Selector should select Field or Property");
             return selectorBody.Member;
+        }
+
+        private List<MemberInfo> GetAllMembersOfType<TType>()
+        {
+            var result = new List<MemberInfo>();
+            foreach (var m in typeof(TOwner).GetSerializedMembers())
+                AddMembers<TType>(m, result);
+            return result;
+        }
+
+        private void AddMembers<TType>
+            (MemberInfo member, List<MemberInfo> members)
+        {
+            var type = member.GetTypeOfPropertyOrField();
+            if (members.Contains(member) || type == typeof(TOwner))
+                return;
+            if (type == typeof(TType))
+                members.Add(member);
+            if (((IList) Config.FinalTypes).Contains(type))
+                return;
+            foreach (var m in type.GetSerializedMembers())
+                AddMembers<TType>(m, members);
         }
     }
 }

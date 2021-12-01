@@ -1,16 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     internal static class MemberInfoExtensions
     {
-        public static IEnumerable<MemberInfo> GetSerializedMembers(this Type type)
-            => type.GetMembers()
-                .Where(IsSerializedMemberType);
-
         public static bool IsSerializedMemberType(this MemberInfo member)
             => member.MemberType == MemberTypes.Field ||
                member.MemberType == MemberTypes.Property;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Configs
 {
     internal class GlobalConfig
     {

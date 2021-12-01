@@ -1,11 +1,11 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrintingTests
 {
@@ -13,18 +13,8 @@ namespace ObjectPrintingTests
     public class ObjectPrinterTests
     {
         private Person person;
-        private readonly Guid defaultGuid;
+        private readonly Guid defaultGuid = Guid.NewGuid();
         private List<string> keyWords;
-
-        public ObjectPrinterTests()
-        {
-            defaultGuid = Guid.NewGuid();
-            keyWords = new List<string>
-            {
-                "Alex", "Smith", "19", "180,2", "60.5", defaultGuid.ToString(),
-                "Public", "92"
-            };
-        }
 
         [SetUp]
         public void SetUp()
@@ -45,8 +35,10 @@ namespace ObjectPrintingTests
         public void PrinterShould_PrintSameStrings_FromExtensionAndObjPrinter()
         {
             var printer = ObjectPrinter.For<Person>();
+
             var fromPrinter = printer.PrintToString(person);
             var fromExtension = person.PrintToString();
+
             fromExtension.Should().Be(fromPrinter);
         }
         [Test]
@@ -55,10 +47,12 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Field)
                 .WithDefaultCulture(CultureInfo.InvariantCulture);
+
             var fromPrinter = printer.PrintToString(person);
             var fromExtension = person.PrintToString(printer => printer
                 .Excluding(p => p.Field)
                 .WithDefaultCulture(CultureInfo.InvariantCulture));
+
             fromExtension.Should().Be(fromPrinter);
         }
 
@@ -66,6 +60,7 @@ namespace ObjectPrintingTests
         public void PrinterShould_PrintAllFieldsAndProperties()
         {
             var res = person.PrintToString();
+
             res.Should().ContainAll(keyWords);
         }
 
@@ -73,6 +68,7 @@ namespace ObjectPrintingTests
         public void PrinterShould_NotPrintPrivateFieldsAndProperties()
         {
             var res = person.PrintToString();
+
             res.Should().NotContain("private");
         }
 
@@ -88,6 +84,7 @@ namespace ObjectPrintingTests
                 .Excluding(p => p.Age);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -105,6 +102,7 @@ namespace ObjectPrintingTests
                 .Excluding<string>();
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -123,6 +121,7 @@ namespace ObjectPrintingTests
                 .Printing<int>().Using(x => (x + 2).ToString());
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -142,6 +141,7 @@ namespace ObjectPrintingTests
                 .Using(n => n.Name.ToLower() + " " + n.Surname.ToLower());
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -160,6 +160,7 @@ namespace ObjectPrintingTests
                 .WithDefaultCulture(CultureInfo.InvariantCulture);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -176,6 +177,7 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Height).Using(CultureInfo.InvariantCulture);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -193,6 +195,7 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Height).Using(CultureInfo.CurrentCulture);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -213,6 +216,7 @@ namespace ObjectPrintingTests
                 .WithDefaultCutToLength(2);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -230,6 +234,7 @@ namespace ObjectPrintingTests
                 .TrimmedToLength(1);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -254,6 +259,7 @@ namespace ObjectPrintingTests
                 .WithDefaultCutToLength(2);
 
             var res = printer.PrintToString(person);
+
             CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
         }
 
@@ -264,6 +270,7 @@ namespace ObjectPrintingTests
             keyWords.Add("The reference is cyclical");
                 
             var res = person.PrintToString();
+
             res.Should().ContainAll(keyWords);
         }
 
@@ -273,6 +280,7 @@ namespace ObjectPrintingTests
             person.AnotherPerson = new Person();
 
             var res = person.PrintToString();
+
             res.Should().ContainAll(keyWords);
             res.Should().NotContain("The reference is cyclical");
         }
@@ -290,7 +298,7 @@ namespace ObjectPrintingTests
             };
             
             var collection = new DefaultCollection();
-            var a = collection.PrintToString();
+
             collection.PrintToString(conf => conf
                     .Excluding(p => p.array)
                     .Excluding(p => p.dict))
@@ -305,6 +313,22 @@ namespace ObjectPrintingTests
                     .Excluding(p => p.list)
                     .Excluding(p => p.array))
                 .Should().ContainAll(dictKeyWords);
+        }
+
+        private class DefaultCollection
+        {
+            public readonly List<int> list = new List<int>
+            {
+                102, 15, 47
+            };
+
+            public int[] array => list.ToArray();
+
+            public Dictionary<int, string> dict = new Dictionary<int, string>
+            {
+                {8, "eight"},
+                {15, "fifteen"}
+            };
         }
 
         private void CheckThatStringContainsKeyWordsExceptOfRemoved(string result, List<string> removed)

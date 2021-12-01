@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Configs;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
@@ -53,17 +55,16 @@ namespace ObjectPrinting
 
         private string GetFinal(object obj, Type type, MemberInfo member)
         {
-            if (member != null)
-            {
-                var culture = config.DefaultCulture;
-                if (config.Cultures.ContainsKey(member))
-                    return GetFinalIFormattable(obj, config.Cultures[member]);
-                if (culture != null && obj is IFormattable)
-                    return GetFinalIFormattable(obj, culture);
+            if (member == null) 
+                return obj + Environment.NewLine;
+            var culture = config.DefaultCulture;
+            if (config.Cultures.ContainsKey(member))
+                return GetFinalIFormattable(obj, config.Cultures[member]);
+            if (culture != null && obj is IFormattable)
+                return GetFinalIFormattable(obj, culture);
 
-                if (type == typeof(string)) 
-                    return GetFinalString(obj, member);
-            }
+            if (type == typeof(string)) 
+                return GetFinalString(obj, member);
             return obj + Environment.NewLine;
         }
 

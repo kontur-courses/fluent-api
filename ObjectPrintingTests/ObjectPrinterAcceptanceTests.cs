@@ -2,17 +2,16 @@
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-
         [Test]
         public void Demo()
         {
-
             var person = new Person { FullName = new FullName("Alex", ""), Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
