@@ -10,14 +10,14 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public Dictionary<Type, Func<PropertyInfo, object, string>> serWay;
-        public Dictionary<Type, CultureInfo> typesCultures;
+        public Dictionary<Type, Func<object, string>> alternativeSerializations;
+        public Dictionary<Type, Func<object, string>> culturedSerializations;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
-            typesCultures = new Dictionary<Type, CultureInfo>();
-            serWay = new Dictionary<Type, Func<PropertyInfo, object, string>>();
+            culturedSerializations = new Dictionary<Type, Func<object, string>>();
+            alternativeSerializations = new Dictionary<Type, Func<object, string>>();
         }
 
         public string PrintToString(TOwner obj)
@@ -30,42 +30,45 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (serWay.ContainsKey(propertyInfo.PropertyType))
+                var propType = propertyInfo.PropertyType;
+                var propValue = propertyInfo.GetValue(obj);
+                if (alternativeSerializations.ContainsKey(propType))
                 {
-                    var config = serWay[propertyInfo.PropertyType];
-                    var serializatedProperty = config(propertyInfo, obj); 
+                    var serialize = alternativeSerializations[propType];
+                    var serializatedProperty = serialize(propValue); 
                     var serializationResult = serializatedProperty == ""
                         ? ""
-                        : identation + serializatedProperty;
+                        : indentation + serializatedProperty;
                     sb.Append(serializationResult);
-                    continue;
                 }
-                if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
+                else if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
-                    sb.AppendLine(identation + propertyInfo.Name + " = " +
-                            propertyInfo.GetValue(obj));
-                    continue;
+                    if (culturedSerializations.ContainsKey(propType))
+                        propValue = culturedSerializations[propType](propValue);
+                    sb.AppendLine(indentation + propertyInfo.Name + " = " + propValue);
                 }
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                else 
+                {
+                    sb.Append(indentation + propertyInfo.Name + " = " +
+                        PrintToString(propValue, nestingLevel + 1));
+                }
             }
 
             foreach (var fieldInfo in type.GetFields())
             {
                 if (fieldInfo.FieldType.Module.ScopeName == BuiltInScope)
                 {
-                    sb.AppendLine(identation + fieldInfo.Name + " = " +
+                    sb.AppendLine(indentation + fieldInfo.Name + " = " +
                         fieldInfo.GetValue(obj));
                     continue;
                 }
-                sb.Append(identation + fieldInfo.Name + " = " +
+                sb.Append(indentation + fieldInfo.Name + " = " +
                           PrintToString(fieldInfo.GetValue(obj),
                               nestingLevel + 1));
             }
@@ -79,7 +82,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            serWay[typeof(TPropType)] = (p, o) => ""; 
+            alternativeSerializations[typeof(TPropType)] = value => ""; 
             return this;
         }
     }

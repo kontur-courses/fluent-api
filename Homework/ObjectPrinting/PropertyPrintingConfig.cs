@@ -10,18 +10,11 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> _printingConfig;
         private readonly Expression<Func<TOwner, TPropType>> _memberSelector;
-        private PropertyInfo _propInfo;
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             _printingConfig = printingConfig;
             _memberSelector = memberSelector;
-        }
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propInfo)
-        {
-            _printingConfig = printingConfig;
-            _propInfo = propInfo;
         }
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
@@ -31,22 +24,43 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            Func<PropertyInfo, object, string> printWrapper = (p, o) =>
+            Func<object, string> printWrapper = value =>
             {
-                var value = p.GetValue(o);
                 return print((TPropType)value);
             };
-            _printingConfig.serWay[typeof(TPropType)] = printWrapper;
+            _printingConfig.alternativeSerializations[typeof(TPropType)] = printWrapper;
             return _printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             var typeToCheck = typeof(TPropType);
-            var culturedToString = typeToCheck.GetMethod("ToString", new Type[] { typeof(CultureInfo) })
-                ?? throw new Exception("\nGiven type has no customizing culture!");
-            _printingConfig.typesCultures[typeToCheck] = culture;
+            var toString = GetToStringWithCulture(typeToCheck);
+            Func<object, string> serializeWithCulture = 
+                BuildSerializationWithCulture(culture, typeToCheck, toString);
+            _printingConfig.culturedSerializations[typeToCheck] = serializeWithCulture;
             return _printingConfig;
+        }
+
+        private Func<object, string> BuildSerializationWithCulture(
+            CultureInfo culture, Type typeToCheck, MethodInfo toString)
+        {
+            return value =>
+            {
+                var serializedValue = toString.Invoke(value, new object[] { culture });
+                if (_printingConfig.alternativeSerializations.ContainsKey(typeToCheck))
+                {
+                    var serializeLike = _printingConfig.alternativeSerializations[typeToCheck];
+                    serializedValue = serializeLike(serializedValue);
+                }
+                return (string)serializedValue;
+            };
+        }
+
+        private static MethodInfo GetToStringWithCulture(Type typeToCheck)
+        {
+            return typeToCheck.GetMethod("ToString", new Type[] { typeof(CultureInfo) })
+                ?? throw new Exception("\nGiven type has no customizing culture!");
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;

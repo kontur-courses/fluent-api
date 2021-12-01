@@ -71,5 +71,22 @@ namespace ObjectPrinting.Tests
 
             setCultureToNonCulturable.Should().Throw<Exception>();
         }
+
+        [Test]
+        public void ApplyTypeCultureCorrect()
+        {
+            var culture = new CultureInfo("en-US");
+            var doubleWrapper = new DoubleWrapper();
+            var culturedDouble = doubleWrapper.WrappedNumber.ToString(culture);
+            var expectedSerialization = "DoubleWrapper" + NewLine +
+                $"\twrappedNumber = {culturedDouble}" + NewLine;
+
+            var doublePrinter = ObjectPrinter
+                .For<DoubleWrapper>()
+                .Printing<double>().Using(culture);
+            var serializationResult = doublePrinter.PrintToString(doubleWrapper);
+
+            serializationResult.Should().BeEquivalentTo(expectedSerialization);
+        }
     }
 }
