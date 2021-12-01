@@ -188,7 +188,7 @@ namespace ObjectPrinting.Tests
         public void TrimString_WhenSpecifiedForStringMember()
         {
             var result = personPrinter
-                .Printing(p => p.Name).TrimmedToLength(2)
+                .Printing<string>().TrimmedToLength(2)
                 .PrintToString(person);
             result.Should()
                 .Be($"Person{newLine}" +
