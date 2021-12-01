@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -80,6 +81,18 @@ namespace ObjectPrintingTests
             var actual = printer.PrintToString(person);
 
             actual.Should().NotContain($"{nameof(person.Name)}");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldPrintCollections_WhenCollectionProvided()
+        {
+            var list = new List<Person> { new(){ Name = "Ivan", Age = 20 }, new() { Name = "Danil", Age = 20 }};
+
+            var printer = ObjectPrinter.For<List<Person>>()
+                .Excluding<int>();
+            var actual = printer.PrintToString(list);
+
+            actual.Should().ContainAll($"{nameof(Person.Name)} = ", "Ivan", "Danil");
         }
         
         [Test]

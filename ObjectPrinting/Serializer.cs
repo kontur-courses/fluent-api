@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,12 +37,15 @@ namespace ObjectPrinting
             }
             
             var type = obj.GetType();
-            
+
             if (settings.TryGetTypeSerializer(type, out var serializer))
                 return FormatString(serializer.Invoke(obj));
 
             if (finalTypes.Contains(type))
                 return FormatString(obj.ToString());
+            
+            if (typeof(ICollection).IsAssignableFrom(type))
+                return PrintCollection((ICollection)obj, nestingLevel);
 
             visited.Add(obj);
             
@@ -58,6 +62,24 @@ namespace ObjectPrinting
             }
             
             return sb.ToString();
+        }
+        
+        private string PrintCollection(ICollection collection, int nestingLevel)
+        {
+            if (collection.Count == 0) 
+                return FormatString("[]");
+            var ident = new string('\t', nestingLevel);
+            var values = new StringBuilder()
+                .AppendLine()
+                .AppendLine($"{ident}[");
+            foreach (var element in collection)
+            {
+                values.Append($"{ident}\t{PrintToString(element, nestingLevel + 1)}");
+            }
+
+            values.AppendLine($"{ident}]");
+
+            return values.ToString();
         }
         
         private string FormatString(string str) => $"{str}{Environment.NewLine}";
