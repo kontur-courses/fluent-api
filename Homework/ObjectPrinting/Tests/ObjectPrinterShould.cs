@@ -9,30 +9,31 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterShould
     {
+        private Person _vasya = new Person
+        {
+            Id = Guid.NewGuid(),
+            Name = "Vasya",
+            Height = 180,
+            Age = 26,
+            weight = 200,
+            secondName = "Minin"
+        };
+
         [Test]
         public void ExcludeChosenTypes()
         {
-            var person = new Person
-            {
-                Id = Guid.NewGuid(),
-                Name = "Vasya",
-                Height = 180,
-                Age = 26,
-                weight = 200,
-                secondName = "Minin"
-            };
             var expectedSerialization = "Person" + NewLine +
-                $"\tId = {person.Id}" + NewLine +
-                $"\tAge = {person.Age}" + NewLine +
+                $"\tId = {_vasya.Id}" + NewLine +
+                $"\tAge = {_vasya.Age}" + NewLine +
                 $"\tNonCulturable = null" + NewLine +
-                $"\tweight = {person.weight}" + NewLine +
-                $"\tsecondName = {person.secondName}" + NewLine;
+                $"\tweight = {_vasya.weight}" + NewLine +
+                $"\tsecondName = {_vasya.secondName}" + NewLine;
 
             var printer = ObjectPrinter
                 .For<Person>()
                 .Excluding<string>()
                 .Excluding<double>();
-            string serializedPerson = printer.PrintToString(person);
+            string serializedPerson = printer.PrintToString(_vasya);
 
             serializedPerson.Should().Be(expectedSerialization);
         }
@@ -42,30 +43,21 @@ namespace ObjectPrinting.Tests
         {
             Func<int, string> intConfig = x => x.ToString() + " is not my real age!" + NewLine;
             Func<Guid, string> guidConfig = x => "guid imitation" + NewLine;
-            var person = new Person
-            {
-                Id = Guid.NewGuid(),
-                Name = "Vasya",
-                Height = 180,
-                Age = 26,
-                weight = 200,
-                secondName = "Minin"
-            };
             var expectedSerialization = "Person" + NewLine +
                 $"\tguid imitation" + NewLine +
-                $"\tName = {person.Name}" + NewLine +
-                $"\tHeight = {person.Height}" + NewLine +
-                $"\t{person.Age} is not my real age!" + NewLine +
+                $"\tName = {_vasya.Name}" + NewLine +
+                $"\tHeight = {_vasya.Height}" + NewLine +
+                $"\t{_vasya.Age} is not my real age!" + NewLine +
                 $"\tNonCulturable = null" + NewLine +
-                $"\tweight = {person.weight}" + NewLine +
-                $"\tsecondName = {person.secondName}" + NewLine;
+                $"\tweight = {_vasya.weight}" + NewLine +
+                $"\tsecondName = {_vasya.secondName}" + NewLine;
 
             var printer = ObjectPrinter
                  .For<Person>()
                  .Printing<int>().Using(intConfig)
                  .Printing<Guid>().Using(guidConfig);
 
-            var serializatedPerson = printer.PrintToString(person);
+            var serializatedPerson = printer.PrintToString(_vasya);
             serializatedPerson.Should().BeEquivalentTo(expectedSerialization);
             Console.WriteLine(serializatedPerson);
         }
@@ -73,21 +65,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ThrowExceptionWhenNonCultureTypeWasCultured()
         {
-            var person = new Person
-            {
-                Id = Guid.NewGuid(),
-                Name = "Vasya",
-                Height = 180,
-                Age = 26,
-                weight = 200,
-                secondName = "Minin"
-            };
-
-            Func<PrintingConfig<Person>> func = () => ObjectPrinter
+            Func<PrintingConfig<Person>> setCultureToNonCulturable = () => ObjectPrinter
                 .For<Person>()
                 .Printing<NonCulturable>().Using(new CultureInfo("en-US"));
 
-            func.Should().Throw<Exception>();
+            setCultureToNonCulturable.Should().Throw<Exception>();
         }
     }
 }

@@ -48,8 +48,8 @@ namespace ObjectPrinting
                 }
                 if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                            propertyInfo.GetValue(obj) + Environment.NewLine);
+                    sb.AppendLine(identation + propertyInfo.Name + " = " +
+                            propertyInfo.GetValue(obj));
                     continue;
                 }
                 sb.Append(identation + propertyInfo.Name + " = " +
@@ -61,8 +61,8 @@ namespace ObjectPrinting
             {
                 if (fieldInfo.FieldType.Module.ScopeName == BuiltInScope)
                 {
-                    sb.Append(identation + fieldInfo.Name + " = " +
-                        fieldInfo.GetValue(obj) + Environment.NewLine);
+                    sb.AppendLine(identation + fieldInfo.Name + " = " +
+                        fieldInfo.GetValue(obj));
                     continue;
                 }
                 sb.Append(identation + fieldInfo.Name + " = " +
