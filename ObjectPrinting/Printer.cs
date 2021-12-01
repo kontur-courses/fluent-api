@@ -82,11 +82,20 @@ namespace ObjectPrinting
         }
 
         private void AppendCollection
-            (IEnumerable collection, int nestingLevel, string identation, StringBuilder sb)
+            (IEnumerable enumerable, int nestingLevel, string identation, StringBuilder sb)
         {
-            foreach (var element in collection)
-                sb.Append(identation + "\t" +
-                          GetSerializedObject(element, null, nestingLevel + 2, element.GetType()));
+            var count = 0;
+            foreach (var element in enumerable)
+            {
+                count++;
+                var serialized = GetSerializedObject(element, null, nestingLevel + 2, element.GetType());
+                sb.Append($"{identation}\t{serialized}");
+                if (count <= 100) 
+                    continue;
+                sb.Append($"{identation}\tIEnumerable probably endless! " +
+                          $"Serializing for this enumerable stopped.{Environment.NewLine}");
+                return;
+            }
         }
 
         private void AppendProperties(object obj,
