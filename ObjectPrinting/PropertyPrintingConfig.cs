@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Reflection;
+using ObjectPrinting.Interfaces;
 
 namespace ObjectPrinting
 {
@@ -24,11 +25,11 @@ namespace ObjectPrinting
         {
             if (memberName != null)
             {
-                PrintingConfig.MemberConverters[memberName] = obj => print.Invoke((TPropType)obj);
+                PrintingConfig.AddConverters(memberName, obj => print.Invoke((TPropType)obj));
             }
             else
             {
-                PrintingConfig.TypeConverters[typeof(TPropType)] = obj => print.Invoke((TPropType)obj);
+                PrintingConfig.AddConverters(typeof(TPropType), obj => print.Invoke((TPropType)obj));
             }
 
             return PrintingConfig;
@@ -37,10 +38,5 @@ namespace ObjectPrinting
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => PrintingConfig;
 
         public PrintingConfig<TOwner> PrintingConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }

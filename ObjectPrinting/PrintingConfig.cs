@@ -33,22 +33,19 @@ namespace ObjectPrinting
         private Dictionary<Type, Func<object, string>> typeConverters =
             new ();
 
-        public Dictionary<MemberInfo, Func<object, string>> MemberConverters
+        internal void AddConverters(MemberInfo memberInfo, Func<object, string> func)
         {
-            get => memberConverters;
-            set => memberConverters = value;
+            memberConverters[memberInfo] = func;
         }
 
-        public Dictionary<Type, Func<object, string>> TypeConverters
+        internal void AddConverters(Type type, Func<object, string> func)
         {
-            get => typeConverters;
-            set => typeConverters = value;
+            typeConverters[type] = func;
         }
 
-        public Dictionary<Type, CultureInfo> CulturesProperties
+        internal void AddCultureProperties<TPropType>(CultureInfo cultureInfo)
         {
-            get => culturesProperties;
-            set => culturesProperties = value;
+            culturesProperties[typeof(TPropType)] = cultureInfo;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
