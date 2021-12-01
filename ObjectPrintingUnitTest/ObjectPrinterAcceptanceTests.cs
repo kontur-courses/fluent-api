@@ -2,6 +2,7 @@
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Extensions;
 using ObjectPrinting.Solved.Tests;
 
 namespace ObjectPrintingUnitTest
