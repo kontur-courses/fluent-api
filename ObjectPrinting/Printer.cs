@@ -22,15 +22,15 @@ namespace ObjectPrinting
             complexObjects = new List<object>();
         }
 
-        public string PrintToString(object obj, MemberInfo member = null, int nestingLevel = 0)
+        public string PrintToString(object obj, int nestingLevel = 0)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
-            return GetSerializedObject(obj, member, nestingLevel, type);
+            return GetSerializedObject(obj, nestingLevel, type);
         }
 
-        private string GetSerializedObject(object obj, MemberInfo member, int nestingLevel, Type type)
+        private string GetSerializedObject(object obj, int nestingLevel, Type type)
         {
             var identation = new string('\t', nestingLevel + 1);
             
@@ -57,7 +57,7 @@ namespace ObjectPrinting
             foreach (var element in enumerable)
             {
                 count++;
-                var serialized = GetSerializedObject(element, null, nestingLevel + 2, element.GetType());
+                var serialized = GetSerializedObject(element, nestingLevel + 2, element.GetType());
                 sb.Append(identation);
                 sb.Append(serialized);
                 if (count <= 100) 
@@ -93,7 +93,7 @@ namespace ObjectPrinting
                 sb.Append(config.AlternativeMemberSerializations[memberInfo]
                     .Invoke(value) + Environment.NewLine);
             else
-                sb.Append(PrintToString(value, memberInfo, nestingLevel + 1));
+                sb.Append(PrintToString(value, nestingLevel + 1));
         }
 
         private string GetLineWithEnd(string serialized)

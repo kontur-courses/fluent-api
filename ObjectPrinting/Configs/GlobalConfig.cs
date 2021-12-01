@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting.Configs
@@ -21,24 +20,11 @@ namespace ObjectPrinting.Configs
         public IReadOnlyDictionary<MemberInfo, Func<object, string>> AlternativeMemberSerializations
             => alternativeMemberSerializations;
 
-        public readonly Dictionary<MemberInfo, CultureInfo> Cultures =
-            new Dictionary<MemberInfo, CultureInfo>();
-
         public void AddExcludedMember(MemberInfo member)
             => excludedMembers.Add(member);
 
         public void AddAlternativeMemberSerialization
             (MemberInfo member, Func<object, string> serializationFunc)
             => alternativeMemberSerializations[member] = serializationFunc;
-        
-
-        public void AddTrimToLength
-            (MemberInfo member, int length)
-        {
-            if (member.GetType() != typeof(string))
-                throw new ArgumentException("You can`t trim not string");
-            alternativeMemberSerializations[member] = obj =>
-                obj.ToString().Substring(0, length);
-        }
     }
 }
