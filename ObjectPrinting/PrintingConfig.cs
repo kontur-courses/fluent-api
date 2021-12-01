@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,7 +25,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> customCycleMembersSerializers = new();
 
         private bool throwIfCycleReference = false;
-
+        private CultureInfo currentCulture = CultureInfo.CurrentCulture;
 
         public PrintingConfig<TOwner> Excluding<TMember>()
         {
@@ -42,6 +43,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> ThrowingIfCycleReference(bool isConfirmed)
         {
             throwIfCycleReference = isConfirmed;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> UsingCulture(CultureInfo culture)
+        {
+            currentCulture = culture;
             return this;
         }
 
@@ -91,7 +98,7 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
             if (FinalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+                return obj is IFormattable formattable ? formattable.ToString(null, currentCulture) + Environment.NewLine : obj + Environment.NewLine;
             if (obj is IDictionary dictionary)
                 return PrintDictionary(dictionary, nestingLevel);
             if (obj is IEnumerable collection)
@@ -107,7 +114,7 @@ namespace ObjectPrinting
             {
                 var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
                 var memberValue = memberInfo.GetMemberValue(obj);
-                sb.Append(identation + memberInfo.Name + " = " +
+                sb.AppendFormat(currentCulture, "{0}", identation + memberInfo.Name + " = " +
                           (!isCustomSerialization
                               ? PrintToString(memberValue,
                                   nestingLevel + 1)

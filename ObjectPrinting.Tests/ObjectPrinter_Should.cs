@@ -145,6 +145,21 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void UseCustomCulture_WhenSpecifiedForPrinter()
+        {
+            var result = personPrinter
+                .UsingCulture(new CultureInfo("en-En"))
+                .PrintToString(person);
+            result.Should()
+                .Be(
+                    $"Person{newLine}" +
+                    $"\tId = 00000000-0000-0000-0000-000000000000{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tAge = 21{newLine}" +
+                    $"\tHeight = 170.5{newLine}");
+        }
+
+        [Test]
         public void UseLastSpecifiedCustomSerialization()
         {
             var result = personPrinter
