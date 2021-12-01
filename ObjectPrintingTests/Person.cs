@@ -10,6 +10,7 @@ namespace ObjectPrintingTests
         public string Surname { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        public PersonType Type { get; set; }
         public List<Person> Family { get; set; }
         public double Money;
     }

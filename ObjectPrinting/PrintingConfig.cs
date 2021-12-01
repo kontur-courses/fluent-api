@@ -5,24 +5,22 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : Config
     {
-        private readonly HashSet<Type> finalTypes;
-        private readonly HashSet<object> printedObjects;
-        private readonly Config config;
+        private readonly Dictionary<object, int> printedObjects;
 
         public PrintingConfig()
         {
-            config = new Config();
-            printedObjects = new HashSet<object>();
-            finalTypes = new HashSet<Type>
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(long)
-            };
+            printedObjects = new Dictionary<object, int>();
+        }
+
+        public PrintingConfig(Config config) : base(config)
+        {
+            printedObjects = new Dictionary<object, int>();
         }
 
         public string PrintToString(TOwner obj)
@@ -47,7 +45,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TMemberType>()
         {
-            config.ExcludedTypes.Add(typeof(TMemberType));
+            AddExcludedType(typeof(TMemberType));
             return this;
         }
 
@@ -57,19 +55,19 @@ namespace ObjectPrinting
                 throw new InvalidCastException("Expression must be a MemberExpression");
 
             var memberInfo = expression.Member;
-            config.ExcludedMembers.Add(memberInfo);
+            AddExcludedMember(memberInfo);
             return this;
         }
 
-        public PrintingConfig<TOwner> AddAltTypeSerialzier(Type type, Func<object, string> customPrint)
+        public PrintingConfig<TOwner> AddAltTypeSerialzier(Type type, Func<object, string> altSerializer)
         {
-            config.AltTypeSerializers[type] = customPrint;
+            AddTypeSerialzier(type, altSerializer);
             return this;
         }
 
-        public PrintingConfig<TOwner> AddAltMemberSerializer(MemberInfo member, Func<object, string> customPrint)
+        public PrintingConfig<TOwner> AddAltMemberSerializer(MemberInfo member, Func<object, string> altSerializer)
         {
-            config.AltMemberSerializers[member] = customPrint;
+            AddMemberSerializer(member, altSerializer);
             return this;
         }
 
@@ -78,64 +76,42 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (printedObjects.Contains(obj))
+            if (printedObjects.Keys.Any(printedObj =>
+                nestingLevel > printedObjects[printedObj] && ReferenceEquals(printedObj, obj)))
             {
-                return "This object has already been printed" + Environment.NewLine;
+                return "Cyclic reference" + Environment.NewLine;
             }
 
-            printedObjects.Add(obj);
+            printedObjects.Add(obj, nestingLevel);
 
             string serializedObj;
 
             var type = obj.GetType();
 
-            if (finalTypes.Contains(type))
+            if (IsFinalType(type))
             {
                 serializedObj = obj + Environment.NewLine;
             }
-            else if (obj is IEnumerable enumerable)
-            {
-                serializedObj = PrintEnumerable(enumerable, nestingLevel + 1);
-            }
             else
-            {
-                serializedObj = PrintComplexObject(obj, nestingLevel + 1);
-            }
+                switch (obj)
+                {
+                    case IDictionary dictionary:
+                        serializedObj = PrintDictionary(dictionary, nestingLevel + 1);
+                        break;
+                    case IEnumerable enumerable:
+                        serializedObj = PrintEnumerable(enumerable, nestingLevel + 1);
+                        break;
+                    case Enum enumObj:
+                        serializedObj = PrintEnum(enumObj);
+                        break;
+                    default:
+                        serializedObj = PrintComplexObject(obj, nestingLevel + 1);
+                        break;
+                }
 
             printedObjects.Remove(obj);
 
             return serializedObj;
-        }
-
-        private static Type GetMemberType(MemberInfo memberInfo)
-        {
-            switch (memberInfo)
-            {
-                case PropertyInfo propertyInfo:
-                    return propertyInfo.PropertyType;
-                case FieldInfo fieldInfo:
-                    return fieldInfo.FieldType;
-                default:
-                    throw new ArgumentException("Member is not a property or a field");
-            }
-        }
-
-        private static object GetMemberValue(MemberInfo memberInfo, object obj)
-        {
-            switch (memberInfo)
-            {
-                case PropertyInfo propertyInfo:
-                    return propertyInfo.GetValue(obj);
-                case FieldInfo fieldInfo:
-                    return fieldInfo.GetValue(obj);
-                default:
-                    throw new ArgumentException("Member is not a property or a field");
-            }
-        }
-
-        private bool IsExcluded(MemberInfo member)
-        {
-            return config.ExcludedTypes.Contains(GetMemberType(member)) || config.ExcludedMembers.Contains(member);
         }
 
         private string PrintEnumerable(IEnumerable enumerable, int nestingLevel)
@@ -160,6 +136,30 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+
+            if (dictionary.Keys.Count == 0)
+            {
+                sb.Append("Empty dictionary" + Environment.NewLine);
+                return sb.ToString();
+            }
+
+            sb.Append(Environment.NewLine);
+
+            foreach (var key in dictionary.Keys)
+            {
+                var serializedKey = PrintToString(key, nestingLevel + 1);
+                sb.Append(identation + "Key = " + serializedKey);
+                var serializedValue = PrintToString(dictionary[key], nestingLevel + 1);
+                sb.Append(identation + "Value = " + serializedValue);
+            }
+
+            return sb.ToString();
+        }
+
         private string PrintComplexObject(object obj, int nestingLevel)
         {
             var type = obj.GetType();
@@ -177,12 +177,12 @@ namespace ObjectPrinting
                     if (altSerializer == null)
                     {
                         sb.Append(identation + memberInfo.Name + " = " +
-                                  PrintToString(GetMemberValue(memberInfo, obj), nestingLevel + 1));
+                                  PrintToString(memberInfo.GetMemberValue(obj), nestingLevel + 1));
                     }
                     else
                     {
                         sb.Append(identation + memberInfo.Name + " = " +
-                                  altSerializer.Invoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine);
+                                  altSerializer.Invoke(memberInfo.GetMemberValue(obj)) + Environment.NewLine);
                     }
                 }
             }
@@ -190,14 +190,9 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private Func<object, string> TryGetAltSerializer(MemberInfo memberInfo)
+        private string PrintEnum(Enum enumObj)
         {
-            if (config.AltMemberSerializers.TryGetValue(memberInfo, out var memberSerializer))
-                return memberSerializer;
-
-            return config.AltTypeSerializers.TryGetValue(GetMemberType(memberInfo), out var typeSerializer)
-                ? typeSerializer
-                : null;
+            return enumObj + Environment.NewLine;
         }
     }
 }
