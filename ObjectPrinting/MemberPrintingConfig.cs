@@ -17,12 +17,5 @@ namespace ObjectPrinting
             parentConfig.AddCustomTypeSerializer(alternativeSerializer);
             return parentConfig;
         }
-
-        public PrintingConfig<TOwner> Using<T>(CultureInfo culture, string format = "") 
-            where T: IFormattable
-        {
-            parentConfig.AddCustomTypeSerializer<T>(o => o.ToString(format, culture));
-            return parentConfig;
-        }
     }
 }

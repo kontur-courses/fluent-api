@@ -23,7 +23,6 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<string> excludedMembers = new();
         private readonly Dictionary<Type, Delegate> typesSerializers = new();
-        private readonly Dictionary<Type, CultureInfo> cultures = new();
 
         public PrintingConfig<TOwner> Exclude<TExcluding>()
         {
@@ -54,7 +53,7 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             if (typesSerializers.ContainsKey(obj.GetType()))
-                return (string) typesSerializers[obj.GetType()].DynamicInvoke(obj);
+                return (string) typesSerializers[obj.GetType()].DynamicInvoke(obj) + Environment.NewLine;
             
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -93,11 +92,6 @@ namespace ObjectPrinting
                 }
             }
             return sb.ToString();
-        }
-
-        internal void AddCustomTypeCulture<T>(CultureInfo culture)
-        {
-            cultures[typeof(T)] = culture;
         }
 
         internal void AddCustomTypeSerializer<T>(Func<T, string> serializer)

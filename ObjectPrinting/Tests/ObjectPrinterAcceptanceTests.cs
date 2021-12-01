@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -10,7 +11,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19};
+            var person = new Person { Name = "Alex", Age = 19, Height = 2.3};
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
