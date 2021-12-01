@@ -10,20 +10,20 @@ namespace ObjectPrinting
 {
     public class ObjectPrinter : IObjectPrinter
     {
-        private const char identationElement = '\t';
-        private readonly HashSet<Type> finalTypes = new();
+        protected const char identationElement = '\t';
+        protected readonly HashSet<Type> finalTypes = new();
 
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly Dictionary<Type, Func<object, string>> typeSpecificSerializers = new();
-        private readonly Dictionary<Type, CultureInfo> typeCultureSettings = new();
-        private readonly Dictionary<MemberInfo, Func<object, string>> memberSpecificSerializers = new();
-        private readonly Dictionary<MemberInfo, CultureInfo> memberCultureSettings = new();
-        private readonly Dictionary<MemberInfo, int> memberTrimLengths = new();
-        private readonly Dictionary<object, Guid> alreadyPrinted = new();
-        private int stringTrimLength = -1;
+        protected readonly HashSet<Type> excludedTypes = new();
+        protected readonly HashSet<MemberInfo> excludedMembers = new();
+        protected readonly Dictionary<Type, Func<object, string>> typeSpecificSerializers = new();
+        protected readonly Dictionary<Type, CultureInfo> typeCultureSettings = new();
+        protected readonly Dictionary<MemberInfo, Func<object, string>> memberSpecificSerializers = new();
+        protected readonly Dictionary<MemberInfo, CultureInfo> memberCultureSettings = new();
+        protected readonly Dictionary<MemberInfo, int> memberTrimLengths = new();
+        protected readonly Dictionary<object, Guid> alreadyPrinted = new();
+        protected int stringTrimLength = -1;
 
-        public ObjectPrinter()
+        protected ObjectPrinter()
         {
             var systemTypes = AppDomain.CurrentDomain.GetAssemblies()
                            .SelectMany(t => t.GetTypes().Where(x => x.Namespace == nameof(System)));
@@ -34,22 +34,62 @@ namespace ObjectPrinting
             finalTypes.Add(typeof(Enum));
         }
 
-        public static PrintingConfig<T> For<T>()
-        {
-            return new PrintingConfig<T>(new ObjectPrinter());
-        }
-
-        public PrintingConfig<T> ConfigureFor<T>()
-        {
-            return new PrintingConfig<T>(this);
-        }
-
         public string PrintToString(object obj)
         {
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object? obj, int nestingLevel, MemberInfo? currentMember = null)
+        public static PrintingConfig<T> For<T>()
+        {
+            return new PrintingConfig<T>(new ObjectPrinter());
+        }
+
+        public static string Print<T>(T obj)
+        {
+            return new ObjectPrinter().PrintToString(obj);
+        }
+
+        void IObjectPrinter.SetTrimLength(int trimLength)
+        {
+            stringTrimLength = trimLength;
+        }
+
+        void IObjectPrinter.SetTrimLength(MemberInfo member, int trimLength)
+        {
+            memberTrimLengths[member] = trimLength;
+        }
+
+        void IObjectPrinter.SetCulture(Type type, CultureInfo cultureInfo)
+        {
+            typeCultureSettings[type] = cultureInfo;
+        }
+
+        void IObjectPrinter.SetCulture(MemberInfo member, CultureInfo cultureInfo)
+        {
+            memberCultureSettings[member] = cultureInfo;
+        }
+
+        void IObjectPrinter.SetSerializer(Type type, Func<object, string> serializer)
+        {
+            typeSpecificSerializers[type] = serializer;
+        }
+
+        void IObjectPrinter.SetSerializer(MemberInfo member, Func<object, string> serializer)
+        {
+            memberSpecificSerializers[member] = serializer;
+        }
+
+        void IObjectPrinter.Exclude(Type type)
+        {
+            excludedTypes.Add(type);
+        }
+
+        void IObjectPrinter.Exclude(MemberInfo member)
+        {
+            excludedMembers.Add(member);
+        }
+
+        protected string PrintToString(object? obj, int nestingLevel, MemberInfo? currentMember = null)
         {
             if (obj == null)
                 return "null";
@@ -183,50 +223,18 @@ namespace ObjectPrinting
         {
             return (obj as IFormattable).ToString(null, culture);
         }
+    }
 
-        public static string Print<T>(T obj)
+    public class ObjectPrinter<TOwner> : ObjectPrinter
+    {
+        public PrintingConfig<TOwner> Configure()
         {
-            return new ObjectPrinter().PrintToString(obj);
+            return new PrintingConfig<TOwner>(this);
         }
 
-        void IObjectPrinter.SetTrimLength(int trimLength)
+        public string PrintToString(TOwner obj)
         {
-            stringTrimLength = trimLength;
-        }
-
-        void IObjectPrinter.SetTrimLength(MemberInfo member, int trimLength)
-        {
-            memberTrimLengths[member] = trimLength;
-        }
-
-        void IObjectPrinter.SetCulture(Type type, CultureInfo cultureInfo)
-        {
-            typeCultureSettings[type] = cultureInfo;
-        }
-
-        void IObjectPrinter.SetCulture(MemberInfo member, CultureInfo cultureInfo)
-        {
-            memberCultureSettings[member] = cultureInfo;
-        }
-
-        void IObjectPrinter.SetSerializer(Type type, Func<object, string> serializer)
-        {
-            typeSpecificSerializers[type] = serializer;
-        }
-
-        void IObjectPrinter.SetSerializer(MemberInfo member, Func<object, string> serializer)
-        {
-            memberSpecificSerializers[member] = serializer;
-        }
-
-        void IObjectPrinter.Exclude(Type type)
-        {
-            excludedTypes.Add(type);
-        }
-
-        void IObjectPrinter.Exclude(MemberInfo member)
-        {
-            excludedMembers.Add(member);
+            return PrintToString(obj, 0);
         }
     }
 }
