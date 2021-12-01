@@ -11,12 +11,12 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         public Dictionary<Type, Func<PropertyInfo, object, string>> serWay;
-        public Dictionary<Type, CultureInfo> typesCulture;
+        public Dictionary<Type, CultureInfo> typesCultures;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
-            typesCulture = new Dictionary<Type, CultureInfo>();
+            typesCultures = new Dictionary<Type, CultureInfo>();
             serWay = new Dictionary<Type, Func<PropertyInfo, object, string>>();
         }
 

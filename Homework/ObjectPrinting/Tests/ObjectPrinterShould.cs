@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Globalization;
 using static System.Environment;
 
 namespace ObjectPrinting.Tests
@@ -67,6 +68,26 @@ namespace ObjectPrinting.Tests
             var serializatedPerson = printer.PrintToString(person);
             serializatedPerson.Should().BeEquivalentTo(expectedSerialization);
             Console.WriteLine(serializatedPerson);
+        }
+
+        [Test]
+        public void ThrowExceptionWhenNonCultureTypeWasCultured()
+        {
+            var person = new Person
+            {
+                Id = Guid.NewGuid(),
+                Name = "Vasya",
+                Height = 180,
+                Age = 26,
+                weight = 200,
+                secondName = "Minin"
+            };
+
+            Func<PrintingConfig<Person>> func = () => ObjectPrinter
+                .For<Person>()
+                .Printing<NonCulturable>().Using(new CultureInfo("en-US"));
+
+            func.Should().Throw<Exception>();
         }
     }
 }
