@@ -8,5 +8,9 @@ namespace ObjectPrinting.Solved.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        public int Health { get; set; }
+        public DateTime DateOfBirth { get; set; }
+        public Person Parent { get; set; }
+
     }
 }

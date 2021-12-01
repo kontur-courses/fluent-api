@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
@@ -22,6 +23,7 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+            s1.Should().Be("");
         }
     }
 }

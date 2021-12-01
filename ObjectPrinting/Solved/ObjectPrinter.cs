@@ -1,3 +1,5 @@
+using System.Collections;
+
 namespace ObjectPrinting.Solved
 {
     public class ObjectPrinter
@@ -6,5 +8,6 @@ namespace ObjectPrinting.Solved
         {
             return new PrintingConfig<T>();
         }
+
     }
 }

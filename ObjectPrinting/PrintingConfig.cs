@@ -6,6 +6,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -37,5 +38,6 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
     }
 }
