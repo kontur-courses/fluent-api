@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -23,7 +24,7 @@ namespace ObjectPrinting.Tests
             
             string result = printer.PrintToString(person);
 
-            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
@@ -36,7 +37,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Peter", Age = 38 };
             var printer = ObjectPrinter.For<Person>().ExcludedType<int>();
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Peter\r\n\tHeight = 0\r\n");
+            result.Should().Be("Person\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Peter\r\n\tHeight = 0\r\n");
         }
 
         [Test]
@@ -45,7 +46,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "John", Age = 59, Height = 175.5 };
             var printer = ObjectPrinter.For<Person>().ExcludedType<string>();
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tHeight = 175.5\r\n\tAge = 59\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tHeight = 175.5\r\n\tAge = 59\r\n");
         }
 
         [Test]
@@ -76,7 +77,7 @@ namespace ObjectPrinting.Tests
                 .SpecialSerializationType<int>(x => (100 - x).ToString())
                 .SpecialSerializationType<double>(x => (-1*x).ToString(CultureInfo.InvariantCulture));
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
+            result.Should().Be("Person\r\n\tId2 = 100\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Nick\r\n\tHeight = -190.8\r\n\tAge = 74\r\n");
         }
 
         [Test]
@@ -90,7 +91,7 @@ namespace ObjectPrinting.Tests
                 .SpecialSerializationField<int>("Age", x => (-1.5).ToString(CultureInfo.InvariantCulture))
                 .SpecialSerializationField<Guid>("Id", x => "0");
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 0\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 0\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
         }
 
         
@@ -112,7 +113,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Scarlett", Height = 180.9, Age = 17 };
             var printer = ObjectPrinter.For<Person>().SetCulture(new CultureInfo("ru-RU"));
             var result = printer.PrintToString(person);
-            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
         }
 
         [Test]
@@ -121,7 +122,30 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Height = 170, Age = 14 };
             var printer = ObjectPrinter.For<Person>().Trim(10, 80);
             var result = printer.PrintToString(person);
-            result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge ");
+            result.Should().Be("d2 = 0\r\n\tFather = null\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 170\r\n\tAge ");
+        }
+
+        [Test]
+        public void SerializationOfList()
+        {
+            var printer = ObjectPrinter.For<List<int>>();
+            var dataList = new List<int>
+            {
+                1, 2, 3, 4
+            };
+            var result = printer.PrintToString(dataList);
+            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItem = null\r\n");
+        }
+
+        [Test]
+        public void SerializationOfArray()
+        {
+            var printer = ObjectPrinter.For<Array>();
+            var dataList = new [] {1,2,3,4};
+            var result = printer.PrintToString(dataList);
+            result.Should().Be("Int32[]\r\n\tLength = 4\r\n\tLongLength = 4\r\n\tRank = 1\r\n\t"+
+                               "SyncRoot = System.Int32[]\r\n\tIsReadOnly = Boolean\r\n\t"+
+                               "IsFixedSize = Boolean\r\n\tIsSynchronized = Boolean\r\n");
         }
     }
 }

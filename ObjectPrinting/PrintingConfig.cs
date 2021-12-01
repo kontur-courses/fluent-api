@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using NUnit.Framework.Constraints;
 
 namespace ObjectPrinting
 {
@@ -12,8 +14,16 @@ namespace ObjectPrinting
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Int32), typeof(Int64),
+
+            
         };
+
+        private readonly Dictionary<string, Type> attachForbiddenNames = new Dictionary<string, Type>
+        {
+            ["SyncRoot"] = typeof(Int32[]),
+        };
+
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
@@ -41,14 +51,13 @@ namespace ObjectPrinting
 
 
             var objType = obj.GetType();
-
+            //|| finalCollectionTypes.Contains(objType)
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
                 if (obj is IFormattable formattable)
                     return formattable.ToString(null, culture) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
-
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -62,10 +71,21 @@ namespace ObjectPrinting
                 SerializationMemberInfo memberSerialization;
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
-                    memberSerialization =
+                    object value;
+                    try
+                    {
+                        value = propertyInfo.GetValue(obj);
+                    }
+                    catch (TargetParameterCountException e)
+                    {
+                        value = null;
+                    }
+
+
+                    memberSerialization = 
                         new SerializationMemberInfo(propertyInfo.Name, 
-                            propertyInfo.PropertyType,
-                            propertyInfo.GetValue(obj));
+                            propertyInfo.PropertyType, 
+                            value);
                 }
                 else if (memberInfo is FieldInfo fieldInfo)
                 {
@@ -88,6 +108,23 @@ namespace ObjectPrinting
 
                 else if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
                     serializeDelegate = specialSerializationsForTypes[memberSerialization.MemberType];
+
+                if (attachForbiddenNames.ContainsKey(memberSerialization.MemberName))
+                {
+                    if (serializeDelegate != null)
+                    {
+                        sb.Append(identation + memberSerialization.MemberName + " = " +
+                                  serializeDelegate.DynamicInvoke(memberSerialization.MemberValue) +
+                                  Environment.NewLine);
+                    }
+                    else
+                    {
+                        sb.Append(identation + memberSerialization.MemberName + " = " +
+                                  memberSerialization.MemberValue + Environment.NewLine);
+                    }
+
+                    continue;
+                }
 
                 if (serializeDelegate != null)
                 {

@@ -9,7 +9,7 @@ namespace ObjectPrinting
         public string MemberName { get;  }
         public Type MemberType { get;  }
         public object MemberValue { get; }
-        public SerializationMemberInfo(string memberName, Type memberType, object memberValue)
+        public SerializationMemberInfo(string memberName = null, Type memberType = null, object memberValue = null)
         {
             MemberName = memberName;
             MemberType = memberType;
