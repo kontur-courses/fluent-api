@@ -18,9 +18,10 @@ namespace ObjectPrinting
             return parentConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        public PrintingConfig<TOwner> Using<T>(CultureInfo culture, string format = "") 
+            where T: IFormattable
         {
-            parentConfig.AddCustomTypeCulture<TMember>(culture);
+            parentConfig.AddCustomTypeSerializer<T>(o => o.ToString(format, culture));
             return parentConfig;
         }
     }
