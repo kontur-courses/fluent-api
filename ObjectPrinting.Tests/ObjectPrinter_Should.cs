@@ -260,13 +260,9 @@ namespace ObjectPrinting.Tests
             var john = new PersonWithFriend() { Name = "John", Age = 19 };
             alex.Friend = john;
             john.Friend = alex;
-            Action act = () =>
-            {
-                personPrinter
-                    .ThrowingIfCycleReference(true)
-                    .PrintToString(alex);
-            };
-            act.Should().Throw<Exception>();
+            Assert.Throws<Exception>(() => personPrinter.
+                ThrowingIfCycleReference(true).
+                PrintToString(alex));
         }
 
         [Test]
