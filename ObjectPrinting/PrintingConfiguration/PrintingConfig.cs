@@ -82,7 +82,7 @@ namespace ObjectPrinting.PrintingConfiguration
                 return obj + Environment.NewLine;
 
             if (obj is IEnumerable collection)
-                return PrintCollection(obj, collection);
+                return PrintCollection(collection);
 
             return PrintMember(obj, nestingLevel);
         }
@@ -110,12 +110,26 @@ namespace ObjectPrinting.PrintingConfiguration
             return sb.ToString();
         }
 
-        private static string PrintCollection(object obj, IEnumerable collection)
+        private static string PrintCollection(IEnumerable collection)
         {
-            var builder = new StringBuilder($"{obj.GetType().Name}{Environment.NewLine}");
+            if (collection is IDictionary dict)
+                return PrintDictionary(dict);
+            
+            var builder = new StringBuilder($"{collection.GetType().Name}{Environment.NewLine}");
             foreach (var member in collection)
                 builder.Append(member.PrintToString());
+            
+            return builder.ToString();
+        }
 
+        private static string PrintDictionary(IDictionary dict)
+        {
+            var builder = new StringBuilder($"{dict.GetType().Name}{Environment.NewLine}");
+            foreach (var key in dict.Keys)
+            {
+                builder.Append($"{key.PrintToString().Trim()} : ");
+                builder.Append($"{dict[key].PrintToString()}");
+            }
             return builder.ToString();
         }
 
