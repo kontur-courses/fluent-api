@@ -41,6 +41,7 @@ namespace ObjectPrintingTests
 
             fromExtension.Should().Be(fromPrinter);
         }
+
         [Test]
         public void PrinterShould_PrintSameStrings_FromExtensionAndObjPrinter_WhenUseSameConfigs()
         {
@@ -70,6 +71,20 @@ namespace ObjectPrintingTests
             var res = person.PrintToString();
 
             res.Should().NotContain("private");
+        }
+
+        [Test]
+        public void PrinterShould_ThrowException_WhenUseNotProperyOrFieldInLambda()
+        {
+            Assert.Throws<InvalidCastException>(() => ObjectPrinter.For<Person>()
+                .Excluding(p => p.GetHashCode()));
+        }
+
+        [Test]
+        public void PrinterShould_ThrowException_WhenUseNotMemberExpressionInLambda()
+        {
+            Assert.Throws<InvalidCastException>(() => ObjectPrinter.For<Person>()
+                .Excluding(p => 10));
         }
 
         [Test]
@@ -139,6 +154,72 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.FullName)
                 .Using(n => n.Name.ToLower() + " " + n.Surname.ToLower());
+
+            var res = printer.PrintToString(person);
+
+            CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
+        }
+
+        [Test]
+        public void PrinterShould_UseLastAlternativeSerialization_WhenChangeSerialization()
+        {
+            var removedWords = new List<string>
+            {
+                "Alex",
+                "Smith",
+                "92"
+            };
+            keyWords = keyWords.Except(removedWords).ToList();
+            keyWords.Add("alex smith");
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.FullName)
+                .Using(n => n.Name + " " + n.Surname)
+                .Printing(p => p.FullName)
+                .Using(n => n.Name.ToLower() + " " + n.Surname.ToLower());
+
+            var res = printer.PrintToString(person);
+
+            CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
+        }
+
+        [Test]
+        public void PrinterShould_UseLastAlternativeSerialization_WhenSetSerializationOfMemberAfterType()
+        {
+            var removedWords = new List<string>
+            {
+                "19",
+                "92"
+            };
+            keyWords = keyWords.Except(removedWords).ToList();
+            keyWords.Add("age");
+            keyWords.Add("{93}");
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<int>()
+                .Using(n => $"{{{n + 1}}}")
+                .Printing(p => p.Age)
+                .Using(n => "age" );
+
+            var res = printer.PrintToString(person);
+
+            CheckThatStringContainsKeyWordsExceptOfRemoved(res, removedWords);
+        }
+
+        [Test]
+        public void PrinterShould_UseLastAlternativeSerialization_WhenSetSerializationOfTypeAfterMember()
+        {
+            var removedWords = new List<string>
+            {
+                "19",
+                "92"
+            };
+            keyWords = keyWords.Except(removedWords).ToList();
+            keyWords.Add("{20}");
+            keyWords.Add("{93}");
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(p => p.Age)
+                .Using(n => "age")
+                .Printing<int>()
+                .Using(n => $"{{{n + 1}}}");
 
             var res = printer.PrintToString(person);
 
@@ -286,49 +367,91 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void PrinterShould_PrintCollections()
+        public void PrinterShould_PrintArray()
         {
-            var listAndArrayKeyWords = new List<string>
+            var arrayElements = new string[]
             {
                 "102", "15", "47"
             };
-            var dictKeyWords = new List<string>
-            {
-                "8", "15", "eight", "fifteen"
-            };
-            
-            var collection = new DefaultCollection();
 
-            collection.PrintToString(conf => conf
-                    .Excluding(p => p.array)
-                    .Excluding(p => p.dict))
-                .Should().ContainAll(listAndArrayKeyWords);
+            var res = arrayElements.PrintToString();
 
-            collection.PrintToString(conf => conf
-                    .Excluding(p => p.list)
-                    .Excluding(p => p.dict))
-                .Should().ContainAll(listAndArrayKeyWords);
-
-            collection.PrintToString(conf => conf
-                    .Excluding(p => p.list)
-                    .Excluding(p => p.array))
-                .Should().ContainAll(dictKeyWords);
+            res.Should().ContainAll(arrayElements);
         }
 
-        private class DefaultCollection
+        [Test]
+        public void PrinterShould_PrintList()
         {
-            public readonly List<int> list = new List<int>
+            var listElements = new List<string>
             {
-                102, 15, 47
+                "102", "15", "47"
             };
 
-            public int[] array => list.ToArray();
+            var res = listElements.PrintToString();
 
-            public Dictionary<int, string> dict = new Dictionary<int, string>
+            res.Should().ContainAll(listElements);
+        }
+
+        [Test]
+        public void PrinterShould_PrintDictionary()
+        {
+            var dict = new Dictionary<int, string>
             {
                 {8, "eight"},
                 {15, "fifteen"}
             };
+            var dictElememts = new List<string>
+            {
+                "8", "15", "eight", "fifteen"
+            };
+
+            var res = dict.PrintToString();
+
+            res.Should().ContainAll(dictElememts);
+        }
+
+        [Test]
+        public void PrinterShould_PrintInnerCollections()
+        {
+            var listOfLists = new List<List<string>>
+            {
+                new List<string>
+                {
+                    "102", "15", "47"
+                },
+                new List<string>
+                {
+                "50", "51", "52"
+                }
+            };
+            var listElements = listOfLists.SelectMany(list => list).ToList();
+
+            var res = listElements.PrintToString();
+
+            res.Should().ContainAll(listElements);
+        }
+
+        [Test]
+        public void PrinterShould_StopPrintingEndlessIEnumerable()
+        {
+
+            var printedElements = GetEndlessIEnumerable().Select(e => e.ToString())
+                .Take(100);
+
+            var res = GetEndlessIEnumerable().PrintToString();
+
+            res.Should().ContainAll(printedElements);
+            res.Should().Contain("IEnumerable probably endless!");
+        }
+
+        private IEnumerable<int> GetEndlessIEnumerable()
+        {
+            var i = 0;
+            while (true)
+            {
+                yield return i;
+                i = ++i % 100;
+            }
         }
 
         private void CheckThatStringContainsKeyWordsExceptOfRemoved(string result, List<string> removed)
