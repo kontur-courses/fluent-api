@@ -25,7 +25,7 @@ namespace ObjectPrinting.PrintingConfig
             if (settings.TryGetTypeTransformer(type, out var typeTransformer))
                 return $"{typeTransformer(obj)}{NewLine}";
 
-            if (FinalTypes.Contains(type))
+            if (FinalTypes.Contains(type) || type.IsPrimitive)
                 return $"{obj}{NewLine}";
 
             if (typeof(ICollection).IsAssignableFrom(type))
@@ -91,12 +91,12 @@ namespace ObjectPrinting.PrintingConfig
             return this;
         }
 
-        public NestingPrintingConfig<TOwner, TType> When<TType>() => new(this, settings);
+        public TypePrintingConfig<TOwner, TType> When<TType>() => new(this, settings);
 
-        public NestingPropertyPrintingConfig<TOwner, TType> When<TType>(Expression<Func<TOwner, TType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TType> When<TType>(Expression<Func<TOwner, TType>> memberSelector)
         {
             if (memberSelector == null) throw new ArgumentNullException(nameof(memberSelector));
-            return new NestingPropertyPrintingConfig<TOwner, TType>(this, settings, SelectMember(memberSelector));
+            return new PropertyPrintingConfig<TOwner, TType>(this, settings, SelectMember(memberSelector));
         }
 
         public PrintingConfig<TOwner> SetAllowCycleReference(bool allow)
