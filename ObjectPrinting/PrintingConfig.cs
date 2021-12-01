@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public partial class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly IObjectPrinter objectPrinter;
 
