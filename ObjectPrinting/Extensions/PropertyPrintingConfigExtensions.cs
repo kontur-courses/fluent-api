@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -15,7 +15,7 @@ namespace ObjectPrinting
             CultureInfo culture)
             where TPropType : IFormattable
         {
-            propConfig.PrintingConfig.CulturesProperties[typeof(TPropType)] = culture;
+            propConfig.PrintingConfig.AddCultureProperties<TPropType>(culture);
 
             return propConfig.Using(obj => obj.ToString(string.Empty, culture));
         }

@@ -1,4 +1,4 @@
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class ObjectExtensions
     {
