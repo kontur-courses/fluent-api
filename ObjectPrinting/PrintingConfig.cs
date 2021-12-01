@@ -7,16 +7,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly IObjectPrinter objectPrinter;
+        internal Config Config { get; } = new();
 
-        public PrintingConfig(IObjectPrinter objectPrinter)
+        internal PrintingConfig()
         {
-            this.objectPrinter = objectPrinter;
-        }
 
-        public string PrintToString(TOwner obj)
-        {
-            return objectPrinter.PrintToString(obj);
         }
 
         public PrintingConfig<TOwner> ForProperties<TProperty>(Action<BasicTypeConfig<TProperty, TOwner>> options)
@@ -90,51 +85,55 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> WithTrimLength(int trimLength)
         {
-            objectPrinter.SetTrimLength(trimLength);
+            if (trimLength < -1)
+                throw new ArgumentOutOfRangeException("Length supposed to be non-negative to trim or -1 to ignoe trim", nameof(trimLength));
+            Config.StringTrimLength = trimLength;
             return this;
         }
 
         protected PrintingConfig<TOwner> WithTrimLength(MemberInfo member, int trimLength)
         {
-            objectPrinter.SetTrimLength(member, trimLength);
+            if (trimLength < -1)
+                throw new ArgumentOutOfRangeException("Length supposed to be non-negative to trim or -1 to ignoe trim", nameof(trimLength));
+            Config.MemberTrimLengths[member] = trimLength;
             return this;
         }
 
         public PrintingConfig<TOwner> WithCulture<T>(CultureInfo cultureInfo)
             where T : IFormattable
         {
-            objectPrinter.SetCulture(typeof(T), cultureInfo);
+            Config.TypeCultureSettings[typeof(T)] = cultureInfo;
             return this;
         }
 
         protected PrintingConfig<TOwner> WithCulture<T>(MemberInfo member, CultureInfo cultureInfo)
             where T : IFormattable
         {
-            objectPrinter.SetCulture(member, cultureInfo);
+            Config.MemberCultureSettings[member] = cultureInfo;
             return this;
         }
 
         public PrintingConfig<TOwner> WithSerializer<T>(Func<T, string> serializer)
         {
-            objectPrinter.SetSerializer(typeof(T), x => serializer((T)x));
+            Config.TypeSpecificSerializers[typeof(T)] = x => serializer((T)x);
             return this;
         }
 
         protected PrintingConfig<TOwner> WithSerializer<T>(MemberInfo member, Func<T, string> serializer)
         {
-            objectPrinter.SetSerializer(member, x => serializer((T)x));
+            Config.MemberSpecificSerializers[member] = x => serializer((T)x);
             return this;
         }
 
         public PrintingConfig<TOwner> Exclude<T>()
         {
-            objectPrinter.Exclude(typeof(T));
+            Config.ExcludedTypes.Add(typeof(T));
             return this;
         }
 
         protected PrintingConfig<TOwner> Exclude(MemberInfo member)
         {
-            objectPrinter.Exclude(member);
+            Config.ExcludedMembers.Add(member);
             return this;
         }
 

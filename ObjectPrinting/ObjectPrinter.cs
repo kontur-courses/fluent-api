@@ -2,94 +2,41 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class ObjectPrinter : IObjectPrinter
+    public class ObjectPrinter<TOwner>
     {
         protected const char identationElement = '\t';
-        protected readonly HashSet<Type> finalTypes = new();
-
-        protected readonly HashSet<Type> excludedTypes = new();
-        protected readonly HashSet<MemberInfo> excludedMembers = new();
-        protected readonly Dictionary<Type, Func<object, string>> typeSpecificSerializers = new();
-        protected readonly Dictionary<Type, CultureInfo> typeCultureSettings = new();
-        protected readonly Dictionary<MemberInfo, Func<object, string>> memberSpecificSerializers = new();
-        protected readonly Dictionary<MemberInfo, CultureInfo> memberCultureSettings = new();
-        protected readonly Dictionary<MemberInfo, int> memberTrimLengths = new();
         protected readonly Dictionary<object, Guid> alreadyPrinted = new();
-        protected int stringTrimLength = -1;
+        internal Config? Config;
 
-        protected ObjectPrinter()
+        private ObjectPrinter(Config? config)
         {
-            var systemTypes = AppDomain.CurrentDomain.GetAssemblies()
-                           .SelectMany(t => t.GetTypes().Where(x => x.Namespace == nameof(System)));
-
-            var primitives = systemTypes.Where(x => x.GetInterface(nameof(IFormattable)) != null);
-            finalTypes.UnionWith(primitives);
-            finalTypes.Add(typeof(string));
-            finalTypes.Add(typeof(Enum));
+            Config = config;
         }
 
-        public string PrintToString(object obj)
+        public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, Config);
         }
 
-        public static PrintingConfig<T> For<T>()
+        public static ObjectPrinter<TOwner> Configure(Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> options)
         {
-            return new PrintingConfig<T>(new ObjectPrinter());
+            var configurator = options(new PrintingConfig<TOwner>());
+            return new ObjectPrinter<TOwner>(configurator.Config);
         }
 
-        public static string Print<T>(T obj)
+        public static ObjectPrinter<TOwner> Default => new(null);
+
+        public static string Print(TOwner obj)
         {
-            return new ObjectPrinter().PrintToString(obj);
+            return Default.PrintToString(obj);
         }
 
-        void IObjectPrinter.SetTrimLength(int trimLength)
-        {
-            stringTrimLength = trimLength;
-        }
-
-        void IObjectPrinter.SetTrimLength(MemberInfo member, int trimLength)
-        {
-            memberTrimLengths[member] = trimLength;
-        }
-
-        void IObjectPrinter.SetCulture(Type type, CultureInfo cultureInfo)
-        {
-            typeCultureSettings[type] = cultureInfo;
-        }
-
-        void IObjectPrinter.SetCulture(MemberInfo member, CultureInfo cultureInfo)
-        {
-            memberCultureSettings[member] = cultureInfo;
-        }
-
-        void IObjectPrinter.SetSerializer(Type type, Func<object, string> serializer)
-        {
-            typeSpecificSerializers[type] = serializer;
-        }
-
-        void IObjectPrinter.SetSerializer(MemberInfo member, Func<object, string> serializer)
-        {
-            memberSpecificSerializers[member] = serializer;
-        }
-
-        void IObjectPrinter.Exclude(Type type)
-        {
-            excludedTypes.Add(type);
-        }
-
-        void IObjectPrinter.Exclude(MemberInfo member)
-        {
-            excludedMembers.Add(member);
-        }
-
-        protected string PrintToString(object? obj, int nestingLevel, MemberInfo? currentMember = null)
+        private string PrintToString(object? obj, int nestingLevel, Config? config = null, MemberInfo? currentMember = null)
         {
             if (obj == null)
                 return "null";
@@ -97,24 +44,25 @@ namespace ObjectPrinting
             if (alreadyPrinted.TryGetValue(obj, out var id))
                 return $"was printed before : {id}";
 
-            var serialized = TrySerializeWithMemberInfo(obj, currentMember);
+            config ??= new Config();
+            var serialized = TrySerializeWithMemberInfo(obj, currentMember, config);
             if (serialized != null)
                 return serialized;
 
             var type = obj.GetType();
 
-            serialized = TrySerializeCollection(obj, nestingLevel);
+            serialized = TrySerializeCollection(obj, nestingLevel, config);
             if (serialized != null)
                 return serialized;
 
-            serialized = TrySerializeByType(obj, type);
+            serialized = TrySerializeByType(obj, type, config);
             if (serialized != null)
                 return serialized;
 
-            return SerializeProperties(obj, type, nestingLevel);
+            return SerializeProperties(obj, type, nestingLevel, config);
         }
 
-        private string SerializeProperties(object obj, Type type, int nestingLevel)
+        private string SerializeProperties(object obj, Type type, int nestingLevel, Config config)
         {
             var id = Guid.NewGuid();
             alreadyPrinted.Add(obj, id);
@@ -123,37 +71,37 @@ namespace ObjectPrinting
             sb.Append($"{type.Name} - {id}");
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedMembers.Contains(propertyInfo))
+                if (config.ExcludedMembers.Contains(propertyInfo))
                     continue;
 
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
+                if (config.ExcludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
 
-                var serialized = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, propertyInfo);
+                var serialized = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, config, propertyInfo);
                 sb.Append($"{Environment.NewLine}{identation}{propertyInfo.Name} = {serialized}");
             }
 
             return sb.ToString();
         }
 
-        private string? TrySerializeCollection(object collection, int nestingLevel)
+        private string? TrySerializeCollection(object collection, int nestingLevel, Config config)
         {
             if (collection is not ICollection)
                 return null;
 
             var identation = new string(identationElement, nestingLevel + 1);
             if (collection is IDictionary dictionary)
-                return SerializeDictionary(dictionary, nestingLevel, identation);
+                return SerializeDictionary(dictionary, nestingLevel, identation, config);
 
-            return SerializeCollection(collection as ICollection, nestingLevel, identation);
+            return SerializeCollection(collection as ICollection, nestingLevel, identation, config);
         }
 
-        private string SerializeCollection(ICollection collection, int nestingLevel, string identation)
+        private string SerializeCollection(ICollection collection, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"[{Environment.NewLine}");
             foreach (var obj in collection)
             {
-                sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1)},{Environment.NewLine}");
+                sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1, config)},{Environment.NewLine}");
             }
 
             sb.Remove(sb.Length - 2, 2);
@@ -162,30 +110,30 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation)
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"{{{Environment.NewLine}");
             foreach (DictionaryEntry obj in dictionary)
             {
-                sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1)} : {PrintToString(obj.Value, nestingLevel + 1)},{Environment.NewLine}");
+                sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1, config)} : {PrintToString(obj.Value, nestingLevel + 1, config)},{Environment.NewLine}");
             }
 
             sb.Append($"{identation}}}");
             return sb.ToString();
         }
 
-        private string? TrySerializeByType(object obj, Type type)
+        private string? TrySerializeByType(object obj, Type type, Config config)
         {
-            if (typeSpecificSerializers.TryGetValue(type, out var serializer))
+            if (config.TypeSpecificSerializers.TryGetValue(type, out var serializer))
                 return serializer(obj);
 
             if (obj is string)
 
-                return ToTrimmedString(obj as string, stringTrimLength);
+                return ToTrimmedString(obj as string, config.StringTrimLength);
 
-            if (finalTypes.Contains(type) || type.IsEnum && finalTypes.Contains(typeof(Enum)))
+            if (config.FinalTypes.Contains(type) || type.IsEnum && config.FinalTypes.Contains(typeof(Enum)))
             {
-                return typeCultureSettings.TryGetValue(type, out var culture)
+                return config.TypeCultureSettings.TryGetValue(type, out var culture)
                     ? ToStringAsFormattable(obj, culture)
                     : obj.ToString();
             }
@@ -193,18 +141,18 @@ namespace ObjectPrinting
             return null;
         }
 
-        private string? TrySerializeWithMemberInfo(object? obj, MemberInfo? memberInfo)
+        private string? TrySerializeWithMemberInfo(object? obj, MemberInfo? memberInfo, Config config)
         {
             if (memberInfo == null)
                 return null;
 
-            if (memberSpecificSerializers.TryGetValue(memberInfo, out var serializer))
+            if (config.MemberSpecificSerializers.TryGetValue(memberInfo, out var serializer))
                 return serializer(obj);
 
-            if (memberCultureSettings.TryGetValue(memberInfo, out var culture))
+            if (config.MemberCultureSettings.TryGetValue(memberInfo, out var culture))
                 return ToStringAsFormattable(obj, culture);
 
-            if (memberTrimLengths.TryGetValue(memberInfo, out var trimLength))
+            if (config.MemberTrimLengths.TryGetValue(memberInfo, out var trimLength))
                 return ToTrimmedString(obj as string, trimLength);
 
             return null;
@@ -222,19 +170,6 @@ namespace ObjectPrinting
         private static string ToStringAsFormattable(object obj, CultureInfo culture)
         {
             return (obj as IFormattable).ToString(null, culture);
-        }
-    }
-
-    public class ObjectPrinter<TOwner> : ObjectPrinter
-    {
-        public PrintingConfig<TOwner> Configure()
-        {
-            return new PrintingConfig<TOwner>(this);
-        }
-
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
         }
     }
 }

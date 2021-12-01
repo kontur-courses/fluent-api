@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public interface IPrintingConfig<TOwner>
+    internal interface IPrintingConfig<TOwner>
     {
         void Exclude(MemberInfo member);
         void WithSerializer<TProperty>(MemberInfo member, Func<TProperty, string> serializer);
