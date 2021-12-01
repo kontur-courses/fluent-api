@@ -43,26 +43,31 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             var sb = new StringBuilder();
+
+
             if (nestingLevel >= 100)
                 return GetTrimString(sb);
 
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-
             var objType = obj.GetType();
+
+
+
+
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
             {
                 if (obj is IFormattable formattable)
                     return formattable.ToString(null, culture) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
+
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(objType.Name);
             var fields =
-                type.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
-            var props = type.GetProperties().Cast<MemberInfo>();
+                objType.GetFields(BindingFlags.Public | BindingFlags.Instance).Cast<MemberInfo>();
+            var props = objType.GetProperties().Cast<MemberInfo>();
             var fieldsAndProperties = fields.Union(props);
 
             foreach (var memberInfo in fieldsAndProperties)
@@ -78,8 +83,7 @@ namespace ObjectPrinting
 
                 if (memberInfo is PropertyInfo propertyInfo)
                 {
-                    var a = propertyInfo.GetIndexParameters();
-                    object value = null;
+                    object value;
 
                     var indexParameters = propertyInfo.GetIndexParameters();
                     if (indexParameters.Length != 0)
@@ -107,9 +111,12 @@ namespace ObjectPrinting
                 else
                     throw new ArgumentException();
 
+
                 if (excludedTypes.Contains(memberSerialization.MemberType)
                     || excludedFieldsProperties.Contains(memberSerialization.MemberName))
                     continue;
+
+
 
                 Delegate serializeDelegate = null;
 
