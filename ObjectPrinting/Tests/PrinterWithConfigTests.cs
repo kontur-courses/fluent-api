@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using FluentAssertions;
@@ -7,6 +8,11 @@ using NUnit.Framework.Interfaces;
 
 namespace ObjectPrinting.Tests
 {
+    public class PrintIfFailure : Attribute
+    {
+        
+    }
+    
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
@@ -27,7 +33,24 @@ namespace ObjectPrinting.Tests
             };
         }
         
+        [TearDown]
+        public void TearDown()
+        {
+            var context = TestContext.CurrentContext;
+            var methodAttr = typeof(ObjectPrinterAcceptanceTests)
+                .GetMethod(context.Test.MethodName)
+                ?.GetCustomAttributes(true)
+                .OfType<PrintIfFailure>()
+                .FirstOrDefault();
+            
+            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed && methodAttr is not null)
+            {
+                TestContext.Out.WriteLine(actual);
+            }
+        }
+        
         [Test]
+        [PrintIfFailure]
         public void AlternativeSerialisationPropertyTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -39,6 +62,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        [PrintIfFailure]
         public void AlternativeSerialisationTypeTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -46,10 +70,11 @@ namespace ObjectPrinting.Tests
                 .Configure();
             actual = printer.PrintToString(person);
 
-            actual.Should().Contain("Name = ([Alex]d)");
+            actual.Should().Contain("Name = ([Alex])");
         }
         
         [Test]
+        [PrintIfFailure]
         public void CultureTypeTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -61,6 +86,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        [PrintIfFailure]
         public void CultureAllOthersTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -72,6 +98,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        [PrintIfFailure]
         public void IgnoreCombineTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -89,6 +116,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        [PrintIfFailure]
         public void IgnorePropertyTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -101,6 +129,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        [PrintIfFailure]
         public void IgnoreTypeTest()
         {
             var printer = Config<Person>.CreateConfig()
@@ -155,6 +184,38 @@ namespace ObjectPrinting.Tests
                     .For<DateTime>().WithMethod(dt => $"{dt.Day}.{dt.Month} - {dt.Year}").And
                     .For(p => p.Name).WithMethod(n => n.Trim().ToUpper()).WithCharsLimit(10).And
                     .For<Guid>().WithMethod(x => x.ToString("N"))
+                .Configure();
+
+            Console.WriteLine(printerDemo.PrintToString(personDemo));
+        }
+        
+        [Test]
+        public void CollectionsDemo()
+        {
+            var personDemo = new PersonWithList
+            {
+                List = new List<int>{2, 1, 4, 6, 23, 234},
+                Dict = new Dictionary<string, float>
+                {
+                    ["First"] = 123f,
+                    ["Second"] = .112323f,
+                    ["Third"] = 1.2342f,
+                },
+                Guids = new Queue<Guid>()
+            };
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            personDemo.Guids.Enqueue(Guid.NewGuid());
+            
+            var printerDemo = Config<PersonWithList>.CreateConfig()
+                .SetAlternativeSerialisation().For<Guid>().WithMethod(g => g.ToString("B"))
+                .SetAlternativeSerialisation().For<string>().WithMethod(s => s.ToUpper())
+                .SetAlternativeSerialisation().For<KeyValuePair<string, float>>().WithMethod(p => $"[{p.Key}] = {p.Value}")
                 .Configure();
 
             Console.WriteLine(printerDemo.PrintToString(personDemo));
