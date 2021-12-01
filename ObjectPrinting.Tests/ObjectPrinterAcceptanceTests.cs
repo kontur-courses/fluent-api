@@ -12,7 +12,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void AcceptanceTest()
         {
-            var person = new Person { FirstName = "Bob", LastName = "Martin", Age = 20 };
+            var person = new Person {FirstName = "Bob", LastName = "Martin", Age = 20};
             person.Parent = person;
 
             var expectedResult = new StringBuilder()
@@ -23,7 +23,7 @@ namespace ObjectPrinting.Tests
                 .AppendLine("\tHeight = 0")
                 .AppendLine("\tParent = ![Cyclic reference]!")
                 .ToString();
-            
+
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Exclude<int>()
@@ -39,7 +39,7 @@ namespace ObjectPrinting.Tests
                 .Exclude(x => x.Age)
                 //7. Детект циклических ссылок
                 .UseCycleReference(true);
-            
+
             var printedObject = printer.PrintToString(person);
             printedObject.Should().Be(expectedResult);
         }

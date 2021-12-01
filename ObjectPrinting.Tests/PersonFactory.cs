@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting.Tests
 {
     public static class PersonFactory
     {

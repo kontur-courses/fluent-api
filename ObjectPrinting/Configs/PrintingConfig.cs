@@ -81,7 +81,7 @@ namespace ObjectPrinting.Configs
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            if (obj is ICollection collection) 
+            if (obj is ICollection collection)
                 return PrintCollection(collection, nestingLevel);
 
             visited.Add(obj);
@@ -103,6 +103,8 @@ namespace ObjectPrinting.Configs
                 return $"[]{Environment.NewLine}";
             var indentation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
+            if (nestingLevel != 0)
+                sb.AppendLine();
             sb.AppendLine($"{indentation}[");
             foreach (var el in collection) sb.Append(indentation + "\t" + PrintToString(el, nestingLevel + 1));
             sb.AppendLine($"{indentation}]");

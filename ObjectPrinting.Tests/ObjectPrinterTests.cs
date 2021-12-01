@@ -33,7 +33,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Should_ThrowException_WhenSelectorIsNull()
         {
-            Assert.Throws<ArgumentNullException>(() => 
+            Assert.Throws<ArgumentNullException>(() =>
                 ObjectPrinter.For<Person>()
                     .Use(x => x.Age).With(null));
         }
@@ -189,6 +189,17 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void Should_PrintEmptyArray()
+        {
+            var array = Array.Empty<string>();
+
+            var printedArray = ObjectPrinter.For<string[]>()
+                .PrintToString(array);
+
+            printedArray.Should().Be($"[]{Environment.NewLine}");
+        }
+
+        [Test]
         public void Should_PrintArray()
         {
             var cities = new[] {"Moscow", "Rio", "Zurich"};
@@ -199,7 +210,7 @@ namespace ObjectPrinting.Tests
                 .AppendLine("\tZurich")
                 .AppendLine("]")
                 .ToString();
-            
+
             var printedArray = ObjectPrinter.For<string[]>()
                 .PrintToString(cities);
 
@@ -217,7 +228,7 @@ namespace ObjectPrinting.Tests
                 .AppendLine("\tZurich")
                 .AppendLine("]")
                 .ToString();
-            
+
             var printedArray = ObjectPrinter.For<List<string>>()
                 .PrintToString(cities);
 
@@ -242,11 +253,57 @@ namespace ObjectPrinting.Tests
                 .AppendLine("\t\tValue = 100")
                 .AppendLine("]")
                 .ToString();
-            
+
             var printedArray = ObjectPrinter.For<Dictionary<string, int>>()
                 .PrintToString(currencies);
 
             printedArray.Should().Be(expected);
+        }
+
+        [Test]
+        public void Should_PrintNestedCollections()
+        {
+            var items = new List<Dictionary<string, string>>
+            {
+                new()
+                {
+                    {"Moscow", "Russia"},
+                    {"Paris", "France"}
+                },
+                new()
+                {
+                    {"London", "England"},
+                    {"Madrid", "Spain"}
+                }
+            };
+
+            var expected = new StringBuilder()
+                .AppendLine("[")
+                .AppendLine("\t")
+                .AppendLine("\t[")
+                .AppendLine("\t\tKeyValuePair`2")
+                .AppendLine("\t\t\tKey = Moscow")
+                .AppendLine("\t\t\tValue = Russia")
+                .AppendLine("\t\tKeyValuePair`2")
+                .AppendLine("\t\t\tKey = Paris")
+                .AppendLine("\t\t\tValue = France")
+                .AppendLine("\t]")
+                .AppendLine("\t")
+                .AppendLine("\t[")
+                .AppendLine("\t\tKeyValuePair`2")
+                .AppendLine("\t\t\tKey = London")
+                .AppendLine("\t\t\tValue = England")
+                .AppendLine("\t\tKeyValuePair`2")
+                .AppendLine("\t\t\tKey = Madrid")
+                .AppendLine("\t\t\tValue = Spain")
+                .AppendLine("\t]")
+                .AppendLine("]")
+                .ToString();
+
+            var printedItems = ObjectPrinter.For<List<Dictionary<string, string>>>()
+                .PrintToString(items);
+
+            printedItems.Should().Be(expected);
         }
     }
 }
