@@ -14,6 +14,7 @@ namespace ObjectPrinting
         public Dictionary<Type, Func<object, string>> typeAlterSerializations;
         public Dictionary<Type, Func<object, string>> culturedSerializations;
         public Dictionary<string, Func<object, string>> nameAlterSerializations;
+        public Dictionary<string, int> trimLengthByName;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
@@ -23,6 +24,7 @@ namespace ObjectPrinting
             culturedSerializations = new Dictionary<Type, Func<object, string>>();
             typeAlterSerializations = new Dictionary<Type, Func<object, string>>();
             nameAlterSerializations = new Dictionary<string, Func<object, string>>();
+            trimLengthByName = new Dictionary<string, int>();
         }
 
         public string PrintToString(TOwner obj)
@@ -48,18 +50,27 @@ namespace ObjectPrinting
                 if (typeAlterSerializations.ContainsKey(propType))
                 {
                     var serialize = typeAlterSerializations[propType];
-                    sb.AppendLine(indentation + serialize(propValue));
+                    var serializedValue = serialize(propValue);
+                    if (trimLengthByName.ContainsKey(propertyInfo.Name))
+                        serializedValue = serializedValue.Substring(0, trimLengthByName[propertyInfo.Name]);
+                    sb.AppendLine(indentation + serializedValue);
                 }
                 else if (nameAlterSerializations.ContainsKey(propertyInfo.Name))
                 {
                     var serialize = nameAlterSerializations[propertyInfo.Name];
-                    sb.AppendLine(indentation + serialize(propValue));
+                    var serializedValue = serialize(propValue);
+                    if (trimLengthByName.ContainsKey(propertyInfo.Name))
+                        serializedValue = serializedValue.Substring(0, trimLengthByName[propertyInfo.Name]);
+                    sb.AppendLine(indentation + serializedValue);
                 }
                 else if (propertyInfo.PropertyType.Module.ScopeName == BuiltInScope)
                 {
                     if (culturedSerializations.ContainsKey(propType))
                         propValue = culturedSerializations[propType](propValue);
-                    sb.AppendLine(indentation + propertyInfo.Name + " = " + propValue);
+                    var serializedValue = propValue.ToString();
+                    if (trimLengthByName.ContainsKey(propertyInfo.Name))
+                        serializedValue = serializedValue.Substring(0, trimLengthByName[propertyInfo.Name]);
+                    sb.AppendLine(indentation + propertyInfo.Name + " = " + serializedValue);
                 }
                 else 
                 {

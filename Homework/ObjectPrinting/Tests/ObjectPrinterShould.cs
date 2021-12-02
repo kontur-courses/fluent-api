@@ -2,6 +2,8 @@
 using NUnit.Framework;
 using System;
 using System.Globalization;
+using System.Linq;
+using ObjectPrinting.PrintingConfigs;
 using static System.Environment;
 
 namespace ObjectPrinting.Tests
@@ -123,6 +125,26 @@ namespace ObjectPrinting.Tests
                 $"\theight alternative serialization" + NewLine +
                 $"\tAge = {_vasya.Age}" + NewLine +
                 $"\tnonculturable alternative serialization" + NewLine +
+                $"\tweight = {_vasya.weight}" + NewLine +
+                $"\tsecondName = {_vasya.secondName}" + NewLine;
+
+            var serializationResult = printer.PrintToString(_vasya);
+
+            serializationResult.Should().BeEquivalentTo(expectedSerialization);
+        }
+
+        [Test]
+        public void TrimStringsToCustomLength()
+        {
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Printing(p => p.Name).TrimmedToLength(1);
+            var expectedSerialization = "Person" + NewLine +
+                $"\tId = {_vasya.Id}" + NewLine +
+                $"\tName = {_vasya.Name.Substring(0,1)}" + NewLine + 
+                $"\tHeight = {_vasya.Height}" + NewLine +
+                $"\tAge = {_vasya.Age}" + NewLine +
+                $"\tNonCulturable = null" + NewLine +
                 $"\tweight = {_vasya.weight}" + NewLine +
                 $"\tsecondName = {_vasya.secondName}" + NewLine;
 

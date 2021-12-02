@@ -23,6 +23,8 @@ namespace ObjectPrinting
             _printingConfig = printingConfig;
         }
 
+        public PropertyInfo GetPropInfo() => _propInfo;
+
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             Func<object, string> printWrapper = value =>
