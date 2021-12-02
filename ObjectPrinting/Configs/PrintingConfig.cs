@@ -12,11 +12,7 @@ namespace ObjectPrinting.Configs
     public class PrintingConfig<TOwner>
     {
         // ReSharper disable once StaticMemberInGenericType
-        private static readonly HashSet<Type> FinalTypes = new()
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        };
+        private static readonly HashSet<Type> finalTypes = TypesConfig.FinalTypes;
 
         private readonly Dictionary<MemberInfo, Func<object, string>> customMembersSerializers = new();
         private readonly Dictionary<Type, Func<object, string>> customTypesSerializers = new();
@@ -78,7 +74,7 @@ namespace ObjectPrinting.Configs
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (FinalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             if (obj is ICollection collection)
@@ -94,7 +90,7 @@ namespace ObjectPrinting.Configs
                 .Where(x => !IsExcluded(x))
                 .Select(x => $"{indentation}{PrintMember(x, obj, nestingLevel + 1)}");
 
-            return sb.AppendCollection(printedMembers).ToString();
+            return AppendCollection(sb, printedMembers).ToString();
         }
 
         private string PrintCollection(ICollection collection, int nestingLevel)
@@ -154,6 +150,14 @@ namespace ObjectPrinting.Configs
             if (memberInfo.MemberType is not MemberTypes.Field and not MemberTypes.Property)
                 throw new ArgumentException($"Expected Field or Property, but was {memberInfo.MemberType}");
             return memberInfo;
+        }
+
+        private static StringBuilder AppendCollection<T>(StringBuilder sb, IEnumerable<T> items)
+        {
+            foreach (var item in items)
+                sb.Append(item);
+
+            return sb;
         }
     }
 }
