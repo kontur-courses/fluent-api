@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -11,22 +12,53 @@ namespace ObjectPrintingTests
     public class PrintConfigTests
     {
         [Test]
+        public void PrintToString_AcceptanceTest()
+        {
+            var person = new Person { Name = "Alex", Age = 255 };
+            var culture = CultureInfo.InvariantCulture;
+            
+            var printer = ObjectPrinter.For<Person>()
+                //1. Исключить из сериализации свойства определенного типа
+                .Excluding<Guid>()
+                //2. Указать альтернативный способ сериализации для определенного типа
+                .Printing<int>().Using(i => i.ToString("X"))
+                //3. Для числовых типов указать культуру
+                .Printing<double>().Using(culture)
+                //4. Настроить сериализацию конкретного свойства
+                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                .Printing(p => p.Name).TrimmedToLength(2)
+                //6. Исключить из сериализации конкретного свойства
+                .Excluding(p => p.Friend);
+
+            var actual = printer.PrintToString(person);
+
+            var expected = new StringBuilder()
+                .AppendLine($"{nameof(Person)}")
+                .AppendLine($"\t{nameof(person.Name)} = {person.Name[..2]}")
+                .AppendLine($"\t{nameof(person.Height)} = {person.Height.ToString(culture)}")
+                .AppendLine($"\t{nameof(person.Age)} = {person.Age:X}")
+                .ToString();
+
+            actual.Should().Be(expected);
+        }
+        
+        
+        [Test]
         public void PrintToString_ShouldPrintWithoutProperty_WhenItHasExcludedType()
         {
-            var person = new Person { Name = "Ivan", Age = 20, Height = 194 };
+            var person = GetDefaultPerson();
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<int>();
             var actual = printer.PrintToString(person);
-
-            var expected = $"Person\r\n\tName = {person.Name}\r\n\tHeight = {person.Height}\r\n";
-            actual.Should().Be(expected);
+            
+            actual.Should().NotContain($"{nameof(person.Age)}");
         }
 
         [Test]
         public void PrintToString_ShouldPrintWithAlternativeWayOfSerialization_WhenItProvided()
         {
-            var person = new Person { Name = "Ivan", Age = 20 };
+            var person = GetDefaultPerson();
 
             var printer = ObjectPrinter.For<Person>()
                 .Printing<int>().Using(i => $"_{i}_");
@@ -38,19 +70,20 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldPrintWithAlternativeWayOfCulture_WhenItProvided()
         {
-            var person = new Person { Name = "Ivan", Age = 20 };
+            var person = GetDefaultPerson();
+            var culture = CultureInfo.InvariantCulture;
 
             var printer = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(CultureInfo.InvariantCulture);
+                .Printing<double>().Using(culture);
             var actual = printer.PrintToString(person);
             
-            actual.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.InvariantCulture)}");
+            actual.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(culture)}");
         }
         
         [Test]
         public void PrintToString_ShouldPrintPropertyWithAlternativeWay_WhenItProvided()
         {
-            var person = new Person { Name = "Ivan", Age = 20 };
+            var person = GetDefaultPerson();
 
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p=> p.Age).Using(x => $"!{x}!");
@@ -62,7 +95,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldPrintTrimmedString_WhenItProvided()
         {
-            var person = new Person { Name = "Ivan", Age = 20 };
+            var person = GetDefaultPerson();
 
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>().TrimmedToLength(3);
@@ -74,7 +107,7 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldPrintWithoutProperty_WhenItExcluded()
         {
-            var person = new Person { Name = "Ivan", Age = 20 };
+            var person = GetDefaultPerson();
 
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Name);
@@ -86,11 +119,11 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldPrintCollections_WhenCollectionProvided()
         {
-            var list = new List<Person> { new(){ Name = "Ivan", Age = 20 }, new() { Name = "Danil", Age = 20 }};
+            var personList = GetPersonList();
 
             var printer = ObjectPrinter.For<List<Person>>()
                 .Excluding<int>();
-            var actual = printer.PrintToString(list);
+            var actual = printer.PrintToString(personList);
 
             actual.Should().ContainAll($"{nameof(Person.Name)} = ", "Ivan", "Danil");
         }
@@ -98,27 +131,24 @@ namespace ObjectPrintingTests
         [Test]
         public void PrintToString_ShouldPrintCycle_WhenCycleReference()
         {
-            var classWithCycleReference = new ClassWithCycleReference();
-            classWithCycleReference.CycleReference = classWithCycleReference;
+            var person = GetCycleReferencePerson();
 
-            var printer = ObjectPrinter.For<ClassWithCycleReference>()
+            var printer = ObjectPrinter.For<Person>()
                 .AllowCyclingReference();
-            var actual = printer.PrintToString(classWithCycleReference);
+            var actual = printer.PrintToString(person);
 
-            var expected = $"ClassWithCycleReference\r\n\tCycleReference = Cycle\r\n";
-            actual.Should().Be(expected);
+            actual.Should().Contain($"{nameof(person.Friend)} = Cycle");
         }
         
         [Test]
         public void PrintToString_ShouldThrowException_WhenCycleReferenceDoesntSet()
         {
-            var classWithCycleReference = new ClassWithCycleReference();
-            classWithCycleReference.CycleReference = classWithCycleReference;
+            var person = GetCycleReferencePerson();
 
-            var printer = ObjectPrinter.For<ClassWithCycleReference>();
+            var printer = ObjectPrinter.For<Person>();
 
             FluentActions.Invoking(
-                    () => printer.PrintToString(classWithCycleReference))
+                    () => printer.PrintToString(person))
                 .Should().Throw<Exception>()
                 .WithMessage("Unexpected cycle reference");
         }
@@ -131,5 +161,40 @@ namespace ObjectPrintingTests
                         .Printing<string>().TrimmedToLength(-1))
                 .Should().Throw<ArgumentException>();
         }
+        
+        [Test]
+        public void PrintToString_ShouldThrowException_WhenIncorrectExpression()
+        {
+            FluentActions.Invoking(
+                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                        .Excluding(p => true))
+                .Should().Throw<ArgumentException>();
+        }
+        
+        [Test]
+        public void PrintToString_ShouldThrowException_WhenNullExpression()
+        {
+            FluentActions.Invoking(
+                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                        .Excluding<int>(null))
+                .Should().Throw<ArgumentException>();
+        }
+        
+        
+        private Person GetDefaultPerson() => new() { Name = "Ivan", Age = 20, Height = 194 };
+
+        private Person GetCycleReferencePerson()
+        {
+            var person = GetDefaultPerson();
+            person.Friend = person;
+            return person;
+        }
+        
+        private List<Person> GetPersonList() => new()
+        {
+            new Person { Name = "Ivan", Age = 20 },
+            new Person { Name = "Danil", Age = 20 },
+            new Person { Name = "Maksim", Age = 20}
+        };
     }
 }

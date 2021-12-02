@@ -8,11 +8,11 @@ namespace ObjectPrinting
     {
         private readonly SerializerSettings settings = new();
 
-        public string PrintToString(TOwner obj) => new Serializer(settings).PrintToString(obj);
+        public string PrintToString(TOwner obj) => new Serializer(settings).Serialize(obj);
         
         public PrintingConfig<TOwner> AllowCyclingReference()
         {
-            settings.IsAllowCyclingReference = true;
+            settings.AllowCyclingReference = true;
             return this;
         }
         
@@ -39,11 +39,15 @@ namespace ObjectPrinting
         
         private MemberInfo GetMember<TType>(Expression<Func<TOwner, TType>> memberSelector)
         {
+            if (memberSelector is null)
+                throw new ArgumentException("Expression should be not null");
             if (memberSelector.Body is not MemberExpression memberExpression)
-                throw new ArgumentException("Cannot resolve member expression");
+                throw new ArgumentException($"Cannot resolve member expression {memberSelector.Body}");
             var memberInfo = memberExpression.Member;
             if (memberInfo is null)
-                throw new ArgumentException("Cannot resolve member type");
+                throw new ArgumentException("MemberInfo should be not null");
+            if (memberInfo.MemberType is not (MemberTypes.Field or MemberTypes.Property))
+                throw new ArgumentException($"Expression should be a field or property selector, not {memberInfo.MemberType}");
             return memberInfo;
         }
     }

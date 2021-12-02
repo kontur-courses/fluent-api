@@ -24,14 +24,14 @@ namespace ObjectPrinting
             this.settings = settings;
         }
 
-        public string PrintToString(object obj, int nestingLevel = 0)
+        public string Serialize(object obj, int nestingLevel = 0)
         {
             if (obj == null)
                 return FormatString("null");
 
             if (visited.Contains(obj))
             {
-                return settings.IsAllowCyclingReference
+                return settings.AllowCyclingReference
                     ? FormatString("Cycle")
                     : throw new Exception("Unexpected cycle reference");
             }
@@ -74,7 +74,7 @@ namespace ObjectPrinting
                 .AppendLine($"{ident}[");
             foreach (var element in collection)
             {
-                values.Append($"{ident}\t{PrintToString(element, nestingLevel + 1)}");
+                values.Append($"{ident}\t{Serialize(element, nestingLevel + 1)}");
             }
 
             values.AppendLine($"{ident}]");
@@ -95,7 +95,7 @@ namespace ObjectPrinting
             var memberValue = memberInfo.GetValue(obj);
             if (settings.TryGetMemberSerializer(memberInfo, out var serializer))
                 return FormatString(serializer.Invoke(memberValue));
-            return PrintToString(memberValue, nestingLevel + 1);
+            return Serialize(memberValue, nestingLevel + 1);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<object, string>> typeToSerializer = new();
         private readonly Dictionary<MemberInfo, Func<object, string>> memberSerializer = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
-        public bool IsAllowCyclingReference { get; set; }
+        public bool AllowCyclingReference { get; set; }
 
         public bool IsExcluded(Type type) => excludedTypes.Contains(type);
 
