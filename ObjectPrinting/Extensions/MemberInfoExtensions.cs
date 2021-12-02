@@ -11,7 +11,7 @@ namespace ObjectPrinting.Extensions
             {
                 PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
                 FieldInfo fieldInfo => fieldInfo.GetValue(obj),
-                _ => throw new Exception($"unexpected memberInfo: {memberInfo}")
+                _ => throw new ArgumentOutOfRangeException($"unexpected memberInfo: {memberInfo}")
             };
         }
 
@@ -21,7 +21,7 @@ namespace ObjectPrinting.Extensions
             {
                 PropertyInfo pi => pi.PropertyType,
                 FieldInfo fi => fi.FieldType,
-                _ => throw new Exception($"unexpected memberInfo: {memberInfo}")
+                _ => throw new ArgumentOutOfRangeException($"unexpected memberInfo: {memberInfo}")
             };
         }
     }
