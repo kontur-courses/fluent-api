@@ -6,6 +6,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Specialized;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Serialization;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
 namespace ObjectPrinting
 {
@@ -47,14 +50,14 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (serializedMembers.Contains(obj))
-               return ReturnWhenCyclic(nestingLevel);
+                return ReturnWhenCyclic(nestingLevel);
 
             var sb = new StringBuilder();
             if (obj == null)
                 return NullToString + Environment.NewLine;
 
             var objType = obj.GetType();
-            
+
 
             if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
                 return ReturnWhenFinal(obj);
@@ -118,8 +121,8 @@ namespace ObjectPrinting
         private string FormSerializeDelegateString(string identation, int nestingLevel,
             SerializationMemberInfo memberSerialization, Delegate serializeDelegate)
         {
-            return identation + memberSerialization.MemberName + " = " + 
-                   PrintToString(serializeDelegate.DynamicInvoke(memberSerialization.MemberValue), 
+            return identation + memberSerialization.MemberName + " = " +
+                   PrintToString(serializeDelegate.DynamicInvoke(memberSerialization.MemberValue),
                        nestingLevel + 1);
         }
 
@@ -214,7 +217,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner,CultureInfo>> inputCulture)
+        public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner, CultureInfo>> inputCulture)
         {
             var cultureName = ((NewExpression)inputCulture.Body).Arguments.First().ToString();
             culture = new CultureInfo(cultureName[1..^1]);
@@ -227,14 +230,17 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Trim(int start = 0, int length = int.MaxValue)
+        public PrintingConfig<TOwner> Trim<TStart,TLength>(Expression<Func<TOwner, Tuple<TStart, TLength>>> trimBorders)
         {
+            var start = int.Parse(((NewExpression) trimBorders.Body).Arguments[0].ToString());
+            var length = int.Parse(((NewExpression)trimBorders.Body).Arguments[1].ToString());
+            
             if (start < 0 || length < 0)
                 throw new ArgumentException();
+            
             resultStartIndex = start;
             resultLength = length;
             return this;
         }
-        
     }
 }

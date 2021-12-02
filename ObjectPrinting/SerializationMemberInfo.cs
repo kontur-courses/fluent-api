@@ -8,12 +8,6 @@ namespace ObjectPrinting
         public string MemberName { get; }
         public Type MemberType { get; }
         public object MemberValue { get; }
-        public SerializationMemberInfo(string memberName = null, Type memberType = null, object memberValue = null)
-        {
-            MemberName = memberName;
-            MemberType = memberType;
-            MemberValue = memberValue;
-        }
 
         public SerializationMemberInfo(PropertyInfo property, object obj)
         {
@@ -21,6 +15,7 @@ namespace ObjectPrinting
             MemberType = property.PropertyType;
             MemberValue = property.GetValue(obj);
         }
+
         public SerializationMemberInfo(FieldInfo field, object obj)
         {
             MemberName = field.Name;

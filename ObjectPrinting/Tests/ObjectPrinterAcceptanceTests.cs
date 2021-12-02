@@ -123,7 +123,11 @@ namespace ObjectPrinting.Tests
         public void SerializationWithTrim()
         {
             var person = new Person { Name = "Alex", Height = 170, Age = 14 };
-            var printer = ObjectPrinter.For<Person>().Trim(10, 80);
+            var printer = ObjectPrinter.For<Person>().Trim(x => new Tuple<int,int>(10, 80));
+
+            //var printer = ObjectPrinter.For<Person>().PinProperty(pr => "Id").Trim(x => new Tuple<int,int>(10, 20));
+
+
             var result = printer.PrintToString(person);
             result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tN");
         }
@@ -165,7 +169,7 @@ namespace ObjectPrinting.Tests
             };
             var result = printer.PrintToString(data);
             result.Should().Be("Dictionary`2\r\n\t" + "Comparer = " +
-                               "GenericEqualityComparer`1\r\n\t" + 
+                               "GenericEqualityComparer`1\r\n\t" +
                                "Count = 3\r\n\t" + "Keys = KeyCollection\r\n\t\t" +
                                "Count = 3\r\n\t" + "Values = ValueCollection\r\n\t\t" +
                                "Count = 3\r\n\t" + "Item =\r\n\t\t" +
