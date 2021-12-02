@@ -22,7 +22,10 @@ namespace PrinterTests
         [SetUp]
         public void PersonCreator()
         {
-            person = fixture.Create<Person>();
+            person = fixture.Build<Person>()
+                .Without(p => p.Father)
+                .Without(p => p.Son)
+                .Create();
         }
 
         [Test]
@@ -36,7 +39,9 @@ namespace PrinterTests
             sut.Replace("\r", "").Should().Be("Person\n" +
                                               $"\tName = {person.Name}\n" +
                                               $"\tHeight = {person.Height}\n" +
-                                              $"\tAge = {person.Age}\n");
+                                              $"\tAge = {person.Age}\n" +
+                                              "\tFather = null\n" +
+                                              "\tSon = null\n");
         }
 
         [Test]
@@ -50,7 +55,9 @@ namespace PrinterTests
                                            $"\tName = {person.Name}\n" +
                                            $"\tHeight = {person.Height}\n" +
                                            $"\tAge = {person.Age}\n" +
-                                           $"\tBirthDate = {person.BirthDate}\n";
+                                           $"\tBirthDate = {person.BirthDate}\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n";
 
             sut.ToLowerInvariant().Replace("\r", "")
                 .Should()
@@ -68,6 +75,8 @@ namespace PrinterTests
                                            $"\tName = {person.Name}\n" +
                                            $"\tHeight = {person.Height}\n" +
                                            $"\tAge = {person.Age}\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
                                            $"\tId = {person.Id}\n";
 
             sut.ToLowerInvariant().Replace("\r", "")
@@ -83,6 +92,8 @@ namespace PrinterTests
                                            "\tHeight = change double\n" +
                                            "\tAge = change int\n" +
                                            "\tBirthDate = change DateTime\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
                                            "\tId = change Guid\n";
 
             var sut = ObjectPrinter.For<Person>()
@@ -100,6 +111,56 @@ namespace PrinterTests
         }
 
         [Test]
+        public void PrintToString_objectHasCyclicReferences_notBeStackOverflow()
+        {
+            var father = fixture.Build<Person>()
+                .Without(p => p.Father)
+                .Without(p => p.Son)
+                .Create();
+
+            father.Son = person;
+            person.Father = father;
+            var printer = ObjectPrinter.For<Person>();
+            var print = new Action(() => { printer.PrintToString(person, int.MaxValue); });
+
+            print.Should().NotThrow<StackOverflowException>();
+        }
+
+        [Test]
+        public void PrintToString_objectHasCyclicReferences_shouldBeExpected()
+        {
+            var father = fixture.Build<Person>()
+                .Without(p => p.Father)
+                .Without(p => p.Son)
+                .Create();
+
+            father.Son = person;
+            person.Father = father;
+            var expectedSerializedPerson = "Person\n" +
+                                           $"\tName = {person.Name}\n" +
+                                           $"\tHeight = {person.Height}\n" +
+                                           $"\tAge = {person.Age}\n" +
+                                           $"\tBirthDate = {person.BirthDate}\n" +
+                                           "\tFather = Person\n" +
+                                           $"\t\tName = {father.Name}\n" +
+                                           $"\t\tHeight = {father.Height}\n" +
+                                           $"\t\tAge = {father.Age}\n" +
+                                           $"\t\tBirthDate = {father.BirthDate}\n" +
+                                           "\t\tFather = null\n" +
+                                           $"\t\tSon = {nameof(person)}({person.GetHashCode()})\n" +
+                                           $"\t\tId = {father.Id}\n\n" +
+                                           "\tSon = null\n" +
+                                           $"\tId = {person.Id}\n";
+
+            var sut = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            sut.Replace("\r", "").ToLowerInvariant()
+                .Should()
+                .Be(expectedSerializedPerson.ToLowerInvariant());
+        }
+
+        [Test]
         public void StringOfField_should_changeFieldSerialization()
         {
             var expectedSerializedPerson = "Person\n" +
@@ -107,7 +168,9 @@ namespace PrinterTests
                                            $"\tHeight = {person.Height}\n" +
                                            $"\tAge = {person.Age}\n" +
                                            $"\tBirthDate = {person.BirthDate}\n" +
-                                           $"\tId(Guid) = {person.Id}\n";
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
+                                           $"\tId(guid) = {person.Id}\n";
 
             var sut = ObjectPrinter.For<Person>()
                 .StringOfField(nameof(Person.Id), (fi, res) => $"{fi.Name}({fi.FieldType.Name}) = {res}")
@@ -126,10 +189,12 @@ namespace PrinterTests
                                            $"\tHeight = {person.Height}\n" +
                                            $"\tAge(int32) = {person.Age}\n" +
                                            $"\tBirthDate = {person.BirthDate}\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
                                            $"\tId = {person.Id}\n";
 
             var sut = ObjectPrinter.For<Person>()
-                .StringOfProperty(nameof(Person.Age), 
+                .StringOfProperty(nameof(Person.Age),
                     (pi, val) => $"{pi.Name}({pi.PropertyType.Name}) = {val}")
                 .PrintToString(person);
 
@@ -150,6 +215,8 @@ namespace PrinterTests
                                            $"\tHeight = {expectedHeight}\n" +
                                            $"\tAge = {person.Age.ToString(culture)}\n" +
                                            $"\tBirthDate = {expectedBirthDate}\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
                                            $"\tId = {person.Id}\n";
 
             var sut = ObjectPrinter
@@ -173,6 +240,8 @@ namespace PrinterTests
                                            $"\tHeight = {person.Height}\n" +
                                            $"\tAge = {person.Age}\n" +
                                            $"\tBirthDate = {expectedBirthDate}\n" +
+                                           "\tFather = null\n" +
+                                           "\tSon = null\n" +
                                            $"\tId = {person.Id}\n";
 
             var sut = ObjectPrinter

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 
@@ -20,15 +21,17 @@ namespace Printer
         private CultureInfo globalCulture = CultureInfo.CurrentCulture;
         private readonly Dictionary<Type, (CultureInfo formatProvider, string format)> formatProviders = new();
 
+        private readonly HashSet<object> serializedObjects = new();
+
         private static readonly Type[] FinalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(Enum)
         };
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(TOwner obj, int recursionLimit = 50)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, recursionLimit);
         }
 
         public PrintingConfig<TOwner> Exclude<T>()
@@ -120,8 +123,8 @@ namespace Printer
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-
             sb.AppendLine(type.Name);
+
             if (typeCustomSerializers.ContainsKey(type))
             {
                 sb.Append(identation + typeCustomSerializers[type](obj));
@@ -131,6 +134,12 @@ namespace Printer
             if (FinalTypes.Contains(obj.GetType()))
             {
                 return Serialize(obj);
+            }
+
+            if (!serializedObjects.Add(obj))
+            {
+                sb.Append($"({obj.GetHashCode()})");
+                return sb.Replace("\r", "").Replace("\n", "").ToString();
             }
 
 
@@ -177,19 +186,20 @@ namespace Printer
             }
 
             var fieldType = fieldInfo.FieldType;
-            
-            var serializedTypeValue = typeCustomSerializers.ContainsKey(fieldType) 
+
+            var serializedTypeValue = typeCustomSerializers.ContainsKey(fieldType)
                 ? typeCustomSerializers[fieldType](fieldInfo.GetValue(obj))
                 : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1);
 
             serializeField = fieldCustomSerializers.ContainsKey(fieldInfo)
-                ? fieldCustomSerializers[fieldInfo](fieldInfo, serializedTypeValue):
-                fieldInfo.Name + " = " + serializedTypeValue;
+                ? fieldCustomSerializers[fieldInfo](fieldInfo, serializedTypeValue)
+                : fieldInfo.Name + " = " + serializedTypeValue;
 
             return true;
         }
 
-        private bool IsNotExcludedMember(PropertyInfo propertyInfo, object obj, int nestingLevel, out string serializedProperty)
+        private bool IsNotExcludedMember(PropertyInfo propertyInfo, object obj, int nestingLevel,
+            out string serializedProperty)
         {
             if (excludedTypes.Contains(propertyInfo.PropertyType))
             {
@@ -198,14 +208,14 @@ namespace Printer
             }
 
             var propertyType = propertyInfo.PropertyType;
-            
-            var serializedTypeValue = typeCustomSerializers.ContainsKey(propertyType) 
+
+            var serializedTypeValue = typeCustomSerializers.ContainsKey(propertyType)
                 ? typeCustomSerializers[propertyType](propertyInfo.GetValue(obj))
                 : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
 
-             serializedProperty = propertyCustomSerializers.ContainsKey(propertyInfo)
-                ? propertyCustomSerializers[propertyInfo](propertyInfo, serializedTypeValue):
-                propertyInfo.Name + " = " + serializedTypeValue;
+            serializedProperty = propertyCustomSerializers.ContainsKey(propertyInfo)
+                ? propertyCustomSerializers[propertyInfo](propertyInfo, serializedTypeValue)
+                : propertyInfo.Name + " = " + serializedTypeValue;
 
             return true;
         }
@@ -218,12 +228,10 @@ namespace Printer
             }
 
             var type = formattable.GetType();
-            if (formatProviders.ContainsKey(type))
-            {
-                return formattable.ToString(formatProviders[type].format, formatProviders[type].formatProvider);
-            }
 
-            return formattable.ToString(null, globalCulture);
+            return formatProviders.ContainsKey(type)
+                ? formattable.ToString(formatProviders[type].format, formatProviders[type].formatProvider)
+                : formattable.ToString(null, globalCulture);
         }
     }
 }
