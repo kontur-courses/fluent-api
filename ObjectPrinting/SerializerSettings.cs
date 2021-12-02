@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class SerializerSettings
+    internal class SerializerSettings
     {
         private readonly List<Type> excludedTypes = new();
         private readonly Dictionary<Type, Func<object, string>> typeToSerializer = new();

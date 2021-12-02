@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public class TypeConfig<TOwner, TType> : IInnerTypeConfig<TOwner, TType>
+    internal class TypeConfig<TOwner, TType> : IInnerTypeConfig<TOwner, TType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly SerializerSettings serializerSettings;

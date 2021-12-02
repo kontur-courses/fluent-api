@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.Extensions
 {
-    public static class MemberInfoExtensions
+    internal static class MemberInfoExtensions
     {
         public static object GetValue(this MemberInfo memberInfo, object obj) =>
             memberInfo switch

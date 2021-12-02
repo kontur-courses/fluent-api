@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.Extensions
 {
-    public static class TypeExtensions
+    internal static class TypeExtensions
     {
         public static IEnumerable<MemberInfo> GetFieldsAndProperties(this Type type) =>
             type

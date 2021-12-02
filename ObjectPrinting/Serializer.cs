@@ -8,7 +8,7 @@ using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
-    public class Serializer
+    internal class Serializer
     {
         private readonly SerializerSettings settings;
         private readonly HashSet<object> visited = new();

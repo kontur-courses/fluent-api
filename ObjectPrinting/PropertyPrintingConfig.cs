@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TType> : IInnerTypeConfig<TOwner, TType>
+    internal class PropertyPrintingConfig<TOwner, TType> : IInnerTypeConfig<TOwner, TType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo memberInfo;
