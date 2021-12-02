@@ -2,7 +2,6 @@
 using NUnit.Framework;
 using System;
 using System.Globalization;
-using System.Linq;
 using ObjectPrinting.PrintingConfigs;
 using static System.Environment;
 
@@ -11,7 +10,7 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterShould
     {
-        private Person _vasya = new Person
+        private readonly Person _vasya = new Person
         {
             Id = Guid.NewGuid(),
             Name = "Vasya",
@@ -35,7 +34,7 @@ namespace ObjectPrinting.Tests
                 .For<Person>()
                 .Excluding<string>()
                 .Excluding<double>();
-            string serializedPerson = printer.PrintToString(_vasya);
+            var serializedPerson = printer.PrintToString(_vasya);
 
             serializedPerson.Should().Be(expectedSerialization);
         }
@@ -167,9 +166,8 @@ namespace ObjectPrinting.Tests
                 "CyclicPerson" + NewLine +
                 $"\tName = {firstPerson.Name}" + NewLine +
                 $"\tChild = {firstPerson.Child.GetType().Name}" + NewLine +
-                "\tCyclicPerson" + NewLine +
                 $"\t\tName = {secondPerson.Name}" + NewLine +
-                $"\t\tChild = {secondPerson.Child.GetType().Name}" + NewLine;
+                $"\t\tChild = {secondPerson.Child.GetType().Name}";
 
                 var serializationResult = printer.PrintToString(firstPerson);
 
