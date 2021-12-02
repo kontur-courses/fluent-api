@@ -4,9 +4,9 @@ namespace ObjectPrinting
 {
     public class BasicTypeConfig<T, TOwner>
     {
-        internal readonly IPrintingConfig<TOwner> Container;
+        internal readonly PrintingConfig<TOwner> Container;
 
-        internal BasicTypeConfig(IPrintingConfig<TOwner> container)
+        internal BasicTypeConfig(PrintingConfig<TOwner> container)
         {
             Container = container;
         }

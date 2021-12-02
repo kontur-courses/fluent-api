@@ -9,18 +9,18 @@ namespace ObjectPrinting
 {
     public class ObjectPrinter<TOwner>
     {
-        protected const char identationElement = '\t';
-        protected readonly Dictionary<object, Guid> alreadyPrinted = new();
-        internal Config? Config;
+        private const char identationElement = '\t';
+        private readonly Dictionary<object, Guid> alreadyPrinted = new();
+        private readonly Config? config;
 
         private ObjectPrinter(Config? config)
         {
-            Config = config;
+            this.config = config;
         }
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, Config);
+            return PrintToString(obj, 0, config);
         }
 
         public static ObjectPrinter<TOwner> Configure(Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> options)

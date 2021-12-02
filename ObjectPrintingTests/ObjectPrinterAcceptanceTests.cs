@@ -81,7 +81,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         {
             testObject.Name = "Really long Name";
 
-            result = ObjectPrinter<Person>.Configure(x => x.WithSerializer<Guid>(x => x.ToString())).PrintToString(testObject);
+            result = ObjectPrinter<Person>.Configure(options => options.WithSerializer<Guid>(guid => guid.ToString())).PrintToString(testObject);
 
             result.Should().ContainAll(testObject.OtherPersons.Select(x => x.ToString()));
         }
@@ -90,7 +90,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         public void Should_PrintSpecificTrimmedStrings_ByOptions()
         {
             testObject.Name = "Really long Name";
-            var printer = ObjectPrinter<Person>.Configure(x => x.ForProperty(x => x.Name, x => x.WithTrimLength(10)));
+            var printer = ObjectPrinter<Person>.Configure(options => options.ForProperty(x => x.Name, x => x.WithTrimLength(10)));
 
             result = printer.PrintToString(testObject);
 
@@ -102,7 +102,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         public void Should_PrintSpecificTrimmedStrings()
         {
             testObject.Name = "Really long Name";
-            var printer = ObjectPrinter<Person>.Configure(x => x.WithTrimLength(x => x.Name, 10));
+            var printer = ObjectPrinter<Person>.Configure(options => options.WithTrimLength(x => x.Name, 10));
 
             result = printer.PrintToString(testObject);
 
@@ -113,7 +113,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void Should_PrintTrimmedStrings_ByOptions()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.ForProperties<string>(x => x.WithTrimLength(10)));
+            var printer = ObjectPrinter<Person>.Configure(options => options.ForProperties<string>(x => x.WithTrimLength(10)));
 
             result = printer.PrintToString(testObject);
 
@@ -123,7 +123,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void Should_PrintTrimmedStrings()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.WithTrimLength(10));
+            var printer = ObjectPrinter<Person>.Configure(options => options.WithTrimLength(10));
 
             result = printer.PrintToString(testObject);
 
@@ -134,7 +134,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         public void Should_PrintUsingTypeSpecificCulture_ByOptions()
         {
             var printer = ObjectPrinter<Person>
-                .Configure(x => x.ForProperties<double>(x => x.WithCulture(CultureInfo.InvariantCulture)));
+                .Configure(options => options.ForProperties<double>(x => x.WithCulture(CultureInfo.InvariantCulture)));
 
             result = printer.PrintToString(testObject);
 
@@ -144,7 +144,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void Should_PrintUsingTypeSpecificCulture()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.WithCulture<double>(CultureInfo.InvariantCulture));
+            var printer = ObjectPrinter<Person>.Configure(options => options.WithCulture<double>(CultureInfo.InvariantCulture));
 
             result = printer.PrintToString(testObject);
 
@@ -154,7 +154,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void Should_PrintUsingTypeSpecificSerializer_ByOptions()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x
+            var printer = ObjectPrinter<Person>.Configure(options => options
                 .ForProperties<Guid>(x => x.WithSerializer(y => y.ToString())));
 
             result = printer.PrintToString(testObject);
@@ -165,7 +165,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void Should_PrintUsingTypeSpecificSerializer()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.WithSerializer<Guid>(y => y.ToString()));
+            var printer = ObjectPrinter<Person>.Configure(options => options.WithSerializer<Guid>(y => y.ToString()));
 
             result = printer.PrintToString(testObject);
 
@@ -175,7 +175,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void ShouldNot_PrintExcludedTypes()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.Exclude<Guid>());
+            var printer = ObjectPrinter<Person>.Configure(options => options.Exclude<Guid>());
 
             result = printer.PrintToString(testObject);
 
@@ -185,7 +185,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void ShouldNot_PrintExcludedTypes_ByOptions()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.ForProperties<Guid>(x => x.Exclude()));
+            var printer = ObjectPrinter<Person>.Configure(options => options.ForProperties<Guid>(x => x.Exclude()));
 
             result = printer.PrintToString(testObject);
 
@@ -195,7 +195,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void ShouldNot_PrintExcludedMembers_ByOptions()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.ForProperty(x => x.Name, x => x.Exclude()));
+            var printer = ObjectPrinter<Person>.Configure(options => options.ForProperty(x => x.Name, x => x.Exclude()));
 
             result = printer.PrintToString(testObject);
 
@@ -205,7 +205,7 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void ShouldNot_PrintExcludedMembers()
         {
-            var printer = ObjectPrinter<Person>.Configure(x => x.Exclude(x => x.Name));
+            var printer = ObjectPrinter<Person>.Configure(options => options.Exclude(x => x.Name));
 
             result = printer.PrintToString(testObject);
 
@@ -215,19 +215,17 @@ Integer nisl quam, bibendum in eleifend vitae, tempus ac massa. Donec mollis.",
         [Test]
         public void SyntaxShowCase()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var obj = new Person { Name = "Alex", Age = 19 };
             var printer = ObjectPrinter<Person>.Configure(
-                                       x => x.Exclude<int>()
-                                       .Exclude(x => x.Height)
-                                       .ForProperties<double>(x => x.WithCulture(CultureInfo.InvariantCulture))
-                                       .ForProperties<string>(x => x.WithTrimLength(10))
-                                       .ForProperty(person => person.Name, config => config.WithSerializer(x => x.ToString()))
+                                       options => options.Exclude<int>()
+                                       .Exclude(person => person.Height)
+                                       .ForProperties<double>(config => config.WithCulture(CultureInfo.InvariantCulture))
+                                       .ForProperties<string>(config => config.WithTrimLength(10))
+                                       .ForProperty(person => person.Name, config => config.WithSerializer(name => name.ToString()))
                                        .ForProperty(person => person.Id, config => config.WithCulture(CultureInfo.InvariantCulture))
                                        );
 
-            result = printer.PrintToString(person);
-
-            Assert.Pass();
+            result = printer.PrintToString(obj);
         }
     }
 }

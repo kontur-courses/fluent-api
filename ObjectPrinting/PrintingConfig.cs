@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
+    public class PrintingConfig<TOwner>
     {
         internal Config Config { get; } = new();
 
@@ -91,7 +91,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        protected PrintingConfig<TOwner> WithTrimLength(MemberInfo member, int trimLength)
+        internal PrintingConfig<TOwner> WithTrimLength(MemberInfo member, int trimLength)
         {
             if (trimLength < -1)
                 throw new ArgumentOutOfRangeException(nameof(trimLength), "Length supposed to be non-negative to trim or -1 to ignoe trim");
@@ -106,7 +106,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        protected PrintingConfig<TOwner> WithCulture<T>(MemberInfo member, CultureInfo cultureInfo)
+        internal PrintingConfig<TOwner> WithCulture<T>(MemberInfo member, CultureInfo cultureInfo)
             where T : IFormattable
         {
             Config.MemberCultureSettings[member] = cultureInfo;
@@ -119,7 +119,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        protected PrintingConfig<TOwner> WithSerializer<T>(MemberInfo member, Func<T, string> serializer)
+        internal PrintingConfig<TOwner> WithSerializer<T>(MemberInfo member, Func<T, string> serializer)
         {
             Config.MemberSpecificSerializers[member] = x => serializer((T)x);
             return this;
@@ -131,7 +131,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        protected PrintingConfig<TOwner> Exclude(MemberInfo member)
+        internal PrintingConfig<TOwner> Exclude(MemberInfo member)
         {
             Config.ExcludedMembers.Add(member);
             return this;
@@ -142,46 +142,6 @@ namespace ObjectPrinting
             if (memberAccess.Body.NodeType != ExpressionType.MemberAccess)
                 throw new ArgumentException("Expression should represent member access", nameof(memberAccess));
             return ((MemberExpression)memberAccess.Body).Member;
-        }
-
-        void IPrintingConfig<TOwner>.Exclude(MemberInfo member)
-        {
-            Exclude(member);
-        }
-
-        void IPrintingConfig<TOwner>.WithSerializer<TProperty>(MemberInfo member, Func<TProperty, string> serializer)
-        {
-            WithSerializer(member, serializer);
-        }
-
-        void IPrintingConfig<TOwner>.WithTrimLength(int length)
-        {
-            WithTrimLength(length);
-        }
-
-        void IPrintingConfig<TOwner>.Exclude<T>()
-        {
-            Exclude<T>();
-        }
-
-        void IPrintingConfig<TOwner>.WithSerializer<T>(Func<T, string> serializer)
-        {
-            WithSerializer(serializer);
-        }
-
-        void IPrintingConfig<TOwner>.WithCulture<TProperty>(MemberInfo member, CultureInfo cultureInfo)
-        {
-            WithCulture<TProperty>(member, cultureInfo);
-        }
-
-        void IPrintingConfig<TOwner>.WithTrimLength(MemberInfo member, int length)
-        {
-            WithTrimLength(member, length);
-        }
-
-        void IPrintingConfig<TOwner>.WithCulture<TProperty>(CultureInfo cultureInfo)
-        {
-            WithCulture<TProperty>(cultureInfo);
         }
     }
 }
