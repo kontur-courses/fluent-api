@@ -157,7 +157,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldThrowException_WhenTrimmedANegativeMaxLenght()
         {
             FluentActions.Invoking(
-                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                    () => ObjectPrinter.For<Person>()
                         .Printing<string>().TrimmedToLength(-1))
                 .Should().Throw<ArgumentException>();
         }
@@ -166,7 +166,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldThrowException_WhenIncorrectExpression()
         {
             FluentActions.Invoking(
-                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                    () => ObjectPrinter.For<Person>()
                         .Excluding(p => true))
                 .Should().Throw<ArgumentException>();
         }
@@ -175,7 +175,7 @@ namespace ObjectPrintingTests
         public void PrintToString_ShouldThrowException_WhenNullExpression()
         {
             FluentActions.Invoking(
-                    () => ObjectPrinter.For<ObjectPrinting.Solved.Tests.Person>()
+                    () => ObjectPrinter.For<Person>()
                         .Excluding<int>(null))
                 .Should().Throw<ArgumentException>();
         }
