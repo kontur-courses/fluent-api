@@ -26,7 +26,11 @@ namespace ObjectPrinting
         private ImmutableDictionary<Type, Delegate> customTypeSerializers = ImmutableDictionary<Type, Delegate>.Empty;
         private ImmutableDictionary<MemberInfo, Delegate> customMemberSerializers = ImmutableDictionary<MemberInfo, Delegate>.Empty;
         private bool throwIfCycleReference = false;
-        private CultureInfo currentCulture = CultureInfo.CurrentCulture;
+        
+        public CultureInfo CurrentCulture { get; init; } = CultureInfo.CurrentCulture;
+        private readonly FinalTypesPrinterHelper finalTypesHelper = new();
+        private readonly CollectionPrinterHelper collectionHelper = new();
+        private readonly DictionaryPrinterHelper dictionaryHelper = new();
 
         public PrintingConfig<TOwner> Excluding<TMember>()
         {
@@ -46,8 +50,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> UsingCulture(CultureInfo culture)
         {
-            currentCulture = culture;
-            return this with {currentCulture = culture};
+            return this with {CurrentCulture = culture};
         }
 
         public INestedPrintingConfig<TOwner, TMember> Printing<TMember>()
@@ -77,17 +80,16 @@ namespace ObjectPrinting
         }
 
 
-        private string PrintToString(object obj, int nestingLevel)
+        internal string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
             if (FinalTypes.Contains(obj.GetType()))
-                return obj is IFormattable formattable ? formattable.ToString(null, currentCulture) + Environment.NewLine : obj + Environment.NewLine;
+                return finalTypesHelper.Print(this, obj);
             if (obj is IDictionary dictionary)
-                return PrintDictionary(dictionary, nestingLevel);
+                return dictionaryHelper.Print(this, dictionary, nestingLevel);
             if (obj is IEnumerable collection)
-                return PrintCollection(collection, nestingLevel);
+                return collectionHelper.Print(this, collection, nestingLevel);
             if (visited.Contains(obj))
                 return TryPrintCycleMember(obj);
             visited.Add(obj);
@@ -99,43 +101,13 @@ namespace ObjectPrinting
             {
                 var isCustomSerialization = TryUseCustomSerialization(memberInfo, obj, out var customSerialization);
                 var memberValue = memberInfo.GetMemberValue(obj);
-                sb.AppendFormat(currentCulture, "{0}", identation + memberInfo.Name + " = " +
+                sb.Append(identation + memberInfo.Name + " = " +
                           (!isCustomSerialization
                               ? PrintToString(memberValue,
                                   nestingLevel + 1)
                               : customSerialization));
             }
             visited.Clear();
-            return sb.ToString();
-        }
-
-        private string PrintCollection(IEnumerable collection, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
-            var bracketIdentation = new string('\t', nestingLevel);
-            sb.AppendLine(Environment.NewLine + bracketIdentation + "{");
-            foreach (var item in collection)
-            {
-                sb.Append(identation + PrintToString(item, nestingLevel + 1));
-            }
-
-            sb.Append(bracketIdentation + "}" + Environment.NewLine);
-            return sb.ToString();
-        }
-
-        private string PrintDictionary(IDictionary dict, int nestingLevel)
-        {
-            var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
-            var bracketIdentation = new string('\t', nestingLevel);
-            sb.AppendLine(Environment.NewLine + bracketIdentation + "{");
-            foreach (var key in dict.Keys)
-            {
-                sb.Append(identation + "key:" + PrintToString(key, nestingLevel + 1));
-                sb.AppendLine(identation + "value:" + PrintToString(dict[key], nestingLevel));
-            }
-            sb.AppendLine(bracketIdentation + "}");
             return sb.ToString();
         }
 
