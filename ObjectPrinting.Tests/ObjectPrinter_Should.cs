@@ -93,6 +93,37 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void AccumulateSettings()
+        {
+            var printer = personPrinter
+                .Excluding<Guid>()
+                .Excluding<int>();
+            printer.PrintToString(person)
+                .Should()
+                .Be($"Person{newLine}" +
+                    $"\tName = Alex{newLine}" +
+                    $"\tHeight = 170,5{newLine}");
+        }
+
+        [Test]
+        public void BeImmutable()
+        {
+            personPrinter
+                .Excluding<Guid>()
+                .PrintToString(person)
+                .Should()
+                .NotContain("Id");
+            personPrinter
+                .Excluding<int>()
+                .PrintToString(person)
+                .Should()
+                .NotContain("Age")
+                .And
+                .Contain("Id");
+
+        }
+
+        [Test]
         public void ExcludeFieldWithType()
         {
             var result = personPrinter
@@ -235,7 +266,7 @@ namespace ObjectPrinting.Tests
             result.Should()
                 .Be($"PersonWithFriend{newLine}" +
                     $"\tFriend = PersonWithFriend{newLine}" +
-                    $"\t\tFriend = cycle link detected{newLine}" +
+                    $"\t\tFriend = cycle link detected on object with hashcode: {alex.GetHashCode()}{newLine}" +
                     $"\t\tName = John{newLine}" +
                     $"\t\tAge = 19{newLine}" +
                     $"\t\tHeight = 0{newLine}" +
@@ -243,29 +274,6 @@ namespace ObjectPrinting.Tests
                     $"\tAge = 19{newLine}" +
                     $"\tHeight = 0{newLine}");
             Console.WriteLine(result);
-        }
-
-        [Test]
-        public void UseDefaultSerializationForCycleMember_WhenSpecifiedForType()
-        {
-            var alex = new PersonWithFriend() { Name = "Alex", Age = 19 };
-            var john = new PersonWithFriend() { Name = "John", Age = 19 };
-            alex.Friend = john;
-            john.Friend = alex;
-            var result = personPrinter
-                .PrintingCycleMember<PersonWithFriend>().Using(p => p.Name)
-                .Excluding<Guid>()
-                .PrintToString(alex);
-            result.Should()
-                .Be($"PersonWithFriend{newLine}" +
-                    $"\tFriend = PersonWithFriend{newLine}" +
-                    $"\t\tFriend = Alex{newLine}" +
-                    $"\t\tName = John{newLine}" +
-                    $"\t\tAge = 19{newLine}" +
-                    $"\t\tHeight = 0{newLine}" +
-                    $"\tName = Alex{newLine}" +
-                    $"\tAge = 19{newLine}" +
-                    $"\tHeight = 0{newLine}");
         }
 
         [Test]

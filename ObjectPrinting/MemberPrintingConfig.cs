@@ -16,8 +16,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(Func<TMember, string> customSerializer)
         {
-            printingConfig.AddCustomMemberSerializer(selectedMember, customSerializer);
-            return printingConfig;
+            return printingConfig.AddCustomMemberSerializer(selectedMember, customSerializer);
         }
     }
 }

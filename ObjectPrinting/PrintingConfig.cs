@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,46 +11,43 @@ using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public record PrintingConfig<TOwner>
     {
         private readonly Type[] FinalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly HashSet<object> visited = new();
-        private readonly Dictionary<Type, Delegate> customTypeSerializers = new();
-        private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers = new();
-        private readonly Dictionary<Type, Delegate> customCycleMembersSerializers = new();
 
+        private readonly HashSet<object> visited = new();
+
+        private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
+        private ImmutableHashSet<MemberInfo> excludedMembers = ImmutableHashSet<MemberInfo>.Empty;
+        private ImmutableDictionary<Type, Delegate> customTypeSerializers = ImmutableDictionary<Type, Delegate>.Empty;
+        private ImmutableDictionary<MemberInfo, Delegate> customMemberSerializers = ImmutableDictionary<MemberInfo, Delegate>.Empty;
         private bool throwIfCycleReference = false;
         private CultureInfo currentCulture = CultureInfo.CurrentCulture;
 
         public PrintingConfig<TOwner> Excluding<TMember>()
         {
-            excludedTypes.Add(typeof(TMember));
-            return this;
+            return this with {excludedTypes = excludedTypes.Add(typeof(TMember))};
         }
 
         public PrintingConfig<TOwner> Excluding<TMember>(Expression<Func<TOwner, TMember>> memberSelector)
         {
             var member = GetMemberInfoFromSelector(memberSelector);
-            excludedMembers.Add(member);
-            return this;
+            return this with {excludedMembers = excludedMembers.Add(member)};
         }
 
         public PrintingConfig<TOwner> ThrowingIfCycleReference(bool isConfirmed)
         {
-            throwIfCycleReference = isConfirmed;
-            return this;
+            return this with {throwIfCycleReference = isConfirmed};
         }
 
         public PrintingConfig<TOwner> UsingCulture(CultureInfo culture)
         {
             currentCulture = culture;
-            return this;
+            return this with {currentCulture = culture};
         }
 
         public INestedPrintingConfig<TOwner, TMember> Printing<TMember>()
@@ -62,35 +60,22 @@ namespace ObjectPrinting
             return new MemberPrintingConfig<TOwner, TMember>(this, GetMemberInfoFromSelector(memberSelector));
         }
 
-        public INestedPrintingConfig<TOwner, TMember> PrintingCycleMember<TMember>()
-        {
-            return new CycleMemberConfig<TOwner, TMember>(this);
-        }
-
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
 
         }
 
-        internal void AddCustomTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
+        internal PrintingConfig<TOwner> AddCustomTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
         {
-            if (!customTypeSerializers.TryAdd(type, serializer))
-                customTypeSerializers[type] = serializer;
-
+            return this with {customTypeSerializers = customTypeSerializers.SetItem(type, serializer)};
         }
 
-        internal void AddCustomMemberSerializer<TMember>(MemberInfo memberInfo, Func<TMember, string> serializer)
+        internal PrintingConfig<TOwner> AddCustomMemberSerializer<TMember>(MemberInfo memberInfo, Func<TMember, string> serializer)
         {
-            if (!customMemberSerializers.TryAdd(memberInfo, serializer))
-                customMemberSerializers[memberInfo] = serializer;
+            return this with {customMemberSerializers = customMemberSerializers.SetItem(memberInfo, serializer)};
         }
 
-        internal void AddCustomCycleMemberSerializer<TMember>(Type type, Func<TMember, string> serializer)
-        {
-            if (!customCycleMembersSerializers.TryAdd(type, serializer))
-                customMemberSerializers[type] = serializer;
-        }
 
         private string PrintToString(object obj, int nestingLevel)
         {
@@ -158,9 +143,7 @@ namespace ObjectPrinting
         {
             if (throwIfCycleReference) throw new Exception($"Member with type {obj.GetType()} has cycle reference");
             var objType = obj.GetType();
-            return !customCycleMembersSerializers.ContainsKey(objType)
-                ? $"cycle link detected{Environment.NewLine}"
-                : customCycleMembersSerializers[objType].DynamicInvoke(obj) + Environment.NewLine;
+            return $"cycle link detected on object with hashcode: {obj.GetHashCode()}{Environment.NewLine}";
         }
 
         private bool TryUseCustomSerialization(MemberInfo member, object obj, out string customSerialization)
