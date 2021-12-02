@@ -13,6 +13,27 @@ namespace ObjectPrinting
     {
         private readonly Dictionary<object, int> printedObjects;
 
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>
+        {
+            typeof(int),
+            typeof(uint),
+            typeof(double),
+            typeof(float),
+            typeof(string),
+            typeof(char),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Guid),
+            typeof(long),
+            typeof(ulong),
+            typeof(decimal),
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(short),
+            typeof(ushort),
+        };
+
         public PrintingConfig()
         {
             printedObjects = new Dictionary<object, int>();
@@ -36,10 +57,7 @@ namespace ObjectPrinting
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression expression))
-                throw new InvalidCastException("Expression must be a MemberExpression");
-
-            var memberInfo = expression.Member;
+            var memberInfo = GetMemberInfoFromExpression(memberSelector);
             return new MemberPrintingConfig<TOwner, TMemberType>(this, memberInfo);
         }
 
@@ -51,10 +69,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression expression))
-                throw new InvalidCastException("Expression must be a MemberExpression");
-
-            var memberInfo = expression.Member;
+            var memberInfo = GetMemberInfoFromExpression(memberSelector);
             AddExcludedMember(memberInfo);
             return this;
         }
@@ -82,32 +97,32 @@ namespace ObjectPrinting
                 return "Cyclic reference" + Environment.NewLine;
             }
 
+            var type = obj.GetType();
+
+            if (finalTypes.Contains(type))
+            {
+                return obj + Environment.NewLine;
+            }
+
             printedObjects.Add(obj, nestingLevel);
 
             string serializedObj;
 
-            var type = obj.GetType();
-
-            if (IsFinalType(type))
+            switch (obj)
             {
-                serializedObj = obj + Environment.NewLine;
+                case IDictionary dictionary:
+                    serializedObj = PrintDictionary(dictionary, nestingLevel + 1);
+                    break;
+                case IEnumerable enumerable:
+                    serializedObj = PrintEnumerable(enumerable, nestingLevel + 1);
+                    break;
+                case Enum enumObj:
+                    serializedObj = PrintEnum(enumObj);
+                    break;
+                default:
+                    serializedObj = PrintComplexObject(obj, nestingLevel + 1);
+                    break;
             }
-            else
-                switch (obj)
-                {
-                    case IDictionary dictionary:
-                        serializedObj = PrintDictionary(dictionary, nestingLevel + 1);
-                        break;
-                    case IEnumerable enumerable:
-                        serializedObj = PrintEnumerable(enumerable, nestingLevel + 1);
-                        break;
-                    case Enum enumObj:
-                        serializedObj = PrintEnum(enumObj);
-                        break;
-                    default:
-                        serializedObj = PrintComplexObject(obj, nestingLevel + 1);
-                        break;
-                }
 
             printedObjects.Remove(obj);
 
@@ -193,6 +208,15 @@ namespace ObjectPrinting
         private string PrintEnum(Enum enumObj)
         {
             return enumObj + Environment.NewLine;
+        }
+
+        private MemberInfo GetMemberInfoFromExpression<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
+        {
+            if (!(memberSelector.Body is MemberExpression expression))
+                throw new InvalidCastException("Expression must be a MemberExpression");
+
+            return expression.Member;
         }
     }
 }
