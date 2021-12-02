@@ -14,17 +14,22 @@ namespace ObjectPrinting.Tests
         public void Should_DoNothing_When_NoSettings()
         {
             var person = PersonFactory.CreateDefaultPerson();
-            var expected = new StringBuilder()
-                .AppendLine($"{nameof(Person)}")
-                .AppendLine($"\t{nameof(person.LastName)} = {person.LastName}")
-                .AppendLine($"\t{nameof(person.Id)} = {person.Id}")
-                .AppendLine($"\t{nameof(person.FirstName)} = {person.FirstName}")
-                .AppendLine($"\t{nameof(person.Height)} = {person.Height}")
-                .AppendLine($"\t{nameof(person.Age)} = {person.Age}")
-                .AppendLine($"\t{nameof(person.Parent)} = null")
-                .ToString();
+            var expected = PersonFactory.GetDefaultPersonPrinting(person);
 
             var printedPerson = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            printedPerson.Should().Be(expected);
+        }
+
+        [Test]
+        public void Should_DoNothing_When_ExcludeTypesThatNotExistsInObject()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+            var expected = PersonFactory.GetDefaultPersonPrinting(person);
+
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Exclude<ulong>()
                 .PrintToString(person);
 
             printedPerson.Should().Be(expected);
@@ -111,7 +116,7 @@ namespace ObjectPrinting.Tests
 
             printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}");
         }
-
+        
         [Test]
         public void MemberCustomSerializer_HasMorePriority_Than_TypeCustomSerializer()
         {
@@ -124,6 +129,67 @@ namespace ObjectPrinting.Tests
 
             printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}")
                 .And.Contain($"{nameof(person.LastName)} = not cool {person.LastName}");
+        }
+
+        [Test]
+        public void When_MemberHasCustomSerializer_TypeCustomSerializer_Doesnt_Affect()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Use(x => x.FirstName).With(x => $"cool {x}")
+                .Use<string>().With(x => $"not cool {x}")
+                .PrintToString(person);
+
+            printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}")
+                .And.Contain($"{nameof(person.LastName)} = not cool {person.LastName}");
+        }
+        
+        [Test]
+        public void Should_Apply_LastConfigurationOfMember()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+            const string firstMessage = "this won't be applied";
+            const string secondMessage = "but this will";
+
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Use(x => x.Age).With(_ => firstMessage)
+                .Use(x => x.Age).With(_ => secondMessage)
+                .PrintToString(person);
+
+            printedPerson.Should().Contain(secondMessage)
+                .And.NotContain(firstMessage);
+        }
+
+        [Test]
+        public void Should_Apply_LastConfiguration()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+            const string alternativeSerializationMessage = "crazy train";
+            
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Use(x => x.LastName).With(_ => alternativeSerializationMessage)
+                .Use(x => x.LastName).WithTrimming(4)
+                .PrintToString(person);
+
+            printedPerson.Should().Contain($"{nameof(person.LastName)} = {person.LastName.Substring(0, 4)}")
+                .And.NotContain(alternativeSerializationMessage);
+        } 
+        
+        [Test]
+        public void Should_Apply_LastConfigurationOfType()
+        {
+            var person = PersonFactory.CreateDefaultPerson();
+            const string firstMessage = "this won't be applied";
+            const string secondMessage = "but this will";
+
+            var printedPerson = ObjectPrinter.For<Person>()
+                .Use<int>().With(_ => firstMessage)
+                .Use<int>().With(_ => secondMessage)
+                .PrintToString(person);
+
+            printedPerson.Should().Contain(secondMessage)
+                .And.NotContain(firstMessage);
         }
 
         [Test]
