@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -18,7 +19,11 @@ namespace ObjectPrinting.Tests
         {
             person = new Person()
             {
-                Name = "Alex",
+                FullName = new FullName()
+                {
+                    FirstName = "Max",
+                    LastName = "Payne"
+                },
                 Age = 19,
                 Height = 175.50
             };
@@ -30,7 +35,7 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(testData.IsUnexpected
                 ? $"Unexpected:\r\n\t{testData.Expected}\r\n"
                 : $"Expected:\r\n\t{testData.Expected}\r\n");
-            Console.WriteLine($"Actual:\r\n\t{testData.Actual}");
+            Console.WriteLine($"Actual:\r\n{testData.Actual}");
         }
 
         [Test]
@@ -77,11 +82,11 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldProvideCustomPropSerialization()
         {
             testData.IsUnexpected = false;
-            testData.Expected = "Height - 175,50 cm";
+            testData.Expected = "175,50 cm";
 
             testData.Actual = ObjectPrinter.For<Person>()
                 .Serialize(prop => prop.Height)
-                .Using(x => $"Height - {x:F} cm")
+                .Using(x => $"{x:F} cm")
                 .PrintToString(person);
 
             testData.Actual.Should().Contain(testData.Expected);
@@ -105,11 +110,11 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldProvideTrimmingForStrings()
         {
             testData.IsUnexpected = false;
-            testData.Expected = "Name = Al";
+            testData.Expected = "LastName = Pay";
 
             testData.Actual = ObjectPrinter.For<Person>()
                 .Serialize<string>()
-                .Trim(2)
+                .Trim(3)
                 .PrintToString(person);
 
             testData.Actual.Should().Contain(testData.Expected);
@@ -122,11 +127,60 @@ namespace ObjectPrinting.Tests
             testData.Expected = ObjectPrinter.For<Person>()
                 .Exclude<Guid>()
                 .PrintToString(person);
-            
+
             testData.Actual = person
                 .PrintToString(x => x.Exclude<Guid>());
-            
+
             testData.Actual.Should().Be(testData.Expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldCatchReferenceCycles()
+        {
+            testData.IsUnexpected = false;
+            testData.Expected = "Reference cycle detected! This object will be skipped";
+
+            person.Parents = new[] {person};
+            testData.Actual = person
+                .PrintToString(x => x.Exclude<Guid>());
+
+            testData.Actual.Should().Contain(testData.Expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintCollections()
+        {
+            testData.IsUnexpected = false;
+            testData.Expected = "Parents = Person[]\r\n\t\tPerson\r\n\t\t\tFullName = null";
+            person.Parents = new[]
+            {
+                new Person {Height = 175, Age = 30},
+                new Person {Height = 200, Age = 27},
+                new Person {Height = 183, Age = 23},
+                new Person {Height = 165, Age = 16},
+            };
+
+            testData.Actual = person
+                .PrintToString(x => x.Exclude<Guid>());
+
+            testData.Actual.Should().Contain(testData.Expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintDictionaries()
+        {
+            testData.IsUnexpected = false;
+            testData.Expected = "Documents = Dictionary`2\r\n\t\tPassport - 6511 403943\r\n\t\tDrive license - 11 214345345 45";
+            person.Documents = new Dictionary<string, string>()
+            {
+                {"Passport", "6511 403943"},
+                {"Drive license", "11 214345345 45"}
+            };
+
+            testData.Actual = person
+                .PrintToString(x => x.Exclude<Guid>());
+
+            testData.Actual.Should().Contain(testData.Expected);
         }
     }
 }
