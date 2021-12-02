@@ -21,9 +21,8 @@ namespace ObjectPrinting
             int maxLen
         )
         {
-            var iConfig = (IMemberPrintingConfig<TOwner, string>) memConfig;
             string Serializer(string obj) => obj.Substring(0, Math.Min(obj.Length, maxLen));
-            iConfig.ParentConfig.AddMemberSerializer(iConfig.MemberInfo, (Func<string, string>) Serializer);
+            memConfig.Using(Serializer);
             return ((IMemberPrintingConfig<TOwner, string>) memConfig).ParentConfig;
         }
     }

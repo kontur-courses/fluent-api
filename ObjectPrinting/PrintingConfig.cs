@@ -14,8 +14,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludingTypes;
         private readonly HashSet<MemberInfo> excludingMembers;
         private readonly HashSet<object> serializedObjects;
-        private readonly Dictionary<Type, Delegate> typeSerializers;
-        private readonly Dictionary<MemberInfo, Delegate> memberSerializers;
+        private readonly SerializerRepository serializerRepository;
         private readonly Type[] finalTypes;
 
         public PrintingConfig()
@@ -23,8 +22,7 @@ namespace ObjectPrinting
             excludingTypes = new HashSet<Type>();
             excludingMembers = new HashSet<MemberInfo>();
             serializedObjects = new HashSet<object>();
-            typeSerializers = new Dictionary<Type, Delegate>();
-            memberSerializers = new Dictionary<MemberInfo, Delegate>();
+            serializerRepository = new SerializerRepository();
             finalTypes = new[]
             {
                 typeof(int),
@@ -47,19 +45,20 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TMemType>> memberSelector
         )
         {
-            excludingMembers.Add((memberSelector.Body as MemberExpression)?.Member);
+            excludingMembers.Add(GetMemberInfo(memberSelector));
             return this;
         }
 
         public MemberPrintingConfig<TOwner, TMemType> Printing<TMemType>()
-            => new MemberPrintingConfig<TOwner, TMemType>(this, null);
+            => new MemberPrintingConfig<TOwner, TMemType>(this, null, serializerRepository);
 
         public MemberPrintingConfig<TOwner, TMemType> Printing<TMemType>(
             Expression<Func<TOwner, TMemType>> memberSelector
         )
             => new MemberPrintingConfig<TOwner, TMemType>(
                 this,
-                (memberSelector.Body as MemberExpression)?.Member
+                GetMemberInfo(memberSelector),
+                serializerRepository
             );
 
         public string PrintToString(TOwner obj)
@@ -67,38 +66,31 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        internal void AddTypeSerializer(Type type, Delegate typeSerializeFunc)
-        {
-            typeSerializers[type] = typeSerializeFunc;
-        }
-
-        internal void AddMemberSerializer(MemberInfo memberInfo, Delegate memberSerializeFunc)
-        {
-            memberSerializers[memberInfo] = memberSerializeFunc;
-        }
-
         private string SerializeMember(object obj, int nestingLevel)
         {
             if (serializedObjects.Contains(obj))
-                return "cyclical link" + Environment.NewLine;
+                return "cyclical reference" + Environment.NewLine;
             serializedObjects.Add(obj);
             
-            var sb = new StringBuilder();
             var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
 
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
             foreach (
                 var memberInfo in members
-                    .Where(x => !excludingTypes.Contains(x.GetMemberType()))
+                    .Where(x => !excludingTypes.Contains(GetMemberType(x)))
                     .Where(x => !excludingMembers.Contains(x))
             )
             {
                 var serializedObject = TryGetSerializer(memberInfo, out var serializer)
-                    ? serializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine
-                    : PrintToString(memberInfo.GetValue(obj), nestingLevel + 1);
-                sb.Append(indentation + memberInfo.Name + " = " + serializedObject);
+                    ? serializer.DynamicInvoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine
+                    : PrintToString(GetMemberValue(memberInfo, obj), nestingLevel + 1);
+                sb.Append(indentation);
+                sb.Append(memberInfo.Name);
+                sb.Append(" = ");
+                sb.Append(serializedObject);
             }
 
             return sb.ToString();
@@ -106,35 +98,58 @@ namespace ObjectPrinting
 
         private bool TryGetSerializer(MemberInfo memberInfo, out Delegate serializer)
         {
-            if (memberSerializers.TryGetValue(memberInfo, out serializer))
+            if (serializerRepository.MemberSerializers.TryGetValue(memberInfo, out serializer))
                 return true;
             var type = memberInfo.GetType();
-            return typeSerializers.TryGetValue(type, out serializer);
+            return serializerRepository.TypeSerializers.TryGetValue(type, out serializer);
         }
 
         private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
         {
-            var serializedEnumerable = enumerable
-                .Cast<object>()
-                .Select(x => PrintToString(x, nestingLevel + 1));
-            return "(" + string.Join("\t", serializedEnumerable) + ")";
+            var sb = new StringBuilder($"{enumerable.GetType().Name}{Environment.NewLine}");
+            foreach (var item in enumerable.Cast<object>())
+                sb.Append(PrintToString(item, nestingLevel + 1));
+            return "(" + sb + ")";
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
+
             var type = obj.GetType();
-            if (typeSerializers.ContainsKey(type))
-                obj = typeSerializers[type].DynamicInvoke(obj);
+
+            if (serializerRepository.TypeSerializers.ContainsKey(type))
+                obj = serializerRepository.TypeSerializers[type].DynamicInvoke(obj);
+            
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
+            
             if (obj is IEnumerable enumerable)
                 return SerializeEnumerable(enumerable, nestingLevel);
-            
-            return type.Name
-                   + Environment.NewLine
-                   + SerializeMember(obj, nestingLevel);
+
+            return SerializeMember(obj, nestingLevel);
+        }
+
+        private static Type GetMemberType(MemberInfo memberInfo)
+            => memberInfo switch
+            {
+                PropertyInfo propertyInfo => propertyInfo.PropertyType,
+                FieldInfo fieldInfo => fieldInfo.FieldType,
+                _ => throw new NotImplementedException()
+            };
+
+        private static object GetMemberValue(MemberInfo memberInfo, object obj)
+            => memberInfo switch
+            {
+                PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
+                FieldInfo fieldInfo => fieldInfo.GetValue(obj),
+                _ => throw new NotImplementedException()
+            };
+
+        private static MemberInfo GetMemberInfo<TMemType>(Expression<Func<TOwner, TMemType>> memberSelector)
+        {
+            return (memberSelector.Body as MemberExpression)?.Member;
         }
     }
 }
