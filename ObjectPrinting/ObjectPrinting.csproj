@@ -14,10 +14,4 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Samples\FluentMapper.Tests\FluentMapping.Tests.csproj" />
-    <ProjectReference Include="..\Samples\FluentMapper\FluentMapping.csproj" />
-    <ProjectReference Include="..\Samples\Spectacle\Spectacle.csproj" />
-  </ItemGroup>
-
 </Project>

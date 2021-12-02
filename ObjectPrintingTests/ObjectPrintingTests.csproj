@@ -1,64 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2A86BA44-B98C-4BA0-9F79-8F1AF6C591B6}</ProjectGuid>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
     <OutputType>Library</OutputType>
-    <RootNamespace>ObjectPrintingTests</RootNamespace>
-    <AssemblyName>ObjectPrintingTests</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
+
   <ItemGroup>
-    <None Include="App.config" />
+    <PackageReference Include="FluentAssertions" Version="6.2.0" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="ObjectPrinterAcceptanceTests.cs" />
-    <Compile Include="Person.cs" />
+    <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj">
-      <Project>{07b8c9b7-8289-46cb-9875-048a57758eee}</Project>
-      <Name>ObjectPrinting</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Samples\FluentMapper.Tests\FluentMapping.Tests.csproj">
-      <Project>{8a7bb3ea-3e6a-4d04-a801-d5cd1620da0d}</Project>
-      <Name>FluentMapping.Tests</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Samples\FluentMapper\FluentMapping.csproj">
-      <Project>{feea5afe-459a-4d13-81d0-252e1a2e6f4e}</Project>
-      <Name>FluentMapping</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Samples\Spectacle\Spectacle.csproj">
-      <Project>{efa9335c-411b-4597-b0b6-5438d1ae04c3}</Project>
-      <Name>Spectacle</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

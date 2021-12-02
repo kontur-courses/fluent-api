@@ -2,10 +2,11 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
-using ObjectPrinting;
+using ObjectPrinting.HomeWork;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -56,9 +57,18 @@ namespace ObjectPrinting.Tests
         public void SerializationExcludeOneField()
         {
             var person = new Person { Name = "Rick", Age = 70 };
-            var printer = ObjectPrinter.For<Person>().ExcludedProperty(pr => "Age");
+            var printer = ObjectPrinter.For<Person>().ExcludedProperty(pr => pr.Age);
             var result = printer.PrintToString(person);
             result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Rick\r\n\tHeight = 0\r\n");
+        }
+
+        [Test]
+        public void SerializationExcludeManyFieldsWithIncorrectExpression()
+        {
+            var person = new Person { Name = "Gregory", Age = 49 };
+            Action action =() => ObjectPrinter.For<Person>()
+                .ExcludedProperty(pr => pr.Name + new[] { 3, 4 }).ExcludedProperty(pr => pr.Age + 1).ExcludedProperty(pr => pr.Id);
+            action.Should().Throw<InvalidExpressionException>();
         }
 
         [Test]
@@ -66,9 +76,9 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Gregory", Age = 49 };
             var printer = ObjectPrinter.For<Person>()
-                .ExcludedProperty(pr => "Id").ExcludedProperty(pr => "Name").ExcludedProperty(pr => "Age");
+                .ExcludedProperty(pr => pr.Name).ExcludedProperty(pr => pr.Age).ExcludedProperty(pr => pr.Id);
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tHeight = 0\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tName = Gregory\r\n\tHeight = 0\r\n");
         }
 
         [Test]
@@ -90,12 +100,29 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                .PinProperty(pr => "Height").SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
-                .PinProperty(pr => "Age").SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
-                .PinProperty(pr => "Id").SpecialSerializationField<Guid>(x => "1");
+                .PinProperty(pr => pr.Height).SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
+
+                .PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
+
+                .PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
 
             var result = printer.PrintToString(person);
             result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
+        }
+
+        [Test]
+        public void SerializationWithIncorrectExpression()
+        {
+            var person = new Person { Name = "Alex", Height = 17, Age = 19 };
+
+            Action action  = () =>  ObjectPrinter.For<Person>()
+                .PinProperty(pr => pr.Height + 1).SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
+
+                .PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
+
+                .PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
+
+            action.Should().Throw<InvalidExpressionException>();
         }
 
 
