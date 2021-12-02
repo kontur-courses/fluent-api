@@ -1,4 +1,4 @@
-namespace ObjectPrinting
+namespace ObjectPrinting.HomeWork
 {
     public class ObjectPrinter
     {

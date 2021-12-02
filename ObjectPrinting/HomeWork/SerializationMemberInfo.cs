@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.HomeWork
 {
     public class SerializationMemberInfo
     {

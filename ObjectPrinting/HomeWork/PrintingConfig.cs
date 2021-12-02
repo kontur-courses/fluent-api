@@ -1,16 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Specialized;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Serialization;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.HomeWork
 {
     public class PrintingConfig<TOwner>
     {
@@ -202,36 +200,54 @@ namespace ObjectPrinting
                 specialSerializationsForFieldsProperties[pinnedPropertyName] = serialization;
                 pinnedPropertyName = null;
             }
-            else
-            {
-                foreach (var propertyName in specialSerializationsForFieldsProperties.Keys)
-                    specialSerializationsForFieldsProperties[propertyName] = serialization;
-            }
             return this;
         }
 
-        public PrintingConfig<TOwner> ExcludedProperty(Expression<Func<TOwner, string>> propertyNameExpression)
+        public PrintingConfig<TOwner> ExcludedProperty(Expression<Func<TOwner, object>> propertyNameExpression)
         {
-
-            excludedFieldsProperties.Add(((ConstantExpression)propertyNameExpression.Body).Value.ToString());
+            if (propertyNameExpression.Body is UnaryExpression unExpression)
+            {
+                string inputName;
+                if (!(unExpression.Operand is MemberExpression))
+                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+                inputName = ((MemberExpression)unExpression.Operand).Member.Name;
+                if ((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(inputName))
+                    excludedFieldsProperties.Add(inputName);
+            }
             return this;
         }
 
         public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner, CultureInfo>> inputCulture)
         {
+            if (!(inputCulture.Body is NewExpression))
+                throw new InvalidExpressionException("Need new Expression(creating a new object)");
             var cultureName = ((NewExpression)inputCulture.Body).Arguments.First().ToString();
             culture = new CultureInfo(cultureName[1..^1]);
             return this;
         }
 
-        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, string>> propertyNameExpression)
+        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, object>> propertyNameExpression)
         {
-            pinnedPropertyName = ((ConstantExpression)propertyNameExpression.Body).Value.ToString();
+            string propertyName = null;
+            if (propertyNameExpression.Body is UnaryExpression unExpression)
+            {
+                if (!(unExpression.Operand is MemberExpression))
+                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+                propertyName = ((MemberExpression) unExpression.Operand).Member.Name;
+            }
+
+            if (!((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(propertyName)))
+                pinnedPropertyName = null;
+            else
+                pinnedPropertyName = propertyName;
             return this;
         }
 
         public PrintingConfig<TOwner> Trim<TStart,TLength>(Expression<Func<TOwner, Tuple<TStart, TLength>>> trimBorders)
         {
+            if (!(trimBorders.Body is NewExpression))
+                throw new InvalidExpressionException("Need new Expression(creating a new object)");
+
             var start = int.Parse(((NewExpression) trimBorders.Body).Arguments[0].ToString());
             var length = int.Parse(((NewExpression)trimBorders.Body).Arguments[1].ToString());
             
