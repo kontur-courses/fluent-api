@@ -1,9 +1,9 @@
-using FluentAssertions;
-using NUnit.Framework;
-using ObjectPrinting.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -21,7 +21,7 @@ namespace ObjectPrinting.Tests
             {
                 Name = "Alex",
                 Age = 21,
-                Height = 170.5,
+                Height = 170.5
             };
             newLine = Environment.NewLine;
             defaultPersonSerialization =
@@ -57,7 +57,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             Console.WriteLine(customCultureResult);
             var specifiedPropertySerialization = personPrinter
-                .Printing(p => p.Name).Using(p => p[0..3].ToString())
+                .Printing(p => p.Name).Using(p => p[..3].ToString())
                 .PrintToString(person);
             Console.WriteLine(specifiedPropertySerialization);
             var trimmedString = personPrinter
@@ -120,7 +120,6 @@ namespace ObjectPrinting.Tests
                 .NotContain("Age")
                 .And
                 .Contain("Id");
-
         }
 
         [Test]
@@ -256,8 +255,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintCycleReferenceMessage_WhenDefaultThrowOptionAndNoCustomSerializer()
         {
-            var alex = new PersonWithFriend() { Name = "Alex", Age = 19 };
-            var john = new PersonWithFriend() { Name = "John", Age = 19 };
+            var alex = new PersonWithFriend {Name = "Alex", Age = 19};
+            var john = new PersonWithFriend {Name = "John", Age = 19};
             alex.Friend = john;
             john.Friend = alex;
             var result = personPrinter
@@ -279,13 +278,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Throw_WhenCycleMemberDetectedAndThrowOption()
         {
-            var alex = new PersonWithFriend() { Name = "Alex", Age = 19 };
-            var john = new PersonWithFriend() { Name = "John", Age = 19 };
+            var alex = new PersonWithFriend {Name = "Alex", Age = 19};
+            var john = new PersonWithFriend {Name = "John", Age = 19};
             alex.Friend = john;
             john.Friend = alex;
-            Assert.Throws<Exception>(() => personPrinter.
-                ThrowingIfCycleReference(true).
-                PrintToString(alex));
+            Assert.Throws<Exception>(() => personPrinter.ThrowingIfCycleReference(true).PrintToString(alex));
         }
 
         [Test]
@@ -349,11 +346,10 @@ namespace ObjectPrinting.Tests
 
         private class Person
         {
+            public double Height;
             public Guid Id { get; set; }
             public string Name { get; set; }
             public int Age { get; set; }
-
-            public double Height;
         }
 
         private class PersonWithFriend : Person
@@ -365,17 +361,17 @@ namespace ObjectPrinting.Tests
         {
             public List<Person> Persons => new()
             {
-                new Person() { Name = "Alex" },
-                new Person() { Name = "Riki" },
-                new Person() { Name = "John" }
+                new Person {Name = "Alex"},
+                new Person {Name = "Riki"},
+                new Person {Name = "John"}
             };
 
-            public int[] Numbers => new[] { 1, 2, 3, 4, 5, 6 };
+            public int[] Numbers => new[] {1, 2, 3, 4, 5, 6};
 
             public Dictionary<Person, int> Age => new()
             {
-                [new Person() { Name = "Alex" }] = 19,
-                [new Person() { Name = "Riki" }] = 21,
+                [new Person {Name = "Alex"}] = 19,
+                [new Person {Name = "Riki"}] = 21
             };
         }
     }

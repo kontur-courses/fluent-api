@@ -11,7 +11,7 @@ namespace ObjectPrinting.Extensions
             {
                 PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
                 FieldInfo fieldInfo => fieldInfo.GetValue(obj),
-                _ => throw new ArgumentException($"{nameof(member)} has no value"),
+                _ => throw new ArgumentException($"{nameof(member)} has no value")
             };
         }
 
@@ -21,7 +21,7 @@ namespace ObjectPrinting.Extensions
             {
                 PropertyInfo propertyInfo => propertyInfo.PropertyType,
                 FieldInfo fieldInfo => fieldInfo.FieldType,
-                _ => throw new ArgumentException($"{nameof(member)} has no value"),
+                _ => throw new ArgumentException($"{nameof(member)} has no value")
             };
         }
     }

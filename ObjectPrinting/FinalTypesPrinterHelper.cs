@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class FinalTypesPrinterHelper: IPrinterHelper<object>
+    public class FinalTypesPrinterHelper : IPrinterHelper<object>
     {
         public string Print<TOwner>(PrintingConfig<TOwner> printer, object obj, int nestingLevel = 0)
         {

@@ -12,10 +12,7 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var bracketIdentation = new string('\t', nestingLevel);
             sb.AppendLine(Environment.NewLine + bracketIdentation + "{");
-            foreach (var item in collection)
-            {
-                sb.Append(identation + printer.PrintToString(item, nestingLevel + 1));
-            }
+            foreach (var item in collection) sb.Append(identation + printer.PrintToString(item, nestingLevel + 1));
 
             sb.Append(bracketIdentation + "}" + Environment.NewLine);
             return sb.ToString();

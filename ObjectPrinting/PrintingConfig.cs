@@ -13,24 +13,29 @@ namespace ObjectPrinting
 {
     public record PrintingConfig<TOwner>
     {
-        private readonly Type[] FinalTypes = new[]
+        private readonly CollectionPrinterHelper collectionHelper = new();
+        private readonly DictionaryPrinterHelper dictionaryHelper = new();
+
+        private readonly Type[] FinalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
+        private readonly FinalTypesPrinterHelper finalTypesHelper = new();
+
         private readonly HashSet<object> visited = new();
 
-        private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
-        private ImmutableHashSet<MemberInfo> excludedMembers = ImmutableHashSet<MemberInfo>.Empty;
+        private ImmutableDictionary<MemberInfo, Delegate> customMemberSerializers =
+            ImmutableDictionary<MemberInfo, Delegate>.Empty;
+
         private ImmutableDictionary<Type, Delegate> customTypeSerializers = ImmutableDictionary<Type, Delegate>.Empty;
-        private ImmutableDictionary<MemberInfo, Delegate> customMemberSerializers = ImmutableDictionary<MemberInfo, Delegate>.Empty;
-        private bool throwIfCycleReference = false;
-        
+        private ImmutableHashSet<MemberInfo> excludedMembers = ImmutableHashSet<MemberInfo>.Empty;
+
+        private ImmutableHashSet<Type> excludedTypes = ImmutableHashSet<Type>.Empty;
+        private bool throwIfCycleReference;
+
         public CultureInfo CurrentCulture { get; init; } = CultureInfo.CurrentCulture;
-        private readonly FinalTypesPrinterHelper finalTypesHelper = new();
-        private readonly CollectionPrinterHelper collectionHelper = new();
-        private readonly DictionaryPrinterHelper dictionaryHelper = new();
 
         public PrintingConfig<TOwner> Excluding<TMember>()
         {
@@ -58,7 +63,8 @@ namespace ObjectPrinting
             return new TypePrintingConfig<TOwner, TMember>(this);
         }
 
-        public INestedPrintingConfig<TOwner, TMember> Printing<TMember>(Expression<Func<TOwner, TMember>> memberSelector)
+        public INestedPrintingConfig<TOwner, TMember> Printing<TMember>(
+            Expression<Func<TOwner, TMember>> memberSelector)
         {
             return new MemberPrintingConfig<TOwner, TMember>(this, GetMemberInfoFromSelector(memberSelector));
         }
@@ -66,7 +72,6 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
-
         }
 
         internal PrintingConfig<TOwner> AddCustomTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
@@ -74,7 +79,8 @@ namespace ObjectPrinting
             return this with {customTypeSerializers = customTypeSerializers.SetItem(type, serializer)};
         }
 
-        internal PrintingConfig<TOwner> AddCustomMemberSerializer<TMember>(MemberInfo memberInfo, Func<TMember, string> serializer)
+        internal PrintingConfig<TOwner> AddCustomMemberSerializer<TMember>(MemberInfo memberInfo,
+            Func<TMember, string> serializer)
         {
             return this with {customMemberSerializers = customMemberSerializers.SetItem(memberInfo, serializer)};
         }
@@ -107,6 +113,7 @@ namespace ObjectPrinting
                                   nestingLevel + 1)
                               : customSerialization));
             }
+
             visited.Clear();
             return sb.ToString();
         }
@@ -124,18 +131,19 @@ namespace ObjectPrinting
             if (customTypeSerializers.ContainsKey(memberType))
             {
                 customSerialization = customTypeSerializers[memberType]
-                    .DynamicInvoke(member.GetMemberValue(obj))
-                    + Environment.NewLine;
+                                          .DynamicInvoke(member.GetMemberValue(obj))
+                                      + Environment.NewLine;
                 return true;
             }
 
             if (customMemberSerializers.ContainsKey(member))
             {
                 customSerialization = customMemberSerializers[member]
-                    .DynamicInvoke(member.GetMemberValue(obj))
-                    + Environment.NewLine;
+                                          .DynamicInvoke(member.GetMemberValue(obj))
+                                      + Environment.NewLine;
                 return true;
             }
+
             customSerialization = null;
             return false;
         }

@@ -17,6 +17,7 @@ namespace ObjectPrinting
                 sb.Append(identation + "key:" + printer.PrintToString(key, nestingLevel + 1));
                 sb.AppendLine(identation + "value:" + printer.PrintToString(dict[key], nestingLevel));
             }
+
             sb.AppendLine(bracketIdentation + "}");
             return sb.ToString();
         }
