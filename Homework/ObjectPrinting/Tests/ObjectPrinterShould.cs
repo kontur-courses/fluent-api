@@ -41,7 +41,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ApplyTypeAlternativeSerializationCorrect()
+        public void ApplyTypeAlternativeSerializationCorrectly()
         {
             Func<int, string> intConfig = x => x.ToString() + " is not my real age!";
             Func<Guid, string> guidConfig = x => "guid imitation";
@@ -74,7 +74,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ApplyTypeCultureCorrect()
+        public void ApplyTypeCultureCorrectly()
         {
             var culture = new CultureInfo("en-US");
             var doubleWrapper = new DoubleWrapper();
@@ -149,6 +149,29 @@ namespace ObjectPrinting.Tests
                 $"\tsecondName = {_vasya.secondName}" + NewLine;
 
             var serializationResult = printer.PrintToString(_vasya);
+
+            serializationResult.Should().BeEquivalentTo(expectedSerialization);
+        }
+
+        [Test]
+        public void ProcessNestedCyclicMembersCorrectly()
+        {
+            var firstPerson = new CyclicPerson();
+            var secondPerson = new CyclicPerson();
+            firstPerson.Name = "mr.First";
+            secondPerson.Name = "mr.Second";
+            firstPerson.Child = secondPerson;
+            secondPerson.Child = firstPerson;
+            var printer = ObjectPrinter.For<CyclicPerson>();
+            var expectedSerialization = 
+                "CyclicPerson" + NewLine +
+                $"\tName = {firstPerson.Name}" + NewLine +
+                $"\tChild = {firstPerson.Child.GetType().Name}" + NewLine +
+                "\tCyclicPerson" + NewLine +
+                $"\t\tName = {secondPerson.Name}" + NewLine +
+                $"\t\tChild = {secondPerson.Child.GetType().Name}" + NewLine;
+
+                var serializationResult = printer.PrintToString(firstPerson);
 
             serializationResult.Should().BeEquivalentTo(expectedSerialization);
         }

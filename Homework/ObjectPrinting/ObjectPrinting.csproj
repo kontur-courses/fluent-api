@@ -69,6 +69,7 @@
     <Compile Include="PrintingConfigs\PropertyPrintingConfigExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PrintingConfigs\PropertyPrintingConfig.cs" />
+    <Compile Include="Tests\CyclicPerson.cs" />
     <Compile Include="Tests\DoubleWrapper.cs" />
     <Compile Include="Tests\NonCulturable.cs" />
     <Compile Include="Tests\ObjectPrinterShould.cs" />
