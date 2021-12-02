@@ -14,14 +14,8 @@ namespace ObjectPrinting.Configs
         // ReSharper disable once StaticMemberInGenericType
         private static readonly HashSet<Type> finalTypes = TypesConfig.FinalTypes;
 
-        private readonly Dictionary<MemberInfo, Func<object, string>> customMembersSerializers = new();
-        private readonly Dictionary<Type, Func<object, string>> customTypesSerializers = new();
-
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly HashSet<Type> excludedTypes = new();
-
-        private bool isCycleReferencesAllowed;
-
+        private readonly SerializationSettings serializationSettings = new();
+        
         private List<object> visited = new();
 
         public string PrintToString(TOwner obj)
@@ -32,7 +26,7 @@ namespace ObjectPrinting.Configs
 
         public PrintingConfig<TOwner> Exclude<TType>()
         {
-            excludedTypes.Add(typeof(TType));
+            serializationSettings.Exclude(typeof(TType));
             return this;
         }
 
@@ -40,7 +34,7 @@ namespace ObjectPrinting.Configs
         {
             if (selector == null)
                 throw new ArgumentNullException(nameof(selector));
-            excludedMembers.Add(SelectMember(selector));
+            serializationSettings.Exclude(SelectMember(selector));
             return this;
         }
 
@@ -48,25 +42,15 @@ namespace ObjectPrinting.Configs
         {
             if (selector == null)
                 throw new ArgumentNullException(nameof(selector));
-            return new MemberConfig<TOwner, TMember>(this, SelectMember(selector));
+            return new MemberConfig<TOwner, TMember>(this, serializationSettings, SelectMember(selector));
         }
 
-        public TypeConfig<TOwner, TMember> Use<TMember>() => new(this);
+        public TypeConfig<TOwner, TMember> Use<TMember>() => new(this, serializationSettings);
 
         public PrintingConfig<TOwner> UseCycleReference(bool cycleReferencesAllowed = false)
         {
-            isCycleReferencesAllowed = cycleReferencesAllowed;
+            serializationSettings.AreCycleReferencesAllowed = cycleReferencesAllowed;
             return this;
-        }
-
-        public void AddTypeSerializer<TMember>(Type type, Func<TMember, string> serializer)
-        {
-            customTypesSerializers[type] = o => serializer((TMember) o);
-        }
-
-        public void AddMemberSerializer<TMember>(MemberInfo info, Func<TMember, string> serializer)
-        {
-            customMembersSerializers[info] = o => serializer((TMember) o);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -87,7 +71,7 @@ namespace ObjectPrinting.Configs
             sb.AppendLine(type.Name);
 
             var printedMembers = GetFieldsAndProperties(type)
-                .Where(x => !IsExcluded(x))
+                .Where(x => !serializationSettings.IsExcluded(x))
                 .Select(x => $"{indentation}{PrintMember(x, obj, nestingLevel + 1)}");
 
             return AppendCollection(sb, printedMembers).ToString();
@@ -118,22 +102,18 @@ namespace ObjectPrinting.Configs
             if (!memberInfo.GetMemberType().IsValueType && memberValue is not null)
             {
                 if (visited.Exists(o => ReferenceEquals(o, memberValue)))
-                    return isCycleReferencesAllowed
+                    return serializationSettings.AreCycleReferencesAllowed
                         ? $"![Cyclic reference]!{Environment.NewLine}"
                         : throw new Exception("Unexpected cycle reference");
 
                 visited.Add(memberValue);
             }
 
-            if (customMembersSerializers.TryGetValue(memberInfo, out var serializer)
-                || customTypesSerializers.TryGetValue(memberInfo.GetMemberType(), out serializer))
+            if (serializationSettings.TryGetSerializer(memberInfo, out var serializer))
                 return $"{serializer(memberValue)}{Environment.NewLine}";
 
             return PrintToString(memberValue, nestingLevel + 1);
         }
-
-        private bool IsExcluded(MemberInfo memberInfo)
-            => excludedMembers.Contains(memberInfo) || excludedTypes.Contains(memberInfo.GetMemberType());
 
         private IEnumerable<MemberInfo> GetFieldsAndProperties(Type type) =>
             type.GetFields()

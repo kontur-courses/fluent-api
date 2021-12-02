@@ -5,20 +5,17 @@ namespace ObjectPrinting.Configs
     public class TypeConfig<TOwner, TType> : INestedPrintingConfig<TOwner, TType>
     {
         private readonly PrintingConfig<TOwner> config;
-        private readonly Type type;
+        private readonly SerializationSettings settings;
 
-        public TypeConfig(PrintingConfig<TOwner> config)
+        public TypeConfig(PrintingConfig<TOwner> config, SerializationSettings settings)
         {
-            type = typeof(TType);
             this.config = config;
+            this.settings = settings;
         }
 
         public PrintingConfig<TOwner> With(Func<TType, string> serializer)
         {
-            if (serializer == null)
-                throw new ArgumentNullException(nameof(serializer));
-
-            config.AddTypeSerializer(type, serializer);
+            settings.SetSerializer(serializer);
             return config;
         }
     }
