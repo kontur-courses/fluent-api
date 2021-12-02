@@ -8,24 +8,24 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public HashSet<Type> ExcludedTypes;
-        public HashSet<string> ExcludedNames;
-        public Dictionary<object, string> AlreadySerialized;
-        public Dictionary<Type, Func<object, string>> typeAlterSerializations;
-        public Dictionary<Type, Func<object, string>> culturedSerializations;
-        public Dictionary<string, Func<object, string>> nameAlterSerializations;
-        public Dictionary<string, int> trimLengthByName;
+        private readonly HashSet<Type> _excludedTypes;
+        private readonly HashSet<string> _excludedNames;
+        public readonly Dictionary<object, string> AlreadySerialized;
+        public readonly Dictionary<Type, Func<object, string>> TypeAlterSerializations;
+        public readonly Dictionary<Type, Func<object, string>> CulturedSerializations;
+        public readonly Dictionary<string, Func<object, string>> NameAlterSerializations;
+        public readonly Dictionary<string, int> TrimLengthByName;
         private const string BuiltInScope = "CommonLanguageRuntimeLibrary";
 
         public PrintingConfig()
         {
-            ExcludedTypes = new HashSet<Type>();
-            ExcludedNames = new HashSet<string>();
+            _excludedTypes = new HashSet<Type>();
+            _excludedNames = new HashSet<string>();
             AlreadySerialized = new Dictionary<object, string>();
-            culturedSerializations = new Dictionary<Type, Func<object, string>>();
-            typeAlterSerializations = new Dictionary<Type, Func<object, string>>();
-            nameAlterSerializations = new Dictionary<string, Func<object, string>>();
-            trimLengthByName = new Dictionary<string, int>();
+            CulturedSerializations = new Dictionary<Type, Func<object, string>>();
+            TypeAlterSerializations = new Dictionary<Type, Func<object, string>>();
+            NameAlterSerializations = new Dictionary<string, Func<object, string>>();
+            TrimLengthByName = new Dictionary<string, int>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
@@ -42,7 +42,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            ExcludedTypes.Add(typeof(TPropType));
+            _excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -50,7 +50,7 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            ExcludedNames.Add(propInfo.Name);
+            _excludedNames.Add(propInfo.Name);
             return this;
         }
 
@@ -61,27 +61,61 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (AlreadySerialized.ContainsKey(obj))
-                return AlreadySerialized[obj];
-
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            if (AlreadySerialized.ContainsKey(obj))
+                return AlreadySerialized[obj];
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             AlreadySerialized[obj] = type.Name;
             sb.AppendLine(type.Name);
+            SerializeProperties(obj, nestingLevel, type, sb, indentation);
+            SerializeFields(obj, nestingLevel, type, sb, indentation);
+            return sb.ToString();
+        }
+
+        private void SerializeFields(
+            object obj, 
+            int nestingLevel, 
+            Type type, 
+            StringBuilder sb, 
+            string indentation)
+        {
+            foreach (var fieldInfo in type.GetFields())
+            {
+                if (fieldInfo.FieldType.Module.ScopeName == BuiltInScope)
+                {
+                    sb.AppendLine(indentation + fieldInfo.Name + " = " +
+                                  fieldInfo.GetValue(obj));
+                    continue;
+                }
+
+                sb.Append(indentation + fieldInfo.Name + " = " +
+                          PrintToString(fieldInfo.GetValue(obj),
+                              nestingLevel + 1));
+            }
+        }
+
+        private void SerializeProperties(
+            object obj, 
+            int nestingLevel, 
+            Type type, 
+            StringBuilder sb, 
+            string indentation)
+        {
             foreach (var propInfo in type.GetProperties())
             {
                 if (IsPropertyExcluded(propInfo, propInfo.PropertyType))
                     continue;
-                if (typeAlterSerializations.ContainsKey(propInfo.PropertyType))
+                if (TypeAlterSerializations.ContainsKey(propInfo.PropertyType))
                 {
                     sb.AppendLine(indentation + ApplyTypeSerialization(propInfo,
                         propInfo.GetValue(obj)));
                 }
-                else if (nameAlterSerializations.ContainsKey(propInfo.Name))
+                else if (NameAlterSerializations.ContainsKey(propInfo.Name))
                 {
                     sb.AppendLine(indentation + ApplyNameSerialization(propInfo,
                         propInfo.GetValue(obj)));
@@ -93,37 +127,23 @@ namespace ObjectPrinting
                     serializedValue = TrimIfPossible(propInfo, serializedValue);
                     sb.AppendLine(indentation + propInfo.Name + " = " + serializedValue);
                 }
-                else 
+                else
                 {
                     sb.Append(indentation + propInfo.Name + " = " +
-                        PrintToString(propInfo.GetValue(obj), nestingLevel + 1));
+                              PrintToString(propInfo.GetValue(obj), nestingLevel + 1));
                 }
             }
-
-            foreach (var fieldInfo in type.GetFields())
-            {
-                if (fieldInfo.FieldType.Module.ScopeName == BuiltInScope)
-                {
-                    sb.AppendLine(indentation + fieldInfo.Name + " = " +
-                        fieldInfo.GetValue(obj));
-                    continue;
-                }
-                sb.Append(indentation + fieldInfo.Name + " = " +
-                          PrintToString(fieldInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
         }
 
         private string ApplyNameSerialization(PropertyInfo propertyInfo, object propValue)
         {
-            var serialize = nameAlterSerializations[propertyInfo.Name];
+            var serialize = NameAlterSerializations[propertyInfo.Name];
             return ApplyCustomSerialization(propertyInfo, propValue, serialize);
         }
 
         private string ApplyTypeSerialization(PropertyInfo propertyInfo, object propValue)
         {
-            var serialize = typeAlterSerializations[propertyInfo.PropertyType];
+            var serialize = TypeAlterSerializations[propertyInfo.PropertyType];
             return ApplyCustomSerialization(propertyInfo, propValue, serialize);
         }
 
@@ -136,21 +156,21 @@ namespace ObjectPrinting
 
         private object ApplyCultureIfPossible(Type propType, object propValue)
         {
-            if (culturedSerializations.ContainsKey(propType))
-                propValue = culturedSerializations[propType](propValue);
+            if (CulturedSerializations.ContainsKey(propType))
+                propValue = CulturedSerializations[propType](propValue);
             return propValue;
         }
 
         private string TrimIfPossible(PropertyInfo propertyInfo, string serializedValue)
         {
-            if (trimLengthByName.ContainsKey(propertyInfo.Name))
-                serializedValue = serializedValue.Substring(0, trimLengthByName[propertyInfo.Name]);
+            if (TrimLengthByName.ContainsKey(propertyInfo.Name))
+                serializedValue = serializedValue.Substring(0, TrimLengthByName[propertyInfo.Name]);
             return serializedValue;
         }
 
         private bool IsPropertyExcluded(PropertyInfo propertyInfo, Type propType)
         {
-            return ExcludedNames.Contains(propertyInfo.Name) || ExcludedTypes.Contains(propType);
+            return _excludedNames.Contains(propertyInfo.Name) || _excludedTypes.Contains(propType);
         }
     }
 }

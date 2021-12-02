@@ -2,10 +2,9 @@
 using NUnit.Framework;
 using System;
 using System.Globalization;
-using ObjectPrinting.PrintingConfigs;
 using static System.Environment;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting
 {
     [TestFixture]
     public class ObjectPrinterShould
@@ -16,8 +15,8 @@ namespace ObjectPrinting.Tests
             Name = "Vasya",
             Height = 180,
             Age = 26,
-            weight = 200,
-            secondName = "Minin"
+            Weight = 200,
+            SecondName = "Minin"
         };
 
         [Test]
@@ -27,8 +26,8 @@ namespace ObjectPrinting.Tests
                 $"\tId = {_vasya.Id}" + NewLine +
                 $"\tAge = {_vasya.Age}" + NewLine +
                 $"\tNonCulturable = null" + NewLine +
-                $"\tweight = {_vasya.weight}" + NewLine +
-                $"\tsecondName = {_vasya.secondName}" + NewLine;
+                $"\tWeight = {_vasya.Weight}" + NewLine +
+                $"\tSecondName = {_vasya.SecondName}" + NewLine;
 
             var printer = ObjectPrinter
                 .For<Person>()
@@ -50,8 +49,8 @@ namespace ObjectPrinting.Tests
                 $"\tHeight = {_vasya.Height}" + NewLine +
                 $"\t{_vasya.Age} is not my real age!" + NewLine +
                 $"\tNonCulturable = null" + NewLine +
-                $"\tweight = {_vasya.weight}" + NewLine +
-                $"\tsecondName = {_vasya.secondName}" + NewLine;
+                $"\tweight = {_vasya.Weight}" + NewLine +
+                $"\tsecondName = {_vasya.SecondName}" + NewLine;
 
             var printer = ObjectPrinter
                  .For<Person>()
@@ -100,8 +99,8 @@ namespace ObjectPrinting.Tests
             var expectedSerialization = "Person" + NewLine +
                 $"\tHeight = {_vasya.Height}" + NewLine + 
                 $"\tNonCulturable = null" + NewLine + 
-                $"\tweight = {_vasya.weight}" + NewLine + 
-                $"\tsecondName = {_vasya.secondName}" + NewLine;
+                $"\tweight = {_vasya.Weight}" + NewLine + 
+                $"\tsecondName = {_vasya.SecondName}" + NewLine;
 
             var serializationResult = printer.PrintToString(_vasya);
 
@@ -124,8 +123,8 @@ namespace ObjectPrinting.Tests
                 $"\theight alternative serialization" + NewLine +
                 $"\tAge = {_vasya.Age}" + NewLine +
                 $"\tnonculturable alternative serialization" + NewLine +
-                $"\tweight = {_vasya.weight}" + NewLine +
-                $"\tsecondName = {_vasya.secondName}" + NewLine;
+                $"\tweight = {_vasya.Weight}" + NewLine +
+                $"\tsecondName = {_vasya.SecondName}" + NewLine;
 
             var serializationResult = printer.PrintToString(_vasya);
 
@@ -144,8 +143,8 @@ namespace ObjectPrinting.Tests
                 $"\tHeight = {_vasya.Height}" + NewLine +
                 $"\tAge = {_vasya.Age}" + NewLine +
                 $"\tNonCulturable = null" + NewLine +
-                $"\tweight = {_vasya.weight}" + NewLine +
-                $"\tsecondName = {_vasya.secondName}" + NewLine;
+                $"\tweight = {_vasya.Weight}" + NewLine +
+                $"\tsecondName = {_vasya.SecondName}" + NewLine;
 
             var serializationResult = printer.PrintToString(_vasya);
 

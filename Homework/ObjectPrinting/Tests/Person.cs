@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting
 {
     public class Person
     {
@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         public int Age { get; set; }
         public NonCulturable NonCulturable { get; set; }
 
-        public double weight;
-        public string secondName;
+        public double Weight;
+        public string SecondName;
     }
 }

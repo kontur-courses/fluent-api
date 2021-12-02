@@ -36,9 +36,9 @@ namespace ObjectPrinting
         private void ChooseDictToUpdate(Func<object, string> printWrapper)
         {
             if (_propInfo == null)
-                _printingConfig.typeAlterSerializations[typeof(TPropType)] = printWrapper;
+                _printingConfig.TypeAlterSerializations[typeof(TPropType)] = printWrapper;
             else
-                _printingConfig.nameAlterSerializations[_propInfo.Name] = printWrapper;
+                _printingConfig.NameAlterSerializations[_propInfo.Name] = printWrapper;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
@@ -46,7 +46,7 @@ namespace ObjectPrinting
             var typeToCheck = typeof(TPropType);
             var toString = GetToStringWithCulture(typeToCheck);
             var serializeWithCulture = GetSerializationWithCulture(culture, typeToCheck, toString);
-            _printingConfig.culturedSerializations[typeToCheck] = serializeWithCulture;
+            _printingConfig.CulturedSerializations[typeToCheck] = serializeWithCulture;
             return _printingConfig;
         }
 
@@ -56,9 +56,9 @@ namespace ObjectPrinting
             return value =>
             {
                 var serializedValue = toString.Invoke(value, new object[] { culture });
-                if (_printingConfig.typeAlterSerializations.ContainsKey(typeToCheck))
+                if (_printingConfig.TypeAlterSerializations.ContainsKey(typeToCheck))
                 {
-                    var serializeLike = _printingConfig.typeAlterSerializations[typeToCheck];
+                    var serializeLike = _printingConfig.TypeAlterSerializations[typeToCheck];
                     serializedValue = serializeLike.DynamicInvoke(serializedValue);
                 }
                 return (string)serializedValue;

@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.PrintingConfigs
+﻿namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -7,7 +7,7 @@
         {
             var propInfo = propConfig.GetPropInfo();
             var parentConfig = ((IPropertyPrintingConfig<TOwner, string>) propConfig).ParentConfig;
-            parentConfig.trimLengthByName[propInfo.Name] = maxLen;
+            parentConfig.TrimLengthByName[propInfo.Name] = maxLen;
             return parentConfig;
         }
 

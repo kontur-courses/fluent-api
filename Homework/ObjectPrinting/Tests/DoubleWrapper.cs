@@ -1,10 +1,10 @@
-﻿namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting
 {
     internal class DoubleWrapper
     {
         public double WrappedNumber
         {
-            get { return 1.234; }
+            get => 1.234; 
         }
     }
 }
