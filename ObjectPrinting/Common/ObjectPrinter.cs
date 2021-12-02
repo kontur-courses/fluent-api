@@ -1,4 +1,6 @@
-namespace ObjectPrinting
+using ObjectPrinting.Common.Configs;
+
+namespace ObjectPrinting.Common
 {
     public class ObjectPrinter
     {
