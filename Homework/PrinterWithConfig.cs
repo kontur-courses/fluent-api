@@ -74,34 +74,45 @@ namespace Homework
             return false;
         }
 
+        private string? TryPrintEnumerableElement(int nestingLevel, bool isDict, bool isList, object value, int index)
+        {
+            if (isDict)
+            {
+                if (!TryPrintKeyValuePair(value, nestingLevel, index, out var printed) || printed is null) return null;
+                if (printed.StartsWith("\t = ")) 
+                    printed = "\t" + printed[3..];
+                return new string('\t', nestingLevel) + printed;
+            }
+            else
+            {
+                var printed = PrintToString(value, $"[{index}]", nestingLevel + 1);
+                if (printed is null) return null;
+                return isList
+                    ? printed 
+                    : printed.Replace($"[{index - 1}] = ", "");
+            }
+        }
+
         private string? TryPrintIEnumerable(object? obj, string name, int nestingLevel)
         {
             if (obj is null) return null;
             var indexer = 0;
             var indentation = new string('\t', nestingLevel);
             var printedIEnumerableObject = new StringBuilder();
+            var interfaces = obj.GetType().GetInterfaces();
             printedIEnumerableObject.AppendLine(indentation + name + " = {");
 
             printedObjects.Add(obj);
             foreach (var collectionValue in (IEnumerable)obj) 
             {
                 if (collectionValue is null || CheckForCycleReference(collectionValue)) continue;
-                if (obj.GetType().GetInterfaces().Contains(typeof(IDictionary)))
-                {
-                    if (!TryPrintKeyValuePair(collectionValue, nestingLevel, indexer++, out var printed) || printed is null) return null;
-                    if (printed.StartsWith("\t = ")) 
-                        printed = "\t" + printed[3..];
-                    printedIEnumerableObject.Append(indentation + printed);
-                }
-                else
-                {
-                    var printed = PrintToString(collectionValue, $"[{indexer++}]", nestingLevel + 1);
-                    if (printed is null) return null;
-                    printedIEnumerableObject.Append(obj.GetType().GetInterfaces().Contains(typeof(IList))
-                        ? printed 
-                        : printed?.Replace($"[{indexer - 1}] = ", ""));
-                }
+                printedIEnumerableObject.Append(TryPrintEnumerableElement(
+                        nestingLevel, 
+                        interfaces.Contains(typeof(IDictionary)), 
+                        interfaces.Contains(typeof(IList)), 
+                        collectionValue, indexer++));
             }
+            
             return printedIEnumerableObject.AppendLine(indentation + "}").ToString();
         }
 
