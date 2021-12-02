@@ -116,7 +116,7 @@ namespace ObjectPrinting.Tests
 
             printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}");
         }
-        
+
         [Test]
         public void MemberCustomSerializer_HasMorePriority_Than_TypeCustomSerializer()
         {
@@ -144,7 +144,7 @@ namespace ObjectPrinting.Tests
             printedPerson.Should().Contain($"{nameof(person.FirstName)} = cool {person.FirstName}")
                 .And.Contain($"{nameof(person.LastName)} = not cool {person.LastName}");
         }
-        
+
         [Test]
         public void Should_Apply_LastConfigurationOfMember()
         {
@@ -166,7 +166,7 @@ namespace ObjectPrinting.Tests
         {
             var person = PersonFactory.CreateDefaultPerson();
             const string alternativeSerializationMessage = "crazy train";
-            
+
             var printedPerson = ObjectPrinter.For<Person>()
                 .Use(x => x.LastName).With(_ => alternativeSerializationMessage)
                 .Use(x => x.LastName).WithTrimming(4)
@@ -174,8 +174,8 @@ namespace ObjectPrinting.Tests
 
             printedPerson.Should().Contain($"{nameof(person.LastName)} = {person.LastName.Substring(0, 4)}")
                 .And.NotContain(alternativeSerializationMessage);
-        } 
-        
+        }
+
         [Test]
         public void Should_Apply_LastConfigurationOfType()
         {

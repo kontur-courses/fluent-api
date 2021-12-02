@@ -15,42 +15,13 @@ namespace ObjectPrinting.Configs
         private static readonly HashSet<Type> finalTypes = TypesConfig.FinalTypes;
 
         private readonly SerializationSettings serializationSettings = new();
-        
+
         private List<object> visited = new();
 
         public string PrintToString(TOwner obj)
         {
             visited = new List<object>();
             return PrintToString(obj, 0);
-        }
-
-        public PrintingConfig<TOwner> Exclude<TType>()
-        {
-            serializationSettings.Exclude(typeof(TType));
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Exclude<TMember>(Expression<Func<TOwner, TMember>> selector)
-        {
-            if (selector == null)
-                throw new ArgumentNullException(nameof(selector));
-            serializationSettings.Exclude(SelectMember(selector));
-            return this;
-        }
-
-        public MemberConfig<TOwner, TMember> Use<TMember>(Expression<Func<TOwner, TMember>> selector)
-        {
-            if (selector == null)
-                throw new ArgumentNullException(nameof(selector));
-            return new MemberConfig<TOwner, TMember>(this, serializationSettings, SelectMember(selector));
-        }
-
-        public TypeConfig<TOwner, TMember> Use<TMember>() => new(this, serializationSettings);
-
-        public PrintingConfig<TOwner> UseCycleReference(bool cycleReferencesAllowed = false)
-        {
-            serializationSettings.AreCycleReferencesAllowed = cycleReferencesAllowed;
-            return this;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -113,6 +84,35 @@ namespace ObjectPrinting.Configs
                 return $"{serializer(memberValue)}{Environment.NewLine}";
 
             return PrintToString(memberValue, nestingLevel + 1);
+        }
+
+        public PrintingConfig<TOwner> Exclude<TType>()
+        {
+            serializationSettings.Exclude(typeof(TType));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TMember>(Expression<Func<TOwner, TMember>> selector)
+        {
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+            serializationSettings.Exclude(SelectMember(selector));
+            return this;
+        }
+
+        public MemberConfig<TOwner, TMember> Use<TMember>(Expression<Func<TOwner, TMember>> selector)
+        {
+            if (selector == null)
+                throw new ArgumentNullException(nameof(selector));
+            return new MemberConfig<TOwner, TMember>(this, serializationSettings, SelectMember(selector));
+        }
+
+        public TypeConfig<TOwner, TMember> Use<TMember>() => new(this, serializationSettings);
+
+        public PrintingConfig<TOwner> UseCycleReference(bool cycleReferencesAllowed = false)
+        {
+            serializationSettings.AreCycleReferencesAllowed = cycleReferencesAllowed;
+            return this;
         }
 
         private IEnumerable<MemberInfo> GetFieldsAndProperties(Type type) =>

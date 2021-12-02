@@ -6,8 +6,8 @@ namespace ObjectPrinting.Configs
     public class MemberConfig<TOwner, TMember> : INestedPrintingConfig<TOwner, TMember>
     {
         private readonly PrintingConfig<TOwner> config;
-        private readonly SerializationSettings settings;
         private readonly MemberInfo memberInfo;
+        private readonly SerializationSettings settings;
 
         public MemberConfig(PrintingConfig<TOwner> config, SerializationSettings settings, MemberInfo memberInfo)
         {
