@@ -23,6 +23,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
+            Func = (x) => string.Format(culture, "{0}", x);
             return Father;
         }
 

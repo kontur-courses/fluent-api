@@ -119,5 +119,58 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(num).Should().Be("1.2\r\n");
         }
 
+        [Test]
+        public void PrintToString_OnNodeWithNoOtherNodesAndNoConfigs_ShouldWorkCorrect()
+        {
+            var node = new Node();
+
+            var printer = ObjectPrinter.For<Node>();
+            var actual = printer.PrintToString(node);
+            actual.Should().Be("Node\r\n\tOtherNode = null\r\n\tValue = 0\r\n");
+        }
+
+        [Test]
+        public void PrintToString_OnObjWithCyclicReference_ShouldHandleIt()
+        {
+            var node = new Node(2);
+            node.AddNode(new Node(3));
+
+            var printer = ObjectPrinter.For<Node>();
+            var actual = printer.PrintToString(node);
+            actual.Should().Be("Node\r\n\tOtherNode = Node\r\n\t\tOtherNode = Cyclic reference found.\r\n\t\tValue = 3\r\n\tValue = 2\r\n");
+        }
+
+        [Test]
+        public void PrintToString_OnObjWithList_ShouldWorkCorrect()
+        {
+            var obj = new ClassWithList();
+            obj.Values.Add(100);
+            obj.Values.Add(200);
+            obj.Values.Add(300);
+
+            var expected = "ClassWithList\r\n\tValues = List`1\r\n\t\tCapacity = 4\r\n\t\tCount = 3\r\n\t\tElements:\r\n\t\t\t100\r\n\t\t\t200\r\n\t\t\t300\r\n\tValue = 0\r\n";
+            var printer = ObjectPrinter.For<ClassWithList>();
+            var actual = printer.PrintToString(obj);
+            actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_TypeAndPropertyConflictInClass_ShouldGoForProperty()
+        {
+            var person = new Person() { Age = 1, Name = "Alex"};
+
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<int>()
+                .Using(x => (1 + ((int)x)).ToString())
+                .Printing(p => p.Age)
+                .Using(x => (2 + ((int)x)).ToString())
+                .Exclude(p => p.Height)
+                .Exclude(p => p.Id)
+                .Exclude(p => p.Name);
+
+            var exp = "Person\r\n\tAge = 3\r\n";
+
+            printer.PrintToString(person).Should().Be(exp);
+        }
     }
 }
