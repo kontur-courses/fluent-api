@@ -160,6 +160,8 @@ namespace ObjectPrintingTests
 
             var resultWithPoint = printerWithPoint.PrintToString(obj);
             var resultWithComma = printerWithComma.PrintToString(obj);
+            
+            Console.WriteLine(resultWithComma);
 
             using (new AssertionScope())
             {
@@ -273,6 +275,42 @@ namespace ObjectPrintingTests
             Action action = () => obj.PrintToString();
 
             action.Should().NotThrow();
+        }
+
+        [Test]
+        public void AllowSettingCustomEndLine()
+        {
+            var obj = new ClassWithFloatField {FloatFieldValue = 0f};
+
+            var endLine = "\n \n";
+
+            var expected = new StringBuilder()
+                .Append(nameof(ClassWithFloatField))
+                .Append(endLine)
+                .Append($"\t{nameof(ClassWithFloatField.FloatFieldValue)} = {obj.FloatFieldValue}")
+                .Append(endLine)
+                .ToString();
+
+            var result = obj.PrintToString(config => config.SetEndLine("\n \n"));
+
+            result.Should().Be(expected);
+        }
+        
+        [Test]
+        public void AllowSettingCustomIndentation()
+        {
+            var obj = new ClassWithFloatField {FloatFieldValue = 0f};
+
+            Func<int, string> customIndentaion = level => new string(' ', level + 1);
+
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithFloatField))
+                .AppendLine(' ' + $"{nameof(ClassWithFloatField.FloatFieldValue)} = {obj.FloatFieldValue}")
+                .ToString();
+
+            var result = obj.PrintToString(config => config.SetIndentation(customIndentaion));
+
+            result.Should().Be(expected);
         }
     }
 }

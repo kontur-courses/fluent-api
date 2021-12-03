@@ -10,6 +10,7 @@ namespace ObjectPrinting
             {
                 FieldInfo fieldInfo => fieldInfo.GetValue(obj),
                 PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
+                Type type => obj,
                 _ => throw new InvalidOperationException()
             };
 
@@ -18,6 +19,7 @@ namespace ObjectPrinting
             {
                 FieldInfo fieldInfo => fieldInfo.FieldType,
                 PropertyInfo propertyInfo => propertyInfo.PropertyType,
+                Type type => type,
                 _ => throw new InvalidOperationException()
             };
     }

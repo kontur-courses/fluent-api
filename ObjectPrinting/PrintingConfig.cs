@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -10,21 +11,40 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly ExcludingConfig excludingConfig = new ExcludingConfig();
+        private readonly ObjectSerializer objectSerializer = new ObjectSerializer();
+        private Func<int, string> indentationCreator;
+        private string endLine;
         
-        private readonly Dictionary<MemberInfo, Delegate> specializedMemberSerializers =
-            new Dictionary<MemberInfo, Delegate>();
-
         private readonly HashSet<object> visited = new HashSet<object>();
-
+        
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
+        public PrintingConfig()
+        {
+            SetIndentation(level => new string('\t', level + 1));
+            SetEndLine(Environment.NewLine);
+        }
+
+
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
         {
             return new MemberPrintingConfig<TOwner, TMemberType>(this);
+        }
+
+        public PrintingConfig<TOwner> SetIndentation(Func<int, string> levelToIndentation)
+        {
+            this.indentationCreator = levelToIndentation;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetEndLine(string newLine)
+        {
+            this.endLine = newLine;
+            return this;
         }
 
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
@@ -45,9 +65,10 @@ namespace ObjectPrinting
             {
                 var excludedMember = memberExpression.Member;
                 excludingConfig.Exclude(excludedMember);
+                return this;
             }
 
-            return this;
+            throw new InvalidOperationException();
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -61,33 +82,34 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        public PrintingConfig<TOwner> SpecializeSerialization(MemberInfo member, Delegate serializer)
+        public PrintingConfig<TOwner> SpecializeSerialization(MemberInfo member, Func<object, string> serializer)
         {
-            specializedMemberSerializers.Add(member, serializer);
+            objectSerializer.Specialize(member, serializer);
             return this;
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
-
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            visited.Add(obj);
-
-            var builder = new StringBuilder();
-
+                return "null" + GetEndLine();
+            
             var type = obj.GetType();
-            builder.AppendLine(type.Name);
+            if (finalTypes.Contains(type))
+                return obj + GetEndLine();
+            
+            visited.Add(obj);
+            
+            var builder = new StringBuilder();
+            
+            builder
+                .Append(type.Name)
+                .Append(GetEndLine());
 
             if (obj is IEnumerable collection)
                 SerializeCollection(builder, collection, nestingLevel);
             else
                 SerializeMembers(builder, obj, nestingLevel);
-
-
+            
             visited.Remove(obj);
 
             return builder.ToString();
@@ -96,6 +118,7 @@ namespace ObjectPrinting
         private void SerializeCollection(StringBuilder builder, IEnumerable collection, int nestingLevel)
         {
             var indentation = GetIndentation(nestingLevel);
+            visited.Add(collection);
 
             foreach (var element in collection)
             {
@@ -110,30 +133,28 @@ namespace ObjectPrinting
             var indentation = GetIndentation(nestingLevel);
             var type = obj.GetType();
 
-            foreach (var memberInfo in type.GetFieldsAndProperties())
+            foreach (var memberInfo in type.GetFieldsAndProperties().Where(x => !MemberIsExcluded(x)))
             {
-                Func<object, string> serializationFunc = GetSerializationFunction(memberInfo, nestingLevel);
+                builder.Append(indentation)
+                    .Append(memberInfo.Name)
+                    .Append(" = ");
+                var value = memberInfo.GetValue(obj);
 
-                if (!MemberIsExcluded(memberInfo))
+                if (IsAlreadyPrinted(value))
+                    continue;
+
+                if (objectSerializer.TryGetSerializationFunction(memberInfo, out var serializer))
                 {
-                    var objj = memberInfo.GetValue(obj);
-                    if (visited.Contains(objj)) continue;
+                    builder.Append(serializer.DynamicInvoke(value))
+                        .Append(GetEndLine());
+                }
+
+                else
+                {
                     builder
-                        .Append(indentation)
-                        .Append(memberInfo.Name)
-                        .Append(" = ")
-                        .Append(serializationFunc(objj));
+                        .Append(PrintToString(value, nestingLevel + 1));
                 }
             }
-        }
-
-        private Func<object, string> GetSerializationFunction(MemberInfo memberInfo, int nestingLevel)
-        {
-            if (specializedMemberSerializers.TryGetValue(memberInfo, out var serializer))
-                return x => serializer.DynamicInvoke(x) + Environment.NewLine;
-            if (specializedMemberSerializers.TryGetValue(memberInfo.GetReturnType(), out serializer))
-                return x => serializer.DynamicInvoke(x) + Environment.NewLine;
-            return x => PrintToString(x, nestingLevel + 1);
         }
 
         private bool MemberIsExcluded(MemberInfo member)
@@ -141,9 +162,13 @@ namespace ObjectPrinting
             return excludingConfig.IsExcluded(member);
         }
 
-        private string GetIndentation(int nestingLevel)
+        private bool IsAlreadyPrinted(object obj)
         {
-            return new string('\t', nestingLevel + 1);
+            return visited.Contains(obj);
         }
+
+        private string GetEndLine() => this.endLine;
+        
+        private string GetIndentation(int nestingLevel) => indentationCreator(nestingLevel);
     }
 }
