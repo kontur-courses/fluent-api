@@ -11,257 +11,480 @@ namespace ObjectPrinting.Solved.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-       
+        private string newLine = Environment.NewLine;
+        private Person person;
+
+        [SetUp]
+        public void PersonInitialization()
+        {
+            person = new Person()
+            {
+                Name = "Vladimir Vladimirovich",
+                Age = 21,
+                Height = 190.5,
+                Id = new Guid(),
+                Health = 100,
+                DateOfBirth = new DateTime(2000, 1, 18),
+                Parent = new Person() { Name = "Vladimir", Age = 45, Health = 1000 }
+            };
+        }
+
         [Test]
         public void ExcludePropertiesByType()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190, Id = new Guid(), Health =100 };
             var printer = ObjectPrinter
                 .For<Person>()
                 .Excluding<int>();
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine+
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190" +
-                Environment.NewLine +
-                "\tDateOfBirth = 01.01.0001 0:00:00" +
-                 Environment.NewLine+
-                  "\tParent = null" +
-                Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
+
 
         [Test]
         public void PruneStringProperty()
         {
-            var person = new Person() { Name = "Volodya", Age = 21, Height = 190, Id = new Guid(), Health = 100 };
             var printer = ObjectPrinter
                 .For<Person>()
                 .Printing(person => person.Name).TrimmedToLength(3);
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vla",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-                 Environment.NewLine +
-                 "\tId = Guid" +
-                 Environment.NewLine +
-                 "\tName = Vol" +
-                 Environment.NewLine +
-                 "\tHeight = 190" +
-                 Environment.NewLine +
-                 "\tAge = 21" +
-                 Environment.NewLine +
-                 "\tHealth = 100" +
-                 Environment.NewLine +
-                 "\tDateOfBirth = 01.01.0001 0:00:00" +
-                 Environment.NewLine +
-                  "\tParent = null" +
-                 Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
 
         [Test]
         public void AlternativePrintForProp()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190, Id = new Guid(), Health = 100 };
             var printer = ObjectPrinter
                 .For<Person>()
-                .Printing(person=>person.Health).Using(health=>$"{health}/100");
+                .Printing(person => person.Health).Using(health => $"{health}/100");
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100/100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine +
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190" +
-                Environment.NewLine +
-                 "\tAge = 21" +
-                Environment.NewLine +
-                "\tHealth = 100/100" +
-                Environment.NewLine +
-                "\tDateOfBirth = 01.01.0001 0:00:00" +
-                 Environment.NewLine +
-                  "\tParent = null" +
-                Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
 
         [Test]
         public void AlternativePrintForType()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190, Id = new Guid(), Health = 100 };
             var printer = ObjectPrinter
                 .For<Person>()
                 .Printing<int>().Using(i => $"(целое число){i}");
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = (целое число)21",
+                "\tHealth = (целое число)100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = (целое число)45",
+                "\t\tHealth = (целое число)1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine +
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190" +
-                Environment.NewLine +
-                "\tAge = (целое число)21" +
-                Environment.NewLine +
-                "\tHealth = (целое число)100" +
-                Environment.NewLine +
-                "\tDateOfBirth = 01.01.0001 0:00:00" +
-                Environment.NewLine+
-                 "\tParent = null" +
-                Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
 
         [Test]
         public void ChangeCultureForDouble()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190.5, Id = new Guid(), Health = 100, DateOfBirth = new DateTime(2000, 1, 18) };
             var printer = ObjectPrinter
                 .For<Person>()
                 .Printing<double>().UsingCulture(CultureInfo.InvariantCulture);
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190.5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine +
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190.5" +
-                Environment.NewLine +
-                "\tAge = 21" +
-                Environment.NewLine +
-                "\tHealth = 100" +
-                Environment.NewLine +
-                "\tDateOfBirth = 18.01.2000 0:00:00" +
-                Environment.NewLine +
-                "\tParent = null" +
-                Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
 
         [Test]
         public void ChangeCultureForDateTime()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190.5, Id = new Guid(), Health = 100, DateOfBirth = new DateTime(2000, 1, 18) };
             var printer = ObjectPrinter
                 .For<Person>()
-                .Printing<DateTime>().UsingCulture(CultureInfo.InvariantCulture);
+                .Printing<DateTime>().UsingCulture(CultureInfo.InvariantCulture, "dd/MM/yyyy");
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18/01/2000",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01/01/0001",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
 
-            res.Should().Be("Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine +
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190,5" +
-                Environment.NewLine +
-                "\tAge = 21" +
-                Environment.NewLine +
-                "\tHealth = 100" +
-                Environment.NewLine +
-                "\tDateOfBirth = 01/18/2000 00:00:00" +
-                Environment.NewLine +
-                 "\tParent = null" +
-                Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
-
-
 
         [Test]
         public void ExcludeProp()
         {
-            var person = new Person() { Name = "Vova", Age = 21, Height = 190.5, Id = new Guid(), Health = 100 };
             var printer = ObjectPrinter.For<Person>()
-                .Excluding(person=>person.Age);
+                .Excluding(person => person.Age);
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person,1);
+            var res = printer.PrintToString(person);
 
-            res.Should().Be("Person" +
-               Environment.NewLine +
-               "\tId = Guid" +
-               Environment.NewLine +
-               "\tName = Vova" +
-               Environment.NewLine +
-               "\tHeight = 190,5" +
-               Environment.NewLine +
-               "\tHealth = 100" +
-               Environment.NewLine +
-               "\tDateOfBirth = 01.01.0001 0:00:00" +
-               Environment.NewLine +
-               "\tParent = null" +
-               Environment.NewLine);
+            res.Should().Be(string.Join(newLine, resProperty));
         }
 
         [Test]
         public void ExcludeInnerProp()
         {
-            var person = new Person() 
-            { 
-                Name = "Vova",
-                Age = 21,
-                Height = 190.5,
-                Id = new Guid(),
-                Health = 100,
-                Parent = new Person() {Name ="Papa", Age = 45, Health = 1000 } 
-            };
-            var expectedRes = "Person" +
-                Environment.NewLine +
-                "\tId = Guid" +
-                Environment.NewLine +
-                "\tName = Vova" +
-                Environment.NewLine +
-                "\tHeight = 190,5" +
-                Environment.NewLine +
-                "\tAge = 21" +
-                Environment.NewLine +
-                "\tHealth = 100" +
-                Environment.NewLine +
-                "\tDateOfBirth = 01.01.0001 0:00:00" +
-                Environment.NewLine +
-                "\tParent = Person" +
-                Environment.NewLine +
-                "\t\tId = Guid" +
-                Environment.NewLine +
-                "\t\tName = Papa" +
-                Environment.NewLine +
-                "\t\tHeight = 0" +
-                Environment.NewLine +
-                "\t\tHealth = 1000" +
-                Environment.NewLine +
-                "\t\tDateOfBirth = 01.01.0001 0:00:00" +
-                Environment.NewLine +
-                "\t\tParent = null" +
-                Environment.NewLine;
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(person => person.Parent.Age);
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
 
-            var res = printer.PrintToString(person, 1);
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
 
-            res.Should().Be(expectedRes);
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void PrintingWithoutAdditionalParameters()
+        {
+            var printer = ObjectPrinter.For<Person>();
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void ExcludingTypeAndAlternativePrintForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<string>()
+                .Printing<string>().Using(str => str.ToUpper());
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+        }
+
+        [Test]
+        public void AlternativePrintForPropAndExcludingProp()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(person => person.Name).Using(str => str.ToUpper())
+                .Excluding(person => person.Name);
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = Vladimir",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void ExcludingTypeAndAlternativePrintForProp()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<string>()
+                .Printing(person => person.Name).Using(str => str.ToUpper());
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void ExcludingPropAndAlternativePrintForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(person => person.Name)
+                .Printing<string>().Using(str => str.ToUpper());
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = VLADIMIR",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void AlternativePrintForPropAndAlternativePrintForType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(person => person.Name).Using(name => $"(Псевдоним){name}")
+                .Printing<string>().Using(str => str.ToUpper());
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tName = (Псевдоним)Vladimir Vladimirovich",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tName = VLADIMIR",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void SpecialPrintingPropAndExcludingType()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(person => person.Name).Using(str => str.ToUpper())
+                .Excluding<string>();
+            var resProperty = new List<string>()
+            {
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 190,5",
+                "\tAge = 21",
+                "\tHealth = 100",
+                "\tDateOfBirth = 18.01.2000 0:00:00",
+                "\tParent = Person",
+                "\t\tId = Guid",
+                "\t\tHeight = 0",
+                "\t\tAge = 45",
+                "\t\tHealth = 1000",
+                "\t\tDateOfBirth = 01.01.0001 0:00:00",
+                "\t\tParent = null"
+            };
+
+            var res = printer.PrintToString(person);
+            Console.WriteLine(res);
+
+            res.Should().Be(string.Join(newLine, resProperty));
+        }
+
+        [Test]
+        public void ExcludeAllProp()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding(person => person.Id)
+                .Excluding<Person>()
+                .Excluding<int>()
+                .Excluding<double>()
+                .Excluding<DateTime>()
+                .Excluding<string>();
+
+            var res = printer.PrintToString(person);
+
+            res.Should().Be("Person");
         }
 
         [Test]
         public void ShouldNotThrowExceptionWhenCircularLinks()
         {
-            var person = new Person()
-            {
-                Name = "Vova",
-                Age = 21,
-                Height = 190.5,
-                Id = new Guid(),
-                Health = 100,
-            };
             var parent = new Person()
             {
                 Name = "Father",
@@ -275,43 +498,5 @@ namespace ObjectPrinting.Solved.Tests
 
             act.Should().NotThrow();
         }
-
-
-
-        private string PrintToString(object obj, int nestingLevel, int maxNestingLevel)
-        {
-
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-
-            sb.AppendLine(type.Name);
-
-            if (nestingLevel > maxNestingLevel)
-                return sb.ToString();
-
-            foreach (var propertyInfo in type.GetProperties())
-            {
-
-                sb.Append(identation + propertyInfo.Name + " = " +
-                        PrintToString(propertyInfo.GetValue(obj),
-                            nestingLevel + 1, maxNestingLevel));
-
-            }
-
-            return sb.ToString();
-        }
     }
-
 }
