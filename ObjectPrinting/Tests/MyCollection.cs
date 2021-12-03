@@ -9,7 +9,7 @@ namespace ObjectPrinting.Tests
     {
         public int Count => 42;
 
-        private List<T> list = new List<T>();
+        private readonly List<T> list = new List<T>();
 
         public bool IsReadOnly => true;
 

@@ -6,7 +6,7 @@ namespace ObjectPrinting
 {
     public class ClassWithArray
     {
-        public int[] array { get
+        public int[] Array { get
             {
                 return new int[] { 1, 2, 3 };
             } }

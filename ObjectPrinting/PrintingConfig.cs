@@ -20,7 +20,7 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
 
-        public readonly HashSet<object> printedObjects = new HashSet<object>();
+        public readonly HashSet<object> PrintedObjects = new HashSet<object>();
 
         public readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
@@ -29,6 +29,7 @@ namespace ObjectPrinting
         public readonly Dictionary<Type, TypeConfig<TOwner>> typeConfigs = new Dictionary<Type, TypeConfig<TOwner>>();
 
         public readonly Dictionary<string, IPropertyConfig> propertyConfigs = new Dictionary<string, IPropertyConfig>();
+
 
         public string PrintToString(TOwner obj)
         {

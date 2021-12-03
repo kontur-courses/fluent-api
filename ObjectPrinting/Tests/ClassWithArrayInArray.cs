@@ -6,6 +6,6 @@ namespace ObjectPrinting.Tests
 {
     public class ClassWithArrayInArray
     {
-        public object[] array { get; set; } 
+        public object[] Array { get; set; } 
     }
 }
