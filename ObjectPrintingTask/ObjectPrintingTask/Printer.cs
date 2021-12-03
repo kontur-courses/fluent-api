@@ -39,12 +39,12 @@ namespace ObjectPrintingTask
 
             visitedObjects.Add(obj);
 
-            if (type.GetInterface(nameof(ICollection)) != null)
-                return type.GetInterface(nameof(IDictionary)) == null
-                    ? GetItemsFromCollection((ICollection)obj, nestingLevel)
-                    : GetItemsFromDictionary((IDictionary)obj, nestingLevel);
-
-            return PrintMembersOfObject(obj, type, nestingLevel);
+            return obj switch
+            {
+                IDictionary => GetItemsFromDictionary((IDictionary)obj, nestingLevel),
+                ICollection => GetItemsFromCollection((ICollection)obj, nestingLevel),
+                _ => PrintMembersOfObject(obj, type, nestingLevel)
+            };
         }
 
         private string PrintMembersOfObject(object obj, Type type, int nestingLevel)

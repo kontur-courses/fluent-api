@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
 using ObjectPrintingTask.Extensions;
 
 namespace ObjectPrintingTask.PrintingConfiguration
@@ -53,7 +50,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
         }
 
         public Printer<TOwner> BuildConfig()
-        {          
+        {
             return new Printer<TOwner>(this);
         }
 
