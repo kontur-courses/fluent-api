@@ -130,5 +130,41 @@ namespace ObjectPrinting.Tests
 
             printed.Should().Contain("1", "2", "3", "4", "one", "two", "three", "four");
         }
+
+        [Test]
+        public void PrintToString_ShouldPrintByLastConfig_IfSeveralConfigsToOneType()
+        {
+            var sut = ObjectPrinter.For<Person>()
+                .Printing<int>().Using(s => "first config")
+                .Printing<int>().Using(s => "second config");
+
+            var printed = sut.PrintToString(person);
+
+            printed.Should().Contain("second config").And.NotContain("first config");
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintByLastConfig_IfSeveralConfigsToOneProperty()
+        {
+            var sut = ObjectPrinter.For<Person>()
+                .Printing(p => p.Age).Using(s => "first config")
+                .Printing(p => p.Age).Using(s => "second config");
+
+            var printed = sut.PrintToString(person);
+
+            printed.Should().Contain("second config").And.NotContain("first config");
+        }
+        
+        [Test]
+        public void PrintToString_ShouldPrintPropertyByPropertyConfig_IfHasTypeConfigOfProperty()
+        {
+            var sut = ObjectPrinter.For<Person>()
+                .Printing<string>().Using(s => "first config")
+                .Printing(p => p.Name).Using(s => "second config");
+
+            var printed = sut.PrintToString(person);
+
+            printed.Should().Contain("second config").And.Contain($"LastName = {person.LastName}");
+        }
     }
 }

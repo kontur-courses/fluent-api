@@ -19,10 +19,11 @@ namespace ObjectPrinting
         public readonly Dictionary<PropertyInfo, int> StringPropertyToLength = new();
         private readonly HashSet<object> printedObjects = new();
 
-        private readonly Type[] finalTypes =
+        private static readonly HashSet<Type> finalTypes = new()
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(bool), typeof(Guid)
+            typeof(int),typeof(uint), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan),
+            typeof(long), typeof(bool), typeof(Guid), typeof(byte), typeof(sbyte), typeof(ushort), typeof(ulong),
+            typeof(char), typeof(IntPtr), typeof(decimal), typeof(short)
         };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
