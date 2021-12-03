@@ -203,9 +203,7 @@ namespace ObjectPrintingTests
             listPrinter
                 .PrintToString(strList)
                 .Should()
-                .Contain("ab")
-                .And.Contain("o")
-                .And.Contain("ba");
+                .ContainAll(strList);
         }
         
         [Test]

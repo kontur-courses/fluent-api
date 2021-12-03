@@ -68,20 +68,32 @@ namespace ObjectPrinting
             if (obj is null)
                 return "null" + delimiter;
             var sb = new StringBuilder();
-            AddSingleSerialization(sb, obj, 0, delimiter);
+            AddSingleSerialization(sb, obj, 0, delimiter, null);
             return sb.ToString();
         }
 
-        private void AddSingleSerialization(StringBuilder sb, object obj, int nestingLevel, string delimiter)
+        private void AddSingleSerialization(
+            StringBuilder sb,
+            object obj,
+            int nestingLevel,
+            string delimiter,
+            MemberHistory history
+        )
         {
             if (obj is null)
             {
                 sb.Append("null", delimiter);
                 return;
             }
-            var type = obj.GetType();
+            
+            if (history is not null && history.TryFindMember(obj))
+            {
+                sb.Append("cyclic reference detected :)");
+                return;
+            }
+            var newHistory = new MemberHistory(obj, history);
 
-            if (finalTypes.Contains(type))
+            if (finalTypes.Contains(obj.GetType()))
             {
                 sb.Append(obj.ToString(), delimiter);
                 return;
@@ -90,20 +102,21 @@ namespace ObjectPrinting
             if (obj is IEnumerable enumerable)
             {
                 sb.Append("(");
-                AddEnumerableSerialization(sb, enumerable, nestingLevel, delimiter);
+                AddEnumerableSerialization(sb, enumerable, nestingLevel, delimiter, newHistory);
                 sb.Append(")");
                 return;
             }
 
-            sb.Append(type.Name, delimiter);
-            AddMembersSerialization(sb, obj, nestingLevel, delimiter);
+            sb.Append(obj.GetType().Name, delimiter);
+            AddMembersSerialization(sb, obj, nestingLevel, delimiter, newHistory);
         }
 
         private void AddEnumerableSerialization(
             StringBuilder sb,
             IEnumerable enumerable,
             int nestingLevel,
-            string delimiter
+            string delimiter,
+            MemberHistory history
         )
         {
             var indentation = new string('\t', nestingLevel + 1);
@@ -111,7 +124,7 @@ namespace ObjectPrinting
             foreach (var item in enumerable.Cast<object>())
             {
                 sb.Append(indentation);
-                AddSingleSerialization(sb, item, nestingLevel + 1, delimiter);
+                AddSingleSerialization(sb, item, nestingLevel + 1, delimiter, history);
             }
         }
 
@@ -119,7 +132,8 @@ namespace ObjectPrinting
             StringBuilder sb,
             object obj,
             int nestingLevel,
-            string delimiter
+            string delimiter,
+            MemberHistory history
         )
         {
             var indentation = new string('\t', nestingLevel + 1);
@@ -134,9 +148,17 @@ namespace ObjectPrinting
             {
                 sb.Append(indentation, memberInfo.Name, " = ");
                 if (TryGetSerializer(memberInfo, out var serializer))
-                    sb.Append((string) serializer.DynamicInvoke(GetMemberValue(memberInfo, obj)), delimiter);
+                    sb.Append(
+                        (string) serializer.DynamicInvoke(GetMemberValue(memberInfo, obj)),
+                        delimiter
+                    );
                 else
-                    AddSingleSerialization(sb, GetMemberValue(memberInfo, obj), nestingLevel + 1, delimiter);
+                    AddSingleSerialization(
+                        sb,
+                        GetMemberValue(memberInfo, obj),
+                        nestingLevel + 1, delimiter,
+                        history
+                    );
             }
         }
 
