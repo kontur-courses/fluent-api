@@ -14,8 +14,13 @@ namespace ObjectPrintingTests
         [Test]
         public void Print_To_String()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 2.3, Surname = "VERYBIGSURNAME"};
-            person.Dict = new Dictionary<int, Person> {{1, new Person()}};
+            var person = new Person 
+            { 
+                Name = "Alex", Age = 19, Height = 2.3, Surname = "VERYBIGSURNAME",
+                Arr = new[] { 1.1, 2.2, 3.3, 4.4 },
+                Dict = new Dictionary<int, Person> { { 1, new Person() } },
+                List = new List<string> { "a", "b", "c" }
+            };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -35,6 +40,7 @@ namespace ObjectPrintingTests
             
             var s1 = printer.PrintToString(person);
 
+            Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             Console.WriteLine(new Person {Name = "lol", Surname = "no lol"}.PrintToString());
             //8. ...с конфигурированием
@@ -42,8 +48,6 @@ namespace ObjectPrintingTests
                 .For<Person>()
                 .Exclude<Guid>()
                 .Exclude(p => p.Parent)));
-            
-            Console.WriteLine(s1);
         }
 
         [Test]

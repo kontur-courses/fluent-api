@@ -6,7 +6,8 @@ namespace ObjectPrintingTests
     internal class Person
     {
         public Guid Id { get; set; }
-        public List<string> Arr = new() {"a", "b", "c"};
+        public double[] Arr;
+        public List<string> List;
         public Dictionary<int, Person> Dict;
         public string Name { get; set; }
         public string Surname;
