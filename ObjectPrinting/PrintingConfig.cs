@@ -16,13 +16,16 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> exceptMembers = new HashSet<MemberInfo>();
         private readonly Dictionary<Type, Delegate> alternativeSerializers = new Dictionary<Type, Delegate>();
         private readonly Dictionary<MemberInfo, Delegate> memberSerializers = new Dictionary<MemberInfo, Delegate>();
-        private readonly Dictionary<MemberInfo, (int start, int end)> serializationsBounds = new Dictionary<MemberInfo, (int, int)>();
+
+        private readonly Dictionary<MemberInfo, (int start, int end)> serializationsBounds =
+            new Dictionary<MemberInfo, (int, int)>();
 
         public PrintingConfig()
         {
             finalTypes = new[]
             {
-                typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+                typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan),
+                typeof(Guid)
             };
         }
 
@@ -49,7 +52,7 @@ namespace ObjectPrinting
                 memberSerializers.Add(member, serializer);
             }
         }
-        
+
         public void AddSerializationBounds(MemberInfo member, int start, int end)
         {
             var bounds = (start, end);
@@ -68,9 +71,9 @@ namespace ObjectPrinting
             return new TypeConfig<TOwner, TProperty>(this);
         }
 
-        public PropertyConfig<TOwner, TMember> Serialize<TMember>(Expression<Func<TOwner, TMember>> selector)
+        public MemberConfig<TOwner, TMember> Serialize<TMember>(Expression<Func<TOwner, TMember>> selector)
         {
-            return new PropertyConfig<TOwner, TMember>(this, (selector.Body as MemberExpression)?.Member);
+            return new MemberConfig<TOwner, TMember>(this, (selector.Body as MemberExpression)?.Member);
         }
 
         public string PrintToString(TOwner obj)
@@ -92,18 +95,9 @@ namespace ObjectPrinting
 
         private string Print(object obj, int nestingLevel)
         {
-            if (serializedObjects.Contains(obj))
+            if (TrySerializeObject(obj, nestingLevel, out var result))
             {
-                return "object with cyclic link";
-            }
-            serializedObjects.Add(obj);
-            if (obj is IEnumerable enumerable)
-            {
-                return GetCollectionSerialization(enumerable, nestingLevel);
-            }
-            if (finalTypes.Contains(obj.GetType()))
-            {
-                return obj.ToString();
+                return result;
             }
 
             var indentation = new string('\t', nestingLevel + 1);
@@ -111,11 +105,13 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
-            foreach (var memberInfo in members
-                .Where(m => !exceptTypes.Contains(GetTypeOfMember(m)) && !exceptMembers.Contains(m)))
+            foreach (var memberInfo in members.Where(m =>
+                !exceptTypes.Contains(GetTypeOfMember(m)) && !exceptMembers.Contains(m)))
             {
-                sb.Append(indentation + memberInfo.Name + " = " + GetSerialization(obj, memberInfo, nestingLevel));
+                sb.Append(indentation + memberInfo.Name + " = " +
+                          GetMemberSerialization(obj, memberInfo, nestingLevel));
             }
+
             return sb.ToString();
         }
 
@@ -139,50 +135,79 @@ namespace ObjectPrinting
             };
         }
 
-        private string GetSerialization(object obj, MemberInfo propertyInfo, int nestingLevel)
+        private string GetMemberSerialization(object obj, MemberInfo memberInfo, int nestingLevel)
         {
-            var result = "";
-            if (obj == null)
+            string result;
+            if (memberSerializers.ContainsKey(memberInfo))
             {
-                result =  "null";
+                result = memberSerializers[memberInfo].DynamicInvoke(memberInfo)?.ToString();
             }
-            if (memberSerializers.ContainsKey(propertyInfo))
+            else if (alternativeSerializers.ContainsKey(GetTypeOfMember(memberInfo)))
             {
-                result = memberSerializers[propertyInfo].DynamicInvoke(propertyInfo)?.ToString();
+                result = alternativeSerializers[GetTypeOfMember(memberInfo)]
+                    .DynamicInvoke(GetValueOfMember(memberInfo, obj))?.ToString();
             }
-            else if (alternativeSerializers.ContainsKey(GetTypeOfMember(propertyInfo)))
+            else if (finalTypes.Contains(GetTypeOfMember(memberInfo)))
             {
-                result =  alternativeSerializers[GetTypeOfMember(propertyInfo)].DynamicInvoke(GetValueOfMember(propertyInfo, obj))?.ToString();
-            }
-            else if (finalTypes.Contains(GetTypeOfMember(propertyInfo)))
-            {
-                result =  GetValueOfMember(propertyInfo, obj).ToString();
+                result = GetValueOfMember(memberInfo, obj).ToString();
             }
             else
             {
-                result = Print(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
+                result = Print(GetValueOfMember(memberInfo, obj), nestingLevel + 1);
             }
 
-            if (serializationsBounds.ContainsKey(propertyInfo))
+            if (serializationsBounds.ContainsKey(memberInfo))
             {
-                var (start, end) = serializationsBounds[propertyInfo];
+                var (start, end) = serializationsBounds[memberInfo];
                 if (start < 0 || end >= result.Length || end < start)
                 {
                     throw new ArgumentException();
                 }
-                result = result.Substring(start,
-                    end - start + 1);
+
+                result = result.Substring(start, end - start + 1);
             }
 
             return result + Environment.NewLine;
         }
 
+        private bool TrySerializeObject(object obj, int nestingLevel, out string result)
+        {
+            result = null;
+            if (obj == null)
+            {
+                result = "null";
+                return true;
+            }
+
+            if (obj is IEnumerable enumerable)
+            {
+                result = GetCollectionSerialization(enumerable, nestingLevel);
+                return true;
+            }
+
+            if (finalTypes.Contains(obj.GetType()))
+            {
+                result = obj.ToString();
+                return true;
+            }
+
+            if (serializedObjects.Contains(obj))
+            {
+                result = "object with cyclic link";
+                return true;
+            }
+
+            serializedObjects.Add(obj);
+            return false;
+        }
+
         private string GetCollectionSerialization(IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            if (collection is IDictionary)
+            if (collection is IDictionary dictionary)
             {
-                return GetCollectionSerialization((collection as IDictionary).Values, nestingLevel);
+                return "Keys : " + GetCollectionSerialization(dictionary.Keys, nestingLevel) + " Values : " +
+                       GetCollectionSerialization(dictionary.Values, nestingLevel);
             }
 
             sb.Append("[ ");
@@ -190,8 +215,8 @@ namespace ObjectPrinting
             {
                 sb.Append(Print(e, nestingLevel) + " ");
             }
-            sb.Append("]");
 
+            sb.Append("]");
             return sb.ToString();
         }
     }

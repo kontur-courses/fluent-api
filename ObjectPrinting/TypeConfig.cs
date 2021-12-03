@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting
 {
-    public class TypeConfig<TOwner, TProperty>
+    public class TypeConfig<TOwner, TMember>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
@@ -11,9 +11,9 @@ namespace ObjectPrinting
             printingConfig = parentConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TProperty, string> serializer)
+        public PrintingConfig<TOwner> Using(Func<TMember, string> serializer)
         {
-            printingConfig.AddAlternativeTypeSerializer(typeof(TProperty), serializer);
+            printingConfig.AddAlternativeTypeSerializer(typeof(TMember), serializer);
             return printingConfig;
         }
     }

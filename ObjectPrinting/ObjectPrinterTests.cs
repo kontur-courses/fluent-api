@@ -20,6 +20,18 @@ namespace ObjectPrinting
         }
 
         [Test]
+        public void PrintToString_PrintsNull_WhenObjectIsNull()
+        {
+            ObjectPrinter.For<Person>().PrintToString(null).Should().BeEquivalentTo("null");
+        }
+
+        [Test]
+        public void PrintToString_PrintsObject_WhenObjectIsFinalType()
+        {
+            ObjectPrinter.For<int>().PrintToString(5).Should().BeEquivalentTo("5");
+        }
+
+        [Test]
         public void PrintToString_ContainsAllMembersOfObject_WithProperties()
         {
             var expectedPersonResult = new[]
@@ -27,11 +39,7 @@ namespace ObjectPrinting
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = 0,2",
                 "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
+            ObjectPrinter.For<Person>().PrintToString(person).Split(Environment.NewLine).Should()
                 .BeEquivalentTo(expectedPersonResult);
         }
 
@@ -39,11 +47,7 @@ namespace ObjectPrinting
         public void PrintToString_ContainsAllMembersOfObject_WithFields()
         {
             var expectedClassWithFieldsResult = new[] {"ClassWithFields", "\tB = 2,5", "\tA = 1,1", ""};
-
-            ObjectPrinter.For<ClassWithFields>()
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
+            ObjectPrinter.For<ClassWithFields>().PrintToString(classWithFields).Split(Environment.NewLine).Should()
                 .BeEquivalentTo(expectedClassWithFieldsResult);
         }
 
@@ -51,13 +55,8 @@ namespace ObjectPrinting
         public void ExceptType_NotPrintSelectedType_ForObjectWithFields()
         {
             var expectedClassWithFieldsResult = new[] {"ClassWithFields", ""};
-
-            ObjectPrinter.For<ClassWithFields>()
-                .ExceptType<double>()
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedClassWithFieldsResult);
+            ObjectPrinter.For<ClassWithFields>().ExceptType<double>().PrintToString(classWithFields)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedClassWithFieldsResult);
         }
 
         [Test]
@@ -67,12 +66,7 @@ namespace ObjectPrinting
             {
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = 0,2", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .ExceptType<int>()
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
+            ObjectPrinter.For<Person>().ExceptType<int>().PrintToString(person).Split(Environment.NewLine).Should()
                 .BeEquivalentTo(expectedPersonResult);
         }
 
@@ -83,26 +77,16 @@ namespace ObjectPrinting
             {
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = 0,2", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .ExceptMember(p => p.Age)
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedPersonResult);
+            ObjectPrinter.For<Person>().ExceptMember(p => p.Age).PrintToString(person).Split(Environment.NewLine)
+                .Should().BeEquivalentTo(expectedPersonResult);
         }
 
         [Test]
         public void ExceptMember_NotPrintSelectedMember_ForObjectWithFields()
         {
             var expectedClassWithFieldsResult = new[] {"ClassWithFields", "\tA = 1,1", ""};
-
-            ObjectPrinter.For<ClassWithFields>()
-                .ExceptMember(c => c.B)
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedClassWithFieldsResult);
+            ObjectPrinter.For<ClassWithFields>().ExceptMember(c => c.B).PrintToString(classWithFields)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedClassWithFieldsResult);
         }
 
         [Test]
@@ -112,41 +96,24 @@ namespace ObjectPrinting
             {
                 "Person", "\tId = xxx", "\tName = Alex", "\tHeight = 0,2", "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .Serialize<Guid>()
-                .Using(g => "xxx")
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedPersonResult);
+            ObjectPrinter.For<Person>().Serialize<Guid>().Using(g => "xxx").PrintToString(person)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedPersonResult);
         }
 
         [Test]
         public void Serialize_SetsAlternativeSerializationForSelectedType_ForObjectWithFields()
         {
             var expectedClassWithFieldsResult = new[] {"ClassWithFields", "\tB = a", "\tA = a", ""};
-
-            ObjectPrinter.For<ClassWithFields>()
-                .Serialize<double>()
-                .Using(d => "a")
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedClassWithFieldsResult);
+            ObjectPrinter.For<ClassWithFields>().Serialize<double>().Using(d => "a").PrintToString(classWithFields)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedClassWithFieldsResult);
         }
 
         [TestCaseSource(nameof(GetCultureTestCasesForObjectWithProperties))]
         public void Serialize_SetsCultureForNumbers_ForObjectWithProperties(string[] expectedResult,
             CultureInfo cultureInfo)
         {
-            ObjectPrinter.For<Person>()
-                .Serialize<double>()
-                .Using(cultureInfo)
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedResult);
+            ObjectPrinter.For<Person>().Serialize<double>().Using(cultureInfo).PrintToString(person)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedResult);
         }
 
         public static IEnumerable<TestCaseData> GetCultureTestCasesForObjectWithProperties
@@ -172,13 +139,8 @@ namespace ObjectPrinting
         public void Serialize_SetsCultureForNumbers_ForObjectWithFields(string[] expectedResult,
             CultureInfo cultureInfo)
         {
-            ObjectPrinter.For<ClassWithFields>()
-                .Serialize<double>()
-                .Using(cultureInfo)
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedResult);
+            ObjectPrinter.For<ClassWithFields>().Serialize<double>().Using(cultureInfo).PrintToString(classWithFields)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedResult);
         }
 
         public static IEnumerable<TestCaseData> GetCultureTestCasesForObjectWithFields
@@ -198,12 +160,7 @@ namespace ObjectPrinting
             var expectedPersonResult = "Person" + Environment.NewLine + "\tId = lol" + Environment.NewLine +
                                        "\tName = Alex" + Environment.NewLine + "\tHeight = 0,2" + Environment.NewLine +
                                        "\tAge = 19" + Environment.NewLine;
-
-            ObjectPrinter.For<Person>()
-                .Serialize(p => person.Id)
-                .Using(i => "lol")
-                .PrintToString(person)
-                .Should()
+            ObjectPrinter.For<Person>().Serialize(p => person.Id).Using(i => "lol").PrintToString(person).Should()
                 .BeEquivalentTo(expectedPersonResult);
         }
 
@@ -211,14 +168,8 @@ namespace ObjectPrinting
         public void Serialize_SetsSerializationForSelectedProperty_ForObjectWithFields()
         {
             var expectedClassWithFieldsResult = new[] {"ClassWithFields", "\tB = 2,5", "\tA = a", ""};
-
-            ObjectPrinter.For<ClassWithFields>()
-                .Serialize(c => c.A)
-                .Using(i => "a")
-                .PrintToString(classWithFields)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedClassWithFieldsResult);
+            ObjectPrinter.For<ClassWithFields>().Serialize(c => c.A).Using(i => "a").PrintToString(classWithFields)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedClassWithFieldsResult);
         }
 
         [Test]
@@ -229,15 +180,8 @@ namespace ObjectPrinting
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = a",
                 "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .Serialize<double>()
-                .Using(CultureInfo.InvariantCulture)
-                .Serialize<double>()
-                .Using(x => "a")
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
+            ObjectPrinter.For<Person>().Serialize<double>().Using(CultureInfo.InvariantCulture).Serialize<double>()
+                .Using(x => "a").PrintToString(person).Split(Environment.NewLine).Should()
                 .BeEquivalentTo(expectedPersonResult);
         }
 
@@ -249,16 +193,8 @@ namespace ObjectPrinting
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = b",
                 "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .Serialize<double>()
-                .Using(x => "a")
-                .Serialize(p => p.Height)
-                .Using(x => "b")
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedPersonResult);
+            ObjectPrinter.For<Person>().Serialize<double>().Using(x => "a").Serialize(p => p.Height).Using(x => "b")
+                .PrintToString(person).Split(Environment.NewLine).Should().BeEquivalentTo(expectedPersonResult);
         }
 
         [Test]
@@ -268,15 +204,8 @@ namespace ObjectPrinting
             {
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>()
-                .Serialize(p => p.Height)
-                .Using(x => "b")
-                .ExceptType<double>()
-                .PrintToString(person)
-                .Split(Environment.NewLine)
-                .Should()
-                .BeEquivalentTo(expectedPersonResult);
+            ObjectPrinter.For<Person>().Serialize(p => p.Height).Using(x => "b").ExceptType<double>()
+                .PrintToString(person).Split(Environment.NewLine).Should().BeEquivalentTo(expectedPersonResult);
         }
 
         [Test]
@@ -286,45 +215,32 @@ namespace ObjectPrinting
             {
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = a", "\tHeight = b", ""
             };
-            var firstOrderResult = ObjectPrinter.For<Person>()
-                .Serialize(p => p.Height)
-                .Using(x => "b")
-                .ExceptType<int>()
-                .Serialize<string>()
-                .Using(s => "a")
-                .PrintToString(person)
-                .Split(Environment.NewLine);
-            var secondOrderResult = ObjectPrinter.For<Person>()
-                .ExceptType<int>()
-                .Serialize<string>()
-                .Using(s => "a")
-                .Serialize(p => p.Height)
-                .Using(x => "b")
-                .PrintToString(person)
-                .Split(Environment.NewLine);
-
+            var firstOrderResult = ObjectPrinter.For<Person>().Serialize(p => p.Height).Using(x => "b")
+                .ExceptType<int>().Serialize<string>().Using(s => "a").PrintToString(person).Split(Environment.NewLine);
+            var secondOrderResult = ObjectPrinter.For<Person>().ExceptType<int>().Serialize<string>().Using(s => "a")
+                .Serialize(p => p.Height).Using(x => "b").PrintToString(person).Split(Environment.NewLine);
             firstOrderResult.Should().BeEquivalentTo(secondOrderResult);
             secondOrderResult.Should().BeEquivalentTo(expectedPersonResult);
         }
-        
+
         [Test]
         public void PrintToString_NotThrows_WhenObjectHasCyclicLinks()
         {
             var cyclicalLinkObject = new ClassWithCyclicalLink();
             Action act = () => ObjectPrinter.For<ClassWithCyclicalLink>().PrintToString(cyclicalLinkObject);
-
             act.Should().NotThrow<StackOverflowException>();
         }
-        
+
         [Test]
         public void PrintToString_PrintWordsWithCyclicLinksCorrectly()
         {
             var cyclicalLinkObject = new ClassWithCyclicalLink();
-            var expectedResult = "ClassWithCyclicalLink" + Environment.NewLine + "\tCyclicalLinkObject = object with cyclic link" + Environment.NewLine;
+            var expectedResult = "ClassWithCyclicalLink" + Environment.NewLine +
+                                 "\tCyclicalLinkObject = object with cyclic link" + Environment.NewLine;
             ObjectPrinter.For<ClassWithCyclicalLink>().PrintToString(cyclicalLinkObject).Should()
                 .BeEquivalentTo(expectedResult);
         }
-        
+
         [Test]
         public void Serialize_SetBoundsOfMemberSerialization()
         {
@@ -333,11 +249,10 @@ namespace ObjectPrinting
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Al", "\tHeight = 0,2",
                 "\tAge = 19", ""
             };
-
-            ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(0, 1).PrintToString(person).Split(Environment.NewLine).Should()
-                .BeEquivalentTo(expectedPersonResult);
+            ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(0, 1).PrintToString(person)
+                .Split(Environment.NewLine).Should().BeEquivalentTo(expectedPersonResult);
         }
-        
+
         [TestCase(-1, 2, TestName = "start is negative")]
         [TestCase(1, 9999, TestName = "end is more than length")]
         [TestCase(2, 1, TestName = "end is less than start")]
@@ -346,6 +261,29 @@ namespace ObjectPrinting
             Action act = () =>
                 ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(start, end).PrintToString(person);
             act.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void PrintToString_PrintsArraysCorrectly()
+        {
+            var expectedResult = "[ 1 2 3 ]";
+            ObjectPrinter.For<int[]>().PrintToString(new[] {1, 2, 3}).Should().BeEquivalentTo(expectedResult);
+        }
+
+        [Test]
+        public void PrintToString_PrintsListsCorrectly()
+        {
+            var expectedResult = "[ 1 2 3 ]";
+            ObjectPrinter.For<List<int>>().PrintToString(new List<int>() {1, 2, 3}).Should()
+                .BeEquivalentTo(expectedResult);
+        }
+
+        [Test]
+        public void PrintToString_PrintsDictionariesCorrectly()
+        {
+            var expectedResult = "Keys : [ 1 2 3 ] Values : [ 3 4 5 ]";
+            ObjectPrinter.For<Dictionary<int, int>>().PrintToString(new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}})
+                .Should().BeEquivalentTo(expectedResult);
         }
     }
 }

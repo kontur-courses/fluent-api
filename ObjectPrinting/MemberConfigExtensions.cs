@@ -1,14 +1,12 @@
-﻿using System;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
     public static class MemberConfigExtensions
     {
         public static PrintingConfig<TOwner> WithBounds<TOwner>(
-            this PropertyConfig<TOwner, string> memberPrintingConfig, int start, int end)
+            this MemberConfig<TOwner, string> memberPrintingConfig, int start, int end)
         {
-            memberPrintingConfig.printingConfig.AddSerializationBounds(memberPrintingConfig.member, start, end);
-            return memberPrintingConfig.printingConfig;
+            memberPrintingConfig.PrintingConfig.AddSerializationBounds(memberPrintingConfig.Member, start, end);
+            return memberPrintingConfig.PrintingConfig;
         }
     }
 }
