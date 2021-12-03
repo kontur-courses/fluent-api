@@ -55,6 +55,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
         public string PrintToString(TOwner obj)
         {
+            visitedObjects.Clear();
             return PrintToString(obj, 0);
         }
 
@@ -63,15 +64,15 @@ namespace ObjectPrintingTask.PrintingConfiguration
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (FinalTypesKeeper.IsFinalType(obj.GetType()))
+            var type = obj.GetType();
+
+            if (type.IsPrimitive || FinalTypesKeeper.IsFinalType(type))
                 return obj.ToString();
 
             if (visitedObjects.Contains(obj))
                 return "[cyclic reference detected]";
 
             visitedObjects.Add(obj);
-
-            var type = obj.GetType();
 
             if (type.GetInterface(nameof(ICollection)) != null)
                 return type.GetInterface(nameof(IDictionary)) == null
@@ -91,7 +92,12 @@ namespace ObjectPrintingTask.PrintingConfiguration
                 if (ShouldIgnoreMember(member))
                     continue;
 
-                builder.AppendNextMember(member, GetMemberValue(obj, member, nestingLvl), GetIndent(nestingLvl));
+                builder
+                .Append(GetIndent(nestingLvl))
+                .Append(member.Name)
+                .Append(" = ")
+                .Append(GetMemberValue(obj, member, nestingLvl))
+                .Append(Environment.NewLine);
             }
 
             return builder.ToString();
@@ -127,12 +133,17 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
             foreach (var key in dictionary.Keys)
             {
-                var keyToString = PrintToString(key, nestingLvl + 1);
-                var valueToString = PrintToString(dictionary[key], nestingLvl + 1);
-                builder.AppendKeyValuePair(GetIndent(nestingLvl + 1), keyToString, valueToString);
+                var keyToString = PrintToString(key, nestingLvl);
+                var valueToString = PrintToString(dictionary[key], nestingLvl);
+                builder
+                .Append(Environment.NewLine)
+                .Append(GetIndent(nestingLvl))
+                .Append(key)
+                .Append(" : ")
+                .Append(valueToString);
             }
 
-            builder.Append(Environment.NewLine).Append(GetIndent(nestingLvl)).Append("]");
+            builder.Append(Environment.NewLine).Append("]").Append(Environment.NewLine);
 
             return builder.ToString();
         }
@@ -145,7 +156,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
             foreach (var item in collection)
                 builder.Append(PrintToString(item, nestingLvl + 1)).Append(", ");
 
-            builder.Remove(builder.Length - 2, 2).Append("]");
+            builder.Remove(builder.Length - 2, 2).Append("]").Append(Environment.NewLine);
 
             return builder.ToString();
         }
@@ -172,6 +183,19 @@ namespace ObjectPrintingTask.PrintingConfiguration
         private static string GetIndent(int nestingLvl)
         {
             return new string('\t', nestingLvl + 1);
+        }
+
+        public static StringBuilder AppendKeyValuePair(
+            StringBuilder builder,
+            string indent, string key, string value,
+            string keyValueDelimiter = " : ")
+        {
+            return builder
+                .Append(Environment.NewLine)
+                .Append(indent)
+                .Append(key)
+                .Append(keyValueDelimiter)
+                .Append(value);
         }
     }
 }
