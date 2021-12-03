@@ -4,19 +4,20 @@ using System.Text;
 
 namespace ObjectPrinting.Solved
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType>
     {
-        private PrintingConfig<TOwner> printingConfig;
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        private BodyPrintingConfig<TOwner> printingConfigBody;
+        public PropertyPrintingConfig(BodyPrintingConfig<TOwner> printingConfigBody)
         {
-            this.printingConfig = printingConfig;
+            this.printingConfigBody = printingConfigBody;
         }
-        public PrintingConfig<TOwner> ParentConfig => printingConfig;
 
         public PrintingConfig<TOwner> Using(Func<TPropType,string> typePrintingConfig)
         {
-            printingConfig.AddFuncForProp(obj => typePrintingConfig((TPropType)obj));
-            return printingConfig;
+            Func<object, string> alternativePrint = obj => typePrintingConfig((TPropType)obj);
+            printingConfigBody
+                .AlternativePrintingProp[printingConfigBody.PropertyKey] = alternativePrint;
+            return printingConfigBody.PrintingConfig;
         }
     }
 }

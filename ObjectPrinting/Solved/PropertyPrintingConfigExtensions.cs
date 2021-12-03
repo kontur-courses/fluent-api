@@ -12,19 +12,16 @@ namespace ObjectPrinting.Solved
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
-            Func<object, string> func = str => ((string)str).Substring(0,maxLen);
-            parentConfig.AddFuncForProp(func);
-            return parentConfig;
+            Func<object, string> trimmingFunc = str => ((string)str).Substring(0, maxLen);
+            return propConfig.Using(trimmingFunc);
         }
 
-        public static PrintingConfig<TOwner> UsingCulture<TOwner, TPropType>(this TypePrintingConfig<TOwner, TPropType> propConfig, CultureInfo cultureInfo)
-            where TPropType: IFormattable
+        public static PrintingConfig<TOwner> UsingCulture<TOwner, TPropType>(this TypePrintingConfig<TOwner, TPropType> propConfig,
+            CultureInfo cultureInfo, string format = null)
+            where TPropType : IFormattable
         {
-            var parentConfig = ((IPropertyPrintingConfig<TOwner, TPropType>)propConfig).ParentConfig;
-            ((IPrintingConfig<TOwner>)parentConfig).SpecialCulture[typeof(TPropType)] = cultureInfo;
-            return parentConfig;
+            Func<TPropType, string> changeCultureFunc = obj => obj.ToString(format, cultureInfo);
+            return propConfig.Using(changeCultureFunc);
         }
-
     }
 }

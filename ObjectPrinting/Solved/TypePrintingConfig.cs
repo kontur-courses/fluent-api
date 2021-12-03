@@ -5,24 +5,20 @@ using System.Linq.Expressions;
 
 namespace ObjectPrinting.Solved
 {
-    public class TypePrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType> 
+    public class TypePrintingConfig<TOwner, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly BodyPrintingConfig<TOwner> printingConfig;
 
-        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public TypePrintingConfig(BodyPrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            Func<object,string> newFunc = obj => print((TPropType)obj);
-            ((IPrintingConfig<TOwner>)printingConfig).AlternativePrinting.Add(typeof(TPropType), newFunc);
-            return printingConfig;
+            Func<object,string> alternativePrint = obj => print((TPropType)obj);
+            printingConfig.AlternativePrinting[typeof(TPropType)] = alternativePrint;
+            return printingConfig.PrintingConfig;
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     }
-
-    
 }
