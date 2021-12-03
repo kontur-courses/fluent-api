@@ -59,10 +59,10 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLvl)
+        private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
             var type = obj.GetType();
 
@@ -76,13 +76,13 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
             if (type.GetInterface(nameof(ICollection)) != null)
                 return type.GetInterface(nameof(IDictionary)) == null
-                    ? GetItemsFromCollection((ICollection)obj, nestingLvl)
-                    : GetItemsFromDictionary((IDictionary)obj, nestingLvl);
+                    ? GetItemsFromCollection((ICollection)obj, nestingLevel)
+                    : GetItemsFromDictionary((IDictionary)obj, nestingLevel);
 
-            return PrintMembersOfObject(obj, type, nestingLvl);
+            return PrintMembersOfObject(obj, type, nestingLevel);
         }
 
-        private string PrintMembersOfObject(object obj, Type type, int nestingLvl)
+        private string PrintMembersOfObject(object obj, Type type, int nestingLevel)
         {
             var builder = new StringBuilder();
             builder.AppendLine(type.Name);
@@ -93,10 +93,10 @@ namespace ObjectPrintingTask.PrintingConfiguration
                     continue;
 
                 builder
-                .Append(GetIndent(nestingLvl))
+                .Append(GetIndent(nestingLevel))
                 .Append(member.Name)
                 .Append(" = ")
-                .Append(GetMemberValue(obj, member, nestingLvl))
+                .Append(GetMemberValue(obj, member, nestingLevel))
                 .Append(Environment.NewLine);
             }
 
@@ -119,25 +119,25 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return membersToExclude.Contains(memberName);
         }
 
-        private string GetMemberValue(object obj, MemberInfo member, int nestingLvl)
+        private string GetMemberValue(object obj, MemberInfo member, int nestingLevel)
         {
             return IsMemberHasAlternateScenario(member) || IsMemberTypeHasAlternateScenario(member)
                 ? GetValueFromScenario(obj, member)
-                : PrintToString(member.GetValue(obj), nestingLvl + 1);
+                : PrintToString(member.GetValue(obj), nestingLevel + 1);
         }
 
-        private string GetItemsFromDictionary(IDictionary dictionary, int nestingLvl)
+        private string GetItemsFromDictionary(IDictionary dictionary, int nestingLevel)
         {
             var builder = new StringBuilder();
             builder.Append("[");
 
             foreach (var key in dictionary.Keys)
             {
-                var keyToString = PrintToString(key, nestingLvl);
-                var valueToString = PrintToString(dictionary[key], nestingLvl);
+                var keyToString = PrintToString(key, nestingLevel);
+                var valueToString = PrintToString(dictionary[key], nestingLevel);
                 builder
                 .Append(Environment.NewLine)
-                .Append(GetIndent(nestingLvl))
+                .Append(GetIndent(nestingLevel))
                 .Append(key)
                 .Append(" : ")
                 .Append(valueToString);
@@ -148,13 +148,13 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return builder.ToString();
         }
 
-        private string GetItemsFromCollection(ICollection collection, int nestingLvl)
+        private string GetItemsFromCollection(ICollection collection, int nestingLevel)
         {
             var builder = new StringBuilder();
             builder.Append("[");
 
             foreach (var item in collection)
-                builder.Append(PrintToString(item, nestingLvl + 1)).Append(", ");
+                builder.Append(PrintToString(item, nestingLevel + 1)).Append(", ");
 
             builder.Remove(builder.Length - 2, 2).Append("]").Append(Environment.NewLine);
 
@@ -180,22 +180,9 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return (string)scenario.DynamicInvoke(member.GetValue(obj));
         }
 
-        private static string GetIndent(int nestingLvl)
+        private static string GetIndent(int nestingLevel)
         {
-            return new string('\t', nestingLvl + 1);
-        }
-
-        public static StringBuilder AppendKeyValuePair(
-            StringBuilder builder,
-            string indent, string key, string value,
-            string keyValueDelimiter = " : ")
-        {
-            return builder
-                .Append(Environment.NewLine)
-                .Append(indent)
-                .Append(key)
-                .Append(keyValueDelimiter)
-                .Append(value);
+            return new string('\t', nestingLevel + 1);
         }
     }
 }
