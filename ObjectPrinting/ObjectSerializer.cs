@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class ObjectSerializer
+    internal class ObjectSerializer
     {
         private readonly Dictionary<MemberInfo, Func<object, string>> specializedSerializers =
             new Dictionary<MemberInfo, Func<object, string>>();
