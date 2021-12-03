@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Security.Cryptography.X509Certificates;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
 using FluentAssertions;
@@ -15,6 +15,7 @@ namespace ObjectPrintingTests
         public void Print_To_String()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 2.3, Surname = "VERYBIGSURNAME"};
+            person.Dict = new Dictionary<int, Person> {{1, new Person()}};
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -28,7 +29,8 @@ namespace ObjectPrintingTests
                 //4. Настроить сериализацию конкретного свойства
                 .Printing<string>().Using(p => p.Name, x => x + " (nice name, bro)")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing<string>().TrimToLength(p => p.Surname, 10);
+                .Printing<string>().TrimToLength(p => p.Surname, 10)
+                .ThrowIfCyclicReferences();
                 
             
             var s1 = printer.PrintToString(person);
@@ -145,7 +147,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ThrowsOnCyclicReference()
+        public void ThrowsOnCyclicReferenceWhenNeeded()
         {
             var person = new Person();
 
@@ -156,6 +158,21 @@ namespace ObjectPrintingTests
             Action act = () => printer.PrintToString(person);
 
             act.Should().Throw<Exception>();
+        }
+        
+        [Test]
+        public void DoesntThrowsOnCyclicReference()
+        {
+            var person = new Person();
+
+            person.Parent = person;
+
+            var printer = ObjectPrinter.For<Person>();
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Contain("Cyclic reference on Person");
+            Console.WriteLine(result);
         }
     }
 }
