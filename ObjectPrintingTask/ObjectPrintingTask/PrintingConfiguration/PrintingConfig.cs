@@ -14,7 +14,6 @@ namespace ObjectPrintingTask.PrintingConfiguration
         private readonly HashSet<string> membersToExclude = new HashSet<string>();
         private readonly Dictionary<Type, Delegate> typeScenarios = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
-        private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
         public TypePrintingConfig<TOwner, TMemberType> PrintingType<TMemberType>()
         {
@@ -24,16 +23,14 @@ namespace ObjectPrintingTask.PrintingConfiguration
         public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
-            var memberFullName = GetMemberFullName(member);
+            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
             return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
-            var memberFullName = GetMemberFullName(member);
+            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
             membersToExclude.Add(memberFullName);
 
             return this;
@@ -55,160 +52,39 @@ namespace ObjectPrintingTask.PrintingConfiguration
             typeScenarios[type] = scenario;
         }
 
-        public string PrintToString(TOwner obj)
-        {
-            visitedObjects.Clear();
-            return PrintToString(obj, 0);
+        public Printer<TOwner> BuildConfig()
+        {          
+            return new Printer<TOwner>(this);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null";
-
-            var type = obj.GetType();
-            
-            //if (type.IsPrimitive || FinalTypesKeeper.IsFinalType(type))
-            if (IsSimple(type))
-                return obj.ToString();
-
-            if (visitedObjects.Contains(obj))
-                return "[cyclic reference detected]";
-
-            visitedObjects.Add(obj);
-
-            if (type.GetInterface(nameof(ICollection)) != null)
-                return type.GetInterface(nameof(IDictionary)) == null
-                    ? GetItemsFromCollection((ICollection)obj, nestingLevel)
-                    : GetItemsFromDictionary((IDictionary)obj, nestingLevel);
-
-            return PrintMembersOfObject(obj, type, nestingLevel);
-        }
-
-        private string PrintMembersOfObject(object obj, Type type, int nestingLevel)
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine(type.Name);
-
-            foreach (var member in type.GetPropertiesAndFields())
-            {
-                if (ShouldIgnoreMember(member))
-                    continue;
-
-                builder
-                .Append(GetIndent(nestingLevel))
-                .Append(member.Name)
-                .Append(" = ")
-                .Append(GetMemberValue(obj, member, nestingLevel))
-                .Append(Environment.NewLine);
-            }
-
-            return builder.ToString();
-        }
-
-        private bool ShouldIgnoreMember(MemberInfo memberInfo)
-        {
-            return ShouldExcludeMemberByName(string.Join(".", memberInfo.ReflectedType.Name, memberInfo.Name))
-                   || ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType());
-        }
-
-        private bool ShouldExcludeMemberByType(Type memberType)
+        public bool ShouldExcludeMemberByType(Type memberType)
         {
             return typesToExclude.Contains(memberType);
         }
 
-        private bool ShouldExcludeMemberByName(string memberName)
+        public bool ShouldExcludeMemberByName(string memberFullName)
         {
-            return membersToExclude.Contains(memberName);
-        }
+            return membersToExclude.Contains(memberFullName);
+        } 
 
-        private string GetMemberValue(object obj, MemberInfo member, int nestingLevel)
-        {
-            return IsMemberHasAlternateScenario(member) || IsMemberTypeHasAlternateScenario(member)
-                ? GetValueFromScenario(obj, member)
-                : PrintToString(member.GetValue(obj), nestingLevel + 1);
-        }
-
-        private string GetItemsFromDictionary(IDictionary dictionary, int nestingLevel)
-        {
-            var builder = new StringBuilder();
-            builder.Append("[");
-
-            foreach (var key in dictionary.Keys)
-            {
-                var keyToString = PrintToString(key, nestingLevel);
-                var valueToString = PrintToString(dictionary[key], nestingLevel);
-                builder
-                .Append(Environment.NewLine)
-                .Append(GetIndent(nestingLevel))
-                .Append(key)
-                .Append(" : ")
-                .Append(valueToString);
-            }
-
-            builder.Append(Environment.NewLine).Append("]").Append(Environment.NewLine);
-
-            return builder.ToString();
-        }
-
-        private string GetItemsFromCollection(ICollection collection, int nestingLevel)
-        {
-            var builder = new StringBuilder();
-            builder.Append("[");
-
-            foreach (var item in collection)
-                builder.Append(PrintToString(item, nestingLevel + 1)).Append(", ");
-
-            builder.Remove(builder.Length - 2, 2).Append("]").Append(Environment.NewLine);
-
-            return builder.ToString();
-        }
-
-        private bool IsMemberHasAlternateScenario(MemberInfo member)
-        {
-            var memberFullName = GetMemberFullName(member);
+        public bool IsMemberHasAlternateScenario(string memberFullName)
+        {      
             return memberScenarios.ContainsKey(memberFullName);
         }
 
-        private bool IsMemberTypeHasAlternateScenario(MemberInfo member)
+        public bool IsMemberTypeHasAlternateScenario(Type memberType)
         {
-            return typeScenarios.ContainsKey(member.GetMemberInstanceType());
+            return typeScenarios.ContainsKey(memberType);
+        }  
+
+        public Delegate GetMemberScenario(string memberFullName)
+        {
+            return memberScenarios[memberFullName];
         }
 
-        private string GetValueFromScenario(object obj, MemberInfo member)
+        public Delegate GetMemberTypeScenario(Type memberType)
         {
-            var memberFullName = GetMemberFullName(member);
-
-            var scenario = IsMemberHasAlternateScenario(member)
-                ? memberScenarios[memberFullName]
-                : typeScenarios[member.GetMemberInstanceType()];
-
-            return (string)scenario.DynamicInvoke(member.GetValue(obj));
-        }
-
-        private static string GetIndent(int nestingLevel)
-        {
-            return new string('\t', nestingLevel + 1);
-        }
-
-        private string GetMemberFullName(MemberInfo member)
-        {
-            return string.Join(".", member.ReflectedType.Name, member.Name);
-        }
-
-        bool IsSimple(Type type)
-        {        
-            var typeInfo = type.GetTypeInfo();           
-            if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                // nullable type, check if the nested type is simple.
-                return IsSimple(typeInfo.GetGenericArguments()[0]);
-            }
-            return typeInfo.IsPrimitive
-              || typeInfo.IsEnum
-              || typeInfo.IsValueType
-              || type.Equals(typeof(string))
-              || type.Equals(typeof(decimal));
+            return typeScenarios[memberType];
         }
     }
 }

@@ -17,8 +17,8 @@ namespace ObjectPrintingTask.Extensions
 
         public static bool IsFieldOrProperty(this MemberInfo memberInfo)
         {
-            return memberInfo.MemberType == MemberTypes.Field
-                   || memberInfo.MemberType == MemberTypes.Property;
+            return memberInfo.MemberType == MemberTypes.Field 
+                || memberInfo.MemberType == MemberTypes.Property;
         }
 
         public static Type GetMemberInstanceType(this MemberInfo memberInfo)
@@ -29,6 +29,11 @@ namespace ObjectPrintingTask.Extensions
                 MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType,
                 _ => throw new NotImplementedException()
             };
+        }
+
+        public static string GetFullName(this MemberInfo member)
+        {
+            return string.Join(".", member.ReflectedType.Name, member.Name);
         }
     }
 }
