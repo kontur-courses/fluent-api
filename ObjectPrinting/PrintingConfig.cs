@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         private readonly HashSet<Type> FinalTypes = new()
         {
@@ -21,30 +21,39 @@ namespace ObjectPrinting
         };
         
         private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<string> excludedMembers = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly Dictionary<Type, Delegate> typesSerializers = new();
+        private readonly Dictionary<MemberInfo, Delegate> membersSerializers = new();
+        private readonly HashSet<object> visited = new();
+        private bool checkCyclicReference = false;
 
-        public PrintingConfig<TOwner> Exclude<TExcluding>()
+        public IPrintingConfig<TOwner> Exclude<TExcluding>()
         {
             excludedTypes.Add(typeof(TExcluding));
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude<TExcluding>(Expression<Func<TOwner, TExcluding>> memberSelector)
+        public IPrintingConfig<TOwner> Exclude<TExcluding>(Expression<Func<TOwner, TExcluding>> memberSelector)
         {
             var memberExpression = (MemberExpression) memberSelector.Body;
-            excludedMembers.Add(memberExpression.Member.Name);
+            excludedMembers.Add(memberExpression.Member);
             return this;
         }
 
-        public MemberPrintingConfig<TOwner, TMember> Printing<TMember>()
+        public IMemberPrintingConfig<TOwner, TMember> Printing<TMember>()
         {
-            return new MemberPrintingConfig<TOwner, TMember>(this);
+            return new MemberPrintingConfig<TMember>(this);
         }
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        public IPrintingConfig<TOwner> ThrowIfCyclicReferences()
+        {
+            checkCyclicReference = true;
+            return this;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -63,63 +72,104 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
-            var members = GetTypeFieldsAndProperties(type);
+            if (checkCyclicReference) CheckForCyclicReference(obj);
             
-            foreach (var memberInfo in members)
+            foreach (var memberInfo in GetTypeFieldsAndProperties(type))
             {
-                if (excludedMembers.Contains(memberInfo.Name)) continue;
-                // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-                switch (memberInfo.MemberType)
-                {
-                    case MemberTypes.Field:
-                    {
-                        var fieldInfo = (FieldInfo) memberInfo;
-                    
-                        if (excludedTypes.Contains(fieldInfo.FieldType)) continue;
+                if (excludedMembers.Contains(memberInfo)) continue;
+                
+                var nameValueType = GetMemberNameValueType(obj, memberInfo);
+                
+                if (excludedTypes.Contains(nameValueType.type)) continue;
 
-                        sb.Append(PrintField(obj, fieldInfo, indentation, nestingLevel));
-                        break;
-                    }
-                    case MemberTypes.Property:
-                    {
-                        var propertyInfo = (PropertyInfo) memberInfo;
-                    
-                        if (excludedTypes.Contains(propertyInfo.PropertyType)) continue;
-                    
-                        sb.Append(PrintProperty(obj, propertyInfo, indentation, nestingLevel));
-                        break;
-                    }
+                if (membersSerializers.ContainsKey(memberInfo))
+                {
+                    sb.Append(PrintFieldOrProperty(nameValueType.name, 
+                        membersSerializers[memberInfo].DynamicInvoke(nameValueType.value),
+                              indentation, nestingLevel));
+                }
+                else
+                {
+                    sb.Append(PrintFieldOrProperty(nameValueType.name,
+                        nameValueType.value,
+                        indentation, nestingLevel));
                 }
             }
             return sb.ToString();
         }
 
-        internal void AddCustomTypeSerializer<T>(Func<T, string> serializer)
+        private void CheckForCyclicReference(object obj)
         {
-            typesSerializers[typeof(T)] = serializer;
+            if (visited.Contains(obj))
+            {
+                throw new ArgumentException("Cyclic reference");
+            }
+
+            visited.Add(obj);
         }
 
-        private string PrintField(object obj, FieldInfo fieldInfo, string indentation, int nestingLevel)
+        private (string name, object value, Type type) GetMemberNameValueType(object obj, MemberInfo memberInfo)
         {
-            return indentation + fieldInfo.Name + " = " +
-                   PrintToString(fieldInfo.GetValue(obj),
+            switch (memberInfo.MemberType)
+            {
+                case MemberTypes.Field:
+                {
+                    var fieldInfo = (FieldInfo) memberInfo;
+                    return (fieldInfo.Name, fieldInfo.GetValue(obj), fieldInfo.FieldType);
+                }
+                case MemberTypes.Property:
+                {
+                    var propertyInfo = (PropertyInfo) memberInfo;
+                    return (propertyInfo.Name, propertyInfo.GetValue(obj), propertyInfo.PropertyType);
+                }
+                default:
+                    throw new ArgumentException("Unexpected argument");
+            }
+        }
+
+        private string PrintFieldOrProperty(string memberName,
+            object value,
+            string indentation,
+            int nestingLevel)
+        {
+            return indentation + memberName + " = " +
+                   PrintToString(value,
                        nestingLevel + 1);
         }
 
-        private string PrintProperty(object obj, PropertyInfo propertyInfo, string indentation, int nestingLevel)
-        {
-            return indentation + propertyInfo.Name + " = " +
-                   PrintToString(propertyInfo.GetValue(obj),
-                       nestingLevel + 1);
-        }
-
-        private IEnumerable<MemberInfo> GetTypeFieldsAndProperties(Type type)
+        private static IEnumerable<MemberInfo> GetTypeFieldsAndProperties(Type type)
         {
             var bindingFlags = BindingFlags.Public | BindingFlags.Instance;
             
             return type.GetFields(bindingFlags)
                 .Cast<MemberInfo>()
                 .Concat(type.GetProperties(bindingFlags));
+        }
+        
+        private class MemberPrintingConfig<TMember> : IMemberPrintingConfig<TOwner, TMember>
+        {
+            private readonly PrintingConfig<TOwner> parentConfig;
+
+            public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig)
+            {
+                this.parentConfig = parentConfig;
+            }
+
+            public IPrintingConfig<TOwner> Using(Func<TMember, string> alternativeSerializer)
+            {
+                parentConfig.typesSerializers[typeof(TMember)] = alternativeSerializer;
+
+                return parentConfig;
+            }
+
+            public IPrintingConfig<TOwner> Using(Expression<Func<TOwner, TMember>> memberSelector,
+                Func<TMember, string> alternativeSerializer)
+            {
+                var memberExpr = (MemberExpression) memberSelector.Body;
+                parentConfig.membersSerializers[memberExpr.Member] = alternativeSerializer;
+
+                return parentConfig;
+            }
         }
     }
 }
