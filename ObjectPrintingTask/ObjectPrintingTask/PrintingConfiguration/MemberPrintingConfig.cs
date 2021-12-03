@@ -6,20 +6,18 @@ namespace ObjectPrintingTask.PrintingConfiguration
         : IChildPrintingConfig<TOwner, TMemberType>
     {
         private readonly string memberName;
+        private readonly PrintingConfig<TOwner> parentConfig;
 
-        public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, string memberName)
+        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, string memberName)
         {
-            ParentConfig = printingConfig;
+            this.parentConfig = parentConfig;
             this.memberName = memberName;
         }
 
-        public PrintingConfig<TOwner> ParentConfig { get; }
-
-
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> scenario)
         {
-            ParentConfig.AddSerializingScenario(memberName, scenario);
-            return ParentConfig;
+            parentConfig.AddSerializingScenario(memberName, scenario);
+            return parentConfig;
         }
     }
 }
