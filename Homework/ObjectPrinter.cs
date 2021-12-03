@@ -14,6 +14,7 @@ namespace Homework
 
         private readonly HashSet<object> printedObjects = new();
         private readonly PrintingRules rules;
+        private readonly MyStringBuilder reservePrintedObject = new();
         private readonly HashSet<Type> finalTypes = new()
         {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(char),
@@ -27,8 +28,12 @@ namespace Homework
         
         public string PrintToString(object? obj)
         {
+            reservePrintedObject.Clear();
             var nullCaseResult = $"null {Environment.NewLine}";
-            return PrintToString(obj, obj?.GetType().Name + ":" ?? "", 0) ?? nullCaseResult;
+            PrintToString(obj, obj?.GetType().Name + ":" ?? "", 0);
+            return !reservePrintedObject.IsEmpty() 
+                ? reservePrintedObject.ToString() 
+                : nullCaseResult;
         }
 
         private bool ShouldIgnore(Type type, string name, int nestingLevel)
@@ -49,10 +54,9 @@ namespace Homework
             return printedObjects.Any(x => ReferenceEquals(x, obj));
         }
 
-        private bool TryPrintKeyValuePair(object pair, int nestingLevel, int index, out string? result)
+        private bool TryPrintKeyValuePair(object pair, int nestingLevel)
         {
-            result = null;
-            if (TryPrintFinalObject(pair, "", nestingLevel, out result)) return true;
+            if (TryPrintFinalObject(pair, "", nestingLevel)) return true;
 
             var valueType = pair.GetType();
             if (valueType.IsGenericType)
@@ -62,63 +66,57 @@ namespace Homework
                 {
                     var key = valueType.GetProperty("Key")?.GetValue(pair, null);
                     var value = valueType.GetProperty("Value")?.GetValue(pair, null);
-                    if (ShouldIgnore(key!.GetType(), "", nestingLevel) || ShouldIgnore(value!.GetType(), "", nestingLevel)) 
-                        return false;
-                    result = PrintToString(key, $"Key[{index}]:", nestingLevel) +
-                             "\t" + PrintToString(value, $"Value[{index}]", nestingLevel); 
-                    
-                    return true;
+                    return !ShouldIgnore(key!.GetType(), "", nestingLevel) 
+                           && !ShouldIgnore(value!.GetType(), "", nestingLevel);
                 }
             }
             
             return false;
         }
 
-        private string? TryPrintEnumerableElement(int nestingLevel, bool isDict, bool isList, object value, int index)
+        private void TryPrintEnumerableElement(int nestingLevel, bool isDict, bool isList, object value, int index)
         {
             if (isDict)
             {
-                if (!TryPrintKeyValuePair(value, nestingLevel, index, out var printed) || printed is null) return null;
-                if (printed.StartsWith("\t = ")) 
-                    printed = "\t" + printed[3..];
-                return new string('\t', nestingLevel) + printed;
+                if (!TryPrintKeyValuePair(value, nestingLevel)) return ;
+                var printed = reservePrintedObject.Last()!;
+                if (printed.StartsWith("\t = ")) reservePrintedObject.ReplaceLast("\t" + printed[3..]);
             }
             else
             {
-                var printed = PrintToString(value, $"[{index}]", nestingLevel + 1);
-                if (printed is null) return null;
-                return isList
-                    ? printed 
-                    : printed.Replace($"[{index - 1}] = ", "");
+                PrintToString(value, $"[{index++}]", nestingLevel + 1);
+                if (!isList) 
+                    reservePrintedObject.ReplaceLast(reservePrintedObject.Last()!.Replace($"[{index - 1}] = ", ""));
             }
         }
 
-        private string? TryPrintIEnumerable(object? obj, string name, int nestingLevel)
+        private void TryPrintIEnumerable(object? obj, string name, int nestingLevel)
         {
-            if (obj is null) return null;
+            if (obj is null) return ;
             var indexer = 0;
             var indentation = new string('\t', nestingLevel);
             var printedIEnumerableObject = new StringBuilder();
             var interfaces = obj.GetType().GetInterfaces();
             printedIEnumerableObject.AppendLine(indentation + name + " = {");
+            reservePrintedObject.AppendLine(indentation + name + " = {");
+            
 
             printedObjects.Add(obj);
             foreach (var collectionValue in (IEnumerable)obj) 
             {
                 if (collectionValue is null || CheckForCycleReference(collectionValue)) continue;
-                printedIEnumerableObject.Append(TryPrintEnumerableElement(
-                        nestingLevel, 
-                        interfaces.Contains(typeof(IDictionary)), 
-                        interfaces.Contains(typeof(IList)), 
-                        collectionValue, indexer++));
+                TryPrintEnumerableElement(
+                    nestingLevel,
+                    interfaces.Contains(typeof(IDictionary)),
+                    interfaces.Contains(typeof(IList)),
+                    collectionValue, indexer++);
             }
             
-            return printedIEnumerableObject.AppendLine(indentation + "}").ToString();
+            reservePrintedObject.AppendLine(indentation + "}");
         }
 
-        private bool TryPrintFinalObject(object value, string name, int nestingLevel, out string? result)
+        private bool TryPrintFinalObject(object value, string name, int nestingLevel)
         {
-            result = null;
             var rName = name +  " = ";
             var indentation = new string('\t', nestingLevel);
             var type = value.GetType();
@@ -126,54 +124,63 @@ namespace Homework
             if (ShouldIgnore(type, name, nestingLevel)) return true;
             if (TryGetPrintRuleFor(type, name, out var serialisationRule))
             {
-                result = indentation + rName + serialisationRule.ToString(value) + Environment.NewLine;
+                reservePrintedObject.Append(indentation + rName + serialisationRule.ToString(value) + Environment.NewLine);
                 return true;
             }
             if (finalTypes.Contains(type))
             {
-                result = indentation + rName + (type.GetInterfaces().Contains(typeof(IConvertible))
+                var toAppend = indentation + rName + (type.GetInterfaces().Contains(typeof(IConvertible))
                     ? ((IConvertible) value).ToString(rules.GetCultureForType(type)) : value) + Environment.NewLine;
+                reservePrintedObject.Append(toAppend);
                 return true;
             }
 
             return false;
         }
 
-        private string? TryPrintPropertyInfo(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        private void  TryPrintPropertyInfo(object obj, PropertyInfo propertyInfo, int nestingLevel)
         {
-            if (MaxNestingLevel == nestingLevel) return null;
+            if (MaxNestingLevel == nestingLevel) return ;
             var value = propertyInfo.GetValue(obj);
             
-            if (value is null) return $"{new string('\t', nestingLevel)}{propertyInfo.Name} = null{Environment.NewLine}";
-            if (TryPrintFinalObject(value, propertyInfo.Name, nestingLevel, out var f)) return f;
+            if (value is null)
+            {
+                reservePrintedObject.Append($"{new string('\t', nestingLevel)}{propertyInfo.Name} = null{Environment.NewLine}");
+                return;
+            }
+            if (TryPrintFinalObject(value, propertyInfo.Name, nestingLevel)) return ;
             var interfaces = propertyInfo.PropertyType.GetInterfaces();
-            return interfaces.Contains(typeof(IEnumerable)) 
-                ? TryPrintIEnumerable(value, propertyInfo.Name, nestingLevel)
-                : TryPrintNestingObject(value, propertyInfo.Name, nestingLevel, true);
+            if (interfaces.Contains(typeof(IEnumerable)))
+                TryPrintIEnumerable(value, propertyInfo.Name, nestingLevel);
+            else TryPrintNestingObject(value, propertyInfo.Name, nestingLevel, true);
         }
 
-        private string TryPrintNestingObject(object value, string name, int nestingLevel, bool isNestedObject = false)
+        private void TryPrintNestingObject(object value, string name, int nestingLevel, bool isNestedObject = false)
         {
             var indentation = new string('\t', nestingLevel);
-            var printedObject = new StringBuilder();
-            printedObject.AppendLine(indentation + name + (isNestedObject ? " = {" : ""));
             
             printedObjects.Add(value);
             var nestedProps = value.GetType().GetProperties();
-            if (!nestedProps.Any()) return indentation + name + " = " + Environment.NewLine;
+            if (!nestedProps.Any())
+            {
+                reservePrintedObject.Append(indentation + name + " = " + Environment.NewLine);
+                return;
+            }
+            reservePrintedObject.AppendLine(indentation + name + (isNestedObject ? " = {" : ""));
             foreach (var nestedPropertyInfo in nestedProps)
             {
                 if (CheckForCycleReference(nestedPropertyInfo.GetValue(value))) continue;
-                printedObject.Append(TryPrintPropertyInfo(value, nestedPropertyInfo, nestingLevel + 1));
+                TryPrintPropertyInfo(value, nestedPropertyInfo, nestingLevel + 1);
             }
-            return printedObject.AppendLine(isNestedObject ? indentation + "}" : "").ToString();
+
+            reservePrintedObject.AppendLine(isNestedObject ? indentation + "}" : "");
         }
 
-        private string? PrintToString(object? obj, string name, int nestingLevel)
+        private void PrintToString(object? obj, string name, int nestingLevel)
         {
-            if (obj is null) return null;
-            if (TryPrintFinalObject(obj, name, nestingLevel, out var printedObject)) return printedObject;
-            return TryPrintNestingObject(obj, name, nestingLevel);
+            if (obj is null) return;
+            if (TryPrintFinalObject(obj, name, nestingLevel)) return;
+            TryPrintNestingObject(obj, name, nestingLevel);
         }
     }
 }
