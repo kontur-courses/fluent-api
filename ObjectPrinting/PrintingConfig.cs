@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -51,9 +52,9 @@ namespace ObjectPrinting
             return new TypeConfig<TOwner, TProperty>(this);
         }
 
-        public PropertyConfig<TOwner> Serialize(PropertyInfo property)
+        public PropertyConfig<TOwner> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> selector)
         {
-            return new PropertyConfig<TOwner>(this, property);
+            return new PropertyConfig<TOwner>(this, (PropertyInfo)(selector.Body as MemberExpression)?.Member);
         }
 
         public string PrintToString(TOwner obj)
@@ -67,9 +68,9 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> ExceptProperty(PropertyInfo property)
+        public PrintingConfig<TOwner> ExceptProperty<TProperty>(Expression<Func<TOwner, TProperty>> selector)
         {
-            exceptProperties.Add(property);
+            exceptProperties.Add((PropertyInfo)(selector.Body as MemberExpression)?.Member);
             return this;
         }
 

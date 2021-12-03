@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -45,7 +46,7 @@ namespace ObjectPrinting.Tests
         public void ExceptProperty_NotPrintSelectedProperty()
         {
             var point = new Point(1, 2);
-            var pointPrinter = ObjectPrinter.For<Point>().ExceptProperty(point.GetType().GetProperties()[1]);
+            var pointPrinter = ObjectPrinter.For<Point>().ExceptProperty(p => p.X);
 
             pointPrinter.PrintToString(point).Should().NotContain("X");
         }
@@ -74,11 +75,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Serialize_SetsSerializationForSelectedProperty()
         {
-            printer.Serialize(person.GetType().GetProperties()[0])
-                .Using(x => "Id = lol")
+            printer.Serialize(p => person.Id)
+                .Using(x => "lol")
                 .PrintToString(person)
                 .Should()
-                .Contain("lol");
+                .Contain("Id = lol");
         }
 
         [Test]
@@ -98,7 +99,7 @@ namespace ObjectPrinting.Tests
         {
             printer.Serialize<double>()
                 .Using(x => "a")
-                .Serialize(person.GetType().GetProperties()[2])
+                .Serialize(p => p.Height)
                 .Using(x => "b")
                 .PrintToString(person)
                 .Should()
@@ -108,7 +109,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void AlternativePropertySerialization_HasLowerPriority_ThanExcluding()
         {
-            printer.Serialize(person.GetType().GetProperties()[2])
+            printer.Serialize(p => p.Height)
                 .Using(x => "b")
                 .ExceptType<double>()
                 .PrintToString(person)
@@ -119,7 +120,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ResultNotDependsOnOrderOfCommands()
         {
-            var firstOrderResult = printer.Serialize(person.GetType().GetProperties()[2])
+            var firstOrderResult = printer.Serialize(p => p.Height)
                 .Using(x => "b")
                 .ExceptType<int>()
                 .Serialize<string>()
@@ -128,7 +129,7 @@ namespace ObjectPrinting.Tests
             var secondOrderResult = printer.ExceptType<int>()
                 .Serialize<string>()
                 .Using(s => "a")
-                .Serialize(person.GetType().GetProperties()[2])
+                .Serialize(p => p.Height)
                 .Using(x => "b")
                 .PrintToString(person);
             
