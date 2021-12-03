@@ -3,33 +3,29 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly PropertyInfo propertyInfo;
+        public PrintingConfig<TOwner> ParentConfig { get; }
+        public PropertyInfo PropertyInfo { get; }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo = null)
         {
-            this.printingConfig = printingConfig;
-            this.propertyInfo = propertyInfo;
+            ParentConfig = parentConfig;
+            PropertyInfo = propertyInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (propertyInfo == null)
+            if (PropertyInfo == null)
             {
-                printingConfig.TypeToPrinting[typeof(TPropType)] = print;
+                ParentConfig.TypeToPrinting[typeof(TPropType)] = print;
             }
             else
             {
-                printingConfig.PropertyToPrinting[propertyInfo] = print;
+                ParentConfig.PropertyToPrinting[PropertyInfo] = print;
             }
 
-            return printingConfig;
+            return ParentConfig;
         }
-
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.PropertyInfo => propertyInfo;
     }
 }

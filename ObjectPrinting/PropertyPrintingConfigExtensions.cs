@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Reflection.Emit;
 
 namespace ObjectPrinting
 {
@@ -13,7 +14,7 @@ namespace ObjectPrinting
                 throw new ArgumentException("Max length should be non-negative");
             }
 
-            var config = (IPropertyPrintingConfig<TOwner, string>)propConfig;
+            var config = (IPropertyPrintingConfig<TOwner>)propConfig;
             config.ParentConfig.StringPropertyToLength[config.PropertyInfo] = maxLen;
             return config.ParentConfig;
         }
@@ -21,9 +22,8 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Using<TOwner, TProp>(this PropertyPrintingConfig<TOwner, TProp> propConfig,
             CultureInfo culture) where TProp : IFormattable
         {
-            var config = (IPropertyPrintingConfig<TOwner, TProp>)propConfig;
-            config.ParentConfig.TypeToCultureInfo[typeof(TProp)] = culture;
-            return config.ParentConfig;
+            propConfig.ParentConfig.TypeToCultureInfo[typeof(TProp)] = culture;
+            return propConfig.ParentConfig;
         }
     }
 }
