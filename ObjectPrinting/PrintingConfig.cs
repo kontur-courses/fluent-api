@@ -11,15 +11,15 @@ namespace ObjectPrinting
     {
         private readonly Type[] finalTypes;
         private readonly HashSet<Type> exceptTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> exceptProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<MemberInfo> exceptMembers = new HashSet<MemberInfo>();
         private readonly Dictionary<Type, Delegate> alternativeSerializers = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<MemberInfo, Delegate> propertySerializers = new Dictionary<MemberInfo, Delegate>();
+        private readonly Dictionary<MemberInfo, Delegate> memberSerializers = new Dictionary<MemberInfo, Delegate>();
 
         public PrintingConfig()
         {
             finalTypes = new[]
             {
-                typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan)
+                typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
         }
 
@@ -35,15 +35,15 @@ namespace ObjectPrinting
             }
         }
 
-        public void AddAlternativePropertySerializer(PropertyInfo property, Delegate serializer)
+        public void AddAlternativeMemberSerializer(MemberInfo member, Delegate serializer)
         {
-            if (propertySerializers.ContainsKey(property))
+            if (memberSerializers.ContainsKey(member))
             {
-                propertySerializers[property] = serializer;
+                memberSerializers[member] = serializer;
             }
             else
             {
-                propertySerializers.Add(property, serializer);
+                memberSerializers.Add(member, serializer);
             }
         }
 
@@ -52,9 +52,9 @@ namespace ObjectPrinting
             return new TypeConfig<TOwner, TProperty>(this);
         }
 
-        public PropertyConfig<TOwner> Serialize<TProperty>(Expression<Func<TOwner, TProperty>> selector)
+        public PropertyConfig<TOwner> Serialize<TMember>(Expression<Func<TOwner, TMember>> selector)
         {
-            return new PropertyConfig<TOwner>(this, (PropertyInfo)(selector.Body as MemberExpression)?.Member);
+            return new PropertyConfig<TOwner>(this, (selector.Body as MemberExpression)?.Member);
         }
 
         public string PrintToString(TOwner obj)
@@ -68,51 +68,75 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> ExceptProperty<TProperty>(Expression<Func<TOwner, TProperty>> selector)
+        public PrintingConfig<TOwner> ExceptMember<TMember>(Expression<Func<TOwner, TMember>> selector)
         {
-            exceptProperties.Add((PropertyInfo)(selector.Body as MemberExpression)?.Member);
+            exceptMembers.Add((selector.Body as MemberExpression)?.Member);
             return this;
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-            {
-                return "null" + Environment.NewLine;
-            }
-
-            if (finalTypes.Contains(obj.GetType()))
-            {
-                return obj + Environment.NewLine;
-            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties()
-                .Where(p => !exceptTypes.Contains(p.PropertyType) && !exceptProperties.Contains(p)))
+            var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
+            foreach (var memberInfo in members
+                .Where(m => !exceptTypes.Contains(GetTypeOfMember(m)) && !exceptMembers.Contains(m)))
             {
-                sb.Append(indentation + propertyInfo.Name + " = " + GetSerialization(obj, propertyInfo, nestingLevel));
+                sb.Append(indentation + memberInfo.Name + " = " + GetSerialization(obj, memberInfo, nestingLevel));
             }
 
             return sb.ToString();
         }
 
-        private string GetSerialization(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        private static Type GetTypeOfMember(MemberInfo memberInfo)
         {
-            if (propertySerializers.ContainsKey(propertyInfo))
+            return memberInfo switch
             {
-                return propertySerializers[propertyInfo].DynamicInvoke(propertyInfo) + Environment.NewLine;
+                FieldInfo fieldInfo => fieldInfo.FieldType,
+                PropertyInfo propertyInfo => propertyInfo.PropertyType,
+                _ => throw new ArgumentException()
+            };
+        }
+
+        private static object GetValueOfMember(MemberInfo memberInfo, object obj)
+        {
+            return memberInfo switch
+            {
+                FieldInfo fieldInfo => fieldInfo.GetValue(obj),
+                PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
+                _ => throw new ArgumentException()
+            };
+        }
+
+        private string GetSerialization(object obj, MemberInfo propertyInfo, int nestingLevel)
+        {
+            if (obj == null)
+            {
+                return "null" + Environment.NewLine;
+            }
+            
+            
+            if (memberSerializers.ContainsKey(propertyInfo))
+            {
+                return memberSerializers[propertyInfo].DynamicInvoke(propertyInfo) + Environment.NewLine;
             }
 
-            if (alternativeSerializers.ContainsKey(propertyInfo.PropertyType))
+            if (alternativeSerializers.ContainsKey(GetTypeOfMember(propertyInfo)))
             {
-                return alternativeSerializers[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj)) +
+                return alternativeSerializers[GetTypeOfMember(propertyInfo)].DynamicInvoke(GetValueOfMember(propertyInfo, obj)) +
                        Environment.NewLine;
             }
+            
+            var type = GetTypeOfMember(propertyInfo);
+            if (finalTypes.Contains(type))
+            {
+                return GetValueOfMember(propertyInfo, obj) + Environment.NewLine;
+            }
 
-            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return PrintToString(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
         }
     }
 }

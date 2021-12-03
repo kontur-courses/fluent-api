@@ -5,18 +5,18 @@ namespace ObjectPrinting
 {
     public class PropertyConfig<TOwner>
     {
-        private readonly PropertyInfo property;
+        private readonly MemberInfo member;
         private readonly PrintingConfig<TOwner> printingConfig;
 
-        public PropertyConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo property)
+        public PropertyConfig(PrintingConfig<TOwner> parentConfig, MemberInfo member)
         {
-            this.property = property;
+            this.member = member;
             printingConfig = parentConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<PropertyInfo, string> serializer)
+        public PrintingConfig<TOwner> Using(Func<MemberInfo, string> serializer)
         {
-            printingConfig.AddAlternativePropertySerializer(property, serializer);
+            printingConfig.AddAlternativeMemberSerializer(member, serializer);
             return printingConfig;
         }
     }
