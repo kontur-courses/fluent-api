@@ -15,7 +15,15 @@ namespace ObjectPrinting
             settings.AllowCyclingReference = true;
             return this;
         }
-        
+
+        public PrintingConfig<TOwner> SetDepthOfSerialize(int depth)
+        {
+            if (depth <= 0)
+                throw new ArgumentException($"depth must be > 0, not {depth}");
+            settings.Depth = depth;
+            return this;
+        }
+
         public PrintingConfig<TOwner> Excluding<TType>()
         {
             settings.AddExcludedType(typeof(TType));

@@ -139,6 +139,32 @@ namespace ObjectPrintingTests
 
             actual.Should().Contain($"{nameof(person.Friend)} = Cycle");
         }
+
+        [Test]
+        public void PrintToString_ShouldPrintWithNestingLevel_WhenItProvided()
+        {
+            var person = GetNestedPerson();
+
+            var printer = ObjectPrinter.For<Person>()
+                .SetDepthOfSerialize(2);
+            var actual = printer.PrintToString(person);
+            
+            actual.Should()
+                .ContainAll($"{nameof(Person.Name)} = ", "Ivan", "Danil").And
+                .NotContain("Maksim");
+        }
+        
+        
+        [Test]
+        public void PrintToString_ShouldPrintDictionary()
+        {
+            var persons = GetPersonDictionary();
+
+            var printer = ObjectPrinter.For<Dictionary<int, Person>>();
+            var actual = printer.PrintToString(persons);
+
+            actual.Should().ContainAll("Key: 1", "Value: Person", "Key: 2");
+        }
         
         [Test]
         public void PrintToString_ShouldThrowException_WhenCycleReferenceDoesntSet()
@@ -196,5 +222,18 @@ namespace ObjectPrintingTests
             new Person { Name = "Danil", Age = 20 },
             new Person { Name = "Maksim", Age = 20}
         };
+
+        private Person GetNestedPerson()
+        {
+            var person1 = new Person { Name = "Ivan" };
+            var person2 = new Person { Name = "Danil" };
+            var person3 = new Person { Name = "Maksim" };
+            person2.Friend = person3;
+            person1.Friend = person2;
+            return person1;
+        }
+        
+        private Dictionary<int, Person> GetPersonDictionary() => new()
+            { { 1, new Person { Name = "Ivan" } }, { 2, new Person { Name = "Danil" } } };
     }
 }

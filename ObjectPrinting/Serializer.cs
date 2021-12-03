@@ -14,9 +14,15 @@ namespace ObjectPrinting
         private readonly HashSet<object> visited = new();
         private readonly HashSet<Type> finalTypes = new()
         {
-            typeof(int), typeof(double), typeof(float),
-            typeof(string), typeof(DateTime), typeof(TimeSpan),
-            typeof(Guid), typeof(long), typeof(Enum)
+            typeof(int), 
+            typeof(double), 
+            typeof(float),
+            typeof(string), 
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(Guid), 
+            typeof(long), 
+            typeof(Enum)
         };
 
         public Serializer(SerializerSettings settings)
@@ -26,6 +32,9 @@ namespace ObjectPrinting
 
         public string Serialize(object obj, int nestingLevel = 0)
         {
+            if (nestingLevel > settings.Depth)
+                return string.Empty;
+            
             if (obj == null)
                 return FormatString("null");
 
@@ -39,7 +48,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             if (settings.TryGetTypeSerializer(type, out var serializer))
-                return FormatString(serializer.Invoke(obj));
+                return FormatString(serializer(obj));
 
             if (finalTypes.Contains(type))
                 return FormatString(obj.ToString());
@@ -68,6 +77,8 @@ namespace ObjectPrinting
         {
             if (collection.Count == 0) 
                 return FormatString("[]");
+            if (collection is IDictionary dictionary)
+                return PrintDictionary(dictionary, nestingLevel);
             var ident = new string('\t', nestingLevel);
             var values = new StringBuilder()
                 .AppendLine()
@@ -79,6 +90,22 @@ namespace ObjectPrinting
 
             values.AppendLine($"{ident}]");
 
+            return values.ToString();
+        }
+
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var ident = new string('\t', nestingLevel);
+            var values = new StringBuilder()
+                .AppendLine()
+                .AppendLine($"{ident}[");
+
+            foreach (DictionaryEntry pair in dictionary)
+            {
+                values.Append($"{ident}\tKey: {Serialize(pair.Key, nestingLevel + 1)}");
+                values.Append($"{ident}\tValue: {Serialize(pair.Value, nestingLevel + 1)}");
+            }
+            values.AppendLine($"{ident}]");
             return values.ToString();
         }
         
@@ -94,7 +121,7 @@ namespace ObjectPrinting
         {
             var memberValue = memberInfo.GetValue(obj);
             if (settings.TryGetMemberSerializer(memberInfo, out var serializer))
-                return FormatString(serializer.Invoke(memberValue));
+                return FormatString(serializer(memberValue));
             return Serialize(memberValue, nestingLevel + 1);
         }
     }
