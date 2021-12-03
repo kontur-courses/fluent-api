@@ -333,8 +333,7 @@ namespace ObjectPrinting
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Al", "\tHeight = 0,2",
                 "\tAge = 19", ""
             };
-            
-            
+
             ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(0, 1).PrintToString(person).Split(Environment.NewLine).Should()
                 .BeEquivalentTo(expectedPersonResult);
         }

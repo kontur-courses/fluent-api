@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -74,7 +75,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return Print(obj, 0);
         }
 
         public PrintingConfig<TOwner> ExceptType<TExcept>()
@@ -89,13 +90,21 @@ namespace ObjectPrinting
             return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string Print(object obj, int nestingLevel)
         {
             if (serializedObjects.Contains(obj))
             {
                 return "object with cyclic link";
             }
             serializedObjects.Add(obj);
+            if (obj is IEnumerable enumerable)
+            {
+                return GetCollectionSerialization(enumerable, nestingLevel);
+            }
+            if (finalTypes.Contains(obj.GetType()))
+            {
+                return obj.ToString();
+            }
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -137,7 +146,7 @@ namespace ObjectPrinting
             {
                 result =  "null";
             }
-            else if (memberSerializers.ContainsKey(propertyInfo))
+            if (memberSerializers.ContainsKey(propertyInfo))
             {
                 result = memberSerializers[propertyInfo].DynamicInvoke(propertyInfo)?.ToString();
             }
@@ -151,7 +160,7 @@ namespace ObjectPrinting
             }
             else
             {
-                result = PrintToString(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
+                result = Print(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
             }
 
             if (serializationsBounds.ContainsKey(propertyInfo))
@@ -166,6 +175,24 @@ namespace ObjectPrinting
             }
 
             return result + Environment.NewLine;
+        }
+
+        private string GetCollectionSerialization(IEnumerable collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            if (collection is IDictionary)
+            {
+                return GetCollectionSerialization((collection as IDictionary).Values, nestingLevel);
+            }
+
+            sb.Append("[ ");
+            foreach (var e in collection)
+            {
+                sb.Append(Print(e, nestingLevel) + " ");
+            }
+            sb.Append("]");
+
+            return sb.ToString();
         }
     }
 }
