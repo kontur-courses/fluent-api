@@ -2,7 +2,7 @@
 
 namespace Homework
 {
-    public class OneTimeSetValue<TValue>
+    public class OneTimeSetValue<TValue> : ICloneable
     {
         private TValue? value;
         
@@ -21,6 +21,19 @@ namespace Homework
         public OneTimeSetValue(TValue defaultValue)
         {
             value = defaultValue;
+        }
+        
+        private OneTimeSetValue()
+        {
+        }
+
+        public object Clone()
+        {
+            return new OneTimeSetValue<TValue>
+            {
+                value = value,
+                Setted = Setted
+            };
         }
     }
 }

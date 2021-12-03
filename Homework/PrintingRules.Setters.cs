@@ -5,16 +5,16 @@ using System.Linq;
 
 namespace Homework
 {
-    internal partial class PrintingRules
+    internal partial class PrintingRules : ICloneable
     {
-        private readonly Dictionary<Type, bool> ignoredTypes = new();
-        private readonly HashSet<string> ignoredProperties = new();
+        private Dictionary<Type, bool> ignoredTypes = new();
+        private HashSet<string> ignoredProperties = new();
         
-        private readonly Dictionary<Type, SerialisationRule> serialisationMethodByType = new();
-        private readonly Dictionary<string, SerialisationRule> serialisationMethodByProperty = new();
+        private Dictionary<Type, SerialisationRule> serialisationMethodByType = new();
+        private Dictionary<string, SerialisationRule> serialisationMethodByProperty = new();
 
-        public OneTimeSetValue<CultureInfo> DefaultCulture { get; } = new(CultureInfo.CurrentCulture);
-        private readonly Dictionary<Type, CultureInfo> cultures = new();
+        public OneTimeSetValue<CultureInfo> DefaultCulture { get; private init; } = new(CultureInfo.CurrentCulture);
+        private Dictionary<Type, CultureInfo> cultures = new();
 
         public bool TrySetIgnore(Type type, bool allNestingLevels)
         {
@@ -64,6 +64,19 @@ namespace Homework
                 || type is not null && (serialisationMethodByType.ContainsKey(type) 
                                         || serialisationMethodByProperty.Any(x => x.Value.Type == type)))
                 throw new InvalidOperationException($"printing for {type} {name} already setted");
+        }
+        
+        public object Clone()
+        {
+            return new PrintingRules
+            {
+                ignoredTypes = new Dictionary<Type, bool>(ignoredTypes),
+                serialisationMethodByType = new Dictionary<Type, SerialisationRule>(serialisationMethodByType),
+                serialisationMethodByProperty = new Dictionary<string, SerialisationRule>(serialisationMethodByProperty),
+                ignoredProperties = new HashSet<string>(ignoredProperties),
+                cultures = new Dictionary<Type, CultureInfo>(cultures),
+                DefaultCulture = (OneTimeSetValue<CultureInfo>)DefaultCulture.Clone()
+            };
         }
     }
 }

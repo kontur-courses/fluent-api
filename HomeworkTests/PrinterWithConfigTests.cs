@@ -50,7 +50,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void AlternativeSerialisationPropertyTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .SetAlternativeSerialisation().For(x => x.Birthday).WithMethod(dt => $"{dt.Day}.{dt.Month} - {dt.Year}")
                 .Configure();
             actual = printer.PrintToString(person);
@@ -62,7 +62,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void AlternativeSerialisationTypeTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .SetAlternativeSerialisation().For<string>().WithMethod(x => $"([{x}])")
                 .Configure();
             actual = printer.PrintToString(person);
@@ -74,7 +74,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void CultureTypeTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .SetCulture().For<double>(CultureInfo.CurrentUICulture)
                 .Configure();
             actual = printer.PrintToString(person);
@@ -86,7 +86,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void CultureAllOthersTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .SetCulture().ForAllOthers(CultureInfo.CurrentUICulture)
                 .Configure();
             actual = printer.PrintToString(person);
@@ -98,7 +98,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void IgnoreCombineTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .Ignore()
                     .Property(x => x.Birthday).And
                     .Type<double>().And
@@ -116,7 +116,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void IgnorePropertyTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .Ignore().Property(x => x.Birthday)
                 .Configure();
             actual = printer.PrintToString(person);
@@ -129,7 +129,7 @@ namespace HomeworkTests
         [PrintIfFailure]
         public void IgnoreTypeTest()
         {
-            var printer = Config<Person>.CreateConfig()
+            var printer = PrinterConfigurator<Person>.CreateConfig()
                 .Ignore().Type<Guid>()
                 .Configure();
             actual = printer.PrintToString(person);
@@ -170,7 +170,7 @@ namespace HomeworkTests
             };
             personDemo.Parent.Parent.Parent = personDemo;
             
-            var printerDemo = Config<Person>.CreateConfig()
+            var printerDemo = PrinterConfigurator<Person>.CreateConfig()
                 .SetCulture()
                     .For<double>(CultureInfo.CurrentUICulture).And
                     .ForAllOthers(CultureInfo.InvariantCulture)
@@ -209,7 +209,7 @@ namespace HomeworkTests
             personDemo.Guids.Enqueue(Guid.NewGuid());
             personDemo.Guids.Enqueue(Guid.NewGuid());
             
-            var printerDemo = Config<PersonWithCollections>.CreateConfig()
+            var printerDemo = PrinterConfigurator<PersonWithCollections>.CreateConfig()
                 .SetAlternativeSerialisation().For<Guid>().WithMethod(g => g.ToString("B"))
                 .SetAlternativeSerialisation().For<string>().WithMethod(s => s.ToUpper())
                 .SetAlternativeSerialisation().For<KeyValuePair<string, float>>().WithMethod(p => $"[{p.Key}] = {p.Value}")

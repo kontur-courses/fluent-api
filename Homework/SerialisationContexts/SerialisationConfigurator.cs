@@ -2,17 +2,17 @@
 
 namespace Homework.SerialisationContexts
 {
-    public class SerialisationConfig<TOwner, TType>
+    public class SerialisationConfigurator<TOwner, TType>
     {
         private readonly PrintingRules rules;
         private readonly string? propertyName;
         
-        internal SerialisationConfig(PrintingRules rules)
+        internal SerialisationConfigurator(PrintingRules rules)
         {
             this.rules = rules;
         }
         
-        internal SerialisationConfig(PrintingRules rules, string propertyName)
+        internal SerialisationConfigurator(PrintingRules rules, string propertyName)
         {
             this.rules = rules;
             this.propertyName = propertyName;
@@ -36,15 +36,15 @@ namespace Homework.SerialisationContexts
             return serialisationRule;
         }
         
-        public SerialisationIntermediateConfig<TOwner> WithMethod(Func<TType, string> serialisationMethod)
+        public ISerialisationIntermediateConfigurator<TOwner> WithMethod(Func<TType, string> serialisationMethod)
         {
             SetMethod(serialisationMethod);
-            return new SerialisationIntermediateConfig<TOwner>(rules);
+            return new PrinterConfigurator<TOwner>(rules);
         }
         
-        public StringSerialisationConfig<TOwner> WithMethod(Func<string, string> serialisationMethod)
+        public IStringSerialisationConfigurator<TOwner> WithMethod(Func<string, string> serialisationMethod)
         {
-            return new StringSerialisationConfig<TOwner>(rules, SetMethod(serialisationMethod));
+            return new PrinterConfigurator<TOwner>(rules, SetMethod(serialisationMethod));
         }
     }
 }

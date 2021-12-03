@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Homework
 {
-    public class PrinterWithConfig<TOwner>
+    public class ObjectPrinter<TOwner>
     {
         private const int MaxNestingLevel = 10;
 
@@ -20,7 +20,7 @@ namespace Homework
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        internal PrinterWithConfig(PrintingRules rules)
+        internal ObjectPrinter(PrintingRules rules)
         {
             this.rules = rules;
         }
