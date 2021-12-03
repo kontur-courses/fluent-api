@@ -58,14 +58,14 @@ namespace ObjectPrinting
                 }
                 else
                 {
-                    sb.Append(ApplyDefaultSerialization(printable, nestingLevel, identation, propertyInfo));
+                    sb.Append(ApplyDefaultSerialization(printable, identation, nestingLevel, propertyInfo));
                 }
             }
 
             return sb.ToString();
         }
 
-        private string ApplyDefaultSerialization(object printable, int nestingLevel, string identation, PropertyInfo propertyInfo)
+        private string ApplyDefaultSerialization(object printable, string identation, int nestingLevel, PropertyInfo propertyInfo)
         {
             var SB = new StringBuilder();
             if (printable is ICollection)
@@ -74,8 +74,10 @@ namespace ObjectPrinting
             }
             else
             {
-                SB.Append(identation + propertyInfo.Name + " = " +
-                                                  PrintToString(propertyInfo.GetValue(printable, null), nestingLevel + 1));
+                SB.Append(string.Format("{0}{1} = {2}", 
+                    identation, 
+                    propertyInfo.Name, 
+                    PrintToString(propertyInfo.GetValue(printable, null), nestingLevel + 1)));
             }
             return SB.ToString();
         }
@@ -100,8 +102,11 @@ namespace ObjectPrinting
 
         private static string ApplyAlternativeSerialization(object printable, string identation, PropertyInfo propertyInfo, IPropertyConfig propertyConfig)
         {
-            return identation + propertyInfo.Name + " = " +
-                                        propertyConfig.Func.Invoke(propertyInfo.GetValue(printable)) + Environment.NewLine;
+            return identation 
+                + propertyInfo.Name 
+                + " = " 
+                + propertyConfig.Func.Invoke(propertyInfo.GetValue(printable)) 
+                + Environment.NewLine;
         }
 
         private bool PropertyHaveDifferentSerialization(PropertyInfo propertyInfo, out IPropertyConfig propertyConfig)
