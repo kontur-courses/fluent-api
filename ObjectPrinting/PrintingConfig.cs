@@ -13,17 +13,17 @@ namespace ObjectPrinting
     {
         private readonly HashSet<PropertyInfo> excludedProperties = new();
         private readonly HashSet<Type> excludedTypes = new();
-        public readonly Dictionary<Type, Delegate> TypeToPrinting = new();
-        public readonly Dictionary<Type, CultureInfo> TypeToCultureInfo = new();
-        public readonly Dictionary<PropertyInfo, Delegate> PropertyToPrinting = new();
-        public readonly Dictionary<PropertyInfo, int> StringPropertyToLength = new();
+        internal readonly Dictionary<Type, Delegate> TypeToPrinting = new();
+        internal readonly Dictionary<Type, CultureInfo> TypeToCultureInfo = new();
+        internal readonly Dictionary<PropertyInfo, Delegate> PropertyToPrinting = new();
+        internal readonly Dictionary<PropertyInfo, int> StringPropertyToLength = new();
         private readonly HashSet<object> printedObjects = new();
 
         private static readonly HashSet<Type> finalTypes = new()
         {
-            typeof(int),typeof(uint), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan),
-            typeof(long), typeof(bool), typeof(Guid), typeof(byte), typeof(sbyte), typeof(ushort), typeof(ulong),
-            typeof(char), typeof(IntPtr), typeof(decimal), typeof(short)
+            typeof(int), typeof(uint), typeof(double), typeof(float), typeof(string), typeof(DateTime),
+            typeof(TimeSpan), typeof(long), typeof(bool), typeof(Guid), typeof(byte), typeof(sbyte), typeof(ushort),
+            typeof(ulong), typeof(char), typeof(IntPtr), typeof(decimal), typeof(short)
         };
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -57,10 +57,9 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-                return "null";
-
-            return GetRepresentation(obj, nestingLevel);
+            return obj == null
+                ? "null"
+                : GetRepresentation(obj, nestingLevel);
         }
 
         private string GetRepresentation(object obj, int nestingLevel)
@@ -101,19 +100,20 @@ namespace ObjectPrinting
                 propertyValue = ((string)propertyValue)?[..length];
             }
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
 
             if (PropertyToPrinting.TryGetValue(propertyInfo, out var propertyPrinting))
             {
-                return identation + propertyPrinting.DynamicInvoke(propertyValue) + Environment.NewLine;
+                return indentation + propertyPrinting.DynamicInvoke(propertyValue) + Environment.NewLine;
             }
 
             if (TypeToPrinting.TryGetValue(propertyInfo.PropertyType, out var typePrinting))
             {
-                return identation + propertyInfo.Name + " = " + typePrinting.DynamicInvoke(propertyValue);
+                return indentation + propertyInfo.Name + " = " + typePrinting.DynamicInvoke(propertyValue) +
+                       Environment.NewLine;
             }
 
-            return identation + propertyInfo.Name + " = " + PrintToString(propertyValue, nestingLevel + 1) +
+            return indentation + propertyInfo.Name + " = " + PrintToString(propertyValue, nestingLevel + 1) +
                    Environment.NewLine;
         }
 

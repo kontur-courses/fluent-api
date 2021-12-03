@@ -19,8 +19,7 @@ namespace ObjectPrinting
         {
             if (propertyInfo == null)
             {
-                printingConfig.TypeToPrinting[typeof(TPropType)] =
-                    print;
+                printingConfig.TypeToPrinting[typeof(TPropType)] = print;
             }
             else
             {
