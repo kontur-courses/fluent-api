@@ -3,14 +3,14 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
+    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
-        public PrintingConfig<TOwner> ParentConfig { get; }
+        private PrintingConfig<TOwner> parentConfig;
         public PropertyInfo PropertyInfo { get; }
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, PropertyInfo propertyInfo = null)
         {
-            ParentConfig = parentConfig;
+            this.parentConfig = parentConfig;
             PropertyInfo = propertyInfo;
         }
 
@@ -18,14 +18,16 @@ namespace ObjectPrinting
         {
             if (PropertyInfo == null)
             {
-                ParentConfig.TypeToPrinting[typeof(TPropType)] = print;
+                parentConfig.TypeToPrinting[typeof(TPropType)] = print;
             }
             else
             {
-                ParentConfig.PropertyToPrinting[PropertyInfo] = print;
+                parentConfig.PropertyToPrinting[PropertyInfo] = print;
             }
 
-            return ParentConfig;
+            return parentConfig;
         }
+
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => parentConfig;
     }
 }

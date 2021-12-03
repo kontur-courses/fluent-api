@@ -50,10 +50,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
         private string PrintToString(object obj, int nestingLevel)
         {
