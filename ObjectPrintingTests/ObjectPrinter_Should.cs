@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Text;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using NUnit.Framework;
+using ObjectPrinting;
 using ObjectPrinting.Tests.TestClasses;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinter_Should
@@ -18,6 +19,12 @@ namespace ObjectPrinting.Tests
         {
             var obj = new ClassWithTwoIntAndOneStringFields
                 {FirstIntFieldValue = 15, SecondIntFieldValue = 20, StringFieldValue = "hello"};
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoIntAndOneStringFields))
+                .AppendLine(
+                    $"\t{nameof(ClassWithTwoIntAndOneStringFields.SecondIntFieldValue)} = {obj.SecondIntFieldValue}")
+                .AppendLine($"\t{nameof(ClassWithTwoIntAndOneStringFields.StringFieldValue)} = {obj.StringFieldValue}")
+                .ToString();
 
             var printer = ObjectPrinter
                 .For<ClassWithTwoIntAndOneStringFields>()
@@ -26,34 +33,20 @@ namespace ObjectPrinting.Tests
             var result = printer.PrintToString(obj);
 
             result.Should()
-                .NotContain(nameof(ClassWithTwoIntAndOneStringFields.FirstIntFieldValue));
+                .Be(expected);
         }
-
-
-        [Test]
-        public void ContainNonExcludedFields()
-        {
-            var obj = new ClassWithTwoIntAndOneStringFields
-                {FirstIntFieldValue = 15, SecondIntFieldValue = 20, StringFieldValue = "hello"};
-
-            var printer = ObjectPrinter
-                .For<ClassWithTwoIntAndOneStringFields>()
-                .Excluding(p => p.FirstIntFieldValue);
-
-            var result = printer.PrintToString(obj);
-
-            result.Should()
-                .Contain(nameof(ClassWithTwoIntAndOneStringFields.SecondIntFieldValue))
-                .And
-                .Contain(nameof(ClassWithTwoIntAndOneStringFields.StringFieldValue));
-        }
-
 
         [Test]
         public void NotContainExcludedProperty()
         {
-            var obj = new ClassWithTwoIntAndOneStringProperties
+            var obj = new ClassWithTwoIntAndOneStringProperties()
                 {FirstIntPropValue = 15, SecondIntPropValue = 20, StringPropValue = "hello"};
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoIntAndOneStringProperties))
+                .AppendLine($"\t{nameof(ClassWithTwoIntAndOneStringProperties.SecondIntPropValue)} = {obj.SecondIntPropValue}")
+                .AppendLine(
+                    $"\t{nameof(ClassWithTwoIntAndOneStringProperties.StringPropValue)} = {obj.StringPropValue}")
+                .ToString();
 
             var printer = ObjectPrinter
                 .For<ClassWithTwoIntAndOneStringProperties>()
@@ -61,111 +54,9 @@ namespace ObjectPrinting.Tests
 
             var result = printer.PrintToString(obj);
 
+            Console.WriteLine(result);
             result.Should()
-                .NotContain(nameof(ClassWithTwoIntAndOneStringProperties.FirstIntPropValue));
-        }
-
-        [Test]
-        public void ContainNonExcludedProperties()
-        {
-            var obj = new ClassWithTwoIntAndOneStringProperties
-                {FirstIntPropValue = 15, SecondIntPropValue = 20, StringPropValue = "hello"};
-
-            var printer = ObjectPrinter
-                .For<ClassWithTwoIntAndOneStringProperties>()
-                .Excluding(p => p.FirstIntPropValue);
-
-            var result = printer.PrintToString(obj);
-
-            result.Should()
-                .Contain(nameof(ClassWithTwoIntAndOneStringProperties.SecondIntPropValue))
-                .And
-                .Contain(nameof(ClassWithTwoIntAndOneStringProperties.StringPropValue));
-        }
-
-        [Test]
-        public void AllowSpecializationForAllObjectOfSomeType()
-        {
-            var obj = new ClassWithTwoStringFields
-                {FirstStringFieldValue = "hello", SecondStringFieldValue = "world"};
-
-            var printer = ObjectPrinter.For<ClassWithTwoStringFields>()
-                .Printing<string>().Using(str => str.ToUpper());
-
-            var result = printer.PrintToString(obj);
-
-            result
-                .Should()
-                .ContainAll(obj.FirstStringFieldValue.ToUpper(), obj.SecondStringFieldValue.ToUpper());
-        }
-
-        [Test]
-        public void AllowSpecializationForExactField()
-        {
-            var obj = new ClassWithTwoStringFields
-                {FirstStringFieldValue = "Value1", SecondStringFieldValue = "Value2"};
-
-            var printer = ObjectPrinter.For<ClassWithTwoStringFields>()
-                .Printing(x => x.FirstStringFieldValue)
-                .Using(str => str.ToUpper());
-
-            var result = printer.PrintToString(obj);
-
-            result
-                .Should()
-                .Contain(obj.FirstStringFieldValue.ToUpper());
-        }
-
-        [Test]
-        public void NotUseExactFieldSpecializationOnAllObjectOfSameType()
-        {
-            var obj = new ClassWithTwoStringFields
-                {FirstStringFieldValue = "Value1", SecondStringFieldValue = "Value2"};
-
-            var printer = ObjectPrinter.For<ClassWithTwoStringFields>()
-                .Printing(x => x.FirstStringFieldValue)
-                .Using(str => str.ToUpper());
-
-            var result = printer.PrintToString(obj);
-
-            result
-                .Should()
-                .NotContain(obj.SecondStringFieldValue.ToUpper());
-        }
-
-        [Test]
-        public void AllowSpecializationForExactProperty()
-        {
-            var obj = new ClassWithTwoStringProperties {FirstStringPropValue = "Value1", SecondPropValue = "Value2"};
-
-            var printer = ObjectPrinter
-                .For<ClassWithTwoStringProperties>()
-                .Printing(x => x.FirstStringPropValue)
-                .Using(str => str.ToUpper());
-
-            var result = printer.PrintToString(obj);
-
-            result
-                .Should()
-                .Contain(obj.FirstStringPropValue.ToUpper());
-        }
-
-        [Test]
-        public void NotUseExactPropertySerializationOnAllObjectOfSameType()
-        {
-            var obj = new ClassWithTwoStringProperties
-                {FirstStringPropValue = "Value1", SecondPropValue = "Value2"};
-
-            var printer = ObjectPrinter
-                .For<ClassWithTwoStringProperties>()
-                .Printing(x => x.FirstStringPropValue)
-                .Using(str => str.ToUpper());
-
-            var result = printer.PrintToString(obj);
-
-            result
-                .Should()
-                .NotContain(obj.SecondPropValue.ToUpper());
+                .Be(expected);
         }
 
         [Test]
@@ -173,19 +64,93 @@ namespace ObjectPrinting.Tests
         {
             var obj = new ClassWithTwoIntAndOneStringFields
                 {FirstIntFieldValue = 10, SecondIntFieldValue = 20, StringFieldValue = "hello"};
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoIntAndOneStringFields))
+                .AppendLine($"\t{nameof(ClassWithTwoIntAndOneStringFields.StringFieldValue)} = {obj.StringFieldValue}")
+                .ToString();
 
             var result = obj.PrintToString(config => config.Excluding<int>());
 
             result.Should()
-                .NotContainAll(
-                    nameof(ClassWithTwoIntAndOneStringFields.FirstIntFieldValue),
-                    nameof(ClassWithTwoIntAndOneStringFields.SecondIntFieldValue));
+                .Be(expected);
         }
 
+        [Test]
+        public void AllowSpecializationForExactField()
+        {
+            var obj = new ClassWithTwoStringFields
+                {FirstStringFieldValue = "Value1", SecondStringFieldValue = "Value2"};
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoStringFields))
+                .AppendLine($"\t{nameof(ClassWithTwoStringFields.FirstStringFieldValue)} = VALUE1")
+                .AppendLine($"\t{nameof(ClassWithTwoStringFields.SecondStringFieldValue)} = Value2")
+                .ToString();
+
+            var printer = ObjectPrinter.For<ClassWithTwoStringFields>()
+                .Printing(x => x.FirstStringFieldValue)
+                .Using(str => str.ToUpper());
+
+            var result = printer.PrintToString(obj);
+
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        public void AllowSpecializationForExactProperty()
+        {
+            var obj = new ClassWithTwoStringProperties
+                {FirstStringPropValue = "Value1", SecondPropValue = "Value2"};
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoStringProperties))
+                .AppendLine($"\t{nameof(ClassWithTwoStringProperties.FirstStringPropValue)} = VALUE1")
+                .AppendLine($"\t{nameof(ClassWithTwoStringProperties.SecondPropValue)} = Value2")
+                .ToString();
+
+            var printer = ObjectPrinter.For<ClassWithTwoStringProperties>()
+                .Printing(x => x.FirstStringPropValue)
+                .Using(str => str.ToUpper());
+
+            var result = printer.PrintToString(obj);
+
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        public void AllowSpecializationForAllObjectOfSameType()
+        {
+            var obj = new ClassWithTwoStringProperties
+                {FirstStringPropValue = "Value1", SecondPropValue = "Value2"};
+            
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithTwoStringProperties))
+                .AppendLine($"\t{nameof(ClassWithTwoStringProperties.FirstStringPropValue)} = VALUE1")
+                .AppendLine($"\t{nameof(ClassWithTwoStringProperties.SecondPropValue)} = VALUE2")
+                .ToString();
+
+            var printer = ObjectPrinter
+                .For<ClassWithTwoStringProperties>()
+                .Printing<string>()
+                .Using(str => str.ToUpper());
+
+            var result = printer.PrintToString(obj);
+
+            result.Should().Be(expected);
+        }
+        
         [Test]
         public void AllowSettingCultureInfo()
         {
             var obj = new ClassWithFloatField {FloatFieldValue = 10.5f};
+
+            var expectedResultWithComma = new StringBuilder()
+                .AppendLine(nameof(ClassWithFloatField))
+                .AppendLine($"\t{nameof(ClassWithFloatField.FloatFieldValue)} = 10,5")
+                .ToString();
+            
+            var expectedResultWithPoint = new StringBuilder()
+                .AppendLine(nameof(ClassWithFloatField))
+                .AppendLine($"\t{nameof(ClassWithFloatField.FloatFieldValue)} = 10.5")
+                .ToString();
 
             var printerWithPoint = ObjectPrinter.For<ClassWithFloatField>()
                 .Printing<float>().Using(CultureInfo.InvariantCulture);
@@ -198,8 +163,8 @@ namespace ObjectPrinting.Tests
 
             using (new AssertionScope())
             {
-                resultWithPoint.Should().Contain("10.5");
-                resultWithComma.Should().Contain("10,5");
+                resultWithPoint.Should().Be(expectedResultWithPoint);
+                resultWithComma.Should().Be(expectedResultWithComma);
             }
         }
 
@@ -207,17 +172,19 @@ namespace ObjectPrinting.Tests
         public void AllowTrimmingStringValues()
         {
             var obj = new ClassWithOneStringField {StringFieldValue = "abcdef"};
-            var expectedTrimmedName = "abc";
-            var unexpectedSubstring = "abcd";
+            var trimmedSize = 3;
+
+            var expected = new StringBuilder()
+                .AppendLine(nameof(ClassWithOneStringField))
+                .AppendLine($"\t{nameof(ClassWithOneStringField.StringFieldValue)} = abc")
+                .ToString();
+            
             var printer = ObjectPrinter.For<ClassWithOneStringField>()
-                .Printing<string>().TrimmedToLength(expectedTrimmedName.Length);
+                .Printing<string>().TrimmedToLength(trimmedSize);
 
             var result = printer.PrintToString(obj);
 
-            result.Should()
-                .Contain(expectedTrimmedName)
-                .And
-                .NotContain(unexpectedSubstring);
+            result.Should().Be(expected);
         }
 
         [Test]
@@ -240,18 +207,27 @@ namespace ObjectPrinting.Tests
             Action action = () => ObjectPrinter
                 .For<LinkNode>()
                 .PrintToString(linkNode1);
-
+            
             action.Should().NotThrow();
         }
 
         [Test]
         public void SerializeAllElementsOfArray()
         {
-            var array = new[] {10, 20, 30};
+            var array = new[] {"hello", "great", "world"};
 
+            var expected = new StringBuilder()
+                .AppendLine("String[]")
+                .AppendLine($"\t{array[0]}")
+                .AppendLine($"\t{array[1]}")
+                .AppendLine($"\t{array[2]}")
+                .ToString();
+                
             var result = array.PrintToString();
+            
+            Console.WriteLine(result);
 
-            result.Should().ContainAll(array.Select(x => x.ToString()));
+            result.Should().Be(expected);
         }
 
         [Test]
@@ -260,6 +236,8 @@ namespace ObjectPrinting.Tests
             var list = new List<int> {10, 20, 30};
 
             var result = list.PrintToString();
+            
+            Console.WriteLine(result);
 
             result.Should().ContainAll(list.Select(x => x.ToString()));
         }
@@ -282,7 +260,7 @@ namespace ObjectPrinting.Tests
         public void Throw_WhenMemberSelectorGiven()
         {
             Action action = () => ObjectPrinter.For<ClassWithFloatField>()
-                .Printing<float>(obj => 5f);
+                .Printing(obj => 5f);
 
             action.Should().Throw<InvalidOperationException>();
         }

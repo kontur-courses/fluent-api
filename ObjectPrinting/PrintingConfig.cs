@@ -9,12 +9,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private ExcludingConfig excludingConfig = new ExcludingConfig();
+        private readonly ExcludingConfig excludingConfig = new ExcludingConfig();
         
-        private Dictionary<MemberInfo, Delegate> specializedMemberSerializers =
+        private readonly Dictionary<MemberInfo, Delegate> specializedMemberSerializers =
             new Dictionary<MemberInfo, Delegate>();
 
-        private HashSet<object> visited = new HashSet<object>();
+        private readonly HashSet<object> visited = new HashSet<object>();
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -50,7 +50,7 @@ namespace ObjectPrinting
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludingConfig.Exclude<TPropType>();
             return this;
@@ -74,9 +74,6 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
-            if (visited.Contains(obj))
-                return Environment.NewLine;
 
             visited.Add(obj);
 
@@ -119,11 +116,13 @@ namespace ObjectPrinting
 
                 if (!MemberIsExcluded(memberInfo))
                 {
+                    var objj = memberInfo.GetValue(obj);
+                    if (visited.Contains(objj)) continue;
                     builder
                         .Append(indentation)
                         .Append(memberInfo.Name)
                         .Append(" = ")
-                        .Append(serializationFunc(memberInfo.GetValue(obj)));
+                        .Append(serializationFunc(objj));
                 }
             }
         }
