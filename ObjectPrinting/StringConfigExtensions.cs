@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
     public static class StringConfigExtensions
     {

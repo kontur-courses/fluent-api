@@ -1,10 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -46,14 +42,28 @@ namespace ObjectPrinting
         public TypeConfig<TOwner> Printing<T>()
         {
             var config = new TypeConfig<TOwner>(this, typeof(T));
-            typeConfigs.Add(config.Type, config);
+            try
+            {
+                typeConfigs.Add(config.Type, config);
+            }
+            catch
+            {
+                throw new ArgumentException("Нельзя применять метод Printing к одному типу несколько раз");
+            }
             return config;
         }
 
         public PropertyConfig<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> expression)
         {
             var config = new PropertyConfig<TOwner, T>(this, expression);
-            propertyConfigs.Add(config.PropertyName, config);
+            try
+            {
+                propertyConfigs.Add(config.PropertyName, config);
+            }
+            catch
+            {
+                throw new ArgumentException("Нельзя применять метод Printing к одному свойству несколько раз или использовать CropToLength и Using одновременно");
+            }
             return config;
         }
 
