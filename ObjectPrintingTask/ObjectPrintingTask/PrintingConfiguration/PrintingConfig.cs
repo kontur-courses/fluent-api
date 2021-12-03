@@ -68,7 +68,8 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
             var type = obj.GetType();
             
-            if (type.IsPrimitive || FinalTypesKeeper.IsFinalType(type))
+            //if (type.IsPrimitive || FinalTypesKeeper.IsFinalType(type))
+            if (IsSimple(type))
                 return obj.ToString();
 
             if (visitedObjects.Contains(obj))
@@ -193,6 +194,21 @@ namespace ObjectPrintingTask.PrintingConfiguration
         private string GetMemberFullName(MemberInfo member)
         {
             return string.Join(".", member.ReflectedType.Name, member.Name);
+        }
+
+        bool IsSimple(Type type)
+        {        
+            var typeInfo = type.GetTypeInfo();           
+            if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                // nullable type, check if the nested type is simple.
+                return IsSimple(typeInfo.GetGenericArguments()[0]);
+            }
+            return typeInfo.IsPrimitive
+              || typeInfo.IsEnum
+              || typeInfo.IsValueType
+              || type.Equals(typeof(string))
+              || type.Equals(typeof(decimal));
         }
     }
 }
