@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {

@@ -10,10 +10,12 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly Type[] finalTypes;
+        private readonly HashSet<object> serializedObjects = new HashSet<object>();
         private readonly HashSet<Type> exceptTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> exceptMembers = new HashSet<MemberInfo>();
         private readonly Dictionary<Type, Delegate> alternativeSerializers = new Dictionary<Type, Delegate>();
         private readonly Dictionary<MemberInfo, Delegate> memberSerializers = new Dictionary<MemberInfo, Delegate>();
+        private readonly Dictionary<MemberInfo, (int start, int end)> serializationsBounds = new Dictionary<MemberInfo, (int, int)>();
 
         public PrintingConfig()
         {
@@ -46,15 +48,28 @@ namespace ObjectPrinting
                 memberSerializers.Add(member, serializer);
             }
         }
+        
+        public void AddSerializationBounds(MemberInfo member, int start, int end)
+        {
+            var bounds = (start, end);
+            if (memberSerializers.ContainsKey(member))
+            {
+                serializationsBounds[member] = bounds;
+            }
+            else
+            {
+                serializationsBounds.Add(member, bounds);
+            }
+        }
 
         public TypeConfig<TOwner, TProperty> Serialize<TProperty>()
         {
             return new TypeConfig<TOwner, TProperty>(this);
         }
 
-        public PropertyConfig<TOwner> Serialize<TMember>(Expression<Func<TOwner, TMember>> selector)
+        public PropertyConfig<TOwner, TMember> Serialize<TMember>(Expression<Func<TOwner, TMember>> selector)
         {
-            return new PropertyConfig<TOwner>(this, (selector.Body as MemberExpression)?.Member);
+            return new PropertyConfig<TOwner, TMember>(this, (selector.Body as MemberExpression)?.Member);
         }
 
         public string PrintToString(TOwner obj)
@@ -76,6 +91,11 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (serializedObjects.Contains(obj))
+            {
+                return "object with cyclic link";
+            }
+            serializedObjects.Add(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -87,7 +107,6 @@ namespace ObjectPrinting
             {
                 sb.Append(indentation + memberInfo.Name + " = " + GetSerialization(obj, memberInfo, nestingLevel));
             }
-
             return sb.ToString();
         }
 
@@ -113,30 +132,40 @@ namespace ObjectPrinting
 
         private string GetSerialization(object obj, MemberInfo propertyInfo, int nestingLevel)
         {
+            var result = "";
             if (obj == null)
             {
-                return "null" + Environment.NewLine;
+                result =  "null";
             }
-            
-            
-            if (memberSerializers.ContainsKey(propertyInfo))
+            else if (memberSerializers.ContainsKey(propertyInfo))
             {
-                return memberSerializers[propertyInfo].DynamicInvoke(propertyInfo) + Environment.NewLine;
+                result = memberSerializers[propertyInfo].DynamicInvoke(propertyInfo)?.ToString();
+            }
+            else if (alternativeSerializers.ContainsKey(GetTypeOfMember(propertyInfo)))
+            {
+                result =  alternativeSerializers[GetTypeOfMember(propertyInfo)].DynamicInvoke(GetValueOfMember(propertyInfo, obj))?.ToString();
+            }
+            else if (finalTypes.Contains(GetTypeOfMember(propertyInfo)))
+            {
+                result =  GetValueOfMember(propertyInfo, obj).ToString();
+            }
+            else
+            {
+                result = PrintToString(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
             }
 
-            if (alternativeSerializers.ContainsKey(GetTypeOfMember(propertyInfo)))
+            if (serializationsBounds.ContainsKey(propertyInfo))
             {
-                return alternativeSerializers[GetTypeOfMember(propertyInfo)].DynamicInvoke(GetValueOfMember(propertyInfo, obj)) +
-                       Environment.NewLine;
-            }
-            
-            var type = GetTypeOfMember(propertyInfo);
-            if (finalTypes.Contains(type))
-            {
-                return GetValueOfMember(propertyInfo, obj) + Environment.NewLine;
+                var (start, end) = serializationsBounds[propertyInfo];
+                if (start < 0 || end >= result.Length || end < start)
+                {
+                    throw new ArgumentException();
+                }
+                result = result.Substring(start,
+                    end - start + 1);
             }
 
-            return PrintToString(GetValueOfMember(propertyInfo, obj), nestingLevel + 1);
+            return result + Environment.NewLine;
         }
     }
 }

@@ -306,5 +306,47 @@ namespace ObjectPrinting
             firstOrderResult.Should().BeEquivalentTo(secondOrderResult);
             secondOrderResult.Should().BeEquivalentTo(expectedPersonResult);
         }
+        
+        [Test]
+        public void PrintToString_NotThrows_WhenObjectHasCyclicLinks()
+        {
+            var cyclicalLinkObject = new ClassWithCyclicalLink();
+            Action act = () => ObjectPrinter.For<ClassWithCyclicalLink>().PrintToString(cyclicalLinkObject);
+
+            act.Should().NotThrow<StackOverflowException>();
+        }
+        
+        [Test]
+        public void PrintToString_PrintWordsWithCyclicLinksCorrectly()
+        {
+            var cyclicalLinkObject = new ClassWithCyclicalLink();
+            var expectedResult = "ClassWithCyclicalLink" + Environment.NewLine + "\tCyclicalLinkObject = object with cyclic link" + Environment.NewLine;
+            ObjectPrinter.For<ClassWithCyclicalLink>().PrintToString(cyclicalLinkObject).Should()
+                .BeEquivalentTo(expectedResult);
+        }
+        
+        [Test]
+        public void Serialize_SetBoundsOfMemberSerialization()
+        {
+            var expectedPersonResult = new[]
+            {
+                "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Al", "\tHeight = 0,2",
+                "\tAge = 19", ""
+            };
+            
+            
+            ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(0, 1).PrintToString(person).Split(Environment.NewLine).Should()
+                .BeEquivalentTo(expectedPersonResult);
+        }
+        
+        [TestCase(-1, 2, TestName = "start is negative")]
+        [TestCase(1, 9999, TestName = "end is more than length")]
+        [TestCase(2, 1, TestName = "end is less than start")]
+        public void Serialize_Throw_WhenBoundsOfSerializationAreInvalid(int start, int end)
+        {
+            Action act = () =>
+                ObjectPrinter.For<Person>().Serialize(p => p.Name).WithBounds(start, end).PrintToString(person);
+            act.Should().Throw<ArgumentException>();
+        }
     }
 }

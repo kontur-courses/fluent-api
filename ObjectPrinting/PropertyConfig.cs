@@ -3,10 +3,10 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyConfig<TOwner>
+    public class PropertyConfig<TOwner, TMember>
     {
-        private readonly MemberInfo member;
-        private readonly PrintingConfig<TOwner> printingConfig;
+        public readonly MemberInfo member;
+        public readonly PrintingConfig<TOwner> printingConfig;
 
         public PropertyConfig(PrintingConfig<TOwner> parentConfig, MemberInfo member)
         {
