@@ -3,10 +3,11 @@ using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrintingTask;
+using ObjectPrintingTask.Extensions;
 using ObjectPrintingTask.PrintingConfiguration;
-using ObjectPrintingTests.TestData;
+using ObjectPrintingTaskTests.TestData;
 
-namespace ObjectPrintingTests
+namespace ObjectPrintingTaskTests
 {
     public class ObjectPrinterTests
     {
@@ -20,69 +21,38 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ObjPrinter_ShouldExcludeSpecificType()
+        public void ObjPrinter_ShouldPrintNullForNullValues()
         {
-            printer.Excluding<Guid>();
+            var result = printer.BuildConfig().PrintToString(null);
+            result.Should().Contain("null");
+        }
 
-            var result = printer.PrintToString(person);
+        [Test]
+        public void ObjPrinter_ShouldBeReusable()
+        {
+            printer.BuildConfig().PrintToString(person);
+            var result = printer.BuildConfig().PrintToString(person);
 
-            var regex = new Regex(@"\s*Id\s*=\s*[\d\w\-]+[\d\w]{1}");
+            var regex = new Regex("\\s*\\[cyclic reference detected\\]");
             regex.Match(result).Success.Should().BeFalse();
         }
 
         [Test]
-        public void ObjPrinter_ShouldExcludeSpecificProperty()
+        public void ObjPrinter_ShouldDetectCyclingReference()
         {
-            printer.Excluding(p => p.Age);
+            person.SetParent(person);
+            var result = printer.BuildConfig().PrintToString(person);
 
-            var result = printer.PrintToString(person);
-
-            var regex = new Regex(@"\s*Age\s*=\s*\d+");
-            regex.Match(result).Success.Should().BeFalse();
-        }
-
-        [Test]
-        public void ObjPrinter_ShouldExcludeSpecificField()
-        {
-            printer.Excluding(p => p.Weight);
-
-            var result = printer.PrintToString(person);
-
-            var regex = new Regex(@"\s*Weight\s*=\d+}");
-            regex.Match(result).Success.Should().BeFalse();
-        }
-
-        [Test]
-        public void ObjPrinter_ShouldUseAlternativeScenario_WithField()
-        {
-            printer.PrintingMember(p => p.Weight).Using(weight => $"Weight is {weight}");
-
-            var result = printer.PrintToString(person);
-
-            var regex = new Regex($"\\s*Weight is {person.Weight}");
+            var regex = new Regex("\\s*\\[cyclic reference detected\\]");
             regex.Match(result).Success.Should().BeTrue();
         }
 
         [Test]
-        public void ObjPrinter_ShouldUseAlternativeScenario_WithProperty()
+        public void ObjPrinter_ShouldThrowWhenCutNegativeLength()
         {
-            printer.PrintingMember(p => p.Age).Using(a => $"The age is {a}");
+            Action act = () => printer.PrintingMember(p => p.Name).TrimmedToLength(-1);
 
-            var result = printer.PrintToString(person);
-
-            var regex = new Regex($"\\s*The age is {person.Age}");
-            regex.Match(result).Success.Should().BeTrue();
-        }
-
-        [Test]
-        public void ObjPrinter_ShouldUseAlternativeScenario_WithType()
-        {
-            printer.PrintingType<Guid>().Using(g => $"The guid is {g}");
-
-            var result = printer.PrintToString(person);
-
-            var regex = new Regex($"\\s*The guid is {person.Id}");
-            regex.Match(result).Success.Should().BeTrue();
-        }
+            act.Should().Throw<ArgumentException>();
+        }     
     }
 }

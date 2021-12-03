@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31729.503
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrintingTask", "ObjectPrintingTask\ObjectPrintingTask.csproj", "{A1E1DB53-D7B9-48D2-AA0D-B20ED621BAAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectPrintingTask", "ObjectPrintingTask\ObjectPrintingTask.csproj", "{A1E1DB53-D7B9-48D2-AA0D-B20ED621BAAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrintingTests", "ObjectPrintingTests\ObjectPrintingTests.csproj", "{6550348E-79CE-4FB4-8387-61B6B0BB44CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectPrintingTaskTests", "ObjectPrintingTests\ObjectPrintingTaskTests.csproj", "{6550348E-79CE-4FB4-8387-61B6B0BB44CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
