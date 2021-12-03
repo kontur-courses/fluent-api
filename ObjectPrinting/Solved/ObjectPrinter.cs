@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Solved
 {
@@ -8,6 +10,5 @@ namespace ObjectPrinting.Solved
         {
             return new PrintingConfig<T>();
         }
-
     }
 }
