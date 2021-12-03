@@ -8,7 +8,7 @@ namespace ObjectPrintingTests
         public Guid Id { get; set; }
         public double[] Arr;
         public List<string> List;
-        public Dictionary<int, Person> Dict;
+        public Dictionary<int, string> Dict;
         public string Name { get; set; }
         public string Surname;
         public Person Parent;

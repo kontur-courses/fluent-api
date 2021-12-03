@@ -18,7 +18,7 @@ namespace ObjectPrintingTests
             { 
                 Name = "Alex", Age = 19, Height = 2.3, Surname = "VERYBIGSURNAME",
                 Arr = new[] { 1.1, 2.2, 3.3, 4.4 },
-                Dict = new Dictionary<int, Person> { { 1, new Person() } },
+                Dict = new Dictionary<int, string> { { 1, "2" } },
                 List = new List<string> { "a", "b", "c" }
             };
 
@@ -42,7 +42,7 @@ namespace ObjectPrintingTests
 
             Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            Console.WriteLine(new Person {Name = "lol", Surname = "no lol"}.PrintToString());
+            Console.WriteLine(new Person { Name = "lol", Surname = "no lol" }.PrintToString());
             //8. ...с конфигурированием
             Console.WriteLine(new Person().PrintToString(ObjectPrinter
                 .For<Person>()
@@ -161,7 +161,7 @@ namespace ObjectPrintingTests
 
             Action act = () => printer.PrintToString(person);
 
-            act.Should().Throw<Exception>();
+            act.Should().Throw<ArgumentException>();
         }
         
         [Test]
@@ -176,7 +176,53 @@ namespace ObjectPrintingTests
             var result = printer.PrintToString(person);
 
             result.Should().Contain("Cyclic reference on Person");
-            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void SerializeArrays()
+        {
+            var person = new Person {Arr = new[] {1.1, 2.2, 3.3}};
+
+            var result = person.PrintToString();
+            
+            result.Should().Contain("Double[]");
+            result.Should().Contain("0: 1,1");
+            result.Should().Contain("1: 2,2");
+            result.Should().Contain("2: 3,3");
+        }
+        
+        [Test]
+        public void SerializeLists()
+        {
+            var person = new Person {List = new List<string> {"a", "b", "c"}};
+
+            var result = person.PrintToString();
+
+            result.Should().Contain("List");
+            result.Should().Contain("0: a");
+            result.Should().Contain("1: b");
+            result.Should().Contain("2: c");
+        }
+
+        [Test]
+        public void SerializeDictionary()
+        {
+            var person = new Person {Dict = new Dictionary<int, string> {{1, "2"}, {3, "4"}, {5, "6"}}};
+
+            var result = person.PrintToString();
+
+            result.Should().Contain("Key:");
+            result.Should().Contain("1");
+            result.Should().Contain("Value:");
+            result.Should().Contain("2");
+            result.Should().Contain("Key:");
+            result.Should().Contain("3");
+            result.Should().Contain("Value:");
+            result.Should().Contain("4");
+            result.Should().Contain("Key:");
+            result.Should().Contain("5");
+            result.Should().Contain("Value:");
+            result.Should().Contain("6");
         }
     }
 }
