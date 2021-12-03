@@ -43,7 +43,8 @@ namespace ObjectPrintingTests
                 {FirstIntPropValue = 15, SecondIntPropValue = 20, StringPropValue = "hello"};
             var expected = new StringBuilder()
                 .AppendLine(nameof(ClassWithTwoIntAndOneStringProperties))
-                .AppendLine($"\t{nameof(ClassWithTwoIntAndOneStringProperties.SecondIntPropValue)} = {obj.SecondIntPropValue}")
+                .AppendLine(
+                    $"\t{nameof(ClassWithTwoIntAndOneStringProperties.SecondIntPropValue)} = {obj.SecondIntPropValue}")
                 .AppendLine(
                     $"\t{nameof(ClassWithTwoIntAndOneStringProperties.StringPropValue)} = {obj.StringPropValue}")
                 .ToString();
@@ -54,7 +55,6 @@ namespace ObjectPrintingTests
 
             var result = printer.PrintToString(obj);
 
-            Console.WriteLine(result);
             result.Should()
                 .Be(expected);
         }
@@ -120,7 +120,7 @@ namespace ObjectPrintingTests
         {
             var obj = new ClassWithTwoStringProperties
                 {FirstStringPropValue = "Value1", SecondPropValue = "Value2"};
-            
+
             var expected = new StringBuilder()
                 .AppendLine(nameof(ClassWithTwoStringProperties))
                 .AppendLine($"\t{nameof(ClassWithTwoStringProperties.FirstStringPropValue)} = VALUE1")
@@ -136,7 +136,7 @@ namespace ObjectPrintingTests
 
             result.Should().Be(expected);
         }
-        
+
         [Test]
         public void AllowSettingCultureInfo()
         {
@@ -146,7 +146,7 @@ namespace ObjectPrintingTests
                 .AppendLine(nameof(ClassWithFloatField))
                 .AppendLine($"\t{nameof(ClassWithFloatField.FloatFieldValue)} = 10,5")
                 .ToString();
-            
+
             var expectedResultWithPoint = new StringBuilder()
                 .AppendLine(nameof(ClassWithFloatField))
                 .AppendLine($"\t{nameof(ClassWithFloatField.FloatFieldValue)} = 10.5")
@@ -160,8 +160,6 @@ namespace ObjectPrintingTests
 
             var resultWithPoint = printerWithPoint.PrintToString(obj);
             var resultWithComma = printerWithComma.PrintToString(obj);
-            
-            Console.WriteLine(resultWithComma);
 
             using (new AssertionScope())
             {
@@ -180,7 +178,7 @@ namespace ObjectPrintingTests
                 .AppendLine(nameof(ClassWithOneStringField))
                 .AppendLine($"\t{nameof(ClassWithOneStringField.StringFieldValue)} = abc")
                 .ToString();
-            
+
             var printer = ObjectPrinter.For<ClassWithOneStringField>()
                 .Printing<string>().TrimmedToLength(trimmedSize);
 
@@ -191,7 +189,7 @@ namespace ObjectPrintingTests
 
         [Test]
         [Timeout(1000)]
-        public void NotThrowWhenCycledLinksFound()
+        public void NotThrowWhenCycledLinksFoundOnDefault()
         {
             var linkNode1 = new LinkNode();
             var linkNode2 = new LinkNode();
@@ -209,8 +207,69 @@ namespace ObjectPrintingTests
             Action action = () => ObjectPrinter
                 .For<LinkNode>()
                 .PrintToString(linkNode1);
-            
+
             action.Should().NotThrow();
+        }
+
+        [Test]
+        [Timeout(1000)]
+        public void AllowThrowingOnCycleFound()
+        {
+            var linkNode1 = new LinkNode();
+            var linkNode2 = new LinkNode();
+            var linkNode3 = new LinkNode();
+
+            linkNode1.Next = linkNode2;
+            linkNode1.Previous = linkNode3;
+
+            linkNode2.Next = linkNode3;
+            linkNode2.Previous = linkNode1;
+
+            linkNode3.Next = linkNode1;
+            linkNode3.Previous = linkNode2;
+
+            Action action = () => ObjectPrinter
+                .For<LinkNode>()
+                .OnCycleFound().Throw()
+                .PrintToString(linkNode1);
+
+            action.Should().Throw<Exception>();
+        }
+
+        [Test]
+        [Timeout(1000)]
+        public void AddTextWhenCycleWasFound()
+        {
+            var linkNode1 = new LinkNode();
+            var linkNode2 = new LinkNode();
+
+            linkNode1.Next = linkNode2;
+            linkNode1.Previous = linkNode2;
+
+            linkNode2.Next = linkNode1;
+            linkNode2.Previous = linkNode1;
+
+            var cycleText = "CYCLE!!!";
+
+            var cycledNodeText = new StringBuilder()
+                .AppendLine($"\t\t{nameof(LinkNode.Next)} = {cycleText}")
+                .AppendLine($"\t\t{nameof(LinkNode.Previous)} = {cycleText}");
+
+            var expected = new StringBuilder()
+                .AppendLine(nameof(LinkNode))
+                .AppendLine($"\t{nameof(LinkNode.Next)} = {nameof(LinkNode)}")
+                .Append(cycledNodeText)
+                .AppendLine($"\t{nameof(LinkNode.Previous)} = {nameof(LinkNode)}")
+                .Append(cycledNodeText)
+                .ToString();
+
+
+            var result = ObjectPrinter
+                .For<LinkNode>()
+                .OnCycleFound().AddText(cycleText)
+                .PrintToString(linkNode1);
+
+            result.Should().Be(expected);
         }
 
         [Test]
@@ -224,10 +283,8 @@ namespace ObjectPrintingTests
                 .AppendLine($"\t{array[1]}")
                 .AppendLine($"\t{array[2]}")
                 .ToString();
-                
+
             var result = array.PrintToString();
-            
-            Console.WriteLine(result);
 
             result.Should().Be(expected);
         }
@@ -238,8 +295,6 @@ namespace ObjectPrintingTests
             var list = new List<int> {10, 20, 30};
 
             var result = list.PrintToString();
-            
-            Console.WriteLine(result);
 
             result.Should().ContainAll(list.Select(x => x.ToString()));
         }
@@ -295,7 +350,7 @@ namespace ObjectPrintingTests
 
             result.Should().Be(expected);
         }
-        
+
         [Test]
         public void AllowSettingCustomIndentation()
         {

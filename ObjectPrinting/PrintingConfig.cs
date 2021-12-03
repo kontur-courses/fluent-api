@@ -12,6 +12,7 @@ namespace ObjectPrinting
     {
         private readonly ExcludingConfig excludingConfig = new ExcludingConfig();
         private readonly ObjectSerializer objectSerializer = new ObjectSerializer();
+        private readonly CycleConfig<TOwner> cycleConfig;
         private Func<int, string> indentationCreator;
         private string endLine;
         
@@ -25,6 +26,7 @@ namespace ObjectPrinting
 
         public PrintingConfig()
         {
+            this.cycleConfig = new CycleConfig<TOwner>(this);
             SetIndentation(level => new string('\t', level + 1));
             SetEndLine(Environment.NewLine);
         }
@@ -33,6 +35,11 @@ namespace ObjectPrinting
         public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
         {
             return new MemberPrintingConfig<TOwner, TMemberType>(this);
+        }
+
+        public CycleConfig<TOwner> OnCycleFound()
+        {
+            return cycleConfig;
         }
 
         public PrintingConfig<TOwner> SetIndentation(Func<int, string> levelToIndentation)
@@ -141,9 +148,9 @@ namespace ObjectPrinting
                 var value = memberInfo.GetValue(obj);
 
                 if (IsAlreadyPrinted(value))
-                    continue;
+                    cycleConfig.AppendCycleText(builder).Append(GetEndLine());
 
-                if (objectSerializer.TryGetSerializationFunction(memberInfo, out var serializer))
+                else if (objectSerializer.TryGetSerializationFunction(memberInfo, out var serializer))
                 {
                     builder.Append(serializer.DynamicInvoke(value))
                         .Append(GetEndLine());
