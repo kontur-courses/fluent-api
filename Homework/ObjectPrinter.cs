@@ -14,7 +14,7 @@ namespace Homework
 
         private readonly HashSet<object> printedObjects = new();
         private readonly PrintingRules rules;
-        private readonly MyStringBuilder reservePrintedObject = new();
+        private readonly MyStringBuilder printingObject = new();
         private readonly HashSet<Type> finalTypes = new()
         {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(char),
@@ -28,11 +28,11 @@ namespace Homework
         
         public string PrintToString(object? obj)
         {
-            reservePrintedObject.Clear();
+            printingObject.Clear();
             var nullCaseResult = $"null {Environment.NewLine}";
             PrintToString(obj, obj?.GetType().Name + ":" ?? "", 0);
-            return !reservePrintedObject.IsEmpty() 
-                ? reservePrintedObject.ToString() 
+            return !printingObject.IsEmpty() 
+                ? printingObject.ToString() 
                 : nullCaseResult;
         }
 
@@ -79,14 +79,14 @@ namespace Homework
             if (isDict)
             {
                 if (!TryPrintKeyValuePair(value, nestingLevel)) return ;
-                var printed = reservePrintedObject.Last()!;
-                if (printed.StartsWith("\t = ")) reservePrintedObject.ReplaceLast("\t" + printed[3..]);
+                var printed = printingObject.Last()!;
+                if (printed.StartsWith("\t = ")) printingObject.ReplaceLast("\t" + printed[3..]);
             }
             else
             {
                 PrintToString(value, $"[{index++}]", nestingLevel + 1);
                 if (!isList) 
-                    reservePrintedObject.ReplaceLast(reservePrintedObject.Last()!.Replace($"[{index - 1}] = ", ""));
+                    printingObject.ReplaceLast(printingObject.Last()!.Replace($"[{index - 1}] = ", ""));
             }
         }
 
@@ -98,7 +98,7 @@ namespace Homework
             var printedIEnumerableObject = new StringBuilder();
             var interfaces = obj.GetType().GetInterfaces();
             printedIEnumerableObject.AppendLine(indentation + name + " = {");
-            reservePrintedObject.AppendLine(indentation + name + " = {");
+            printingObject.AppendLine(indentation + name + " = {");
             
 
             printedObjects.Add(obj);
@@ -112,7 +112,7 @@ namespace Homework
                     collectionValue, indexer++);
             }
             
-            reservePrintedObject.AppendLine(indentation + "}");
+            printingObject.AppendLine(indentation + "}");
         }
 
         private bool TryPrintFinalObject(object value, string name, int nestingLevel)
@@ -124,14 +124,14 @@ namespace Homework
             if (ShouldIgnore(type, name, nestingLevel)) return true;
             if (TryGetPrintRuleFor(type, name, out var serialisationRule))
             {
-                reservePrintedObject.Append(indentation + rName + serialisationRule.ToString(value) + Environment.NewLine);
+                printingObject.Append(indentation + rName + serialisationRule.ToString(value) + Environment.NewLine);
                 return true;
             }
             if (finalTypes.Contains(type))
             {
                 var toAppend = indentation + rName + (type.GetInterfaces().Contains(typeof(IConvertible))
                     ? ((IConvertible) value).ToString(rules.GetCultureForType(type)) : value) + Environment.NewLine;
-                reservePrintedObject.Append(toAppend);
+                printingObject.Append(toAppend);
                 return true;
             }
 
@@ -145,7 +145,7 @@ namespace Homework
             
             if (value is null)
             {
-                reservePrintedObject.Append($"{new string('\t', nestingLevel)}{propertyInfo.Name} = null{Environment.NewLine}");
+                printingObject.Append($"{new string('\t', nestingLevel)}{propertyInfo.Name} = null{Environment.NewLine}");
                 return;
             }
             if (TryPrintFinalObject(value, propertyInfo.Name, nestingLevel)) return ;
@@ -163,17 +163,17 @@ namespace Homework
             var nestedProps = value.GetType().GetProperties();
             if (!nestedProps.Any())
             {
-                reservePrintedObject.Append(indentation + name + " = " + Environment.NewLine);
+                printingObject.Append(indentation + name + " = " + Environment.NewLine);
                 return;
             }
-            reservePrintedObject.AppendLine(indentation + name + (isNestedObject ? " = {" : ""));
+            printingObject.AppendLine(indentation + name + (isNestedObject ? " = {" : ""));
             foreach (var nestedPropertyInfo in nestedProps)
             {
                 if (CheckForCycleReference(nestedPropertyInfo.GetValue(value))) continue;
                 TryPrintPropertyInfo(value, nestedPropertyInfo, nestingLevel + 1);
             }
 
-            reservePrintedObject.AppendLine(isNestedObject ? indentation + "}" : "");
+            printingObject.AppendLine(isNestedObject ? indentation + "}" : "");
         }
 
         private void PrintToString(object? obj, string name, int nestingLevel)
