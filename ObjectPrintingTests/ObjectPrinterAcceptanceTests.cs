@@ -150,6 +150,18 @@ namespace ObjectPrintingTests
             Action act = () => robotPrinter.PrintToString(robot);
             act.Should().NotThrow<StackOverflowException>();
         }
+
+        [Test]
+        public void PrintToString_ShouldWorkCorrectWithCyclicalLinks_CorrectPrint()
+        {
+            var robot = new Robot("Oleg");
+            var robotPrinter = ObjectPrinter.For<Robot>();
+            robotPrinter
+                .PrintToString(robot)
+                .Should()
+                .Contain("Name = Oleg")
+                .And.Contain("ItName = Oleg");
+        }
         
         [Test]
         public void PrintToString_ShouldSerialize_Array()
@@ -221,7 +233,7 @@ namespace ObjectPrintingTests
             var dict = new Dictionary<string, string>
             {
                 {"a", "b"},
-                {"b", "c"}
+                {"b", "c"},
             };
             var listPrinter = ObjectPrinter.For<Dictionary<string, string>>();
             listPrinter

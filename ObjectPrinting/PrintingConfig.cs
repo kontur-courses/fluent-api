@@ -67,34 +67,64 @@ namespace ObjectPrinting
         {
             if (obj is null)
                 return "null" + delimiter;
-
-            return PrintToString(obj, 0, delimiter).ToString();
+            var sb = new StringBuilder();
+            AddSingleSerialization(sb, obj, 0, delimiter);
+            return sb.ToString();
         }
 
-        private StringBuilder PrintToString(object obj, int nestingLevel, string delimiter)
+        private void AddSingleSerialization(StringBuilder sb, object obj, int nestingLevel, string delimiter)
         {
-            var sb = new StringBuilder();
             if (obj is null)
-                return sb.Append("null", delimiter);
-
+            {
+                sb.Append("null", delimiter);
+                return;
+            }
             var type = obj.GetType();
 
             if (finalTypes.Contains(type))
-                return sb.Append(obj.ToString(), delimiter);
+            {
+                sb.Append(obj.ToString(), delimiter);
+                return;
+            }
 
             if (obj is IEnumerable enumerable)
-                return sb.Append("(", SerializeEnumerable(enumerable, nestingLevel, delimiter).ToString(), ")");
+            {
+                sb.Append("(");
+                AddEnumerableSerialization(sb, enumerable, nestingLevel, delimiter);
+                sb.Append(")");
+                return;
+            }
 
-            return SerializeMember(obj, nestingLevel, delimiter);
+            sb.Append(type.Name, delimiter);
+            AddMembersSerialization(sb, obj, nestingLevel, delimiter);
         }
 
-        private StringBuilder SerializeMember(object obj, int nestingLevel, string delimiter)
+        private void AddEnumerableSerialization(
+            StringBuilder sb,
+            IEnumerable enumerable,
+            int nestingLevel,
+            string delimiter
+        )
         {
             var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+            sb.Append($"{enumerable.GetType().Name}{delimiter}");
+            foreach (var item in enumerable.Cast<object>())
+            {
+                sb.Append(indentation);
+                AddSingleSerialization(sb, item, nestingLevel + 1, delimiter);
+            }
+        }
+
+        private void AddMembersSerialization(
+            StringBuilder sb,
+            object obj,
+            int nestingLevel,
+            string delimiter
+        )
+        {
+            var indentation = new string('\t', nestingLevel + 1);
 
             var type = obj.GetType();
-            sb.Append(type.Name, delimiter);
             var members = type.GetProperties().Concat<MemberInfo>(type.GetFields());
             foreach (
                 var memberInfo in members
@@ -106,10 +136,8 @@ namespace ObjectPrinting
                 if (TryGetSerializer(memberInfo, out var serializer))
                     sb.Append((string) serializer.DynamicInvoke(GetMemberValue(memberInfo, obj)), delimiter);
                 else
-                    sb.Append(PrintToString(GetMemberValue(memberInfo, obj), nestingLevel + 1, delimiter));
+                    AddSingleSerialization(sb, GetMemberValue(memberInfo, obj), nestingLevel + 1, delimiter);
             }
-
-            return sb;
         }
 
         private bool TryGetSerializer(MemberInfo memberInfo, out Delegate serializer)
@@ -118,14 +146,6 @@ namespace ObjectPrinting
                 return true;
             var type = GetMemberType(memberInfo);
             return serializerRepository.TypeSerializers.TryGetValue(type, out serializer);
-        }
-
-        private StringBuilder SerializeEnumerable(IEnumerable enumerable, int nestingLevel, string delimiter)
-        {
-            var sb = new StringBuilder($"{enumerable.GetType().Name}{delimiter}");
-            foreach (var item in enumerable.Cast<object>())
-                sb.Append(PrintToString(item, nestingLevel + 1, delimiter));
-            return sb;
         }
 
         private static Type GetMemberType(MemberInfo memberInfo)
