@@ -4,17 +4,15 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class ExcludingConfig
+    internal class ExcludingConfig
     {
-        private HashSet<MemberInfo> excludedMembers
-            = new HashSet<MemberInfo>();
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
 
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
         public bool IsExcluded(MemberInfo memberInfo)
-        {
-            return excludedMembers.Contains(memberInfo) || excludedTypes.Contains(memberInfo.GetReturnType());
-        }
+            => excludedMembers.Contains(memberInfo) ||
+               excludedTypes.Contains(memberInfo.GetReturnType());
         
         public void Exclude(MemberInfo member)
         {

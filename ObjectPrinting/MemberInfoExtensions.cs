@@ -6,29 +6,19 @@ namespace ObjectPrinting
     public static class MemberInfoExtensions
     {
         public static object GetValue(this MemberInfo memberInfo, object obj)
-        {
-            switch (memberInfo)
+            => memberInfo switch
             {
-                case FieldInfo fieldInfo:
-                    return fieldInfo.GetValue(obj);
-                case PropertyInfo propertyInfo:
-                    return propertyInfo.GetValue(obj);
-                default:
-                    throw new InvalidOperationException();
-            }
-        }
-        
+                FieldInfo fieldInfo => fieldInfo.GetValue(obj),
+                PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
+                _ => throw new InvalidOperationException()
+            };
+
         public static Type GetReturnType(this MemberInfo memberInfo)
-        {
-            switch (memberInfo)
+            => memberInfo switch
             {
-                case FieldInfo fieldInfo:
-                    return fieldInfo.FieldType;
-                case PropertyInfo propertyInfo:
-                    return propertyInfo.PropertyType;
-                default:
-                    throw new InvalidOperationException();
-            }
-        }
+                FieldInfo fieldInfo => fieldInfo.FieldType,
+                PropertyInfo propertyInfo => propertyInfo.PropertyType,
+                _ => throw new InvalidOperationException()
+            };
     }
 }

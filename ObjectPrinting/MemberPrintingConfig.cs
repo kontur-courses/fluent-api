@@ -17,6 +17,8 @@ namespace ObjectPrinting
         
         public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member)
         {
+            if (member.GetReturnType() is TMemberType)
+                throw new ArgumentException($"{member.Name} is not {nameof(TMemberType)}");
             this.printingConfig = printingConfig;
             this.member = member;
         }
@@ -28,15 +30,11 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            Func<object, string> func = x => Convert.ToString(x, culture);
-            return printingConfig.SpecializeSerialization(member, func);
+            Func<object, string> culturedConverter = x => Convert.ToString(x, culture);
+            return printingConfig.SpecializeSerialization(member, culturedConverter);
         }
 
         PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TMemberType>.ParentConfig => printingConfig;
     }
 
-    public interface IMemberPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
-    }
 }
