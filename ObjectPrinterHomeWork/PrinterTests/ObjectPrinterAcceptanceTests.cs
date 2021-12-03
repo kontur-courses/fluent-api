@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Globalization;
+using AutoFixture;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Tests;
 using Printer;
-using AutoFixture;
 
 namespace PrinterTests
 {
@@ -48,7 +48,7 @@ namespace PrinterTests
         public void ExcludeField_should_excludeExpectedFields()
         {
             var sut = ObjectPrinter.For<Person>()
-                .ExcludeField(nameof(Person.Id))
+                .Exclude(p => p.Id)
                 .PrintToString(person);
 
             var expectedSerialisedPerson = "Person\n" +
@@ -68,7 +68,7 @@ namespace PrinterTests
         public void ExcludeProperty_should_excludeExpectedProperty()
         {
             var sut = ObjectPrinter.For<Person>()
-                .ExcludeProperty(nameof(Person.BirthDate))
+                .Exclude(p => p.BirthDate)
                 .PrintToString(person);
 
             var expectedSerialisedPerson = "Person\n" +
@@ -97,11 +97,11 @@ namespace PrinterTests
                                            "\tId = change Guid\n";
 
             var sut = ObjectPrinter.For<Person>()
-                .StringOf<string>(_ => "change string")
-                .StringOf<int>(_ => "change int")
-                .StringOf<DateTime>(_ => "change DateTime")
-                .StringOf<double>(_ => "change double")
-                .StringOf<Guid>(_ => "change Guid")
+                .For<string>(_ => "change string")
+                .For<int>(_ => "change int")
+                .For<DateTime>(_ => "change DateTime")
+                .For<double>(_ => "change double")
+                .For<Guid>(_ => "change Guid")
                 .PrintToString(person);
 
 
@@ -170,10 +170,12 @@ namespace PrinterTests
                                            $"\tBirthDate = {person.BirthDate}\n" +
                                            "\tFather = null\n" +
                                            "\tSon = null\n" +
-                                           $"\tId(guid) = {person.Id}\n";
+                                           $"\tId = changed id: {person.Id}\n";
 
             var sut = ObjectPrinter.For<Person>()
-                .StringOfField(nameof(Person.Id), (fi, res) => $"{fi.Name}({fi.FieldType.Name}) = {res}")
+                .ForMember(p => p.Id)
+                .SetCustomSerializing(g => $"changed id: {g}")
+                .Apply()
                 .PrintToString(person);
 
             sut.ToLowerInvariant().Replace("\r", "")
@@ -187,20 +189,31 @@ namespace PrinterTests
             var expectedSerializedPerson = "Person\n" +
                                            $"\tName = {person.Name}\n" +
                                            $"\tHeight = {person.Height}\n" +
-                                           $"\tAge(int32) = {person.Age}\n" +
+                                           $"\tAge = changed age: {person.Age}\n" +
                                            $"\tBirthDate = {person.BirthDate}\n" +
                                            "\tFather = null\n" +
                                            "\tSon = null\n" +
                                            $"\tId = {person.Id}\n";
 
             var sut = ObjectPrinter.For<Person>()
-                .StringOfProperty(nameof(Person.Age),
-                    (pi, val) => $"{pi.Name}({pi.PropertyType.Name}) = {val}")
+                .ForMember(p => p.Age).SetCustomSerializing(a => $"changed age: {a}").Apply()
                 .PrintToString(person);
 
             sut.ToLowerInvariant().Replace("\r", "")
                 .Should()
                 .Be(expectedSerializedPerson.ToLowerInvariant());
+        }
+
+        [Test]
+        public void LengthOfString_should_ChangeLength()
+        {
+            var source = "123456789";
+            var expected = "12";
+
+            var sut = ObjectPrinter.For<string>()
+                .For<string>().LengthOfString(2).Apply()
+                .PrintToString(source);
+            sut.Should().Be(expected);
         }
 
         [TestCaseSource(nameof(Cultures))]
@@ -221,7 +234,9 @@ namespace PrinterTests
 
             var sut = ObjectPrinter
                 .For<Person>()
-                .WithCulture(culture)
+                .For<DateTime>().SetCulture(culture).Apply()
+                .For<double>().SetCulture(culture).Apply()
+                .For<int>().SetCulture(culture).Apply()
                 .PrintToString(person);
 
             sut.ToLowerInvariant().Replace("\r", "")
@@ -246,7 +261,9 @@ namespace PrinterTests
 
             var sut = ObjectPrinter
                 .For<Person>()
-                .WithCultureFor<DateTime>(culture)
+                .For<DateTime>()
+                .SetCulture(culture)
+                .Apply()
                 .PrintToString(person);
 
             sut.ToLowerInvariant().Replace("\r", "")
