@@ -275,5 +275,21 @@ namespace ObjectPrintingTests
             };
             printerAction.Should().Throw<ArgumentException>();
         }
+
+        [Test]
+        public void PrintToString_AlternativeListSerialization_ShouldWork()
+        {
+            var expected = "ClassWithList\r\n\tValues = 2 элемента\r\n\tValue = 0\r\n";
+            var printable = new ClassWithList();
+            printable.Values.Add(1.2);
+            printable.Values.Add(3.4);
+
+            var printer = ObjectPrinter.For<ClassWithList>()
+                .Printing(p => p.Values)
+                .Using(p => ((List<double>)p).Count + " элемента");
+
+            var actual = printer.PrintToString(printable);
+            actual.Should().Be(expected);
+        }
     }
 }
