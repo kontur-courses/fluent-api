@@ -128,7 +128,7 @@ namespace ObjectPrinting
         {
             var arr = enumerable as object[] ?? enumerable.Cast<object>().ToArray();
             var stringValues = arr.Select(e => PrintToString(e, nestingLevel + 1));
-            return "[" + string.Join(" ", stringValues) + "]";
+            return "[" + string.Join(", ", stringValues) + "]";
         }
     }
 }
