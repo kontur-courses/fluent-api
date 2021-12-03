@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -117,6 +118,11 @@ namespace Printer
                 return obj.ToString();
             }
 
+            if (obj is IEnumerable enumerable)
+            {
+                return SerializeEnumerable(enumerable,nestingLevel);
+            }
+
             sb.Append(type.Name + Environment.NewLine);
             if (!serializedObjects.Add(obj))
             {
@@ -134,6 +140,29 @@ namespace Printer
             }
 
             return sb.ToString();
+        }
+
+        private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
+        {
+            var builder = new StringBuilder();
+            if (enumerable is IDictionary dictionary)
+            {
+                foreach (DictionaryEntry dictionaryEntry in dictionary)
+                {
+                    builder.Append(
+                        $"{{{PrintToString(dictionaryEntry.Key, nestingLevel)} " +
+                        $": {PrintToString(dictionaryEntry.Value, nestingLevel)}}}\n");
+                }
+            }
+            else
+            {
+                foreach (var obj in enumerable)
+                {
+                    builder.Append($"[{PrintToString(obj, nestingLevel)}],");
+                }
+            }
+
+            return builder.ToString();
         }
 
         private bool TryAppendMember(MemberInfo memberInfo, object obj, int nestingLevel, out string stringMember)

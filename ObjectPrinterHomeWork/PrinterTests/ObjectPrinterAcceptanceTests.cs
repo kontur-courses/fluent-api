@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using AutoFixture;
 using FluentAssertions;
@@ -213,6 +214,63 @@ namespace PrinterTests
             var sut = ObjectPrinter.For<string>()
                 .For<string>().LengthOfString(2).Apply()
                 .PrintToString(source);
+            sut.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_should_printingIEnumerable()
+        {
+            var expected = "[ru],[fi],[ar],[da],[en],[zh],[es],[de],[el],";
+            var sut = ObjectPrinter.For<IEnumerable<string>>().PrintToString(Cultures);
+
+            sut.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_should_printingDictionary()
+        {
+            var source = new Dictionary<int, string> { { 1, "один" }, { 2, "два" } };
+            var expected = "{1 : один}\n{2 : два}\n";
+
+            var sut = ObjectPrinter.For<IDictionary<int, string>>().PrintToString(source);
+
+            sut.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_enumerableWithCustomSerialized_itemsShouldBeChanged()
+        {
+            var expected = "[],[],[],[],[],[],[],[],[],";
+            var sut = ObjectPrinter.For<IEnumerable<string>>()
+                .For<string>(_ => "")
+                .PrintToString(Cultures);
+
+            sut.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingToString_dictionaryWithCustomSerialized_keysShouldBeChanged()
+        {
+            var source = new Dictionary<int, string> { { 1, "один" }, { 2, "два" } };
+            var expected = "{100 : один}\n{200 : два}\n";
+
+            var sut = ObjectPrinter.For<IDictionary<int, string>>()
+                .For<int>(x => (x * 100).ToString())
+                .PrintToString(source);
+
+            sut.Should().Be(expected);
+        }
+        
+        [Test]
+        public void PrintingToString_dictionaryWithCustomSerialized_valuesShouldBeChanged()
+        {
+            var source = new Dictionary<int, string> { { 1, "один" }, { 2, "два" } };
+            var expected = "{1 : 'один'}\n{2 : 'два'}\n";
+
+            var sut = ObjectPrinter.For<IDictionary<int, string>>()
+                .For<string>(x => $"'{x}'")
+                .PrintToString(source);
+
             sut.Should().Be(expected);
         }
 
