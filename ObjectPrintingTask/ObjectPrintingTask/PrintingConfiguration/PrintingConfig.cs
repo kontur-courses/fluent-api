@@ -24,15 +24,17 @@ namespace ObjectPrintingTask.PrintingConfiguration
         public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var memberName = ((MemberExpression)memberSelector.Body).Member.Name;
-            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberName);
+            var member = ((MemberExpression)memberSelector.Body).Member;
+            var memberFullName = GetMemberFullName(member);
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
-            membersToExclude.Add(memberInfo.Name);
+            var member = ((MemberExpression)memberSelector.Body).Member;
+            var memberFullName = GetMemberFullName(member);
+            membersToExclude.Add(memberFullName);
 
             return this;
         }
@@ -43,9 +45,9 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return this;
         }
 
-        public void AddSerializingScenario<TMemberType>(string memberName, Func<TMemberType, string> scenario)
+        public void AddSerializingScenario<TMemberType>(string memberFullName, Func<TMemberType, string> scenario)
         {
-            memberScenarios[memberName] = scenario;
+            memberScenarios[memberFullName] = scenario;
         }
 
         public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
@@ -65,7 +67,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
                 return "null";
 
             var type = obj.GetType();
-
+            
             if (type.IsPrimitive || FinalTypesKeeper.IsFinalType(type))
                 return obj.ToString();
 
@@ -105,7 +107,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
         private bool ShouldIgnoreMember(MemberInfo memberInfo)
         {
-            return ShouldExcludeMemberByName(memberInfo.Name)
+            return ShouldExcludeMemberByName(string.Join(".", memberInfo.ReflectedType.Name, memberInfo.Name))
                    || ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType());
         }
 
@@ -163,7 +165,8 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
         private bool IsMemberHasAlternateScenario(MemberInfo member)
         {
-            return memberScenarios.ContainsKey(member.Name);
+            var memberFullName = GetMemberFullName(member);
+            return memberScenarios.ContainsKey(memberFullName);
         }
 
         private bool IsMemberTypeHasAlternateScenario(MemberInfo member)
@@ -173,8 +176,10 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
         private string GetValueFromScenario(object obj, MemberInfo member)
         {
+            var memberFullName = GetMemberFullName(member);
+
             var scenario = IsMemberHasAlternateScenario(member)
-                ? memberScenarios[member.Name]
+                ? memberScenarios[memberFullName]
                 : typeScenarios[member.GetMemberInstanceType()];
 
             return (string)scenario.DynamicInvoke(member.GetValue(obj));
@@ -183,6 +188,11 @@ namespace ObjectPrintingTask.PrintingConfiguration
         private static string GetIndent(int nestingLevel)
         {
             return new string('\t', nestingLevel + 1);
+        }
+
+        private string GetMemberFullName(MemberInfo member)
+        {
+            return string.Join(".", member.ReflectedType.Name, member.Name);
         }
     }
 }
