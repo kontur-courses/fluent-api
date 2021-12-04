@@ -39,12 +39,15 @@ namespace ObjectPrintingTask
 
             visitedObjects.Add(obj);
 
-            return obj switch
+            var objToString = obj switch
             {
                 IDictionary => GetItemsFromDictionary((IDictionary)obj, nestingLevel),
-                ICollection => GetItemsFromCollection((ICollection)obj, nestingLevel),
+                IEnumerable => GetItemsFromEnumerable((IEnumerable)obj, nestingLevel),
                 _ => PrintMembersOfObject(obj, type, nestingLevel)
             };
+
+            visitedObjects.Remove(obj);
+            return objToString;
         }
 
         private string PrintMembersOfObject(object obj, Type type, int nestingLevel)
@@ -113,16 +116,22 @@ namespace ObjectPrintingTask
             return builder.ToString();
         }
 
-        private string GetItemsFromCollection(ICollection collection, int nestingLevel)
-        {
+        private string GetItemsFromEnumerable(IEnumerable collection, int nestingLevel)
+        {           
             var builder = new StringBuilder();
             builder.Append("[");
 
+            var itemsCount = 0;
             foreach (var item in collection)
+            {
                 builder.Append(PrintToString(item, nestingLevel + 1)).Append(", ");
+                itemsCount++;
+            }
 
-            builder.Remove(builder.Length - 2, 2).Append("]").Append(Environment.NewLine);
+            if (itemsCount > 0)
+                builder.Remove(builder.Length - 2, 2);
 
+            builder.Append("]").Append(Environment.NewLine);
             return builder.ToString();
         }
 
@@ -131,12 +140,11 @@ namespace ObjectPrintingTask
             return new string('\t', nestingLevel + 1);
         }
 
-        bool IsSimple(Type type)
+        private bool IsSimple(Type type)
         {
             var typeInfo = type.GetTypeInfo();
             if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                // nullable type, check if the nested type is simple.
                 return IsSimple(typeInfo.GetGenericArguments()[0]);
             }
             return typeInfo.IsPrimitive
