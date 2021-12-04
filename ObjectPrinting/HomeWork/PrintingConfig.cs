@@ -12,7 +12,7 @@ namespace ObjectPrinting.HomeWork
 {
     public class PrintingConfig<TOwner>
     {
-        public const string NullToString = "null";
+        private const string NullToString = "null";
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
@@ -23,6 +23,7 @@ namespace ObjectPrinting.HomeWork
         private readonly HashSet<object> serializedMembers = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
+        private readonly HashSet<MemberInfo> excludedFieldsProperties1 = new HashSet<MemberInfo>();
 
         private string pinnedPropertyName;
 
@@ -57,7 +58,7 @@ namespace ObjectPrinting.HomeWork
             var objType = obj.GetType();
 
 
-            if (finalTypes.Contains(objType) && !excludedTypes.Contains(objType))
+            if ((finalTypes.Contains(objType) || objType.IsPrimitive) && !excludedTypes.Contains(objType))
                 return ReturnWhenFinal(obj);
 
 
@@ -101,9 +102,8 @@ namespace ObjectPrinting.HomeWork
                     new SerializationMemberInfo(fieldInfo, obj);
             }
 
-
-            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType)
-                                            || excludedFieldsProperties.Contains(memberSerialization.MemberName))
+            //|| excludedFieldsProperties.Contains(memberSerialization.MemberName))
+            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType) || excludedFieldsProperties1.Contains(memberInfo)) 
                 return;
 
             var serializeDelegate = MakeSerializeDelegate(memberSerialization);
@@ -155,8 +155,8 @@ namespace ObjectPrinting.HomeWork
 
         private string ReturnWhenFinal(object obj)
         {
-            if (obj is IFormattable formattable)
-                return formattable.ToString(null, culture) + Environment.NewLine;
+            if (obj is IFormattable formatObj)
+                return formatObj.ToString(null, culture) + Environment.NewLine;
             return obj + Environment.NewLine;
         }
 
@@ -179,12 +179,45 @@ namespace ObjectPrinting.HomeWork
 
 
 
+        //Expression<Func<TOwner, TTarget>> expression where expression : MemberExpression
+
 
 
         public PrintingConfig<TOwner> ExcludedType<TExType>()
         {
             excludedTypes.Add(typeof(TExType));
             return this;
+        }
+
+        public PrintingConfig<TOwner> ExcludedProperty<TTarget>(Expression<Func<TOwner, TTarget>> propertyNameExpression)
+        {
+            if (propertyNameExpression.Body is MemberExpression propertyName)
+            {
+                var inputName = (propertyName).Member.Name;
+                var member = propertyName.Member;
+
+                if (GetFieldsAndProperties(typeof(TOwner)).Contains(member))
+                    excludedFieldsProperties1.Add(member);
+
+
+                if ((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(inputName))
+                    excludedFieldsProperties.Add(inputName);
+
+
+                return this;
+            }
+            throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+            /*
+            if (propertyNameExpression.Body is UnaryExpression unExpression)
+            {
+                if (!(unExpression.Operand is MemberExpression))
+                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+                var inputName = ((MemberExpression)unExpression.Operand).Member.Name;
+                if ((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(inputName))
+                    excludedFieldsProperties.Add(inputName);
+            }
+            return this;
+            */
         }
 
         public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
@@ -203,19 +236,7 @@ namespace ObjectPrinting.HomeWork
             return this;
         }
 
-        public PrintingConfig<TOwner> ExcludedProperty(Expression<Func<TOwner, object>> propertyNameExpression)
-        {
-            if (propertyNameExpression.Body is UnaryExpression unExpression)
-            {
-                string inputName;
-                if (!(unExpression.Operand is MemberExpression))
-                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
-                inputName = ((MemberExpression)unExpression.Operand).Member.Name;
-                if ((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(inputName))
-                    excludedFieldsProperties.Add(inputName);
-            }
-            return this;
-        }
+        
 
         public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner, CultureInfo>> inputCulture)
         {

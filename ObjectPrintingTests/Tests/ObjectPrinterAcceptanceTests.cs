@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.Linq;
+using System.Linq.Expressions;
 using ObjectPrinting.HomeWork;
 
 namespace ObjectPrintingTests.Tests
@@ -65,7 +67,7 @@ namespace ObjectPrintingTests.Tests
         [Test]
         public void SerializationExcludeManyFieldsWithIncorrectExpression()
         {
-            var person = new Person { Name = "Gregory", Age = 49 };
+            //var person = new Person { Name = "Gregory", Age = 49 };
             Action action =() => ObjectPrinter.For<Person>()
                 .ExcludedProperty(pr => pr.Name + new[] { 3, 4 }).ExcludedProperty(pr => pr.Age + 1).ExcludedProperty(pr => pr.Id);
             action.Should().Throw<InvalidExpressionException>();
@@ -76,9 +78,12 @@ namespace ObjectPrintingTests.Tests
         {
             var person = new Person { Name = "Gregory", Age = 49 };
             var printer = ObjectPrinter.For<Person>()
-                .ExcludedProperty(pr => pr.Name).ExcludedProperty(pr => pr.Age).ExcludedProperty(pr => pr.Id);
+                .ExcludedProperty(pr => pr.Age)
+                .ExcludedProperty(pr => pr.Father)
+                .ExcludedProperty(pr => pr.Id);
+
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tName = Gregory\r\n\tHeight = 0\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tName = Gregory\r\n\tHeight = 0\r\n");
         }
 
         [Test]
@@ -125,7 +130,7 @@ namespace ObjectPrintingTests.Tests
             action.Should().Throw<InvalidExpressionException>();
         }
 
-
+        
         [Test]
         public void Cyclic()
         {
@@ -136,6 +141,7 @@ namespace ObjectPrintingTests.Tests
             Action action = () => printer.PrintToString(person);
             action.Should().NotThrow<StackOverflowException>();
         }
+        
 
 
         [Test]
@@ -179,8 +185,8 @@ namespace ObjectPrintingTests.Tests
             var dataList = new[] { 1, 2, 3, 4 };
             var result = printer.PrintToString(dataList);
             result.Should().Be("Int32[]\r\n\tLength = 4\r\n\tLongLength = 4\r\n\tRank = 1\r\n\t" +
-                               "SyncRoot = this (parentObj)\r\n\tIsReadOnly = Boolean\r\n\t" +
-                               "IsFixedSize = Boolean\r\n\tIsSynchronized = Boolean\r\n");
+                               "SyncRoot = this (parentObj)\r\n\tIsReadOnly = False\r\n\t" +
+                               "IsFixedSize = True\r\n\tIsSynchronized = False\r\n");
         }
 
         [Test]
