@@ -105,11 +105,12 @@ namespace ObjectPrintingTests.Tests
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                .PinProperty(pr => pr.Height).SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
+                .PinProperty(pr => pr.Height)
+                .SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture));
 
-                .PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
+                //.PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
 
-                .PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
+                //.PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
 
             var result = printer.PrintToString(person);
             result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
