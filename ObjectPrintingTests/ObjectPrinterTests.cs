@@ -5,8 +5,9 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Common;
 using ObjectPrinting.Extensions;
+using ObjectPrintingTests.Common;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -32,6 +33,9 @@ namespace ObjectPrinting.Tests
         [TearDown]
         public void TearDown()
         {
+            if (string.IsNullOrEmpty(testData.Expected) && string.IsNullOrEmpty(testData.Actual))
+                return;
+
             Console.WriteLine(testData.IsUnexpected
                 ? $"Unexpected:\r\n\t{testData.Expected}\r\n"
                 : $"Expected:\r\n\t{testData.Expected}\r\n");
@@ -170,7 +174,8 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldPrintDictionaries()
         {
             testData.IsUnexpected = false;
-            testData.Expected = "Documents = Dictionary`2\r\n\t\tPassport - 6511 403943\r\n\t\tDrive license - 11 214345345 45";
+            testData.Expected =
+                "Documents = Dictionary`2\r\n\t\tPassport - 6511 403943\r\n\t\tDrive license - 11 214345345 45";
             person.Documents = new Dictionary<string, string>()
             {
                 {"Passport", "6511 403943"},
@@ -181,6 +186,28 @@ namespace ObjectPrinting.Tests
                 .PrintToString(x => x.Exclude<Guid>());
 
             testData.Actual.Should().Contain(testData.Expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_AcceptanceTest()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Exclude<Guid>()
+                .Serialize<double>().Using(i => i.ToString("F"))
+                .Serialize<double>().Using(CultureInfo.InvariantCulture)
+                .Serialize(p => p.Age)
+                .Using(x => $"{x} years")
+                .Serialize(p => p.FullName.FirstName)
+                .Trim(2)
+                .Exclude(p => p.FullName.LastName);
+
+            var s1 = printer.PrintToString(person);
+            var s2 = person.PrintToString();
+            var s3 = person.PrintToString(s => s.Exclude(p => p.Id));
+
+            Console.WriteLine(s1);
+            Console.WriteLine(s2);
+            Console.WriteLine(s3);
         }
     }
 }

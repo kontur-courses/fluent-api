@@ -3,9 +3,9 @@ using System.Reflection;
 
 namespace ObjectPrinting.Extensions
 {
-    public static class MemberInfoExtensions
+    internal static class MemberInfoExtensions
     {
-        public static object GetValue(this MemberInfo memberInfo, object forObject)
+        internal static object GetValue(this MemberInfo memberInfo, object forObject)
         {
             return memberInfo.MemberType switch
             {
@@ -14,8 +14,8 @@ namespace ObjectPrinting.Extensions
                 _ => throw new ArgumentException($"Невозможно получить значение для {memberInfo.MemberType}")
             };
         }
-        
-        public static Type GetMemberType(this MemberInfo memberInfo)
+
+        internal static Type GetMemberType(this MemberInfo memberInfo)
         {
             return memberInfo.MemberType switch
             {

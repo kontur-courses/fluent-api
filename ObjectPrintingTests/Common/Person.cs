@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ObjectPrinting.Common
+namespace ObjectPrintingTests.Common
 {
     public class Person
     {
@@ -11,7 +11,7 @@ namespace ObjectPrinting.Common
         public int Age { get; set; }
 
         public Person[] Parents { get; set; }
-        
+
         public Dictionary<string, string> Documents { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -14,8 +15,8 @@ namespace ObjectPrinting.Common.Configs
         private readonly HashSet<Type> finalTypes;
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<MemberInfo> excludedMembers;
-        private readonly Dictionary<Type, Delegate> typeSerializers;
-        private readonly Dictionary<MemberInfo, Delegate> memberSerializers;
+        private readonly Dictionary<Type, Func<object, string>> typeSerializers;
+        private readonly Dictionary<MemberInfo, Func<object, string>> memberSerializers;
 
         public PrintingConfig()
         {
@@ -27,17 +28,11 @@ namespace ObjectPrinting.Common.Configs
             };
             excludedTypes = new HashSet<Type>();
             excludedMembers = new HashSet<MemberInfo>();
-            typeSerializers = new Dictionary<Type, Delegate>();
-            memberSerializers = new Dictionary<MemberInfo, Delegate>();
+            typeSerializers = new Dictionary<Type, Func<object, string>>();
+            memberSerializers = new Dictionary<MemberInfo, Func<object, string>>();
         }
 
-
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel, bool isPrintObjName = true)
+        public string PrintToString(object obj, int nestingLevel = 0, bool isPrintObjName = true)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -70,7 +65,7 @@ namespace ObjectPrinting.Common.Configs
                 : Environment.NewLine;
 
             var sb = new StringBuilder(objName);
-            foreach (var memberInfo in objType.GetSerializedMembers(mi => !IsExcluded(mi)))
+            foreach (var memberInfo in GetSerializedMembers(objType, mi => !IsExcluded(mi)))
             {
                 var memberIndent = new string('\t', nestingLevel + 1);
                 var result = memberIndent + memberInfo.Name + " = ";
@@ -112,6 +107,12 @@ namespace ObjectPrinting.Common.Configs
             return sb.ToString();
         }
 
+        private static IEnumerable<MemberInfo> GetSerializedMembers(Type type, Predicate<MemberInfo> selector)
+        {
+            return type.GetMembers()
+                .Where(mi => mi.MemberType == MemberTypes.Field || mi.MemberType == MemberTypes.Property)
+                .Where(mi => selector(mi));
+        }
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -126,16 +127,16 @@ namespace ObjectPrinting.Common.Configs
             return this;
         }
 
-        public SerializingConfig<TOwner, TPropType> Serialize<TPropType>()
+        public TypeSerializingConfig<TOwner, TPropType> Serialize<TPropType>()
         {
-            return new SerializingConfig<TOwner, TPropType>(this, typeSerializers);
+            return new TypeSerializingConfig<TOwner, TPropType>(this, typeSerializers);
         }
 
-        public SerializingConfig<TOwner, TPropType> Serialize<TPropType>(
+        public PropSerializingConfig<TOwner, TPropType> Serialize<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var body = (MemberExpression) memberSelector.Body;
-            return new SerializingConfig<TOwner, TPropType>(this, memberSerializers, body.Member);
+            return new PropSerializingConfig<TOwner, TPropType>(this, memberSerializers, body.Member);
         }
     }
 }

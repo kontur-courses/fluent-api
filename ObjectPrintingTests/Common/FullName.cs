@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Common
+﻿namespace ObjectPrintingTests.Common
 {
     public class FullName
     {
