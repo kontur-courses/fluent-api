@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using AutoFixture;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrintingTask;
 using ObjectPrintingTask.PrintingConfiguration;
@@ -10,7 +11,7 @@ namespace ObjectPrintingTaskTests
 {
     public class ObjectPrintingExcludingTests
     {
-        private readonly Person person = Person.GetTestInstance();
+        private Person person = Person.GetTestInstance();
         private PrintingConfig<Person> printer;
 
         [SetUp]

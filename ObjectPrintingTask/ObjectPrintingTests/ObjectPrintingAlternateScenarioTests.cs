@@ -55,12 +55,23 @@ namespace ObjectPrintingTaskTests
         }
 
         [Test]
-        public void ObjPrinter_ShouldUseCultureInfo()
+        public void ObjPrinter_ShouldUseCultureInfoForMembers()
         {
             printer.PrintingMember(p => p.Height).Using(CultureInfo.GetCultureInfo("RU-ru"));
 
             var result = printer.BuildConfig().PrintToString(person);
-            var regex = new Regex($"\\s*Height\\s*=\\s*\\d+\\,\\d*");
+            var regex = new Regex("\\s*Height\\s*=\\s*\\d+\\,?\\d*");
+
+            regex.Match(result).Success.Should().BeTrue();
+        }
+
+        [Test]
+        public void ObjPrinter_ShouldUseCultureInfoForType()
+        {
+            printer.PrintingType<double>().Using(CultureInfo.GetCultureInfo("RU-ru"));
+
+            var result = printer.BuildConfig().PrintToString(person);
+            var regex = new Regex("\\s*Height\\s*=\\s*\\d+\\,?\\d*");
 
             regex.Match(result).Success.Should().BeTrue();
         }
