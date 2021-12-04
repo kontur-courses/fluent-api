@@ -20,13 +20,20 @@ namespace ObjectPrintingTask.PrintingConfiguration
         public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
+            if (memberSelector == null)
+                throw new ArgumentException("Member selector can not be null");
+
             var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
+
             return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
+            if (memberSelector == null)
+                throw new ArgumentException("Member selector can not be null");
+
             var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
             membersToExclude.Add(memberFullName);
 

@@ -16,6 +16,9 @@ namespace ObjectPrintingTask.PrintingConfiguration
 
         public PrintingConfig<TOwner> Using(Func<TMemberType, string> scenario)
         {
+            if (scenario == null)
+                throw new ArgumentException("Alternate scenario can not be null");
+
             parentConfig.AddSerializingScenario(type, scenario);
             return parentConfig;
         }
