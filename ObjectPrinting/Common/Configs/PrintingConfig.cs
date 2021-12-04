@@ -17,7 +17,7 @@ namespace ObjectPrinting.Common.Configs
         private readonly HashSet<MemberInfo> excludedMembers;
         private readonly Dictionary<Type, Func<object, string>> typeSerializers;
         private readonly Dictionary<MemberInfo, Func<object, string>> memberSerializers;
-
+        
         public PrintingConfig()
         {
             serializedObjs = new HashSet<object>();
@@ -68,19 +68,11 @@ namespace ObjectPrinting.Common.Configs
             foreach (var memberInfo in GetSerializedMembers(objType, mi => !IsExcluded(mi)))
             {
                 var memberIndent = new string('\t', nestingLevel + 1);
-                var result = memberIndent + memberInfo.Name + " = ";
-                if (memberSerializers.TryGetValue(memberInfo, out var memberSerializer))
-                    result += memberSerializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine;
-                else if (typeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
-                    result += typeSerializer.DynamicInvoke(memberInfo.GetValue(obj)) + Environment.NewLine;
-                else
-                    result += PrintToString(memberInfo.GetValue(obj), nestingLevel + 1, false);
-                sb.Append(result);
+                sb.Append($"{memberIndent}{memberInfo.Name} = {SerializeMember(obj, memberInfo, nestingLevel)}");
             }
-
             return sb.ToString();
         }
-
+        
         private string SerializeCollection(IEnumerable collection, int nestingLevel)
         {
             if (collection is IDictionary dictionary)
@@ -107,6 +99,32 @@ namespace ObjectPrinting.Common.Configs
             return sb.ToString();
         }
 
+        private string SerializeMember(object obj, MemberInfo memberInfo, int nestingLevel)
+        {
+            if (TryGetCustomSerializer(memberInfo, out var serializer))
+                return serializer.Invoke(memberInfo.GetValue(obj)) + Environment.NewLine;
+            
+            return PrintToString(memberInfo.GetValue(obj), nestingLevel + 1, false);
+        }
+        
+        private bool TryGetCustomSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
+        {
+            if (memberSerializers.TryGetValue(memberInfo, out var memberSerializer))
+            {
+                serializer = memberSerializer;
+                return true;
+            }
+
+            if (typeSerializers.TryGetValue(memberInfo.GetMemberType(), out var typeSerializer))
+            {
+                serializer = typeSerializer;
+                return true;
+            }
+
+            serializer = null;
+            return false;
+        }
+        
         private static IEnumerable<MemberInfo> GetSerializedMembers(Type type, Predicate<MemberInfo> selector)
         {
             return type.GetMembers()
