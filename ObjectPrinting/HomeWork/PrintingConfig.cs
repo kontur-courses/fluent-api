@@ -22,25 +22,17 @@ namespace ObjectPrinting.HomeWork
 
         private readonly HashSet<object> serializedMembers = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-
-
-        //private readonly HashSet<string> excludedFieldsProperties = new HashSet<string>();
         private readonly HashSet<MemberInfo> excludedFieldsProperties = new HashSet<MemberInfo>();
 
-
-        private string pinnedPropertyName; //!!!
-
-        private MemberInfo pinnedPropertyName1;
+        //private string pinnedPropertyName;
+        private MemberInfo pinnedPropertyName;
 
         private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
             new Dictionary<Type, Delegate>();
 
 
-        //private readonly Dictionary<string, Delegate> specialSerializationsForFieldsProperties =
-            //new Dictionary<string, Delegate>();  //!!!
-
-        private readonly Dictionary<MemberInfo, Delegate> specialSerializationsForFieldsProperties1 =
-            new Dictionary<MemberInfo, Delegate>();
+        private readonly Dictionary<string, Delegate> specialSerializationsForFieldsProperties =
+            new Dictionary<string, Delegate>();
 
 
         private CultureInfo culture = CultureInfo.InvariantCulture;
@@ -81,45 +73,12 @@ namespace ObjectPrinting.HomeWork
             return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
         }
 
-        //private Delegate MakeSerializeDelegate(SerializationMemberInfo memberSerialization)
-        private Delegate MakeSerializeDelegate(MemberInfo memberSerialization)
+        private Delegate MakeSerializeDelegate(SerializationMemberInfo memberSerialization)
         {
-            //var a = (MemberInfo)memberSerialization.MemberType;
-            /*
             if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization.MemberName))
-            {
                 return specialSerializationsForFieldsProperties[memberSerialization.MemberName];
-            }
-            */
-
-            var dsf = specialSerializationsForFieldsProperties1.Keys.Select(x => x.Name);
-            var b = memberSerialization.Name.ToString();
-            var c = "";
-
-            if (specialSerializationsForFieldsProperties1.Keys.ToList().Contains(memberSerialization))
-                return specialSerializationsForFieldsProperties1[memberSerialization];
-            //}
-
-
-
-
-
-
-
-
-
-
-
-            var a = memberSerialization.GetType();
-
-            if (specialSerializationsForTypes.ContainsKey(memberSerialization.GetType()))
-                return specialSerializationsForTypes[memberSerialization.GetType()];
-
-
-            /*
             if (specialSerializationsForTypes.ContainsKey(memberSerialization.MemberType))
                 return specialSerializationsForTypes[memberSerialization.MemberType];
-            */
             return null;
         }
 
@@ -144,10 +103,10 @@ namespace ObjectPrinting.HomeWork
             }
 
             //|| excludedFieldsProperties.Contains(memberSerialization.MemberName))
-            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType) || excludedFieldsProperties.Contains(memberInfo)) 
+            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType) || excludedFieldsProperties.Contains(memberInfo))
                 return;
 
-            var serializeDelegate = MakeSerializeDelegate(memberSerialization.MemberType);
+            var serializeDelegate = MakeSerializeDelegate(memberSerialization);
             serializedMembers.Add(obj);
 
             if (serializeDelegate != null)
@@ -201,7 +160,7 @@ namespace ObjectPrinting.HomeWork
             return obj + Environment.NewLine;
         }
 
-        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name) //!!!
+        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name)
         {
             if (!(obj is ICollection cast))
                 sb.Append(name);
@@ -232,22 +191,23 @@ namespace ObjectPrinting.HomeWork
 
         public PrintingConfig<TOwner> ExcludedProperty<TTarget>(Expression<Func<TOwner, TTarget>> propertyNameExpression)
         {
-            if (propertyNameExpression.Body is MemberExpression propertyName)
+            if (propertyNameExpression.Body is MemberExpression propertyMember)
             {
-                var inputName = (propertyName).Member.Name;
-                var member = propertyName.Member;
+                //var inputName = (propertyName).Member.Name;
+                var member = propertyMember.Member;
 
                 if (GetFieldsAndProperties(typeof(TOwner)).Contains(member))
                     excludedFieldsProperties.Add(member);
 
 
                 //if ((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(inputName))
-                    //excludedFieldsProperties.Add(inputName);
+                //excludedFieldsProperties.Add(inputName);
 
 
                 return this;
             }
             throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+
             /*
             if (propertyNameExpression.Body is UnaryExpression unExpression)
             {
@@ -261,24 +221,65 @@ namespace ObjectPrinting.HomeWork
             */
         }
 
-        public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType) //!!!
+        public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
         {
             specialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
             return this;
         }
 
-        public PrintingConfig<TOwner> SpecialSerializationField<TFieldType>(Func<TFieldType, string> serialization) //!!!
+        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, object>> propertyNameExpression)
         {
-            if (pinnedPropertyName1 != null)
+            //string propertyName = null;
+            MemberInfo prop = null;
+            if (propertyNameExpression.Body is UnaryExpression unExpression)
             {
-                //specialSerializationsForFieldsProperties[pinnedPropertyName] = serialization;
-                specialSerializationsForFieldsProperties1[pinnedPropertyName1] = serialization;
-                pinnedPropertyName1 = null;
+                if (!(unExpression.Operand is MemberExpression memb))
+                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
+                //propertyName = ((MemberExpression) unExpression.Operand).Member.Name;
+                prop = memb.Member;
+            }
+
+
+
+
+            /*
+            if (!((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(propertyName)))
+                pinnedPropertyName = null;
+            else
+                pinnedPropertyName = propertyName;
+            */
+
+
+
+
+            //if (!((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(propertyName)))
+            if (!((GetFieldsAndProperties(typeof(TOwner))).Contains(prop)))
+            {
+                pinnedPropertyName = null;
+            }
+            else
+            {
+                //pinnedPropertyName = propertyName;
+                pinnedPropertyName = prop;
+            }
+
+            return this;
+        }
+
+
+        ///*******************************************************************
+
+        public PrintingConfig<TOwner> SpecialSerializationField<TFieldType>(Func<TFieldType, string> serialization)
+        {
+            if (pinnedPropertyName != null)
+            {
+                specialSerializationsForFieldsProperties[pinnedPropertyName.Name] = serialization;
+                pinnedPropertyName = null;
             }
             return this;
         }
 
-        
+
 
         public PrintingConfig<TOwner> SetCulture(Expression<Func<TOwner, CultureInfo>> inputCulture)
         {
@@ -291,54 +292,17 @@ namespace ObjectPrinting.HomeWork
 
 
 
-        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, object>> propertyNameExpression)
-        {
-            //string propertyName = null;
-
-            MemberInfo propertyMember = null;
-
-
-            if (propertyNameExpression.Body is UnaryExpression unExpression)
-            {
-                if (!(unExpression.Operand is MemberExpression propertyMemberExpression))
-                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
-                //propertyName = ((MemberExpression) unExpression.Operand).Member.Name;
-                //propertyMember = propertyMemberExpression.Member;
-                propertyMember = propertyMemberExpression.Member;
-            }
-
-
-
-
-            /*
-            if (!((GetFieldsAndProperties(typeof(TOwner))).Select(x => x.Name).Contains(propertyName)))
-            {
-                pinnedPropertyName = null;
-            }
-            else
-                pinnedPropertyName = propertyName;
-            */
-
-            if ((GetFieldsAndProperties(typeof(TOwner))).Contains(propertyMember))
-                pinnedPropertyName1 = propertyMember;
-            else
-            {
-                pinnedPropertyName1 = null;
-            }
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Trim<TStart,TLength>(Expression<Func<TOwner, Tuple<TStart, TLength>>> trimBorders) //!!!
+        public PrintingConfig<TOwner> Trim<TStart, TLength>(Expression<Func<TOwner, Tuple<TStart, TLength>>> trimBorders)
         {
             if (!(trimBorders.Body is NewExpression))
                 throw new InvalidExpressionException("Need new Expression(creating a new object)");
 
-            var start = int.Parse(((NewExpression) trimBorders.Body).Arguments[0].ToString());
+            var start = int.Parse(((NewExpression)trimBorders.Body).Arguments[0].ToString());
             var length = int.Parse(((NewExpression)trimBorders.Body).Arguments[1].ToString());
-            
+
             if (start < 0 || length < 0)
                 throw new ArgumentException();
-            
+
             resultStartIndex = start;
             resultLength = length;
             return this;
