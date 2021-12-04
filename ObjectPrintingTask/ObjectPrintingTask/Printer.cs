@@ -11,6 +11,7 @@ namespace ObjectPrintingTask
     public class Printer<TOwner>
     {
         private PrintingConfig<TOwner> config;
+        private Dictionary<Type, IEnumerable<MemberInfo>> cachedMembers = new Dictionary<Type, IEnumerable<MemberInfo>>();
         private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
         public Printer(PrintingConfig<TOwner> config)
@@ -55,7 +56,11 @@ namespace ObjectPrintingTask
             var builder = new StringBuilder();
             builder.AppendLine(type.Name);
 
-            foreach (var member in type.GetPropertiesAndFields())
+            if (!cachedMembers.ContainsKey(type))
+                cachedMembers.Add(type, type.GetPropertiesAndFields());
+            
+
+            foreach (var member in cachedMembers[type])
             {
                 if (ShouldIgnoreMember(member))
                     continue;
