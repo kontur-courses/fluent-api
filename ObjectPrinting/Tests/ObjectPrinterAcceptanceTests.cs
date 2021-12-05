@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Runtime.ConstrainedExecution;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -11,7 +10,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "Alexander Gorcia", Age = 19, Height = 1.85};
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -22,9 +21,8 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
+                .Printing(p => p.Name).TrimmedToLength(10);
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
             
@@ -32,7 +30,8 @@ namespace ObjectPrinting.Tests
             string s2 = person.PrintToString();
             
             //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            string s3 = person.PrintToString(s => s.Excluding(p => p.Age)
+                .Excluding(p => p.Id));
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
