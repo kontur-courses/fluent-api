@@ -3,6 +3,7 @@ using ObjectPrintingTask.PrintingConfiguration;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -17,6 +18,45 @@ namespace ObjectPrintingTask
         public Printer(PrintingConfig<TOwner> config)
         {
             this.config = config;
+        }
+
+        public TypePrintingConfig<TOwner, TMemberType> PrintingType<TMemberType>()
+        {
+            return new TypePrintingConfig<TOwner, TMemberType>(this, typeof(TMemberType));
+        }
+
+        public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
+        {
+            if (memberSelector == null)
+                throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
+
+            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
+
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
+        }
+
+        public Printer<TOwner> Excluding<TMemberType>(
+            Expression<Func<TOwner, TMemberType>> memberSelector)
+        {
+            config.Excluding(memberSelector);
+            return this;
+        }
+
+        public Printer<TOwner> Excluding<TMemberType>()
+        {
+            config.Excluding<TMemberType>();
+            return this;
+        }
+
+        public void AddSerializingScenario<TMemberType>(string memberFullName, Func<TMemberType, string> scenario)
+        {
+            config.AddSerializingScenario(memberFullName, scenario);
+        }
+
+        public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
+        {
+            config.AddSerializingScenario(type, scenario);
         }
 
         public string PrintToString(TOwner obj)

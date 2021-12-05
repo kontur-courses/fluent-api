@@ -12,27 +12,11 @@ namespace ObjectPrintingTask.PrintingConfiguration
         private readonly Dictionary<Type, Delegate> typeScenarios = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
 
-        public TypePrintingConfig<TOwner, TMemberType> PrintingType<TMemberType>()
-        {
-            return new TypePrintingConfig<TOwner, TMemberType>(this, typeof(TMemberType));
-        }
-
-        public MemberPrintingConfig<TOwner, TMemberType> PrintingMember<TMemberType>(
-            Expression<Func<TOwner, TMemberType>> memberSelector)
-        {
-            if (memberSelector == null)
-                throw new ArgumentException("Member selector can not be null");
-
-            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
-
-            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
-        }
-
         public PrintingConfig<TOwner> Excluding<TMemberType>(
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (memberSelector == null)
-                throw new ArgumentException("Member selector can not be null");
+                throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
 
             var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
             membersToExclude.Add(memberFullName);
@@ -54,11 +38,6 @@ namespace ObjectPrintingTask.PrintingConfiguration
         public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
         {
             typeScenarios[type] = scenario;
-        }
-
-        public Printer<TOwner> BuildConfig()
-        {
-            return new Printer<TOwner>(this);
         }
 
         public bool ShouldExcludeMemberByType(Type memberType)

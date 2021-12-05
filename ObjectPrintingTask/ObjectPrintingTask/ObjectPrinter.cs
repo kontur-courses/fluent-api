@@ -4,9 +4,9 @@ namespace ObjectPrintingTask
 {
     public class ObjectPrinter
     {
-        public static PrintingConfig<T> For<T>()
+        public static Printer<T> For<T>()
         {
-            return new PrintingConfig<T>();
+            return new Printer<T>(new PrintingConfig<T>());
         }
     }
 }

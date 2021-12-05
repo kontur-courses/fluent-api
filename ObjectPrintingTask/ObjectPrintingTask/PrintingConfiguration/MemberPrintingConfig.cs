@@ -6,21 +6,21 @@ namespace ObjectPrintingTask.PrintingConfiguration
         : IChildPrintingConfig<TOwner, TMemberType>
     {
         private readonly string memberFullName;
-        private readonly PrintingConfig<TOwner> parentConfig;
+        private readonly Printer<TOwner> printer;
 
-        public MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, string memberFullName)
+        public MemberPrintingConfig(Printer<TOwner> printer, string memberFullName)
         {
-            this.parentConfig = parentConfig;
+            this.printer = printer;
             this.memberFullName = memberFullName;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TMemberType, string> scenario)
+        public Printer<TOwner> Using(Func<TMemberType, string> scenario)
         {
             if (scenario == null)
-                throw new ArgumentException("Alternate scenario can not be null");
+                throw new ArgumentNullException("Alternate scenario can not be null");
 
-            parentConfig.AddSerializingScenario(memberFullName, scenario);
-            return parentConfig;
+            printer.AddSerializingScenario(memberFullName, scenario);
+            return printer;
         }
     }
 }

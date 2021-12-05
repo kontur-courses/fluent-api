@@ -13,7 +13,7 @@ namespace ObjectPrintingTaskTests
     public class ObjectPrinterAcceptanceTests
     {
         private readonly Person person = Person.GetTestInstance();
-        private PrintingConfig<Person> printer;
+        private Printer<Person> printer;
 
         [SetUp]
         public void SetUp()
@@ -28,7 +28,7 @@ namespace ObjectPrintingTaskTests
                 .Excluding<Guid>()
                 .Excluding(p => p.Surname);
 
-            Console.WriteLine(printer.BuildConfig().PrintToString(person));
+            Console.WriteLine(printer.PrintToString(person));
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace ObjectPrintingTaskTests
                 .PrintingType<Guid>().Using(g => g.ToString().Substring(0, 8))
                 .PrintingMember(p => p.Height).Using(height => (height / 100).ToString("#.##m"));
 
-            Console.WriteLine(printer.BuildConfig().PrintToString(person));
+            Console.WriteLine(printer.PrintToString(person));
         }
 
         [Test]
@@ -47,7 +47,7 @@ namespace ObjectPrintingTaskTests
             printer
                 .PrintingType<double>().Using(CultureInfo.GetCultureInfo("RU-ru"));
 
-            Console.WriteLine(printer.BuildConfig().PrintToString(person));
+            Console.WriteLine(printer.PrintToString(person));
         }
 
         [Test]
@@ -56,7 +56,7 @@ namespace ObjectPrintingTaskTests
             printer
                 .PrintingMember(p => p.Name).TrimmedToLength(3);
 
-            Console.WriteLine(printer.BuildConfig().PrintToString(person));
+            Console.WriteLine(printer.PrintToString(person));
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace ObjectPrintingTaskTests
                 .Excluding(p => p.Surname)
                 .PrintingType<string>().TrimmedToLength(4);
 
-            Console.WriteLine(printer.BuildConfig().PrintToString(person));
+            Console.WriteLine(printer.PrintToString(person));
         }
 
         [Test]
@@ -129,7 +129,7 @@ namespace ObjectPrintingTaskTests
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
-            string s1 = config.BuildConfig().PrintToString(person);
+            string s1 = config.PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();

@@ -13,7 +13,7 @@ namespace ObjectPrintingTaskTests
     public class ObjectPrinterTests
     {
         private readonly Person person = Person.GetTestInstance();
-        private PrintingConfig<Person> printer;
+        private Printer<Person> printer;
 
         [SetUp]
         public void SetUp()
@@ -24,14 +24,14 @@ namespace ObjectPrintingTaskTests
         [Test]
         public void ObjPrinter_ShouldPrintNullForNullValues()
         {
-            var result = printer.BuildConfig().PrintToString(null);
+            var result = printer.PrintToString(null);
             result.Should().Contain("null");
         }
 
         [Test]
         public void ObjPrinter_ShouldGetFullInfo_WhenDefaultConfig()
         {
-            var actualResult = printer.BuildConfig().PrintToString(person);
+            var actualResult = printer.PrintToString(person);
 
             var regex = new Regex(@"\s*Person\.*Parent\.*Name\.*Surname\.*Height\.*Weight\.*");
             regex.Match(actualResult).Success.Should().BeFalse();
@@ -40,8 +40,8 @@ namespace ObjectPrintingTaskTests
         [Test]
         public void ObjPrinter_ShouldBeReusable()
         {
-            printer.BuildConfig().PrintToString(person);
-            var result = printer.BuildConfig().PrintToString(person);
+            printer.PrintToString(person);
+            var result = printer.PrintToString(person);
 
             var regex = new Regex("\\s*\\[cyclic reference detected\\]");
             regex.Match(result).Success.Should().BeFalse();
@@ -51,7 +51,7 @@ namespace ObjectPrintingTaskTests
         public void ObjPrinter_ShouldDetectCyclingReference()
         {
             person.Parent = person;
-            var result = printer.BuildConfig().PrintToString(person);
+            var result = printer.PrintToString(person);
 
             var regex = new Regex("\\s*\\[cyclic reference detected\\]");
             regex.Match(result).Success.Should().BeTrue();
@@ -77,7 +77,7 @@ namespace ObjectPrintingTaskTests
         {
             var cutAmount = 3;
             printer.PrintingMember(p => p.Name).TrimmedToLength(cutAmount);
-            var actualResult = printer.BuildConfig().PrintToString(person);
+            var actualResult = printer.PrintToString(person);
 
             actualResult.Should().Contain($"Name = {person.Name.Substring(0, cutAmount)}");
         }
@@ -87,7 +87,7 @@ namespace ObjectPrintingTaskTests
         {
             var cutAmount = 3;
             printer.PrintingType<string>().TrimmedToLength(cutAmount);
-            var actualResult = printer.BuildConfig().PrintToString(person);
+            var actualResult = printer.PrintToString(person);
 
             actualResult.Should().Contain($"Name = {person.Name.Substring(0, cutAmount)}");
         }
@@ -105,11 +105,11 @@ namespace ObjectPrintingTaskTests
         {
             var person = new Person();
             var printer = ObjectPrinter.For<Person>().PrintingMember(p => p.Surname).TrimmedToLength(4);
-            Action act = () => printer.BuildConfig().PrintToString(person);
+            Action act = () => printer.PrintToString(person);
 
             act.Should()
                 .Throw<TargetInvocationException>()
-                .WithInnerException<ArgumentException>().WithMessage("Cutted string can not be null reference");
+                .WithInnerException<ArgumentNullException>();
         }
     }
 }
