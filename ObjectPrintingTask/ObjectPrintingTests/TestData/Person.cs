@@ -14,6 +14,7 @@ namespace ObjectPrintingTaskTests.TestData
         public double Height { get; set; }
         public int Age { get; set; }
         public List<Person> Family { get; set; } = new List<Person>();
+        public Teststruct structure = new Teststruct();
 
         public static Person GetTestInstance()
         {
@@ -27,5 +28,10 @@ namespace ObjectPrintingTaskTests.TestData
                 Weight = new Fixture().Create<double>() - 0.5
             };
         }       
+    }
+    public struct Teststruct
+    {
+        public int Id { get; set; } = 1;
+        public string Name { get; set; } = "A";
     }
 }

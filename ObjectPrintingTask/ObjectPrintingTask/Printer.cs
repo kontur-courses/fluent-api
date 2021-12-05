@@ -29,7 +29,7 @@ namespace ObjectPrintingTask
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (memberSelector == null)
-                throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
+                throw new ArgumentNullException(nameof(memberSelector), "Member selector can not be null");
 
             var member = ((MemberExpression)memberSelector.Body).Member;
 
@@ -79,7 +79,6 @@ namespace ObjectPrintingTask
                 return "[cyclic reference detected]";
 
             visitedObjects.Add(obj);
-
             var objToString = obj switch
             {
                 IDictionary => GetItemsFromDictionary((IDictionary)obj, nestingLevel),
@@ -119,7 +118,7 @@ namespace ObjectPrintingTask
         private bool ShouldIgnoreMember(MemberInfo member)
         {
             return config.ShouldExcludeMemberByName(member)
-                   || config.ShouldExcludeMemberByType(member.GetMemberInstanceType());
+                   || config.ShouldExcludeMemberByType(member.GetMemberInstanceType())                 ;
         }
 
         private string GetMemberValue(object obj, MemberInfo member, int nestingLevel)
@@ -146,7 +145,7 @@ namespace ObjectPrintingTask
 
             foreach (var key in dictionary.Keys)
             {
-                var keyToString = PrintToString(key, nestingLevel);
+
                 var valueToString = PrintToString(dictionary[key], nestingLevel);
                 builder
                 .Append(Environment.NewLine)
@@ -192,9 +191,15 @@ namespace ObjectPrintingTask
             {
                 return IsSimple(typeInfo.GetGenericArguments()[0]);
             }
+
+            //if (!typeInfo.IsPrimitive && typeInfo.IsValueType)
+            //    return false;
+
             return typeInfo.IsPrimitive
               || typeInfo.IsEnum
-              || typeInfo.IsValueType
+              || type.Equals(typeof(DateTime))
+              || type.Equals(typeof(TimeSpan))
+              || type.Equals(typeof(Guid))
               || type.Equals(typeof(string))
               || type.Equals(typeof(decimal));
         }

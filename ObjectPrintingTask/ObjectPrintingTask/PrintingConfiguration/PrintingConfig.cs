@@ -17,7 +17,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
             Expression<Func<TOwner, TMemberType>> memberSelector)
         {
             if (memberSelector == null)
-                throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
+                throw new ArgumentNullException(nameof(memberSelector), "Member selector can not be null");
 
             var member = ((MemberExpression)memberSelector.Body).Member;
             membersToExclude.Add(member);
