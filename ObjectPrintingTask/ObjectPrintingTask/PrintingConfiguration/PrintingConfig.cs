@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 using ObjectPrintingTask.Extensions;
 
 namespace ObjectPrintingTask.PrintingConfiguration
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Dictionary<string, Delegate> memberScenarios = new Dictionary<string, Delegate>();
-        private readonly HashSet<string> membersToExclude = new HashSet<string>();
+        private readonly Dictionary<MemberInfo, Delegate> memberScenarios = new Dictionary<MemberInfo, Delegate>();
+        private readonly HashSet<MemberInfo> membersToExclude = new HashSet<MemberInfo>();
         private readonly Dictionary<Type, Delegate> typeScenarios = new Dictionary<Type, Delegate>();
         private readonly HashSet<Type> typesToExclude = new HashSet<Type>();
 
@@ -18,8 +19,8 @@ namespace ObjectPrintingTask.PrintingConfiguration
             if (memberSelector == null)
                 throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
 
-            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
-            membersToExclude.Add(memberFullName);
+            var member = ((MemberExpression)memberSelector.Body).Member;
+            membersToExclude.Add(member);
 
             return this;
         }
@@ -30,9 +31,9 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return this;
         }
 
-        public void AddSerializingScenario<TMemberType>(string memberFullName, Func<TMemberType, string> scenario)
+        public void AddSerializingScenario<TMemberType>(MemberInfo member, Func<TMemberType, string> scenario)
         {
-            memberScenarios[memberFullName] = scenario;
+            memberScenarios[member] = scenario;
         }
 
         public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
@@ -45,14 +46,14 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return typesToExclude.Contains(memberType);
         }
 
-        public bool ShouldExcludeMemberByName(string memberFullName)
+        public bool ShouldExcludeMemberByName(MemberInfo member)
         {
-            return membersToExclude.Contains(memberFullName);
+            return membersToExclude.Contains(member);
         } 
 
-        public bool IsMemberHasAlternateScenario(string memberFullName)
+        public bool IsMemberHasAlternateScenario(MemberInfo member)
         {      
-            return memberScenarios.ContainsKey(memberFullName);
+            return memberScenarios.ContainsKey(member);
         }
 
         public bool IsMemberTypeHasAlternateScenario(Type memberType)
@@ -60,9 +61,9 @@ namespace ObjectPrintingTask.PrintingConfiguration
             return typeScenarios.ContainsKey(memberType);
         }  
 
-        public Delegate GetMemberScenario(string memberFullName)
+        public Delegate GetMemberScenario(MemberInfo member)
         {
-            return memberScenarios[memberFullName];
+            return memberScenarios[member];
         }
 
         public Delegate GetMemberTypeScenario(Type memberType)

@@ -30,10 +30,5 @@ namespace ObjectPrintingTask.Extensions
                 _ => throw new NotImplementedException()
             };
         }
-
-        public static string GetFullName(this MemberInfo member)
-        {
-            return string.Join(".", member.DeclaringType.Namespace, member.ReflectedType.Name, member.Name);
-        }
     }
 }

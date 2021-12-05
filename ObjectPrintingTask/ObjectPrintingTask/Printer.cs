@@ -31,9 +31,9 @@ namespace ObjectPrintingTask
             if (memberSelector == null)
                 throw new ArgumentNullException($"Member selector {memberSelector} can not be null");
 
-            var memberFullName = ((MemberExpression)memberSelector.Body).Member.GetFullName();
+            var member = ((MemberExpression)memberSelector.Body).Member;
 
-            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberFullName);
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, member);
         }
 
         public Printer<TOwner> Excluding<TMemberType>(
@@ -49,9 +49,9 @@ namespace ObjectPrintingTask
             return this;
         }
 
-        public void AddSerializingScenario<TMemberType>(string memberFullName, Func<TMemberType, string> scenario)
+        public void AddSerializingScenario<TMemberType>(MemberInfo member, Func<TMemberType, string> scenario)
         {
-            config.AddSerializingScenario(memberFullName, scenario);
+            config.AddSerializingScenario(member, scenario);
         }
 
         public void AddSerializingScenario<TMemberType>(Type type, Func<TMemberType, string> scenario)
@@ -116,23 +116,23 @@ namespace ObjectPrintingTask
             return builder.ToString();
         }
 
-        private bool ShouldIgnoreMember(MemberInfo memberInfo)
+        private bool ShouldIgnoreMember(MemberInfo member)
         {
-            return config.ShouldExcludeMemberByName(memberInfo.GetFullName())
-                   || config.ShouldExcludeMemberByType(memberInfo.GetMemberInstanceType());
+            return config.ShouldExcludeMemberByName(member)
+                   || config.ShouldExcludeMemberByType(member.GetMemberInstanceType());
         }
 
         private string GetMemberValue(object obj, MemberInfo member, int nestingLevel)
         {
-            var hasAlternateScenario = config.IsMemberHasAlternateScenario(member.GetFullName())
+            var hasAlternateScenario = config.IsMemberHasAlternateScenario(member)
                 || config.IsMemberTypeHasAlternateScenario(member.GetMemberInstanceType());
 
             Delegate scenario = null;
             if (config.IsMemberTypeHasAlternateScenario(member.GetMemberInstanceType()))
                 scenario = config.GetMemberTypeScenario(member.GetMemberInstanceType());
 
-            if (config.IsMemberHasAlternateScenario(member.GetFullName()))
-                scenario = config.GetMemberScenario(member.GetFullName());
+            if (config.IsMemberHasAlternateScenario(member))
+                scenario = config.GetMemberScenario(member);
 
             return hasAlternateScenario
                 ? (string)scenario.DynamicInvoke(member.GetValue(obj))

@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrintingTask.PrintingConfiguration
 {
     public class MemberPrintingConfig<TOwner, TMemberType>
         : IChildPrintingConfig<TOwner, TMemberType>
     {
-        private readonly string memberFullName;
+        private readonly MemberInfo member;
         private readonly Printer<TOwner> printer;
 
-        public MemberPrintingConfig(Printer<TOwner> printer, string memberFullName)
+        public MemberPrintingConfig(Printer<TOwner> printer, MemberInfo member)
         {
             this.printer = printer;
-            this.memberFullName = memberFullName;
+            this.member = member;
         }
 
         public Printer<TOwner> Using(Func<TMemberType, string> scenario)
@@ -19,7 +20,7 @@ namespace ObjectPrintingTask.PrintingConfiguration
             if (scenario == null)
                 throw new ArgumentNullException("Alternate scenario can not be null");
 
-            printer.AddSerializingScenario(memberFullName, scenario);
+            printer.AddSerializingScenario(member, scenario);
             return printer;
         }
     }
