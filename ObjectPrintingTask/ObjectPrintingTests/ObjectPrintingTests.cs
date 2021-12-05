@@ -101,15 +101,12 @@ namespace ObjectPrintingTaskTests
         }
 
         [Test]
-        public void ObjPrinter_SholdThrowWhenCutString_StringIsNull()
+        public void ObjPrinter_SholdPrintNull_WhenCuttedStringIsNull()
         {
             var person = new Person();
             var printer = ObjectPrinter.For<Person>().PrintingMember(p => p.Surname).TrimmedToLength(4);
-            Action act = () => printer.PrintToString(person);
-
-            act.Should()
-                .Throw<TargetInvocationException>()
-                .WithInnerException<ArgumentNullException>();
+            var result = printer.PrintToString(person);
+            result.Should().Contain("Surname = null");
         }
     }
 }

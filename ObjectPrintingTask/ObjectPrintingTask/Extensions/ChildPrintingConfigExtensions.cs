@@ -26,7 +26,7 @@ namespace ObjectPrintingTask.Extensions
             return config.Using(str =>
             {
                 if (str == null)
-                    throw new ArgumentNullException("Cutted string can not be null reference");
+                    return "null";
 
                 return str.Substring(0, Math.Min(str.Length, maxLen));
             });
