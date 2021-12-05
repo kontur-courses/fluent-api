@@ -1,12 +1,10 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.HomeWork;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
-using ObjectPrinting.HomeWork;
 
 namespace ObjectPrintingTests.Tests
 {
@@ -68,8 +66,8 @@ namespace ObjectPrintingTests.Tests
         public void SerializationExcludeManyFieldsWithIncorrectExpression()
         {
             //var person = new Person { Name = "Gregory", Age = 49 };
-            Action action =() => ObjectPrinter.For<Person>()
-                .ExcludedProperty(pr => pr.Name + new[] { 3, 4 }).ExcludedProperty(pr => pr.Age + 1).ExcludedProperty(pr => pr.Id);
+            Action action = () => ObjectPrinter.For<Person>()
+                 .ExcludedProperty(pr => pr.Name + new[] { 3, 4 }).ExcludedProperty(pr => pr.Age + 1).ExcludedProperty(pr => pr.Id);
             action.Should().Throw<InvalidExpressionException>();
         }
 
@@ -105,25 +103,23 @@ namespace ObjectPrintingTests.Tests
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
             var printer = ObjectPrinter.For<Person>()
-                .PinProperty(pr => pr.Height).SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
-                .PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
-                .PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
+                .SpecialSerializationField(pr => pr.Name, x => $"{x} - {x} = 0")
+                .SpecialSerializationField(pr => pr.Height, x => (100 - x).ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationField(pr => pr.Age, x => (-1.5).ToString(CultureInfo.InvariantCulture))
+                .SpecialSerializationField(pr => pr.Id, x => "1");
 
             var result = printer.PrintToString(person);
-            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
+            result.Should().Be("Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = 1\r\n\tName = Alex - Alex = 0\r\n\tHeight = 83\r\n\tAge = -1.5\r\n");
         }
+
 
         [Test]
         public void SerializationWithIncorrectExpression()
         {
             var person = new Person { Name = "Alex", Height = 17, Age = 19 };
 
-            Action action  = () =>  ObjectPrinter.For<Person>()
-                .PinProperty(pr => pr.Height + 1).SpecialSerializationField<double>(x => (100 - x).ToString(CultureInfo.InvariantCulture))
-
-                .PinProperty(pr => pr.Age).SpecialSerializationField<int>(x => (-1.5).ToString(CultureInfo.InvariantCulture))
-
-                .PinProperty(pr => pr.Id).SpecialSerializationField<Guid>(x => "1");
+            Action action = () => ObjectPrinter.For<Person>()
+                .SpecialSerializationField(pr => pr.Height + 1, x => (100 - x).ToString(CultureInfo.InvariantCulture));
 
             action.Should().Throw<InvalidExpressionException>();
         }
@@ -138,14 +134,15 @@ namespace ObjectPrintingTests.Tests
             Action action = () => printer.PrintToString(person);
             action.Should().NotThrow<StackOverflowException>();
         }
-        
+
 
 
         [Test]
         public void SerializationWithSpecialCulture()
         {
             var person = new Person { Name = "Scarlett", Height = 180.9, Age = 17 };
-            var printer = ObjectPrinter.For<Person>().SetCulture(p => new CultureInfo("ru-RU"));
+            //var printer = ObjectPrinter.For<Person>().SetCulture(p => new CultureInfo("ru-RU"));
+            var printer = ObjectPrinter.For<Person>().SetCulture(new CultureInfo("ru-RU"));
             var result = printer.PrintToString(person);
             result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
         }
@@ -154,9 +151,7 @@ namespace ObjectPrintingTests.Tests
         public void SerializationWithTrim()
         {
             var person = new Person { Name = "Alex", Height = 170, Age = 14 };
-            var printer = ObjectPrinter.For<Person>().Trim(x => new Tuple<int,int>(10, 80));
-
-
+            var printer = ObjectPrinter.For<Person>().Trim(x => new Tuple<int, int>(10, 80));
             var result = printer.PrintToString(person);
             result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tN");
         }
