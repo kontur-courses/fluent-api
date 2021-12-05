@@ -21,7 +21,7 @@ namespace ObjectPrintingTask.Extensions
             this IChildPrintingConfig<TOwner, string> config, int maxLen)
         {
             if (maxLen <= 0)
-                throw new ArgumentOutOfRangeException($"Length {0} should be greater then 0");
+                throw new ArgumentOutOfRangeException(nameof(maxLen), "Cut amount should be greater then 0");
 
             return config.Using(str =>
             {

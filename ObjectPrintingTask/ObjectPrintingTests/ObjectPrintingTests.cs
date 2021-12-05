@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using FluentAssertions;
@@ -97,7 +98,7 @@ namespace ObjectPrintingTaskTests
         {
             Action act = () => printer.PrintingMember(p => p.Name).TrimmedToLength(-1);
 
-            act.Should().Throw<ArgumentException>();
+            act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
         [Test]
@@ -107,6 +108,42 @@ namespace ObjectPrintingTaskTests
             var printer = ObjectPrinter.For<Person>().PrintingMember(p => p.Surname).TrimmedToLength(4);
             var result = printer.PrintToString(person);
             result.Should().Contain("Surname = null");
+        }
+
+        [TestCase(-1)]
+        [TestCase(42)]
+        public void ObjPrinter_ShouldPrintIntegers(int number)
+        {
+            var result = number.PrintToString();
+
+            result.Should().Equals($"{number}");
+        }
+
+        [TestCase(42.5)]
+        [TestCase(45.0)]
+        public void ObjPrinter_ShouldPrintDoubles(double number)
+        {
+            var result = number.PrintToString();
+
+            result.Should().Equals($"{number}");
+        }
+
+        [Test]
+        public void ObjPrinter_ShouldUseCultureInfo_ForDouble()
+        {
+            var number = 42.5;
+            var result = number.PrintToString(p => p.PrintingType<double>().Using(CultureInfo.GetCultureInfo("RU-ru")));
+
+            result.Should().Equals("42,5");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ObjPrinterShouldPrintBooleans(bool value)
+        {
+            var result = value.PrintToString();
+
+            result.Should().Equals($"{value}");
         }
     }
 }
