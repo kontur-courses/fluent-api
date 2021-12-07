@@ -61,11 +61,11 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             var sb = new StringBuilder();
-            PrintToString(obj, 0, new Dictionary<Type, Dictionary<object, int>>(), sb);
+            PrintToString(obj, "", new Dictionary<Type, Dictionary<object, int>>(), sb);
             return sb.ToString();
         }
 
-        private void PrintToString(object obj, int nestingLevel, 
+        private void PrintToString(object obj, string indentation, 
             Dictionary<Type, Dictionary<object, int>> printedObjects, StringBuilder currentPrint)
         {
             if (obj is null)
@@ -86,21 +86,21 @@ namespace ObjectPrinting
             }
             if (obj is IEnumerable collection)
             {
-                PrintCollection(collection, nestingLevel, printedObjects, currentPrint);
+                PrintCollection(collection, indentation, printedObjects, currentPrint);
                 return;
             }
             if (GetAllMembers(type, obj).Any())
             {
-                PrintClassWithFields(obj, nestingLevel, printedObjects, currentPrint);
+                PrintClassWithFields(obj, indentation, printedObjects, currentPrint);
                 return;
             }
             currentPrint.Append(obj);
         }
 
-        private void PrintCollection(IEnumerable collection, int nestingLevel,
+        private void PrintCollection(IEnumerable collection, string indentation,
             Dictionary<Type, Dictionary<object, int>> printedObjects, StringBuilder currentPrint)
         {
-            var indentation = new string('\t', nestingLevel + 1);
+            indentation += '\t';
             currentPrint.AppendLine("{");
             var first = true;
             foreach (var element in collection)
@@ -108,31 +108,29 @@ namespace ObjectPrinting
                 if (first) first = false;
                 else currentPrint.AppendLine(",");
                 currentPrint.Append(indentation);
-                PrintToString(element, nestingLevel + 1, printedObjects, currentPrint);
+                PrintToString(element, indentation, printedObjects, currentPrint);
             }
             currentPrint.Append("}");
         }
 
-        private void PrintClassWithFields(object obj, int nestingLevel, 
+        private void PrintClassWithFields(object obj, string indentation, 
             Dictionary<Type, Dictionary<object, int>> printedObjects, StringBuilder currentPrint)
         {
-            var indentation = new string('\t', nestingLevel + 1);
+            indentation += '\t';
             var type = obj.GetType();
+            currentPrint.Append(type.Name);
             if (!obj.GetType().IsValueType)
             {
                 if (!printedObjects.ContainsKey(type))
                     printedObjects[type] = new Dictionary<object, int>();
                 if (printedObjects[type].ContainsKey(obj))
                 {
-                    currentPrint.Append(type.Name).Append(" ").Append(printedObjects[type][obj].ToString());
+                    currentPrint.Append(" ").Append(printedObjects[type][obj].ToString());
                     return;
                 }
                 printedObjects[type][obj] = printedObjects[type].Count;
-                currentPrint.Append(type.Name).Append(" ").AppendLine(printedObjects[type][obj].ToString());
+                currentPrint.Append(" ").AppendLine(printedObjects[type][obj].ToString());
             }
-            else
-                currentPrint.AppendLine(type.Name);
-
             var first = true;
             foreach (var (member, value) in GetAllMembers(type, obj))
             {
@@ -142,7 +140,7 @@ namespace ObjectPrinting
                 if (MemberCustomPrinting.ContainsKey(member))
                     currentPrint.Append(MemberCustomPrinting[member](value));
                 else 
-                    PrintToString(value, nestingLevel + 1, printedObjects, currentPrint);
+                    PrintToString(value, indentation, printedObjects, currentPrint);
             }
         }
 

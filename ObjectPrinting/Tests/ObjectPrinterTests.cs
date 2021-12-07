@@ -104,7 +104,8 @@ namespace ObjectPrinting.Tests
             var g1 = new GraphObject() { Id = 0 };
             var g2 = new GraphObject() { Id = 2, Child = g1};
             g1.Child = g2;
-            result = g1.PrintToString();
+            Action action = () => result = g1.PrintToString();
+            action.Should().NotThrow<StackOverflowException>();
         }
 
         [Test]
@@ -112,7 +113,6 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.85, Numbers = new []{12, 23, 34}};
             result = person.PrintToString();
-            //result.Should().MatchRegex("\n\t*12,\n\t*23,\n\t*34"); регулярные вырожения слишком сложно
         }
         
         [Test]
