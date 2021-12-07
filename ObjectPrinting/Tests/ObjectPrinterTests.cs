@@ -140,5 +140,12 @@ namespace ObjectPrinting.Tests
             };
             result = dict.PrintToString();
         }
+
+        [Test]
+        public void CanPrintStruct()
+        {
+            var so = new StructObject() { Id = 2, Value = "Hello" };
+            result = so.PrintToString();
+        }
     }
 }

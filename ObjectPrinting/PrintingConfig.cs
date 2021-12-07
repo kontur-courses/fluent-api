@@ -12,20 +12,36 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
-        internal readonly Dictionary<Type, Func<object, string>> TypeCustomPrintings =
+        protected readonly Dictionary<Type, Func<object, string>> TypeCustomPrintings =
             new Dictionary<Type, Func<object, string>>();
-        internal readonly Dictionary<MemberInfo, Func<object, string>> MemberCustomPrinting =
+        protected readonly Dictionary<MemberInfo, Func<object, string>> MemberCustomPrinting =
             new Dictionary<MemberInfo, Func<object, string>>();
         
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public PrintingConfig(){}
+        
+        protected PrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            excludedTypes = printingConfig.excludedTypes;
+            excludedMembers = printingConfig.excludedMembers;
+            TypeCustomPrintings = printingConfig.TypeCustomPrintings;
+            MemberCustomPrinting = printingConfig.MemberCustomPrinting;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        {
+            return new MemberPrintingConfig<TOwner, TPropType>(this);
+        }
+        
+        public PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            excludedTypes.Add(typeof(TPropType));
+            return this;
+        }
+
+        public IMemberPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var member  = GetMemberInfo(memberSelector);
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, member);
+            return new MemberPrintingConfig<TOwner, TPropType>(this, member);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -41,11 +57,6 @@ namespace ObjectPrinting
             return expression.Member;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>()
-        {
-            excludedTypes.Add(typeof(TPropType));
-            return this;
-        }
 
         public string PrintToString(TOwner obj)
         {
@@ -63,17 +74,22 @@ namespace ObjectPrinting
                 return;
             }
             var type = obj.GetType();
+            if (obj is string)
+            {
+                currentPrint.Append(obj);
+                return;
+            }
             if (TypeCustomPrintings.ContainsKey(type))
             {
                 currentPrint.Append(TypeCustomPrintings[type](obj));
                 return;
             }
-            if (!(obj is string) && obj is IEnumerable collection)
+            if (obj is IEnumerable collection)
             {
                 PrintCollection(collection, nestingLevel, printedObjects, currentPrint);
                 return;
             }
-            if (!(obj is string) && GetAllMembers(type, obj).Any())
+            if (GetAllMembers(type, obj).Any())
             {
                 PrintClassWithFields(obj, nestingLevel, printedObjects, currentPrint);
                 return;
