@@ -4,6 +4,7 @@ using ObjectPrinting.HomeWork;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Globalization;
 
 namespace ObjectPrintingTests.Tests
@@ -85,6 +86,26 @@ namespace ObjectPrintingTests.Tests
         }
 
         [Test]
+        public void TrimType()
+        {
+            var person = new Person { Name = "John", Age = 21, Height = 175.5, Id2 = 7};
+            var printer = ObjectPrinter.For<Person>()
+                .TrimType<string>(new Borders(1,2));
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 7\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = oh\r\n\tHeight = 175.5\r\n\tAge = 21\r\n");
+        }
+
+        [Test]
+        public void TrimMember()
+        {
+            var person = new Person { Name = "John", Age = 21, Height = 175.5};
+            var printer = ObjectPrinter.For<Person>()
+                .TrimProperty(per => per.Age, new Borders(1, 1));
+            var result = printer.PrintToString(person);
+            result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = John\r\n\tHeight = 175.5\r\n\tAge = 1\r\n");
+        }
+
+        [Test]
         public void SerializationWithTypeModification()
         {
             var person = new Person { Name = "Nick", Height = 190.8, Age = 26 };
@@ -116,8 +137,6 @@ namespace ObjectPrintingTests.Tests
         [Test]
         public void SerializationWithIncorrectExpression()
         {
-            var person = new Person { Name = "Alex", Height = 17, Age = 19 };
-
             Action action = () => ObjectPrinter.For<Person>()
                 .SpecialSerializationField(pr => pr.Height + 1, x => (100 - x).ToString(CultureInfo.InvariantCulture));
 
@@ -141,19 +160,9 @@ namespace ObjectPrintingTests.Tests
         public void SerializationWithSpecialCulture()
         {
             var person = new Person { Name = "Scarlett", Height = 180.9, Age = 17 };
-            //var printer = ObjectPrinter.For<Person>().SetCulture(p => new CultureInfo("ru-RU"));
             var printer = ObjectPrinter.For<Person>().SetCulture(new CultureInfo("ru-RU"));
             var result = printer.PrintToString(person);
             result.Should().Be($"Person\r\n\tId2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Scarlett\r\n\tHeight = 180,9\r\n\tAge = 17\r\n");
-        }
-
-        [Test]
-        public void SerializationWithTrim()
-        {
-            var person = new Person { Name = "Alex", Height = 170, Age = 14 };
-            var printer = ObjectPrinter.For<Person>().Trim(x => new Tuple<int, int>(10, 80));
-            var result = printer.PrintToString(person);
-            result.Should().Be($"d2 = 0\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tN");
         }
 
         [Test]
@@ -165,9 +174,32 @@ namespace ObjectPrintingTests.Tests
                 1, 2, 3, 4
             };
             var result = printer.PrintToString(dataList);
-            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItem =\r\n\t\t" +
-                               "Index 0 = 1\r\n\t\tIndex 1 = 2\r\n\t\tIndex 2 = 3\r\n\t\t" +
-                               "Index 3 = 4\r\n");
+            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItems =\r\n\t\t" +
+                               "1\r\n\t\t2\r\n\t\t3\r\n\t\t" + "4\r\n");
+        }
+
+        [Test]
+        public void SerializationOfComplexList()
+        {
+            var printer = ObjectPrinter.For<List<Tuple<int, Point>>>();
+            var dataList = new List<Tuple<int, Point>>
+            {
+                Tuple.Create(0, new Point(0,1)),
+                Tuple.Create(1, new Point(1,2)),
+                Tuple.Create(2, new Point(2,3)),
+                Tuple.Create(3, new Point(3,4)),
+            };
+            var result = printer.PrintToString(dataList);
+            result.Should().Be("List`1\r\n\tCapacity = 4\r\n\tCount = 4\r\n\tItems =\r\n\t\t" +
+                               "Tuple`2\r\n\t\t\tItem1 = 0\r\n\t\t\tItem2 = Point\r\n\t\t\t\t" + 
+                               "IsEmpty = False\r\n\t\t\t\tX = 0\r\n\t\t\t\tY = 1\r\n\t\t" +
+                               "Tuple`2\r\n\t\t\tItem1 = 1\r\n\t\t\tItem2 = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\tX = 1\r\n\t\t\t\tY = 2\r\n\t\t" +
+                               "Tuple`2\r\n\t\t\tItem1 = 2\r\n\t\t\tItem2 = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\tX = 2\r\n\t\t\t\tY = 3\r\n\t\t" +
+                               "Tuple`2\r\n\t\t\tItem1 = 3\r\n\t\t\tItem2 = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\tX = 3\r\n\t\t\t\tY = 4\r\n");
+
         }
 
         [Test]
@@ -192,14 +224,58 @@ namespace ObjectPrintingTests.Tests
                 {"Лондон", 47}
             };
             var result = printer.PrintToString(data);
+
             result.Should().Be("Dictionary`2\r\n\t" + "Comparer = " +
                                "GenericEqualityComparer`1\r\n\t" +
                                "Count = 3\r\n\t" + "Keys = KeyCollection\r\n\t\t" +
                                "Count = 3\r\n\t" + "Values = ValueCollection\r\n\t\t" +
-                               "Count = 3\r\n\t" + "Item =\r\n\t\t" +
-                               "Index 0 = [Париж, -53]\r\n\t\t" +
-                               "Index 1 = [Берлин, 1237]\r\n\t\t" +
-                               "Index 2 = [Лондон, 47]\r\n");
+                               "Count = 3\r\n\t" + "Items =\r\n\t\t" +
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Париж\r\n\t\t\t" +
+                               "Value = -53\r\n\t\t" +
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Берлин\r\n\t\t\t" +
+                               "Value = 1237\r\n\t\t" +
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Лондон\r\n\t\t\t" +
+                               "Value = 47\r\n");
+        }
+
+        [Test]
+        public void SerializationOfComplexDictionary()
+        {
+            var printer = ObjectPrinter.For<Dictionary<string, Point>>();
+            var data = new Dictionary<string, Point>
+            {
+                {"Точка", new Point(-53, 53)},
+                {"Точка2", new Point(-1237, 1237)},
+                {"Точка3", new Point(-47, 47)}
+            };
+            var result = printer.PrintToString(data);
+            result.Should().Be("Dictionary`2\r\n\t" + "Comparer = " +
+                               "GenericEqualityComparer`1\r\n\t" +
+                               "Count = 3\r\n\t" + "Keys = KeyCollection\r\n\t\t" +
+                               "Count = 3\r\n\t" + "Values = ValueCollection\r\n\t\t" +
+                               "Count = 3\r\n\t" + "Items =\r\n\t\t" +
+
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Точка\r\n\t\t\t" +
+                               "Value = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\t" + 
+                               "X = -53\r\n\t\t\t\t" + 
+                               "Y = 53\r\n\t\t" +
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Точка2\r\n\t\t\t" +
+                               "Value = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\t" +
+                               "X = -1237\r\n\t\t\t\t" +
+                               "Y = 1237\r\n\t\t" +
+                               "KeyValuePair`2\r\n\t\t\t" +
+                               "Key = Точка3\r\n\t\t\t" +
+                               "Value = Point\r\n\t\t\t\t" +
+                               "IsEmpty = False\r\n\t\t\t\t" +
+                               "X = -47\r\n\t\t\t\t" +
+                               "Y = 47\r\n");
         }
     }
 }

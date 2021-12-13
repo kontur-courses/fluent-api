@@ -15,8 +15,7 @@ namespace ObjectPrinting.HomeWork
         private const string NullToString = "null";
         private const string ParentObj = "this (parentObj)";
         private const string MemberExpressionMessage = "Need member expression here(which giving access to the field)";
-        private const string NewExpressionMessage = "Need new Expression here(creating a new object)";
-        private const string Index = "Index ";
+        private const string Items = "Items";
         private const BindingFlags BindFlags = BindingFlags.Public | BindingFlags.Instance;
 
 
@@ -33,9 +32,13 @@ namespace ObjectPrinting.HomeWork
             new Dictionary<Type, Delegate>();
         private readonly Dictionary<MemberInfo, Delegate> specialSerializationsForFieldsProperties =
             new Dictionary<MemberInfo, Delegate>();
+
+        private readonly Dictionary<Type, Borders> trimTypes =
+            new Dictionary<Type, Borders>();
+        private readonly Dictionary<MemberInfo, Borders> trimMembers = 
+            new Dictionary<MemberInfo, Borders>();
+
         private CultureInfo culture = CultureInfo.InvariantCulture;
-        private int resultStartIndex;
-        private int resultLength = int.MaxValue;
 
 
         public string PrintToString(TOwner obj)
@@ -48,10 +51,10 @@ namespace ObjectPrinting.HomeWork
             if (serializedMembers.Contains(obj))
                 return ReturnWhenCyclic(nestingLevel);
 
-            var sb = new StringBuilder();
             if (obj == null)
                 return NullToString + Environment.NewLine;
 
+            var sb = new StringBuilder();
             var objType = obj.GetType();
 
 
@@ -67,7 +70,7 @@ namespace ObjectPrinting.HomeWork
             {
                 PrintMemberInformation(memberInfo, obj, sb, nestingLevel, identation);
             }
-            return (nestingLevel != 0) ? sb.ToString() : GetTrimString(sb);
+            return sb.ToString();
         }
 
         private Delegate MakeSerializeDelegate(MemberInfo memberSerialization)
@@ -98,7 +101,7 @@ namespace ObjectPrinting.HomeWork
                 var indexParameters = propertyInfo.GetIndexParameters();
                 if (indexParameters.Length != 0)
                 {
-                    PrintIndexes(obj, sb, identation, propertyInfo.Name);
+                    PrintIndexes(obj, sb, identation, Items, nestingLevel);
                     return;
                 }
                 memberSerialization =
@@ -116,11 +119,28 @@ namespace ObjectPrinting.HomeWork
             var serializeDelegate = MakeSerializeDelegate(memberInfo);
             serializedMembers.Add(obj);
 
+            string specialSerialize;
+
             if (serializeDelegate != null)
-                sb.Append(FormSerializeDelegateString(identation, nestingLevel, memberSerialization,
+                specialSerialize = (FormSerializeDelegateString(identation, nestingLevel, memberSerialization,
                     serializeDelegate));
             else
-                sb.Append(FormSerializeString(identation, nestingLevel, memberSerialization));
+                specialSerialize = (FormSerializeString(identation, nestingLevel, memberSerialization));
+
+
+            if (trimMembers.TryGetValue(memberInfo, out var memberBorders))
+                specialSerialize = MakeTrim(identation,memberBorders, memberSerialization);
+            if (trimTypes.TryGetValue(memberSerialization.MemberType, out var typeBorders))
+                specialSerialize = MakeTrim(identation, typeBorders, memberSerialization);
+
+
+            sb.Append(specialSerialize);
+        }
+
+        private string MakeTrim(string identation, Borders typeBorders, SerializationMemberInfo serializationMemberInfo)
+        {
+            return identation + serializationMemberInfo.MemberName + " = " + 
+                   serializationMemberInfo.MemberValue.ToString().Substring(typeBorders.Start, typeBorders.Length) + "\r\n";
         }
 
         private string FormSerializeDelegateString(string identation, int nestingLevel,
@@ -146,16 +166,10 @@ namespace ObjectPrinting.HomeWork
             return fieldsAndProperties;
         }
 
-        private string GetTrimString(StringBuilder resultString)
-        {
-            return resultString.ToString()
-                [resultStartIndex..Math.Min(resultLength, resultString.Length)];
-        }
-
         private string ReturnWhenCyclic(int nestingLevel)
         {
             return (nestingLevel != 0 ? ParentObj
-                : GetTrimString(new StringBuilder(ParentObj))) + "\r\n";
+                : (new StringBuilder(ParentObj)).ToString()) + "\r\n";
         }
 
         private string ReturnWhenFinal(object obj)
@@ -165,19 +179,16 @@ namespace ObjectPrinting.HomeWork
             return obj + Environment.NewLine;
         }
 
-        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name)
+        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
         {
             if (!(obj is ICollection collection))
                 sb.Append(name);
             else
             {
-                var counter = 0;
                 sb.Append(identation + name + " =\r\n");
                 foreach (var parameter in collection)
                 {
-                    var value = parameter.ToString();
-                    sb.Append(identation + "\t" + Index + counter + " = " + value + "\r\n");
-                    counter++;
+                    sb.Append(identation + '\t' + PrintToString(parameter, nestingLevel + 2));
                 }
             }
         }
@@ -200,38 +211,31 @@ namespace ObjectPrinting.HomeWork
             throw new InvalidExpressionException(MemberExpressionMessage);
         }
 
+
+
+        public PrintingConfig<TOwner> TrimType<TTrimType>(Borders borders)
+        {
+            trimTypes[typeof(TTrimType)] = borders;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> TrimProperty<TTarget>(Expression<Func<TOwner, TTarget>> propertyExpression,
+           Borders borders)
+        {
+            if (propertyExpression.Body is MemberExpression memberExpression)
+            {
+
+                trimMembers[memberExpression.Member] = borders;
+                return this;
+            }
+            throw new InvalidExpressionException(MemberExpressionMessage);
+        }
+
         public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
         {
             specialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
             return this;
         }
-
-        /*
-        public PrintingConfig<TOwner> PinProperty(Expression<Func<TOwner, object>> propertyNameExpression)
-        {
-            MemberInfo prop = null;
-            if (propertyNameExpression.Body is UnaryExpression unExpression)
-            {
-                if (!(unExpression.Operand is MemberExpression memb))
-                    throw new InvalidExpressionException("Need member expression(which giving access to the field)");
-                prop = memb.Member;
-            }
-
-
-
-
-            if (!((GetFieldsAndProperties(typeof(TOwner))).Contains(prop)))
-            {
-                pinnedPropertyName = null;
-            }
-            else
-            {
-                pinnedPropertyName = prop;
-            }
-
-            return this;
-        }
-        */
 
         public PrintingConfig<TOwner> SpecialSerializationField<TFieldType>(Expression<Func<TOwner, TFieldType>> memberAccess, Func<TFieldType, string> serialization)
         {
@@ -246,31 +250,7 @@ namespace ObjectPrinting.HomeWork
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
-            /*
-            if (!(inputCulture.Body is NewExpression))
-                throw new InvalidExpressionException(NewExpressionMessage);
-            */
-            //var cultureName = ((NewExpression)inputCulture.Body).Arguments.First().ToString();
-            //culture = new CultureInfo(cultureName[1..^1]);
             culture = cultureInfo;
-            return this;
-        }
-
-        ///*******************************************************************
-
-        public PrintingConfig<TOwner> Trim<TStart, TLength>(Expression<Func<TOwner, Tuple<TStart, TLength>>> trimBorders)
-        {
-            if (!(trimBorders.Body is NewExpression))
-                throw new InvalidExpressionException(NewExpressionMessage);
-
-            var start = int.Parse(((NewExpression)trimBorders.Body).Arguments[0].ToString());
-            var length = int.Parse(((NewExpression)trimBorders.Body).Arguments[1].ToString());
-
-            if (start < 0 || length < 0)
-                throw new ArgumentException();
-
-            resultStartIndex = start;
-            resultLength = length;
             return this;
         }
     }
