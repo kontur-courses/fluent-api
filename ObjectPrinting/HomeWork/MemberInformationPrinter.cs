@@ -26,13 +26,13 @@ namespace ObjectPrinting.HomeWork
                     new SerializationMemberInfo(fieldInfo, obj);
             }
 
-            if (memberSerialization == null || config.excludedTypes.Contains(memberSerialization.MemberType) 
-                                            || config.excludedFieldsProperties.Contains(memberInfo))
+            if (memberSerialization == null || config.ExcludedTypes.Contains(memberSerialization.MemberType) 
+                                            || config.ExcludedFieldsProperties.Contains(memberInfo))
                 return;
 
             var serializeDelegate = MakeSerializeDelegate(memberInfo,
-                config.specialSerializationsForTypes, config.specialSerializationsForFieldsProperties);
-            config.serializedMembers.Add(obj);
+                config.SpecialSerializationsForTypes, config.SpecialSerializationsForFieldsProperties);
+            config.SerializedMembers.Add(obj);
 
             string specialSerialize;
 
@@ -43,9 +43,9 @@ namespace ObjectPrinting.HomeWork
                 specialSerialize = (config.FormSerializeString(identation, nestingLevel, memberSerialization));
 
 
-            if (config.trimMembers.TryGetValue(memberInfo, out var memberBorders))
+            if (config.TrimMembers.TryGetValue(memberInfo, out var memberBorders))
                 specialSerialize = TrimMaker.MakeTrim(identation, memberBorders, memberSerialization);
-            if (config.trimTypes.TryGetValue(memberSerialization.MemberType, out var typeBorders))
+            if (config.TrimTypes.TryGetValue(memberSerialization.MemberType, out var typeBorders))
                 specialSerialize = TrimMaker.MakeTrim(identation, typeBorders, memberSerialization);
 
 

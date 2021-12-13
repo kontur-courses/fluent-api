@@ -39,7 +39,6 @@ namespace ObjectPrintingTests.Tests
         public void SerializationExcludeInt()
         {
             var person = new Person { Name = "Peter", Age = 38 };
-            //var printer = ObjectPrinter.For<Person>().ExcludedType(x => typeof(int));
             var printer = ObjectPrinter.For<Person>().ExcludedType<int>();
             var result = printer.PrintToString(person);
             result.Should().Be($"Person\r\n\tFather = null\r\n\tId = {ZeroGuid}\r\n\tName = Peter\r\n\tHeight = 0\r\n");
@@ -66,7 +65,6 @@ namespace ObjectPrintingTests.Tests
         [Test]
         public void SerializationExcludeManyFieldsWithIncorrectExpression()
         {
-            //var person = new Person { Name = "Gregory", Age = 49 };
             Action action = () => ObjectPrinter.For<Person>()
                  .ExcludedProperty(pr => pr.Name + new[] { 3, 4 }).ExcludedProperty(pr => pr.Age + 1).ExcludedProperty(pr => pr.Id);
             action.Should().Throw<InvalidExpressionException>();

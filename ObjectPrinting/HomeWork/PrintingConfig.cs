@@ -7,8 +7,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using static ObjectPrinting.HomeWork.SerializationDelegateMaker;
-using static ObjectPrinting.HomeWork.TrimMaker;
 
 namespace ObjectPrinting.HomeWork
 {
@@ -27,17 +25,17 @@ namespace ObjectPrinting.HomeWork
             typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(Guid)
         };
 
-        internal readonly HashSet<object> serializedMembers = new HashSet<object>();
-        internal readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        internal readonly HashSet<MemberInfo> excludedFieldsProperties = new HashSet<MemberInfo>();
-        internal readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
+        internal readonly HashSet<object> SerializedMembers = new HashSet<object>();
+        internal readonly HashSet<Type> ExcludedTypes = new HashSet<Type>();
+        internal readonly HashSet<MemberInfo> ExcludedFieldsProperties = new HashSet<MemberInfo>();
+        internal readonly Dictionary<Type, Delegate> SpecialSerializationsForTypes =
             new Dictionary<Type, Delegate>();
-        internal readonly Dictionary<MemberInfo, Delegate> specialSerializationsForFieldsProperties =
+        internal readonly Dictionary<MemberInfo, Delegate> SpecialSerializationsForFieldsProperties =
             new Dictionary<MemberInfo, Delegate>();
 
-        internal readonly Dictionary<Type, Borders> trimTypes =
+        internal readonly Dictionary<Type, Borders> TrimTypes =
             new Dictionary<Type, Borders>();
-        internal readonly Dictionary<MemberInfo, Borders> trimMembers = 
+        internal readonly Dictionary<MemberInfo, Borders> TrimMembers = 
             new Dictionary<MemberInfo, Borders>();
 
         private CultureInfo culture = CultureInfo.InvariantCulture;
@@ -50,7 +48,7 @@ namespace ObjectPrinting.HomeWork
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (serializedMembers.Contains(obj))
+            if (SerializedMembers.Contains(obj))
                 return ReturnWhenCyclic(nestingLevel);
 
             if (obj == null)
@@ -60,7 +58,7 @@ namespace ObjectPrinting.HomeWork
             var objType = obj.GetType();
 
 
-            if ((finalTypes.Contains(objType) || objType.IsPrimitive) && !excludedTypes.Contains(objType))
+            if ((finalTypes.Contains(objType) || objType.IsPrimitive) && !ExcludedTypes.Contains(objType))
                 return ReturnWhenFinal(obj);
 
 
@@ -74,82 +72,6 @@ namespace ObjectPrinting.HomeWork
             }
             return sb.ToString();
         }
-
-        /*
-        private Delegate MakeSerializeDelegate(MemberInfo memberSerialization)
-        {
-            if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization))
-                return specialSerializationsForFieldsProperties[memberSerialization];
-
-            if (memberSerialization is FieldInfo fieldSerialization &&
-                specialSerializationsForTypes.ContainsKey(fieldSerialization.FieldType))
-            {
-                return specialSerializationsForTypes[fieldSerialization.FieldType];
-            }
-
-            if (memberSerialization is PropertyInfo propertySerialization &&
-                specialSerializationsForTypes.ContainsKey(propertySerialization.PropertyType))
-            {
-                return specialSerializationsForTypes[propertySerialization.PropertyType];
-            }
-
-            return null;
-        }
-        */
-        /*
-        private void PrintMemberInformation(MemberInfo memberInfo, object obj, StringBuilder sb, int nestingLevel, string identation)
-        {
-            SerializationMemberInfo memberSerialization = default;
-            if (memberInfo is PropertyInfo propertyInfo)
-            {
-                var indexParameters = propertyInfo.GetIndexParameters();
-                if (indexParameters.Length != 0)
-                {
-                    PrintIndexes(obj, sb, identation, Items, nestingLevel);
-                    return;
-                }
-                memberSerialization =
-                    new SerializationMemberInfo(propertyInfo, obj);
-            }
-            else if (memberInfo is FieldInfo fieldInfo)
-            {
-                memberSerialization =
-                    new SerializationMemberInfo(fieldInfo, obj);
-            }
-
-            if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType) || excludedFieldsProperties.Contains(memberInfo))
-                return;
-
-            var serializeDelegate = MakeSerializeDelegate(memberInfo, 
-                specialSerializationsForTypes, specialSerializationsForFieldsProperties);
-            serializedMembers.Add(obj);
-
-            string specialSerialize;
-
-            if (serializeDelegate != null)
-                specialSerialize = (FormSerializeDelegateString(identation, nestingLevel, memberSerialization,
-                    serializeDelegate));
-            else
-                specialSerialize = (FormSerializeString(identation, nestingLevel, memberSerialization));
-
-
-            if (trimMembers.TryGetValue(memberInfo, out var memberBorders))
-                specialSerialize = MakeTrim(identation,memberBorders, memberSerialization);
-            if (trimTypes.TryGetValue(memberSerialization.MemberType, out var typeBorders))
-                specialSerialize = MakeTrim(identation, typeBorders, memberSerialization);
-
-
-            sb.Append(specialSerialize);
-        }
-        */
-
-        /*
-        private static string MakeTrim(string identation, Borders typeBorders, SerializationMemberInfo serializationMemberInfo)
-        {
-            return identation + serializationMemberInfo.MemberName + " = " + 
-                   serializationMemberInfo.MemberValue.ToString().Substring(typeBorders.Start, typeBorders.Length) + "\r\n";
-        }
-        */
 
         internal string FormSerializeDelegateString(string identation, int nestingLevel,
             SerializationMemberInfo memberSerialization, Delegate serializeDelegate)
@@ -189,8 +111,6 @@ namespace ObjectPrinting.HomeWork
         }
 
 
-
-
         private string ReturnWhenCyclic(int nestingLevel)
         {
             return (nestingLevel != 0 ? ParentObj
@@ -204,13 +124,9 @@ namespace ObjectPrinting.HomeWork
             return obj + Environment.NewLine;
         }
 
-
-
-
-
         public PrintingConfig<TOwner> ExcludedType<TExType>()
         {
-            excludedTypes.Add(typeof(TExType));
+            ExcludedTypes.Add(typeof(TExType));
             return this;
         }
 
@@ -220,7 +136,7 @@ namespace ObjectPrinting.HomeWork
             {
                 var member = propertyMember.Member;
                 if (GetFieldsAndProperties(typeof(TOwner)).Contains(member))
-                    excludedFieldsProperties.Add(member);
+                    ExcludedFieldsProperties.Add(member);
                 return this;
             }
             throw new InvalidExpressionException(MemberExpressionMessage);
@@ -230,7 +146,7 @@ namespace ObjectPrinting.HomeWork
 
         public PrintingConfig<TOwner> TrimType<TTrimType>(Borders borders)
         {
-            trimTypes[typeof(TTrimType)] = borders;
+            TrimTypes[typeof(TTrimType)] = borders;
             return this;
         }
 
@@ -240,7 +156,7 @@ namespace ObjectPrinting.HomeWork
             if (propertyExpression.Body is MemberExpression memberExpression)
             {
 
-                trimMembers[memberExpression.Member] = borders;
+                TrimMembers[memberExpression.Member] = borders;
                 return this;
             }
             throw new InvalidExpressionException(MemberExpressionMessage);
@@ -248,7 +164,7 @@ namespace ObjectPrinting.HomeWork
 
         public PrintingConfig<TOwner> SpecialSerializationType<TType>(Func<TType, string> specialSerializationForType)
         {
-            specialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
+            SpecialSerializationsForTypes[typeof(TType)] = specialSerializationForType;
             return this;
         }
 
@@ -257,7 +173,7 @@ namespace ObjectPrinting.HomeWork
 
             if (memberAccess.Body is MemberExpression memberExpression)
             {
-                specialSerializationsForFieldsProperties[memberExpression.Member] = serialization;
+                SpecialSerializationsForFieldsProperties[memberExpression.Member] = serialization;
                 return this;
             }
             throw new InvalidExpressionException(MemberExpressionMessage);
