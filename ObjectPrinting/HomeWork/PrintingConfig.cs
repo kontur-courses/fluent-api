@@ -7,6 +7,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using static ObjectPrinting.HomeWork.SerializationDelegateMaker;
+using static ObjectPrinting.HomeWork.TrimMaker;
 
 namespace ObjectPrinting.HomeWork
 {
@@ -15,7 +17,7 @@ namespace ObjectPrinting.HomeWork
         private const string NullToString = "null";
         private const string ParentObj = "this (parentObj)";
         private const string MemberExpressionMessage = "Need member expression here(which giving access to the field)";
-        private const string Items = "Items";
+        internal readonly string Items = "Items";
         private const BindingFlags BindFlags = BindingFlags.Public | BindingFlags.Instance;
 
 
@@ -25,17 +27,17 @@ namespace ObjectPrinting.HomeWork
             typeof(DateTime), typeof(TimeSpan), typeof(long), typeof(Guid)
         };
 
-        private readonly HashSet<object> serializedMembers = new HashSet<object>();
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<MemberInfo> excludedFieldsProperties = new HashSet<MemberInfo>();
-        private readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
+        internal readonly HashSet<object> serializedMembers = new HashSet<object>();
+        internal readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        internal readonly HashSet<MemberInfo> excludedFieldsProperties = new HashSet<MemberInfo>();
+        internal readonly Dictionary<Type, Delegate> specialSerializationsForTypes =
             new Dictionary<Type, Delegate>();
-        private readonly Dictionary<MemberInfo, Delegate> specialSerializationsForFieldsProperties =
+        internal readonly Dictionary<MemberInfo, Delegate> specialSerializationsForFieldsProperties =
             new Dictionary<MemberInfo, Delegate>();
 
-        private readonly Dictionary<Type, Borders> trimTypes =
+        internal readonly Dictionary<Type, Borders> trimTypes =
             new Dictionary<Type, Borders>();
-        private readonly Dictionary<MemberInfo, Borders> trimMembers = 
+        internal readonly Dictionary<MemberInfo, Borders> trimMembers = 
             new Dictionary<MemberInfo, Borders>();
 
         private CultureInfo culture = CultureInfo.InvariantCulture;
@@ -68,11 +70,12 @@ namespace ObjectPrinting.HomeWork
 
             foreach (var memberInfo in fieldsAndProperties)
             {
-                PrintMemberInformation(memberInfo, obj, sb, nestingLevel, identation);
+                MemberInformationPrinter.PrintMemberInformation(this, memberInfo, obj, sb, nestingLevel, identation);
             }
             return sb.ToString();
         }
 
+        /*
         private Delegate MakeSerializeDelegate(MemberInfo memberSerialization)
         {
             if (specialSerializationsForFieldsProperties.ContainsKey(memberSerialization))
@@ -92,7 +95,8 @@ namespace ObjectPrinting.HomeWork
 
             return null;
         }
-
+        */
+        /*
         private void PrintMemberInformation(MemberInfo memberInfo, object obj, StringBuilder sb, int nestingLevel, string identation)
         {
             SerializationMemberInfo memberSerialization = default;
@@ -116,7 +120,8 @@ namespace ObjectPrinting.HomeWork
             if (memberSerialization == null || excludedTypes.Contains(memberSerialization.MemberType) || excludedFieldsProperties.Contains(memberInfo))
                 return;
 
-            var serializeDelegate = MakeSerializeDelegate(memberInfo);
+            var serializeDelegate = MakeSerializeDelegate(memberInfo, 
+                specialSerializationsForTypes, specialSerializationsForFieldsProperties);
             serializedMembers.Add(obj);
 
             string specialSerialize;
@@ -136,14 +141,17 @@ namespace ObjectPrinting.HomeWork
 
             sb.Append(specialSerialize);
         }
+        */
 
-        private string MakeTrim(string identation, Borders typeBorders, SerializationMemberInfo serializationMemberInfo)
+        /*
+        private static string MakeTrim(string identation, Borders typeBorders, SerializationMemberInfo serializationMemberInfo)
         {
             return identation + serializationMemberInfo.MemberName + " = " + 
                    serializationMemberInfo.MemberValue.ToString().Substring(typeBorders.Start, typeBorders.Length) + "\r\n";
         }
+        */
 
-        private string FormSerializeDelegateString(string identation, int nestingLevel,
+        internal string FormSerializeDelegateString(string identation, int nestingLevel,
             SerializationMemberInfo memberSerialization, Delegate serializeDelegate)
         {
             return identation + memberSerialization.MemberName + " = " +
@@ -151,7 +159,7 @@ namespace ObjectPrinting.HomeWork
                        nestingLevel + 1);
         }
 
-        private string FormSerializeString(string identation, int nestingLevel,
+        internal string FormSerializeString(string identation, int nestingLevel,
             SerializationMemberInfo memberSerialization)
         {
             return identation + memberSerialization.MemberName + " = " +
@@ -166,6 +174,23 @@ namespace ObjectPrinting.HomeWork
             return fieldsAndProperties;
         }
 
+        internal void PrintIndexes(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
+        {
+            if (!(obj is ICollection collection))
+                sb.Append(name);
+            else
+            {
+                sb.Append(identation + name + " =\r\n");
+                foreach (var parameter in collection)
+                {
+                    sb.Append(identation + '\t' + PrintToString(parameter, nestingLevel + 2));
+                }
+            }
+        }
+
+
+
+
         private string ReturnWhenCyclic(int nestingLevel)
         {
             return (nestingLevel != 0 ? ParentObj
@@ -179,19 +204,9 @@ namespace ObjectPrinting.HomeWork
             return obj + Environment.NewLine;
         }
 
-        private void PrintIndexes(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
-        {
-            if (!(obj is ICollection collection))
-                sb.Append(name);
-            else
-            {
-                sb.Append(identation + name + " =\r\n");
-                foreach (var parameter in collection)
-                {
-                    sb.Append(identation + '\t' + PrintToString(parameter, nestingLevel + 2));
-                }
-            }
-        }
+
+
+
 
         public PrintingConfig<TOwner> ExcludedType<TExType>()
         {
