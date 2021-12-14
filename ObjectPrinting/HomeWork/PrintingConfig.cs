@@ -66,6 +66,15 @@ namespace ObjectPrinting.HomeWork
             sb.AppendLine(objType.Name);
             var fieldsAndProperties = GetFieldsAndProperties(objType);
 
+            if (obj is IEnumerable enumerable)
+            {
+                var enumerator = enumerable.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    sb.Append(identation + '\t' + PrintToString(enumerator.Current, nestingLevel + 2));
+                }
+            }
+
             foreach (var memberInfo in fieldsAndProperties)
             {
                 MemberInformationPrinter.PrintMemberInformation(this, memberInfo, obj, sb, nestingLevel, identation);
@@ -96,8 +105,18 @@ namespace ObjectPrinting.HomeWork
             return fieldsAndProperties;
         }
 
-        internal void PrintIndexes(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
+        internal void SerializeDelegate(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
         {
+            if (obj is Delegate del)
+            {
+                sb.Append(identation + name + " =\r\n");
+                sb.Append(identation + '\t' + PrintToString(del.Target, nestingLevel + 2));
+            }
+        }
+
+        internal void SerializeComplexTypes(object obj, StringBuilder sb, string identation, string name, int nestingLevel)
+        {
+            
             if (!(obj is ICollection collection))
                 sb.Append(name);
             else

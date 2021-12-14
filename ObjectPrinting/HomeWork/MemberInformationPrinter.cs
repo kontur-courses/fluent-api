@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Text;
 using static ObjectPrinting.HomeWork.SerializationDelegateMaker;
 
@@ -9,12 +10,17 @@ namespace ObjectPrinting.HomeWork
         public static void PrintMemberInformation<TOwner>(PrintingConfig<TOwner> config, MemberInfo memberInfo, object obj, StringBuilder sb, int nestingLevel, string identation)
         {
             SerializationMemberInfo memberSerialization = default;
+            if (obj is Delegate)
+            {
+                config.SerializeDelegate(obj, sb, identation, config.Items, nestingLevel);
+                return;
+            }
             if (memberInfo is PropertyInfo propertyInfo)
             {
                 var indexParameters = propertyInfo.GetIndexParameters();
                 if (indexParameters.Length != 0)
                 {
-                    config.PrintIndexes(obj, sb, identation, config.Items, nestingLevel);
+                    config.SerializeComplexTypes(obj, sb, identation, config.Items, nestingLevel);
                     return;
                 }
                 memberSerialization =

@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using ObjectPrinting.HomeWork;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -274,6 +275,140 @@ namespace ObjectPrintingTests.Tests
                                "IsEmpty = False\r\n\t\t\t\t" +
                                "X = -47\r\n\t\t\t\t" +
                                "Y = 47\r\n");
+        }
+
+        [Test]
+        public void HashSetText()
+        {
+            var printer = ObjectPrinter.For<HashSet<int>>();
+            var data = new HashSet<int>{1,2,3};
+            var result = printer.PrintToString(data);
+            result.Should().Be("");
+        }
+
+        [Test]
+        public void Test()
+        {
+            var printer = ObjectPrinter.For<MyClass<int>>();
+            var data = new MyClass<int>(MyEnum.First, MyEnum.Second)
+            {
+                CollectionProperty = new MyCollection<int>(new List<int> { 1, 2, 3 }),
+                DelegateProperty = x => x + 1,
+                DictProperty = new Dictionary<MyInnerClass, MyInnerClass2<int>>
+                {
+                    {
+                        new MyInnerClass
+                        {
+                            SomeProperty1 = "Property3",
+                            SomeProperty2 = 4
+                        },
+                        new MyInnerClass2<int>
+                        {
+                            SomeProperty1 = Guid.NewGuid(),
+                            ListOfObjects = new List<MyInnerClass3>
+                            {
+                                new MyInnerClass3
+                                {
+                                    Id = Guid.NewGuid(),
+                                    EnumProp = MyEnum.First
+                                }
+                            },
+                            SomeCollection = new HashSet<int>(new[] { 1, 2, 3 })
+                        }
+                    }
+                },
+                DoubleField = 3d,
+                StringProperty = "Property2",
+                IntFieldProperty = 2,
+                ObjectCollectionProperty = new MyCollection<MyInnerClass>(
+                    new List<MyInnerClass>
+                    {
+                        new MyInnerClass
+                        {
+                            SomeProperty1 = "Property1",
+                            SomeProperty2 = 1
+                        }
+                    }),
+                ObjectList = new List<MyInnerClass>
+                {
+                    new MyInnerClass
+                    {
+                        SomeProperty1 = "Property5",
+                        SomeProperty2 = 1
+                    }
+                },
+                IntArray = new[] { 1, 2, 3 }
+            };
+            var result = printer.PrintToString(data);
+            result.Should().Be("");
+        }
+
+        public class MyClass<T>
+        {
+            public int IntFieldProperty { get; set; }
+            public Func<int, int> DelegateProperty { get; set; }
+            public string StringProperty { get; set; }
+            public double DoubleField;
+
+            public MyClass(
+                MyEnum enumProperty,
+                MyEnum enumField)
+            {
+                EnumProperty = enumProperty;
+                EnumField = enumField;
+            }
+
+            private MyEnum EnumProperty { get; set; }
+            private MyEnum EnumField { get; set; }
+            public MyCollection<int> CollectionProperty { get; set; }
+            public MyCollection<MyInnerClass> ObjectCollectionProperty { get; set; }
+            public Dictionary<MyInnerClass, MyInnerClass2<T>> DictProperty { get; set; }
+            public IList<MyInnerClass> ObjectList { get; set; }
+            public int[] IntArray { get; set; }
+        }
+
+        public enum MyEnum
+        {
+            First = 0,
+            Second = 1
+        }
+
+        public class MyInnerClass
+        {
+            public string SomeProperty1 { get; set; }
+            public int SomeProperty2 { get; set; }
+        }
+
+        public class MyInnerClass2<T>
+        {
+            public Guid SomeProperty1 { get; set; }
+            public List<MyInnerClass3> ListOfObjects { get; set; }
+            public ICollection<T> SomeCollection { get; set; }
+        }
+
+        public class MyInnerClass3
+        {
+            public Guid Id { get; set; }
+            public MyEnum EnumProp { get; set; }
+        }
+
+        public class MyCollection<T> : ICollection<T>
+        {
+            public IEnumerator<T> GetEnumerator() => Items.GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+            public void Add(T item) => Items.Add(item);
+            public void Clear() => Items.Clear();
+            public bool Contains(T item) => Items.Contains(item);
+            public void CopyTo(T[] array, int arrayIndex) => Items.CopyTo(array, arrayIndex);
+            public bool Remove(T item) => Items.Remove(item);
+            public int Count => Items.Count;
+            public bool IsReadOnly => false;
+            private readonly List<T> Items;
+
+            public MyCollection(List<T> items)
+            {
+                Items = items;
+            }
         }
     }
 }
