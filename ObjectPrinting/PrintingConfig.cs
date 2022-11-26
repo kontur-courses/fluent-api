@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using ObjectPrinting.Infrastructure;
 
@@ -12,7 +15,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> _finalTypes = new()
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(bool)
         };
 
         private readonly HashSet<Type> _excludedTypes = new();
@@ -31,37 +34,79 @@ namespace ObjectPrinting
 
         private string PrintToString(object? obj, int nestingLevel, ImmutableList<string> memberPath)
         {
+            if (TryFinalPrintToString(obj, memberPath, out var result))
+                return result!;
+            if (obj is IEnumerable enumerable)
+                return PrintToStringEnumerable(enumerable, nestingLevel, memberPath);
+            return obj!.GetType().Name + Environment.NewLine +
+                   string.Join(Environment.NewLine, PrintToStringMembers(obj, nestingLevel, memberPath));
+        }
+
+        private bool TryFinalPrintToString(object? obj, ImmutableList<string> memberPath, out string? result)
+        {
+            result = default;
             if (obj is null)
-                return "null" + Environment.NewLine;
+            {
+                result = "null";
+                return true;
+            }
 
             var type = obj.GetType();
 
-            if (_customPrintingMembers.TryGetValue(memberPath, out var printFunc))
-                return printFunc(obj) + Environment.NewLine;
+            if (_customPrintingMembers.TryGetValue(memberPath, out var memberPrint))
+                result = memberPrint(obj);
+            else if (_customPrintingTypes.TryGetValue(type, out var typePrint))
+                result = typePrint(obj);
+            else if (_finalTypes.Contains(type))
+                result = obj.ToString();
 
-            if (_customPrintingTypes.TryGetValue(type, out var printFunc1))
-                return printFunc1(obj) + Environment.NewLine;
+            return result is not null;
+        }
 
-            if (_finalTypes.Contains(type))
-                return obj + Environment.NewLine;
+        private string PrintToStringEnumerable(
+            IEnumerable enumerable,
+            int nestingLevel,
+            ImmutableList<string> memberPath
+        )
+        {
+            var printed = enumerable
+                .Cast<object?>()
+                .Select(obj => PrintToString(obj, nestingLevel + 1, memberPath))
+                .ToArray();
 
-            var builder = new StringBuilder();
-            builder.AppendLine(type.Name);
-            foreach (var member in type.GetProperties())
+            if (!printed.All(obj => obj.Contains(Environment.NewLine)))
+                return $"[{string.Join(", ", printed)}]";
+
+            var builder = new StringBuilder()
+                .AppendLine("[");
+            foreach (var str in printed)
+                builder
+                    .Append('\t', nestingLevel + 1)
+                    .Append(str)
+                    .AppendLine();
+
+            return builder.Append(']').ToString();
+        }
+
+        private IEnumerable<string> PrintToStringMembers(object obj, int nestingLevel, ImmutableList<string> memberPath)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            foreach (var member in obj.GetType().GetProperties().OfType<MemberInfo>().Concat(obj.GetType().GetFields()))
             {
-                if (_excludedTypes.Contains(member.PropertyType))
+                if (_excludedTypes.Contains(member.GetFieldPropertyType()))
                     continue;
                 var currentMemberPath = memberPath.Add(member.Name);
                 if (_excludedMembers.Contains(currentMemberPath))
                     continue;
-                builder
-                    .Append('\t', nestingLevel + 1)
-                    .Append(member.Name)
-                    .Append(" = ")
-                    .Append(PrintToString(member.GetValue(obj), nestingLevel + 1, currentMemberPath));
-            }
 
-            return builder.ToString();
+                var printValue = PrintToString(
+                    member.GetFieldPropertyValue(obj),
+                    nestingLevel + 1,
+                    currentMemberPath
+                );
+
+                yield return $"{indentation}{member.Name} = {printValue}";
+            }
         }
 
         public PrintingConfig<TOwner> Exclude<TMember>()
