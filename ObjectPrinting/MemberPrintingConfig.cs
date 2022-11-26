@@ -2,17 +2,28 @@
 
 namespace ObjectPrinting;
 
-public class MemberPrintingConfig<TMember>
+public class MemberPrintingConfig<TOwner, TMember> : IMemberPrintingConfig<TOwner>
 {
-    private readonly PrintingConfig<TMember> _printingConfig;
+    private readonly PrintingConfig<TOwner> _printingConfig;
+    private Func<TMember, string> _printFunction = null!;
 
-    internal MemberPrintingConfig(PrintingConfig<TMember> printingConfig)
+    public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig)
     {
         _printingConfig = printingConfig;
     }
 
-    public PrintingConfig<TMember> Using(Func<TMember, string> stringFunc)
+    public PrintingConfig<TOwner> Using(Func<TMember, string> printFunc)
     {
+        _printFunction = printFunc;
         return _printingConfig;
+    }
+
+    PrintingConfig<TOwner> IMemberPrintingConfig<TOwner>.PrintingConfig => _printingConfig;
+
+    string IMemberPrintingConfig<TOwner>.Print(object obj)
+    {
+        if (obj is not TMember member)
+            throw new ArgumentException($"{nameof(obj)} should be of type {typeof(TMember)}");
+        return _printFunction(member);
     }
 }

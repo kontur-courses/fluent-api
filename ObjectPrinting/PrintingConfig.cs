@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 using ObjectPrinting.Infrastructure;
 
@@ -18,7 +17,14 @@ namespace ObjectPrinting
 
         private readonly HashSet<Type> _excludedTypes = new();
 
-        private readonly HashSet<IEnumerable<string>> _excludedMembers = new(new EnumerableEqualityComparer<string>());
+        private readonly HashSet<IEnumerable<string>> _excludedMembers = new(
+            new EnumerableEqualityComparer<string>());
+
+
+        private readonly Dictionary<Type, Func<object, string>> _customPrintingTypes = new();
+
+        private readonly Dictionary<IEnumerable<string>, Func<object, string>> _customPrintingMembers = new(
+            new EnumerableEqualityComparer<string>());
 
         public string PrintToString(TOwner obj) =>
             PrintToString(obj, 0, ImmutableList<string>.Empty);
@@ -29,6 +35,12 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
+
+            if (_customPrintingMembers.TryGetValue(memberPath, out var printFunc))
+                return printFunc(obj) + Environment.NewLine;
+
+            if (_customPrintingTypes.TryGetValue(type, out var printFunc1))
+                return printFunc1(obj) + Environment.NewLine;
 
             if (_finalTypes.Contains(type))
                 return obj + Environment.NewLine;
@@ -64,14 +76,20 @@ namespace ObjectPrinting
             return this;
         }
 
-        public MemberPrintingConfig<TOwner> Printing<TMember>()
+        public MemberPrintingConfig<TOwner, TMember> Printing<TMember>()
         {
-            return new MemberPrintingConfig<TOwner>(this);
+            var memberCfg = new MemberPrintingConfig<TOwner, TMember>(this);
+            _customPrintingTypes[typeof(TMember)] = obj => ((IMemberPrintingConfig<TOwner>) memberCfg).Print(obj);
+            return memberCfg;
         }
 
-        public MemberPrintingConfig<TOwner> Printing<TMember>(Expression<Func<TOwner, TMember>> selector)
+        public MemberPrintingConfig<TOwner, TMember> Printing<TMember>(Expression<Func<TOwner, TMember>> selector)
         {
-            return new MemberPrintingConfig<TOwner>(this);
+            var memberCfg = new MemberPrintingConfig<TOwner, TMember>(this);
+            _customPrintingMembers[selector.GetMemberPath()] =
+                obj => ((IMemberPrintingConfig<TOwner>) memberCfg).Print(obj);
+
+            return memberCfg;
         }
     }
 }

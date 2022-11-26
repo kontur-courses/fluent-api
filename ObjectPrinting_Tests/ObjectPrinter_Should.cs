@@ -44,4 +44,34 @@ public class ObjectPrinter_Should
                 "\tDouble = 12.34\r\n"
             );
     }
+    
+    [Test]
+    public void ReturnCorrectResult_WithTypePrintingConfigured()
+    {
+        var obj = new TestObject(10, 12, "abc", 12.34);
+        ObjectPrinter.For<TestObject>()
+            .Printing<double>().Using(_ => "X")
+            .PrintToString(obj).Should().Be(
+                "TestObject\r\n" +
+                "\tInt1 = 10\r\n" +
+                "\tInt2 = 12\r\n" +
+                "\tStr = abc\r\n" +
+                "\tDouble = X\r\n"
+            );
+    }
+    
+    [Test]
+    public void ReturnCorrectResult_WithMemberPrintingConfigured()
+    {
+        var obj = new TestObject(10, 12, "abc", 12.34);
+        ObjectPrinter.For<TestObject>()
+            .Printing(o => o.Int1).Using(_ => "X")
+            .PrintToString(obj).Should().Be(
+                "TestObject\r\n" +
+                "\tInt1 = X\r\n" +
+                "\tInt2 = 12\r\n" +
+                "\tStr = abc\r\n" +
+                "\tDouble = 12.34\r\n"
+            );
+    }
 }
