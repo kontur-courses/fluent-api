@@ -106,6 +106,8 @@ namespace ObjectPrinting.PrintingConfig
             var sb = new StringBuilder();
             var i = 0;
             var indentation = new string('\t', nestingLevel + 1);
+            list.Add(collection);
+            stack.Push(list);
 
             if (collection is IDictionary dictionary)
                 foreach (DictionaryEntry entry in dictionary)
@@ -115,8 +117,8 @@ namespace ObjectPrinting.PrintingConfig
                 foreach (var obj in collection)
                     sb.Append(GetLine($"[{i++}]", indentation, 
                         PrintToString(obj, nestingLevel + 1, stack)));
-                
 
+            stack.Pop();
             return sb.ToString();
         }
 
