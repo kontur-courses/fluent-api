@@ -8,24 +8,15 @@ namespace ObjectPrinting;
 
 public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrintingConfigStorage
 {
-    public void PrintToString(object obj, int nestingLevel, StringBuilder stringBuilder)
+    internal RootPrintingConfig() : base(null)
     {
-        var indentation = new string('\t', nestingLevel + 1);
-        var type = obj.GetType();
-        stringBuilder.AppendLine(type.Name);
-        var iinternalPrintingConfig = this as IInternalPrintingConfig<TOwner>;
-        var root = iinternalPrintingConfig.GetRoot();
-        foreach (var propertyInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            root.ConsumeProperty(obj, nestingLevel, stringBuilder, propertyInfo, indentation);
-
-        foreach (var fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            root.ConsumeField(obj, nestingLevel, stringBuilder, fieldInfo, indentation);
     }
 
     public LinkedList<(Type Type, Func<object, string> Serializer)>
         AssignableTypeSerializers { get; } = new(
         new (Type Type, Func<object, string> Serializer)[]
         {
+            (typeof(string), o => o.ToString() ?? string.Empty),
             (typeof(IFormattable), o => ((IFormattable)o).ToString(null, CultureInfo.CurrentCulture))
         });
 
@@ -38,7 +29,17 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
 
     public Dictionary<Type, Func<object, string>> TypeSerializers { get; } = new();
 
-    internal RootPrintingConfig() : base(null)
+    public void PrintToString(object obj, int nestingLevel, StringBuilder stringBuilder)
     {
+        var indentation = new string('\t', nestingLevel + 1);
+        var type = obj.GetType();
+        stringBuilder.AppendLine(type.Name);
+        var iinternalPrintingConfig = this as IInternalPrintingConfig<TOwner>;
+        var root = iinternalPrintingConfig.GetRoot();
+        foreach (var propertyInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            root.ConsumeProperty(obj, nestingLevel, stringBuilder, propertyInfo, indentation);
+
+        foreach (var fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+            root.ConsumeField(obj, nestingLevel, stringBuilder, fieldInfo, indentation);
     }
 }

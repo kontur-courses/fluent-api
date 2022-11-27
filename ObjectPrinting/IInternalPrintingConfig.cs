@@ -1,8 +1,7 @@
 ﻿namespace ObjectPrinting;
 
-internal interface IInternalPrintingConfig<TOwner>
+public interface IInternalPrintingConfig<TOwner>
 {
-    RootPrintingConfig<TOwner> GetRoot();
-    
     PrintingConfig<TOwner>? ParentConfig { get; }
+    RootPrintingConfig<TOwner> GetRoot();
 }

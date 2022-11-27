@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ObjectPrinting;
 
-internal static class PrintingConfigExtensions
+public static class PrintingConfigExtensions
 {
     public static void ConsumeProperty<TOwner>(this RootPrintingConfig<TOwner> printingConfig, object obj,
         int nestingLevel,
@@ -46,7 +46,6 @@ internal static class PrintingConfigExtensions
             printingConfig.TryReturnMemberStringValue(fieldInfo, value!, out fieldStringValue) ||
             printingConfig.TryReturnTypeStringValue(fieldInfo.FieldType, value!, out fieldStringValue) ||
             printingConfig.TryReturnAssignableTypeStringValue(fieldInfo.FieldType, value!, out fieldStringValue))
-
             stringBuilder.AppendLine(fieldStringValue);
         else
             printingConfig.PrintToString(value!, nestingLevel, stringBuilder);
@@ -97,7 +96,7 @@ internal static class PrintingConfigExtensions
     {
         stringValue = null;
         if (!printingConfig.TypeSerializers.TryGetValue(type, out var serializer)) return false;
-        stringValue = string.Concat(serializer(value), Environment.NewLine);
+        stringValue = string.Concat(serializer(value));
         return true;
     }
 
@@ -107,7 +106,7 @@ internal static class PrintingConfigExtensions
     {
         stringValue = null;
         if (!printingConfig.MemberSerializers.TryGetValue(memberInfo, out var serializer)) return false;
-        stringValue = string.Concat(serializer(value), Environment.NewLine);
+        stringValue = string.Concat(serializer(value));
         return true;
     }
 
@@ -117,18 +116,5 @@ internal static class PrintingConfigExtensions
         if (value is not null) return false;
         stringValue = "null";
         return true;
-    }
-
-    public static PropertyPrintingConfig<TOwner, T> For<TOwner, T>(
-        this IInternalPrintingConfig<TOwner> printingConfig,
-        Expression<Func<TOwner, T>> expression)
-    {
-        return new(expression, printingConfig.GetRoot());
-    }
-
-
-    public static TypePrintingConfig<TOwner, T> ForType<TOwner, T>(this IInternalPrintingConfig<TOwner> printingConfig)
-    {
-        return new(printingConfig.GetRoot());
     }
 }

@@ -17,12 +17,4 @@ public static class PropertyPrintingConfigExtensions
     {
         return config.Serialize(x => x.ToString(format, cultureInfo));
     }
-
-
-    public static TypePrintingConfig<TOwner, TType> Format<TOwner, TType>(
-        this TypePrintingConfig<TOwner, TType> config, CultureInfo cultureInfo, string? format = null)
-        where TType : IFormattable
-    {
-        return config.Serialize(x => x.ToString(format, cultureInfo));
-    }
 }

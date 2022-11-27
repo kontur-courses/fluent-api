@@ -21,13 +21,13 @@ public class PropertyPrintingConfig<TOwner, TProperty> : PrintingConfig<TOwner>
 
     public PropertyPrintingConfig<TOwner, TProperty> Serialize(Func<TProperty, string> func)
     {
-        GetRoot().MemberSerializers[memberInfo] = d => func((TProperty)d);
+        ((IInternalPrintingConfig<TOwner>)this).GetRoot().MemberSerializers[memberInfo] = d => func((TProperty)d);
         return this;
     }
 
     public PropertyPrintingConfig<TOwner, TProperty> Exclude()
     {
-        GetRoot().MemberExcluding.Add(memberInfo);
+        ((IInternalPrintingConfig<TOwner>)this).GetRoot().MemberExcluding.Add(memberInfo);
         return this;
     }
 }

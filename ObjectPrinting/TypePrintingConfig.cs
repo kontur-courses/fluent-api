@@ -11,13 +11,13 @@ public class TypePrintingConfig<TOwner, TType> : PrintingConfig<TOwner>
 
     public TypePrintingConfig<TOwner, TType> Serialize(Func<TType, string> func)
     {
-        GetRoot().TypeSerializers[typeof(TType)] = d => func((TType)d);
+        ((IInternalPrintingConfig<TOwner>)this).GetRoot().TypeSerializers[typeof(TType)] = d => func((TType)d);
         return this;
     }
 
     public TypePrintingConfig<TOwner, TType> SerializeAllAssignable(Func<TType, string> func)
     {
-        var rootPrintingConfig = GetRoot();
+        var rootPrintingConfig = ((IInternalPrintingConfig<TOwner>)this).GetRoot();
         rootPrintingConfig.AssignableTypeSerializers.AddFirst((typeof(TType), d => func((TType)d)));
         rootPrintingConfig.IgnoredTypesFromAssignableCheck.RemoveWhere(t => t.IsAssignableTo(typeof(TType)));
         return this;
@@ -25,7 +25,7 @@ public class TypePrintingConfig<TOwner, TType> : PrintingConfig<TOwner>
 
     public TypePrintingConfig<TOwner, TType> Exclude()
     {
-        GetRoot().TypeExcluding.Add(typeof(TType));
+        ((IInternalPrintingConfig<TOwner>)this).GetRoot().TypeExcluding.Add(typeof(TType));
         return this;
     }
 }
