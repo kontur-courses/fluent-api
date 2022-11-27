@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -14,6 +15,8 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
         private HashSet<Type> excludingTypes = new HashSet<Type>();
+        private HashSet<PropertyInfo> excludingPropeties = new HashSet<PropertyInfo>();
+        private HashSet<object> printed= new HashSet<object>();
 
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -27,23 +30,26 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            excludingPropeties.Add(((MemberExpression)memberSelector.Body).Member as PropertyInfo);
             return this;
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludingTypes.Add(typeof(TPropType));
-            return this;
+            return this;    
         }
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            if (obj is null)
+                return "null" + Environment.NewLine;
+            return GetFinalString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string GetFinalString(object obj, int nestingLevel)
         {
-            if (obj == null)
+            if (obj is null)
                 return "null" + Environment.NewLine;
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
@@ -53,12 +59,13 @@ namespace ObjectPrinting
             stringBuilder.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(excludingTypes.Contains(propertyInfo.PropertyType))
-                    break;
+
+                if(excludingTypes.Contains(propertyInfo.PropertyType)|| excludingPropeties.Contains(propertyInfo))
+                    continue;
                 stringBuilder.Append(identation);
                 stringBuilder.Append(propertyInfo.Name);
                 stringBuilder.Append(" = ");
-                stringBuilder.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                stringBuilder.Append(GetFinalString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
 
             return stringBuilder.ToString();
