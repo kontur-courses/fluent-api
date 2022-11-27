@@ -22,7 +22,7 @@ namespace ObjectPrinting.Tests
                 //4. Настроить сериализацию конкретного свойства
                 .Serialize(x => x.Age).Using(x=>x.ToString())
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Serialize(x=>x.Age).CutTo(4)
+                .Serialize(x=>x.Name).TrimmedToLength(4)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(x => x.Name);
 
@@ -31,20 +31,7 @@ namespace ObjectPrinting.Tests
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию     
             var s2 = person.PrintToStringDefault();
             //8. ...с конфигурированием
-            var s3 = person.PrintToStringWithConfig(printer);
-        }
-    }
-
-    public static class ObjectExtensions
-    {
-        public static string PrintToStringDefault<T>(this T obj)
-        {
-            return string.Empty;
-        }
-
-        public static string PrintToStringWithConfig<TType, TOwner>(this TType obj, PrintingConfig<TOwner> config)
-        {
-            return string.Empty;
+            var s3 = person.PrintToString(x=>x.Excluding<string>());
         }
     }
 }
