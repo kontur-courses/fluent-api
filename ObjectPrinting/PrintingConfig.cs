@@ -12,12 +12,12 @@ namespace ObjectPrinting
         private readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan),typeof(bool), typeof(decimal),
         };
         private HashSet<Type> excludingTypes = new HashSet<Type>();
         private HashSet<PropertyInfo> excludingPropeties = new HashSet<PropertyInfo>();
-        private HashSet<object> printed= new HashSet<object>();
-
+        //private HashSet<object> printed= new HashSet<object>();
+        public readonly Dictionary<Type, Delegate> typesForPrintWithSpec = new Dictionary<Type, Delegate>();
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyConfig<TOwner, TPropType>(this);
@@ -44,31 +44,44 @@ namespace ObjectPrinting
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
-            return GetFinalString(obj, 0);
+            return GetValueString(obj, 0);
         }
 
-        private string GetFinalString(object obj, int nestingLevel)
+        private string GetValueString(object obj, int nestingLevel)
         {
-            if (obj is null)
-                return "null" + Environment.NewLine;
-            if (FinalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-            var identation = new string('\t', nestingLevel + 1);
+            if (ReturnDefaultString(obj, out var valueString)) 
+                return valueString;
             var stringBuilder = new StringBuilder();
             var type = obj.GetType();
             stringBuilder.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-
-                if(excludingTypes.Contains(propertyInfo.PropertyType)|| excludingPropeties.Contains(propertyInfo))
+                if(excludingTypes.Contains(propertyInfo.PropertyType) || excludingPropeties.Contains(propertyInfo))
                     continue;
-                stringBuilder.Append(identation);
+                var value = GetValueString(propertyInfo.GetValue(obj),nestingLevel + 1);
+                if (string.IsNullOrEmpty(value)) continue;
+                stringBuilder.Append(new string('\t', nestingLevel+1));
                 stringBuilder.Append(propertyInfo.Name);
                 stringBuilder.Append(" = ");
-                stringBuilder.Append(GetFinalString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                stringBuilder.Append(value);
             }
-
             return stringBuilder.ToString();
+        }
+
+        private bool ReturnDefaultString(object obj, out string valueString)
+        {
+            valueString = null;
+            if (obj is null) 
+                return true;
+
+            var objType = obj.GetType();
+            if (!FinalTypes.Contains(objType)) 
+                return false;
+            if (typesForPrintWithSpec.ContainsKey(objType))
+                valueString = (string)typesForPrintWithSpec[objType].DynamicInvoke(obj) + Environment.NewLine;
+            else 
+                valueString = obj + Environment.NewLine;
+            return true;
         }
     }
 }
