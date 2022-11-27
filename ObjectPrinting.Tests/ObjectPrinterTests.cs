@@ -92,6 +92,47 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        public void Should_CutStrings_ForProperties()
+        {
+            var person = new Person() { Id = new Guid(), Name = "Alex", Age = 17, Height = 1.87 };
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeProperty(p => p.Name)
+                .CutAfter(2);
+            
+            var result = printer.PrintToString(person);
+            
+            result.Should().Contain("Name = Al...");
+        }
+
+        
+        [Test]
+        public void Should_Serialize_WithComplexRules()
+        {
+            var word = new Word()
+            {
+                Prefix = "con",
+                Root = "struct"
+            };
+
+            var printer = ObjectPrinter.For<Word>()
+                .SerializeType<int>()
+                    .As(n => $"{n} letters")
+                .SerializeProperty(w => w.Suffix)
+                    .As(s => s ?? "<No suffix>")
+                .SerializeType<string>()
+                    .CutAfter(3)
+                .SerializeProperty(w => w.Prefix)
+                    .As(p => p.ToUpper());
+
+            var result = printer.PrintToString(word);
+
+            result.Should().Contain("9 letters")
+                .And.Contain("Suffix = <No suffix>")
+                .And.Contain("Prefix = CON")
+                .And.Contain("Root = str...");
+        }
+        
+        [Test]
         public void Should_SerializeLists()
         {
             var list = new List<string> { "a", "b", "c", "d", "e" };

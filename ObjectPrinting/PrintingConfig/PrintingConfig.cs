@@ -173,7 +173,7 @@ namespace ObjectPrinting.PrintingConfig
                 else if (propertyInfo.PropertyType == typeof(string) && maxStringLength != null)
                     serialized = CutString(serialized, maxStringLength.Value);
                 line = GetLine(propertyInfo.Name, indentation, serialized);
-                sb.Append(line);
+                sb.AppendLine(line);
                 stack.Pop();
             }
 
@@ -212,9 +212,6 @@ namespace ObjectPrinting.PrintingConfig
 
         private string Serialize(object value, PropertyInfo propertyInfo)
         {
-            if (value == null)
-                return "null";
-            
             var str = (string)PropertySerializers[propertyInfo].DynamicInvoke(value);
             if (str == null)
                 return "null";
@@ -227,9 +224,6 @@ namespace ObjectPrinting.PrintingConfig
 
         private string Serialize(object value, Type type)
         {
-            if (value == null)
-                return "null";
-            
             var str = (string)TypeSerializers[type].DynamicInvoke(value);
             if (str == null)
                 return "null";
