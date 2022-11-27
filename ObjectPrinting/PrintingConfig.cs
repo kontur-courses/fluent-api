@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -28,12 +29,19 @@ public abstract class PrintingConfig<TOwner> : IPrintingConfig<TOwner>, IInterna
 
     public string PrintToString(TOwner obj)
     {
-        var sb = new StringBuilder();
+        var stringBuilder = new StringBuilder();
         if (PrintingConfigExtensions.TryReturnNull(obj, out var stringValue))
-            sb.Append(stringValue);
+        {
+            stringBuilder.Append(stringValue);
+        }
         else
-            ((IInternalPrintingConfig<TOwner>)this).GetRoot().PrintToString(obj!, 0, sb);
-        return sb.ToString();
+        {
+            var cyclicInheritanceIgnoredObjects = new HashSet<object>();
+            ((IInternalPrintingConfig<TOwner>)this).GetRoot()
+                .PrintToString(obj!, 0, stringBuilder, cyclicInheritanceIgnoredObjects);
+        }
+
+        return stringBuilder.ToString();
     }
 
     public PropertyPrintingConfig<TOwner, T> For<T>(

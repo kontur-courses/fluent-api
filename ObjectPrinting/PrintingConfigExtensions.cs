@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -7,10 +8,18 @@ namespace ObjectPrinting;
 
 public static class PrintingConfigExtensions
 {
+    public static PrintingConfig<TOwner> WithCyclicInheritanceHandler<TOwner>(
+        this PrintingConfig<TOwner> printingConfig, CyclicInheritanceHandler cyclicInheritanceHandler)
+    {
+        ((IInternalPrintingConfig<TOwner>)printingConfig).GetRoot().CyclicInheritanceHandler =
+            cyclicInheritanceHandler;
+        return printingConfig;
+    }
+
     public static void ConsumeProperty<TOwner>(this RootPrintingConfig<TOwner> printingConfig, object obj,
         int nestingLevel,
         StringBuilder stringBuilder, PropertyInfo propertyInfo,
-        string indentation)
+        string indentation, HashSet<object> cyclicInheritanceIgnoredObjects)
     {
         if (printingConfig.TypeExcluding.Contains(propertyInfo.PropertyType) ||
             printingConfig.MemberExcluding.Contains(propertyInfo))
@@ -18,13 +27,14 @@ public static class PrintingConfigExtensions
 
         stringBuilder.Append(indentation + propertyInfo.Name + " = ");
         var value = propertyInfo.GetValue(obj);
-        printingConfig.GetPropertyStringValue(nestingLevel + 1, value, propertyInfo, stringBuilder);
+        printingConfig.GetPropertyStringValue(nestingLevel + 1, value, propertyInfo, stringBuilder,
+            cyclicInheritanceIgnoredObjects);
     }
 
     public static void ConsumeField<TOwner>(this RootPrintingConfig<TOwner> printingConfig, object obj,
         int nestingLevel,
         StringBuilder stringBuilder, FieldInfo fieldInfo,
-        string indentation)
+        string indentation, HashSet<object> cyclicInheritanceIgnoredObjects)
     {
         if (printingConfig.TypeExcluding.Contains(fieldInfo.FieldType) ||
             printingConfig.MemberExcluding.Contains(fieldInfo))
@@ -32,14 +42,15 @@ public static class PrintingConfigExtensions
 
         stringBuilder.Append(indentation + fieldInfo.Name + " = ");
         var value = fieldInfo.GetValue(obj);
-        printingConfig.GetFieldStringValue(nestingLevel + 1, value, fieldInfo, stringBuilder);
+        printingConfig.GetFieldStringValue(nestingLevel + 1, value, fieldInfo, stringBuilder,
+            cyclicInheritanceIgnoredObjects);
     }
 
 
     private static void GetFieldStringValue<T>(this RootPrintingConfig<T> printingConfig, int nestingLevel,
         object? value,
         FieldInfo fieldInfo,
-        StringBuilder stringBuilder)
+        StringBuilder stringBuilder, HashSet<object> cyclicInheritanceIgnoredObjects)
     {
         if (TryReturnNull(value, out var fieldStringValue) ||
             printingConfig.TryReturnMemberStringValue(fieldInfo, value!, out fieldStringValue) ||
@@ -47,14 +58,14 @@ public static class PrintingConfigExtensions
             printingConfig.TryReturnAssignableTypeStringValue(fieldInfo.FieldType, value!, out fieldStringValue))
             stringBuilder.AppendLine(fieldStringValue);
         else
-            printingConfig.PrintToString(value!, nestingLevel, stringBuilder);
+            printingConfig.PrintToString(value!, nestingLevel, stringBuilder, cyclicInheritanceIgnoredObjects);
     }
 
 
     private static void GetPropertyStringValue<T>(this RootPrintingConfig<T> printingConfig, int nestingLevel,
         object? value,
         PropertyInfo propertyInfo,
-        StringBuilder stringBuilder)
+        StringBuilder stringBuilder, HashSet<object> cyclicInheritanceIgnoredObjects)
     {
         if (TryReturnNull(value, out var propertyStringValue) ||
             printingConfig.TryReturnMemberStringValue(propertyInfo, value!, out propertyStringValue) ||
@@ -63,7 +74,7 @@ public static class PrintingConfigExtensions
                 out propertyStringValue))
             stringBuilder.AppendLine(propertyStringValue);
         else
-            printingConfig.PrintToString(value!, nestingLevel, stringBuilder);
+            printingConfig.PrintToString(value!, nestingLevel, stringBuilder, cyclicInheritanceIgnoredObjects);
     }
 
 

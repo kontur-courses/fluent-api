@@ -159,4 +159,39 @@ public class ObjectPrinterTests
 	{nameof(For_Exclude_ConcreteFieldAndConcreteProperty_Type.Test)} = {TestingConstants.TestStringValue}
 ");
     }
+
+    [Test(Description = "minimal requirements p 7")]
+    public void For_IgnoreMembers_CycleInheritance()
+    {
+        var input = new For_IgnoreMembers_CycleInheritance_Type();
+        var config = ObjectPrinter.For<For_IgnoreMembers_CycleInheritance_Type>()
+            .WithCyclicInheritanceHandler(CyclicInheritanceHandler.IgnoreMembers);
+
+        var actual = config.PrintToString(input);
+
+        actual.Should().Be(@"For_IgnoreMembers_CycleInheritance_Type
+	Children = NestedType
+		Parent = For_IgnoreMembers_CycleInheritance_Type
+");
+    }
+}
+
+public class For_IgnoreMembers_CycleInheritance_Type
+{
+    public For_IgnoreMembers_CycleInheritance_Type()
+    {
+        Children = new(this);
+    }
+
+    public NestedType Children { get; set; }
+
+    public class NestedType
+    {
+        public NestedType(For_IgnoreMembers_CycleInheritance_Type parent)
+        {
+            Parent = parent;
+        }
+
+        public For_IgnoreMembers_CycleInheritance_Type Parent { get; set; }
+    }
 }
