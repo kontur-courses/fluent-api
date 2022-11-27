@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using ObjectPrinting.Infrastructure;
 
@@ -16,6 +17,11 @@ namespace ObjectPrinting
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(bool)
+        };
+
+        private readonly HashSet<Type> _specialFinalTypes = new()
+        {
+            typeof(ITuple), typeof(KeyValuePair<,>)
         };
 
         private readonly HashSet<Type> _excludedTypes = new();
@@ -30,27 +36,30 @@ namespace ObjectPrinting
             new EnumerableEqualityComparer<string>());
 
         public string PrintToString(TOwner obj) =>
-            PrintToString(obj, 0, ImmutableList<string>.Empty);
+            PrintToString(obj, 0, ImmutableList<string>.Empty, ImmutableHashSet<object>.Empty);
 
-        private string PrintToString(object? obj, int nestingLevel, ImmutableList<string> memberPath)
+        private string PrintToString(
+            object? obj, int nestingLevel,
+            ImmutableList<string> memberPath,
+            ImmutableHashSet<object> parents
+        )
         {
+            if (obj is null)
+                return "null";
+            if (parents.Contains(obj))
+                return "[Loop reference]";
+            parents = parents.Add(obj);
             if (TryFinalPrintToString(obj, memberPath, out var result))
                 return result!;
             if (obj is IEnumerable enumerable)
-                return PrintToStringEnumerable(enumerable, nestingLevel, memberPath);
-            return obj!.GetType().Name + Environment.NewLine +
-                   string.Join(Environment.NewLine, PrintToStringMembers(obj, nestingLevel, memberPath));
+                return PrintToStringEnumerable(enumerable, nestingLevel, memberPath, parents);
+            return obj.GetType().Name + Environment.NewLine +
+                   string.Join(Environment.NewLine, PrintToStringMembers(obj, nestingLevel, memberPath, parents));
         }
 
-        private bool TryFinalPrintToString(object? obj, ImmutableList<string> memberPath, out string? result)
+        private bool TryFinalPrintToString(object obj, ImmutableList<string> memberPath, out string? result)
         {
             result = default;
-            if (obj is null)
-            {
-                result = "null";
-                return true;
-            }
-
             var type = obj.GetType();
 
             if (_customPrintingMembers.TryGetValue(memberPath, out var memberPrint))
@@ -59,6 +68,13 @@ namespace ObjectPrinting
                 result = typePrint(obj);
             else if (_finalTypes.Contains(type))
                 result = obj.ToString();
+            else
+            {
+                if (type.IsGenericType)
+                    type = type.GetGenericTypeDefinition();
+                if (_specialFinalTypes.Any(final => final.IsAssignableFrom(type)))
+                    result = obj.ToString();
+            }
 
             return result is not null;
         }
@@ -66,29 +82,34 @@ namespace ObjectPrinting
         private string PrintToStringEnumerable(
             IEnumerable enumerable,
             int nestingLevel,
-            ImmutableList<string> memberPath
+            ImmutableList<string> memberPath,
+            ImmutableHashSet<object> parents
         )
         {
             var printed = enumerable
                 .Cast<object?>()
-                .Select(obj => PrintToString(obj, nestingLevel + 1, memberPath))
+                .Select(obj => PrintToString(obj, nestingLevel + 1, memberPath, parents))
                 .ToArray();
 
             if (!printed.All(obj => obj.Contains(Environment.NewLine)))
-                return $"[{string.Join(", ", printed)}]";
+                return '{' + string.Join(", ", printed) + '}';
 
             var builder = new StringBuilder()
-                .AppendLine("[");
+                .AppendLine("{");
             foreach (var str in printed)
                 builder
                     .Append('\t', nestingLevel + 1)
                     .Append(str)
                     .AppendLine();
 
-            return builder.Append(']').ToString();
+            return builder.Append('}').ToString();
         }
 
-        private IEnumerable<string> PrintToStringMembers(object obj, int nestingLevel, ImmutableList<string> memberPath)
+        private IEnumerable<string> PrintToStringMembers(
+            object obj, int nestingLevel,
+            ImmutableList<string> memberPath,
+            ImmutableHashSet<object> parents
+        )
         {
             var indentation = new string('\t', nestingLevel + 1);
             foreach (var member in obj.GetType().GetProperties().OfType<MemberInfo>().Concat(obj.GetType().GetFields()))
@@ -102,7 +123,8 @@ namespace ObjectPrinting
                 var printValue = PrintToString(
                     member.GetFieldPropertyValue(obj),
                     nestingLevel + 1,
-                    currentMemberPath
+                    currentMemberPath,
+                    parents
                 );
 
                 yield return $"{indentation}{member.Name} = {printValue}";
