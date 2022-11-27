@@ -8,12 +8,14 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public HashSet<Type> FinalTypes = new HashSet<Type>
+        private readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-    public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
+        private HashSet<Type> excludingTypes = new HashSet<Type>();
+
+        public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyConfig<TOwner, TPropType>(this);
         }
@@ -30,7 +32,7 @@ namespace ObjectPrinting
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            FinalTypes.Remove(typeof(TPropType));
+            excludingTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -41,23 +43,25 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-
             if (obj == null)
                 return "null" + Environment.NewLine;
             if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
             var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            stringBuilder.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if(excludingTypes.Contains(propertyInfo.PropertyType))
+                    break;
+                stringBuilder.Append(identation);
+                stringBuilder.Append(propertyInfo.Name);
+                stringBuilder.Append(" = ");
+                stringBuilder.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
-            return sb.ToString();
+
+            return stringBuilder.ToString();
         }
     }
 }
