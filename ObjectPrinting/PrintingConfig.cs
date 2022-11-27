@@ -16,11 +16,11 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan),typeof(bool), typeof(decimal),typeof(long),
             typeof(byte),typeof(sbyte),typeof(short),typeof(char),typeof(ushort),typeof(uint),typeof(ulong),typeof(ushort)
         };
-        private HashSet<Type> excludingTypes = new HashSet<Type>();
-        private HashSet<PropertyInfo> excludingPropeties = new HashSet<PropertyInfo>();
-        public readonly Dictionary<Type, Delegate> typesForPrintWithSpec = new Dictionary<Type, Delegate>();
-        public readonly Dictionary<PropertyInfo, Delegate> propertiesForPrintWithSpec = new Dictionary<PropertyInfo, Delegate>();
-
+        private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> excludingProperties = new HashSet<PropertyInfo>();
+        public readonly Dictionary<Type, Delegate> TypesForPrintWithSpec = new Dictionary<Type, Delegate>();
+        public readonly Dictionary<PropertyInfo, Delegate> PropertiesForPrintWithSpec = new Dictionary<PropertyInfo, Delegate>();
+        private readonly HashSet<object> printedObjects= new HashSet<object>();
         public readonly Dictionary<PropertyInfo, int> PropertyLenForString=new Dictionary<PropertyInfo, int>();
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -38,7 +38,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludingPropeties.Add(GetPropertyInfoFromExpression(memberSelector));
+            excludingProperties.Add(GetPropertyInfoFromExpression(memberSelector));
             return this;
         }
 
@@ -48,31 +48,42 @@ namespace ObjectPrinting
             return this;    
         }
 
-        public string PrintToString(TOwner obj)
+       
+        public string PrintToString(TOwner obj,int maxNesting=-1)
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
-            return GetValueString(obj, 0);
+            return GetValueString(obj, 0,maxNesting);
         }
 
-        private string GetValueString(object obj, int nestingLevel,PropertyInfo property=null)
+        private string GetValueString(object obj, int nestingLevel,int maxNesting,PropertyInfo property=null)
         {
             if (ReturnDefaultString(obj,property,out var valueString)) 
                 return valueString;
             var stringBuilder = new StringBuilder();
             var type = obj.GetType();
             stringBuilder.AppendLine(type.Name);
+            if (printedObjects.Contains(obj))
+                return "Cyclic reference"+Environment.NewLine;
+            
+            
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(excludingTypes.Contains(propertyInfo.PropertyType) || excludingPropeties.Contains(propertyInfo))
+                printedObjects.Add(obj);
+                if (nestingLevel==maxNesting)
+                    break;
+                if(excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperties.Contains(propertyInfo))
                     continue;
-                var value = GetValueString(propertyInfo.GetValue(obj),nestingLevel + 1, propertyInfo);
+
+                var value = GetValueString(propertyInfo.GetValue(obj),nestingLevel + 1,maxNesting, propertyInfo);
                 if (string.IsNullOrEmpty(value)) continue;
                 stringBuilder.Append(new string('\t', nestingLevel+1));
                 stringBuilder.Append(propertyInfo.Name);
                 stringBuilder.Append(" = ");
                 stringBuilder.Append(value);
+                
             }
+            
             return stringBuilder.ToString();
         }
 
@@ -92,19 +103,19 @@ namespace ObjectPrinting
 
         private string GetString(object obj, string valueString, Type objType, PropertyInfo property, bool isTrimmed)
         {
-            if(propertiesForPrintWithSpec.ContainsKey(property))
+            if(PropertiesForPrintWithSpec.ContainsKey(property))
             {
                 if (isTrimmed)
-                    valueString = (string)propertiesForPrintWithSpec[property].DynamicInvoke(valueString);
+                    valueString = (string)PropertiesForPrintWithSpec[property].DynamicInvoke(valueString);
                 else
-                    valueString = (string)propertiesForPrintWithSpec[property].DynamicInvoke(obj);
+                    valueString = (string)PropertiesForPrintWithSpec[property].DynamicInvoke(obj);
             }
-            else if (typesForPrintWithSpec.ContainsKey(objType))
+            else if (TypesForPrintWithSpec.ContainsKey(objType))
             {
                 if (isTrimmed)
-                    valueString = (string)typesForPrintWithSpec[objType].DynamicInvoke(valueString);
+                    valueString = (string)TypesForPrintWithSpec[objType].DynamicInvoke(valueString);
                 else
-                    valueString = (string)typesForPrintWithSpec[objType].DynamicInvoke(obj);
+                    valueString = (string)TypesForPrintWithSpec[objType].DynamicInvoke(obj);
             }
             else if(!isTrimmed)
                 valueString = obj.ToString();
@@ -115,7 +126,7 @@ namespace ObjectPrinting
         {
             if (property == null || !PropertyLenForString.ContainsKey(property) || !(obj is string s) ||
                 s.Length <= PropertyLenForString[property]) return false;
-            valueString = s.Substring(0, PropertyLenForString[property]);
+            valueString = s[..PropertyLenForString[property]];
             return true;
         }
     }

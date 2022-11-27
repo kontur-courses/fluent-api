@@ -10,7 +10,9 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
         public int? Power { get; set; }
         public double? Weight { get; set; }
-        public int YearOfCarProduction { get; set; }
+        private int YearOfCarProduction { get; }
+
+        public int AgeOfTheCar { get; }
 
         public Vehicle(string name, int? power, double? weight, int yearOfCarProduction)
         {
@@ -18,7 +20,8 @@ namespace ObjectPrinting.Tests
             Name = name;
             Power = power;
             Weight = weight;
-            YearOfCarProduction = yearOfCarProduction;
+            this.YearOfCarProduction = yearOfCarProduction;
+            AgeOfTheCar = 2022 - this.YearOfCarProduction;
         }
     }
 }

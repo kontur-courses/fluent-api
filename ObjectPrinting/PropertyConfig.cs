@@ -23,9 +23,9 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
             if(Properties == null)
-                printingConfig.typesForPrintWithSpec[typeof(TPropType)] = print;
+                printingConfig.TypesForPrintWithSpec[typeof(TPropType)] = print;
             else
-                printingConfig.propertiesForPrintWithSpec[Properties] = print;
+                printingConfig.PropertiesForPrintWithSpec[Properties] = print;
             return printingConfig;
         }
  
@@ -33,7 +33,7 @@ namespace ObjectPrinting
     }
    
 
-    public static class PropertyPrintingConfigExtensions
+    public static class PropertyExtensions
     {
         public static PrintingConfig<TOwner> Using<TOwner, T>(this PropertyConfig<TOwner, T> config,
             CultureInfo culture, string format = null) where T : IFormattable
