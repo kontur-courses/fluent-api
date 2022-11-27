@@ -10,7 +10,7 @@ public static class TypePrintingConfigExtensions
     {
         return config.Serialize(x => x[..length]);
     }
-    
+
     public static TypePrintingConfig<TOwner, TType> Format<TOwner, TType>(
         this TypePrintingConfig<TOwner, TType> config, CultureInfo? cultureInfo, string? format = null)
         where TType : IFormattable

@@ -89,7 +89,7 @@ public class ObjectPrinterTests
         CultureInfo.CurrentCulture = tempCultureInfo;
     }
 
-    [Test(Description = "minimar requirements p 4.1")]
+    [Test(Description = "minimal requirements p 4.1")]
     public void For_Serialize_ConcreteField()
     {
         var input = new For_Serialize_ConcreteField_Type();
@@ -106,7 +106,7 @@ public class ObjectPrinterTests
     }
 
 
-    [Test(Description = "minimar requirements p 4.2")]
+    [Test(Description = "minimal requirements p 4.2")]
     public void For_Serialize_ConcreteProperty()
     {
         var input = new For_Serialize_ConcreteProperty_Type();
@@ -121,4 +121,33 @@ public class ObjectPrinterTests
 	{nameof(For_Serialize_ConcreteProperty_Type.Test)} = {TestingConstants.TestStringValue}
 ");
     }
+
+    [Test(Description = "minimal requirements p 5")]
+    public void For_Serialize_CutStrings()
+    {
+        var input = new For_Serialize_CutStrings_Type();
+        var config = ObjectPrinter.For<For_Serialize_CutStrings_Type>()
+            .For(x => x.CutUpTo50)
+            .Cut(50)
+            .For(x => x.CutUpTo25)
+            .Cut(25)
+            .ForType<string>()
+            .Cut(75);
+
+        var actual = config.PrintToString(input);
+
+        actual.Should().Be($@"{nameof(For_Serialize_CutStrings_Type)}
+	{nameof(For_Serialize_CutStrings_Type.CutUpTo50)} = {TestingConstants.LongTestStringValue[..50]}
+	{nameof(For_Serialize_CutStrings_Type.CutUpTo75Other)} = {TestingConstants.LongTestStringValue[..75]}
+	{nameof(For_Serialize_CutStrings_Type.CutUpTo25)} = {TestingConstants.LongTestStringValue[..25]}
+");
+    }
+}
+
+public class For_Serialize_CutStrings_Type
+{
+    public string CutUpTo25 = TestingConstants.LongTestStringValue;
+    public string CutUpTo50 { get; set; } = TestingConstants.LongTestStringValue;
+
+    public string CutUpTo75Other { get; set; } = TestingConstants.LongTestStringValue;
 }
