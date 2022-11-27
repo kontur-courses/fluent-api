@@ -37,5 +37,25 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        public IPropertyConfig<TOwner,T> ConfigProperty<T>(Func<TOwner,T> property)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public IPropertyConfig<TOwner,T> AlternateForType<T>(Func<TOwner, T> property)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IPropertyConfig<TOwner, T> ExcludeProperty<T>(Func<TOwner, T> property)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public IPropertyConfig<TOwner, T> ExcludeType<T>()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
