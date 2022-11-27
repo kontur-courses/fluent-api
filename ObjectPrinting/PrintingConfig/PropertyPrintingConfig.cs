@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting.PrintingConfig
@@ -16,7 +17,6 @@ namespace ObjectPrinting.PrintingConfig
             : base(parent.propertyInfo, maxLength, parent)
         { }
 
-        
         public PropertyPrintingConfig<TOwner, TField> As(Func<TField, string> serializer)
         {
             PropertySerializers[propertyInfo] = serializer;

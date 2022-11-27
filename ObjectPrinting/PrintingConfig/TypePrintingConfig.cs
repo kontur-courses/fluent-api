@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace ObjectPrinting.PrintingConfig
 {
@@ -9,6 +10,10 @@ namespace ObjectPrinting.PrintingConfig
 
         internal TypePrintingConfig(int maxStringLength, TypePrintingConfig<TOwner, string> parent)
             : base(maxStringLength, parent)
+        { }
+        
+        internal TypePrintingConfig(Type type, CultureInfo cultureInfo, TypePrintingConfig<TOwner, T> parent)
+            : base(type, cultureInfo, parent)
         { }
         
         public TypePrintingConfig<TOwner, T> As(Func<T, string> serializer)

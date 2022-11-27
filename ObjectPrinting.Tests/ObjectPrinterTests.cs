@@ -53,7 +53,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void Should_UseProvidedSerializerForProperty()
+        public void Should_UseProvidedSerializer_ForProperty()
         {
             var person = new Person() { Id = new Guid(), Name = "Alex", Age = 17, Height = 1.87 };
             var printer = ObjectPrinter.For<Person>()
@@ -66,7 +66,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void Should_UseProvidedSerializerForType()
+        public void Should_UseProvidedSerializer_ForType()
         {
             var person = new Person() { Id = new Guid(), Name = "Alex", Age = 17, Height = 1.87 };
             var printer = ObjectPrinter.For<Person>()
@@ -137,7 +137,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ShouldNot_BreakOnImmediateCyclicalReferences()
+        public void ShouldNot_Break_OnImmediateCyclicalReferences()
         {
             var person = new Person { Name = "Alex" };
             person.Parent = person;
@@ -149,7 +149,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void ShouldNot_BreakOnNotImmediateCyclicalReferences()
+        public void ShouldNot_Break_OnNotImmediateCyclicalReferences()
         {
             var person = new Person { Name = "Alex" };
             var parent = new Person { Name = "Bethy" };
@@ -160,6 +160,19 @@ namespace ObjectPrinting.Tests
             var result = printer.PrintToString(person);
 
             result.Should().Contain("Parent = <Cyclical reference>");
+        }
+
+        [Test]
+        public void Should_UseProvidedCulture_ForType()
+        {
+            var person = new Person() { Id = new Guid(), Name = "Alex", Age = 17, Height = 1.87 };
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeType<double>()
+                .Using(new CultureInfo("ru"));
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Contain("Height = 1,87");
         }
     }
 }

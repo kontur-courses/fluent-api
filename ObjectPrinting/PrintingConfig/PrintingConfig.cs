@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,6 +13,8 @@ namespace ObjectPrinting.PrintingConfig
     {
         protected readonly Dictionary<Type, Delegate> TypeSerializers;
         protected readonly Dictionary<PropertyInfo, Delegate> PropertySerializers;
+        private readonly Dictionary<Type, CultureInfo> typeCultures;
+        private readonly Dictionary<PropertyInfo, CultureInfo> propertyCultures;
         private readonly HashSet<Type> excludedTypes;
         private readonly HashSet<PropertyInfo> excludedProperties;
         private readonly int? maxStringLength;
@@ -21,9 +24,6 @@ namespace ObjectPrinting.PrintingConfig
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
-        public PrintingConfig() : this(null, null, null, null, null, null)
-        { }
 
         internal PrintingConfig(int maxStringLength, PrintingConfig<TOwner> parent) : this(parent)
         {
@@ -35,21 +35,37 @@ namespace ObjectPrinting.PrintingConfig
             maxPropertyLength[property] = maxLength;
         }
         
-        protected PrintingConfig(PrintingConfig<TOwner> parent)
-            : this(parent.excludedTypes, parent.excludedProperties, parent.TypeSerializers, 
-                parent.PropertySerializers, parent.maxPropertyLength, parent.maxStringLength)
-        { }
-        
-        private PrintingConfig(HashSet<Type> excludedTypes, HashSet<PropertyInfo> excludedFields,
-            Dictionary<Type, Delegate> typeMap, Dictionary<PropertyInfo, Delegate> fieldMap, 
-            Dictionary<PropertyInfo, int> maxPropertyLength, int? maxStringLength)
+        internal PrintingConfig(Type type, CultureInfo cultureInfo, PrintingConfig<TOwner> parent) : this(parent)
         {
-            this.excludedTypes = excludedTypes ?? new HashSet<Type>();
-            excludedProperties = excludedFields ?? new HashSet<PropertyInfo>();
-            TypeSerializers = typeMap ?? new Dictionary<Type, Delegate>();
-            PropertySerializers = fieldMap ?? new Dictionary<PropertyInfo, Delegate>();
-            this.maxPropertyLength = maxPropertyLength ?? new Dictionary<PropertyInfo, int>();
-            this.maxStringLength = maxStringLength;
+            typeCultures[type] = cultureInfo;
+        }
+
+        internal PrintingConfig(PropertyInfo property, CultureInfo cultureInfo, PrintingConfig<TOwner> parent) : this(parent)
+        {
+            propertyCultures[property] = cultureInfo;
+        }
+
+        protected PrintingConfig(PrintingConfig<TOwner> parent)
+        {
+            excludedTypes = parent.excludedTypes;
+            excludedProperties = parent.excludedProperties;
+            TypeSerializers = parent.TypeSerializers;
+            PropertySerializers = parent.PropertySerializers;
+            maxPropertyLength = parent.maxPropertyLength;
+            maxStringLength = parent.maxStringLength;
+            propertyCultures = parent.propertyCultures;
+            typeCultures = parent.typeCultures;
+        }
+        
+        public PrintingConfig()
+        {
+            excludedTypes = new HashSet<Type>();
+            excludedProperties = new HashSet<PropertyInfo>();
+            TypeSerializers = new Dictionary<Type, Delegate>();
+            PropertySerializers = new Dictionary<PropertyInfo, Delegate>();
+            maxPropertyLength = new Dictionary<PropertyInfo, int>();
+            propertyCultures = new Dictionary<PropertyInfo, CultureInfo>();
+            typeCultures = new Dictionary<Type, CultureInfo>();
         }
 
         public string PrintToString(TOwner obj)
@@ -64,9 +80,14 @@ namespace ObjectPrinting.PrintingConfig
 
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
+
             if (finalTypes.Contains(obj.GetType()))
+            {
+                if (typeCultures.ContainsKey(obj.GetType()))
+                    return ((IFormattable)obj).ToString("", typeCultures[obj.GetType()]) + Environment.NewLine;
+                
                 return obj + Environment.NewLine;
+            }
             
             var sb = new StringBuilder();
             sb.AppendLine(obj.GetType().Name);
