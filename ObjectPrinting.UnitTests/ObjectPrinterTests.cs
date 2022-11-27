@@ -142,4 +142,21 @@ public class ObjectPrinterTests
 	{nameof(For_Serialize_CutStrings_Type.CutUpTo25)} = {TestingConstants.LongTestStringValue[..25]}
 ");
     }
+
+    [Test(Description = "minimal requirements p 6")]
+    public void For_Exclude_ConcreteFieldAndConcreteProperty()
+    {
+        var input = new For_Exclude_ConcreteFieldAndConcreteProperty_Type();
+        var printingConfig = ObjectPrinter.For<For_Exclude_ConcreteFieldAndConcreteProperty_Type>()
+            .For(x => x.Property)
+            .Exclude()
+            .For(x => x.Field)
+            .Exclude();
+
+        var actual = printingConfig.PrintToString(input);
+
+        actual.Should().Be($@"{nameof(For_Exclude_ConcreteFieldAndConcreteProperty_Type)}
+	{nameof(For_Exclude_ConcreteFieldAndConcreteProperty_Type.Test)} = {TestingConstants.TestStringValue}
+");
+    }
 }
