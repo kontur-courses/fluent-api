@@ -17,8 +17,9 @@ namespace ObjectPrinting
         };
         private HashSet<Type> excludingTypes = new HashSet<Type>();
         private HashSet<PropertyInfo> excludingPropeties = new HashSet<PropertyInfo>();
-        //private HashSet<object> printed= new HashSet<object>();
         public readonly Dictionary<Type, Delegate> typesForPrintWithSpec = new Dictionary<Type, Delegate>();
+        public readonly Dictionary<PropertyInfo, Delegate> propertiesForPrintWithSpec = new Dictionary<PropertyInfo, Delegate>();
+
         public readonly Dictionary<PropertyInfo, int> PropertyLenForString=new Dictionary<PropertyInfo, int>();
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -27,8 +28,7 @@ namespace ObjectPrinting
  
         public PropertyConfig<TOwner,TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertyInfo = GetPropertyInfoFromExpression(memberSelector);
-            return new PropertyConfig<TOwner, TPropType>(this, propertyInfo);
+            return new PropertyConfig<TOwner, TPropType>(this, GetPropertyInfoFromExpression(memberSelector));
         }
         private static PropertyInfo GetPropertyInfoFromExpression<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -84,21 +84,28 @@ namespace ObjectPrinting
             if (!FinalTypes.Contains(objType)) 
                 return false;
             var isTrimmed = TrimString(obj, property, ref valueString);
-            valueString= GetString(obj, valueString, objType, isTrimmed);
+            valueString= GetString(obj, valueString, objType, property, isTrimmed);
             valueString += Environment.NewLine;
             return true;
         }
 
-        private string GetString(object obj, string valueString, Type objType, bool isTrimmed)
+        private string GetString(object obj, string valueString, Type objType, PropertyInfo property, bool isTrimmed)
         {
-            if (typesForPrintWithSpec.ContainsKey(objType))
+            if(propertiesForPrintWithSpec.ContainsKey(property))
+            {
+                if (isTrimmed)
+                    valueString = (string)propertiesForPrintWithSpec[property].DynamicInvoke(valueString);
+                else
+                    valueString = (string)propertiesForPrintWithSpec[property].DynamicInvoke(obj);
+            }
+            else if (typesForPrintWithSpec.ContainsKey(objType))
             {
                 if (isTrimmed)
                     valueString = (string)typesForPrintWithSpec[objType].DynamicInvoke(valueString);
                 else
                     valueString = (string)typesForPrintWithSpec[objType].DynamicInvoke(obj);
             }
-            else
+            else if(!isTrimmed)
                 valueString = obj.ToString();
             return valueString;
         }
