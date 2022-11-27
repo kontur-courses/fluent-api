@@ -10,10 +10,11 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> FinalTypes = new HashSet<Type>
+        private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan),typeof(bool), typeof(decimal),
+            typeof(DateTime), typeof(TimeSpan),typeof(bool), typeof(decimal),typeof(long),
+            typeof(byte),typeof(sbyte),typeof(short),typeof(char),typeof(ushort),typeof(uint),typeof(ulong),typeof(ushort)
         };
         private HashSet<Type> excludingTypes = new HashSet<Type>();
         private HashSet<PropertyInfo> excludingPropeties = new HashSet<PropertyInfo>();
