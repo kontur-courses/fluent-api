@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -12,12 +13,13 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
     {
     }
 
-    public CyclicInheritanceHandler CyclicInheritanceHandler { get; set; }
+    public CyclicInheritanceHandler CyclicInheritanceHandler { get; set; } = CyclicInheritanceHandler.IgnoreMembers;
 
     public LinkedList<(Type Type, Func<object, string> Serializer)>
         AssignableTypeSerializers { get; } = new(
         new (Type Type, Func<object, string> Serializer)[]
         {
+            (typeof(bool), o => o.ToString() ?? string.Empty),
             (typeof(string), o => o.ToString() ?? string.Empty),
             (typeof(IFormattable), o => ((IFormattable)o).ToString(null, CultureInfo.CurrentCulture))
         });
@@ -34,7 +36,7 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
     public void PrintToString(object obj, int nestingLevel, StringBuilder stringBuilder,
         HashSet<object> cyclicInheritanceIgnoredObjects)
     {
-        var indentation = new string('\t', nestingLevel + 1);
+        nestingLevel = nestingLevel + 1;
         var type = obj.GetType();
         stringBuilder.AppendLine(type.Name);
         if (CyclicInheritanceHandler == CyclicInheritanceHandler.IgnoreMembers && type.IsClass)
@@ -46,12 +48,20 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
 
         var internalPrintingConfig = this as IInternalPrintingConfig<TOwner>;
         var root = internalPrintingConfig.GetRoot();
+
+        if (type.IsAssignableTo(typeof(IEnumerable)))
+        {
+            var enumerable = (IEnumerable)obj;
+            root.ConsumeItems(enumerable, nestingLevel, stringBuilder, '\t', cyclicInheritanceIgnoredObjects);
+            return;
+        }
+
         foreach (var propertyInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            root.ConsumeProperty(obj, nestingLevel, stringBuilder, propertyInfo, indentation,
+            root.ConsumeProperty(obj, nestingLevel, stringBuilder, propertyInfo, '\t',
                 cyclicInheritanceIgnoredObjects);
 
         foreach (var fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            root.ConsumeField(obj, nestingLevel, stringBuilder, fieldInfo, indentation,
+            root.ConsumeField(obj, nestingLevel, stringBuilder, fieldInfo, '\t',
                 cyclicInheritanceIgnoredObjects);
     }
 }

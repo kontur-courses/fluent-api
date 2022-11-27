@@ -174,4 +174,49 @@ public class ObjectPrinterTests
 		Parent = For_IgnoreMembers_CycleInheritance_Type
 ");
     }
+
+
+    [Test(Description = "full requirements p 2.1")]
+    public void For_Serialize_EnumerableOfObjects()
+    {
+        var input = new For_Serialize_Objects_Type[]
+        {
+            new(), new(), new()
+        };
+        var config = ObjectPrinter.For<For_Serialize_Objects_Type[]>();
+
+        var actual = config.PrintToString(input);
+
+        actual.Should().Be(@"For_Serialize_Objects_Type[]
+	Items
+		[0] = For_Serialize_Objects_Type
+			Value = TestValue
+		[1] = For_Serialize_Objects_Type
+			Value = TestValue
+		[2] = For_Serialize_Objects_Type
+			Value = TestValue
+");
+    }
+
+    [Test(Description = "full requirements p 2.2")]
+    public void For_Serialize_DictionaryOfObjects()
+    {
+        var input = new Dictionary<string, For_Serialize_Objects_Type>
+        {
+            { "first", new() }, { "second", new() }, { "third", new() }
+        };
+        var config = ObjectPrinter.For<Dictionary<string, For_Serialize_Objects_Type>>();
+
+        var actual = config.PrintToString(input);
+
+        actual.Should().Be(@"Dictionary`2
+	Items
+		[first] = For_Serialize_Objects_Type
+			Value = TestValue
+		[second] = For_Serialize_Objects_Type
+			Value = TestValue
+		[third] = For_Serialize_Objects_Type
+			Value = TestValue
+");
+    }
 }
