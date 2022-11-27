@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner,TType>
+    public class PropertyPrintingConfig<TOwner,TType> : IPropertyPrintingConfig<TOwner,TType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
@@ -17,22 +17,11 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using<T>(CultureInfo currentCulture) 
+        public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> CutTo(int index)
-        {
-            return printingConfig;
-        }
-    }
-    
-    public static class Extensions
-    {
-        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner,double> config, CultureInfo currentCulture) 
-        {
-            
-        }
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TType>.ParentConfig => printingConfig;
     }
 }

@@ -45,7 +45,7 @@ namespace ObjectPrinting
             return this;
         }
         
-        public PrintingConfig<TOwner> Excluding(Expression<Func<TOwner,object>> expression)
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> expression)
         {
             return this;
         }
