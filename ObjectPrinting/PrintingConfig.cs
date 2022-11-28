@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -13,7 +16,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -31,24 +33,31 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                string name = propertyInfo.Name;
+                if (OverridedConfigs.ContainsKey(name) && OverridedConfigs[name].Excluded) continue;
+                
+                sb.Append(identation + propertyInfo.Name + " = ");
+                if (OverridedConfigs.ContainsKey(propertyInfo.Name))
+                {
+                    sb.Append(OverridedConfigs[propertyInfo.Name]
+                        .GetStringResult(propertyInfo.GetValue(obj)));
+                    sb.AppendLine();
+                }
+                else
+                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
+                        nestingLevel + 1));
+
             }
+
             return sb.ToString();
         }
 
-        public IPropertyConfig<TOwner,T> ConfigProperty<T>(Func<TOwner,T> property)
+        public IPropertyConfig<TOwner, T> ConfigForProperty<T>(Expression<Func<TOwner, T>> property)
         {
-            throw new NotImplementedException();
+            return new PropertyConfig<TOwner, T>(this, property);
         }
         
         public IPropertyConfig<TOwner,T> AlternateForType<T>(Func<TOwner, T> property)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IPropertyConfig<TOwner, T> ExcludeProperty<T>(Func<TOwner, T> property)
         {
             throw new NotImplementedException();
         }
@@ -56,6 +65,46 @@ namespace ObjectPrinting
         public IPropertyConfig<TOwner, T> ExcludeType<T>()
         {
             throw new NotImplementedException();
+        }
+
+        internal void ExcludeProperty<T>(Expression<Func<TOwner, T>> property)
+        {
+            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
+            var info = (PropertyInfo) ((MemberExpression) property.Body).Member;
+            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
+            OverridedConfigs[info.Name].Exclude();
+        }
+        internal void OverrideSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> property,
+            Func<T, string> newMethod)
+        {
+            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
+            var info = (PropertyInfo) ((MemberExpression) property.Body).Member;
+            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
+            OverridedConfigs[info.Name].SetNewSerializeMethod(newMethod);
+        }
+        
+        private Dictionary<string, OverrideConfig> OverridedConfigs = new Dictionary<string, OverrideConfig>();
+        private class OverrideConfig
+        {
+            public bool Excluded { get; private set; } = false;
+            private Func<object, string> OverrideFunc;
+
+            public OverrideConfig()
+            {
+                
+            }
+
+            public void Exclude()
+            {
+                Excluded = true;
+            }
+
+            public void SetNewSerializeMethod<T>(Func<T, string> newMethod)
+            {
+                OverrideFunc = (object obj) => newMethod((T) obj);
+            }
+
+            public string GetStringResult<T>(T value) => OverrideFunc(value);
         }
     }
 }

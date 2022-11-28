@@ -1,0 +1,4 @@
+﻿Person
+	Name = Alex
+	Height = 0
+	Age = 19

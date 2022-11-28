@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 0
+	Age = Old
