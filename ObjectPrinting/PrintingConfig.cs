@@ -28,26 +28,33 @@ namespace ObjectPrinting
         private readonly HashSet<object> printedObjects = new HashSet<object>();
         public readonly Dictionary<PropertyInfo, int> PropertyLenForString = new Dictionary<PropertyInfo, int>();
 
+        /// <summary>
+        /// Include fields by type TPropType for next serialization
+        /// </summary>
+        /// <typeparam name="TPropType"> Generic parameter for serialization TPropType </typeparam>
+        /// <returns>PropertyConfig&lt;TOwner, TPropType&gt;</returns>
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyConfig<TOwner, TPropType>(this);
         }
+
         /// <summary>
-        /// Include fields by property TPropType
+        /// Include field by property TPropType for next serialization
         /// </summary>
         /// <typeparam name="TPropType"> Generic parameter for serialization TPropType </typeparam>
-        /// <param name="memberSelector"></param>
-        /// <returns></returns>
+        /// <returns>PropertyConfig&lt;TOwner, TPropType&gt;</returns>
         public PropertyConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyConfig<TOwner, TPropType>(this, GetPropertyInfoFromExpression(memberSelector));
         }
+
         private static PropertyInfo GetPropertyInfoFromExpression<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            
+
         }
+
         /// <summary>
         /// Exclude property from <typeparam name="TPropType">Expression&lt;Func&lt;TOwner, TPropType&gt;&gt;</typeparam> 
         /// </summary>
@@ -58,6 +65,7 @@ namespace ObjectPrinting
             excludingProperties.Add(GetPropertyInfoFromExpression(memberSelector));
             return this;
         }
+
         /// <summary>
         /// Exclude all fields of <typeparam name="TPropType">TPropType</typeparam> from PrintingConfig 
         /// </summary>

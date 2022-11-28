@@ -56,10 +56,12 @@ namespace ObjectPrinting
         {
             return config.Using(type => type.ToString(format, culture));
         }
+
         public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
+
         /// <summary>
         /// Trim string for object printer
         /// </summary>
