@@ -48,7 +48,7 @@ namespace ObjectPrinting
         /// <typeparam name="T">IFormattable type</typeparam>
         /// <param name="culture">Culture for IFormattable types </param>
         /// <returns>PrintingConfig&lt;TOwner&gt;</returns>
-        public static PrintingConfig<TOwner> Using<TOwner, T>(this PropertyConfig<TOwner, T> config,
+        public static PrintingConfig<TOwner> UsingWithFormatting<TOwner, T>(this PropertyConfig<TOwner, T> config,
             CultureInfo culture, string format = null) where T : IFormattable
         {
             return config.Using(type => type.ToString(format, culture));

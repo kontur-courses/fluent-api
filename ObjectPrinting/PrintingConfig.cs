@@ -1,10 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting
 {
@@ -17,7 +20,7 @@ namespace ObjectPrinting
             typeof(byte), typeof(sbyte), typeof(short), typeof(char), typeof(ushort), typeof(uint), typeof(ulong),
             typeof(ushort)
         };
-
+        private int inCollection= 0;
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludingProperties = new HashSet<PropertyInfo>();
         public readonly Dictionary<Type, Delegate> TypesForPrintWithSpec = new Dictionary<Type, Delegate>();
@@ -79,33 +82,72 @@ namespace ObjectPrinting
         }
 
 
-        public string PrintToString(TOwner obj, int maxNesting = -1)
+        public string PrintToString(TOwner obj, int maxNesting = -1, int nestingLevel=0)
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
-            return GetValueString(obj, 0, maxNesting);
+            return GetValueString(obj, nestingLevel, maxNesting);
         }
 
-        private string GetValueString(object obj, int nestingLevel, int maxNesting, PropertyInfo property = null)
+        private string GetIDictionaryString(IDictionary iDictionary, int nestingLevel, int maxNesting)
         {
-            if (ReturnDefaultString(obj, property, out var valueString))
+            inCollection ++;
+            var list = new List<string>();
+            foreach (var key in iDictionary.Keys)
+            {
+                //list.Add(GetValueString(iDictionary[key], nestingLevel + 1, maxNesting, ""));
+                var stringKey = GetValueString(key, nestingLevel + 1, maxNesting, "");
+                var stringValue = GetValueString(iDictionary[key], nestingLevel + 1, maxNesting,"");
+                list.Add($"[{stringKey}] = {stringValue}");
+            }
+            var finalString = "[" + (string.Join(", ", list)) + "]";
+            inCollection--;
+            return inCollection == 0 ? finalString + "\r\n" : finalString;
+        }
+        
+        private string GetIEnumerableString(IEnumerable enumerable, int nestingLevel, int maxNesting)
+        {
+            inCollection++;
+            var list = new List<string>();
+            foreach (var enumerableObject in enumerable)
+            {
+                list.Add(GetValueString(enumerableObject, nestingLevel + 1, maxNesting,""));
+            }
+
+            var finalString = "[" + (string.Join(", ", list)) + "]";
+            inCollection--;
+            return inCollection == 0 ? finalString + "\r\n" : finalString;
+
+
+        }
+        private string GetValueString(object obj, int nestingLevel, int maxNesting,string newLine="\r\n", PropertyInfo property = null)
+        {
+            if (ReturnDefaultString(obj, property, out var valueString,newLine))
                 return valueString;
+
+            if (obj is IDictionary dictionary)
+                return GetIDictionaryString(dictionary, nestingLevel + 1, maxNesting);
+
+            if (obj is IEnumerable list)
+                return GetIEnumerableString(list,nestingLevel+1, maxNesting);
+            
             var stringBuilder = new StringBuilder();
             var type = obj.GetType();
-            stringBuilder.AppendLine(type.Name);
+            stringBuilder.Append(type.Name+newLine);
             if (printedObjects.Contains(obj))
-                return "Cyclic reference" + Environment.NewLine;
+                return "Cyclic reference" + newLine;
+            var tString = newLine == "\r\n" ? new string('\t', nestingLevel + 1) : "; ";
             foreach (var propertyInfo in type.GetProperties())
             {
-                printedObjects.Add(obj);
+                if(!FinalTypes.Contains(obj))
+                    printedObjects.Add(obj);
                 if (nestingLevel == maxNesting)
                     break;
                 if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperties.Contains(propertyInfo))
                     continue;
-
-                var value = GetValueString(propertyInfo.GetValue(obj), nestingLevel + 1, maxNesting, propertyInfo);
+                var value = GetValueString(propertyInfo.GetValue(obj), nestingLevel + 1, maxNesting, newLine, propertyInfo);
                 if (string.IsNullOrEmpty(value)) continue;
-                stringBuilder.Append(new string('\t', nestingLevel + 1));
+                stringBuilder.Append(tString);
                 stringBuilder.Append(propertyInfo.Name);
                 stringBuilder.Append(" = ");
                 stringBuilder.Append(value);
@@ -114,7 +156,7 @@ namespace ObjectPrinting
             return stringBuilder.ToString();
         }
 
-        private bool ReturnDefaultString(object obj, PropertyInfo property, out string valueString)
+        private bool ReturnDefaultString(object obj, PropertyInfo property, out string valueString, string newLine= null)
         {
             valueString = null;
             if (obj is null)
@@ -124,13 +166,13 @@ namespace ObjectPrinting
                 return false;
             var isTrimmed = TrimString(obj, property, ref valueString);
             valueString = GetString(obj, valueString, objType, property, isTrimmed);
-            valueString += Environment.NewLine;
+            valueString += newLine;
             return true;
         }
 
         private string GetString(object obj, string valueString, Type objType, PropertyInfo property, bool isTrimmed)
         {
-            if (PropertiesForPrintWithSpec.ContainsKey(property))
+            if (property!= null && PropertiesForPrintWithSpec.ContainsKey(property))
             {
                 if (isTrimmed)
                     valueString = (string)PropertiesForPrintWithSpec[property].DynamicInvoke(valueString);
