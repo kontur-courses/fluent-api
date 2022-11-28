@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using FluentAssertions;
 using System;
+using System.Globalization;
 using ObjectPrinting.PropertyPrintingConfig;
 
 namespace ObjectPrinting.Tests
@@ -17,7 +18,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsing_PropertyByName_Success()
+        public void PrintingUsingFunction_PropertyByName_Success()
         {
             var printedObject = printingConfig.Printing(p => p.Age).Using(val => $"{val} years").PrintToString(person);
 
@@ -27,7 +28,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsing_PropertyByNameTwice_ThrowException()
+        public void PrintingUsingFunction_PropertyByNameTwice_ThrowException()
         {
             Action act = () => printingConfig.Printing(p => p.Age).Using(val => $"{val} years")
                 .Printing(p => p.Age).Using(val => val.ToString("X8"));
@@ -36,7 +37,30 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsing_PropertyByType_Success()
+        public void PrintingUsingCulture_PropertyByName_Success()
+        {
+            person.Height = 18.3;
+
+            var printedObject = printingConfig.Printing(p => p.Height).
+                Using(CultureInfo.InvariantCulture).PrintToString(person);
+
+            printedObject.Should().Contain("18.3");
+
+            printingConfig.PrintToString(person).Should().NotContain("18.3");
+        }
+
+        [Test]
+        public void PrintingUsingCulture_PropertyByNameTwice_ThrowException()
+        {
+            Action act = () => printingConfig.Printing(p => p.Height).
+                Using(CultureInfo.InvariantCulture).Printing(p => p.Height).
+                Using(CultureInfo.InvariantCulture);
+
+            act.Should().Throw<InvalidOperationException>();
+        }
+
+        [Test]
+        public void PrintingUsingFunction_PropertyByType_Success()
         {
             var printedObject = printingConfig.Printing<Guid>().Using(val => $"{val} (GUID)").PrintToString(person);
 
@@ -46,7 +70,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsing_PropertyByTypeTwice_ThrowException()
+        public void PrintingUsingFunction_PropertyByTypeTwice_ThrowException()
         {
             Action act = () => printingConfig.Printing<Guid>().Using(val => $"{val} (GUID)")
                 .Printing<Guid>().Using(val => val.ToString());

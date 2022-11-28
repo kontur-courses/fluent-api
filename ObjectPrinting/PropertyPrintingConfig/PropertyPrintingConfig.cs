@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting.PropertyPrintingConfig
@@ -21,12 +20,6 @@ namespace ObjectPrinting.PropertyPrintingConfig
                 printingConfig.TypeSerializationRule.AddRule(typeof(TPropType), print);
             else
                 printingConfig.MemberSerializationRule.AddRule(MemberInfo, print);
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            throw new NotImplementedException();
             return printingConfig;
         }
 

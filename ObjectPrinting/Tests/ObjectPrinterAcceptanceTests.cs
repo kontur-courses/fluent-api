@@ -8,7 +8,7 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
+        //[Test]
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
                 .Excluding<Guid>()
                 //+2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для всех типов, имеющих культуру, есть возможность ее указать
+                //+3. Для всех типов, имеющих культуру, есть возможность ее указать
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 .Printing<DateTime>().Using(CultureInfo.CurrentUICulture)
                 //+4. Настроить сериализацию конкретного свойства
