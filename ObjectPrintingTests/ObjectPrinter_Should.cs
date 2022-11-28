@@ -86,7 +86,7 @@ public class ObjectPrinter_Should
     }
 
     [Test]
-    public void PrintToString_ExcludePropertyByType()
+    public void ExcludingPropertiesByType_WorkCorrectly()
     {
         var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
         var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
@@ -96,5 +96,29 @@ public class ObjectPrinter_Should
         var result = printer.PrintToString(person);
 
         result.Should().Be(expected);
+    }
+
+    [Test]
+    public void ExcludingPropertyByName_WorkCorrectly()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var printer = ObjectPrinter.For<Person>().Excluding(p => p.Id);
+        var nl = Environment.NewLine;
+        var expected = $"Person{nl}\tName = Имя{nl}\tHeight = 0{nl}\tAge = 0";
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Be(expected);
+    }
+
+    [Test]
+    public void ExcludingPropertyByName_ThrowException_OnNotPropertyCall()
+    {
+        var printer = ObjectPrinter.For<Person>();
+
+        var act = () => printer.Excluding(p => 0);
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Member selector (p => 0) isn't property call");
     }
 }

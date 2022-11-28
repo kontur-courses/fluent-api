@@ -6,6 +6,7 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private readonly List<PropertyInfo> excludedProperties = new();
     private readonly List<Type> excludedTypes = new();
 
     private readonly Type[] finalTypes =
@@ -27,7 +28,23 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
+        var body = memberSelector.Body;
+        if (!IsPropertyCall(body))
+            throw new ArgumentException($"Member selector ({memberSelector}) isn't property call");
+
+        if ((body as MemberExpression)!.Member is PropertyInfo property)
+            excludedProperties.Add(property);
+
         return this;
+    }
+
+    private static bool IsPropertyCall(Expression expression)
+    {
+        var isMemberCall = expression.NodeType == ExpressionType.MemberAccess;
+        if (!isMemberCall) return false;
+
+        var isPropertyCall = (expression as MemberExpression)!.Member.MemberType == MemberTypes.Property;
+        return isPropertyCall;
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -66,6 +83,6 @@ public class PrintingConfig<TOwner>
 
     private bool NotExcluded(PropertyInfo property)
     {
-        return !excludedTypes.Contains(property.PropertyType);
+        return !excludedProperties.Contains(property) && !excludedTypes.Contains(property.PropertyType);
     }
 }
