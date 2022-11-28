@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -52,6 +53,38 @@ namespace ObjectPrinting.Tests
             var printedObject = printingConfig.PrintToString(person);
 
             printedObject.Should().Contain(person.Name, Exactly.Once());
+        }
+
+        [Test]
+        public void PrintToString_ListOfPerson_Success()
+        {
+            var persons = new List<Person>
+            {
+                person,
+                new Person() { Name = "Igor", Age = 17 }
+            };
+            var printedObject = ObjectPrinter.For<List<Person>>().PrintToString(persons);
+            printedObject.Should().ContainAll(persons[0].Name, persons[1].Name);
+        }
+
+        [Test]
+        public void PrintToString_ArrayOfPerson_Success()
+        {
+            var persons = new [] {person, new Person() { Name = "Igor", Age = 17} };
+            var printedObject = ObjectPrinter.For<Person[]>().PrintToString(persons);
+            printedObject.Should().ContainAll(persons[0].Name, persons[1].Name);
+        }
+
+        [Test]
+        public void PrintToString_DictionaryOfPerson_Success()
+        {
+            var persons = new Dictionary<int, Person>
+            {
+                { 1, person },
+                { 2, new Person() { Name = "Igor", Age = 17 } }
+            };
+            var printedObject = ObjectPrinter.For<Dictionary<int, Person>>().PrintToString(persons);
+            printedObject.Should().ContainAll(persons[1].Name, persons[2].Name);
         }
 
         /*

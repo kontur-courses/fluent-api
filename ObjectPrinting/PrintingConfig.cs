@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -21,8 +23,11 @@ namespace ObjectPrinting
             typeof(float),
             typeof(string),
             typeof(DateTime),
-            typeof(TimeSpan)
+            typeof(TimeSpan),
+            typeof(Guid)
         };
+
+        private readonly char leveler = '\t';
 
         public PrintingConfig()
         {
@@ -39,15 +44,15 @@ namespace ObjectPrinting
             
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var config = new PrintingConfig<TOwner>(this);
-            return new PropertyPrintingConfig<TOwner, TPropType>(config);
+            var configClone = new PrintingConfig<TOwner>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(configClone);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var config = new PrintingConfig<TOwner>(this);
+            var configClone = new PrintingConfig<TOwner>(this);
             var memberInfo = GetMemberInfo(memberSelector);
-            return new PropertyPrintingConfig<TOwner, TPropType>(config, memberInfo);
+            return new PropertyPrintingConfig<TOwner, TPropType>(configClone, memberInfo);
         }
 
         private MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
@@ -55,18 +60,17 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var config = new PrintingConfig<TOwner>(this);
+            var configClone = new PrintingConfig<TOwner>(this);
             var memberInfo = GetMemberInfo(memberSelector);
-            if(memberInfo != null)
-                config.excludedMembers.Add(memberInfo);
-            return config;
+            configClone.excludedMembers.Add(memberInfo);
+            return configClone;
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            var config = new PrintingConfig<TOwner>(this);
-            config.excludedTypes.Add(typeof(TPropType));
-            return config;
+            var configClone = new PrintingConfig<TOwner>(this);
+            configClone.excludedTypes.Add(typeof(TPropType));
+            return configClone;
         }
 
         public string PrintToString(TOwner obj)
@@ -76,22 +80,34 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null || printedObjects.Contains(obj))
                 return "null" + Environment.NewLine;
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var identation = new string(leveler, nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties().Where(AreNotExcludedProperty))
+            if (obj is IEnumerable enumerable)
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(GetValue(obj, propertyInfo), nestingLevel + 1));
-                printedObjects.Add(obj);
+                sb.AppendLine("[");
+                foreach (var el in enumerable)
+                {
+                    sb.Append(identation + PrintToString(el, nestingLevel + 1));
+                }
+                printedObjects.Add(enumerable);
+                sb.AppendLine("]");
+            }
+            else
+            {
+                foreach (var propertyInfo in type.GetProperties().Where(AreNotExcludedProperty))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(GetValue(obj, propertyInfo), nestingLevel + 1));
+                    printedObjects.Add(obj);
+                }
             }
             return sb.ToString();
         }
