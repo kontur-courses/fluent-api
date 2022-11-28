@@ -45,11 +45,8 @@ namespace ObjectPrinting
         /// <summary>
         /// Defines format settings for including properties
         /// </summary>
-        /// <typeparam name="TOwner"></typeparam>
         /// <typeparam name="T">IFormattable type</typeparam>
-        /// <param name="config"></param>
         /// <param name="culture">Culture for IFormattable types </param>
-        /// <param name="format"></param>
         /// <returns>PrintingConfig&lt;TOwner&gt;</returns>
         public static PrintingConfig<TOwner> Using<TOwner, T>(this PropertyConfig<TOwner, T> config,
             CultureInfo culture, string format = null) where T : IFormattable
@@ -65,10 +62,8 @@ namespace ObjectPrinting
         /// <summary>
         /// Trim string for object printer
         /// </summary>
-        /// <typeparam name="TOwner"></typeparam>
-        /// <param name="propertyConfig"></param>
         /// <param name="maxLen">Length maximum setting for string</param>
-        /// <returns></returns>
+        /// <returns>PrintingConfig&lt;TOwner&gt;</returns>
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyConfig<TOwner, string> propertyConfig,
             int maxLen)
         {
