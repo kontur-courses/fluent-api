@@ -84,4 +84,17 @@ public class ObjectPrinter_Should
 
         result.Should().Be(expected);
     }
+
+    [Test]
+    public void PrintToString_ExcludePropertyByType()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
+        var nl = Environment.NewLine;
+        var expected = $"Person{nl}\tName = Имя{nl}\tHeight = 0{nl}\tAge = 0";
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Be(expected);
+    }
 }

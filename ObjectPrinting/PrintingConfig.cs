@@ -1,10 +1,13 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private readonly List<Type> excludedTypes = new();
+
     private readonly Type[] finalTypes =
     {
         typeof(int), typeof(double), typeof(float), typeof(string),
@@ -29,6 +32,7 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
+        excludedTypes.Add(typeof(TPropType));
         return this;
     }
 
@@ -46,17 +50,22 @@ public class PrintingConfig<TOwner>
             return $"{obj}";
 
         var sb = new StringBuilder();
-        
+
         var type = obj.GetType();
         sb.AppendLine(type.Name);
-        
+
         var identation = new string('\t', nestingLevel + 1);
-        foreach (var property in type.GetProperties())
+        foreach (var property in type.GetProperties().Where(NotExcluded))
         {
             var print = PrintToString(property.GetValue(obj), nestingLevel + 1);
             sb.AppendLine($"{identation}{property.Name} = {print}");
         }
-        
+
         return sb.ToString().Trim();
+    }
+
+    private bool NotExcluded(PropertyInfo property)
+    {
+        return !excludedTypes.Contains(property.PropertyType);
     }
 }
