@@ -6,6 +6,7 @@ using ObjectPrinting;
 namespace ObjectPrintingTests;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class ObjectPrinter_Should
 {
     [Test]
