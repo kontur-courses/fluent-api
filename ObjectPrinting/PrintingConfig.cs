@@ -10,12 +10,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<object> printedObjects = new HashSet<object>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
         internal readonly Dictionary<MemberInfo, Delegate> MemberSerializationRule = new Dictionary<MemberInfo, Delegate>();
         internal readonly Dictionary<Type, Delegate> TypeSerializationRule = new Dictionary<Type, Delegate>();
-        private readonly Type[] finalTypes = new[]
-        {
+        private readonly Type[] finalTypes = {
             typeof(int),
             typeof(double),
             typeof(float),
@@ -28,6 +28,7 @@ namespace ObjectPrinting
         {
 
         }
+
         private PrintingConfig(PrintingConfig<TOwner> parent)
         {
             excludedTypes.AddRange(parent.excludedTypes);
@@ -76,7 +77,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            if (obj == null)
+            if (obj == null || printedObjects.Contains(obj))
                 return "null" + Environment.NewLine;
 
             if (finalTypes.Contains(obj.GetType()))
@@ -86,11 +87,11 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties()
-                .Where(AreNotExcludedProperty))
+            foreach (var propertyInfo in type.GetProperties().Where(AreNotExcludedProperty))
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(GetValue(obj, propertyInfo), nestingLevel + 1));
+                printedObjects.Add(obj);
             }
             return sb.ToString();
         }

@@ -44,6 +44,16 @@ namespace ObjectPrinting.Tests
             printedObject.Should().NotContain(propertyNames);
         }
 
+        [Test]
+        public void PrintToString_LoopedReferencedMembers_PrintedOnce()
+        {
+            person.BestFriend = new Person() { Name = "Igor", BestFriend = person };
+
+            var printedObject = printingConfig.PrintToString(person);
+
+            printedObject.Should().Contain(person.Name, Exactly.Once());
+        }
+
         /*
         //TODO: удалить или доделать
         [TestCase(typeof(string), nameof(Person.Name))]
