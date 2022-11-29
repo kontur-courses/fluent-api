@@ -12,7 +12,7 @@ public class ExcludingRules : IExcludingRules
     private readonly HashSet<IReadOnlyList<string>> _excludedMembers = new(new EnumerableEqualityComparer<string>());
 
     public bool IsExcluded(PrintingMemberData memberData) =>
-        _excludedTypes.Contains(memberData.GetMemberType) || _excludedMembers.Contains(memberData.MemberPath);
+        _excludedTypes.Contains(memberData.MemberType) || _excludedMembers.Contains(memberData.MemberPath);
 
     public void Exclude<T>() =>
         Exclude(typeof(T));

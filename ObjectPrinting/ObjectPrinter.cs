@@ -21,7 +21,7 @@ public static class ObjectPrinter
             kernel.Resolver.AddSubResolver(new CollectionResolver(kernel, true));
 
             _container.Register(
-                Classes.FromAssemblyContaining<IPrintingConfig<T>>()
+                Classes.FromAssemblyContaining(typeof(ObjectPrinter))
                     .Where(component =>
                         component.Namespace is not null && component.Namespace.Contains(nameof(Implementations)))
                     .WithService.AllInterfaces()

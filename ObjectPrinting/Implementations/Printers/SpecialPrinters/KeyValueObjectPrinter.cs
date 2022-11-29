@@ -4,7 +4,7 @@ using System.Text;
 using ObjectPrinting.Abstractions.Printers;
 using ObjectPrinting.Infrastructure;
 
-namespace ObjectPrinting.Implementations.Printers;
+namespace ObjectPrinting.Implementations.Printers.SpecialPrinters;
 
 public class KeyValueObjectPrinter : ISpecialObjectPrinter
 {
@@ -17,7 +17,7 @@ public class KeyValueObjectPrinter : ISpecialObjectPrinter
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>);
     }
 
-    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootObjectPrinter)
+    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
     {
         var obj = memberData.Member;
         if (obj is null || !CanPrint(obj))
@@ -26,10 +26,10 @@ public class KeyValueObjectPrinter : ISpecialObjectPrinter
         var key = (object) kvp.Key;
         var value = (object) kvp.Value;
 
-        var keyStr = rootObjectPrinter.PrintToString(memberData.CreateForChild(key, "Key"));
-        var valueStr = rootObjectPrinter.PrintToString(memberData.CreateForChild(value, "Value"));
+        var keyStr = rootPrinter.PrintToString(memberData.CreateForChild(key, "Key"));
+        var valueStr = rootPrinter.PrintToString(memberData.CreateForChild(value, "Value"));
 
-        if (!keyStr.Contains(Environment.NewLine) && !valueStr.Contains(Environment.NewLine))
+        if (!keyStr.Contains(rootPrinter.LineSplitter) && !valueStr.Contains(rootPrinter.LineSplitter))
             return $"{OpeningBrace}{keyStr}: {valueStr}{ClosingBrace}";
 
         return JoinInMultiline(keyStr, valueStr, memberData.Nesting);

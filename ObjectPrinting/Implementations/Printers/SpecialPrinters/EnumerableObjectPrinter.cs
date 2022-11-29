@@ -6,23 +6,23 @@ using System.Text;
 using ObjectPrinting.Abstractions.Printers;
 using ObjectPrinting.Infrastructure;
 
-namespace ObjectPrinting.Implementations.Printers;
+namespace ObjectPrinting.Implementations.Printers.SpecialPrinters;
 
 public class EnumerableObjectPrinter : ISpecialObjectPrinter
 {
     private const char OpeningBrace = '[';
     private const char ClosingBrace = ']';
 
-    public bool CanPrint(object obj) => obj is IEnumerable;
+    public bool CanPrint(object obj) => obj is IEnumerable and not string;
 
-    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootObjectPrinter)
+    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
     {
-        if (memberData.Member is not IEnumerable enumerable)
+        if (memberData.Member is not IEnumerable enumerable || enumerable is string)
             throw new ArgumentException("Unable to print this member, using this printer!");
 
-        var printed = PrintElementsToString(enumerable, rootObjectPrinter, memberData);
+        var printed = PrintElementsToString(enumerable, rootPrinter, memberData);
 
-        return printed.All(obj => !obj.Contains(Environment.NewLine))
+        return printed.All(obj => !obj.Contains(rootPrinter.LineSplitter))
             ? $"{OpeningBrace}{string.Join(", ", printed)}{ClosingBrace}"
             : JoinInMultiline(memberData.Nesting, printed);
     }

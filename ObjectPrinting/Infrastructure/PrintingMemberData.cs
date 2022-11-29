@@ -12,7 +12,7 @@ public record PrintingMemberData(object? Member, ImmutableList<string> MemberPat
 
     public int Nesting { get; } = MemberPath.Count;
 
-    public Type GetMemberType =>
+    public Type MemberType =>
         Member?.GetType() ?? throw new InvalidOperationException($"{nameof(Member)} is null!");
 
     public PrintingMemberData CreateForChild(object? child, string childMemberName) =>

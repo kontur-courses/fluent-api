@@ -27,7 +27,7 @@ public class CustomPrintersCollector : ICustomPrintersCollector
     {
         printer = default;
         if (!_customMembersPrintingRules.TryGetValue(memberData.MemberPath, out var provider) &&
-            !_customTypesPrintingRules.TryGetValue(memberData.GetMemberType, out provider))
+            !_customTypesPrintingRules.TryGetValue(memberData.MemberType, out provider))
             return false;
         if (!provider.TryGetPrinter(out printer))
             throw new InvalidOperationException("Custom printer was not initialized before printing!");

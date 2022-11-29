@@ -4,6 +4,7 @@ namespace ObjectPrinting.Abstractions.Printers;
 
 public interface IRootObjectPrinter
 {
+    public string LineSplitter { get; }
     ICustomPrintersCollector PrintersCollector { get; }
     IExcludingRules ExcludingRules { get; }
 

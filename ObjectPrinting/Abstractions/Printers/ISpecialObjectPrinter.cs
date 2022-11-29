@@ -5,5 +5,5 @@ namespace ObjectPrinting.Abstractions.Printers;
 public interface ISpecialObjectPrinter
 {
     bool CanPrint(object obj);
-    string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootObjectPrinter);
+    string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter);
 }

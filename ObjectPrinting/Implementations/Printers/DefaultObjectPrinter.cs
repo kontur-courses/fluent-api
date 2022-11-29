@@ -18,8 +18,8 @@ public class DefaultObjectPrinter : IDefaultObjectPrinter
     }
 
     public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter) =>
-        memberData.GetMemberType.Name + Environment.NewLine +
-        string.Join(Environment.NewLine, PrintToStringMembers(memberData, rootPrinter));
+        memberData.MemberType.Name + rootPrinter.LineSplitter +
+        string.Join(rootPrinter.LineSplitter, PrintToStringMembers(memberData, rootPrinter));
 
     private IEnumerable<string> PrintToStringMembers(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
     {
