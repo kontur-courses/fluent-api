@@ -71,75 +71,80 @@ public class PrintingConfig<TOwner>
         return PrintToString(obj, new List<object>());
     }
 
-    private string PrintToString(object? obj, List<object> printedObjects)
+    private string PrintToString(object? obj, IEnumerable<object> printedObjects)
     {
-        if (obj is null)
-            return "null";
+        if (obj is null) return "null";
 
         var type = obj.GetType();
 
+        if (AlternativePrintingsForTypes.ContainsKey(type))
+            return AlternativePrintingsForTypes[type](obj);
+
         if (finalTypes.Contains(type))
-        {
-            if (TypesCultures.ContainsKey(type) && obj is IConvertible convertible)
-                return convertible.ToString(TypesCultures[type]);
+            return PrintFinalType(obj);
 
-            var result = obj.ToString();
-            if (StringPropertyTrimIndex.HasValue)
-                result = result[..Math.Min(StringPropertyTrimIndex.Value, result.Length)];
-            return result;
-        }
+        var printedObjectsArray = printedObjects.ToArray();
+        if (!type.IsValueType && printedObjectsArray.Contains(obj))
+            throw new InvalidOperationException("Printable object contains circular reference");
 
-        if (!type.IsValueType)
-        {
-            if (printedObjects.Contains(obj))
-                throw new InvalidOperationException("Printable object contains circular reference");
-            printedObjects.Add(obj);
-        }
-
-        var sb = new StringBuilder();
-        sb.Append(type.Name);
-        var newLine = Environment.NewLine;
-
-        if (obj is IEnumerable enumerable)
-        {
-            sb.Append(newLine + '\t');
-            var allFinal = true;
-            var strings = new List<string>();
-            foreach (var o in enumerable)
-            {
-                if (!finalTypes.Contains(o.GetType()))
-                    allFinal = false;
-                strings.Add(PrintToString(o, printedObjects).Replace(newLine, $"{newLine}\t"));
-            }
-
-            var result = $"[{string.Join(allFinal ? ", " : $",{newLine}\t", strings)}]";
-            sb.Append(result);
-            return sb.ToString();
-        }
-        
-        foreach (var property in type.GetProperties().Where(NotExcluded))
-        {
-            var print = GetPrint(property, printedObjects)(property.GetValue(obj))
-                .Replace(newLine, $"{newLine}\t");
-            sb.Append($"{newLine}\t{property.Name} = {print}");
-        }
-
-        return sb.ToString();
-    }
-
-    private Func<object, string> GetPrint(PropertyInfo property, List<object> printedObjects)
-    {
-        if (AlternativePrintingsForProperties.ContainsKey(property))
-            return obj => AlternativePrintingsForProperties[property](obj);
-
-        if (AlternativePrintingsForTypes.ContainsKey(property.PropertyType))
-            return obj => AlternativePrintingsForTypes[property.PropertyType](obj);
-
-        return obj => PrintToString(obj, printedObjects);
+        printedObjects = printedObjectsArray.Append(obj);
+        return obj is ICollection collection
+            ? PrintCollection(collection, printedObjects)
+            : PrintComplexObject(obj, printedObjects);
     }
 
     private bool NotExcluded(PropertyInfo property)
     {
         return !excludedProperties.Contains(property) && !excludedTypes.Contains(property.PropertyType);
+    }
+
+    private string PrintFinalType(object obj)
+    {
+        var type = obj.GetType();
+        
+        if (StringPropertyTrimIndex.HasValue && obj is string str)
+            obj = str[..Math.Min(StringPropertyTrimIndex.Value, str.Length)];
+
+        if (TypesCultures.ContainsKey(type) && obj is IConvertible convertible)
+            return convertible.ToString(TypesCultures[type]);
+
+        return obj.ToString();
+    }
+
+    private string PrintCollection(ICollection collection, IEnumerable<object> printedObjects)
+    {
+        var newLine = Environment.NewLine;
+        
+        var sb = new StringBuilder(collection.GetType().Name + newLine + '\t');
+
+        var itemsStrings = collection
+            .Cast<object>()
+            .Select(o => PrintToString(o, printedObjects).Replace(newLine, newLine + '\t'));
+
+        var allFinal = collection.Cast<object>().All(o => finalTypes.Contains(o.GetType()));
+            
+        sb.Append($"[{string.Join(allFinal ? ", " : $",{newLine}\t", itemsStrings)}]");
+
+        return sb.ToString();
+    }
+    
+    private string PrintComplexObject(object obj, IEnumerable<object> printedObjects){
+        var newLine = Environment.NewLine;
+
+        var type = obj.GetType();
+        
+        var sb = new StringBuilder(type.Name);
+        
+        foreach (var property in type.GetProperties().Where(NotExcluded))
+        {
+            var result = (AlternativePrintingsForProperties.ContainsKey(property)
+                    ? AlternativePrintingsForProperties[property](property.GetValue(obj))
+                    : PrintToString(property.GetValue(obj), printedObjects))
+                .Replace(newLine, $"{newLine}\t");
+
+            sb.Append($"{newLine}\t{property.Name} = {result}");
+        }
+
+        return sb.ToString();
     }
 }

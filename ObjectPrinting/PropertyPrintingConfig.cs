@@ -12,7 +12,7 @@ public class PropertyPrintingConfig<TOwner, TPropType>
         this.propertyInfo = propertyInfo;
     }
 
-    public PrintingConfig<TOwner> ParentConfig { get; }
+    internal PrintingConfig<TOwner> ParentConfig { get; }
 
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)

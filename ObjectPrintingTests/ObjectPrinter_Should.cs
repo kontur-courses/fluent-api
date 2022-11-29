@@ -337,4 +337,28 @@ public class ObjectPrinter_Should
 
         result.Should().Be(expected);
     }
+    
+    [Test]
+    public void PrintToString_DontThrowException_OnEqualsObjectOnOneLevel()
+    {
+        var person = new Person();
+        var array = new[] { person, person };
+        var printer = ObjectPrinter.For<Person[]>();
+
+        var act = () => printer.PrintToString(array);
+
+        act.Should().NotThrow<InvalidOperationException>();
+    }
+    
+    [Test]
+    public void PrintToString_ChangePrinting_ToSimpleTypes()
+    {
+        const int value = 1;
+        var printer = ObjectPrinter.For<int>().Printing<int>().Using(_ => "New printing");
+        const string expected = "New printing";
+
+        var result = printer.PrintToString(value);
+
+        result.Should().Be(expected);
+    }
 }

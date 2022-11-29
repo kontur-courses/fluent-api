@@ -10,7 +10,8 @@ public static class PropertyPrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
-        this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture) where TPropType : IConvertible
+        this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture)
+        where TPropType : IConvertible
     {
         propConfig.ParentConfig.TypesCultures[typeof(TPropType)] = culture;
         return propConfig.ParentConfig;
