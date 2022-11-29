@@ -15,7 +15,6 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            //PropertyRule = new Dictionary<Type, Func<TPropType, string>>();
             this.printingConfig = printingConfig;
         }
 
@@ -25,7 +24,7 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        public PrintingConfig<TOwner> Using(CultureInfo culture)  
         {
             CultureInfo = culture;
             return printingConfig;

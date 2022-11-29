@@ -15,55 +15,34 @@ namespace ObjectPrinting
         
         private readonly List<PropertyInfo> excludeProperties = new List<PropertyInfo>();
 
-        //public Dictionary<Type, PropertyPrintingConfig<TOwner, object>> TypesFunc;
-        public PropertyPrintingConfig<TOwner, string> StringConfig{ get; set; }
-        public PropertyPrintingConfig<TOwner, int> IntConfig { get; set; }
-        public PropertyPrintingConfig<TOwner, double> DoubleConfig { get; set; }
-        public PropertyPrintingConfig<TOwner, DateTime> DateTimeConfig { get; set; }
-        public PropertyPrintingConfig<TOwner, TimeSpan> TimeSpanConfig { get; set; }
-        public PropertyPrintingConfig<TOwner, Guid> GuidConfig { get; set; }
-
-        //public PrintingConfig()
-        //{
-        //    //StringConfig = new PropertyPrintingConfig<TOwner, string>(this);
-        //    //IntConfig = new PropertyPrintingConfig<TOwner, int>(this);
-        //    //DoubleConfig = new PropertyPrintingConfig<TOwner, double>(this);
-        //    //DateTimeConfig = new PropertyPrintingConfig<TOwner, DateTime>(this);
-        //    //TimeSpanConfig = new PropertyPrintingConfig<TOwner, TimeSpan>(this);
-        //    //GuidConfig = new PropertyPrintingConfig<TOwner, Guid>(this);
-        //}
+        public Dictionary<PropertyInfo, List<object>> Properties { get; set; }
+        
+        public PrintingConfig()
+        {
+            Properties = new Dictionary<PropertyInfo, List<object>>();
+            foreach (var propertyInfo in typeof(TOwner).GetProperties())
+                Properties[propertyInfo] = new List<object>();
+        }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            if (propertyConfig is PropertyPrintingConfig<TOwner, string> stringConfig)
+            foreach (var property in Properties)
             {
-                if(StringConfig is null)
-                    StringConfig = stringConfig;
-                else
-                {
-                    var propertyRule = StringConfig.PropertyRule;
-                    StringConfig = stringConfig;
-                    StringConfig.PropertyRule = propertyRule;
-                }
+                if (property.Key.PropertyType == typeof(TPropType))
+                    Properties[property.Key].Add(propertyConfig);
             }
-            //дописать для остальных типов данных
-            else if (propertyConfig is PropertyPrintingConfig<TOwner, int> intConfig)
-                IntConfig = intConfig;
-            else if (propertyConfig is PropertyPrintingConfig<TOwner, double> doubleConfig)
-                DoubleConfig = doubleConfig;
-            else if (propertyConfig is PropertyPrintingConfig<TOwner, DateTime> dateTimeConfig)
-                DateTimeConfig = dateTimeConfig;
-            else if (propertyConfig is PropertyPrintingConfig<TOwner, TimeSpan> timeSpanConfig)
-                TimeSpanConfig = timeSpanConfig;
-            else if (propertyConfig is PropertyPrintingConfig<TOwner, Guid> guidConfig)
-                GuidConfig = guidConfig;
+
             return propertyConfig;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var member = (MemberExpression)memberSelector.Body;
+            var property = (PropertyInfo)member.Member;
+            Properties[property].Add(propertyConfig);
+            return propertyConfig;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -86,7 +65,7 @@ namespace ObjectPrinting
         }
 
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, PropertyInfo prInfo = null)
         {
             //TODO apply configurations
             if (obj == null)
@@ -100,18 +79,48 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
             {
                 var objValue = obj.ToString();
-                if (!(StringConfig is null) && obj is string stringObj)
-                    objValue = StringConfig.PropertyRule(stringObj);
-                else if (!(DoubleConfig is null) && obj is double doubleObj)
+                if (obj is string stringObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
                 {
-                    //if (!(DoubleConfig.PropertyRule is null))
-                    //    objValue = DoubleConfig.PropertyRule(doubleObj);
-                    if (!(DoubleConfig.CultureInfo is null))
-                        objValue = doubleObj.ToString(DoubleConfig.CultureInfo);
+                    foreach (var prConfig in Properties[prInfo])
+                    {
+                        if (prConfig is PropertyPrintingConfig<TOwner, string> stringConfig)
+                        {
+                            objValue = stringConfig.PropertyRule(stringObj);
+                            stringObj = objValue;
+                        }
+                    }
                 }
-                //дописать для остальных типов данных
+
+                if (obj is int intObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
+                {
+                    foreach (var prConfig in Properties[prInfo])
+                    {
+                        if (prConfig is PropertyPrintingConfig<TOwner, int> intConfig)
+                        {
+                            if(!(intConfig.PropertyRule is null))
+                                objValue = intConfig.PropertyRule(intObj);
+                            else if (!(intConfig.CultureInfo is null))
+                                objValue = intObj.ToString(intConfig.CultureInfo);
+                        }
+                    }
+                }
+
+                if (obj is double doubleObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
+                {
+                    foreach (var prConfig in Properties[prInfo])
+                    {
+                        if (prConfig is PropertyPrintingConfig<TOwner, double> doubleConfig)
+                        {
+                            if (!(doubleConfig.PropertyRule is null))
+                                objValue = doubleConfig.PropertyRule(doubleObj);
+                            else if (!(doubleConfig.CultureInfo is null))
+                                objValue = doubleObj.ToString(doubleConfig.CultureInfo);
+                        }
+                    }
+                }
                 return objValue + Environment.NewLine;
-                //return obj + Environment.NewLine;
+                    //return obj + Environment.NewLine;
+                
             }
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -124,7 +133,7 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                              nestingLevel + 1, propertyInfo));
             }
             return sb.ToString();
         }

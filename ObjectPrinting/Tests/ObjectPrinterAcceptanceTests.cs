@@ -72,18 +72,6 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_WithExcludeProperty()
-        {
-            var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n";
-            var printer = ObjectPrinter.For<Person>();
-            var s = printer
-                .Excluding(p => p.Height)
-                .PrintToString(person);
-            s.Should().Be(expected);
-        }
-
-        [Test]
         public void PrintToString_WithCultureInfo()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.80};
@@ -91,6 +79,43 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing<double>().Using(new CultureInfo("en"))
+                .PrintToString(person);
+            s.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_WithAlternativeSerializationProperty()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var expected = "Person\r\n\tId = Guid\r\n\tName = ALEX\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var printer = ObjectPrinter.For<Person>();
+            var s = printer
+                .Printing(p => p.Name).Using(s => s.ToUpper())
+                .PrintToString(person);
+            s.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_WithTrimmedToLength()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var expected = "Person\r\n\tId = Guid\r\n\tName = Al\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var printer = ObjectPrinter.For<Person>();
+            var s = printer
+                .Printing(p => p.Name).TrimmedToLength(2)
+                .PrintToString(person);
+            s.Should().Be(expected);
+        }
+
+
+        [Test]
+        public void PrintToString_WithExcludeProperty()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n";
+            var printer = ObjectPrinter.For<Person>();
+            var s = printer
+                .Excluding(p => p.Height)
                 .PrintToString(person);
             s.Should().Be(expected);
         }
