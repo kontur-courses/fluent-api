@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -8,5 +9,9 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+
+        public int[] ArmsLenght { get; set; }
+        public List<string> FriendsNames { get; set; }
+        public Dictionary<string, int> Awards { get; set; }
     }
 }
