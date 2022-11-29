@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IBasicConfigurator<TOwner>
+    public class PrintingConfig<TOwner> 
     {
         public string PrintToString(TOwner obj)
         {
@@ -34,50 +31,12 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedMembers.Contains(propertyInfo))
-                    continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
 
             return sb.ToString();
-        }
-
-        public IBasicConfigurator<TOwner> Exclude<T>()
-        {
-            excludedTypes.Add(typeof(T));
-            return this;
-        }
-
-        public IBasicConfigurator<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression)
-        {
-            var memberExpression = (MemberExpression) expression.Body;
-            var member = memberExpression.Member;
-            excludedMembers.Add(member);
-            return this;
-        }
-
-        public IMemberConfigurator<TOwner, T> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression)
-        {
-            var memberExpression = (MemberExpression) expression.Body;
-            var member = memberExpression.Member;
-            excludedMembers.Add(member);
-            return new MemberConfigurator<TOwner, T>(this);
-            // return this;
-        }
-
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-    }
-
-    public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
-    {
-        public IBasicConfigurator<TOwner> BasicConfigurator { get; }
-        
-        public MemberConfigurator(IBasicConfigurator<TOwner> basicConfigurator)
-        {
-            BasicConfigurator = basicConfigurator;
         }
     }
 }

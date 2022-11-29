@@ -1,6 +1,6 @@
 namespace ObjectPrinting
 {
-    public class ObjectPrinter
+    public class ObjectConfig
     {
         public static IBasicConfigurator<T> For<T>()
         {

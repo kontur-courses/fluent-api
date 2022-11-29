@@ -13,10 +13,11 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Alex", Age = 19};
 
-            var printer = ObjectPrinter.For<Person>()
+            var printer = ObjectConfig.For<Person>()
                 .Exclude<int>()
                 .Exclude(p => p.Name)
-                .ConfigureProperty(p => p.Name).TrimByLength(4);
+                .ConfigureProperty(p => p.Name).TrimByLength(4)
+                .ConfigurePrinter();
                 // .ConfigureProperty(p => p.Name);
             // .SetNumberCulture(CultureInfo.InvariantCulture)
                 // .ConfigureProperty(p => p.Name)

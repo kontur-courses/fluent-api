@@ -1,27 +1,41 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting;
 
 public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
 {
+
     public IBasicConfigurator<TOwner> Exclude<T>()
     {
-        throw new NotImplementedException();
+        excludedTypes.Add(typeof(T));
+        return this;
     }
 
     public IBasicConfigurator<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression)
     {
-        throw new NotImplementedException();
+        var memberExpression = (MemberExpression) expression.Body;
+        var member = memberExpression.Member;
+        excludedMembers.Add(member);
+        return this;
     }
 
     public IMemberConfigurator<TOwner, T> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression)
     {
-        throw new NotImplementedException();
+        var memberExpression = (MemberExpression) expression.Body;
+        var member = memberExpression.Member;
+        excludedMembers.Add(member);
+        return new MemberConfigurator<TOwner, T>(this);
+        // return this;
     }
 
-    public string PrintToString(TOwner obj)
+    public PrintingConfig<TOwner> ConfigurePrinter()
     {
-        throw new NotImplementedException();
+        return new PrintingConfig<TOwner>();
     }
+
+    private readonly HashSet<Type> excludedTypes = new();
+    private readonly HashSet<MemberInfo> excludedMembers = new();
 }
