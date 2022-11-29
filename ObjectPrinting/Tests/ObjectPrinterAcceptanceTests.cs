@@ -16,7 +16,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectConfig.For<Person>()
                 .Exclude<int>()
                 .Exclude(p => p.Name)
-                .ConfigureProperty(p => p.Name).TrimByLength(4)
+                .ConfigureProperty(p => p.Height).SetCulture(CultureInfo.InvariantCulture)
                 .ConfigurePrinter();
                 // .ConfigureProperty(p => p.Name);
             // .SetNumberCulture(CultureInfo.InvariantCulture)

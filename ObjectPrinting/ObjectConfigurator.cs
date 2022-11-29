@@ -26,15 +26,13 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
 
     public IMemberConfigurator<TOwner, T> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression)
     {
-        var memberExpression = (MemberExpression) expression.Body;
-        var member = memberExpression.Member;
-        excludedMembers.Add(member);
+        // var memberExpression = (MemberExpression) expression.Body;
+        // var member = memberExpression.Member;
         return new MemberConfigurator<TOwner, T>(this);
-        // return this;
     }
 
     public PrintingConfig<TOwner> ConfigurePrinter()
     {
-        return new PrintingConfig<TOwner>();
+        return new PrintingConfig<TOwner>(excludedTypes, excludedMembers);
     }
 }

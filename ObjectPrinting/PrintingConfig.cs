@@ -1,11 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> 
+    public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<MemberInfo> excludedMembers;
+
+        public PrintingConfig(HashSet<Type> excludedTypes = null, HashSet<MemberInfo> excludedMembers = null)
+        {
+            this.excludedTypes = excludedTypes;
+            this.excludedMembers = excludedMembers;
+        }
+        
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -30,7 +41,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedMembers.Contains(propertyInfo))
+                if (excludedTypes is not null && excludedMembers is not null &&
+                    (excludedTypes.Contains(propertyInfo.PropertyType) || excludedMembers.Contains(propertyInfo)))
                     continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
