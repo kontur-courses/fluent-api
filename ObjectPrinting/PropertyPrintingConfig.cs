@@ -8,23 +8,23 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TProperty>
     {
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
-        public PropertyInfo PropertyInfo => propertyInfo;
+        public MemberInfo MemberInfo => memberInfo;
         public IDictionary<object, object> Serializers => serializers;
 
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly MemberInfo memberInfo;
         private readonly IDictionary<object, object> serializers;
         
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo, IDictionary<object, object> serializers)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo, IDictionary<object, object> serializers)
         {
             this.printingConfig = printingConfig;
-            this.propertyInfo = propertyInfo;
+            this.memberInfo = memberInfo;
             this.serializers = serializers;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProperty, string> func)
         {
-            if (propertyInfo != null)
+            if (memberInfo != null)
                 UsingToProperty(func);
             else
                 UsingToType(func);
@@ -41,11 +41,10 @@ namespace ObjectPrinting
             
             return printingConfig;
         }
-        
 
         private void UsingToProperty(Func<TProperty, string> func)
         {
-            var propertyName = propertyInfo.Name;
+            var propertyName = memberInfo.Name;
             
             if (!serializers.ContainsKey(propertyName))
                 serializers.Add(propertyName, func);

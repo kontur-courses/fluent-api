@@ -6,18 +6,16 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int length)
         {
-            if (propertyPrintingConfig.PropertyInfo == null) 
+            if (propertyPrintingConfig.MemberInfo == null) 
                 return propertyPrintingConfig.ParentConfig;
             
-            var propertyName = propertyPrintingConfig.PropertyInfo.Name;
+            var propertyName = propertyPrintingConfig.MemberInfo.Name;
+            var trim = new Func<string, string>(x => x.Length >= length ? x[..length] : x);
             
             if (propertyPrintingConfig.Serializers.ContainsKey(propertyName))
-            {
-                var trim = new Func<string, string>(x => x[..length]);
                 propertyPrintingConfig.Serializers[propertyName] = Delegate.Combine((Delegate)propertyPrintingConfig.Serializers[propertyName], trim);
-            }
             else
-                propertyPrintingConfig.Serializers.Add(propertyName, new Func<string, string>(x => x[..length]));
+                propertyPrintingConfig.Serializers.Add(propertyName, trim);
         
             return propertyPrintingConfig.ParentConfig;
         }

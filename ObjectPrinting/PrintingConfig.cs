@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
@@ -46,7 +47,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>(Expression<Func<TOwner, TProperty>> expr)
         {
             var memberExpression = (MemberExpression)expr.Body;
-            return new PropertyPrintingConfig<TOwner, TProperty>(this, (PropertyInfo)memberExpression.Member, serializes);
+            return new PropertyPrintingConfig<TOwner, TProperty>(this, memberExpression.Member, serializes);
         }
 
         public string PrintToString(TOwner obj)
@@ -59,48 +60,57 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (nestingLevel == 5)
+                return "TOO DEEP" + Environment.NewLine;
+            
             var type = obj.GetType();
             
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
-            
             var stringBuilder = new StringBuilder();
-            stringBuilder.Append(type.Name);
-            
-            foreach (var propertyInfo in type.GetProperties())
+            stringBuilder.AppendLine(type.Name);
+
+            foreach (var memberInfo in type.GetProperties().Cast<MemberInfo>().Concat(type.GetFields()))
             {
-                if (excludedObjects.Contains(propertyInfo.Name))
-                    continue;
-                
-                if (excludedObjects.Contains(propertyInfo.PropertyType))
+                var memberName = memberInfo.Name;
+                var memberType = memberInfo.GetMemberType();
+                var memberValue = memberInfo.GetMemberValue(obj);
+
+                if (excludedObjects.Contains(memberName) || excludedObjects.Contains(memberType))
                     continue;
 
-                if (serializes.ContainsKey(propertyInfo.Name))
+                if (serializes.ContainsKey(memberName))
                 {
-                    if (serializes[propertyInfo.Name] is Delegate func)
-                        stringBuilder.Append(func.DynamicInvoke(propertyInfo.GetValue(obj)));
+                    if (serializes[memberName] is Delegate func)
+                        stringBuilder.AppendLine(identation + InvokeDelegate(func, memberValue));
                     continue;
                 }
 
-                if (serializes.ContainsKey(propertyInfo.PropertyType))
+                if (serializes.ContainsKey(memberType))
                 {
-                    if (serializes[propertyInfo.PropertyType] is CultureInfo cultureInfo)
+                    if (serializes[memberType] is CultureInfo cultureInfo)
                     {
-                        var nextString = PrintToString(Convert.ToString(propertyInfo.GetValue(obj), cultureInfo), nestingLevel + 1);
-                        stringBuilder.Append(identation + propertyInfo.Name + " = " + nextString);
+                        var nextString = PrintToString(Convert.ToString(memberValue, cultureInfo), nestingLevel + 1);
+                        stringBuilder.Append(identation + memberName + " = " + nextString);
                     }
                     
-                    if (serializes[propertyInfo.PropertyType] is Delegate func)
-                        stringBuilder.Append(func.DynamicInvoke(propertyInfo.GetValue(obj)));
+                    if (serializes[memberType] is Delegate func)
+                        stringBuilder.AppendLine(identation + InvokeDelegate(func, memberValue));
+                    
                     continue;
                 }
                 
-                stringBuilder.Append(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                stringBuilder.Append(identation + memberName + " = " + PrintToString(memberValue, nestingLevel + 1));
             }
             
             return stringBuilder.ToString();
+        }
+
+        private object InvokeDelegate(Delegate del, object value)
+        {
+            return del.GetInvocationList().Aggregate(value, (current, func) => func.DynamicInvoke(current));
         }
     }
 }
