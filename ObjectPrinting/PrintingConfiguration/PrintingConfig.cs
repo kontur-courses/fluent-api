@@ -18,6 +18,8 @@ namespace ObjectPrinting.PrintingConfiguration
         private Dictionary<MemberInfo, int> stringMaxLengths;
         private Dictionary<Type, CultureInfo> differentCultures;
         private PropertyInfo currentProperty;
+        private HashSet<object> history;
+        private bool ignoringCyclicReferences;
 
         private Type[] finalTypes =
         {
@@ -33,6 +35,8 @@ namespace ObjectPrinting.PrintingConfiguration
             customTypesSerialization = new Dictionary<Type, Delegate>();
             stringMaxLengths = new Dictionary<MemberInfo, int>();
             differentCultures = new Dictionary<Type, CultureInfo>();
+            history = new HashSet<object>();
+            ignoringCyclicReferences = false;
         }
 
         public string PrintToString(TOwner obj)
@@ -67,6 +71,17 @@ namespace ObjectPrinting.PrintingConfiguration
                 return HandleObjectWithFinalType(obj);
             }
 
+            if (history.Contains(obj))
+            {
+                if (!ignoringCyclicReferences)
+                {
+                    throw new ArgumentException("Cyclic reference");
+                }
+
+                return $"New cyclic reference detected on {type.FullName}";
+            }
+
+            history.Add(obj);
             var starter = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -80,6 +95,7 @@ namespace ObjectPrinting.PrintingConfiguration
                 }
             }
 
+            history.Remove(obj);
             currentProperty = null;
             return sb.ToString();
         }
@@ -127,6 +143,12 @@ namespace ObjectPrinting.PrintingConfiguration
         {
             var member = ((MemberExpression)memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TMemberInfo>(this, member);
+        }
+
+        public PrintingConfig<TOwner> IgnoreCyclicReference()
+        {
+            ignoringCyclicReferences = true;
+            return this;
         }
 
         protected internal void ExcludeType(Type type)

@@ -159,4 +159,37 @@ public class ObjectPrinter_Should
         str.Should().Contain(personConfig.PrintToString(person3));
         Console.WriteLine(str);
     }
+
+    [Test]
+    public void PrintToString_ShouldWorkCorrect_WithCyclicReference()
+    {
+        var person = person1;
+        person.Parent = person;
+        Action action = () => personConfig.PrintToString(person);
+        action.Should().Throw<ArgumentException>();
+    }
+    
+    [Test]
+    public void IgnoreCyclicReference_ShouldIgnore_WithCyclicReference()
+    {
+        var person = person1;
+        person.Parent = person;
+        personConfig.IgnoreCyclicReference();
+        var str = personConfig.PrintToString(person);
+        str.Should().Contain("New cyclic reference detected");
+        Console.WriteLine(str);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldPrintParent_WithConfiguration()
+    {
+        var person = person1;
+        person.Parent = person2;
+        personConfig.For<int>().Exclude();
+        personConfig.For(p => p.Id).Exclude();
+        var str = personConfig.PrintToString(person);
+        str.Should().NotContain("Age");
+        str.Should().NotContain("Id");
+        Console.WriteLine(str);
+    }
 }
