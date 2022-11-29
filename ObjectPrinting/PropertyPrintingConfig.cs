@@ -11,14 +11,15 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
 
 
-        public Func<TPropType, string> printFunc = null;
+        public Func<TPropType, string> printFunc = (prop) => prop.ToString();
+        public int strTrimLength = int.MaxValue;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             this.printingConfig = printingConfig;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> SetSerialization(Func<TPropType, string> print)
         {
             printFunc = print;
             return printingConfig;
@@ -29,9 +30,10 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public string Get(object obj)
+        public string GetProperty(object obj)
         {
-            return printFunc((TPropType)obj);
+            var prop = printFunc((TPropType) obj);
+            return prop.Substring(0, Math.Min(prop.Length, strTrimLength));
         }
     }
 }

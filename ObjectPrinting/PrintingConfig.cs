@@ -25,18 +25,18 @@ namespace ObjectPrinting
             propsCustomSerializations = new Dictionary<string, Func<object, string>>();
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public PropertyPrintingConfig<TOwner, TPropType> For<TPropType>()
         {
             var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            typesCustomSerializations.Add(typeof(TPropType), obj => config.Get(obj));
+            typesCustomSerializations.Add(typeof(TPropType), obj => config.GetProperty(obj));
             return config;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector)
+        public PropertyPrintingConfig<TOwner, TPropType> For<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
             var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
             var prop = (selector.Body as MemberExpression).Member as PropertyInfo;
-            propsCustomSerializations.Add(prop.Name, obj => config.Get(obj));
+            propsCustomSerializations.Add(prop.Name, obj => config.GetProperty(obj));
             return config;
         }
 

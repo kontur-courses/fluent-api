@@ -46,8 +46,8 @@ namespace ObjectPrinting.Tests
         public void ChangeSerializationForType()
         {
             var res = printer
-                .Printing<string>()
-                .Using(s => "строка с кастомной сериализацией")
+                .For<string>()
+                    .SetSerialization(s => "строка с кастомной сериализацией")
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
                 "Person", "\tId = Guid", "\tName = строка с кастомной сериализацией", "\tHeight = 0", "\tAge = 19", "");
@@ -59,11 +59,24 @@ namespace ObjectPrinting.Tests
         public void ChangeSerializationForProperty()
         {
             var res = printer
-                .Printing(e => e.Age)
-                .Using(num => "Изменил только Age")
+                .For(e => e.Age)
+                    .SetSerialization(num => "Изменил только Age")
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
                 "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = Изменил только Age", "");
+
+            res.Should().Be(expected);
+        }
+
+        [Test]
+        public void TrimString()
+        {
+            var res = printer
+                .For(e => e.Name)
+                .TrimmedToLength(1)
+                .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                "Person", "\tId = Guid", "\tName = A", "\tHeight = 0", "\tAge = 19", "");
 
             res.Should().Be(expected);
         }
