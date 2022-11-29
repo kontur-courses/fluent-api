@@ -68,7 +68,6 @@ namespace ObjectPrinting
             int maxLen)
         {
             var config = (IPropertyPrintingConfig<TOwner, string>)propertyConfig;
-
             config.ParentConfig.PropertyLenForString[config.Properties] = maxLen;
             return config.ParentConfig;
 
