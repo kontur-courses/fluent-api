@@ -231,4 +231,16 @@ public class ObjectPrinter_Should
         act.Should().Throw<ArgumentException>()
             .WithMessage("String length can't be less than zero, but -1");
     }
+    
+    [Test]
+    public void PrintToString_ThrowException_OnObjectWithCycledReference()
+    {
+        var obj = new CycledObject();
+        var printer = ObjectPrinter.For<CycledObject>();
+
+        var act = () => printer.PrintToString(obj);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Printable object contains circular reference");
+    }
 }

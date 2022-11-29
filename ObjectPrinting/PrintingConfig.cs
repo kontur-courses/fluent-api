@@ -67,15 +67,22 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj)
     {
-        return PrintToStringLogic(obj);
+        return PrintToString(obj, new List<object>());
     }
 
-    private string PrintToStringLogic(object? obj)
+    private string PrintToString(object? obj, List<object> printedObjects)
     {
         if (obj is null)
             return "null";
 
         var type = obj.GetType();
+
+        if (!type.IsValueType)
+        {
+            if (printedObjects.Contains(obj))
+                throw new InvalidOperationException("Printable object contains circular reference");
+            printedObjects.Add(obj);
+        }
 
         if (finalTypes.Contains(type))
         {
@@ -93,14 +100,15 @@ public class PrintingConfig<TOwner>
         var newLine = Environment.NewLine;
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
-            var print = GetPrint(property)(property.GetValue(obj)).Replace(newLine, $"{newLine}\t");
+            var print = GetPrint(property, printedObjects)(property.GetValue(obj))
+                .Replace(newLine, $"{newLine}\t");
             sb.Append($"{newLine}\t{property.Name} = {print}");
         }
 
         return sb.ToString();
     }
 
-    private Func<object, string> GetPrint(PropertyInfo property)
+    private Func<object, string> GetPrint(PropertyInfo property, List<object> printedObjects)
     {
         if (AlternativePrintingsForProperties.ContainsKey(property))
             return obj => AlternativePrintingsForProperties[property](obj);
@@ -108,7 +116,7 @@ public class PrintingConfig<TOwner>
         if (AlternativePrintingsForTypes.ContainsKey(property.PropertyType))
             return obj => AlternativePrintingsForTypes[property.PropertyType](obj);
 
-        return PrintToStringLogic;
+        return obj => PrintToString(obj, printedObjects);
     }
 
     private bool NotExcluded(PropertyInfo property)
