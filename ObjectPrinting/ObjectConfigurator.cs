@@ -7,6 +7,8 @@ namespace ObjectPrinting;
 
 public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
 {
+    private readonly HashSet<Type> excludedTypes = new();
+    private readonly HashSet<MemberInfo> excludedMembers = new();
 
     public IBasicConfigurator<TOwner> Exclude<T>()
     {
@@ -35,7 +37,4 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
     {
         return new PrintingConfig<TOwner>();
     }
-
-    private readonly HashSet<Type> excludedTypes = new();
-    private readonly HashSet<MemberInfo> excludedMembers = new();
 }

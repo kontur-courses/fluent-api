@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -31,6 +30,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedMembers.Contains(propertyInfo))
+                    continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
