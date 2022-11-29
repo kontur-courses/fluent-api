@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -77,13 +78,6 @@ public class PrintingConfig<TOwner>
 
         var type = obj.GetType();
 
-        if (!type.IsValueType)
-        {
-            if (printedObjects.Contains(obj))
-                throw new InvalidOperationException("Printable object contains circular reference");
-            printedObjects.Add(obj);
-        }
-
         if (finalTypes.Contains(type))
         {
             if (TypesCultures.ContainsKey(type) && obj is IConvertible convertible)
@@ -95,9 +89,34 @@ public class PrintingConfig<TOwner>
             return result;
         }
 
+        if (!type.IsValueType)
+        {
+            if (printedObjects.Contains(obj))
+                throw new InvalidOperationException("Printable object contains circular reference");
+            printedObjects.Add(obj);
+        }
+
         var sb = new StringBuilder();
         sb.Append(type.Name);
         var newLine = Environment.NewLine;
+
+        if (obj is IEnumerable enumerable)
+        {
+            sb.Append(newLine + '\t');
+            var allFinal = true;
+            var strings = new List<string>();
+            foreach (var o in enumerable)
+            {
+                if (!finalTypes.Contains(o.GetType()))
+                    allFinal = false;
+                strings.Add(PrintToString(o, printedObjects).Replace(newLine, $"{newLine}\t"));
+            }
+
+            var result = $"[{string.Join(allFinal ? ", " : $",{newLine}\t", strings)}]";
+            sb.Append(result);
+            return sb.ToString();
+        }
+        
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
             var print = GetPrint(property, printedObjects)(property.GetValue(obj))
