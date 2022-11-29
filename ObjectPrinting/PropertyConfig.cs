@@ -5,30 +5,30 @@ namespace ObjectPrinting
 {
     public sealed class PropertyConfig<TOwner, T> : IPropertyConfig<TOwner, T>
     {
-        private PrintingConfig<TOwner> printer;
-        private Expression<Func<TOwner, T>> property;
+        public PrintingConfig<TOwner> Printer { get; private set; }
+        public Expression<Func<TOwner, T>> PropertyExpression { get; private set; }
         
         public PropertyConfig(PrintingConfig<TOwner> printer, Expression<Func<TOwner, T>> property)
         {
-            this.printer = printer;
-            this.property = property;
+            this.Printer = printer;
+            this.PropertyExpression = property;
         }
 
         public IPropertyConfig<TOwner, T> OverrideSerializeMethod(Func<T, string> newMethod)
         {
-            printer.OverrideSerializeMethodForProperty(property, newMethod);
+            Printer.OverrideSerializeMethodForProperty(PropertyExpression, newMethod);
             return this;
         }
 
         public PrintingConfig<TOwner> SetConfig()
         {
-            return printer;
+            return Printer;
         }
 
         public PrintingConfig<TOwner> ExcludeFromConfig()
         {
-            printer.ExcludeProperty(property);
-            return printer;
+            Printer.ExcludeProperty(PropertyExpression);
+            return Printer;
         }
     }
 }

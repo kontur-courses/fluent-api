@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = Al
+	Height = 0
+	Age = 19

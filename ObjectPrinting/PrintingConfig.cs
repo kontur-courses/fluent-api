@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace ObjectPrinting
@@ -11,6 +12,13 @@ namespace ObjectPrinting
     {
         public string PrintToString(TOwner obj)
         {
+
+            foreach (var propertyInfo in obj.GetType().GetProperties())
+            {
+                if (propertyInfo.PropertyType == typeof(string) && !StringCutFunctions.ContainsKey(propertyInfo.Name))
+                    StringCutFunctions[propertyInfo.Name] = (s) => s;
+            }
+
             return PrintToString(obj, 0);
         }
 
@@ -37,14 +45,16 @@ namespace ObjectPrinting
                 if (OverridedConfigs.ContainsKey(name) && OverridedConfigs[name].Excluded) continue;
                 
                 sb.Append(identation + propertyInfo.Name + " = ");
-                if (OverridedConfigs.ContainsKey(propertyInfo.Name))
+                var value = propertyInfo.GetValue(obj);
+                if (propertyInfo.PropertyType == typeof(string)) value = StringCutFunctions[name](value as string);
+                if (OverridedConfigs.ContainsKey(name))
                 {
-                    sb.Append(OverridedConfigs[propertyInfo.Name]
-                        .GetStringResult(propertyInfo.GetValue(obj)));
+                    sb.Append(OverridedConfigs[name]
+                        .GetStringResult(value));
                     sb.AppendLine();
                 }
                 else
-                    sb.Append(PrintToString(propertyInfo.GetValue(obj),
+                    sb.Append(PrintToString(value,
                         nestingLevel + 1));
 
             }
@@ -67,22 +77,39 @@ namespace ObjectPrinting
             throw new NotImplementedException();
         }
 
-        internal void ExcludeProperty<T>(Expression<Func<TOwner, T>> property)
+        internal void ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
-            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
-            var info = (PropertyInfo) ((MemberExpression) property.Body).Member;
+            var info = ExtractProperty(propertyExpression);
             if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
             OverridedConfigs[info.Name].Exclude();
         }
-        internal void OverrideSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> property,
+        internal void OverrideSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
             Func<T, string> newMethod)
         {
-            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
-            var info = (PropertyInfo) ((MemberExpression) property.Body).Member;
+
+            var info = ExtractProperty(propertyExpression);
             if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
             OverridedConfigs[info.Name].SetNewSerializeMethod(newMethod);
         }
-        
+
+        internal void SetStringCut(Expression<Func<TOwner, string>> propertyExpression, int maxLength)
+        {
+            var info = ExtractProperty(propertyExpression);
+            StringCutFunctions[info.Name] = (s) =>
+            {
+                if (s.Length > maxLength) return s.Substring(0, maxLength);
+                else return s;
+            };
+        }
+
+        private PropertyInfo ExtractProperty<T>(Expression<Func<TOwner, T>> property)
+        {
+            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
+            return (PropertyInfo) ((MemberExpression) property.Body).Member;
+        }
+
+        private Dictionary<string, Func<string, string>> StringCutFunctions =
+            new Dictionary<string, Func<string, string>>();
         private Dictionary<string, OverrideConfig> OverridedConfigs = new Dictionary<string, OverrideConfig>();
         private class OverrideConfig
         {

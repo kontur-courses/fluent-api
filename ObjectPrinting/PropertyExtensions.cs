@@ -4,9 +4,10 @@ namespace ObjectPrinting
 {
     public static class PropertyExtensions
     {
-        public static IPropertyConfig<TOwner,string> CutString<TOwner>(this IPropertyConfig<TOwner, string> config)
+        public static IPropertyConfig<TOwner,string> CutString<TOwner>(this IPropertyConfig<TOwner, string> config, int maxLength)
         {
-            throw new NotImplementedException();
+            config.Printer.SetStringCut(config.PropertyExpression, maxLength);
+            return config;
         }
 
         public static IPropertyConfig<TOwner, float> SetCulture<TOwner>(this IPropertyConfig<TOwner, float> config)

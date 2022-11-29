@@ -40,5 +40,30 @@ namespace ObjectPrinting.Tests
                 .SetConfig();
             Approvals.Verify(printer.PrintToString(person));
         }
+        
+        [Test]
+        public void OverrideProperty_Should_DiscardPrevOverrideProperty()
+        {
+            var person = new Person {Name = "Alex", Age = 19};
+            var printer = ObjectPrinter.For<Person>()
+                .ConfigForProperty(p => p.Age)
+                .OverrideSerializeMethod(i => "Old")
+                .OverrideSerializeMethod(i=>i+" Old")
+                .SetConfig();
+            Approvals.Verify(printer.PrintToString(person));
+        }
+        
+        [Test]
+        public void OverrideProperty_ShouldNot_Work_OnExcludedProperty()
+        {
+            var person = new Person {Name = "Alex", Age = 19};
+            var printer = ObjectPrinter.For<Person>()
+                .ConfigForProperty(p=>p.Age)
+                .ExcludeFromConfig()
+                .ConfigForProperty(p => p.Age)
+                .OverrideSerializeMethod(i => "Old")
+                .SetConfig();
+            Approvals.Verify(printer.PrintToString(person));
+        }
     }
 }
