@@ -5,6 +5,7 @@ using System.Threading;
 using FluentAssertions;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
+using ObjectPrinting.Tests.TestClasses;
 
 namespace ObjectPrinting.Tests
 {
@@ -15,9 +16,6 @@ namespace ObjectPrinting.Tests
         public Vehicle VehicleCar;
         private Person simplePerson;
         private Person childPerson;
-
-
-
 
         [SetUp]
         public void SetUp()
@@ -50,7 +48,7 @@ namespace ObjectPrinting.Tests
             };
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()// исключение типа Guid
+                .Excluding<Guid>() // исключение типа Guid
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .Printing<int>().Using(i => $"full {i}") // все поля int кроме Age будет в формате "full {property}" 
                 ////3. Для числовых типов указать культуру
@@ -58,7 +56,7 @@ namespace ObjectPrinting.Tests
                 ////4. Настроить сериализацию конкретного свойства
                 .Printing(x => x.Age).Using(x => $"{x} Years") // все поля Age в формате "{Age} Years"
                 ////5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(4) // все поля Name будут длинной не больше 4 символов
+                .Printing(p => p.Name).TrimmedToLength(4) // все поля BrandAuto будут длинной не больше 4 символов
                 ////6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.HaveCar); // исключение поля HaveCar
             printedString = printer.PrintToString(person);
@@ -75,34 +73,19 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>();
             printedString = printer.PrintToString(childPerson);
-            printedString.Should().Contain("AgeOfTheCar = 17");
+            printedString.Should().Contain("AgeOfCar = 17");
             printer = ObjectPrinter.For<Person>().Excluding<Vehicle>();
-            childPerson.TypeList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 };
-            childPerson.TypeArray = new [] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 };
-            childPerson.TypeDict = new Dictionary<int, object>() { [1] = 123 , [2]="rere"};
-            childPerson.TypeSet = new HashSet<string>() { "effe", "nice hashset" };
             printedString = printer.PrintToString(childPerson);
-            printedString.Should().NotContain("AgeOfTheCar = 17");
+            printedString.Should().NotContain("AgeOfCar = 17");
         }
 
         [Test]
         public void PrintCyclicReference()
         {
             simplePerson.Parent = childPerson;
-            var printer = ObjectPrinter.For<Person>();
+            var printer = ObjectPrinter.For<Person>().Excluding<int>();
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Parent = Cyclic reference");
-        }
-
-        [Test]
-        public void IEnumerable()
-        {
-            var list = new List<object>() { 2, 23, 434, 3, 5, 4, 54, 5, 6, 6, 5, 65, 6 };
-            var dict = new Dictionary<string, object>() { ["fef"] = 12, ["nicekey"]="yes", ["fe123f"] = 12, ["ffeef"] = childPerson, ["list"]=list };
-            
-            var printer= ObjectPrinter.For<IDictionary<string,object>>();
-            printedString = printer.PrintToString(dict);
-
         }
     }
 }
