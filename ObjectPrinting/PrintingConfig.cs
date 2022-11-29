@@ -12,6 +12,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private object startObject;
         private HashSet<Type> excludedTypes;
         private HashSet<string> excludedNames;
         private Dictionary<Type, Func<object, string>> typesCustomSerializations;
@@ -60,6 +61,8 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            startObject ??= obj;
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -68,8 +71,6 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-
-            
 
             if (typesCustomSerializations.ContainsKey(obj.GetType()))
                 return typesCustomSerializations[obj.GetType()](obj) + Environment.NewLine;
@@ -92,7 +93,8 @@ namespace ObjectPrinting
 
                 sb.Append(identation);
                 sb.Append(propertyInfo.Name + " = ");
-                if (propertyInfo.GetValue(obj) == obj)
+
+                if (propertyInfo.GetValue(obj) == startObject)
                     sb.Append("this" + Environment.NewLine);
                 else if (propsCustomSerializations.ContainsKey(propertyInfo.Name))
                     sb.Append(propsCustomSerializations[propertyInfo.Name](propertyInfo.GetValue(obj)) +
@@ -101,6 +103,8 @@ namespace ObjectPrinting
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
 
             }
+
+            startObject = null!;
             return sb.ToString();
         }
     }

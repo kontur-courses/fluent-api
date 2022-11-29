@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -15,7 +16,7 @@ namespace ObjectPrinting.Tests
         public void SetUp()
         {
             person = new Person { Name = "Alex", Age = 19, Double = 2.2 };
-            person.Parent = person;
+            
             printer = ObjectPrinter.For<Person>();
         }
 
@@ -26,7 +27,7 @@ namespace ObjectPrinting.Tests
                 .Exclude<string>()
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
+                "Person", "\tId = Guid", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -38,7 +39,7 @@ namespace ObjectPrinting.Tests
                 .Exclude(e => e.Id)
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                 "Person", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
+                 "Person", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -52,7 +53,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
                 "Person", "\tId = Guid", "\tName = строка с кастомной сериализацией", "\tHeight = 0", "\tAge = 19"
-                , "\tDouble = 2,2", "\tParent = this", "");
+                , "\tDouble = 2,2", "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -66,7 +67,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
                 "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = Изменил только Age", "\tDouble = 2,2"
-                , "\tParent = this", "");
+                , "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -79,7 +80,7 @@ namespace ObjectPrinting.Tests
                 .TrimmedToLength(1)
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = A", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
+                "Person", "\tId = Guid", "\tName = A", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -92,7 +93,7 @@ namespace ObjectPrinting.Tests
                     .Using(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "\tParent = this", "");
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "\tParent = null", "");
 
             res.Should().Be(expected);
         }
@@ -100,12 +101,12 @@ namespace ObjectPrinting.Tests
         [Test]
         public void BrakeOnLooping()
         {
+            person.Parent = new Person {Parent = person};
             var res = printer
-                .For<double>()
-                .Using(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "\tParent = this", "");
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = Person",
+                    "\t\tId = Guid", "\t\tName = null", "\t\tHeight = 0", "\t\tAge = 0", "\t\tDouble = 0", "\t\tParent = this", "");
 
             res.Should().Be(expected);
         }
