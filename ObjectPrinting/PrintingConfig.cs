@@ -8,13 +8,10 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes;
-        private readonly HashSet<MemberInfo> excludedMembers;
-
-        public PrintingConfig(HashSet<Type> excludedTypes = null, HashSet<MemberInfo> excludedMembers = null)
+        private readonly IBasicConfigurator<TOwner> configurator;
+        public PrintingConfig(IBasicConfigurator<TOwner> configurator)
         {
-            this.excludedTypes = excludedTypes;
-            this.excludedMembers = excludedMembers;
+            this.configurator = configurator;
         }
         
         public string PrintToString(TOwner obj)
@@ -41,12 +38,22 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes is not null && excludedMembers is not null &&
-                    (excludedTypes.Contains(propertyInfo.PropertyType) || excludedMembers.Contains(propertyInfo)))
+                var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+                if (configurator.Dict.ContainsKey(propertyInfo))
+                {
+                    if (value != null)
+                    {
+                        value = value.ToString(configurator.Dict[propertyInfo].CultureInfo);
+                        if (configurator.Dict[propertyInfo].TrimLength > 0)
+                            value = value[..configurator.Dict[propertyInfo].TrimLength] + Environment.NewLine;
+                    }
+                }
+                if (configurator.ExcludedTypes.Contains(propertyInfo.PropertyType) || configurator.ExcludedMembers.Contains(propertyInfo))
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                // sb.Append(identation + propertyInfo.Name + " = " +
+                //           PrintToString(value,
+                //               nestingLevel + 1));
+                sb.Append(identation + propertyInfo.Name + " = " + value);
             }
 
             return sb.ToString();

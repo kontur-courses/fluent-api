@@ -14,9 +14,12 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alex", Age = 19};
 
             var printer = ObjectConfig.For<Person>()
-                .Exclude<int>()
-                .Exclude(p => p.Name)
-                .ConfigureProperty(p => p.Height).SetCulture(CultureInfo.InvariantCulture)
+                // .Exclude<int>()
+                // .Exclude(p => p.Name)
+                // .ConfigureProperty(p => p.Height).SetCulture(CultureInfo.InvariantCulture)
+                // .ConfigureProperty(p => p.Name)
+                .ConfigureProperty(p => p.Name).TrimByLength(3)
+                .ConfigureProperty(p => p.Age).SetCulture(CultureInfo.CurrentCulture)
                 .ConfigurePrinter();
                 // .ConfigureProperty(p => p.Name);
             // .SetNumberCulture(CultureInfo.InvariantCulture)
