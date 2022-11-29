@@ -9,16 +9,23 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    internal class PrintingConfigRoot
     {
         internal HashSet<Type> ExcludedTypes { get; set; } = new HashSet<Type>();
         internal Dictionary<Type, Func<object, string>> TypeSerializers { get; set; } = new Dictionary<Type, Func<object, string>>();
         internal Dictionary<Type, CultureInfo> NumericTypeCulture { get; set; } = new Dictionary<Type, CultureInfo>();
-        internal Dictionary<PropertyInfo, Func<object, string>> PropertySerializers { get; set; } = new Dictionary<PropertyInfo, Func<object, string>>();
-        internal HashSet<PropertyInfo> ExcludedProperties { get; set; } = new HashSet<PropertyInfo>();
+        internal Dictionary<PropertyInfo, Func<object, string>> PropertySerializers { get; } = new Dictionary<PropertyInfo, Func<object, string>>();
+        internal HashSet<PropertyInfo> ExcludedProperties { get; } = new HashSet<PropertyInfo>();
+        internal Dictionary<PropertyInfo, int> MaxStringPropertyLengths { get; } = new Dictionary<PropertyInfo, int>();
+    }
 
-        internal PrintingConfig<TOwner> Parent { get; set; } = new PrintingConfig<TOwner>();
+    public interface IHaveRoot
+    {
+        internal PrintingConfigRoot Root { get; }
+    }
 
+    public interface IPrintingConfig<TOwner> : IHaveRoot
+    {
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -51,106 +58,103 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public PrintingConfig<TOwner> Exclude<TExcluded>()
+        public IPrintingConfig<TOwner> Exclude<TExcluded>()
         {
-            Parent.ExcludedTypes.Add(typeof(TExcluded));
+            Root.ExcludedTypes.Add(typeof(TExcluded));
             return this;
         }
 
-        public PrintingConfig<TOwner> SerializeTypeAs<T>(Func<T, string> serializationFunction)
+        public IPrintingConfig<TOwner> SerializeTypeAs<T>(Func<T, string> serializationFunction)
         {
             var type = typeof(T);
-            if (!Parent.TypeSerializers.ContainsKey(type))
-                Parent.TypeSerializers.Add(type, obj => serializationFunction((T)obj));
-
+            if (!Root.TypeSerializers.ContainsKey(type))
+                Root.TypeSerializers.Add(type, obj => serializationFunction((T)obj));
             return this;
         }
 
-        public PrintingConfig<TOwner> SetNumericTypeCulture<T>(CultureInfo culture)
+        public IPrintingConfig<TOwner> SetNumericTypeCulture<T>(CultureInfo culture)
         {
             var type = typeof(T);
-            if (!Parent.NumericTypeCulture.ContainsKey(type))
-                Parent.NumericTypeCulture.Add(type, culture);
+            if (!Root.NumericTypeCulture.ContainsKey(type))
+                Root.NumericTypeCulture.Add(type, culture);
 
             return this;
         }
 
-        public PrintingStringPropertySerializer<TOwner> ConfigurePropertySerialization(Expression<Func<TOwner, string>> property)
+        public IPrintingPropertyBaseConfig<TOwner, T> ConfigurePropertySerialization<T>(Expression<Func<TOwner, T>> property)
         {
-            var propertyInfo = GetPropertyInfoFromExpression(property);
-            return new PrintingStringPropertySerializer<TOwner>(propertyInfo, Parent);
+            var propertyInfo = GetPropertyInfoFromExpression(property.Body);
+            return new PrintingPropertyBaseConfig<TOwner, T>(propertyInfo, Root);
         }
 
-        public PrintingPropertySerializer<TOwner, T> ConfigurePropertySerialization<T>(Expression<Func<TOwner, T>> property)
+        public IPrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> property)
         {
-            var propertyInfo = GetPropertyInfoFromExpression(property);
-            return new PrintingPropertySerializer<TOwner, T>(propertyInfo, Parent);
-        }
-
-        public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> property)
-        {
-            var propertyInfo = GetPropertyInfoFromExpression(property);
-            Parent.ExcludedProperties.Add(propertyInfo);
+            var propertyInfo = GetPropertyInfoFromExpression(property.Body);
+            Root.ExcludedProperties.Add(propertyInfo);
             return this;
         }
 
         private static PropertyInfo GetPropertyInfoFromExpression(Expression expression)
         {
             if (!(expression is MemberExpression))
-                throw new ArgumentException("Argument expression doesn't contain property");
+                throw new ArgumentException($"Can't find property {expression}");
 
             return (expression as MemberExpression).Member as PropertyInfo;
         }
     }
 
-    public class PrintingPropertySerializer<TOwner, T> : PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        protected readonly PropertyInfo currentProperty;
+        private PrintingConfigRoot root = new PrintingConfigRoot();
+        PrintingConfigRoot IHaveRoot.Root { get => root; }
+    }
 
-        public PrintingPropertySerializer(PropertyInfo property, PrintingConfig<TOwner> parent)
+    public interface IPrintingPropertyBaseConfig<TOwner, T> : IHaveRoot
+    {
+        internal PropertyInfo CurrentProperty { get; }
+
+        public IPrintingPropertyConfig<TOwner, T> SetSerializer(Func<T, string> serializer)
         {
-            currentProperty = property;
-            Parent = parent;
-        }
+            var objSerializer = new Func<object, string>(obj => serializer((T)obj));
 
-        public PrintingPropertySerializer<TOwner, T> SetSerializer(Func<T, string> serializer)
-        {
-            if (!Parent.PropertySerializers.ContainsKey(currentProperty))
-                Parent.PropertySerializers.Add(currentProperty, obj => serializer((T)obj));
+            if (!Root.PropertySerializers.ContainsKey(CurrentProperty))
+                Root.PropertySerializers.Add(CurrentProperty, objSerializer);
+            else Root.PropertySerializers[CurrentProperty] = objSerializer;
 
-            return this;
+            return new PrintingPropertyConfig<TOwner, T>(CurrentProperty, Root);
         }
     }
 
-    public class PrintingStringPropertySerializer<TOwner> : PrintingConfig<TOwner>
+    public class PrintingPropertyBaseConfig<TOwner, T> : IPrintingPropertyConfig<TOwner, T>
     {
-        protected readonly PropertyInfo currentProperty;
+        private PropertyInfo currentProperty;
+        private PrintingConfigRoot root;
 
-        public PrintingStringPropertySerializer(PropertyInfo property, PrintingConfig<TOwner> parent)
+        PrintingConfigRoot IHaveRoot.Root => root;
+        PropertyInfo IPrintingPropertyBaseConfig<TOwner, T>.CurrentProperty => currentProperty;
+
+        internal PrintingPropertyBaseConfig(PropertyInfo property, PrintingConfigRoot root)
         {
             currentProperty = property;
-            Parent = parent;
+            this.root = root;
         }
+    }
 
-        public PrintingStringPropertySerializer<TOwner> SetSerializer(Func<string, string> serializer)
+    public interface IPrintingPropertyConfig<TOwner, T> : IPrintingConfig<TOwner>, IPrintingPropertyBaseConfig<TOwner, T>
+    { }
+
+    public class PrintingPropertyConfig<TOwner, T> : IPrintingPropertyConfig<TOwner, T>
+    {
+        private readonly PrintingConfigRoot root;
+        private readonly PropertyInfo currentProperty;
+
+        PrintingConfigRoot IHaveRoot.Root => root;
+        PropertyInfo IPrintingPropertyBaseConfig<TOwner, T>.CurrentProperty => currentProperty;
+
+        internal PrintingPropertyConfig(PropertyInfo property, PrintingConfigRoot root)
         {
-            if (!Parent.PropertySerializers.ContainsKey(currentProperty))
-                Parent.PropertySerializers.Add(currentProperty, obj => serializer((string)obj));
-
-            return this;
-        }
-
-        public PrintingStringPropertySerializer<TOwner> SetMaxLength(int length)
-        {
-            if(Parent.PropertySerializers.ContainsKey(currentProperty))
-            {
-                Parent.PropertySerializers[currentProperty] = 
-                    obj => Parent.PropertySerializers[currentProperty](obj).Substring(length);
-                return this;
-            }
-
-            Parent.PropertySerializers.Add(currentProperty, obj => ((string)obj).Substring(length));
-            return this;
+            this.root = root;
+            currentProperty = property;
         }
     }
 }
