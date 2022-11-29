@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
 
             var result = personConfig.PrintToString(person);
             
-            Assert.That(result, Has.No.Contains("Id"));
+            StringAssert.DoesNotContain("Id", result);
         }
         
         [Test]
@@ -71,7 +71,7 @@ namespace ObjectPrinting.Tests
 
             var result = personConfig.PrintToString(person);
             
-            Assert.That(result, Has.No.Contains("Age"));
+            StringAssert.DoesNotContain("Age", result);;
         }
         
         [Test]
@@ -81,7 +81,30 @@ namespace ObjectPrinting.Tests
 
             var result = personConfig.PrintToString(person);
             
-            Assert.That(result, Has.No.Contains("Guid"));
+            StringAssert.DoesNotContain("Guid", result);
+        }
+        
+        [Test]
+        public void PrintingConfig_WithCustomSerializeProperty_ShouldReturnString()
+        {
+            var personConfig = printingConfig.Printing(x => x.Name).Using(x => "IDK");
+
+            var result = personConfig.PrintToString(person);
+            
+            StringAssert.DoesNotContain(person.Name, result);
+        }
+        
+        [Test]
+        public void PrintingConfig_WithTrimStringProperty_ShouldReturnString()
+        {
+            const int length = 2;
+            var subName = person.Name[..length];
+            var personConfig = printingConfig.Printing(x => x.Name).TrimmedToLength(length);
+
+            var result = personConfig.PrintToString(person);
+            
+            StringAssert.DoesNotContain(person.Name, result);
+            StringAssert.Contains(subName, result);
         }
     }
 }
