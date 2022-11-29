@@ -1,12 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly List<Type> _excludedTypes;
+        private readonly List<MemberInfo> _excludedMembers;
+
+        public PrintingConfig()
+        {
+            _excludedTypes = new List<Type>();
+            _excludedMembers = new List<MemberInfo>();
+        }
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -19,11 +31,16 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            if (!(memberSelector.Body is MemberExpression memberExpression))
+                throw new ArgumentException();
+            
+            _excludedMembers.Add(memberExpression.Member);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            _excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -52,6 +69,10 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if(_excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+                if(_excludedMembers.Contains(propertyInfo))
+                    continue;
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
