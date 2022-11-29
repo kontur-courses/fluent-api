@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,13 +8,19 @@ namespace ObjectPrinting;
 
 public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
 {
-    public Dictionary<MemberInfo, MemberConfig> Dict { get; }
+    public Dictionary<MemberInfo, UniversalConfig> MemberInfoConfigs { get; }
+    public Dictionary<Type, UniversalConfig> TypeConfigs { get; }
     public HashSet<Type> ExcludedTypes { get; }
     public HashSet<MemberInfo> ExcludedMembers { get; }
+    public ITypeConfigurator<TOwner, T> ConfigureType<T>()
+    {
+        return new TypeConfigurator<TOwner, T>(this);
+    }
 
     public ObjectConfigurator()
     {
-        Dict = new Dictionary<MemberInfo, MemberConfig>();
+        MemberInfoConfigs = new Dictionary<MemberInfo, UniversalConfig>();
+        TypeConfigs = new Dictionary<Type, UniversalConfig>();
         ExcludedTypes = new HashSet<Type>();
         ExcludedMembers = new HashSet<MemberInfo>();
     }
@@ -44,17 +49,5 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
     public PrintingConfig<TOwner> ConfigurePrinter()
     {
         return new PrintingConfig<TOwner>(this);
-    }
-}
-
-public class MemberConfig
-{
-    public CultureInfo CultureInfo { get; }
-    public int TrimLength { get; }
-
-    public MemberConfig(CultureInfo cultureInfo, int trimLength)
-    {
-        CultureInfo = cultureInfo;
-        TrimLength = trimLength;
     }
 }

@@ -18,8 +18,10 @@ namespace ObjectPrinting.Tests
                 // .Exclude(p => p.Name)
                 // .ConfigureProperty(p => p.Height).SetCulture(CultureInfo.InvariantCulture)
                 // .ConfigureProperty(p => p.Name)
-                .ConfigureProperty(p => p.Name).TrimByLength(3)
-                .ConfigureProperty(p => p.Age).SetCulture(CultureInfo.CurrentCulture)
+                // .ConfigureProperty(p => p.Name).TrimByLength(3)
+                // .ConfigureProperty(p => p.Age).SetCulture(CultureInfo.CurrentCulture)
+                .ConfigureType<int>().SetCulture(CultureInfo.CurrentCulture)
+                .ConfigureType<string>().TrimByLength(2)
                 .ConfigurePrinter();
                 // .ConfigureProperty(p => p.Name);
             // .SetNumberCulture(CultureInfo.InvariantCulture)

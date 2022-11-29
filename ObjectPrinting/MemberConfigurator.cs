@@ -7,28 +7,31 @@ namespace ObjectPrinting;
 
 public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
 {
-    private MemberInfo memberInfo;
+    private readonly MemberInfo memberInfo;
+    
+    public MemberConfigurator(IBasicConfigurator<TOwner> basicConfigurator, MemberInfo memberInfo)
+    {
+        BasicConfigurator = basicConfigurator;
+        this.memberInfo = memberInfo;
+    }
     
     public IBasicConfigurator<TOwner> BasicConfigurator { get; }
+    
     public IBasicConfigurator<TOwner> Configure(CultureInfo cultureInfo)
     {
-        var memberConfig = new MemberConfig(cultureInfo, 0);
-        BasicConfigurator.Dict.Add(memberInfo, memberConfig);
-
+        if (!BasicConfigurator.MemberInfoConfigs.ContainsKey(memberInfo))
+            BasicConfigurator.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
+        
+        BasicConfigurator.MemberInfoConfigs[memberInfo].CultureInfo = cultureInfo;
         return BasicConfigurator;
     }
 
     public IBasicConfigurator<TOwner> Configure(int length)
     {
-         var memberConfig = new MemberConfig(CultureInfo.CurrentCulture, length);
-         BasicConfigurator.Dict.Add(memberInfo, memberConfig);
-
-         return BasicConfigurator;
-    }
-
-    public MemberConfigurator(IBasicConfigurator<TOwner> basicConfigurator, MemberInfo memberInfo)
-    {
-        BasicConfigurator = basicConfigurator;
-        this.memberInfo = memberInfo;
+        if (!BasicConfigurator.MemberInfoConfigs.ContainsKey(memberInfo))
+            BasicConfigurator.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
+        
+        BasicConfigurator.MemberInfoConfigs[memberInfo].TrimLength = length;
+        return BasicConfigurator;
     }
 }

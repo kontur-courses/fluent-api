@@ -9,6 +9,12 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly IBasicConfigurator<TOwner> configurator;
+        private readonly Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        
         public PrintingConfig(IBasicConfigurator<TOwner> configurator)
         {
             this.configurator = configurator;
@@ -25,13 +31,16 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
-            var finalTypes = new[]
+            var result = obj + Environment.NewLine;
+            if (configurator.TypeConfigs.ContainsKey(type))
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+                result = result.ToString(configurator.TypeConfigs[type].CultureInfo);
+                if (configurator.TypeConfigs[type].TrimLength > 0)
+                    result = result![..configurator.TypeConfigs[type].TrimLength] + Environment.NewLine;
+            }
+
             if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
+                return result;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -39,13 +48,13 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                if (configurator.Dict.ContainsKey(propertyInfo))
+                if (configurator.MemberInfoConfigs.ContainsKey(propertyInfo))
                 {
                     if (value != null)
                     {
-                        value = value.ToString(configurator.Dict[propertyInfo].CultureInfo);
-                        if (configurator.Dict[propertyInfo].TrimLength > 0)
-                            value = value[..configurator.Dict[propertyInfo].TrimLength] + Environment.NewLine;
+                        value = value.ToString(configurator.MemberInfoConfigs[propertyInfo].CultureInfo);
+                        if (configurator.MemberInfoConfigs[propertyInfo].TrimLength > 0)
+                            value = value[..configurator.MemberInfoConfigs[propertyInfo].TrimLength] + Environment.NewLine;
                     }
                 }
                 if (configurator.ExcludedTypes.Contains(propertyInfo.PropertyType) || configurator.ExcludedMembers.Contains(propertyInfo))
