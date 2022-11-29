@@ -69,16 +69,16 @@ public class PrintingConfig<TOwner>
         var sb = new StringBuilder();
 
         var type = obj.GetType();
-        sb.AppendLine(type.Name);
+        sb.Append(type.Name);
 
         var identation = new string('\t', nestingLevel + 1);
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
             var print = PrintToString(property.GetValue(obj), nestingLevel + 1);
-            sb.AppendLine($"{identation}{property.Name} = {print}");
+            sb.Append($"{Environment.NewLine}{identation}{property.Name} = {print}");
         }
 
-        return sb.ToString().Trim();
+        return sb.ToString();
     }
 
     private bool NotExcluded(PropertyInfo property)

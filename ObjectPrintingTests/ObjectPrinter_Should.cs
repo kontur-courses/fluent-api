@@ -74,6 +74,20 @@ public class ObjectPrinter_Should
     }
 
     [Test]
+    public void DefaultPrintToString_ReturnCorrectString_WithNestedComplexObject()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var personWrapper = new PersonWrapper { Id = 0, Person = person };
+        var nl = Environment.NewLine;
+        var personExpected = $"Person{nl}\t\tId = Guid{nl}\t\tName = Имя{nl}\t\tHeight = 0{nl}\t\tAge = 0";
+        var expected = $"PersonWrapper{nl}\tId = 0{nl}\tPerson = {personExpected}";
+
+        var result = personWrapper.PrintToString();
+
+        result.Should().Be(expected);
+    }
+
+    [Test]
     public void PrintToString_EqualToDefaultPrintToString_OnDefaultPrinter()
     {
         var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
