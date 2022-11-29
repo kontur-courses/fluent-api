@@ -100,6 +100,18 @@ public class ObjectPrinter_Should
 
         result.Should().Be(expected);
     }
+    
+    [Test]
+    public void PrintToStringWithConfiguring_ReturnStringEqualsToPrinter()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
+        var expected = printer.PrintToString(person);
+
+        var result = person.PrintToString(op => op.Excluding<Guid>());
+
+        result.Should().Be(expected);
+    }
 
     [Test]
     public void ExcludingPropertiesByType_WorkCorrectly()
