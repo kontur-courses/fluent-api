@@ -4,7 +4,7 @@ namespace ObjectPrinting
     {
         public static PrintingConfig<T> For<T>()
         {
-            return new PrintingConfig<T>(null, null);
+            return new PrintingConfig<T>();
         }
     }
 }

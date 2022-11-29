@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -23,8 +24,10 @@ namespace ObjectPrinting.Tests
             var res = printer
                 .Exclude<string>()
                 .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                "Person", "\tId = Guid", "\tHeight = 0", "\tAge = 19", "");
 
-            res.Should().Be("Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+            res.Should().Be(expected);
         }
 
         [Test]
@@ -33,20 +36,36 @@ namespace ObjectPrinting.Tests
             var res = printer
                 .Exclude(e => e.Id)
                 .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                 "Person", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "");
 
-            res.Should().Be("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+            res.Should().Be(expected);
         }
 
         [Test]
-        public void ForSavesConfiguration()
+        public void ChangeSerializationForType()
         {
             var res = printer
-                .Exclude(e => e.Id)
-                .For<int>()
-                .For<Person>()
+                .Printing<string>()
+                .Using(s => "строка с кастомной сериализацией")
                 .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                "Person", "\tId = Guid", "\tName = строка с кастомной сериализацией", "\tHeight = 0", "\tAge = 19", "");
 
-            res.Should().Be("Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n");
+            res.Should().Be(expected);
+        }
+
+        [Test]
+        public void ChangeSerializationForProperty()
+        {
+            var res = printer
+                .Printing(e => e.Age)
+                .Using(num => "Изменил только Age")
+                .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = Изменил только Age", "");
+
+            res.Should().Be(expected);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,39 +12,43 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<string> excludedTypes;
+        private HashSet<Type> excludedTypes;
         private HashSet<string> excludedNames;
+        private Dictionary<Type, Func<object, string>> typesCustomSerializations;
+        private Dictionary<string, Func<object, string>> propsCustomSerializations;
 
-        public PrintingConfig(HashSet<string> types, HashSet<string> names)
+        public PrintingConfig(HashSet<Type> types = null, HashSet<string> names = null)
         {
-            excludedTypes = types == null ? new HashSet<string>() : types;
-            excludedNames = names == null ? new HashSet<string>() : names;
+            excludedTypes = types ?? new HashSet<Type>();
+            excludedNames = names ?? new HashSet<string>();
+            typesCustomSerializations = new Dictionary<Type, Func<object, string>>();
+            propsCustomSerializations = new Dictionary<string, Func<object, string>>();
         }
 
-        public PrintingConfig<T> For<T>()
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PrintingConfig<T>(excludedTypes, excludedNames);
+            var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
+            typesCustomSerializations.Add(typeof(TPropType), obj => config.Get(obj));
+            return config;
         }
 
-        public PrintingConfig<TOwner> SetSerialization(Action<TOwner> action)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
-            throw new NotImplementedException();
+            var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var prop = (selector.Body as MemberExpression).Member as PropertyInfo;
+            propsCustomSerializations.Add(prop.Name, obj => config.Get(obj));
+            return config;
         }
 
-        public PrintingConfig<TOwner> SetSerialization<T>()
+        public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            throw new NotImplementedException();
-        }
-
-        public PrintingConfig<TOwner> Exclude<T>()
-        { 
-            excludedTypes.Add(typeof(T).Name);
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude<T>(Expression<Func<TOwner, T>> func)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
-            var prop = (func.Body as MemberExpression).Member as PropertyInfo;
+            var prop = (selector.Body as MemberExpression).Member as PropertyInfo;
             excludedNames.Add(prop.Name);
             return this;
         }
@@ -55,7 +60,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -64,8 +68,17 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
+            
+
+            if (typesCustomSerializations.ContainsKey(obj.GetType()))
+                return typesCustomSerializations[obj.GetType()](obj) + Environment.NewLine;
+
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            {
+                if (!typesCustomSerializations.ContainsKey(obj.GetType()))
+                    return obj + Environment.NewLine;
+            }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -73,11 +86,17 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType.Name)
-                    && excludedNames.Contains(propertyInfo.Name)) 
+                if (excludedTypes.Contains(propertyInfo.PropertyType)
+                    || excludedNames.Contains(propertyInfo.Name)) 
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),nestingLevel + 1));
+
+                sb.Append(identation);
+                sb.Append(propertyInfo.Name + " = ");
+                if (propsCustomSerializations.ContainsKey(propertyInfo.Name))
+                    sb.Append(propsCustomSerializations[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else 
+                    sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+
             }
             return sb.ToString();
         }
