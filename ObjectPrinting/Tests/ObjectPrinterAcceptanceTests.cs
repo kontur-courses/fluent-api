@@ -15,6 +15,7 @@ namespace ObjectPrinting.Tests
         public void SetUp()
         {
             person = new Person { Name = "Alex", Age = 19, Double = 2.2 };
+            person.Parent = person;
             printer = ObjectPrinter.For<Person>();
         }
 
@@ -25,7 +26,7 @@ namespace ObjectPrinting.Tests
                 .Exclude<string>()
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "");
+                "Person", "\tId = Guid", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -37,7 +38,7 @@ namespace ObjectPrinting.Tests
                 .Exclude(e => e.Id)
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                 "Person", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "");
+                 "Person", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -50,7 +51,8 @@ namespace ObjectPrinting.Tests
                     .SetSerialization(s => "строка с кастомной сериализацией")
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = строка с кастомной сериализацией", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "");
+                "Person", "\tId = Guid", "\tName = строка с кастомной сериализацией", "\tHeight = 0", "\tAge = 19"
+                , "\tDouble = 2,2", "\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -63,7 +65,8 @@ namespace ObjectPrinting.Tests
                     .SetSerialization(num => "Изменил только Age")
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = Изменил только Age", "\tDouble = 2,2", "");
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = Изменил только Age", "\tDouble = 2,2"
+                , "\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -76,7 +79,7 @@ namespace ObjectPrinting.Tests
                 .TrimmedToLength(1)
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = A", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "");
+                "Person", "\tId = Guid", "\tName = A", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -89,7 +92,20 @@ namespace ObjectPrinting.Tests
                     .Using(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
-                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "");
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "\tParent = this", "");
+
+            res.Should().Be(expected);
+        }
+
+        [Test]
+        public void BrakeOnLooping()
+        {
+            var res = printer
+                .For<double>()
+                .Using(System.Globalization.CultureInfo.GetCultureInfo("en-US"))
+                .PrintToString(person);
+            var expected = string.Join(Environment.NewLine,
+                "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2.2", "\tParent = this", "");
 
             res.Should().Be(expected);
         }

@@ -92,9 +92,12 @@ namespace ObjectPrinting
 
                 sb.Append(identation);
                 sb.Append(propertyInfo.Name + " = ");
-                if (propsCustomSerializations.ContainsKey(propertyInfo.Name))
-                    sb.Append(propsCustomSerializations[propertyInfo.Name](propertyInfo.GetValue(obj)) + Environment.NewLine);
-                else 
+                if (propertyInfo.GetValue(obj) == obj)
+                    sb.Append("this" + Environment.NewLine);
+                else if (propsCustomSerializations.ContainsKey(propertyInfo.Name))
+                    sb.Append(propsCustomSerializations[propertyInfo.Name](propertyInfo.GetValue(obj)) +
+                              Environment.NewLine);
+                else
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
 
             }
