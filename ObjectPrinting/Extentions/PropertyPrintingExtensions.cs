@@ -1,7 +1,8 @@
 using System;
+using ObjectPrinting.BasicConfigurator.Implementation;
 using ObjectPrinting.Solved;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.Extentions;
 
 public static class PropertyPrintingExtensions
 {

@@ -1,16 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
+using ObjectPrinting.BasicConfigurator;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly IBasicConfigurator<TOwner> configurator;
-        private readonly Type[] finalTypes = new[]
-        {
+        private readonly Type[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
@@ -20,10 +18,8 @@ namespace ObjectPrinting
             this.configurator = configurator;
         }
         
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        public string PrintToString(TOwner obj) =>
+            PrintToString(obj, 0);
 
         private string PrintToString(object obj, int nestingLevel)
         {
@@ -33,11 +29,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
             var result = obj + Environment.NewLine;
             if (configurator.TypeConfigs.ContainsKey(type))
-            {
-                result = result.ToString(configurator.TypeConfigs[type].CultureInfo);
-                if (configurator.TypeConfigs[type].TrimLength > 0)
-                    result = result![..configurator.TypeConfigs[type].TrimLength] + Environment.NewLine;
-            }
+                result = ConfigureItem(result, configurator.TypeConfigs[type]);
 
             if (finalTypes.Contains(type))
                 return result;
@@ -49,23 +41,23 @@ namespace ObjectPrinting
             {
                 var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
                 if (configurator.MemberInfoConfigs.ContainsKey(propertyInfo))
-                {
-                    if (value != null)
-                    {
-                        value = value.ToString(configurator.MemberInfoConfigs[propertyInfo].CultureInfo);
-                        if (configurator.MemberInfoConfigs[propertyInfo].TrimLength > 0)
-                            value = value[..configurator.MemberInfoConfigs[propertyInfo].TrimLength] + Environment.NewLine;
-                    }
-                }
+                    value = ConfigureItem(value, configurator.MemberInfoConfigs[propertyInfo]);
+                    
                 if (configurator.ExcludedTypes.Contains(propertyInfo.PropertyType) || configurator.ExcludedMembers.Contains(propertyInfo))
                     continue;
-                // sb.Append(identation + propertyInfo.Name + " = " +
-                //           PrintToString(value,
-                //               nestingLevel + 1));
                 sb.Append(identation + propertyInfo.Name + " = " + value);
             }
 
             return sb.ToString();
+        }
+
+        private static string ConfigureItem(string result, UniversalConfig config)
+        {
+            result = result.ToString(config.CultureInfo);
+            if (config.TrimLength > 0)
+                result = result[..config.TrimLength] + Environment.NewLine;
+
+            return result;
         }
     }
 }

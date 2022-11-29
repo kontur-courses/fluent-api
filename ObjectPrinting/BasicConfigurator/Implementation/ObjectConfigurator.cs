@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using ObjectPrinting.MemberConfigurator;
+using ObjectPrinting.MemberConfigurator.Implementation;
+using ObjectPrinting.TypeConfigurator;
+using ObjectPrinting.TypeConfigurator.Implementation;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.BasicConfigurator.Implementation;
 
 public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
 {
@@ -12,10 +15,8 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
     public Dictionary<Type, UniversalConfig> TypeConfigs { get; }
     public HashSet<Type> ExcludedTypes { get; }
     public HashSet<MemberInfo> ExcludedMembers { get; }
-    public ITypeConfigurator<TOwner, T> ConfigureType<T>()
-    {
-        return new TypeConfigurator<TOwner, T>(this);
-    }
+    
+    public ITypeConfigurator<TOwner, T> ConfigureType<T>() => new TypeConfigurator<TOwner, T>(this);
 
     public ObjectConfigurator()
     {
@@ -46,8 +47,5 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
         return new MemberConfigurator<TOwner, T>(this, member);
     }
 
-    public PrintingConfig<TOwner> ConfigurePrinter()
-    {
-        return new PrintingConfig<TOwner>(this);
-    }
+    public PrintingConfig<TOwner> ConfigurePrinter() => new(this);
 }

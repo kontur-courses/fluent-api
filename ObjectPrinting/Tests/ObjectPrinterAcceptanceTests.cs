@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
-using ObjectPrinting.Solved;
+using ObjectPrinting.Extentions;
 
 namespace ObjectPrinting.Tests
 {

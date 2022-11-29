@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using System.Globalization;
-using System.Net;
 using System.Reflection;
+using ObjectPrinting.BasicConfigurator;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.MemberConfigurator.Implementation;
 
 public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
 {

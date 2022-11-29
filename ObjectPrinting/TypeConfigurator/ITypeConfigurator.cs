@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
+using ObjectPrinting.BasicConfigurator;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.TypeConfigurator;
 
 public interface ITypeConfigurator<TOwner, T>
 {

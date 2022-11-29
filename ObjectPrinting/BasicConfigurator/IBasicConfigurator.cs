@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using ObjectPrinting.MemberConfigurator;
+using ObjectPrinting.TypeConfigurator;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.BasicConfigurator;
 
 public interface IBasicConfigurator<TOwner>
 {
