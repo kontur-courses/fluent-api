@@ -1,3 +1,5 @@
+using NUnit.Framework;
+
 namespace ObjectPrinterTests.HelperClasses
 {
     public class TwoString

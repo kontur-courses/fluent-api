@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -30,7 +31,6 @@ namespace ObjectPrinting
         {
             this.depth = depth;
         }
-
 
 
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -104,22 +104,24 @@ namespace ObjectPrinting
         }
 
 
-
-
         private string PrintToString(object obj, int nestingLevel, ImmutableHashSet<object> parents,
             MemberInfo member = null)
         {
             if (nestingLevel > depth)
                 throw new OverflowException("object nesting depth exceeded");
 
-            //TODO apply configurations
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
+            var type = obj.GetType();
+
+            if (obj is IDictionary dict)
+                return GetStringDict(dict, nestingLevel);
+
+            if (obj is IEnumerable enumerable and not string)
+                return GetStringEnumerable(enumerable);
 
             if (parents.Contains(obj))
-                return obj + Environment.NewLine;
-
-            var type = obj.GetType();
+                return obj.ToString();
 
             if ((member is not null && propertySerializers.ContainsKey(member)) || typeSerializers.ContainsKey(type))
                 return GetSerializeObj(obj, member, type);
@@ -140,16 +142,48 @@ namespace ObjectPrinting
                     continue;
 
                 var newObj = propertyInfo.GetValue(obj);
-                sb.Append(indent
-                          + propertyInfo.Name
-                          + " = "
-                          + PrintToString(newObj,
-                              nestingLevel + 1,
-                              parents.Add(obj),
-                              propertyInfo));
+                sb
+                .Append(indent)
+                .Append(propertyInfo.Name)
+                .Append(" = ")
+                .Append(PrintToString(newObj,
+                    nestingLevel + 1,
+                    parents.Add(obj),
+                    propertyInfo))
+                .Append(Environment.NewLine);
             }
 
             return sb.ToString();
+        }
+
+        private string GetStringDict(IDictionary dict, int nestingLevel)
+        {
+            var sb = new StringBuilder().AppendLine("{");
+            var indent = new string('\t', nestingLevel + 1);
+            foreach (var key in dict.Keys)
+            {
+                sb.Append($"{indent}{key}: ")
+                    .Append(PrintToString(dict[key],
+                        0,
+                        ImmutableHashSet<object>.Empty).Trim())
+                    .Append(',')
+                    .AppendLine()
+                    .AppendLine();
+            }
+
+            sb.Append(new string('\t', nestingLevel)).Append('}');
+            return sb.ToString();
+        }
+
+        private string GetStringEnumerable(IEnumerable enumerable)
+        {
+            var sb = new StringBuilder().Append('[');
+
+            var elems = new List<string>();
+            foreach (var e in enumerable)
+                elems.Add($"{PrintToString(e, 0, ImmutableHashSet<object>.Empty)}");
+
+            return sb.Append(string.Join(", ", elems)).Append(']').ToString();
         }
 
         private string GetFormattedString(IFormattable formattedObj, MemberInfo member)
@@ -159,7 +193,7 @@ namespace ObjectPrinting
                 culture = formattedTypes[formattedObj.GetType()];
             if (member != null && formattedProperties.ContainsKey(member))
                 culture = formattedProperties[member];
-            return formattedObj.ToString(null, culture) + Environment.NewLine;
+            return formattedObj.ToString(null, culture);
         }
 
         private string GetString(string str, MemberInfo member, Type type)
@@ -172,7 +206,7 @@ namespace ObjectPrinting
                 str = additionalSerializationProperties[member]
                     .Aggregate(str, (current, serializer) => serializer(current));
 
-            return str + Environment.NewLine;
+            return str;
         }
 
         private string GetSerializeObj(object obj, MemberInfo member, Type type)
@@ -188,7 +222,7 @@ namespace ObjectPrinting
             if (member != null && additionalSerializationProperties.ContainsKey(member))
                 serializedStr = additionalSerializationProperties[member]
                     .Aggregate(serializedStr, (current, serializer) => serializer(current));
-            return serializedStr + Environment.NewLine;
+            return serializedStr;
         }
     }
 }

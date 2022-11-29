@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -7,9 +8,77 @@ using ObjectPrinting;
 
 namespace ObjectPrinterTests
 {
-
     public class ObjectPrinterShould
     {
+        [Test]
+        public void HandleObject_WitCollections()
+        {
+            var collection = new Collections();
+            var expected = @"Collections
+	Array = [1, 2, 3, 4, 5, 7, 8, 9]
+	List = [1, 2, 3, 4, 5, 7, 8, 9, 10]
+	Dictionary = {
+		one: 1,
+
+		two: 2,
+
+		three: 3,
+
+		four: 4,
+
+		five: 5,
+
+		six: 6,
+
+	}
+";
+            var result = collection.PrintToString();
+            result.Should().Be(expected);
+        }
+
+
+        [Test]
+        public void HandleArray()
+        {
+            var array = new Collections().Array;
+
+            var expected = @"[100,00 %, 200,00 %, 300,00 %, 400,00 %, 500,00 %, 700,00 %, 800,00 %, 900,00 %]";
+            var result = array
+                .PrintToString(p => p.Printing<int>()
+                    .Using(i => i.ToString("P")));
+
+            result.Should().Be(expected);
+        }
+
+
+        [Test]
+        public void HandleDictionary()
+        {
+            var dict = new Collections().Dictionary;
+
+            var config = ObjectPrinter.For<Dictionary<string, int>>()
+                .Printing<int>()
+                .Using(i => i.ToString("P"));
+
+            var expected = @"{
+	one: 100,00 %,
+
+	two: 200,00 %,
+
+	three: 300,00 %,
+
+	four: 400,00 %,
+
+	five: 500,00 %,
+
+	six: 600,00 %,
+
+}";
+
+            var result = config.PrintToString(dict);
+            result.Should().Be(expected);
+        }
+
 
         [Test]
         public void ExcludeType()
@@ -243,7 +312,6 @@ namespace ObjectPrinterTests
 
             Action action = () => parent.PrintToString();
 
-            // не самая осмысленная операция, но пусть так будет
             action.Should().NotThrow<StackOverflowException>();
         }
     }
