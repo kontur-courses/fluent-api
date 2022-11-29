@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -6,6 +7,9 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    internal readonly Dictionary<PropertyInfo, Func<object, string>> AlternativePrintingsForProperties = new();
+    internal readonly Dictionary<Type, Func<object, string>> AlternativePrintingsForTypes = new();
+
     private readonly List<PropertyInfo> excludedProperties = new();
     private readonly List<Type> excludedTypes = new();
 
@@ -15,6 +19,8 @@ public class PrintingConfig<TOwner>
         typeof(DateTime), typeof(TimeSpan)
     };
 
+    internal readonly Dictionary<Type, CultureInfo> TypesCultures = new();
+
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
         return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -23,19 +29,24 @@ public class PrintingConfig<TOwner>
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyInfo(memberSelector));
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
+        excludedProperties.Add(GetPropertyInfo(memberSelector));
+
+        return this;
+    }
+
+    private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
         var body = memberSelector.Body;
+
         if (!IsPropertyCall(body))
             throw new ArgumentException($"Member selector ({memberSelector}) isn't property call");
 
-        if ((body as MemberExpression)!.Member is PropertyInfo property)
-            excludedProperties.Add(property);
-
-        return this;
+        return ((body as MemberExpression)!.Member as PropertyInfo)!;
     }
 
     private static bool IsPropertyCall(Expression expression)
@@ -55,30 +66,45 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj)
     {
-        return PrintToString(obj, 0);
+        return PrintToStringLogic(obj);
     }
 
-    private string PrintToString(object? obj, int nestingLevel)
+    private string PrintToStringLogic(object? obj)
     {
         if (obj is null)
             return "null";
 
-        if (finalTypes.Contains(obj.GetType()))
-            return $"{obj}";
+        var type = obj.GetType();
+
+        if (finalTypes.Contains(type))
+        {
+            if (TypesCultures.ContainsKey(type) && obj is IConvertible convertible)
+                return convertible.ToString(TypesCultures[type]);
+
+            return obj.ToString();
+        }
 
         var sb = new StringBuilder();
-
-        var type = obj.GetType();
         sb.Append(type.Name);
-
-        var identation = new string('\t', nestingLevel + 1);
+        var newLine = Environment.NewLine;
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
-            var print = PrintToString(property.GetValue(obj), nestingLevel + 1);
-            sb.Append($"{Environment.NewLine}{identation}{property.Name} = {print}");
+            var print = GetPrint(property)(property.GetValue(obj)).Replace(newLine, $"{newLine}\t");
+            sb.Append($"{newLine}\t{property.Name} = {print}");
         }
 
         return sb.ToString();
+    }
+
+    private Func<object, string> GetPrint(PropertyInfo property)
+    {
+        if (AlternativePrintingsForProperties.ContainsKey(property))
+            return obj => AlternativePrintingsForProperties[property](obj);
+
+        if (AlternativePrintingsForTypes.ContainsKey(property.PropertyType))
+            return obj => AlternativePrintingsForTypes[property.PropertyType](obj);
+
+        return PrintToStringLogic;
     }
 
     private bool NotExcluded(PropertyInfo property)

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ObjectPrinting;
 
 public static class PropertyPrintingConfigExtensions
@@ -7,9 +9,16 @@ public static class PropertyPrintingConfigExtensions
         return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 
+    public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
+        this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture) where TPropType : IConvertible
+    {
+        propConfig.ParentConfig.TypesCultures[typeof(TPropType)] = culture;
+        return propConfig.ParentConfig;
+    }
+
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
         this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
-        return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+        return propConfig.ParentConfig;
     }
 }

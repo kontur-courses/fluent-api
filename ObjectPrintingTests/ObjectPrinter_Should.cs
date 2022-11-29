@@ -46,9 +46,10 @@ public class ObjectPrinter_Should
         {
             yield return new TestCaseData(null, "null").SetName("On null");
             yield return new TestCaseData(0, "0").SetName("On int");
-            yield return new TestCaseData(0.1, "0,1").SetName("On double");
-            yield return new TestCaseData(0.1f, "0,1").SetName("On float");
-            yield return new TestCaseData(new DateTime(1970, 1, 1), "01.01.1970 0:00:00").SetName("On datetime");
+            yield return new TestCaseData(0.1, 0.1.ToString(CultureInfo.CurrentCulture)).SetName("On double");
+            yield return new TestCaseData(0.1f, 0.1f.ToString(CultureInfo.CurrentCulture)).SetName("On float");
+            yield return new TestCaseData(new DateTime(1970, 1, 1),
+                new DateTime(1970, 1, 1).ToString(CultureInfo.CurrentCulture)).SetName("On datetime");
             yield return new TestCaseData(new TimeSpan(0), "00:00:00").SetName("On timespan");
         }
     }
@@ -134,5 +135,62 @@ public class ObjectPrinter_Should
 
         act.Should().Throw<ArgumentException>()
             .WithMessage("Member selector (p => 0) isn't property call");
+    }
+
+    [Test]
+    public void PrintingPropertyByType_UsingAlternativePrinting_WorkCorrectly()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var printer = ObjectPrinter.For<Person>()
+            .Printing<Guid>().Using(_ => "New Printing");
+        var nl = Environment.NewLine;
+        var expected = $"Person{nl}\tId = New Printing{nl}\tName = Имя{nl}\tHeight = 0{nl}\tAge = 0";
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintingPropertyByName_UsingAlternativePrinting_WorkCorrectly()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0, Age = 0 };
+        var printer = ObjectPrinter.For<Person>()
+            .Printing(p => p.Id).Using(_ => "New Printing");
+        var nl = Environment.NewLine;
+        var expected = $"Person{nl}\tId = New Printing{nl}\tName = Имя{nl}\tHeight = 0{nl}\tAge = 0";
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintingPropertyByType_UsingAlternativeCulture_WorkCorrectly()
+    {
+        var person = new Person { Id = Guid.Empty, Name = "Имя", Height = 0.1, Age = 0 };
+        var printer = ObjectPrinter.For<Person>()
+            .Printing<double>().Using(CultureInfo.InvariantCulture);
+        var nl = Environment.NewLine;
+        var expected = $"Person{nl}\tId = Guid{nl}\tName = Имя{nl}\tHeight = 0.1{nl}\tAge = 0";
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintingPropertyByType_UsingAlternativeCulture_ChangeCulture()
+    {
+        const double value = 0.1;
+        var ruPrinter = ObjectPrinter.For<double>()
+            .Printing<double>().Using(CultureInfo.GetCultureInfo("ru-ru"));
+        var invPrinter = ObjectPrinter.For<double>()
+            .Printing<double>().Using(CultureInfo.InvariantCulture);
+
+        var ruResult = ruPrinter.PrintToString(value);
+        var invResult = invPrinter.PrintToString(value);
+
+        ruResult.Should().NotBe(invResult);
     }
 }

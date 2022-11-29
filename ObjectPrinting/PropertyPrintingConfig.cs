@@ -1,30 +1,26 @@
-﻿using System.Globalization;
+﻿using System.Reflection;
 
 namespace ObjectPrinting;
 
-public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+public class PropertyPrintingConfig<TOwner, TPropType>
 {
-    private readonly PrintingConfig<TOwner> printingConfig;
+    private readonly PropertyInfo? propertyInfo;
 
-    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo? propertyInfo = null)
     {
-        this.printingConfig = printingConfig;
+        ParentConfig = printingConfig;
+        this.propertyInfo = propertyInfo;
     }
 
-    PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+    public PrintingConfig<TOwner> ParentConfig { get; }
+
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        return printingConfig;
+        if (propertyInfo is null)
+            ParentConfig.AlternativePrintingsForTypes[typeof(TPropType)] = obj => print((TPropType)obj);
+        else
+            ParentConfig.AlternativePrintingsForProperties[propertyInfo] = obj => print((TPropType)obj);
+        return ParentConfig;
     }
-
-    public PrintingConfig<TOwner> Using(CultureInfo culture)
-    {
-        return printingConfig;
-    }
-}
-
-public interface IPropertyPrintingConfig<TOwner, TPropType>
-{
-    PrintingConfig<TOwner> ParentConfig { get; }
 }
