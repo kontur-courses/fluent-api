@@ -19,6 +19,10 @@ public static class PropertyPrintingConfigExtensions
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
         this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
+        if (maxLen < 0)
+            throw new ArgumentException($"String length can't be less than zero, but {maxLen}");
+
+        propConfig.ParentConfig.StringPropertyTrimIndex = maxLen;
         return propConfig.ParentConfig;
     }
 }

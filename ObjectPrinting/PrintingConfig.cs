@@ -20,6 +20,7 @@ public class PrintingConfig<TOwner>
     };
 
     internal readonly Dictionary<Type, CultureInfo> TypesCultures = new();
+    internal int? StringPropertyTrimIndex = null;
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
@@ -81,7 +82,10 @@ public class PrintingConfig<TOwner>
             if (TypesCultures.ContainsKey(type) && obj is IConvertible convertible)
                 return convertible.ToString(TypesCultures[type]);
 
-            return obj.ToString();
+            var result = obj.ToString();
+            if (StringPropertyTrimIndex.HasValue)
+                result = result[..Math.Min(StringPropertyTrimIndex.Value, result.Length)];
+            return result;
         }
 
         var sb = new StringBuilder();

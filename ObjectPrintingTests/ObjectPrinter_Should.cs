@@ -48,6 +48,7 @@ public class ObjectPrinter_Should
             yield return new TestCaseData(0, "0").SetName("On int");
             yield return new TestCaseData(0.1, 0.1.ToString(CultureInfo.CurrentCulture)).SetName("On double");
             yield return new TestCaseData(0.1f, 0.1f.ToString(CultureInfo.CurrentCulture)).SetName("On float");
+            yield return new TestCaseData("string", "string").SetName("On string");
             yield return new TestCaseData(new DateTime(1970, 1, 1),
                 new DateTime(1970, 1, 1).ToString(CultureInfo.CurrentCulture)).SetName("On datetime");
             yield return new TestCaseData(new TimeSpan(0), "00:00:00").SetName("On timespan");
@@ -192,5 +193,30 @@ public class ObjectPrinter_Should
         var invResult = invPrinter.PrintToString(value);
 
         ruResult.Should().NotBe(invResult);
+    }
+
+    [TestCase("string", 0, "", TestName = "With zero max length")]
+    [TestCase("string", 3, "str", TestName = "Max length less then string length")]
+    [TestCase("string", 6, "string", TestName = "Max length equals to string length")]
+    [TestCase("string", 9, "string", TestName = "Max length more then string length")]
+    public void PrintingStringProperty_WithTrimmedToLength_WorkCorrectly(string value, int maxLen, string expected)
+    {
+        var printer = ObjectPrinter.For<string>()
+            .Printing<string>().TrimmedToLength(maxLen);
+
+        var ruResult = printer.PrintToString(value);
+
+        ruResult.Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintingStringProperty_WithTrimmedToLength_ThrowException_OnNegativeMaxLength()
+    {
+        var printer = ObjectPrinter.For<string>();
+
+        var act = () => printer.Printing<string>().TrimmedToLength(-1);
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("String length can't be less than zero, but -1");
     }
 }
