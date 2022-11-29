@@ -67,6 +67,8 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyConfig<TOwner, string> propertyConfig,
             int maxLen)
         {
+            if(maxLen < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxLen));
             var config = (IPropertyPrintingConfig<TOwner, string>)propertyConfig;
             config.ParentConfig.PropertyLenForString[config.Properties] = maxLen;
             return config.ParentConfig;

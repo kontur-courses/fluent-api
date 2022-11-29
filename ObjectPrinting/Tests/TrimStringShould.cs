@@ -64,5 +64,12 @@ namespace ObjectPrinting.Tests
             printedString = printer.PrintToString(childPerson);
             printedString.Should().Contain("Seraphina");
         }
+        [Test]
+        public void ThrowException_whenTrimmedLengthIsNegative()
+        {
+            var printer = ObjectPrinter.For<string>();
+            Action action = () => { printer.Printing<string>().TrimmedToLength(-1); };
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
     }
 }
