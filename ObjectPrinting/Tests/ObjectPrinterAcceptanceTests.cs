@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -15,17 +16,18 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<int>()
                 .Exclude(p => p.Name)
-                .ConfigureProperty(p => p.Name);
+                .ConfigureProperty(p => p.Name).TrimByLength(4);
+                // .ConfigureProperty(p => p.Name);
             // .SetNumberCulture(CultureInfo.InvariantCulture)
                 // .ConfigureProperty(p => p.Name)
                 // .SetMaxLength(3)
                 // .ConfigureType<int>(obj => obj.ToString());
-            //1. Исключить из сериализации свойства определенного типа
+            //1. Исключить из сериализации свойства определенного типа !
             //2. Указать альтернативный способ сериализации для определенного типа
             //3. Для числовых типов указать культуру
             //4. Настроить сериализацию конкретного свойства
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            //6. Исключить из сериализации конкретного свойства
+            //6. Исключить из сериализации конкретного свойства !
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);

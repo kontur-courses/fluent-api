@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner> : IMemberConfigurator<TOwner>
+    public class PrintingConfig<TOwner> : IBasicConfigurator<TOwner>
     {
         public string PrintToString(TOwner obj)
         {
@@ -57,15 +58,26 @@ namespace ObjectPrinting
             return this;
         }
 
-        public IMemberConfigurator<TOwner> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression)
+        public IMemberConfigurator<TOwner, T> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression)
         {
             var memberExpression = (MemberExpression) expression.Body;
             var member = memberExpression.Member;
             excludedMembers.Add(member);
-            return this;
+            return new MemberConfigurator<TOwner, T>(this);
+            // return this;
         }
 
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
+    }
+
+    public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
+    {
+        public IBasicConfigurator<TOwner> BasicConfigurator { get; }
+        
+        public MemberConfigurator(IBasicConfigurator<TOwner> basicConfigurator)
+        {
+            BasicConfigurator = basicConfigurator;
+        }
     }
 }

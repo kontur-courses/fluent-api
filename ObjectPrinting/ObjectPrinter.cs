@@ -4,7 +4,7 @@ namespace ObjectPrinting
     {
         public static IBasicConfigurator<T> For<T>()
         {
-            return new PrintingConfig<T>();
+            return new ObjectConfigurator<T>();
         }
     }
 }
