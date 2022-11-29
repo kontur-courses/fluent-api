@@ -3,27 +3,23 @@ using ObjectPrinting;
 
 namespace ObjectPrinting_Tests;
 
+[TestFixture, Parallelizable]
 public class ObjectPrinter_Should
 {
-    private TestObject _defTestObj = null!;
-
-    [SetUp]
-    public void SetUp()
-    {
-        _defTestObj = new TestObject
+    private static TestObject CreateTestObject() =>
+        new()
         {
             Int1 = 10,
             Int2 = 12,
             Double = 12.34,
             Str = "abc"
         };
-    }
 
     [Test]
     public void ReturnCorrectResult_WithoutConfiguration()
     {
         ObjectPrinter.For<TestObject>()
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -37,7 +33,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Exclude<int>()
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tStr = abc\r\n" +
                 "\tDouble = 12.34"
@@ -49,7 +45,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Exclude(o => o.Int2)
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -62,7 +58,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing<double>().Using(_ => "X")
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -76,7 +72,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing(o => o.Int1).Using(_ => "X")
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = X\r\n" +
                 "\tStr = abc\r\n" +
@@ -90,7 +86,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing<string>().WithMaxLength(1)
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = a\r\n" +
@@ -104,7 +100,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing<string>().WithMaxLength(10)
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -118,7 +114,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing<double>().WithCulture(CultureInfo.GetCultureInfoByIetfLanguageTag("Ru"))
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -132,7 +128,7 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject>()
             .Printing<double>().WithRounding(1)
-            .PrintToString(_defTestObj).Should().Be(
+            .PrintToString(CreateTestObject()).Should().Be(
                 "TestObject\r\n" +
                 "\tInt1 = 10\r\n" +
                 "\tStr = abc\r\n" +
@@ -145,7 +141,7 @@ public class ObjectPrinter_Should
     public void ReturnCorrectResult_WithOneLineValuesArray()
     {
         ObjectPrinter.For<int[]>().PrintToString(new[] {1, 2, 3})
-            .Should().Be("{1, 2, 3}");
+            .Should().Be("[1, 2, 3]");
     }
 
     [Test]
@@ -153,10 +149,10 @@ public class ObjectPrinter_Should
     {
         ObjectPrinter.For<TestObject[]>().PrintToString(new[]
             {
-                _defTestObj,
-                _defTestObj
+                CreateTestObject(),
+                CreateTestObject()
             })
-            .Should().Be("{\r\n" +
+            .Should().Be("[\r\n" +
                          "\tTestObject\r\n" +
                          "\t\tInt1 = 10\r\n" +
                          "\t\tStr = abc\r\n" +
@@ -167,15 +163,69 @@ public class ObjectPrinter_Should
                          "\t\tStr = abc\r\n" +
                          "\t\tDouble = 12.34\r\n" +
                          "\t\tInt2 = 12\r\n" +
-                         "}");
+                         "]");
     }
 
     [Test]
-    public void ReturnCorrectResult_WithDictionary()
+    public void ReturnCorrectResult_WithNestedMultilineValuesArray()
+    {
+        ObjectPrinter.For<TestObject[][]>().PrintToString(new[]
+            {
+                new[]
+                {
+                    CreateTestObject(),
+                    CreateTestObject()
+                }
+            })
+            .Should().Be("[\r\n" +
+                         "\t[\r\n" +
+                         "\t\tTestObject\r\n" +
+                         "\t\t\tInt1 = 10\r\n" +
+                         "\t\t\tStr = abc\r\n" +
+                         "\t\t\tDouble = 12.34\r\n" +
+                         "\t\t\tInt2 = 12\r\n" +
+                         "\t\tTestObject\r\n" +
+                         "\t\t\tInt1 = 10\r\n" +
+                         "\t\t\tStr = abc\r\n" +
+                         "\t\t\tDouble = 12.34\r\n" +
+                         "\t\t\tInt2 = 12\r\n" +
+                         "\t]\r\n" +
+                         "]");
+    }
+
+    [Test]
+    public void ReturnCorrectResult_WithOneLineDictionaryValues()
+    {
+        var obj = new Dictionary<TestObject, TestObject>
+        {
+            {
+                CreateTestObject(),
+                CreateTestObject()
+            }
+        };
+        ObjectPrinter.For<Dictionary<TestObject, TestObject>>().PrintToString(obj)
+            .Should().Be("[\r\n" +
+                         "\t{\r\n" +
+                         "\t\tTestObject\r\n" +
+                         "\t\t\tInt1 = 10\r\n" +
+                         "\t\t\tStr = abc\r\n" +
+                         "\t\t\tDouble = 12.34\r\n" +
+                         "\t\t\tInt2 = 12:\r\n" +
+                         "\t\tTestObject\r\n" +
+                         "\t\t\tInt1 = 10\r\n" +
+                         "\t\t\tStr = abc\r\n" +
+                         "\t\t\tDouble = 12.34\r\n" +
+                         "\t\t\tInt2 = 12\r\n" +
+                         "\t}\r\n" +
+                         "]");
+    }
+
+    [Test]
+    public void ReturnCorrectResult_WithMultilineDictionaryValues()
     {
         ObjectPrinter.For<Dictionary<int, string>>()
             .PrintToString(new Dictionary<int, string> {{1, "a"}, {2, "b"}, {3, "c"}})
-            .Should().Be("{[1, a], [2, b], [3, c]}");
+            .Should().Be("[{1: a}, {2: b}, {3: c}]");
     }
 
     [Test]
