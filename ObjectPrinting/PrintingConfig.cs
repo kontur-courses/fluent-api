@@ -70,16 +70,10 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
             if (typesCustomSerializations.ContainsKey(obj.GetType()))
                 return typesCustomSerializations[obj.GetType()](obj) + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType()))
+            if (obj.GetType().IsSimple())
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
