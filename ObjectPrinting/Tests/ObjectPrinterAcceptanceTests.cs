@@ -26,9 +26,9 @@ namespace ObjectPrinting.Tests
                 .SetCulture<int>(CultureInfo.CurrentCulture)
                 .ExcludeProperty(typeof(Person).GetProperty("Name")).
                 //4. Настроить сериализацию конкретного свойства
-                SerializeProperty("Age").SetSerialization(x => x + " лет");
+                SerializeProperty("Age").SetSerialization(x => x + " лет")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //.SelectString(p => p.name).Crop(10)
+                .SelectString("Name").Crop(10);
                 //6. Исключить из сериализации конкретного свойства
                 //.ExcludeProperty(p => p.name);
             
@@ -38,6 +38,56 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+        
+        [Test]
+        public void Serialization_CropInt_ThrowException()
+        {
+            var person = new Person { Name = "Alex Ivanov", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SelectString("Age").Crop(4);
+            
+            Action act = () => printer.PrintToString(person);
+
+            act.Should().Throw<ArgumentException>();
+        }
+        
+        
+        [Test]
+        public void Serialization_CropShortString()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SelectString("Name").Crop(10);
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            //Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void Serialization_CropString()
+        {
+            var person = new Person { Name = "Alex Ivanov", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SelectString("Name").Crop(4);
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            //Console.WriteLine(s1);
         }
         
         [Test]
@@ -51,8 +101,8 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
                             "\tHeight = 70.5 kg" + Environment.NewLine +
                             "\tAge = 19 years old" + Environment.NewLine;
             s1.Should().Be(result);
@@ -69,8 +119,8 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19 лет" + Environment.NewLine;
             s1.Should().Be(result);
@@ -141,8 +191,8 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
                             "\tHeight = 70" + Environment.NewLine;
             s1.Should().Be(result);
         }
@@ -251,8 +301,8 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
             s1.Should().Be(result);
             

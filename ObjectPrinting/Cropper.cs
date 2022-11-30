@@ -2,13 +2,14 @@
 
 namespace ObjectPrinting
 {
-    public class Serialization<TOwner>
+    public class Cropper<TOwner>
     {
         public String EditingPropertyInfoName;
         public PrintingConfig<TOwner> PrintingConfig; 
-        public PrintingConfig<TOwner> SetSerialization(Func<object, string> func)
+        
+        public PrintingConfig<TOwner> Crop(int length)
         {
-            PrintingConfig.PropertySerialization.Add(EditingPropertyInfoName, func);
+            PrintingConfig.PropertiesToCrop.Add(EditingPropertyInfoName, length);
             return PrintingConfig;
         }
     }

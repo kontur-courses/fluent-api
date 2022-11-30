@@ -16,12 +16,12 @@ namespace ObjectPrinting
         private Dictionary<Type, Func<object, string>> alternativeSerialization = 
             new Dictionary<Type, Func<object, string>>();
         
-        public Dictionary<string, Func<object, string>> propertySerialization = 
+        public Dictionary<string, Func<object, string>> PropertySerialization = 
             new Dictionary<string, Func<object, string>>();
         
-        //и тут бы тоже название свойства
-        // public Dictionary<MemberInfo, Func<object, string>> crop = 
-        //     new Dictionary<String, Func<object, string>>();
+        
+        public Dictionary<string, int> PropertiesToCrop = 
+            new Dictionary<string, int>();
         
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
         public string PrintToString(TOwner obj)
@@ -49,6 +49,14 @@ namespace ObjectPrinting
             serialization.EditingPropertyInfoName = propertyInfoName;
             serialization.PrintingConfig = this;
             return serialization;
+        }
+
+        public Cropper<TOwner> SelectString(String propertyInfoName)
+        {
+            var cropper = new Cropper<TOwner>();
+            cropper.EditingPropertyInfoName = propertyInfoName;
+            cropper.PrintingConfig = this;
+            return cropper;
         }
 
         public PrintingConfig<TOwner> SerializeType<T>(Func<T, string> func)
@@ -100,14 +108,30 @@ namespace ObjectPrinting
                 if (exludingProperty.Contains(propertyInfo))
                     continue;
 
-                if (propertySerialization.ContainsKey(propertyInfo.Name))
+                if (PropertySerialization.ContainsKey(propertyInfo.Name))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              propertySerialization[propertyInfo.Name](propertyInfo.GetValue(obj)) 
+                              PropertySerialization[propertyInfo.Name](propertyInfo.GetValue(obj)) 
                               + Environment.NewLine);
                     continue;
                 }
+                
+                if (PropertiesToCrop.ContainsKey(propertyInfo.Name))
+                {
+                    var propertyInfoType = propertyInfo.PropertyType;
+                    if (propertyInfoType != typeof(string))
+                    {
+                        throw new ArgumentException();
+                    }
 
+                    var propInfoValue = propertyInfo.GetValue(obj).ToString();
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              propInfoValue.Substring(0, 
+                                  Math.Min(PropertiesToCrop[propertyInfo.Name], propInfoValue.Length))
+                                                        + Environment.NewLine);
+                    continue;
+                }
+                
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
