@@ -14,20 +14,9 @@ namespace ObjectPrinting
             this.PropertyExpression = property;
         }
 
-        public IPropertyConfig<TOwner, T> OverrideSerializeMethod(Func<T, string> newMethod)
+        public PrintingConfig<TOwner> UseSerializeMethod(Func<T, string> newMethod)
         {
-            Printer.OverrideSerializeMethodForProperty(PropertyExpression, newMethod);
-            return this;
-        }
-
-        public PrintingConfig<TOwner> SetConfig()
-        {
-            return Printer;
-        }
-
-        public PrintingConfig<TOwner> ExcludeFromConfig()
-        {
-            Printer.ExcludeProperty(PropertyExpression);
+            Printer.UseSerializeMethodForProperty(PropertyExpression, newMethod);
             return Printer;
         }
     }

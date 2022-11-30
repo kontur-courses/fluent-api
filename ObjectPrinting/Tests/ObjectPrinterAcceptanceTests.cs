@@ -1,5 +1,4 @@
 ﻿using ApprovalTests;
-using ApprovalTests.Core;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
@@ -25,8 +24,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
-                .ConfigForProperty(p => p.Id)
-                .ExcludeFromConfig();
+                .ExcludeProperty(p => p.Id);
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -36,8 +34,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Age)
-                .OverrideSerializeMethod(i => "Old")
-                .SetConfig();
+                .UseSerializeMethod(i => "Old");
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -47,9 +44,9 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Age)
-                .OverrideSerializeMethod(i => "Old")
-                .OverrideSerializeMethod(i=>i+" Old")
-                .SetConfig();
+                .UseSerializeMethod(i => "Old")
+                .ConfigForProperty(p => p.Age)
+                .UseSerializeMethod(i => i + " Old");
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -58,11 +55,9 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
-                .ConfigForProperty(p=>p.Age)
-                .ExcludeFromConfig()
+                .ExcludeProperty(p => p.Age)
                 .ConfigForProperty(p => p.Age)
-                .OverrideSerializeMethod(i => "Old")
-                .SetConfig();
+                .UseSerializeMethod(i => "Old");
             Approvals.Verify(printer.PrintToString(person));
         }
     }

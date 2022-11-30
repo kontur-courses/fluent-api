@@ -18,8 +18,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
-                .CutString(4)
-                .SetConfig();
+                .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -29,8 +28,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Al", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
-                .CutString(4)
-                .SetConfig();
+                .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -40,8 +38,7 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
-                .CutString(4)
-                .SetConfig();
+                .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -51,9 +48,9 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
-                .OverrideSerializeMethod(s=>"Call me "+s)
-                .CutString(4)
-                .SetConfig();
+                .UseSerializeMethod(s => "Call me " + s)
+                .ConfigForProperty(p => p.Name)
+                .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
         
@@ -64,8 +61,8 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
                 .CutString(4)
-                .OverrideSerializeMethod(s=>"Call me "+s)
-                .SetConfig();
+                .ConfigForProperty(p => p.Name)
+                .UseSerializeMethod(s => "Call me " + s);
             Approvals.Verify(printer.PrintToString(person));
         }
 
@@ -76,8 +73,8 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .ConfigForProperty(p => p.Name)
                 .CutString(2)
-                .CutString(4)
-                .SetConfig();
+                .ConfigForProperty(p => p.Name)
+                .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
             
         }

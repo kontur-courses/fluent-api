@@ -49,7 +49,7 @@ namespace ObjectPrinting
                 if (OverridedConfigs.ContainsKey(name))
                 {
                     sb.Append(OverridedConfigs[name]
-                        .GetStringResult(value));
+                        .CalculateStringResult(value));
                     sb.AppendLine();
                 }
                 else
@@ -67,7 +67,7 @@ namespace ObjectPrinting
             {
                 if (info.PropertyType.GetInterface("IFormattable")!=null)
                 {
-                    if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
+                    if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
                     OverridedConfigs[info.Name].SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
                 }
             }
@@ -90,18 +90,19 @@ namespace ObjectPrinting
             throw new NotImplementedException();
         }
 
-        internal void ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
+        public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
             var info = ExtractProperty(propertyExpression);
-            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
-            OverridedConfigs[info.Name].Exclude();
+            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
+            OverridedConfigs[info.Name].Excluded = true;
+            return this;
         }
-        internal void OverrideSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
+        internal void UseSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
             Func<T, string> newMethod)
         {
 
             var info = ExtractProperty(propertyExpression);
-            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
+            if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
             OverridedConfigs[info.Name].SetNewSerializeMethod(newMethod);
         }
 
@@ -123,28 +124,19 @@ namespace ObjectPrinting
 
         private Dictionary<string, Func<string, string>> StringCutFunctions =
             new Dictionary<string, Func<string, string>>();
-        private Dictionary<string, OverrideConfig> OverridedConfigs = new Dictionary<string, OverrideConfig>();
-        private class OverrideConfig
+        private Dictionary<string, PropertySerializationConfig> OverridedConfigs = new Dictionary<string, PropertySerializationConfig>();
+        private class PropertySerializationConfig
         {
-            public bool Excluded { get; private set; } = false;
+            public bool Excluded { get; set; } = false;
             private Func<object, string> OverrideFunc;
 
-            public OverrideConfig()
-            {
-                
-            }
-
-            public void Exclude()
-            {
-                Excluded = true;
-            }
 
             public void SetNewSerializeMethod<T>(Func<T, string> newMethod)
             {
                 OverrideFunc = (object obj) => newMethod((T) obj);
             }
 
-            public string GetStringResult<T>(T value) => OverrideFunc(value);
+            public string CalculateStringResult<T>(T value) => OverrideFunc(value);
         }
     }
 }

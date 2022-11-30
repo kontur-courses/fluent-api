@@ -7,8 +7,6 @@ namespace ObjectPrinting
     {
         PrintingConfig<TOwner> Printer { get; }
         Expression<Func<TOwner, T>> PropertyExpression { get; }
-        IPropertyConfig<TOwner, T> OverrideSerializeMethod(Func<T, string> method);
-        PrintingConfig<TOwner> SetConfig();
-        PrintingConfig<TOwner> ExcludeFromConfig();
+        PrintingConfig<TOwner> UseSerializeMethod(Func<T, string> method);
     }
 }

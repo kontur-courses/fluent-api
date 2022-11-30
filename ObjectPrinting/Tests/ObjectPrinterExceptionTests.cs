@@ -14,8 +14,7 @@ namespace ObjectPrinting.Tests
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()
-                    .ConfigForProperty(p => p)
-                    .ExcludeFromConfig();
+                    .ExcludeProperty(p => p);
                 printer.PrintToString(person);
             });
         }
@@ -28,8 +27,7 @@ namespace ObjectPrinting.Tests
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()
-                    .ConfigForProperty(p => "123")
-                    .ExcludeFromConfig();
+                    .ExcludeProperty(p => "123");
                 printer.PrintToString(person);
             });
         }
@@ -43,8 +41,7 @@ namespace ObjectPrinting.Tests
             {
                 var printer = ObjectPrinter.For<Person>()
                     .ConfigForProperty(p => "123")
-                    .OverrideSerializeMethod(p=>"1")
-                    .SetConfig();
+                    .UseSerializeMethod(p => "1");
                 printer.PrintToString(person);
             });
         }
@@ -58,8 +55,7 @@ namespace ObjectPrinting.Tests
             {
                 var printer = ObjectPrinter.For<Person>()
                     .ConfigForProperty(p => p)
-                    .OverrideSerializeMethod(p=>"0")
-                    .SetConfig();
+                    .UseSerializeMethod(p => "0");
                 printer.PrintToString(person);
             });
         }
