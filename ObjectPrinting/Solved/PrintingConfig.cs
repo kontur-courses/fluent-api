@@ -14,7 +14,6 @@ namespace ObjectPrinting.Solved
         private readonly List<MemberInfo> _excludedMembers;
         private readonly Dictionary<string, Func<object, string>> _propertiesPrintSettings;
         private readonly Dictionary<Type, Func<object, string>> _typesPrintSettings;
-        private List<object> _printedObjects;
 
         public PrintingConfig()
         {
@@ -35,7 +34,7 @@ namespace ObjectPrinting.Solved
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpression))
+            if (memberSelector.Body is not MemberExpression memberExpression)
                 throw new ArgumentException();
 
             var memberName = memberExpression.Member.Name;
@@ -46,7 +45,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpression))
+            if (memberSelector.Body is not MemberExpression memberExpression)
                 throw new ArgumentException();
 
             _excludedMembers.Add(memberExpression.Member);
@@ -61,18 +60,18 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
-            _printedObjects = new List<object>();
-            return PrintToString(obj, 0);
+            var printedObjects = new List<object>();
+            return PrintToString(obj, 0, printedObjects);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, List<object> printedObjects)
         {
-            _printedObjects.Add(obj);
+            printedObjects.Add(obj);
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             if (obj is ICollection collection)
-                return obj + GenerateStringFromCollection(collection, nestingLevel);
+                return obj + GenerateStringFromCollection(collection, nestingLevel, printedObjects);
 
             var finalTypes = new[]
             {
@@ -88,10 +87,10 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (!IsValidMember(obj, propertyInfo))
+                if (!ShouldPrintMember(obj, propertyInfo, printedObjects))
                     continue;
 
-                string toPrint = GetPrintMember(obj, propertyInfo, nestingLevel);
+                var toPrint = GetPrintMember(obj, propertyInfo, nestingLevel, printedObjects);
                 sb.Append(identation + propertyInfo.Name + " = " + toPrint);
             }
 
@@ -99,7 +98,8 @@ namespace ObjectPrinting.Solved
         }
 
 
-        private string GenerateStringFromCollection(ICollection collection, int nestingLevel)
+        private string GenerateStringFromCollection(ICollection collection, int nestingLevel,
+            List<object> printedObjects)
         {
             var sb = new StringBuilder();
             sb.Append(Environment.NewLine)
@@ -110,7 +110,7 @@ namespace ObjectPrinting.Solved
             foreach (var element in collection)
             {
                 sb.Append($"{new string('\t', nestingLevel + 1)}" +
-                          $"{PrintToString(element, nestingLevel)}");
+                          $"{PrintToString(element, nestingLevel, printedObjects)}");
             }
 
             sb.Append(new string('\t', nestingLevel))
@@ -119,16 +119,17 @@ namespace ObjectPrinting.Solved
             return sb.ToString();
         }
 
-        private bool IsValidMember(object obj, PropertyInfo propertyInfo)
+        private bool ShouldPrintMember(object obj, PropertyInfo propertyInfo, List<object> printedObjects)
         {
             if (_excludedTypes.Contains(propertyInfo.PropertyType))
                 return false;
             if (_excludedMembers.Contains(propertyInfo))
                 return false;
-            return !_printedObjects.Contains(propertyInfo.GetValue(obj));
+            return !printedObjects.Contains(propertyInfo.GetValue(obj));
         }
 
-        private string GetPrintMember(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        private string GetPrintMember(object obj, PropertyInfo propertyInfo, int nestingLevel,
+            List<object> printedObjects)
         {
             if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
                 return _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
@@ -136,7 +137,7 @@ namespace ObjectPrinting.Solved
             if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
                 return _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
                        + Environment.NewLine;
-            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, printedObjects);
         }
     }
 }
