@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
 using ObjectPrinting.Extensions;
+using ObjectPrintingShould.ObjectsForTest;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingShould
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -47,12 +50,11 @@ namespace ObjectPrinting.Tests
             // var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
             // Console.WriteLine(s3);
         }
-    }
-}
 
-public class Collections
-{
-    public int[] Arr { get; set; }
-    public List<string> Lis { get; set; }
-    public Dictionary<int, double> Dict { get; set; }
+        public void PrintToString_ClearItem_ItemWithSerialize(Person person, string result)
+        {
+            var printer = ObjectConfig.For<Person>().Build();
+            printer.PrintToString(person).Should().Be(result);
+        }
+    }
 }

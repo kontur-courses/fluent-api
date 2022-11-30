@@ -3,7 +3,7 @@ using ObjectPrinting.ObjectConfiguration;
 
 namespace ObjectPrinting.MemberConfigurator;
 
-public interface IMemberConfigurator<TOwner, T>
+public interface IMemberConfigurator<TOwner, out T>
 {
-    IObjectConfiguration<TOwner> Configure(Func<object, string> func);
+    IObjectConfiguration<TOwner> Configure(Func<T, string> func);
 }

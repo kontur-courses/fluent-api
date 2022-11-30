@@ -14,11 +14,6 @@ public class PrintingConfig<TOwner>
         typeof(int), typeof(double), typeof(float), typeof(string),
         typeof(DateTime), typeof(TimeSpan)
     };
-
-    private readonly Type[] collectionTypes =
-    {
-        typeof(IEnumerable)
-    };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
     {
@@ -34,14 +29,13 @@ public class PrintingConfig<TOwner>
             return "null" + Environment.NewLine;
 
         var type = obj.GetType();
-        var result = obj + Environment.NewLine;
         if (obj is IEnumerable enumerable and not string)
             return CollectionToString(enumerable);
         if (configuration.TypeConfigs.ContainsKey(type))
-            result = ApplyFunc(configuration.TypeConfigs[type], obj);
+            return configuration.TypeConfigs[type](obj);
 
         if (finalTypes.Contains(type))
-            return result;
+            return obj + Environment.NewLine;
 
         var identation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
@@ -50,7 +44,7 @@ public class PrintingConfig<TOwner>
         {
             var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
             if (configuration.MemberInfoConfigs.ContainsKey(propertyInfo))
-                value = ApplyFunc(configuration.MemberInfoConfigs[propertyInfo], value);
+                value = configuration.MemberInfoConfigs[propertyInfo](value);
                     
             if (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) || configuration.ExcludedMembers.Contains(propertyInfo))
                 continue;
@@ -58,15 +52,6 @@ public class PrintingConfig<TOwner>
         }
 
         return sb.ToString();
-    }
-
-    private static string ApplyFunc(List<Func<object, string>> configurationMemberInfoConfig, object value)
-    {
-        var result = new StringBuilder();
-        foreach (var func in configurationMemberInfoConfig)
-            result.Append(func(value));
-        
-        return result.ToString();
     }
 
     private string CollectionToString(IEnumerable enumerable)
@@ -79,12 +64,8 @@ public class PrintingConfig<TOwner>
                 sb.Append(CollectionToString(enumerate));
             else
             {
-                // TODO: Change Binary
                 var type = item.GetType();
-                if (configuration.TypeConfigs.ContainsKey(type))
-                    sb.Append(ApplyFunc(configuration.TypeConfigs[type], item));
-                else
-                    sb.Append(item);
+                sb.Append(configuration.TypeConfigs.ContainsKey(type) ? configuration.TypeConfigs[type](item) : item);
                 sb.Append(", ");
             }
         }
