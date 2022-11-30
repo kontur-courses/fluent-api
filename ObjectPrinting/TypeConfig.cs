@@ -16,6 +16,7 @@ namespace ObjectPrinting
         {
             this.printingConfig = printingConfig;
             this.serializerSettings = serializerSettings;
+            typeToConfig = typeof(TPropType);
         }
 
         public PrintingConfig<TOwner> IgnoreType()

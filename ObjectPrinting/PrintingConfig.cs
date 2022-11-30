@@ -1,3 +1,5 @@
+using Microsoft.VisualBasic;
+using Newtonsoft.Json.Linq;
 using ObjectPrinting.Solved;
 using System;
 using System.Collections;
@@ -16,7 +18,6 @@ namespace ObjectPrinting
         public Settings settings;
         public Type configType;
         private Dictionary<object, Func<string>> customProps;
-
 
         private Type[] finalTypes = new[]
             {
@@ -56,53 +57,103 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
             
-            var builder = new StringBuilder();
-
             var valueType = obj.GetType();
             var line = Serialize(valueType, obj, 0);
-            builder.Append(line);
 
+            return line;
+        }
+
+        private string Serialize(object curType, object curValue, int level)
+        {
+            if (curValue == null) return null;
+
+            var valueType = curValue.GetType();
+            if (TypeInBlackList(valueType)) return null;
+            if (curType is MemberInfo && MemberInBlackList((MemberInfo)curType)) return null;
+
+            var line = string.Empty;
+
+            if (curValue is IDictionary)
+            {
+                line = AddDictionary(curType, (IDictionary)curValue, level);
+                return line;
+            }
+            else if (curValue is ICollection)
+            {
+                line = AddCollection(curType, (ICollection)curValue, level);
+            }
+            else if (curType is MemberInfo && settings.customMembs.ContainsKey((MemberInfo)curType))
+            {
+                curValue = settings.customMembs[(MemberInfo)curType](curValue);
+                line = GetFinalStr(curType, curValue, level);
+                return line;
+            }
+            else if (settings.customTypes.ContainsKey(curValue.GetType()))
+            {
+                curValue = settings.customTypes[curValue.GetType()](curValue);
+                line = GetFinalStr(curType, curValue, level);
+            }
+            else if (finalTypes.Contains(valueType))
+            {
+                curValue = TrySetCulture(curValue);
+                line = GetFinalStr(curType, curValue, level);
+            }
+            else
+            {
+                line = SerializeMembers(curType, curValue, level);
+            }
+
+            return line;
+        }
+
+        private object TrySetCulture(object formattableObj)
+        {
+            var objType = formattableObj.GetType();
+
+            if (formattableObj is IFormattable && settings.customCultures.ContainsKey(objType))
+            {
+                var formatStr = ((IFormattable)formattableObj).ToString(null, settings.customCultures[objType]);
+                return formatStr;
+            }
+
+            return formattableObj;
+        }
+
+        private string GetFinalStr(object objType, object objValue, int level)
+        {
+            var builder = new StringBuilder();
+            builder.Append(new string('\t', level));
+            var valueType = objValue.GetType();
+            var line = "";
+
+            if (objType is FieldInfo || objType is PropertyInfo)
+            {
+                var member = (MemberInfo)objType;
+                line = member.Name + " = " + objValue + ";" + '\n';
+            }
+            else
+            {
+                line = objValue.ToString();
+            }
+
+            builder.Append(line);
             return builder.ToString();
         }
 
-        private string Serialize(object parent, object current, int level)
+        private bool TypeInBlackList(Type typeToCheck)
         {
-            if (current == null) return null;
+            return settings.typesToIgnore.Contains(typeToCheck);
+        }
 
-            var build = new StringBuilder();
+        private bool MemberInBlackList(MemberInfo memberToCheck)
+        {
+            return settings.membersToIgnor.Contains(memberToCheck);
+        }
+
+        private string SerializeMembers(object parent, object current, int level)
+        {
             var valueType = current.GetType();
-            var line = string.Empty;
-
-            if (current is IDictionary)
-            {
-                line = AddDictionary(parent, (IDictionary)current, level);
-                return line;
-            }
-
-            if (current is ICollection)
-            {
-                line = AddCollection(parent, (ICollection)current, level);
-                return line;
-            }
-
-            if (finalTypes.Contains(valueType))
-            {
-                var builder = new StringBuilder();
-                builder.Append(new string('\t', level));
-
-                if(parent is MemberInfo)
-                {
-                    var member = (MemberInfo)parent;
-                    line = member.Name + " = " + current.ToString() + ";" + '\n';
-                }
-                else
-                {
-                    line = current.ToString();
-                }
-
-                builder.Append(line);
-                return builder.ToString();
-            }
+            var build = new StringBuilder();
 
             var members = valueType.GetFields()
                 .Cast<MemberInfo>()
@@ -110,19 +161,18 @@ namespace ObjectPrinting
                 .ToArray();
 
             build.Append('\t', level);
-            build.Append(valueType.Name + ":\n");
-            build.Append('\t', level);
+            build.Append(((MemberInfo)parent).Name + ":\n");
 
             foreach (var member in members)
             {
                 if (member.MemberType is MemberTypes.Field)
                 {
-                    line = Serialize(member, ((FieldInfo)member).GetValue(current), level + 1);
+                    var line = Serialize(member, ((FieldInfo)member).GetValue(current), level + 1);
                     build.Append(line);
                 }
                 else
                 {
-                    line = Serialize(member, ((PropertyInfo)member).GetValue(current), level + 1);
+                    var line = Serialize(member, ((PropertyInfo)member).GetValue(current), level + 1);
                     build.Append(line);
                 }
             }
@@ -132,44 +182,61 @@ namespace ObjectPrinting
 
         private string AddDictionary(object parent, IDictionary dict, int tabLevel)
         {
+            var valueType = dict.GetType().GetGenericArguments();
+            var isCollTypeClassMember = (parent is FieldInfo || parent is PropertyInfo);
+
+            if (TypeInBlackList(valueType[0]) && TypeInBlackList(valueType[1])) return null;
+
             var builder = new StringBuilder();
             builder.Append('\t', tabLevel);
+            builder.Append("(dict) ");
 
-            if (parent is MemberInfo)
-            {
-                builder.Append("(Dictionary) " + ((MemberInfo)parent).Name + ": \n");
-            }
+            if (isCollTypeClassMember) builder.Append(((MemberInfo)parent).Name + ": ");
+
+            builder.Append("\n");
 
             foreach (DictionaryEntry entry in dict)
             {
                 builder.Append('\t', tabLevel + 1);
-                builder.Append("[");
                 var keys = Serialize(dict, entry.Key, 0);
-                builder.Append(keys + "] = [");
+                builder.Append(keys + " = ");
                 var values = Serialize(dict, entry.Value, 0);
-                builder.Append(values + "];\n");
+                builder.Append(values + ";\n");
             }
 
             return builder.ToString();
         }
 
-        private string AddCollection(object parent, ICollection collection, int tabLevel)
+        private string AddCollection(object collType, ICollection collection, int tabLevel)
         {
+            var collectionType = collection.GetType();
+            var generics = collectionType.GetGenericArguments();
+            var elementType = collectionType.GetElementType();
+            var isCollTypeClassMember = (collType is FieldInfo || collType is PropertyInfo);
+
+            if (generics.Length != 0) elementType = generics[0];
+            if (TypeInBlackList(elementType)) return null;
+
             var builder = new StringBuilder();
             builder.Append('\t', tabLevel);
+            builder.Append("(coll) ");
 
-            if (parent is MemberInfo)
+            if (isCollTypeClassMember)
             {
-                builder.Append("(Collection) " + ((MemberInfo)parent).Name + ": \n");
+                builder.Append(((MemberInfo)collType).Name + ": \n");
+                builder.Append('\t', tabLevel + 1);
+            }
+            else
+            {
+                builder.Append("\n");
             }
 
-            builder.Append('\t', tabLevel + 1);
             builder.Append("[");
             var index = 0;
 
             foreach (var item in collection)
             {
-                var collectionItem = Serialize(collection, item, 0);
+                var collectionItem = Serialize(elementType, item, 0);
 
                 if (index + 1 != collection.Count)
                 {
@@ -182,7 +249,9 @@ namespace ObjectPrinting
                 }
             }
 
-            builder.Append("];\n");
+            if (isCollTypeClassMember) builder.Append("];\n");
+            else builder.Append("]");
+            
             return builder.ToString();
         }
     }
