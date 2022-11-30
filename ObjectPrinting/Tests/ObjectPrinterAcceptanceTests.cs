@@ -107,7 +107,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             var expected = string.Join(Environment.NewLine,
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = Person",
-                    "\t\tId = 00000000-0000-0000-0000-000000000000", "\t\tName = null", "\t\tHeight = 0", "\t\tAge = 0", "\t\tDouble = 0", "\t\tParent = this", "");
+                    "\t\t\tId = 00000000-0000-0000-0000-000000000000", "\t\t\tName = null", "\t\t\tHeight = 0", "\t\t\tAge = 0", "\t\t\tDouble = 0", "\t\t\tParent = this", "");
 
             res.Should().Be(expected);
         }
@@ -133,7 +133,7 @@ namespace ObjectPrinting.Tests
             var expectedDictionary = string.Join(Environment.NewLine,
                 "", "\tfirst = 10", "\tsecond = 0", "\tthird = 43", "");
             var expectedDictionaryInList = string.Join(Environment.NewLine,
-                "", "\t0 = Dictionary`2", "\t\t1 = 10", "\t\t2 = 20", "");
+                "", "\t0 = Dictionary`2", "\t\t\t1 = 10", "\t\t\t2 = 20", "");
 
             res1.Should().Be("Int32[]" + expectedEnumerable);
             res2.Should().Be("List`1" + expectedEnumerable);
@@ -142,9 +142,46 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void WorkWithFields()
+        public void WorkWithOtherTypes()
         {
+            var obj = new A {Date = DateTime.MinValue, Time = new TimeSpan()};
+            var printer1 = ObjectPrinter.For<A>();
+            var res = printer1.PrintToString(obj);
+            var expected = string.Join(Environment.NewLine,
+                "A", "\tDate = 01.01.0001 0:00:00", "\tTime = 00:00:00", "");
 
+            res.Should().Be(expected);
+        }
+
+        [Test]
+        public void CultureChangingUsingOnOnlyConfiguredProps()
+        {
+            var obj = new CultureChecker {Date = DateTime.MinValue, Double = 2.2};
+            var printer = ObjectPrinter.For<CultureChecker>();
+            var res = printer
+                .For<DateTime>()
+                    .Using(CultureInfo.GetCultureInfo("en-US"))
+                .PrintToString(obj);
+            var expected = string.Join(Environment.NewLine,
+                "CultureChecker", "\tDate = 1/1/0001 12:00:00 AM", "\tDouble = 2,2", "");
+
+            res.Should().Be(expected);
+        }
+
+        [Test]
+        public void DictionaryWithClassesInKeyAndValues()
+        {
+            var obj = new Dictionary<A, A>
+            {
+                {new A {Date = DateTime.MinValue, Time = new TimeSpan()}, 
+                    new A {Date = DateTime.MinValue, Time = new TimeSpan()}}
+            };
+            var printer = ObjectPrinter.For<Dictionary<A, A>>();
+            var res = printer.PrintToString(obj);
+            var expected = string.Join(Environment.NewLine,
+                "Dictionary`2", "\tObjectPrinting.Tests.A = A", "\t\t\tDate = 01.01.0001 0:00:00", "\t\t\tTime = 00:00:00", "");
+
+            res.Should().Be(expected);
         }
     }
 }

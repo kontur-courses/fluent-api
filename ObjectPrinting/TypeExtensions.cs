@@ -8,7 +8,7 @@ namespace ObjectPrinting
     {
         public static bool IsSimple(this Type type)
         {
-            return type.IsPrimitive
+            return type.IsPrimitive || type.Equals(typeof(DateTime)) || type.Equals(typeof(TimeSpan))
                    || type.Equals(typeof(string)) || type.Equals(typeof(Guid));
         }
     }

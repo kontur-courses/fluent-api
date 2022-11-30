@@ -123,7 +123,12 @@ namespace ObjectPrinting
                 else if (memberInfo != null && propsCustomSerializations.ContainsKey(memberInfo.Name))
                     sb.Append(propsCustomSerializations[memberInfo.Name](value) + Environment.NewLine);
                 else
+                {
+                    if (value != null && !value.GetType().IsSimple())
+                        nestingLevel++;
+
                     sb.Append(PrintToString(value, nestingLevel + 1));
+                }
             }
             return sb.ToString();
         }
