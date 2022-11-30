@@ -152,5 +152,16 @@ namespace ObjectPrintingTests
             Func<string> printing = () => printer.PrintToString(son);
             printing.Should().NotThrow<StackOverflowException>();
         }
+
+        [Test]
+        public void ObjectPrinter_ShouldTrimmedToLength()
+        {
+            var person = new Person {Name = "Alex", Age = 19, Height = 178.5};
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<string>()
+                .TrimmedToLength(1);
+            var result = printer.PrintToString(person);
+            result.Should().Contain("Name = A");
+        }
     }
 }
