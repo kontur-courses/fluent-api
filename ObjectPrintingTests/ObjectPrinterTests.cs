@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
@@ -8,7 +9,7 @@ namespace ObjectPrintingTests;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
-public class ObjectPrinter_Should
+public class ObjectPrinterTests
 {
     [Test]
     public void AcceptanceTest()
@@ -217,9 +218,9 @@ public class ObjectPrinter_Should
         var printer = ObjectPrinter.For<string>()
             .Printing<string>().TrimmedToLength(maxLen);
 
-        var ruResult = printer.PrintToString(value);
+        var result = printer.PrintToString(value);
 
-        ruResult.Should().Be(expected);
+        result.Should().Be(expected);
     }
 
     [Test]
@@ -245,91 +246,58 @@ public class ObjectPrinter_Should
             .WithMessage("Printable object contains circular reference");
     }
 
-    [Test]
-    public void PrintToString_ReturnCorrectString_OnArrayOfSimpleObjects()
+    private static IEnumerable<TestCaseData> CollectionsExamples
     {
-        var numbers = new[] { 1, 2, 3 };
-        var printer = ObjectPrinter.For<int[]>();
-        var nl = Environment.NewLine;
-        var expected = $"Int32[]{nl}\t[1, 2, 3]";
+        get
+        {
+            var nl = Environment.NewLine;
 
-        var result = printer.PrintToString(numbers);
+            yield return new TestCaseData(new[] { 1, 2, 3 },
+                    $"Int32[]{nl}\t[1, 2, 3]")
+                .SetName("{m}_ArrayOfSimpleObjects");
+
+            var personExpected =
+                $"Person{nl}" +
+                $"\t\tId = Guid{nl}" +
+                $"\t\tName = null{nl}" +
+                $"\t\tHeight = 0{nl}" +
+                "\t\tAge = 0";
+
+            yield return new TestCaseData(new Person[] { new(), new(), new() },
+                    $"Person[]{nl}\t[{personExpected},{nl}\t{personExpected},{nl}\t{personExpected}]")
+                .SetName("{m}_ArrayOfComplexObjects");
+
+            yield return new TestCaseData(new List<int> { 1, 2, 3 },
+                    $"List`1{nl}\t[1, 2, 3]")
+                .SetName("{m}_ListOfSimpleObjects");
+
+            yield return new TestCaseData(new List<Person> { new(), new(), new() },
+                    $"List`1{nl}\t[{personExpected},{nl}\t{personExpected},{nl}\t{personExpected}]")
+                .SetName("{m}_ListOfComplexObjects");
+
+            var kvpExpected = (int k, int v) =>
+                $"KeyValuePair`2{nl}" +
+                $"\t\tKey = {k}{nl}" +
+                $"\t\tValue = {v}";
+
+            yield return new TestCaseData(new Dictionary<int, int> { { 1, 2 }, { 2, 3 }, { 3, 4 } },
+                    $"Dictionary`2{nl}\t[{kvpExpected(1, 2)},{nl}\t{kvpExpected(2, 3)},{nl}\t{kvpExpected(3, 4)}]")
+                .SetName("{m}_Dictionary");
+        }
+    }
+
+    [TestCaseSource(nameof(CollectionsExamples))]
+    public void PrintToString_ReturnCorrectString_OnCollection(ICollection collection, string expected)
+    {
+        var result = collection.PrintToString();
 
         result.Should().Be(expected);
     }
 
-    [Test]
-    public void PrintToString_ReturnCorrectString_OnArrayOfComplexObjects()
-    {
-        var numbers = new[] { new Person(), new Person(), new Person() };
-        var printer = ObjectPrinter.For<Person[]>();
-        var nl = Environment.NewLine;
-        var personExpected =
-            $"Person{nl}" +
-            $"\t\tId = Guid{nl}" +
-            $"\t\tName = null{nl}" +
-            $"\t\tHeight = 0{nl}" +
-            "\t\tAge = 0";
-        var expected = $"Person[]{nl}\t[{personExpected},{nl}\t{personExpected},{nl}\t{personExpected}]";
-
-        var result = printer.PrintToString(numbers);
-
-        result.Should().Be(expected);
-    }
-
-    [Test]
-    public void PrintToString_ReturnCorrectString_OnListOfSimpleObjects()
-    {
-        var numbers = new List<int> { 1, 2, 3 };
-        var printer = ObjectPrinter.For<List<int>>();
-        var nl = Environment.NewLine;
-        var expected = $"List`1{nl}\t[1, 2, 3]";
-
-        var result = printer.PrintToString(numbers);
-
-        result.Should().Be(expected);
-    }
-
-    [Test]
-    public void PrintToString_ReturnCorrectString_OnListOfComplexObjects()
-    {
-        var numbers = new List<Person> { new(), new(), new() };
-        var printer = ObjectPrinter.For<List<Person>>();
-        var nl = Environment.NewLine;
-        var personExpected =
-            $"Person{nl}" +
-            $"\t\tId = Guid{nl}" +
-            $"\t\tName = null{nl}" +
-            $"\t\tHeight = 0{nl}" +
-            "\t\tAge = 0";
-        var expected = $"List`1{nl}\t[{personExpected},{nl}\t{personExpected},{nl}\t{personExpected}]";
-
-        var result = printer.PrintToString(numbers);
-
-        result.Should().Be(expected);
-    }
-
-    [Test]
-    public void PrintToString_ReturnCorrectString_OnDictionary()
-    {
-        var numbers = new Dictionary<int, int> { { 1, 2 }, { 2, 3 }, { 3, 4 } };
-        var printer = ObjectPrinter.For<Dictionary<int, int>>();
-        var nl = Environment.NewLine;
-        var kvpExpected = (int k, int v) =>
-            $"KeyValuePair`2{nl}" +
-            $"\t\tKey = {k}{nl}" +
-            $"\t\tValue = {v}";
-        var expected = $"Dictionary`2{nl}\t[{kvpExpected(1, 2)},{nl}\t{kvpExpected(2, 3)},{nl}\t{kvpExpected(3, 4)}]";
-
-        var result = printer.PrintToString(numbers);
-
-        result.Should().Be(expected);
-    }
-    
     [Test]
     public void PrintToString_ReturnCorrectString_OnComplexObjectWithEnumerable()
     {
-        var obj = new ObjectWithEnumerable { Enumerable = new []{ 1, 2, 3 }};
+        var obj = new ObjectWithEnumerable { Enumerable = new[] { 1, 2, 3 } };
         var printer = ObjectPrinter.For<ObjectWithEnumerable>();
         var nl = Environment.NewLine;
         var expected = $"ObjectWithEnumerable{nl}\tEnumerable = Int32[]{nl}\t\t[1, 2, 3]";
@@ -338,7 +306,7 @@ public class ObjectPrinter_Should
 
         result.Should().Be(expected);
     }
-    
+
     [Test]
     public void PrintToString_DontThrowException_OnEqualsObjectOnOneLevel()
     {
@@ -350,7 +318,7 @@ public class ObjectPrinter_Should
 
         act.Should().NotThrow<InvalidOperationException>();
     }
-    
+
     [Test]
     public void PrintToString_ChangePrinting_ToSimpleTypes()
     {
