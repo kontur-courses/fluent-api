@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Text;
 
 namespace ObjectPrinting
@@ -12,7 +12,6 @@ namespace ObjectPrinting
     {
         public string PrintToString(TOwner obj)
         {
-
             foreach (var propertyInfo in obj.GetType().GetProperties())
             {
                 if (propertyInfo.PropertyType == typeof(string) && !StringCutFunctions.ContainsKey(propertyInfo.Name))
@@ -61,12 +60,26 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+        
+        public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
+        {
+            foreach (var info in typeof(TOwner).GetProperties())
+            {
+                if (info.PropertyType.GetInterface("IFormattable")!=null)
+                {
+                    if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new OverrideConfig());
+                    OverridedConfigs[info.Name].SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
+                }
+            }
+
+            return this;
+        }
 
         public IPropertyConfig<TOwner, T> ConfigForProperty<T>(Expression<Func<TOwner, T>> property)
         {
             return new PropertyConfig<TOwner, T>(this, property);
         }
-        
+
         public IPropertyConfig<TOwner,T> AlternateForType<T>(Func<TOwner, T> property)
         {
             throw new NotImplementedException();
