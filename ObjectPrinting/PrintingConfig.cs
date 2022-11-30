@@ -1,40 +1,122 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : ISerializer<TOwner>
     {
+        private readonly Dictionary<string, Func<object, string>> optionsProperties
+            = new Dictionary<string, Func<object, string>>();
+
+        private readonly Dictionary<Type, Func<object, string>> optionsTypes
+            = new Dictionary<Type, Func<object, string>>();
+
+        private readonly List<string> exceptOptions
+            = new List<string>();
+
+        private readonly List<Type> exceptTypes
+            = new List<Type>();
+
+        private int stringMaxSize = -1;
+        private Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public ISerializer<TOwner> SetStringMaxSize(int length)
         {
-            //TODO apply configurations
+            stringMaxSize = length;
+            return this;
+        }
+
+        public ISerializer<TOwner> SetupDefaultStringSize()
+        {
+            stringMaxSize = -1;
+            return this;
+        }
+
+        public ISerializer<TOwner> ChangePropertyOutput<P>(Expression<Func<TOwner, P>> properties,
+            Func<object, string> method)
+        {
+            var memberExpression = (MemberExpression)properties.Body;
+
+            optionsProperties.Add(memberExpression.Member.Name, method);
+
+            return this;
+        }
+
+        public ISerializer<TOwner> ChangeTypeOutput(Type type, Func<object, string> method)
+        {
+            optionsTypes.Add(type, method);
+
+            return this;
+        }
+
+        public ISerializer<TOwner> ExceptProperty<P>(Expression<Func<TOwner, P>> properties)
+        {
+            var memberExpression = (MemberExpression)properties.Body;
+
+            exceptOptions.Add(memberExpression.Member.Name);
+
+            return this;
+        }
+
+        public ISerializer<TOwner> ExceptType(Type type)
+        {
+            exceptTypes.Add(type);
+
+            return this;
+        }
+
+        private string PrintToString(object obj, int nestingLevel, bool isArray = false)
+        {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            if (finalTypes.Contains(obj.GetType()) || obj is string && stringMaxSize < 0 || nestingLevel > 1000)
+                return obj + "\r\n";
+            if (obj is string)
+                return ((string)obj).Substring(0, stringMaxSize) + "\r\n";
 
-            var identation = new string('\t', nestingLevel + 1);
+            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(identation + type.Name + ":");
+            identation = new string('\t', nestingLevel + 1);
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var variable = propertyInfo.GetValue(obj);
+                if (exceptOptions.Contains(propertyInfo.Name) || exceptTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+
+                if (optionsProperties.ContainsKey(propertyInfo.Name))
+                    sb.AppendLine(identation + optionsProperties[propertyInfo.Name].Invoke(variable));
+                else if (optionsTypes.ContainsKey(propertyInfo.PropertyType))
+                    sb.AppendLine(identation + optionsTypes[propertyInfo.PropertyType].Invoke(variable));
+                else if (variable is IList)
+                {
+                    var list = (IList)variable;
+                    for(int i = 0; i < list.Count; i++)
+                        sb.Append(identation + i + " = " + PrintToString(list[i],nestingLevel + 1));
+                }
+                else
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                }
             }
+
             return sb.ToString();
         }
     }
