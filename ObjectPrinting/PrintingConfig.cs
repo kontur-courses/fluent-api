@@ -1,14 +1,65 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> _excludedTypes = new HashSet<Type>();
+        private readonly Dictionary<Type, IPrintingConfig> _typeSerializers = new Dictionary<Type, IPrintingConfig>();
+        private readonly Dictionary<MemberInfo, IPrintingConfig> _memberSerializers = new Dictionary<MemberInfo, IPrintingConfig>();
+        private readonly HashSet<MemberInfo> _excludedMembers = new HashSet<MemberInfo>();
+
+        public PrintingConfig<TOwner> Excluding<T>()
+        {
+            _excludedTypes.Add(typeof(T));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> With<TSer>(Func<TSer, string> serializer)
+        {
+            var typeSerializationConfig = new PrinterConfigSerialization<TOwner, TSer>(this);
+            typeSerializationConfig.SetSerialization(serializer);
+            _typeSerializers[typeof(TSer)] = typeSerializationConfig;
+            return this;
+        }
+
+        public PrinterConfigSerialization<TOwner, TProp> ForMember<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
+        {
+            var memberSerializationConfig = new PrinterConfigSerialization<TOwner, TProp>(this);
+            var members = GetMemberFromSelectorByName(memberSelector);
+            foreach (var member in members)
+                _memberSerializers[member] = memberSerializationConfig;
+
+            return memberSerializationConfig;
+        }
+        
+        public PrintingConfig<TOwner> Excluding<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
+        {
+            _excludedMembers.UnionWith(GetMemberFromSelectorByName(memberSelector));
+            return this;
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        private IEnumerable<MemberInfo> GetMemberFromSelectorByName<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
+        {
+            var memberName = memberSelector.Body.ToString().Split('.').Last();
+            var members = typeof(TOwner).GetMember(memberName)
+                .Where(member => member.MemberType == MemberTypes.Field || member.MemberType == MemberTypes.Property);
+            
+            if (!members.Any())
+                throw new ArgumentException($"Field/Property {memberName} is not found!");
+
+            return members;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -31,6 +82,25 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (_excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+
+                if (_excludedMembers.Contains(propertyInfo))
+                    continue;
+
+                if (_typeSerializers.ContainsKey(propertyInfo.PropertyType))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " + _typeSerializers[propertyInfo.PropertyType].PrintObject(propertyInfo.GetValue(obj)));
+                    continue;
+                }
+
+                if (_memberSerializers.ContainsKey(propertyInfo))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              _memberSerializers[propertyInfo].PrintObject(propertyInfo.GetValue(obj)));
+                    continue;
+                }
+
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
