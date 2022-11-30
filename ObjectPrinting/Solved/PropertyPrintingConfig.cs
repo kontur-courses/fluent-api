@@ -1,34 +1,39 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting.Solved
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> _printingConfig;
-        private Func<TPropType, string> _printSettings;
+        private readonly PropertyInfo _propertyInfo;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
             _printingConfig = printingConfig;
-            _printSettings = null;
+            _propertyInfo = null;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
         {
-            _printSettings = print;
+            _printingConfig = printingConfig;
+            _propertyInfo = propertyInfo;
+        }
+
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> printSetting)
+        {
+            if (_propertyInfo is null)
+                _printingConfig.AddPrintSetting(typeof(TPropType), printSetting);
+            else
+                _printingConfig.AddPrintSetting(_propertyInfo.Name, printSetting);
             return _printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            _printSettings = x => string.Format(culture, "{0}", x);
-            return _printingConfig;
-        }
-
-        public string UseSettings(object property)
-        {
-            return _printSettings((TPropType)property);
+            Func<TPropType, string> printSetting = x => string.Format(culture, "{0}", x);
+            return Using(printSetting);
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;

@@ -25,10 +25,7 @@ namespace ObjectPrinting.Solved
 
         public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var type = typeof(TPropType);
-            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            _typesPrintSettings.Add(type, propertyConfig.UseSettings);
-            return propertyConfig;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
         public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
@@ -37,10 +34,11 @@ namespace ObjectPrinting.Solved
             if (memberSelector.Body is not MemberExpression memberExpression)
                 throw new ArgumentException();
 
-            var memberName = memberExpression.Member.Name;
-            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            _propertiesPrintSettings.Add(memberName, propertyConfig.UseSettings);
-            return propertyConfig;
+            var memberInfo = memberExpression.Member;
+            if (memberInfo is not PropertyInfo propertyInfo)
+                throw new ArgumentException();
+            
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -56,6 +54,16 @@ namespace ObjectPrinting.Solved
         {
             _excludedTypes.Add(typeof(TPropType));
             return this;
+        }
+        
+        internal void AddPrintSetting<TPropType>(string propertyName, Func<TPropType, string> printSetting)
+        {
+            _propertiesPrintSettings[propertyName] = x => printSetting((TPropType)x);
+        }
+        
+        internal void AddPrintSetting<TPropType>(Type type, Func<TPropType, string> printSetting)
+        {
+            _typesPrintSettings[type] = x => printSetting((TPropType)x);
         }
 
         public string PrintToString(TOwner obj)
