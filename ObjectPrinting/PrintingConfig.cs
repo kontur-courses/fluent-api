@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -76,15 +77,42 @@ namespace ObjectPrinting
                 return typesCustomSerializations[obj.GetType()](obj) + Environment.NewLine;
 
             if (finalTypes.Contains(obj.GetType()))
-            {
-                if (!typesCustomSerializations.ContainsKey(obj.GetType()))
-                    return obj + Environment.NewLine;
-            }
+                return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+
+
+            if (obj is IDictionary)
+            {
+                var dict = obj as IDictionary;
+                foreach (var key in dict.Keys)
+                {
+                    sb.Append(identation);
+                    sb.Append(key);
+                    sb.Append(" = ");
+                    sb.Append(PrintToString(dict[key], nestingLevel + 1));
+                }
+
+                return sb.ToString();
+            }
+
+            if (obj is IEnumerable)
+            {
+                var i = 0;
+                foreach (var e in obj as IEnumerable)
+                {
+                    sb.Append(identation);
+                    sb.Append(i);
+                    sb.Append(" = ");
+                    sb.Append(PrintToString(e, nestingLevel + 1));
+                    i++;
+                }
+                return sb.ToString();
+            }
+
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (excludedTypes.Contains(propertyInfo.PropertyType)
@@ -103,8 +131,6 @@ namespace ObjectPrinting
                     sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
 
             }
-
-            startObject = null!;
             return sb.ToString();
         }
     }

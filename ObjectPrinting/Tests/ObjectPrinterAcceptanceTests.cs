@@ -110,5 +110,34 @@ namespace ObjectPrinting.Tests
 
             res.Should().Be(expected);
         }
+
+        [Test]
+        public void WorkWithEnumerable()
+        {
+            var res1 = ObjectPrinter.For<int[]>().PrintToString(new[] {1, 2, 3, 4});
+            var res2 = ObjectPrinter.For<List<int>>().PrintToString(new List<int> {1, 2, 3, 4});
+            var res3 = ObjectPrinter.For<Dictionary<string, int>>().PrintToString(new Dictionary<string, int>
+            {
+                { "first", 10 },
+                { "second", 0 },
+                { "third", 43 },
+            });
+            var res4 = ObjectPrinter.For<List<Dictionary<int, int>>>()
+                .PrintToString(new List<Dictionary<int, int>>
+                {
+                    new Dictionary<int, int> {{1, 10}, {2, 20}},
+                });
+            var expectedEnumerable = string.Join(Environment.NewLine,
+                "", "\t0 = 1", "\t1 = 2", "\t2 = 3", "\t3 = 4", "");
+            var expectedDictionary = string.Join(Environment.NewLine,
+                "", "\tfirst = 10", "\tsecond = 0", "\tthird = 43", "");
+            var expectedDictionaryInList = string.Join(Environment.NewLine,
+                "", "\t0 = Dictionary`2", "\t\t1 = 10", "\t\t2 = 20", "");
+
+            res1.Should().Be("Int32[]" + expectedEnumerable);
+            res2.Should().Be("List`1" + expectedEnumerable);
+            res3.Should().Be("Dictionary`2" + expectedDictionary);
+            res4.Should().Be("List`1" + expectedDictionaryInList);
+        }
     }
 }
