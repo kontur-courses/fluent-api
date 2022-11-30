@@ -32,12 +32,10 @@ namespace ObjectPrinting
             this.depth = depth;
         }
 
-
         public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
-
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
@@ -46,7 +44,6 @@ namespace ObjectPrinting
 
             return new PropertyPrintingConfig<TOwner, TPropType>(this, member.Member);
         }
-
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
@@ -92,6 +89,7 @@ namespace ObjectPrinting
         {
             if (!additionalSerializationProperties.ContainsKey(member))
                 additionalSerializationProperties[member] = new List<Func<string, string>>();
+
             additionalSerializationProperties[member].Add(serializer);
         }
 
@@ -143,14 +141,14 @@ namespace ObjectPrinting
 
                 var newObj = propertyInfo.GetValue(obj);
                 sb
-                .Append(indent)
-                .Append(propertyInfo.Name)
-                .Append(" = ")
-                .Append(PrintToString(newObj,
-                    nestingLevel + 1,
-                    parents.Add(obj),
-                    propertyInfo))
-                .Append(Environment.NewLine);
+                    .Append(indent)
+                    .Append(propertyInfo.Name)
+                    .Append(" = ")
+                    .Append(PrintToString(newObj,
+                        nestingLevel + 1,
+                        parents.Add(obj),
+                        propertyInfo))
+                    .AppendLine();
             }
 
             return sb.ToString();
@@ -161,7 +159,6 @@ namespace ObjectPrinting
             var sb = new StringBuilder().AppendLine("{");
             var indent = new string('\t', nestingLevel + 1);
             foreach (var key in dict.Keys)
-            {
                 sb.Append($"{indent}{key}: ")
                     .Append(PrintToString(dict[key],
                         0,
@@ -169,7 +166,6 @@ namespace ObjectPrinting
                     .Append(',')
                     .AppendLine()
                     .AppendLine();
-            }
 
             sb.Append(new string('\t', nestingLevel)).Append('}');
             return sb.ToString();
