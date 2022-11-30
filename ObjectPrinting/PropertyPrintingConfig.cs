@@ -11,12 +11,12 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
 
         private Func<TPropType, string> printFunc;
-        private int strTrimLength;
         private CultureInfo culture;
+        public int StrTrimLength { get; set; }
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {
-            strTrimLength = int.MaxValue;
+            StrTrimLength = int.MaxValue;
             culture = CultureInfo.CurrentCulture;   
             printFunc = (prop) => Convert.ToString(prop, culture);
             this.printingConfig = printingConfig;
@@ -37,7 +37,7 @@ namespace ObjectPrinting
         public string GetProperty(object obj)
         {
             var prop = printFunc((TPropType) obj);
-            return prop.Substring(0, Math.Min(prop.Length, strTrimLength));
+            return prop.Substring(0, Math.Min(prop.Length, StrTrimLength));
         }
     }
 }

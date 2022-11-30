@@ -16,7 +16,7 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int length)
         {
-            propConfig.strTrimLength = length;
+            propConfig.StrTrimLength = length;
             return propConfig.ParentConfig;
         }
     }

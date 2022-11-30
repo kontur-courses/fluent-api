@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using FluentAssertions.Common;
 using NUnit.Framework;
@@ -57,7 +58,9 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            var strObject = PrintToString(obj, 0);
+            startObject = null!;
+            return strObject;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -84,51 +87,48 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
+            IEnumerable properties;
+            Func<object, object> valueExtractor;
 
-            if (obj is IDictionary dict)
+            switch (obj)
             {
-                foreach (var key in dict.Keys)
-                {
-                    sb.Append(identation);
-                    sb.Append(key);
-                    sb.Append(" = ");
-                    sb.Append(PrintToString(dict[key], nestingLevel + 1));
-                }
-
-                return sb.ToString();
+                case IDictionary dict:
+                    properties = dict.Keys;
+                    valueExtractor = (key) => dict[key];
+                    break;
+                case IEnumerable list:
+                    properties = list
+                        .Cast<object>()
+                        .Select((e, index) => index);
+                    valueExtractor = (index) => list.ElementAtOrDefault((int)index);
+                    break;
+                default:
+                    properties = type.GetProperties();
+                    valueExtractor = (propertyInfo) => (propertyInfo as PropertyInfo).GetValue(obj);
+                    break;
             }
 
-            if (obj is IEnumerable)
+            foreach (var property in properties)
             {
-                var i = 0;
-                foreach (var e in obj as IEnumerable)
-                {
-                    sb.Append(identation);
-                    sb.Append(i);
-                    sb.Append(" = ");
-                    sb.Append(PrintToString(e, nestingLevel + 1));
-                    i++;
-                }
-                return sb.ToString();
-            }
-
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (excludedTypes.Contains(propertyInfo.PropertyType)
-                    || excludedNames.Contains(propertyInfo.Name)) 
+                var value = valueExtractor(property);
+                var propInfo = (property as PropertyInfo);
+                if (excludedTypes.Contains(propInfo?.PropertyType)
+                    || excludedNames.Contains(propInfo?.Name))
                     continue;
 
                 sb.Append(identation);
-                sb.Append(propertyInfo.Name + " = ");
+                if (propInfo != null)
+                    sb.Append(propInfo.Name);
+                else 
+                    sb.Append(property);
+                sb.Append(" = ");
 
-                if (propertyInfo.GetValue(obj) == startObject)
+                if (value == startObject)
                     sb.Append("this" + Environment.NewLine);
-                else if (propsCustomSerializations.ContainsKey(propertyInfo.Name))
-                    sb.Append(propsCustomSerializations[propertyInfo.Name](propertyInfo.GetValue(obj)) +
-                              Environment.NewLine);
+                else if (propInfo != null && propsCustomSerializations.ContainsKey(propInfo.Name))
+                    sb.Append(propsCustomSerializations[propInfo.Name](value) + Environment.NewLine);
                 else
-                    sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-
+                    sb.Append(PrintToString(value, nestingLevel + 1));
             }
             return sb.ToString();
         }
