@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using FluentAssertions;
@@ -19,6 +20,23 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ObjectPrinter_ShouldCorrectlySerializeDictionary()
+        {
+            examplePerson.Pets = new Dictionary<int, string> {{1, "cat"}, {2, "dog"}, {3, "pig"}};
+            var printer = ObjectPrinter.For<Person>().Excluding<int>();
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
+                                                             Environment.NewLine + '\t' + "Name = John Doe" +
+                                                             Environment.NewLine + '\t' + "Height = 173.5" +
+                                                             Environment.NewLine + '\t' + "Pets : {" +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + "1 : cat," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + "2 : dog," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + "3 : pig," +
+                                                             Environment.NewLine + '\t' + '\t' + '}' +
+                                                             Environment.NewLine);
+        }
+
+        [Test]
         public void ObjectPrinter_ShouldCorrectlyExcludeType()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
@@ -26,6 +44,7 @@ namespace ObjectPrinting.Tests
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
+                                                             Environment.NewLine + '\t' + "Pets = null" +
                                                              Environment.NewLine);
         }
 
@@ -37,13 +56,15 @@ namespace ObjectPrinting.Tests
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
+                                                             Environment.NewLine + '\t' + "Pets = null" +
                                                              Environment.NewLine);
         }
 
         [Test]
         public void ObjectPrinter_ShouldCorrectlySetCultureForNumericalTypes()
         {
-            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(new CultureInfo("ru"));
+            var printer = ObjectPrinter.For<Person>().Excluding<Dictionary<int, string>>().Printing<double>()
+                .Using(new CultureInfo("ru"));
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -61,13 +82,15 @@ namespace ObjectPrinting.Tests
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
                                                              Environment.NewLine + '\t' + "Age = 2A" +
+                                                             Environment.NewLine + '\t' + "Pets = null" +
                                                              Environment.NewLine);
         }
 
         [Test]
         public void ObjectPrinter_ShouldCorrectlyApplySpecialSerializationForProperties()
         {
-            var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i.ToString("X"));
+            var printer = ObjectPrinter.For<Person>().Excluding<Dictionary<int, string>>().Printing(p => p.Age)
+                .Using(i => i.ToString("X"));
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -79,7 +102,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyTrimStrings()
         {
-            var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(5);
+            var printer = ObjectPrinter.For<Person>().Excluding<Dictionary<int, string>>().Printing(p => p.Name)
+                .TrimmedToLength(5);
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John " +
