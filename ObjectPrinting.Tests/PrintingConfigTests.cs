@@ -116,30 +116,27 @@ public class PrintingConfigTests
     public void PrintingConfigShouldPrintArray()
     {
         var array = new[] { 10, 12, 123};
-        var config = PrintingConfig.For<int>();
-        var printedObject = array.PrintToString(config);
+        var printedObject = array.PrintToString();
         printedObject.Should().ContainAll("10", "12", "123");
     }
     [Test]
     public void PrintingConfigShouldPrintList()
     {
         var list = new List<int>{ 10, 12, 123};
-        var config = PrintingConfig.For<int>();
-        var printedObject = list.PrintToString(config);
+        var printedObject = list.PrintToString();
         printedObject.Should().ContainAll("10", "12", "123");
     }
     
     [Test]
     public void PrintingConfigShouldPrintDictionary()
     {
-        var array = new Dictionary<int, int>
+        var dictionary = new Dictionary<int, int>
         {
             [10] = 4,
             [12] = 5,
             [123] = 6,
         };
-        var config = PrintingConfig.For<int>();
-        var printedObject = array.PrintToString(config);
+        var printedObject = dictionary.PrintToString();
         printedObject.Should().ContainAll("10", "12", "123");
         printedObject.Should().ContainAll("4", "5", "6");
     }

@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ObjectPrinting.Solved;
@@ -17,33 +19,21 @@ public static class ObjectPrinter
         return PrintToString(obj, config, 0, new HashSet<object>());
     }
 
-    public static string PrintToString<TOwner, TCollection>(this TCollection collectionOfObjects,
-        PrintingConfig<TOwner> config)
-        where TCollection : IEnumerable<TOwner>
+    public static string PrintToString<TOwner>(ICollection collectionOfObjects, PrintingConfig<TOwner> config)
     {
-        var stringBuilder = new StringBuilder();
-        foreach (var obj in collectionOfObjects)
-        {
-            var printedObject = PrintToString(obj, config);
-            stringBuilder.Append($"{printedObject}{Environment.NewLine}");
-        }
-
-        return stringBuilder.ToString();
+        return PrintToString(collectionOfObjects, config, 0, new HashSet<object>());
     }
 
-    public static string PrintToString<TOwner, TKey, TValue>(this IDictionary<TKey, TValue> collectionOfObjects,
-        PrintingConfig<TOwner> config)
+    private static string PrintToString<TOwner>(ICollection collectionOfObjects,
+        PrintingConfig<TOwner> config, int shiftLevel, HashSet<object> printedObjects)
     {
-        var stringBuilder = new StringBuilder();
+        var shift = new string('\t', shiftLevel);
+
+        var stringBuilder = new StringBuilder(Environment.NewLine);
         foreach (var obj in collectionOfObjects)
         {
-            var printedKey = obj.Key.ToString();
-            var printedValue = obj.Value.ToString();
-            if (obj.Key is TOwner key)
-                printedKey = PrintToString(key, config);
-            if (obj.Value is TOwner value)
-                printedValue = PrintToString(value, config);
-            stringBuilder.Append($"{printedKey} - {{{printedValue}{Environment.NewLine}}}{Environment.NewLine}");
+            var printedObject = PrintToString(obj, config, shiftLevel, printedObjects);
+            stringBuilder.Append($"{shift}{printedObject}{Environment.NewLine}");
         }
 
         return stringBuilder.ToString();
@@ -55,40 +45,33 @@ public static class ObjectPrinter
         printedObjects.Add(obj);
         if (obj is null)
             return "null";
-
         if (_finalTypes.Contains(obj.GetType()))
             return obj.ToString();
+        if (obj is ICollection collection)
+            return PrintToString(collection, config, nestingLevel, printedObjects);
 
         var stringBuilder = new StringBuilder();
-        foreach (var memberInfo in config.Members)
+        var members = MemberInfoHelper.GetAllPropertiesAndFields(obj.GetType());
+
+        foreach (var memberInfo in members)
         {
+            if (config.ExcludedMembers.Contains(memberInfo))
+                continue;
             var memberType = MemberInfoHelper.GetTypeFromMemberInfo(memberInfo);
             var memberValue = MemberInfoHelper.GetValueFromMemberInfo(obj, memberInfo);
 
             if (memberType.IsValueType == false && memberType != typeof(string) &&
                 memberValue is not null && printedObjects.Contains(memberValue))
                 continue;
-            printedObjects.Add(memberValue);
 
             string printedMember;
-            if (config.AlternativePropertiesPrints.ContainsKey(memberInfo.Name))
-            {
+            if (obj is TOwner && config.AlternativePropertiesPrints.ContainsKey(memberInfo.Name))
                 printedMember = config.AlternativePropertiesPrints[memberInfo.Name](memberValue);
-            }
             else if (config.AlternativeTypesPrints.ContainsKey(memberType))
-            {
                 printedMember = config.AlternativeTypesPrints[memberType](memberValue);
-            }
             else
-            {
-                if (memberValue is TOwner)
-                    printedMember = PrintToString(memberValue, config, nestingLevel + 1,
-                        new HashSet<object>(printedObjects));
-                else
-                    printedMember = PrintToString(memberValue, memberValue?.GetDefaultPrintingConfig(),
-                        nestingLevel + 1,
-                        new HashSet<object>(printedObjects));
-            }
+                printedMember = PrintToString(memberValue, config, nestingLevel + 1,
+                    new HashSet<object>(printedObjects));
 
             AddLineToPrint(stringBuilder, nestingLevel, memberInfo.Name, printedMember);
         }
