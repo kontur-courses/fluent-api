@@ -41,25 +41,6 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-    {
-        var body = memberSelector.Body;
-
-        if (!IsPropertyCall(body))
-            throw new ArgumentException($"Member selector ({memberSelector}) isn't property call");
-
-        return ((body as MemberExpression)!.Member as PropertyInfo)!;
-    }
-
-    private static bool IsPropertyCall(Expression expression)
-    {
-        var isMemberCall = expression.NodeType == ExpressionType.MemberAccess;
-        if (!isMemberCall) return false;
-
-        var isPropertyCall = (expression as MemberExpression)!.Member.MemberType == MemberTypes.Property;
-        return isPropertyCall;
-    }
-
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
         excludedTypes.Add(typeof(TPropType));
@@ -93,15 +74,10 @@ public class PrintingConfig<TOwner>
             : PrintComplexObject(obj, printedObjects);
     }
 
-    private bool NotExcluded(PropertyInfo property)
-    {
-        return !excludedProperties.Contains(property) && !excludedTypes.Contains(property.PropertyType);
-    }
-
     private string PrintFinalType(object obj)
     {
         var type = obj.GetType();
-        
+
         if (StringPropertyTrimIndex.HasValue && obj is string str)
             obj = str[..Math.Min(StringPropertyTrimIndex.Value, str.Length)];
 
@@ -114,7 +90,7 @@ public class PrintingConfig<TOwner>
     private string PrintCollection(ICollection collection, IEnumerable<object> printedObjects)
     {
         var newLine = Environment.NewLine;
-        
+
         var sb = new StringBuilder(collection.GetType().Name + newLine + '\t');
 
         var itemsStrings = collection
@@ -122,19 +98,20 @@ public class PrintingConfig<TOwner>
             .Select(o => PrintToString(o, printedObjects).Replace(newLine, newLine + '\t'));
 
         var allFinal = collection.Cast<object>().All(o => finalTypes.Contains(o.GetType()));
-            
+
         sb.Append($"[{string.Join(allFinal ? ", " : $",{newLine}\t", itemsStrings)}]");
 
         return sb.ToString();
     }
-    
-    private string PrintComplexObject(object obj, IEnumerable<object> printedObjects){
+
+    private string PrintComplexObject(object obj, IEnumerable<object> printedObjects)
+    {
         var newLine = Environment.NewLine;
 
         var type = obj.GetType();
-        
+
         var sb = new StringBuilder(type.Name);
-        
+
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
             var result = (AlternativePrintingsForProperties.ContainsKey(property)
@@ -146,5 +123,29 @@ public class PrintingConfig<TOwner>
         }
 
         return sb.ToString();
+    }
+
+    private bool NotExcluded(PropertyInfo property)
+    {
+        return !excludedProperties.Contains(property) && !excludedTypes.Contains(property.PropertyType);
+    }
+
+    private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var body = memberSelector.Body;
+
+        if (!IsPropertyCall(body))
+            throw new ArgumentException($"Member selector ({memberSelector}) isn't property call");
+
+        return ((body as MemberExpression)!.Member as PropertyInfo)!;
+    }
+
+    private static bool IsPropertyCall(Expression expression)
+    {
+        var isMemberCall = expression.NodeType == ExpressionType.MemberAccess;
+        if (!isMemberCall) return false;
+
+        var isPropertyCall = (expression as MemberExpression)!.Member.MemberType == MemberTypes.Property;
+        return isPropertyCall;
     }
 }
