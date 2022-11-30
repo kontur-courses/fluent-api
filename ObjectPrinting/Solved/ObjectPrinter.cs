@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting.Solved;
@@ -13,14 +12,41 @@ public static class ObjectPrinter
         typeof(DateTime), typeof(TimeSpan)
     };
 
-    public static PrintingConfig<T> For<T>()
-    {
-        return new PrintingConfig<T>();
-    }
-
-    public static string PrintToString<TOwner>(this object obj, PrintingConfig<TOwner> config)
+    public static string PrintToString<TOwner>(this TOwner obj, PrintingConfig<TOwner> config)
     {
         return PrintToString(obj, config, 0, new HashSet<object>());
+    }
+
+    public static string PrintToString<TOwner, TCollection>(this TCollection collectionOfObjects,
+        PrintingConfig<TOwner> config)
+        where TCollection : IEnumerable<TOwner>
+    {
+        var stringBuilder = new StringBuilder();
+        foreach (var obj in collectionOfObjects)
+        {
+            var printedObject = PrintToString(obj, config);
+            stringBuilder.Append($"{printedObject}{Environment.NewLine}");
+        }
+
+        return stringBuilder.ToString();
+    }
+
+    public static string PrintToString<TOwner, TKey, TValue>(this IDictionary<TKey, TValue> collectionOfObjects,
+        PrintingConfig<TOwner> config)
+    {
+        var stringBuilder = new StringBuilder();
+        foreach (var obj in collectionOfObjects)
+        {
+            var printedKey = obj.Key.ToString();
+            var printedValue = obj.Value.ToString();
+            if (obj.Key is TOwner key)
+                printedKey = PrintToString(key, config);
+            if (obj.Value is TOwner value)
+                printedValue = PrintToString(value, config);
+            stringBuilder.Append($"{printedKey} - {{{printedValue}{Environment.NewLine}}}{Environment.NewLine}");
+        }
+
+        return stringBuilder.ToString();
     }
 
     private static string PrintToString<TOwner>(object obj, PrintingConfig<TOwner> config, int nestingLevel,
@@ -36,8 +62,8 @@ public static class ObjectPrinter
         var stringBuilder = new StringBuilder();
         foreach (var memberInfo in config.Members)
         {
-            var memberType = GetTypeFromMemberInfo(memberInfo);
-            var memberValue = GetValueFromMemberInfo(obj, memberInfo);
+            var memberType = MemberInfoHelper.GetTypeFromMemberInfo(memberInfo);
+            var memberValue = MemberInfoHelper.GetValueFromMemberInfo(obj, memberInfo);
 
             if (memberType.IsValueType == false && memberType != typeof(string) &&
                 memberValue is not null && printedObjects.Contains(memberValue))
@@ -46,36 +72,28 @@ public static class ObjectPrinter
 
             string printedMember;
             if (config.AlternativePropertiesPrints.ContainsKey(memberInfo.Name))
+            {
                 printedMember = config.AlternativePropertiesPrints[memberInfo.Name](memberValue);
+            }
             else if (config.AlternativeTypesPrints.ContainsKey(memberType))
+            {
                 printedMember = config.AlternativeTypesPrints[memberType](memberValue);
+            }
             else
-                printedMember = PrintToString(memberValue, config, nestingLevel + 1,
-                    new HashSet<object>(printedObjects));
+            {
+                if (memberValue is TOwner)
+                    printedMember = PrintToString(memberValue, config, nestingLevel + 1,
+                        new HashSet<object>(printedObjects));
+                else
+                    printedMember = PrintToString(memberValue, memberValue?.GetDefaultPrintingConfig(),
+                        nestingLevel + 1,
+                        new HashSet<object>(printedObjects));
+            }
+
             AddLineToPrint(stringBuilder, nestingLevel, memberInfo.Name, printedMember);
         }
 
         return stringBuilder.ToString();
-    }
-
-    private static Type GetTypeFromMemberInfo(MemberInfo memberInfo)
-    {
-        return memberInfo switch
-        {
-            FieldInfo fieldInfo => fieldInfo.FieldType,
-            PropertyInfo propertyInfo => propertyInfo.PropertyType,
-            _ => throw new ArgumentException("Member is not a field or a property!")
-        };
-    }
-
-    private static object? GetValueFromMemberInfo(object obj, MemberInfo memberInfo)
-    {
-        return memberInfo switch
-        {
-            FieldInfo fieldInfo => fieldInfo.GetValue(obj),
-            PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
-            _ => throw new ArgumentException("Member is not a field or a property!")
-        };
     }
 
     private static void AddLineToPrint(StringBuilder stringBuilder, int shiftLevel, string name, string value)
