@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ObjectPrinting.Solved
@@ -14,6 +14,8 @@ namespace ObjectPrinting.Solved
         private readonly List<MemberInfo> _excludedMembers;
         private readonly Dictionary<string, Func<object, string>> _propertiesPrintSettings;
         private readonly Dictionary<Type, Func<object, string>> _typesPrintSettings;
+        private List<object> _printedObjects;
+
         public PrintingConfig()
         {
             _excludedTypes = new List<Type>();
@@ -30,13 +32,14 @@ namespace ObjectPrinting.Solved
             return propertyConfig;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException();
 
             var memberName = memberExpression.Member.Name;
-            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this); 
+            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
             _propertiesPrintSettings.Add(memberName, propertyConfig.UseSettings);
             return propertyConfig;
         }
@@ -45,7 +48,7 @@ namespace ObjectPrinting.Solved
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException();
-            
+
             _excludedMembers.Add(memberExpression.Member);
             return this;
         }
@@ -58,14 +61,18 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
+            _printedObjects = new List<object>();
             return PrintToString(obj, 0);
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
+            _printedObjects.Add(obj);
             if (obj == null)
                 return "null" + Environment.NewLine;
+            
+            if (obj is ICollection collection)
+                return GenerateStringFromCollection(collection);
 
             var finalTypes = new[]
             {
@@ -74,31 +81,53 @@ namespace ObjectPrinting.Solved
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-
+            
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(_excludedTypes.Contains(propertyInfo.PropertyType))
+                if (!IsValidMember(obj, propertyInfo))
                     continue;
-                if(_excludedMembers.Contains(propertyInfo))
-                    continue;
-
-                string toPrint;
-                if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
-                    toPrint = _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) 
-                              + Environment.NewLine;
-                else if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
-                    toPrint = _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
-                              + Environment.NewLine;
-                else
-                    toPrint = PrintToString(propertyInfo.GetValue(obj),
-                            nestingLevel + 1);
+                
+                string toPrint = GetPrintMember(obj, propertyInfo, nestingLevel);
                 sb.Append(identation + propertyInfo.Name + " = " + toPrint);
             }
+
             return sb.ToString();
+        }
+        
+        
+        private string GenerateStringFromCollection(ICollection collection)
+        {
+            var sb = new StringBuilder();
+            sb.Append("[");
+            foreach (var element in collection)
+                sb.Append($" {element}");
+            sb.Append(" ]");
+            sb.Append(Environment.NewLine);
+            return sb.ToString();
+        }
+
+        private bool IsValidMember(object obj, PropertyInfo propertyInfo)
+        {
+            if (_excludedTypes.Contains(propertyInfo.PropertyType))
+                return false;
+            if(_excludedMembers.Contains(propertyInfo))
+                return false;
+            return !_printedObjects.Contains(propertyInfo.GetValue(obj));
+        }
+        
+        private string GetPrintMember(object obj, PropertyInfo propertyInfo, int nestingLevel)
+        {
+            if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
+                return _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
+                        + Environment.NewLine;
+            if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
+                return _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
+                                           + Environment.NewLine;
+            return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
     }
 }
