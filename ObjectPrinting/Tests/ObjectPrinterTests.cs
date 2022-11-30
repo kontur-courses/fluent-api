@@ -22,7 +22,8 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldCorrectlyExcludeType()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
                                                              Environment.NewLine);
@@ -32,7 +33,8 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldCorrectlyExcludeProperty()
         {
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Age);
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
                                                              Environment.NewLine);
@@ -42,7 +44,8 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldCorrectlySetCultureForNumericalTypes()
         {
             var printer = ObjectPrinter.For<Person>().Printing<double>().Using(new CultureInfo("ru"));
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173,5" +
                                                              Environment.NewLine + '\t' + "Age = 42" +
@@ -53,30 +56,36 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldCorrectlyApplySpecialSerializationForType()
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(i => i.ToString("X"));
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
-                                                             Environment.NewLine + '\t' + "Age = 2A");
+                                                             Environment.NewLine + '\t' + "Age = 2A" +
+                                                             Environment.NewLine);
         }
 
         [Test]
         public void ObjectPrinter_ShouldCorrectlyApplySpecialSerializationForProperties()
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i.ToString("X"));
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
                                                              Environment.NewLine + '\t' + "Height = 173.5" +
-                                                             Environment.NewLine + '\t' + "Age = 2A");
+                                                             Environment.NewLine + '\t' + "Age = 2A" +
+                                                             Environment.NewLine);
         }
 
         [Test]
         public void ObjectPrinter_ShouldCorrectlyTrimStrings()
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(5);
-            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' + "Id = Guid" +
-                                                             Environment.NewLine + '\t' + "Name = John " + '\t' +
-                                                             "Height = 173.5" + Environment.NewLine + '\t' +
-                                                             "Age = 42" + Environment.NewLine);
+            printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
+                                                             "Id = 00000000-0000-0000-0000-000000000000" +
+                                                             Environment.NewLine + '\t' + "Name = John " +
+                                                             Environment.NewLine + '\t' + "Height = 173.5" +
+                                                             Environment.NewLine + '\t' + "Age = 42" +
+                                                             Environment.NewLine);
         }
     }
 }

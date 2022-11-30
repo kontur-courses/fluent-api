@@ -4,40 +4,40 @@ using System.Globalization;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TParentType, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly string propertyName;
+        internal readonly PrintingConfig<TParentType> Parent;
+        private string specialSerializationPropertyName;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TParentType> parent, string specialSerializationPropertyName)
         {
-            this.printingConfig = printingConfig;
+            this.Parent = parent;
+            this.specialSerializationPropertyName = specialSerializationPropertyName;
         }
 
-        public PropertyPrintingConfig(string propertyName, PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TParentType> parent) : this(parent, null)
         {
-            this.printingConfig = printingConfig;
-            this.propertyName = propertyName;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public string PrintToString(TParentType obj)
         {
-            printingConfig.SpecialSerializations.Add(new Tuple<Type, string>(typeof(TPropType), propertyName),
-                pr => print.Invoke((TPropType) pr));
-            return printingConfig;
+            return Parent.PrintToString(obj);
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        public PrintingConfig<TParentType> Using(Func<TPropType, string> function)
         {
-            printingConfig.CultureInfosForTypes.Add(typeof(TPropType), culture);
-            return printingConfig;
+            if (specialSerializationPropertyName == null)
+                Parent.SpecialSerializationForTypes.Add(typeof(TPropType), el => function.Invoke((TPropType) el));
+            else
+                Parent.SpecialSerializationForNames.Add(specialSerializationPropertyName,
+                    el => function.Invoke((TPropType) el));
+            return Parent;
         }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        public PrintingConfig<TParentType> Using(CultureInfo cultureInfo)
+        {
+            Parent.CultureInfos.Add(typeof(TPropType), cultureInfo);
+            return Parent;
+        }
     }
 }

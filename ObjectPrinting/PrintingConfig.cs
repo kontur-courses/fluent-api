@@ -1,106 +1,150 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TType>
     {
-        private readonly List<Type> excludingTypes = new List<Type>();
-        private readonly List<string> excludingProperties = new List<string>();
-        protected internal readonly Dictionary<Type, CultureInfo> CultureInfosForTypes = new Dictionary<Type, CultureInfo>();
-        protected internal readonly Dictionary<Tuple<Type, string>, Func<object, string>> SpecialSerializations =
-            new Dictionary<Tuple<Type, string>, Func<object, string>>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<string> excludedNames = new List<string>();
 
-
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        private readonly Type[] finalTypes =
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
-        }
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> memberSelector)
-        {
-            var member = (MemberExpression) memberSelector.Body;
-            var property = (PropertyInfo) member.Member;
-            return new PropertyPrintingConfig<TOwner, TPropType>(property.Name, this);
-        }
+        protected internal readonly Dictionary<Type, CultureInfo> CultureInfos = new Dictionary<Type, CultureInfo>();
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        protected internal readonly Dictionary<Type, Func<object, string>> SpecialSerializationForTypes =
+            new Dictionary<Type, Func<object, string>>();
+
+        protected internal readonly Dictionary<string, Func<object, string>> SpecialSerializationForNames =
+            new Dictionary<string, Func<object, string>>();
+
+
+        public PrintingConfig<TType> Excluding<TPropType>()
         {
-            var member = (MemberExpression) memberSelector.Body;
-            var property = (PropertyInfo) member.Member;
-            excludingProperties.Add(property.Name);
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TType> Excluding<TPropType>(Expression<Func<TType, TPropType>> memberSelector)
         {
-            excludingTypes.Add(typeof(TPropType));
+            var returnedPropertyName = ((MemberExpression) memberSelector.Body).Member.Name;
+            excludedNames.Add(returnedPropertyName);
             return this;
         }
 
-        public string PrintToString(TOwner obj)
+        public PropertyPrintingConfig<TType, TPropType> Printing<TPropType>()
+        {
+            return new PropertyPrintingConfig<TType, TPropType>(this);
+        }
+
+        public PropertyPrintingConfig<TType, TPropType> Printing<TPropType>(
+            Expression<Func<TType, TPropType>> memberSelector)
+        {
+            var returnedPropertyName = ((MemberExpression) memberSelector.Body).Member.Name;
+            return new PropertyPrintingConfig<TType, TPropType>(this, returnedPropertyName);
+        }
+
+        public string PrintToString(TType obj)
         {
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int shiftCount)
         {
-            if (nestingLevel > 10)
-                throw new ArgumentException("Cycling reference");
             if (obj == null)
-                return "null" + Environment.NewLine;
-
-            if (CultureInfosForTypes.ContainsKey(obj.GetType()))
-                CultureInfo.CurrentCulture = CultureInfosForTypes[obj.GetType()];
-
-            if (SpecialSerializations.ContainsKey(new Tuple<Type, string>(obj.GetType(), null)))
-                return SpecialSerializations[new Tuple<Type, string>(obj.GetType(), null)](obj);
-
-            if (PrintFinalType(obj) != null)
-                return PrintFinalType(obj);
-
-            var identation = new string('\t', nestingLevel + 1);
+                return "null";
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (CheckExcluding(propertyInfo))
-                    continue;
-                var pairPropertyTypeAndName = new Tuple<Type, string>(propertyInfo.PropertyType, propertyInfo.Name);
+            var shift = new string('\t', shiftCount + 1);
+            sb.Append(obj.GetType().Name + Environment.NewLine);
+            if (CultureInfos.ContainsKey(obj.GetType()))
+                CultureInfo.CurrentCulture = CultureInfos[obj.GetType()];
+            if (SpecialSerializationForTypes.ContainsKey(obj.GetType()))
+                return SpecialSerializationForTypes[obj.GetType()](obj);
+            if (finalTypes.Contains(obj.GetType()))
+                return obj.ToString();
 
-                sb.Append(identation + propertyInfo.Name + " = ");
-                sb.Append(SpecialSerializations.ContainsKey(pairPropertyTypeAndName)
-                    ? SpecialSerializations[pairPropertyTypeAndName](propertyInfo.GetValue(obj))
-                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+            foreach (var property in obj.GetType().GetProperties())
+            {
+                if (excludedTypes.Contains(property.PropertyType) || excludedNames.Contains(property.Name))
+                    continue;
+                sb.Append(shift + property.Name);
+                if (SpecialSerializationForNames.ContainsKey(property.Name))
+                    sb.Append(" = " + SpecialSerializationForNames[property.Name](property.GetValue(obj)));
+                else
+                    sb.Append(property.GetValue(obj) is ICollection
+                        ? " : " + PrintCollection(((ICollection) property.GetValue(obj))!, shiftCount + 1)
+                        : " = " + PrintToString(property.GetValue(obj), shiftCount + 1));
+                sb.Append(Environment.NewLine);
             }
 
             return sb.ToString();
         }
 
-        public bool CheckExcluding(PropertyInfo propertyInfo)
+        private string PrintCollection(ICollection collection, int shiftCount)
         {
-            return excludingProperties.Contains(propertyInfo.Name) ||
-                   excludingTypes.Contains(propertyInfo.PropertyType);
+            var shift = new string('\t', shiftCount + 2);
+            var collectionLength = collection.Count;
+            var sb = new StringBuilder();
+            var openBracket = collection is IDictionary ? '{' : '[';
+            var closeBracket = collection is IDictionary ? '}' : ']';
+            sb.Append(openBracket);
+            if (collection is IDictionary dictionary)
+                sb.Append(PrintDictionary(dictionary, shiftCount + 2));
+            else
+            {
+                sb.Append(Environment.NewLine);
+                foreach (var element in collection)
+                {
+                    sb.Append(shift);
+                    sb.Append(PrintElementInCollection(element, shiftCount, shift));
+                    if (collectionLength > 0)
+                        sb.Append(",");
+                    sb.Append(Environment.NewLine);
+                    collectionLength--;
+                }
+            }
+
+            sb.Append(new string('\t', shiftCount + 1) + closeBracket);
+            return sb.ToString();
         }
 
-        public string PrintFinalType(object obj)
+        private string PrintElementInCollection(object element, int shiftCount, string shift)
         {
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            if (element is ICollection nestedCollection)
+                return PrintCollection(nestedCollection, shiftCount + 1);
+            var result = PrintToString(element, shiftCount + 2);
+            if (!finalTypes.Contains(element.GetType()))
+                return result + shift;
+            return result;
+        }
 
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-            return null;
+        private string PrintDictionary(IDictionary dict, int shiftCount)
+        {
+            var sb = new StringBuilder();
+            sb.Append(Environment.NewLine);
+            foreach (DictionaryEntry e in dict)
+            {
+                sb.Append(new string('\t', shiftCount));
+                sb.Append(e.Key is ICollection key
+                    ? PrintCollection(key, shiftCount)
+                    : PrintToString(e.Key, shiftCount));
+                sb.Append(" : ");
+                sb.Append(e.Value is ICollection value
+                    ? PrintCollection(value, shiftCount)
+                    : PrintToString(e.Value, shiftCount));
+                sb.Append(',' + Environment.NewLine);
+            }
+
+            return sb.ToString();
         }
     }
 }
