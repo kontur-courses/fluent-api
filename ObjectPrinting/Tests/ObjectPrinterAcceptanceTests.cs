@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using FluentAssertions;
@@ -33,7 +35,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            
+
             //8. ...с конфигурированием
         }
 
@@ -41,7 +43,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithoutProperty()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = Alex Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer.PrintToString(person);
             s.Should().Be(expected);
@@ -51,7 +53,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithExcludeType()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Name = Alex Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Excluding<Guid>()
@@ -63,7 +65,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithAlternativeSerializationType()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = ALEX\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = ALEX Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing<string>().Using(s => s.ToUpper())
@@ -75,7 +77,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithCultureInfo()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.80};
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 1.8\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = Alex Height = 1.8 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing<double>().Using(new CultureInfo("en"))
@@ -87,7 +89,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithAlternativeSerializationProperty()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = ALEX\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = ALEX Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing(p => p.Name).Using(s => s.ToUpper())
@@ -99,7 +101,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithTrimmedToLength()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Al\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = Al Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing(p => p.Name).TrimmedToLength(2)
@@ -111,7 +113,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithExcludeProperty()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = Alex Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Excluding(p => p.Height)
@@ -124,7 +126,7 @@ namespace ObjectPrinting.Tests
         public void PrintToString_WithTwoRuleForPropertyString()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            var expected = "Person\r\n\tId = Guid\r\n\tName = AL\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var expected = "Person Id = Guid Name = AL Height = 0 Age = 19";
             var printer = ObjectPrinter.For<Person>();
             var s = printer
                 .Printing<string>().Using(s => s.ToUpper())
@@ -133,6 +135,64 @@ namespace ObjectPrinting.Tests
             s.Should().Be(expected);
         }
 
+        [Test]
+        public void PrintToString_ForList_WithProperty()
+        {
+            var persons = new List<Person>
+            {
+                new Person { Name = "Alex", Age = 19 }
+                , new Person { Name = "Anna", Age = 16 }
+            };
+
+            var expected = "[Person Name = ALEX Age = 19, Person Name = ANNA Age = 16]";
+            var printer = ObjectPrinter.For<List<Person>>();
+            var s = printer
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Printing(p => p.FirstOrDefault().Name).Using(s => s.ToUpper())
+                .PrintToString(persons);
+            s.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_ForList_WithoutProperty()
+        {
+            var list = new List<int> { 1, 2, 3 };
+            var expected = "[1, 2, 3]";
+            var printer = ObjectPrinter.For<List<int>>();
+            var s = printer
+                .PrintToString(list);
+            s.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_ForArray_WithoutProperty()
+        {
+            var array = new [] { 1, 2, 3 };
+            var expected = "[1, 2, 3]";
+            var printer = ObjectPrinter.For<int[]>();
+            var s = printer
+                .PrintToString(array);
+            s.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_ForDictionary_WithProperty()
+        {
+            var dict = new Dictionary<int, Person>();
+            dict[1] = new Person { Name = "Alex", Age = 19 };
+            dict[2] = new Person { Name = "Anna", Age = 16 };
+
+            var expected = "[[1] = Person Name = ALEX Age = 19, [2] = Person Name = ANNA Age = 16]";
+            var printer = ObjectPrinter.For<Dictionary<int, Person>>();
+            var s = printer
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Printing(p => p.FirstOrDefault().Value.Name)
+                    .Using(s => s.ToUpper())
+                .PrintToString(dict);
+            s.Should().Be(expected);
+        }
 
     }
 }
