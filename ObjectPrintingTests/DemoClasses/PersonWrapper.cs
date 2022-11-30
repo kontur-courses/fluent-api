@@ -1,4 +1,4 @@
-﻿namespace ObjectPrintingTests;
+﻿namespace ObjectPrintingTests.DemoClasses;
 
 public class PersonWrapper
 {

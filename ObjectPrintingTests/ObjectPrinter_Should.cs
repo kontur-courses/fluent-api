@@ -2,6 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrintingTests.DemoClasses;
 
 namespace ObjectPrintingTests;
 
