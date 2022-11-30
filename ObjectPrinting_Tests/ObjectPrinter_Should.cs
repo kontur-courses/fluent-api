@@ -1,246 +1,102 @@
+using System.Collections;
 using System.Globalization;
 using ObjectPrinting;
+using ObjectPrinting.Abstractions.Configs;
 
 namespace ObjectPrinting_Tests;
 
 [TestFixture, Parallelizable]
 public class ObjectPrinter_Should
 {
-    private static TestObject CreateTestObject() =>
-        new()
-        {
-            Int1 = 10,
-            Int2 = 12,
-            Double = 12.34,
-            Str = "abc"
-        };
-
     [Test]
-    public void ReturnCorrectResult_WithoutConfiguration()
+    public void ReturnCorrectResult_ForNull()
     {
-        ObjectPrinter.For<TestObject>()
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34\r\n" +
-                "\tInt2 = 12"
-            );
+        ObjectPrinter.For<object>().PrintToString(null)
+            .Should().Be("null");
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.PrimitiveAndFinalTypes))]
+    public void ReturnCorrectResult_WithPrimitiveAndFinalTypes<T>(T obj, string expected)
+    {
+        ObjectPrinter.For<T>().PrintToString(obj)
+            .Should().Be(expected);
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.StringMaxLengthConfiguration))]
+    public void ReturnCorrectResult_WithCorrectStringMaxLength(string source, int maxLength, string expected)
+    {
+        ObjectPrinter.For<string>()
+            .Printing<string>().WithMaxLength(maxLength)
+            .PrintToString(source)
+            .Should().Be(expected);
     }
 
     [Test]
-    public void ReturnCorrectResult_WithTypeExcluding()
+    public void ThrowArgumentException_OnSetNegativeStringMaxLength()
     {
-        ObjectPrinter.For<TestObject>()
-            .Exclude<int>()
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34"
-            );
+        ObjectPrinter.For<string>().Printing<string>()
+            .Invoking(cfg => cfg.WithMaxLength(-5))
+            .Should().Throw<ArgumentException>();
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithMemberExcluding()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.CultureConfiguration))]
+    public void ReturnCorrectResult_WithCultureConfiguration<T>(T obj, CultureInfo cultureInfo, string expected)
     {
-        ObjectPrinter.For<TestObject>()
-            .Exclude(o => o.Int2)
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34"
-            );
+        ObjectPrinter.For<T>()
+            .Printing<float>().WithCulture(cultureInfo)
+            .Printing<double>().WithCulture(cultureInfo)
+            .Printing<DateTime>().WithCulture(cultureInfo)
+            .PrintToString(obj)
+            .Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithTypePrintingConfigured()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.RoundingConfiguration))]
+    public void ReturnCorrectResult_WithRounding<T>(T obj, int decimalPartLength, string expected)
     {
-        ObjectPrinter.For<TestObject>()
-            .Printing<double>().Using(_ => "X")
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = X\r\n" +
-                "\tInt2 = 12"
-            );
+        ObjectPrinter.For<T>()
+            .Printing<float>().WithRounding(decimalPartLength)
+            .Printing<double>().WithRounding(decimalPartLength)
+            .PrintToString(obj)
+            .Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithMemberPrintingConfigured()
+    [TestCase(1f, TestName = "Float")]
+    [TestCase(1d, TestName = "Double")]
+    public void ThrowArgumentException_OnSetNegativeDecimalPartLength<T>(T instance)
     {
-        ObjectPrinter.For<TestObject>()
-            .Printing(o => o.Int1).Using(_ => "X")
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = X\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34\r\n" +
-                "\tInt2 = 12"
-            );
+        ObjectPrinter.For<double>().Printing<float>()
+            .Invoking(cfg => cfg.WithRounding(-1))
+            .Should().Throw<ArgumentException>();
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithStringLengthCut()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.TestObjectPrintConfiguration))]
+    public void ReturnCorrectResult_ForUserObjectWithConfiguration<T>(
+        Func<T> objProvider,
+        Func<IPrintingConfig<T>, IPrintingConfig<T>> cfg,
+        string expected
+    )
     {
-        ObjectPrinter.For<TestObject>()
-            .Printing<string>().WithMaxLength(1)
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = a\r\n" +
-                "\tDouble = 12.34\r\n" +
-                "\tInt2 = 12"
-            );
+        cfg(ObjectPrinter.For<T>())
+            .PrintToString(objProvider())
+            .Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithStringLengthCutLongerThanSource()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.OneLineEnumerable))]
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.MultilineEnumerable))]
+    public void ReturnCorrectResult_ForEnumerable<T>(T obj, string expected)
+        where T : IEnumerable
     {
-        ObjectPrinter.For<TestObject>()
-            .Printing<string>().WithMaxLength(10)
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34\r\n" +
-                "\tInt2 = 12"
-            );
+        ObjectPrinter.For<T>()
+            .PrintToString(obj)
+            .Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnCorrectResult_WithCulture()
-    {
-        ObjectPrinter.For<TestObject>()
-            .Printing<double>().WithCulture(CultureInfo.GetCultureInfoByIetfLanguageTag("Ru"))
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12,34\r\n" +
-                "\tInt2 = 12"
-            );
-    }
 
-    [Test]
-    public void ReturnCorrectResult_WithRounding()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.LoopReferences))]
+    public void ReturnCorrectResult_LoopReferences<T>(Func<T> objProvider, string expected)
     {
-        ObjectPrinter.For<TestObject>()
-            .Printing<double>().WithRounding(1)
-            .PrintToString(CreateTestObject()).Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.3\r\n" +
-                "\tInt2 = 12"
-            );
-    }
-
-    [Test]
-    public void ReturnCorrectResult_WithOneLineValuesArray()
-    {
-        ObjectPrinter.For<int[]>().PrintToString(new[] {1, 2, 3})
-            .Should().Be("[1, 2, 3]");
-    }
-
-    [Test]
-    public void ReturnCorrectResult_WithMultilineValuesArray()
-    {
-        ObjectPrinter.For<TestObject[]>().PrintToString(new[]
-            {
-                CreateTestObject(),
-                CreateTestObject()
-            })
-            .Should().Be("[\r\n" +
-                         "\tTestObject\r\n" +
-                         "\t\tInt1 = 10\r\n" +
-                         "\t\tStr = abc\r\n" +
-                         "\t\tDouble = 12.34\r\n" +
-                         "\t\tInt2 = 12\r\n" +
-                         "\tTestObject\r\n" +
-                         "\t\tInt1 = 10\r\n" +
-                         "\t\tStr = abc\r\n" +
-                         "\t\tDouble = 12.34\r\n" +
-                         "\t\tInt2 = 12\r\n" +
-                         "]");
-    }
-
-    [Test]
-    public void ReturnCorrectResult_WithNestedMultilineValuesArray()
-    {
-        ObjectPrinter.For<TestObject[][]>().PrintToString(new[]
-            {
-                new[]
-                {
-                    CreateTestObject(),
-                    CreateTestObject()
-                }
-            })
-            .Should().Be("[\r\n" +
-                         "\t[\r\n" +
-                         "\t\tTestObject\r\n" +
-                         "\t\t\tInt1 = 10\r\n" +
-                         "\t\t\tStr = abc\r\n" +
-                         "\t\t\tDouble = 12.34\r\n" +
-                         "\t\t\tInt2 = 12\r\n" +
-                         "\t\tTestObject\r\n" +
-                         "\t\t\tInt1 = 10\r\n" +
-                         "\t\t\tStr = abc\r\n" +
-                         "\t\t\tDouble = 12.34\r\n" +
-                         "\t\t\tInt2 = 12\r\n" +
-                         "\t]\r\n" +
-                         "]");
-    }
-
-    [Test]
-    public void ReturnCorrectResult_WithOneLineDictionaryValues()
-    {
-        var obj = new Dictionary<TestObject, TestObject>
-        {
-            {
-                CreateTestObject(),
-                CreateTestObject()
-            }
-        };
-        ObjectPrinter.For<Dictionary<TestObject, TestObject>>().PrintToString(obj)
-            .Should().Be("[\r\n" +
-                         "\t{\r\n" +
-                         "\t\tTestObject\r\n" +
-                         "\t\t\tInt1 = 10\r\n" +
-                         "\t\t\tStr = abc\r\n" +
-                         "\t\t\tDouble = 12.34\r\n" +
-                         "\t\t\tInt2 = 12:\r\n" +
-                         "\t\tTestObject\r\n" +
-                         "\t\t\tInt1 = 10\r\n" +
-                         "\t\t\tStr = abc\r\n" +
-                         "\t\t\tDouble = 12.34\r\n" +
-                         "\t\t\tInt2 = 12\r\n" +
-                         "\t}\r\n" +
-                         "]");
-    }
-
-    [Test]
-    public void ReturnCorrectResult_WithMultilineDictionaryValues()
-    {
-        ObjectPrinter.For<Dictionary<int, string>>()
-            .PrintToString(new Dictionary<int, string> {{1, "a"}, {2, "b"}, {3, "c"}})
-            .Should().Be("[{1: a}, {2: b}, {3: c}]");
-    }
-
-    [Test]
-    public void ReturnCorrectResult_LoopReferences()
-    {
-        var cyclic1 = new CyclicTestObject {Str = "abc"};
-        var cyclic2 = new CyclicTestObject {Str = "def", TestObject = cyclic1};
-        cyclic1.TestObject = cyclic2;
-
-        ObjectPrinter.For<CyclicTestObject>()
-            .PrintToString(cyclic1)
-            .Should().Be("CyclicTestObject\r\n" +
-                         "\tStr = abc\r\n" +
-                         "\tTestObject = CyclicTestObject\r\n" +
-                         "\t\tStr = def\r\n" +
-                         "\t\tTestObject = [Loop reference]");
+        var result = ObjectPrinter.For<T>().PrintToString(objProvider());
+        result.Should().Be(expected);
+        Console.WriteLine(result);
     }
 }

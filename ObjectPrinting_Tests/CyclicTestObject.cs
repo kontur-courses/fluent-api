@@ -2,6 +2,8 @@
 
 public class CyclicTestObject
 {
-    public string Str { get; set; }
-    public CyclicTestObject TestObject { get; set; }
+    public int Number { get; set; }
+    public CyclicTestObject Child1 { get; set; }
+    public CyclicTestObject Child2 { get; set; }
+    public CyclicTestObject Child3 { get; set; }
 }

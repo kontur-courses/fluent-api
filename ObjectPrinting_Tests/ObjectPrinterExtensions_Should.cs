@@ -1,47 +1,69 @@
-﻿using ObjectPrinting;
+﻿using System.Collections;
+using System.Globalization;
+using ObjectPrinting;
+using ObjectPrinting.Abstractions.Configs;
 
 namespace ObjectPrinting_Tests;
 
+[TestFixture, Parallelizable]
 public class ObjectPrinterExtensions_Should
 {
-    private TestObject _defTestObj = null!;
-
-    [SetUp]
-    public void SetUp()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.PrimitiveAndFinalTypes))]
+    public void ReturnCorrectResult_WithPrimitiveAndFinalTypes<T>(T obj, string expected)
     {
-        _defTestObj = new TestObject
-        {
-            Int1 = 10,
-            Int2 = 12,
-            Double = 12.34,
-            Str = "abc"
-        };
+        obj.PrintToString().Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnDefaultPrint_WithoutConfig()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.StringMaxLengthConfiguration))]
+    public void ReturnCorrectResult_WithCorrectStringMaxLength(string source, int maxLength, string expected)
     {
-        _defTestObj.PrintToString()
-            .Should().Be(
-                "TestObject\r\n" +
-                "\tInt1 = 10\r\n" +
-                "\tStr = abc\r\n" +
-                "\tDouble = 12.34\r\n" +
-                "\tInt2 = 12"
-            );
+        source.PrintToString(cfg => cfg.Printing<string>().WithMaxLength(maxLength))
+            .Should().Be(expected);
     }
 
-    [Test]
-    public void ReturnCorrectPrint_WithConfig()
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.CultureConfiguration))]
+    public void ReturnCorrectResult_WithCultureConfiguration<T>(T obj, CultureInfo cultureInfo, string expected)
     {
-        _defTestObj.PrintToString(cfg => cfg
-            .Exclude<int>()
-            .Printing(obj => obj.Double).Using(_ => "X")
-            .Printing<string>().WithMaxLength(2)
-        ).Should().Be(
-            "TestObject\r\n" +
-            "\tStr = ab\r\n" +
-            "\tDouble = X"
-        );
+        obj.PrintToString(cfg => cfg
+            .Printing<float>().WithCulture(cultureInfo)
+            .Printing<double>().WithCulture(cultureInfo)
+            .Printing<DateTime>().WithCulture(cultureInfo)
+        ).Should().Be(expected);
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.RoundingConfiguration))]
+    public void ReturnCorrectResult_WithRounding<T>(T obj, int decimalPartLength, string expected)
+    {
+        obj.PrintToString(cfg => cfg
+            .Printing<float>().WithRounding(decimalPartLength)
+            .Printing<double>().WithRounding(decimalPartLength)
+        ).Should().Be(expected);
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.TestObjectPrintConfiguration))]
+    public void ReturnCorrectResult_ForUserObjectWithConfiguration<T>(
+        Func<T> objProvider,
+        Func<IPrintingConfig<T>, IPrintingConfig<T>> cfg,
+        string expected
+    )
+    {
+        objProvider().PrintToString(cfg)
+            .Should().Be(expected);
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.OneLineEnumerable))]
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.MultilineEnumerable))]
+    public void ReturnCorrectResult_ForEnumerable<T>(T obj, string expected)
+        where T : IEnumerable
+    {
+        obj.PrintToString().Should().Be(expected);
+    }
+
+    [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.LoopReferences))]
+    public void ReturnCorrectResult_LoopReferences<T>(Func<T> objProvider, string expected)
+    {
+        var result = objProvider().PrintToString();
+        result.Should().Be(expected);
+        Console.WriteLine(result);
     }
 }

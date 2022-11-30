@@ -7,28 +7,23 @@ namespace ObjectPrinting;
 
 public static class ObjectPrinter
 {
-    private static IWindsorContainer? _container;
+    private static readonly IWindsorContainer Container;
 
     public static IPrintingConfig<T> For<T>() =>
-        CreateConfig<T>();
+        Container.Resolve<IPrintingConfig<T>>();
 
-    private static IPrintingConfig<T> CreateConfig<T>()
+    static ObjectPrinter()
     {
-        if (_container is null)
-        {
-            _container = new WindsorContainer();
-            var kernel = _container.Kernel;
-            kernel.Resolver.AddSubResolver(new CollectionResolver(kernel, true));
+        Container = new WindsorContainer();
+        var kernel = Container.Kernel;
+        kernel.Resolver.AddSubResolver(new CollectionResolver(kernel, true));
 
-            _container.Register(
-                Classes.FromAssemblyContaining(typeof(ObjectPrinter))
-                    .Where(component =>
-                        component.Namespace is not null && component.Namespace.Contains(nameof(Implementations)))
-                    .WithService.AllInterfaces()
-                    .LifestyleTransient()
-            );
-        }
-
-        return _container.Resolve<IPrintingConfig<T>>();
+        Container.Register(
+            Classes.FromAssemblyContaining(typeof(ObjectPrinter))
+                .Where(component =>
+                    component.Namespace is not null && component.Namespace.Contains(nameof(Implementations)))
+                .WithService.AllInterfaces()
+                .LifestyleTransient()
+        );
     }
 }
