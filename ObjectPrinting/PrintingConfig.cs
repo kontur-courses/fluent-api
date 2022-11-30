@@ -93,15 +93,39 @@ namespace ObjectPrinting
             return stringBuilder.ToString();
         }
 
-        public object SerializeProperty(PropertyInfo propertyInfo, object obj)
+        private object SerializeProperty(PropertyInfo propertyInfo, object obj)
         {
             Func<object, object> defaultPrint = (value) => value;
             var print = configurations.SerializationOfProperties.GetValueOrDefault(propertyInfo)
                 ?? configurations.SerializationOfTypes.GetValueOrDefault(propertyInfo.PropertyType)
+                ?? TryGetCollectionPrint(propertyInfo)
                 ?? defaultPrint;
 
             var value = propertyInfo.GetValue(obj);
+            if (value is null) return null;
             return print.Method.Invoke(print.Target, new object[] { value });
         }
+
+        private Func<object, object> TryGetCollectionPrint(PropertyInfo propertyInfo)
+        {
+            if (IsCollection(propertyInfo.PropertyType))
+            {
+                return (collection) =>
+                {
+                    var elements = string.Join(", ", (collection as ICollection).Cast<object>());
+                    if (IsDictionary(propertyInfo.PropertyType))
+                    {
+                        var keyValuePairs = (collection as IDictionary).Cast()
+                            .Select(entry => $"[{entry.Key}] = {entry.Value}");
+                        elements = string.Join(", ", keyValuePairs);
+                    }
+                    return $"[{elements}]";
+                };
+            }
+            return null;
+        }
+
+        private bool IsDictionary(Type type) => typeof(IDictionary).IsAssignableFrom(type);
+        private bool IsCollection(Type type) => typeof(ICollection).IsAssignableFrom(type);
     }
 }
