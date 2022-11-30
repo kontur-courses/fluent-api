@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using NUnit.Framework;
 using ObjectPrinting.ObjectConfiguration.Implementation;
 
 namespace ObjectPrinting;
@@ -11,6 +14,11 @@ public class PrintingConfig<TOwner>
     private readonly Type[] finalTypes = {
         typeof(int), typeof(double), typeof(float), typeof(string),
         typeof(DateTime), typeof(TimeSpan)
+    };
+
+    private readonly Type[] collectionTypes =
+    {
+        typeof(Array), typeof(int[])
     };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
@@ -27,6 +35,8 @@ public class PrintingConfig<TOwner>
             return "null" + Environment.NewLine;
 
         var type = obj.GetType();
+        if (collectionTypes.Contains(type))
+            CollectionToString(obj as Array);
         var result = obj + Environment.NewLine;
         if (configuration.TypeConfigs.ContainsKey(type))
             result = configuration.TypeConfigs[type].Aggregate(result, (current, func) => func(current));
@@ -49,6 +59,19 @@ public class PrintingConfig<TOwner>
             sb.Append(identation + propertyInfo.Name + " = " + value);
         }
 
+        return sb.ToString();
+    }
+
+    private string CollectionToString(Array array)
+    {
+        var sb = new StringBuilder();
+        sb.Append("[");
+        foreach (var item in array)
+        {
+            sb.Append($"{item}, ");
+        }
+
+        sb.Append("]");
         return sb.ToString();
     }
 }

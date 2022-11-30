@@ -14,10 +14,10 @@ public class TypeConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
         this.objectConfiguration = objectConfiguration;
     }
 
-    public IObjectConfiguration<TOwner> Configure(Func<string, string> func)
+    public IObjectConfiguration<TOwner> Configure(Func<object, string> func)
     {
         if (!objectConfiguration.TypeConfigs.ContainsKey(typeof(T)))
-            objectConfiguration.TypeConfigs.Add(typeof(T), new List<Func<string, string>>());
+            objectConfiguration.TypeConfigs.Add(typeof(T), new List<Func<object, string>>());
         
         objectConfiguration.TypeConfigs[typeof(T)].Add(func);
         return objectConfiguration;

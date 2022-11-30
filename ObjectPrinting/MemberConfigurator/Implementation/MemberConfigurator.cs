@@ -18,10 +18,10 @@ public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
         this.memberInfo = memberInfo;
     }
 
-    public IObjectConfiguration<TOwner> Configure(Func<string, string> func)
+    public IObjectConfiguration<TOwner> Configure(Func<object, string> func)
     {
         if (!objectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
-            objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<string, string>>());
+            objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<object, string>>());
 
         objectConfiguration.MemberInfoConfigs[memberInfo].Add(func);
         return objectConfiguration;

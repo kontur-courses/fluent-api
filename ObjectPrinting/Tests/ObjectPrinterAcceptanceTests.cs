@@ -15,10 +15,10 @@ namespace ObjectPrinting.Tests
             var person = new Person {Name = "Alex", Age = 19};
             var collections = new Collections
             {
-                Arr = new[] {1, 2, 3}, Lis = new List<string>() {"dafs", "fkda;", "fdjai"},
-                Dict = new Dictionary<int, double>() {{1, 2d}, {2, 3d}, {3, 4d}}
+                Arr = new[] {1, 2, 3}, Lis = new List<string> {"dafs", "fkda;", "fdjai"},
+                // Dict = new Dictionary<int, double> {{1, 2d}, {2, 3d}, {3, 4d}}
             };
-            // var printerCol = ObjectConfig.For<Collections>().Build();
+            var printerCol = ObjectConfig.For<Collections>().Build();
 
             var printer = ObjectConfig.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа !
@@ -33,8 +33,8 @@ namespace ObjectPrinting.Tests
                 .Exclude(p => p.Height)
                 .Build();
 
-            // var s = printerCol.PrintToString(collections);
-            // Console.WriteLine(s);
+            var s = printerCol.PrintToString(collections);
+            Console.WriteLine(s);
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);

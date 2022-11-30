@@ -9,15 +9,15 @@ namespace ObjectPrinting.ObjectConfiguration.Implementation;
 
 public class ObjectConfiguration<TOwner> : IObjectConfiguration<TOwner>
 {
-    public Dictionary<MemberInfo, List<Func<string, string>>> MemberInfoConfigs { get; }
-    public Dictionary<Type, List<Func<string, string>>> TypeConfigs { get; }
+    public Dictionary<MemberInfo, List<Func<object, string>>> MemberInfoConfigs { get; }
+    public Dictionary<Type, List<Func<object, string>>> TypeConfigs { get; }
     public HashSet<Type> ExcludedTypes { get; }
     public HashSet<MemberInfo> ExcludedMembers { get; }
 
     public ObjectConfiguration()
     {
-        MemberInfoConfigs = new Dictionary<MemberInfo, List<Func<string, string>>>();
-        TypeConfigs = new Dictionary<Type, List<Func<string, string>>>();
+        MemberInfoConfigs = new Dictionary<MemberInfo, List<Func<object, string>>>();
+        TypeConfigs = new Dictionary<Type, List<Func<object, string>>>();
         ExcludedTypes = new HashSet<Type>();
         ExcludedMembers = new HashSet<MemberInfo>();
     }
