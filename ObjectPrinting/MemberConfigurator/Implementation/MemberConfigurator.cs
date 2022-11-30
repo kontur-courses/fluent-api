@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using ObjectPrinting.ObjectConfiguration;
@@ -7,31 +9,31 @@ namespace ObjectPrinting.MemberConfigurator.Implementation;
 
 public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
 {
-    private ObjectConfiguration<TOwner> ObjectConfiguration { get; }
+    private readonly ObjectConfiguration<TOwner> objectConfiguration;
     
     private readonly MemberInfo memberInfo;
     
     public MemberConfigurator(ObjectConfiguration<TOwner> objectConfiguration, MemberInfo memberInfo)
     {
-        ObjectConfiguration = objectConfiguration;
+        this.objectConfiguration = objectConfiguration;
         this.memberInfo = memberInfo;
     }
     
     public IObjectConfiguration<TOwner> Configure(CultureInfo cultureInfo)
     {
-        if (!ObjectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
-            ObjectConfiguration.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
-        
-        ObjectConfiguration.MemberInfoConfigs[memberInfo].CultureInfo = cultureInfo;
-        return ObjectConfiguration;
+        if (!objectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
+            objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<string, string>>());
+
+        objectConfiguration.MemberInfoConfigs[memberInfo].Add(s => s.ToString(cultureInfo));
+        return objectConfiguration;
     }
 
     public IObjectConfiguration<TOwner> Configure(int length)
     {
-        if (!ObjectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
-            ObjectConfiguration.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
-        
-        ObjectConfiguration.MemberInfoConfigs[memberInfo].TrimLength = length;
-        return ObjectConfiguration;
+        if (!objectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
+            objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<string, string>>());
+
+        objectConfiguration.MemberInfoConfigs[memberInfo].Add(s => s[..length]);
+        return objectConfiguration;
     }
 }
