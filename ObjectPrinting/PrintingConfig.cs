@@ -19,7 +19,7 @@ namespace ObjectPrinting
             finalTypes = new Type[] 
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
         }
 
@@ -75,6 +75,12 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return Convert.ToString(obj, culture);
 
+            if (IsCollection(type))
+            {
+                var print = TryGetCollectionPrint(obj);
+                return print.Method.Invoke(print.Target, new[] { obj }).ToString();
+            }
+
             var identation = new string('\t', nestingLevel + 1);
             var stringBuilder = new StringBuilder().AppendLine(type.Name);
 
@@ -106,14 +112,14 @@ namespace ObjectPrinting
             return print.Method.Invoke(print.Target, new object[] { value });
         }
 
-        private Func<object, object> TryGetCollectionPrint(PropertyInfo propertyInfo)
+        private Func<object, object> TryGetCollectionPrint(object obj)
         {
-            if (IsCollection(propertyInfo.PropertyType))
+            if (IsCollection(obj.GetType()))
             {
                 return (collection) =>
                 {
                     var elements = string.Join(", ", (collection as ICollection).Cast<object>());
-                    if (IsDictionary(propertyInfo.PropertyType))
+                    if (IsDictionary(obj.GetType()))
                     {
                         var keyValuePairs = (collection as IDictionary).Cast()
                             .Select(entry => $"[{entry.Key}] = {entry.Value}");
