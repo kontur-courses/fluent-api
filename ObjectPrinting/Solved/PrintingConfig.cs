@@ -6,6 +6,14 @@ using System.Reflection;
 
 namespace ObjectPrinting.Solved;
 
+public static class PrintingConfig
+{
+    public static PrintingConfig<T> For<T>()
+    {
+        return new PrintingConfig<T>();
+    }
+}
+
 public class PrintingConfig<TOwner>
 {
     private readonly Dictionary<string, Func<object, string>> _alternativePropertiesPrints = new();
@@ -14,8 +22,14 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig()
     {
-        _members.AddRange(typeof(TOwner).GetProperties());
-        _members.AddRange(typeof(TOwner).GetFields());
+        _members.AddRange(typeof(TOwner).GetProperties(BindingFlags.Public | BindingFlags.Instance));
+        _members.AddRange(typeof(TOwner).GetFields(BindingFlags.Public | BindingFlags.Instance));
+    }
+
+    public PrintingConfig(TOwner obj)
+    {
+        _members.AddRange(obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance));
+        _members.AddRange(obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance));
     }
 
     public IReadOnlyDictionary<string, Func<object, string>> AlternativePropertiesPrints =>
@@ -27,7 +41,7 @@ public class PrintingConfig<TOwner>
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        var name = GetMemberNameFromExpression(memberSelector.Body);
+        var name = MemberInfoHelper.GetMemberNameFromExpression(memberSelector.Body);
         var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
         _alternativePropertiesPrints[name] = propertyConfig.AlternativePrintInvoke;
         return propertyConfig;
@@ -43,7 +57,7 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        var name = GetMemberNameFromExpression(memberSelector.Body);
+        var name = MemberInfoHelper.GetMemberNameFromExpression(memberSelector.Body);
         _members.RemoveAll(property => property.Name == name);
         return this;
     }
@@ -51,24 +65,7 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
         var type = typeof(TPropType);
-        _members.RemoveAll(member => GetTypeFromMemberInfo(member) == type);
+        _members.RemoveAll(member => MemberInfoHelper.GetTypeFromMemberInfo(member) == type);
         return this;
-    }
-
-    private string GetMemberNameFromExpression(Expression expression)
-    {
-        if (expression is MemberExpression memberSelector)
-            return memberSelector.Member.Name;
-        throw new ArgumentException($"Can't convert {expression} to MemberExpression.");
-    }
-
-    private Type GetTypeFromMemberInfo(MemberInfo memberInfo)
-    {
-        return memberInfo switch
-        {
-            FieldInfo fieldInfo => fieldInfo.FieldType,
-            PropertyInfo propertyInfo => propertyInfo.PropertyType,
-            _ => throw new ArgumentException("Member is not a field or a property!")
-        };
     }
 }
