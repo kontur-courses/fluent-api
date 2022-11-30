@@ -49,7 +49,7 @@ namespace ObjectPrinting
             if (!serializers.ContainsKey(propertyName))
                 serializers.Add(propertyName, func);
             else
-                serializers[propertyName] = Delegate.Combine(func, (Delegate)serializers[propertyName]);
+                serializers[propertyName] = Delegate.Combine((Delegate)serializers[propertyName], func);
         }
         
         private void UsingToType(Func<TProperty, string> func)
