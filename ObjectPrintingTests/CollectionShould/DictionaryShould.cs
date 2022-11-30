@@ -1,35 +1,10 @@
-﻿
-
-using System.Reflection;
-
-namespace ObjectPrintingTests.CollectionShould
+﻿namespace ObjectPrintingTests.CollectionShould
 {
-    [TestFixture]
     public class DictionaryShould
     {
         private string printedString;
-        public Vehicle VehicleCar;
-        private Person simplePerson;
-        private Person childPerson;
         private PrintingConfig<Dictionary<object, object>> printer;
 
-        [SetUp]
-        public void SetUp()
-        {
-            VehicleCar = new Vehicle("Audi", 230, 1400, 2005);
-
-            simplePerson = new Person() { Age = 35, Height = 155, Id = new Guid(), Name = "Anna", Car = VehicleCar };
-            childPerson = new Person()
-            {
-                Age = 8,
-                Height = 86.34,
-                Id = new Guid(),
-                Name = "Seraphina",
-                Parent = simplePerson
-            };
-            printedString = null;
-
-        }
 
         [TearDown]
         public void TearDown()

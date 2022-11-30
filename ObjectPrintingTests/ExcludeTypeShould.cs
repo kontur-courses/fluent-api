@@ -1,12 +1,10 @@
 ﻿namespace ObjectPrintingTests
 {
-    [TestFixture]
     public class ExcludeTypeShould
     {
         private string printedString;
         public Vehicle VehicleCar;
         private Person simplePerson;
-        private Person childPerson;
         private PrintingConfig<Person> printer;
 
 
@@ -16,14 +14,6 @@
             printer = ObjectPrinter.For<Person>();
             VehicleCar = new Vehicle("Audi", 230, 1400, 2005);
             simplePerson = new Person() { Age = 35, Height = 155, Id = new Guid(), Name = "Anna", Car = VehicleCar };
-            childPerson = new Person()
-            {
-                Age = 8,
-                Height = 86.34,
-                Id = new Guid(),
-                Name = "Seraphina",
-                Parent = simplePerson
-            };
             printedString = null;
         }
 

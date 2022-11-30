@@ -2,14 +2,13 @@
 
 namespace ObjectPrintingTests
 {
-    [TestFixture]
     public class FormattableCultureShould
     {
         private string printedString;
-        private static CultureInfo ruCultureInfo = new ("ru");
-        private static CultureInfo enCultureInfo = new ("en");
-        private static CultureInfo euCultureInfo = new ("eu");
-        private static DateTime time= new (2022,11,29,13,34,56);
+        private static CultureInfo ruCultureInfo = new("ru");
+        private static CultureInfo enCultureInfo = new("en");
+        private static CultureInfo euCultureInfo = new("eu");
+        private static DateTime time = new(2022, 11, 29, 13, 34, 56);
 
         [SetUp]
         public void SetUp()
@@ -32,6 +31,7 @@ namespace ObjectPrintingTests
             printedString = printer.PrintToString(1.2);
             printedString.Should().Contain(",");
         }
+
         [Test]
         public void ChangeNumberFormat_WhenCurrentCultureIsUs()
         {
@@ -49,6 +49,7 @@ namespace ObjectPrintingTests
             printedString = printer.PrintToString(time);
             printedString.Should().Contain("2022/11/29 13:34:56");
         }
+
         [Test]
         public void ChangeDateFormat_WhenCurrentCultureIsUS()
         {
@@ -57,6 +58,7 @@ namespace ObjectPrintingTests
             printedString = printer.PrintToString(time);
             printedString.Should().Contain("11/29/2022 1:34:56 PM");
         }
+
         [Test]
         public void ChangeDateFormat_WhenCurrentCultureIsRU()
         {

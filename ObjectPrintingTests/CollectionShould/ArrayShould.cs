@@ -1,36 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using ObjectPrinting;
-using ObjectPrintingTests.TestClasses;
-using System;
-
-namespace ObjectPrintingTests.CollectionShould
+﻿namespace ObjectPrintingTests.CollectionShould
 {
-    [TestFixture]
     public class ArrayShould
     {
         private string printedString;
-        public Vehicle VehicleCar;
-        private Person simplePerson;
-        private Person childPerson;
         private PrintingConfig<object[]> printer;
-
-        [SetUp]
-        public void SetUp()
-        {
-            VehicleCar = new Vehicle("Audi", 230, 1400, 2005);
-
-            simplePerson = new Person() { Age = 35, Height = 155, Id = new Guid(), Name = "Anna", Car = VehicleCar };
-            childPerson = new Person()
-            {
-                Age = 8,
-                Height = 86.34,
-                Id = new Guid(),
-                Name = "Seraphina",
-                Parent = simplePerson
-            };
-            printedString = null;
-
-        }
 
         [TearDown]
         public void TearDown()
@@ -120,6 +93,5 @@ namespace ObjectPrintingTests.CollectionShould
             AssertThatArrayContainCollection(persons,
                 "[Person; Name = Sirgey; Age = 22; HaveCar = True; Car = Vehicle; CarNumber = 0; BrandAuto = BMW; Power = 230; Weight = 1500; AgeOfCar = 19]");
         }
-
     }
 }

@@ -6,7 +6,7 @@ namespace ObjectPrinting
 {
     public class PropertyConfig<TOwner, TPropType>  
     {
-        internal PropertyInfo Properties { get; }
+        internal MemberInfo Properties { get; }
         internal PrintingConfig<TOwner> PrintingConfig { get; }
         public PropertyConfig(PrintingConfig<TOwner> printingConfig)
         {
@@ -14,7 +14,7 @@ namespace ObjectPrinting
             Properties = null;
         }
 
-        public PropertyConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo properties)
+        public PropertyConfig(PrintingConfig<TOwner> printingConfig, MemberInfo properties)
         {
             PrintingConfig = printingConfig;
             Properties = properties;

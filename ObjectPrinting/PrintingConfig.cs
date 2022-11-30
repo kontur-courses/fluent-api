@@ -17,18 +17,18 @@ namespace ObjectPrinting
 
         private int nestingCollection;
         private readonly HashSet<Type> excludingTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> excludingProperties = new HashSet<PropertyInfo>();
+        private readonly HashSet<MemberInfo> excludingProperties = new HashSet<MemberInfo>();
         internal readonly Dictionary<Type, Delegate> TypesForPrintWithSpec = new Dictionary<Type, Delegate>();
 
-        internal readonly Dictionary<PropertyInfo, Delegate> PropertiesForPrintWithSpec =
-            new Dictionary<PropertyInfo, Delegate>();
+        internal readonly Dictionary<MemberInfo, Delegate> PropertiesForPrintWithSpec =
+            new Dictionary<MemberInfo, Delegate>();
 
         private readonly HashSet<object> printedObjects = new HashSet<object>();
-        internal readonly Dictionary<PropertyInfo, int> PropertyLenForString = new Dictionary<PropertyInfo, int>();
+        internal readonly Dictionary<MemberInfo, int> PropertyLenForString = new Dictionary<MemberInfo, int>();
 
-        private static PropertyInfo GetPropertyInfoFromExpression<TPropType>(
+        private static MemberInfo GetPropertyInfoFromExpression<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector) =>
-            ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
+            ((MemberExpression)memberSelector.Body).Member as MemberInfo;
 
         private string GetIDictionaryString(IDictionary iDictionary, int nestingLevel, int maxNesting)
         {
@@ -54,7 +54,7 @@ namespace ObjectPrinting
         }
 
         private string GetValueString(object obj, int nestingLevel, int maxNesting, string newLine = null,
-            PropertyInfo property = null)
+            MemberInfo property = null)
         {
             newLine ??= Environment.NewLine;
             if (TryGetDefaultString(obj, property, out var valueString, newLine))
@@ -71,8 +71,11 @@ namespace ObjectPrinting
             if (printedObjects.Contains(obj))
                 return "Cyclic reference" + newLine;
             var tString = newLine == Environment.NewLine ? new string('\t', nestingLevel + 1) : "; ";
-            foreach (var propertyInfo in type.GetProperties())
-                if (exType || AppendProperty(obj, nestingLevel, maxNesting, newLine, propertyInfo, stringBuilder,
+            var fieldsAndProperties = type.GetProperties()
+                .Select(x => (MemberInfo)x)
+                .Concat(type.GetFields());
+            foreach (var fieldInfo in fieldsAndProperties)
+                if (exType || AppendFieldOrProperty(obj, nestingLevel, maxNesting, newLine, fieldInfo, stringBuilder,
                         tString))
                     break;
             return stringBuilder.ToString();
@@ -85,24 +88,52 @@ namespace ObjectPrinting
                    || specialFinalTypes.Contains(type);
         }
 
-        private bool AppendProperty(object obj, int nestingLevel, int maxNesting, string newLine,
-            PropertyInfo propertyInfo,
+        private bool AppendFieldOrProperty(object obj, int nestingLevel, int maxNesting, string newLine,
+            MemberInfo memberInfo,
             StringBuilder stringBuilder, string tString)
         {
             if (!obj.GetType().IsPrimitive)
                 printedObjects.Add(obj);
             if (nestingLevel == maxNesting)
                 return true;
-            if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperties.Contains(propertyInfo))
-                return false;
-            var value = GetValueString(propertyInfo.GetValue(obj), nestingLevel + 1, maxNesting, newLine, propertyInfo);
+            var value = "";
+            switch (memberInfo)
+            {
+                case FieldInfo fieldInfo
+                    when !TryAppendField(obj, nestingLevel, maxNesting, newLine, fieldInfo, out value):
+                case PropertyInfo propertyInfo
+                    when !TryAppendProperty(obj, nestingLevel, maxNesting, newLine, propertyInfo, out value):
+                    return false;
+            }
+
             if (string.IsNullOrEmpty(value)) return false;
-            AppendLineToStringBuilder(stringBuilder, tString, propertyInfo, value);
+            AppendLineToStringBuilder(stringBuilder, tString, memberInfo, value);
             return false;
         }
 
-        private static void AppendLineToStringBuilder(StringBuilder stringBuilder, string tString,
+        private bool TryAppendField(object obj, int nestingLevel, int maxNesting, string newLine, FieldInfo fieldInfo,
+            out string value)
+        {
+            value = null;
+            if (excludingTypes.Contains(fieldInfo.FieldType) || excludingProperties.Contains(fieldInfo))
+                return false;
+            value = GetValueString(fieldInfo.GetValue(obj), nestingLevel + 1, maxNesting, newLine, fieldInfo);
+            return true;
+        }
+
+        private bool TryAppendProperty(object obj, int nestingLevel, int maxNesting, string newLine,
             PropertyInfo propertyInfo,
+            out string value)
+        {
+            value = null;
+            if (excludingTypes.Contains(propertyInfo.PropertyType) || excludingProperties.Contains(propertyInfo))
+                return false;
+            value = GetValueString(propertyInfo.GetValue(obj), nestingLevel + 1, maxNesting, newLine, propertyInfo);
+            return true;
+        }
+
+        private static void AppendLineToStringBuilder(StringBuilder stringBuilder, string tString,
+            MemberInfo propertyInfo,
             string value)
         {
             stringBuilder.Append(tString);
@@ -127,13 +158,12 @@ namespace ObjectPrinting
             return false;
         }
 
-        private bool TryGetDefaultString(object obj, PropertyInfo property, out string valueString, string newLine)
+        private bool TryGetDefaultString(object obj, MemberInfo property, out string valueString, string newLine)
         {
             valueString = null;
             if (obj is null)
                 return true;
             var objType = obj.GetType();
-
             if (!IsSimple(objType))
                 return false;
             var isTrimmed = TryTrimString(obj, property, ref valueString);
@@ -142,7 +172,7 @@ namespace ObjectPrinting
             return true;
         }
 
-        private string GetString(object obj, string valueString, Type objType, PropertyInfo property, bool isTrimmed)
+        private string GetString(object obj, string valueString, Type objType, MemberInfo property, bool isTrimmed)
         {
             if (property != null && PropertiesForPrintWithSpec.ContainsKey(property))
                 valueString = DynamicInvokePropertiesPrint(isTrimmed ? valueString : obj, property);
@@ -153,7 +183,7 @@ namespace ObjectPrinting
             return valueString;
         }
 
-        private string DynamicInvokePropertiesPrint(object valueString, PropertyInfo property)
+        private string DynamicInvokePropertiesPrint(object valueString, MemberInfo property)
         {
             return (string)PropertiesForPrintWithSpec[property].DynamicInvoke(valueString);
         }
@@ -163,7 +193,7 @@ namespace ObjectPrinting
             return (string)TypesForPrintWithSpec[type].DynamicInvoke(valueString);
         }
 
-        private bool TryTrimString(object obj, PropertyInfo property, ref string valueString)
+        private bool TryTrimString(object obj, MemberInfo property, ref string valueString)
         {
             if (property == null || !PropertyLenForString.ContainsKey(property) || !(obj is string s) ||
                 s.Length <= PropertyLenForString[property]) return false;

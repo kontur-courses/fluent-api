@@ -1,6 +1,5 @@
 ﻿namespace ObjectPrintingTests
 {
-    [TestFixture]
     public class TrimStringShould
     {
         private string printedString;
@@ -42,6 +41,7 @@
             printedString = printer.PrintToString(childPerson);
             printedString.Should().Contain("Sera").And.NotContain("Seraphina");
         }
+
         [Test]
         public void PrintString_WhenTrimStringBiggerThanLength()
         {
@@ -49,6 +49,7 @@
             printedString = printer.PrintToString(childPerson);
             printedString.Should().Contain("Seraphina");
         }
+
         [Test]
         public void PrintString_WhenTrimStringBiggerEqualLength()
         {
@@ -56,6 +57,7 @@
             printedString = printer.PrintToString(childPerson);
             printedString.Should().Contain("Seraphina");
         }
+
         [Test]
         public void ThrowException_whenTrimmedLengthIsNegative()
         {

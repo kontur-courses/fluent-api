@@ -2,7 +2,6 @@
 
 namespace ObjectPrintingTests
 {
-    [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
         private string printedString;

@@ -13,7 +13,6 @@
         {
             printer = ObjectPrinter.For<Person>();
             VehicleCar = new Vehicle("Audi", 230, 1400, 2005);
-
             simplePerson = new Person() { Age = 35, Height = 155, Id = new Guid(), Name = "Anna", Car = VehicleCar };
             childPerson = new Person()
             {
@@ -41,6 +40,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Cyclic reference");
         }
+
         [Test]
         public void PrintPersonWithoutExceptions_WhenPersonHaveReferenceOnSelf()
         {
@@ -48,6 +48,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Cyclic reference");
         }
+
         [TestCase(10, TestName = "cyclic reference in iteration 10")]
         [TestCase(50, TestName = "cyclic reference in iteration 50")]
         [TestCase(100, TestName = "cyclic reference in iteration 100")]

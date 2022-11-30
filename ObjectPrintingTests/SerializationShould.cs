@@ -1,6 +1,5 @@
 ﻿namespace ObjectPrintingTests
 {
-    [TestFixture]
     public class SerializationShould
     {
         private string printedString;
@@ -31,6 +30,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("System.Int32");
         }
+
         [Test]
         public void PrintPersonWithSpecialSerialization_WhenTypeInt()
         {
@@ -38,6 +38,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("System.String");
         }
+
         [Test]
         public void PrintPersonWithSpecialSerialization_WhenTypeDouble()
         {
@@ -45,6 +46,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("System.Double");
         }
+
         [Test]
         public void PrintPersonWithSpecialFieldSerialization_WhenPropertyNameString()
         {
@@ -52,6 +54,7 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Anna(Official form)");
         }
+
         [Test]
         public void PrintPersonWithSpecialFieldSerialization_WhenPropertyAgeInt()
         {
@@ -59,10 +62,11 @@
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Age = 35 years");
         }
+
         [Test]
         public void PrintPersonWithSpecialFieldSerialization_WhenPropertyHeightDouble()
         {
-            printer.Printing(x=>x.Height).Using(x => $"{x} cm");
+            printer.Printing(x => x.Height).Using(x => $"{x} cm");
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().Contain("Height = 155 cm");
         }
