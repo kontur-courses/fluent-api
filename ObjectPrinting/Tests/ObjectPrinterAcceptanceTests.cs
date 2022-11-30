@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using NUnit.Framework;
 using FluentAssertions;
@@ -21,7 +22,8 @@ namespace ObjectPrinting.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .SerializeType<string>(x => x.ToUpper())
                 //3. Для числовых типов указать культуру
-                .SetCulture<int>(CultureInfo.CurrentCulture);
+                .SetCulture<int>(CultureInfo.CurrentCulture)
+                .ExcludeProperty(typeof(Person).GetProperty("Name"));
                 //4. Настроить сериализацию конкретного свойства
                 //.SerializeProperty(p.).SetSerialization(x => { })
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
@@ -35,6 +37,60 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+        
+        [Test]
+        public void ExcludePropertyNameAndExcludeTypeInt()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .ExcludeProperty(typeof(Person).GetProperty("Name"))
+                .ExcludeType<int>();
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine;
+            s1.Should().Be(result);
+            //Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void ExcludeProperty_Name()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .ExcludeProperty(typeof(Person).GetProperty("Name"));
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            //Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void SetCulture_Double()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SetCulture<double>(CultureInfo.CurrentCulture);
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            
+            
+            //Console.WriteLine(s1);
         }
 
         [Test]

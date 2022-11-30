@@ -23,6 +23,8 @@ namespace ObjectPrinting
         //и тут бы тоже название свойства
         // public Dictionary<MemberInfo, Func<object, string>> crop = 
         //     new Dictionary<String, Func<object, string>>();
+        
+        private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -34,6 +36,13 @@ namespace ObjectPrinting
             removedTypes.Add(tType);
             return this;
         }
+
+        public PrintingConfig<TOwner> ExcludeProperty(PropertyInfo propertyInfo)
+        {
+            exludingProperty.Add(propertyInfo);
+            return this;
+        }
+            
 
         public PrintingConfig<TOwner> SerializeType<T>(Func<T, string> func)
         {
@@ -52,18 +61,21 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
+            
             if (alternativeSerialization.ContainsKey(type))
                 return alternativeSerialization[type](obj) + Environment.NewLine;
+            
+            if (cultures.ContainsKey(type))
+                return ((IFormattable)obj).ToString(null, cultures[type]) + Environment.NewLine;
+            
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+            
             if (finalTypes.Contains(type))
             {
-                if (cultures.ContainsKey(type))
-                    return ((IFormattable)obj).ToString(null, cultures[type]);
-
                 return obj + Environment.NewLine;
             }
 
@@ -77,20 +89,9 @@ namespace ObjectPrinting
             {
                 if (removedTypes.Contains(propertyInfo.PropertyType))
                     continue;
-                if (alternativeSerialization.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
-                              //alternativeSerialization[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
+                
+                if (exludingProperty.Contains(propertyInfo))
                     continue;
-                }
-
-                if (cultures.ContainsKey(type))
-                {
-                    sb.Append(((IFormattable)propertyInfo.GetValue(obj)!).ToString(null, cultures[type]));
-                    continue;
-                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
