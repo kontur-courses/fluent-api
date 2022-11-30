@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,7 +12,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private const int MaxNestingLevel = 10;
+        private int maxNestingLevel = 10;
         
         #region Fields declaration
 
@@ -40,6 +42,11 @@ namespace ObjectPrinting
 
         #region Printing methods
         
+        /// <summary>
+        /// Метод, котторый позволяет сериализовать объект
+        /// </summary>
+        /// <param name="obj">Объект для сериализации</param>
+        /// <returns>Строковое представление объекта</returns>
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -47,19 +54,83 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (nestingLevel >= MaxNestingLevel)
+            if (nestingLevel >= maxNestingLevel)
                 return "..." + Environment.NewLine;
             
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (TryPrintFinalType(obj, out var result))
-                return result;
-            
-            
+            if (TryPrintFinalType(obj, out var finalTypeResult))
+                return finalTypeResult;
+
+            if (TryPrintIList(obj, nestingLevel, out var arrayResult))
+                return arrayResult;
+
+            if (TryPrintIDictionary(obj, nestingLevel, out var dictResult))
+                return dictResult;
 
             var type = obj.GetType();
-            return ObjectView(type, obj, nestingLevel);
+            return GetObjectView(type, obj, nestingLevel);
+        }
+
+        private bool TryPrintIDictionary(object obj, int nestingLevel, out string result)
+        {
+            if (!(obj is IDictionary dict))
+            {
+                result = null;
+                return false;
+            }
+
+            const string separator = " : ";
+            var serialisedItems = new List<string>();
+            var identation = new string('\t', nestingLevel + 1);
+            // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
+            foreach (DictionaryEntry dictionaryEntry in dict)
+            {
+                var key = GetStringValueWithIdentationAndNewLine(dictionaryEntry.Key, nestingLevel);
+                var value = GetStringValueWithIdentationAndNewLine(dictionaryEntry.Value, nestingLevel + 1);
+                serialisedItems.Add(key + separator + value);
+            }
+
+            result = "{" + Environment.NewLine +
+                     identation + 
+                     string.Join(", "+Environment.NewLine + identation, serialisedItems) + Environment.NewLine +
+                     new string('\t', nestingLevel) + "}" + Environment.NewLine;
+            return true;
+
+        }
+
+        private bool TryPrintIList(object obj, int nestingLevel, out string result)
+        {
+            if (!(obj is IList list))
+            {
+                result = null;
+                return false;
+            }
+
+            var serializedItems = (
+                from object item in list
+                select GetStringValueWithIdentationAndNewLine(item, nestingLevel))
+                .ToList();
+
+            var view = string.Join(", ", serializedItems);
+            var end = view.IndexOf(Environment.NewLine, StringComparison.Ordinal) != -1
+                ? Environment.NewLine + new string('\t', nestingLevel) + "]"
+                : " ]";
+            result = "[ " + view + end + Environment.NewLine;
+            return true;
+        }
+
+        private string GetStringValueWithIdentationAndNewLine(object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            if (TryPrintFinalType(obj, out var itemResult))
+            {
+                return itemResult.Substring(0, itemResult.Length - 2);
+            }
+            
+            itemResult = PrintToString(obj, nestingLevel + 1);
+            return Environment.NewLine + identation + itemResult.Substring(0, itemResult.Length-2);
         }
 
         private bool TryPrintFinalType(object obj, out string result)
@@ -76,7 +147,7 @@ namespace ObjectPrinting
             return result != null;
         }
 
-        private string ObjectView(Type type, object obj, int nestingLevel)
+        private string GetObjectView(Type type, object obj, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -168,12 +239,23 @@ namespace ObjectPrinting
 
         #region Сonfiguration methods
         
+        /// <summary>
+        /// Позволяет исключить из сериализации все поля заданного типа
+        /// </summary>
+        /// <typeparam name="TExcluding">Тип поля, который нужно исключить из сериализации</typeparam>
+        /// <returns>Исходный экзкмпляр сериализатора, с обновлёнными параметрами</returns>
         public PrintingConfig<TOwner> Excluding<TExcluding>()
         {
             excludedTypes.Add(typeof(TExcluding));
             return this;
         }
-
+        
+        /// <summary>
+        /// Позволяет исключить из сериализации конкретное свойство объекта
+        /// </summary>
+        /// <param name="memberSelector">Выбор свойства, которое необходимо исключить (o => o.Property)</param>
+        /// <returns>Исходный экзкмпляр сериализатора, с обновлёнными параметрами</returns>
+        /// <exception cref="ArgumentException">В случае передачи не свойства или несуществующего свойства</exception>
         public PrintingConfig<TOwner> Excluding<TExcluding>(Expression<Func<TOwner, TExcluding>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression member))
@@ -184,12 +266,23 @@ namespace ObjectPrinting
             excludedProperties.Add(excludedProperty);
             return this;
         }
-
+        
+        /// <summary>
+        /// Позволяет задать собственное правило сериализации для выбранного типа
+        /// </summary>
+        /// <typeparam name="TPrintType">Тип, для которого нужно задать правило</typeparam>
+        /// <returns>Объект настроек, в котором указывается новое правило</returns>
         public PropertyPrintingConfig<TOwner, TPrintType> Printing<TPrintType>()
         {
             return new PropertyPrintingConfig<TOwner, TPrintType>(this);
         }
         
+        /// <summary>
+        /// Позволяет задать собственное правило сериализации для конкретного свойства обхекта
+        /// </summary>
+        /// <param name="memberSelector">Выбор свойства, которое необходимо исключить (o => o.Property)</param>
+        /// <returns>Объект настроек, в котором указывается новое правило</returns>
+        /// <exception cref="ArgumentException">В случае передачи не свойства или несуществующего свойства</exception>
         public PropertyPrintingConfig<TOwner, TPrintType> Printing<TPrintType>(
             Expression<Func<TOwner, TPrintType>> memberSelector)
         {
@@ -201,6 +294,16 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPrintType>(this, printingProperty);
         }
         
+        /// <summary>
+        /// Позволяет задать максимальную глубину погружения при сериализации. (По умолчанию 10)
+        /// </summary>
+        /// <param name="nestingLevel">Максимальная глубина рекурсивного поиска при сериализации</param>
+        /// <returns>Исходный экзкмпляр сериализатора, с обновлёнными параметрами</returns>
+        public PrintingConfig<TOwner> WithMaxNestingLevel(int nestingLevel)
+        {
+            maxNestingLevel = nestingLevel;
+            return this;
+        }
         #endregion
     }
 }

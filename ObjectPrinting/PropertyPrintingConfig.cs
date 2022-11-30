@@ -31,7 +31,7 @@ namespace ObjectPrinting
         }
         
         /// <summary>
-        /// Метод, который позволяет указать правило сериализации
+        /// Позволяет указать правило сериализации
         /// </summary>
         /// <param name="serializer">Функция, которая преобразует данные в строковое представление</param>
         /// <returns>Исходный объект настроек с новым правилосм</returns>
@@ -41,13 +41,18 @@ namespace ObjectPrinting
                 ? SetSerializerForType(serializer)
                 : SetSerializerForProperty(serializer);
         }
-
+        
+        /// <summary>
+        /// Позволяет указать культуру для числовых типов
+        /// </summary>
+        /// <param name="cultureInfo">Культура, которую необходимо использовать при сериализации</param>
+        /// <returns>Исходный экзкмпляр сериализатора, с обновлёнными параметрами</returns>
         public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
         {
             ParentConfig.AddCultureInfo(typeof(TPropType), cultureInfo);
             return ParentConfig;
         }
-
+        
         private PrintingConfig<TOwner> SetSerializerForType(Func<TPropType, string> serializer)
         {
             ParentConfig.AddSerializer(typeof(TPropType), serializer);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -108,8 +109,8 @@ namespace ObjectPrinting.Tests
         {
             var sun = new Person();
             var dad = new Person();
-            sun.Parent = dad;
-            dad.Parent = sun;
+            sun.Father = dad;
+            dad.Father = sun;
             var printer = ObjectPrinter.For<Person>();
             var s = printer.PrintToString(sun);
             Console.WriteLine(s);
@@ -134,6 +135,110 @@ namespace ObjectPrinting.Tests
             var s = person.PrintToString(config => config.Excluding<string>());
             s.Should().Be(printer.PrintToString(person));
             Console.WriteLine(s);
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintArrayOfBaseTypes_InOneLine()
+        {
+            var array = new[] { 1, 2, 3, 4, 5 };
+            const string expectedResult = "[ 1, 2, 3, 4, 5 ]";
+            var s = array.PrintToString();
+            s.Should().Contain(expectedResult);
+            Console.WriteLine(s);
+        }
+        
+        [Test]
+        public void PrintToString_ShouldPrintListOfBaseTypes_InOneLine()
+        {
+            var list = new List<int>{ 1, 2, 3, 4, 5 };
+            const string expectedResult = "[ 1, 2, 3, 4, 5 ]";
+            var s = list.PrintToString();
+            s.Should().Contain(expectedResult);
+            Console.WriteLine(s);
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintArrayOrListOfComplexType_InSomeLines()
+        {
+            var array = new[]
+            {
+                new ComplexNumber(1, 3),
+                new ComplexNumber(4, 1),
+                new ComplexNumber(6, 8)
+            };
+            var expectedResult = "[ " + Environment.NewLine +
+                                          "\tComplexNumber" + Environment.NewLine +
+                                          "\t\tReal = 1" + Environment.NewLine +
+                                          "\t\tImaginary = 3, " + Environment.NewLine +
+                                          "\tComplexNumber" + Environment.NewLine +
+                                          "\t\tReal = 4" + Environment.NewLine +
+                                          "\t\tImaginary = 1, " + Environment.NewLine +
+                                          "\tComplexNumber" + Environment.NewLine +
+                                          "\t\tReal = 6" + Environment.NewLine +
+                                          "\t\tImaginary = 8" + Environment.NewLine +
+                                          "]";
+            var s = array.PrintToString();
+            s.Should().Contain(expectedResult);
+            Console.WriteLine(s);
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintDictionary_WithBaseTypes()
+        {
+            var dict = new Dictionary<string, int>
+            {
+                { "youTube", 3 },
+                { "fabric", 15 },
+                { "railway station", 6 }
+            };
+            var expectedResult = "{" + Environment.NewLine +
+                                          "\tyouTube : 3, " + Environment.NewLine +
+                                          "\tfabric : 15, " + Environment.NewLine +
+                                          "\trailway station : 6" + Environment.NewLine +
+                                          "}";
+            var s = dict.PrintToString();
+            s.Should().Contain(expectedResult);
+            Console.WriteLine(s);
+        }
+        
+        [Test]
+        public void PrintToString_ShouldPrintDictionary_WithComplexTypes()
+        {
+            var dict = new Dictionary<string, ComplexNumber>
+            {
+                { "i", new ComplexNumber(0,1) },
+                { "5+7i", new ComplexNumber(5, 7) },
+                { "1", new ComplexNumber(1, 0) }
+            };
+            var expectedResult = "{" + Environment.NewLine +
+                                 "\ti : " + Environment.NewLine +
+                                 "\t\tComplexNumber" + Environment.NewLine +
+                                 "\t\t\tReal = 0" + Environment.NewLine +
+                                 "\t\t\tImaginary = 1, " + Environment.NewLine +
+                                 "\t5+7i : " + Environment.NewLine +
+                                 "\t\tComplexNumber" + Environment.NewLine +
+                                 "\t\t\tReal = 5" + Environment.NewLine +
+                                 "\t\t\tImaginary = 7, " + Environment.NewLine +
+                                 "\t1 : " + Environment.NewLine +
+                                 "\t\tComplexNumber" + Environment.NewLine +
+                                 "\t\t\tReal = 1" + Environment.NewLine +
+                                 "\t\t\tImaginary = 0" + Environment.NewLine +
+                                 "}";
+            var s = dict.PrintToString();
+            s.Should().Contain(expectedResult);
+            Console.WriteLine(s);
+        }
+    }
+
+    public class ComplexNumber
+    {
+        public int Real { get; }
+        public int Imaginary { get; }
+
+        public ComplexNumber(int real, int imaginary)
+        {
+            Real = real;
+            Imaginary = imaginary;
         }
     }
 }
