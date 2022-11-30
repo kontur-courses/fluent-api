@@ -23,6 +23,7 @@ public class ObjectConfiguration<TOwner> : IObjectConfiguration<TOwner>
     }
     
     public IMemberConfigurator<TOwner, T> ConfigureType<T>() => new TypeConfigurator<TOwner, T>(this);
+    public IObjectConfiguration<TOwner> ConfigureType<T>(Func<T, string> func) => ConfigureType<T>().Configure(func);
 
     public IObjectConfiguration<TOwner> Exclude<T>()
     {

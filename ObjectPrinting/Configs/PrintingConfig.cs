@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using ObjectPrinting.ObjectConfiguration.Implementation;
 
@@ -12,7 +13,7 @@ public class PrintingConfig<TOwner>
     private readonly ObjectConfiguration<TOwner> configuration;
     private readonly Type[] finalTypes = {
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan)
+        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
     };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
@@ -30,48 +31,56 @@ public class PrintingConfig<TOwner>
 
         var type = obj.GetType();
         if (obj is IEnumerable enumerable and not string)
-            return CollectionToString(enumerable);
+            return ParseCollection(enumerable, nestingLevel);
         if (configuration.TypeConfigs.ContainsKey(type))
             return configuration.TypeConfigs[type](obj);
 
         if (finalTypes.Contains(type))
-            return obj + Environment.NewLine;
+            return obj.ToString();
 
-        var identation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         sb.AppendLine(type.Name);
-        foreach (var propertyInfo in type.GetProperties())
-        {
-            var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-            if (configuration.MemberInfoConfigs.ContainsKey(propertyInfo))
-                value = configuration.MemberInfoConfigs[propertyInfo](value);
-                    
-            if (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) || configuration.ExcludedMembers.Contains(propertyInfo))
-                continue;
-            sb.Append(identation + propertyInfo.Name + " = " + value);
-        }
+        sb.Append(GetCollection(type.GetFields(), nestingLevel, obj));
+        sb.Append(GetCollection(type.GetProperties(), nestingLevel, obj));
 
         return sb.ToString();
     }
 
-    private string CollectionToString(IEnumerable enumerable)
+    private string GetCollection(IEnumerable<MemberInfo> memberInfos, int nestingLevel, object obj)
     {
-        var sb = new StringBuilder();
-        sb.Append("[");
-        foreach (var item in enumerable)
+        var builder = new StringBuilder();
+        foreach (var memberInfo in memberInfos)
         {
-            if (item is IEnumerable enumerate and not string)
-                sb.Append(CollectionToString(enumerate));
-            else
-            {
-                var type = item.GetType();
-                sb.Append(configuration.TypeConfigs.ContainsKey(type) ? configuration.TypeConfigs[type](item) : item);
-                sb.Append(", ");
-            }
+            var propertyInfo = memberInfo as PropertyInfo;
+            var fieldInfo = memberInfo as FieldInfo;
+            var identation = new string('\t', nestingLevel + 1);
+            if (fieldInfo is null && propertyInfo is null)
+                throw new ArgumentException();
+
+            var value = PrintToString(propertyInfo == null ? fieldInfo.GetValue(obj) : propertyInfo.GetValue(obj),
+                nestingLevel + 1);
+            if (configuration.MemberInfoConfigs.ContainsKey(memberInfo))
+                value = configuration.MemberInfoConfigs[memberInfo](value);
+
+            if (propertyInfo != null && (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
+                                         configuration.ExcludedMembers.Contains(propertyInfo))
+                || fieldInfo is not null && configuration.ExcludedTypes.Contains(fieldInfo.FieldType) ||
+                configuration.ExcludedMembers.Contains(fieldInfo)) 
+                continue;
+            builder.Append(identation + memberInfo.Name + " = " + value);           
         }
 
-        sb.Remove(sb.Length - 2, 2);
-        sb.AppendLine("]");
-        return sb.ToString();
+        return builder.ToString();
+    }
+
+    private string ParseCollection(IEnumerable enumerable, int nestingLevel)
+    {
+        var result = new StringBuilder();
+        result.Append("[");
+        foreach (var item in enumerable)
+            result.Append(PrintToString(item, nestingLevel) + ", ");
+        result.Remove(result.Length - 2, 2);
+        result.AppendLine("]");
+        return result.ToString();
     }
 }

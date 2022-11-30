@@ -10,5 +10,6 @@ public interface IObjectConfiguration<TOwner>
     IObjectConfiguration<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression);
     IMemberConfigurator<TOwner, T> ConfigureProperty<T>(Expression<Func<TOwner, T>> expression);
     IMemberConfigurator<TOwner, T> ConfigureType<T>();
+    IObjectConfiguration<TOwner> ConfigureType<T>(Func<T, string> func);
     PrintingConfig<TOwner> Build();
 }
