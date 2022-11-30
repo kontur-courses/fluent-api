@@ -67,7 +67,7 @@ public class PrintingConfig<TOwner>
                 || fieldInfo is not null && configuration.ExcludedTypes.Contains(fieldInfo.FieldType) ||
                 configuration.ExcludedMembers.Contains(fieldInfo)) 
                 continue;
-            builder.Append(identation + memberInfo.Name + " = " + value);           
+            builder.Append(identation + memberInfo.Name + " = " + value + "\n");           
         }
 
         return builder.ToString();
@@ -78,9 +78,11 @@ public class PrintingConfig<TOwner>
         var result = new StringBuilder();
         result.Append("[");
         foreach (var item in enumerable)
-            result.Append(PrintToString(item, nestingLevel) + ", ");
-        result.Remove(result.Length - 2, 2);
-        result.AppendLine("]");
+            result.Append(PrintToString(item, nestingLevel) + (finalTypes.Contains(item.GetType()) ? ", " : ""));
+        
+        if (result[^2] == ',')
+            result.Remove(result.Length - 2, 2);
+        result.Append("]");
         return result.ToString();
     }
 }

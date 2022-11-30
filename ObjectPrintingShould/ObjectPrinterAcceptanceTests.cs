@@ -37,30 +37,30 @@ public class ObjectPrinterAcceptanceTests
             .Exclude(p => p.Height)
             .Build();
 
-        // var s = printerCol.PrintToString(collections);
-        // Console.WriteLine(s);
-        //
-        // var s1 = printer.PrintToString(person);
-        // Console.WriteLine(s1);
-        //
-        // //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-        // var s2 = person.PrintToString();
-        // Console.WriteLine(s2);
-        //
-        // //8. ...с конфигурированием
-        // var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
-        // Console.WriteLine(s3);
+        var s = printerCol.PrintToString(collections);
+        Console.WriteLine(s);
+        
+        var s1 = printer.PrintToString(person);
+        Console.WriteLine(s1);
+        
+        //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+        var s2 = person.PrintToString();
+        Console.WriteLine(s2);
+        
+        //8. ...с конфигурированием
+        var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
+        Console.WriteLine(s3);
 
-        // var persons = new Person[] {new() {Name = "Alex"}, new() {Name = "Vova"}, new() {Name = "Kirill"}};
-        // var printerPersons = ObjectConfig.For<Person[]>().Build();
-        // Console.WriteLine(printerPersons.PrintToString(persons));
+        var persons = new Person[] {new() {Name = "Alex"}, new() {Name = "Vova"}, new() {Name = "Kirill"}};
+        var printerPersons = ObjectConfig.For<Person[]>().Build();
+        Console.WriteLine(printerPersons.PrintToString(persons));
         
         var item = ObjectConfig
             .For<Order>()
             .ConfigureType<Item>(i => i.Name)
             .Build()
             .PrintToString(new Order { Item = new Item { Name = "some item" }, Quantity = 1000 });
-
+        
         Console.WriteLine(item);
     }
 
