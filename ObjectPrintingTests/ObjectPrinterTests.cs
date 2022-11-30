@@ -275,14 +275,16 @@ public class ObjectPrinterTests
                     $"List`1{nl}\t[{personExpected},{nl}\t{personExpected},{nl}\t{personExpected}]")
                 .SetName("{m}_ListOfComplexObjects");
 
-            var kvpExpected = (int k, int v) =>
-                $"KeyValuePair`2{nl}" +
-                $"\t\tKey = {k}{nl}" +
-                $"\t\tValue = {v}";
-
             yield return new TestCaseData(new Dictionary<int, int> { { 1, 2 }, { 2, 3 }, { 3, 4 } },
-                    $"Dictionary`2{nl}\t[{kvpExpected(1, 2)},{nl}\t{kvpExpected(2, 3)},{nl}\t{kvpExpected(3, 4)}]")
-                .SetName("{m}_Dictionary");
+                    $"Dictionary`2{nl}\t[{{ Key = 1, Value = 2 }}, {{ Key = 2, Value = 3 }}, {{ Key = 3, Value = 4 }}]")
+                .SetName("{m}_DictionaryOfSimpleObjects");
+
+            var pairExpected = (int key) =>
+                $"{{{nl}\t\tKey = {key},{nl}\t\tValue = {personExpected.Replace(nl, nl + '\t')}{nl}\t}}";
+
+            yield return new TestCaseData(new Dictionary<int, Person> { { 1, new() }, { 2, new() }, { 3, new() } },
+                    $"Dictionary`2{nl}\t[{pairExpected(1)},{nl}\t{pairExpected(2)},{nl}\t{pairExpected(3)}]")
+                .SetName("{m}_DictionaryOfComplexObjects");
         }
     }
 
@@ -292,6 +294,8 @@ public class ObjectPrinterTests
         var result = collection.PrintToString();
 
         result.Should().Be(expected);
+
+        Console.WriteLine(result);
     }
 
     [Test]

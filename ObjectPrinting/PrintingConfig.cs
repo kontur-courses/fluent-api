@@ -93,15 +93,29 @@ public class PrintingConfig<TOwner>
 
         var sb = new StringBuilder(collection.GetType().Name + newLine + '\t');
 
-        var itemsStrings = collection
-            .Cast<object>()
-            .Select(o => PrintToString(o, printedObjects).Replace(newLine, newLine + '\t'));
+        var itemsStrings = (collection is IDictionary dictionary
+                ? DictionaryItems(dictionary, printedObjects)
+                : collection.Cast<object>().Select(o => PrintToString(o, printedObjects)))
+            .Select(AddTabulation)
+            .ToArray();
 
-        var allFinal = collection.Cast<object>().All(o => finalTypes.Contains(o.GetType()));
-
-        sb.Append($"[{string.Join(allFinal ? ", " : $",{newLine}\t", itemsStrings)}]");
+        sb.Append($"[{string.Join(AllOneLine(itemsStrings) ? ", " : $",{newLine}\t", itemsStrings)}]");
 
         return sb.ToString();
+    }
+
+    private IEnumerable<string> DictionaryItems(IDictionary dictionary, IEnumerable<object> printedObjects)
+    {
+        var newLine = Environment.NewLine;
+        foreach (var key in dictionary.Keys)
+        {
+            var keyStr = AddTabulation(PrintToString(key, printedObjects));
+            var valueStr = AddTabulation(PrintToString(dictionary[key], printedObjects));
+            if (AllOneLine(new[] { keyStr, valueStr }))
+                yield return $"{{ Key = {keyStr}, Value = {valueStr} }}";
+            else 
+                yield return $"{{{newLine}\tKey = {keyStr},{newLine}\tValue = {valueStr}{newLine}}}";
+        }
     }
 
     private string PrintComplexObject(object obj, IEnumerable<object> printedObjects)
@@ -114,12 +128,11 @@ public class PrintingConfig<TOwner>
 
         foreach (var property in type.GetProperties().Where(NotExcluded))
         {
-            var result = (AlternativePrintingsForProperties.ContainsKey(property)
-                    ? AlternativePrintingsForProperties[property](property.GetValue(obj))
-                    : PrintToString(property.GetValue(obj), printedObjects))
-                .Replace(newLine, $"{newLine}\t");
+            var result = AlternativePrintingsForProperties.ContainsKey(property)
+                ? AlternativePrintingsForProperties[property](property.GetValue(obj))
+                : PrintToString(property.GetValue(obj), printedObjects);
 
-            sb.Append($"{newLine}\t{property.Name} = {result}");
+            sb.Append($"{newLine}\t{property.Name} = {AddTabulation(result)}");
         }
 
         return sb.ToString();
@@ -128,6 +141,17 @@ public class PrintingConfig<TOwner>
     private bool NotExcluded(PropertyInfo property)
     {
         return !excludedProperties.Contains(property) && !excludedTypes.Contains(property.PropertyType);
+    }
+
+    private static bool AllOneLine(IEnumerable<string> strings)
+    {
+        return strings.All(s => s.Split('\n').Length == 1);
+    }
+
+    private static string AddTabulation(string str)
+    {
+        var newLine = Environment.NewLine;
+        return str.Replace(newLine, newLine + '\t');
     }
 
     private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
