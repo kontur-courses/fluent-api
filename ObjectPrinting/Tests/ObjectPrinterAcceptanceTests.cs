@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using ObjectPrinting.Solved;
 
@@ -21,6 +19,11 @@ namespace ObjectPrinting.Tests
                 Age = 35,
                 ArmsLenght = new int[] { 540, 600 },
                 FriendsNames = new List<string>(){ "Rick", "Morgan", "Alex" },
+                Dad = new Person
+                {
+                    Name = "Alex",
+                    Age = 65
+                },
                 Awards = new Dictionary<string, int>()
                 {
                     ["Best friend"] = 12,

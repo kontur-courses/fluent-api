@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using ObjectPrinting.Solved;
 using System;
 using System.Collections;
@@ -17,7 +16,7 @@ namespace ObjectPrinting
         public Settings settings;
         public Type configType;
         private Dictionary<object, Func<string>> customProps;
-        private StringBuilder builder;
+
 
         private Type[] finalTypes = new[]
             {
@@ -34,7 +33,6 @@ namespace ObjectPrinting
         {
             configType = typeof(TOwner);
             settings = new Settings();
-            builder = new StringBuilder();
         }
 
         public TypeConfig<TOwner, TPropType> SelectType<TPropType>()
@@ -57,81 +55,53 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+            
+            var builder = new StringBuilder();
 
-            var members = obj.GetType().GetFields()
-                .Cast<MemberInfo>()
-                .Concat(obj.GetType().GetProperties())
-                .ToArray();
-
-            foreach (var member in members)
-            {
-                if (member.MemberType is MemberTypes.Field)
-                {
-                    LoadDataToBuilder(member,  ((FieldInfo)member).GetValue(obj), 0);
-                }
-                else
-                {
-                    LoadDataToBuilder(member,  ((PropertyInfo)member).GetValue(obj), 0);
-                }
-            }
+            var valueType = obj.GetType();
+            var line = Serialize(valueType, obj, 0);
+            builder.Append(line);
 
             return builder.ToString();
         }
 
-        private void LoadDataToBuilder(MemberInfo membInfo, object value, int level)
+        private string Serialize(object parent, object current, int level)
         {
-            if (value == null) return;
+            if (current == null) return null;
 
-            var valueType = value.GetType();
+            var build = new StringBuilder();
+            var valueType = current.GetType();
             var line = string.Empty;
 
-            if (settings.typesToIgnore.Contains(valueType) ||
-                settings.membersToIgnor.Contains(membInfo))
+            if (current is IDictionary)
             {
-                return;
+                line = AddDictionary(parent, (IDictionary)current, level);
+                return line;
             }
 
-            if (settings.customMembs.ContainsKey(membInfo))
+            if (current is ICollection)
             {
-                line = settings.customMembs[membInfo](value);
-                builder.Append(line);
-                return;
-            }
-
-            if (settings.customTypes.Keys.Contains(valueType))
-            {
-                line = settings.customTypes[valueType](value);
-                builder.Append(line);
-                return;
-            }
-
-            if (value is IDictionary)
-            {
-                AddDictionary(membInfo, (IDictionary)value, level);
-                return;
-            }
-
-            if (value is ICollection)
-            {
-                AddCollection(membInfo, (ICollection)value, level);
-                return;
+                line = AddCollection(parent, (ICollection)current, level);
+                return line;
             }
 
             if (finalTypes.Contains(valueType))
             {
+                var builder = new StringBuilder();
                 builder.Append(new string('\t', level));
 
-                if (membInfo.MemberType is MemberTypes.Field)
+                if(parent is MemberInfo)
                 {
-                    line = "Member: " + membInfo.Name + " type: "  +((FieldInfo)membInfo).FieldType.Name + " Value: " + value.ToString() + '\n';
+                    var member = (MemberInfo)parent;
+                    line = member.Name + " = " + current.ToString() + ";" + '\n';
                 }
                 else
                 {
-                    line = "Member: " + membInfo.Name + " type: "  +((PropertyInfo)membInfo).PropertyType.Name + " Value: " + value.ToString() + '\n';
+                    line = current.ToString();
                 }
 
                 builder.Append(line);
-                return;
+                return builder.ToString();
             }
 
             var members = valueType.GetFields()
@@ -139,34 +109,81 @@ namespace ObjectPrinting
                 .Concat(valueType.GetProperties())
                 .ToArray();
 
+            build.Append('\t', level);
+            build.Append(valueType.Name + ":\n");
+            build.Append('\t', level);
+
             foreach (var member in members)
             {
                 if (member.MemberType is MemberTypes.Field)
                 {
-                    LoadDataToBuilder(member, ((FieldInfo)member).GetValue(value), level);
+                    line = Serialize(member, ((FieldInfo)member).GetValue(current), level + 1);
+                    build.Append(line);
                 }
                 else
                 {
-                    LoadDataToBuilder(member, ((PropertyInfo)member).GetValue(value), level);
+                    line = Serialize(member, ((PropertyInfo)member).GetValue(current), level + 1);
+                    build.Append(line);
                 }
             }
+
+            return build.ToString();
         }
 
-        private void AddDictionary(MemberInfo memInfo, IDictionary obj, int tabLevel)
+        private string AddDictionary(object parent, IDictionary dict, int tabLevel)
         {
-            foreach (DictionaryEntry entry in obj)
+            var builder = new StringBuilder();
+            builder.Append('\t', tabLevel);
+
+            if (parent is MemberInfo)
             {
-                LoadDataToBuilder(memInfo, entry.Key, tabLevel + 1);
-                LoadDataToBuilder(memInfo, entry.Value, tabLevel + 1);
+                builder.Append("(Dictionary) " + ((MemberInfo)parent).Name + ": \n");
             }
+
+            foreach (DictionaryEntry entry in dict)
+            {
+                builder.Append('\t', tabLevel + 1);
+                builder.Append("[");
+                var keys = Serialize(dict, entry.Key, 0);
+                builder.Append(keys + "] = [");
+                var values = Serialize(dict, entry.Value, 0);
+                builder.Append(values + "];\n");
+            }
+
+            return builder.ToString();
         }
 
-        private void AddCollection(MemberInfo memInfo, ICollection obj, int tabLevel)
+        private string AddCollection(object parent, ICollection collection, int tabLevel)
         {
-            foreach (var item in obj)
+            var builder = new StringBuilder();
+            builder.Append('\t', tabLevel);
+
+            if (parent is MemberInfo)
             {
-                LoadDataToBuilder(memInfo, item, tabLevel + 1);
+                builder.Append("(Collection) " + ((MemberInfo)parent).Name + ": \n");
             }
+
+            builder.Append('\t', tabLevel + 1);
+            builder.Append("[");
+            var index = 0;
+
+            foreach (var item in collection)
+            {
+                var collectionItem = Serialize(collection, item, 0);
+
+                if (index + 1 != collection.Count)
+                {
+                    builder.Append(collectionItem + ", ");
+                    index++;
+                }
+                else
+                {
+                    builder.Append(collectionItem);
+                }
+            }
+
+            builder.Append("];\n");
+            return builder.ToString();
         }
     }
 }
