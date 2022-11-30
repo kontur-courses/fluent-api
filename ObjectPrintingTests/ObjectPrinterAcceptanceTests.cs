@@ -72,16 +72,16 @@ namespace ObjectPrintingTests
         [Test]
         public void ObjectPrinter_ShouldPrintArray()
         {
-            var array = new int[] {1, 2, 3, 4, 5};
+            var array = new int[] { 1, 2, 3, 4, 5 };
             var result = array.PrintToString();
             result.Should().Contain("System.Int32[]" +
-                                    "\r\n[" +
-                                    "\r\n\t1" +
-                                    "\r\n\t2" +
-                                    "\r\n\t3" +
-                                    "\r\n\t4" +
-                                    "\r\n\t5" +
-                                    "\r\n]");
+                                    $"{Environment.NewLine}[" +
+                                    $"{Environment.NewLine}\t1" +
+                                    $"{Environment.NewLine}\t2" +
+                                    $"{Environment.NewLine}\t3" +
+                                    $"{Environment.NewLine}\t4" +
+                                    $"{Environment.NewLine}\t5" +
+                                    $"{Environment.NewLine}]");
         }
 
         [Test]
@@ -90,13 +90,13 @@ namespace ObjectPrintingTests
             var list = new List<int>(new int[] {1, 2, 3, 4, 5});
             var result = list.PrintToString();
             result.Should().Contain("System.Collections.Generic.List`1[System.Int32]" +
-                                    "\r\n[" +
-                                    "\r\n\t1" +
-                                    "\r\n\t2" +
-                                    "\r\n\t3" +
-                                    "\r\n\t4" +
-                                    "\r\n\t5" +
-                                    "\r\n]");
+                                    $"{Environment.NewLine}[" +
+                                    $"{Environment.NewLine}\t1" +
+                                    $"{Environment.NewLine}\t2" +
+                                    $"{Environment.NewLine}\t3" +
+                                    $"{Environment.NewLine}\t4" +
+                                    $"{Environment.NewLine}\t5" +
+                                    $"{Environment.NewLine}]");
         }
 
         [Test]
@@ -109,12 +109,12 @@ namespace ObjectPrintingTests
             };
             var result = dict.PrintToString();
             result.Should().Contain("System.Collections.Generic.Dictionary`2[System.Int32,System.Int32]" +
-                                    "\r\n[" +
-                                    "\r\n\tKeyValuePair`2" +
-                                    "\r\n\tKey = 1" +
-                                    "\r\n\tKeyValuePair`2" +
-                                    "\r\n\tKey = 2" +
-                                    "\r\n]");
+                                    $"{Environment.NewLine}[" +
+                                    $"{Environment.NewLine}\tKeyValuePair`2" +
+                                    $"{Environment.NewLine}\tKey = 1" +
+                                    $"{Environment.NewLine}\tKeyValuePair`2" +
+                                    $"{Environment.NewLine}\tKey = 2" +
+                                    $"{Environment.NewLine}]");
         }
 
         [Test]
