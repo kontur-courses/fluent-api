@@ -23,7 +23,7 @@ namespace ObjectPrinting.Solved
             _typesPrintSettings = new Dictionary<Type, Func<object, string>>();
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             var type = typeof(TPropType);
             var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -31,7 +31,7 @@ namespace ObjectPrinting.Solved
             return propertyConfig;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public IPropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is not MemberExpression memberExpression)

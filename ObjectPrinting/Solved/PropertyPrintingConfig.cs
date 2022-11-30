@@ -28,7 +28,7 @@ namespace ObjectPrinting.Solved
 
         public string UseSettings(object property)
         {
-            return _printSettings((TPropType) property);
+            return _printSettings((TPropType)property);
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => _printingConfig;
@@ -37,5 +37,7 @@ namespace ObjectPrinting.Solved
     public interface IPropertyPrintingConfig<TOwner, TPropType>
     {
         PrintingConfig<TOwner> ParentConfig { get; }
+        public PrintingConfig<TOwner> Using(Func<TPropType, string> print);
+        public PrintingConfig<TOwner> Using(CultureInfo culture);
     }
 }
