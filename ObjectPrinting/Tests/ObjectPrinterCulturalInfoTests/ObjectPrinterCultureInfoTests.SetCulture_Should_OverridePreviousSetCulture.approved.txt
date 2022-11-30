@@ -1,0 +1,8 @@
+﻿Operation
+	Operator1 = 0.1
+	Operator2 = 0.2
+	Operator3 = 0.3
+	Operator4 = 0.4
+	Operator5 = 0.5
+	Operator6 = 0.6
+	OperationDate = 5/3/1994 12:00:00 AM

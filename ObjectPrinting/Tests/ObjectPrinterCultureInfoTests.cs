@@ -25,5 +25,53 @@ namespace ObjectPrinting.Tests
                 .SetCulture(cultureInfo);
             Approvals.Verify(printer.PrintToString(operation));
         }
+        
+        [Test]
+        public void SetCulture_Should_OverridePreviousSetCulture()
+        {
+            var operation = new Operation()
+            {
+                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
+                OperationDate = new DateTime(1994, 5, 3)
+            };
+            CultureInfo cultureInfo1 = new CultureInfo("ru");
+            CultureInfo cultureInfo2 = new CultureInfo("en");
+            var printer = ObjectPrinter.For<Operation>()
+                .SetCulture(cultureInfo1)
+                .SetCulture(cultureInfo2);
+            Approvals.Verify(printer.PrintToString(operation));
+        }
+        
+        [Test]
+        public void SetCulture_Should_OverridePreviousMethod()
+        {
+            var operation = new Operation()
+            {
+                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
+                OperationDate = new DateTime(1994, 5, 3)
+            };
+            CultureInfo cultureInfo = new CultureInfo("ru");
+            var printer = ObjectPrinter.For<Operation>()
+                .ConfigForProperty(op => op.Operator1)
+                .UseSerializeMethod(f => "123")
+                .SetCulture(cultureInfo);
+            Approvals.Verify(printer.PrintToString(operation));
+        }
+        
+        [Test]
+        public void UseSerializeMethod_Should_OverridePreviousSetCulture()
+        {
+            var operation = new Operation()
+            {
+                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
+                OperationDate = new DateTime(1994, 5, 3)
+            };
+            CultureInfo cultureInfo = new CultureInfo("ru");
+            var printer = ObjectPrinter.For<Operation>()
+                .SetCulture(cultureInfo)
+                .ConfigForProperty(op => op.Operator1)
+                .UseSerializeMethod(f => "123");
+            Approvals.Verify(printer.PrintToString(operation));
+        }
     }
 }
