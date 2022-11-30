@@ -107,7 +107,6 @@ namespace ObjectPrinting.Tests
             s.Should().Be(expected);
         }
 
-
         [Test]
         public void PrintToString_WithExcludeProperty()
         {
@@ -119,6 +118,21 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
             s.Should().Be(expected);
         }
+
+
+        [Test]
+        public void PrintToString_WithTwoRuleForPropertyString()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var expected = "Person\r\n\tId = Guid\r\n\tName = AL\r\n\tHeight = 0\r\n\tAge = 19\r\n";
+            var printer = ObjectPrinter.For<Person>();
+            var s = printer
+                .Printing<string>().Using(s => s.ToUpper())
+                .Printing(p => p.Name).TrimmedToLength(2)
+                .PrintToString(person);
+            s.Should().Be(expected);
+        }
+
 
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -9,7 +10,7 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> printingConfig;
 
-        public Func<TPropType,string> PropertyRule { get; set; }
+        public Func<TPropType, string> PropertyRule { get; set; }
 
         public CultureInfo CultureInfo { get; set; }
 

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using FluentAssertions.Equivalency;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace ObjectPrinting
 {
@@ -15,24 +16,14 @@ namespace ObjectPrinting
         
         private readonly List<PropertyInfo> excludeProperties = new List<PropertyInfo>();
 
-        public Dictionary<PropertyInfo, List<object>> Properties { get; set; }
-        
-        public PrintingConfig()
-        {
-            Properties = new Dictionary<PropertyInfo, List<object>>();
-            foreach (var propertyInfo in typeof(TOwner).GetProperties())
-                Properties[propertyInfo] = new List<object>();
-        }
+        private readonly Dictionary<PropertyInfo, object> propertiesConfig = new Dictionary<PropertyInfo, object>();
+
+        private readonly Dictionary<Type, object> typesConfig = new Dictionary<Type, object>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            foreach (var property in Properties)
-            {
-                if (property.Key.PropertyType == typeof(TPropType))
-                    Properties[property.Key].Add(propertyConfig);
-            }
-
+            typesConfig[typeof(TPropType)] = propertyConfig;
             return propertyConfig;
         }
 
@@ -41,7 +32,7 @@ namespace ObjectPrinting
             var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
             var member = (MemberExpression)memberSelector.Body;
             var property = (PropertyInfo)member.Member;
-            Properties[property].Add(propertyConfig);
+            propertiesConfig[property] = propertyConfig;
             return propertyConfig;
         }
 
@@ -79,48 +70,13 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
             {
                 var objValue = obj.ToString();
-                if (obj is string stringObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
-                {
-                    foreach (var prConfig in Properties[prInfo])
-                    {
-                        if (prConfig is PropertyPrintingConfig<TOwner, string> stringConfig)
-                        {
-                            objValue = stringConfig.PropertyRule(stringObj);
-                            stringObj = objValue;
-                        }
-                    }
-                }
-
-                if (obj is int intObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
-                {
-                    foreach (var prConfig in Properties[prInfo])
-                    {
-                        if (prConfig is PropertyPrintingConfig<TOwner, int> intConfig)
-                        {
-                            if(!(intConfig.PropertyRule is null))
-                                objValue = intConfig.PropertyRule(intObj);
-                            else if (!(intConfig.CultureInfo is null))
-                                objValue = intObj.ToString(intConfig.CultureInfo);
-                        }
-                    }
-                }
-
-                if (obj is double doubleObj && !(prInfo is null) && Properties.ContainsKey(prInfo))
-                {
-                    foreach (var prConfig in Properties[prInfo])
-                    {
-                        if (prConfig is PropertyPrintingConfig<TOwner, double> doubleConfig)
-                        {
-                            if (!(doubleConfig.PropertyRule is null))
-                                objValue = doubleConfig.PropertyRule(doubleObj);
-                            else if (!(doubleConfig.CultureInfo is null))
-                                objValue = doubleObj.ToString(doubleConfig.CultureInfo);
-                        }
-                    }
-                }
+                if (obj is string stringObj)
+                    objValue = ApplyRulesForString(stringObj, prInfo);
+                else if (obj is int intObj)
+                    objValue = ApplyRulesForNumbers(intObj, prInfo);
+                else if (obj is double doubleObj)
+                    objValue = ApplyRulesForNumbers(doubleObj, prInfo);
                 return objValue + Environment.NewLine;
-                    //return obj + Environment.NewLine;
-                
             }
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -136,6 +92,43 @@ namespace ObjectPrinting
                               nestingLevel + 1, propertyInfo));
             }
             return sb.ToString();
+        }
+
+        private string ApplyRulesForNumbers<TPropType>(TPropType obj, PropertyInfo prInfo) where TPropType : IConvertible
+        {
+            var objValue = obj.ToString();
+            if (typesConfig.ContainsKey(typeof(TPropType)) && typesConfig[typeof(TPropType)] is PropertyPrintingConfig<TOwner, TPropType> config)
+            {
+                if (!(config.PropertyRule is null))
+                    objValue = config.PropertyRule(obj);
+                else if (!(config.CultureInfo is null))
+                    objValue = obj.ToString(config.CultureInfo);
+            }
+
+            if (!(prInfo is null) && propertiesConfig.ContainsKey(prInfo) && propertiesConfig[prInfo] is PropertyPrintingConfig<TOwner, TPropType> propConfig)
+                if (!(propConfig.PropertyRule(obj) is null))
+                    objValue = propConfig.PropertyRule(obj);
+            
+            return objValue;
+        }
+
+        private string ApplyRulesForString(string obj, PropertyInfo prInfo) 
+        {
+            var objValue = obj.ToString();
+            if (typesConfig.ContainsKey(typeof(string)) && typesConfig[typeof(string)] is PropertyPrintingConfig<TOwner, string> config)
+            {
+                if (!(config.PropertyRule is null))
+                {
+                    objValue = config.PropertyRule(obj);
+                    obj = objValue;
+                }
+            }
+
+            if (!(prInfo is null) && propertiesConfig.ContainsKey(prInfo) && propertiesConfig[prInfo] is PropertyPrintingConfig<TOwner, string> propConfig)
+                if (!(propConfig.PropertyRule is null))
+                    objValue = propConfig.PropertyRule(obj);
+
+            return objValue;
         }
     }
 }
