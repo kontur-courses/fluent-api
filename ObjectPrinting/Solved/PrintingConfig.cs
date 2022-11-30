@@ -12,21 +12,33 @@ namespace ObjectPrinting.Solved
     {
         private readonly List<Type> _excludedTypes;
         private readonly List<MemberInfo> _excludedMembers;
-
+        private readonly Dictionary<string, Func<object, string>> _propertiesPrintSettings;
+        private readonly Dictionary<Type, Func<object, string>> _typesPrintSettings;
         public PrintingConfig()
         {
             _excludedTypes = new List<Type>();
             _excludedMembers = new List<MemberInfo>();
+            _propertiesPrintSettings = new Dictionary<string, Func<object, string>>();
+            _typesPrintSettings = new Dictionary<Type, Func<object, string>>();
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var type = typeof(TPropType);
+            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
+            _typesPrintSettings.Add(type, propertyConfig.UseSettings);
+            return propertyConfig;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            if (!(memberSelector.Body is MemberExpression memberExpression))
+                throw new ArgumentException();
+
+            var memberName = memberExpression.Member.Name;
+            var propertyConfig = new PropertyPrintingConfig<TOwner, TPropType>(this); 
+            _propertiesPrintSettings.Add(memberName, propertyConfig.UseSettings);
+            return propertyConfig;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -73,9 +85,18 @@ namespace ObjectPrinting.Solved
                     continue;
                 if(_excludedMembers.Contains(propertyInfo))
                     continue;
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+
+                string toPrint;
+                if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
+                    toPrint = _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj)) 
+                              + Environment.NewLine;
+                else if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
+                    toPrint = _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
+                              + Environment.NewLine;
+                else
+                    toPrint = PrintToString(propertyInfo.GetValue(obj),
+                            nestingLevel + 1);
+                sb.Append(identation + propertyInfo.Name + " = " + toPrint);
             }
             return sb.ToString();
         }
