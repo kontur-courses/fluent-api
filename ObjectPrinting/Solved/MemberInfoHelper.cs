@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -31,5 +32,13 @@ public static class MemberInfoHelper
             PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
             _ => throw new ArgumentException("Member is not a field or a property!")
         };
+    }
+
+    public static List<MemberInfo> GetAllPropertiesAndFields(Type type)
+    {
+        var members = new List<MemberInfo>();
+        members.AddRange(type.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+        members.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.Instance));
+        return members;
     }
 }

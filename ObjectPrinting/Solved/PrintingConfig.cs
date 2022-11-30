@@ -18,25 +18,27 @@ public class PrintingConfig<TOwner>
 {
     private readonly Dictionary<string, Func<object, string>> _alternativePropertiesPrints = new();
     private readonly Dictionary<Type, Func<object, string>> _alternativeTypesPrints = new();
-    private readonly List<MemberInfo> _members = new();
+    private readonly List<MemberInfo> _excludedMembers = new();
+    private readonly List<MemberInfo> _members;
 
-    public PrintingConfig()
+    public PrintingConfig() : this(typeof(TOwner))
     {
-        _members.AddRange(typeof(TOwner).GetProperties(BindingFlags.Public | BindingFlags.Instance));
-        _members.AddRange(typeof(TOwner).GetFields(BindingFlags.Public | BindingFlags.Instance));
     }
 
-    public PrintingConfig(TOwner obj)
+    public PrintingConfig(TOwner obj) : this(obj.GetType())
     {
-        _members.AddRange(obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance));
-        _members.AddRange(obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance));
+    }
+
+    public PrintingConfig(Type type)
+    {
+        _members = MemberInfoHelper.GetAllPropertiesAndFields(type);
     }
 
     public IReadOnlyDictionary<string, Func<object, string>> AlternativePropertiesPrints =>
         _alternativePropertiesPrints;
 
     public IReadOnlyDictionary<Type, Func<object, string>> AlternativeTypesPrints => _alternativeTypesPrints;
-    public IReadOnlyList<MemberInfo> Members => _members;
+    public IReadOnlyList<MemberInfo> ExcludedMembers => _excludedMembers;
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
@@ -58,14 +60,18 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
         var name = MemberInfoHelper.GetMemberNameFromExpression(memberSelector.Body);
-        _members.RemoveAll(property => property.Name == name);
+        foreach (var member in _members)
+            if (member.Name == name)
+                _excludedMembers.Add(member);
         return this;
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
         var type = typeof(TPropType);
-        _members.RemoveAll(member => MemberInfoHelper.GetTypeFromMemberInfo(member) == type);
+        foreach (var member in _members)
+            if (MemberInfoHelper.GetTypeFromMemberInfo(member) == type)
+                _excludedMembers.Add(member);
         return this;
     }
 }
