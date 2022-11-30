@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
-using ObjectPrinting.Extentions;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -16,9 +16,9 @@ namespace ObjectPrinting.Tests
             var collections = new Collections
             {
                 Arr = new[] {1, 2, 3}, Lis = new List<string> {"dafs", "fkda;", "fdjai"},
-                // Dict = new Dictionary<int, double> {{1, 2d}, {2, 3d}, {3, 4d}}
+                Dict = new Dictionary<int, double> {{1, 2d}, {2, 3d}, {3, 4d}}
             };
-            var printerCol = ObjectConfig.For<Collections>().Build();
+            var printerCol = ObjectConfig.For<Collections>().Exclude(item => item.Dict).Build();
 
             var printer = ObjectConfig.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа !
@@ -38,14 +38,14 @@ namespace ObjectPrinting.Tests
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            var s2 = person.PrintToString();
-            Console.WriteLine(s2);
             
-            //8. ...с конфигурированием
-            var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
-            Console.WriteLine(s3);
+            // //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            // var s2 = person.PrintToString();
+            // Console.WriteLine(s2);
+            //
+            // //8. ...с конфигурированием
+            // var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
+            // Console.WriteLine(s3);
         }
     }
 }

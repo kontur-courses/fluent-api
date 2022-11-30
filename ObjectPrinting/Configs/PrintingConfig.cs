@@ -1,9 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
-using NUnit.Framework;
 using ObjectPrinting.ObjectConfiguration.Implementation;
 
 namespace ObjectPrinting;
@@ -18,7 +17,7 @@ public class PrintingConfig<TOwner>
 
     private readonly Type[] collectionTypes =
     {
-        typeof(Array), typeof(int[])
+        typeof(IEnumerable)
     };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
@@ -35,11 +34,11 @@ public class PrintingConfig<TOwner>
             return "null" + Environment.NewLine;
 
         var type = obj.GetType();
-        if (collectionTypes.Contains(type))
-            CollectionToString(obj as Array);
         var result = obj + Environment.NewLine;
+        if (obj is IEnumerable enumerable and not string)
+            return CollectionToString(enumerable);
         if (configuration.TypeConfigs.ContainsKey(type))
-            result = configuration.TypeConfigs[type].Aggregate(result, (current, func) => func(current));
+            result = ApplyFunc(configuration.TypeConfigs[type], obj);
 
         if (finalTypes.Contains(type))
             return result;
@@ -51,8 +50,7 @@ public class PrintingConfig<TOwner>
         {
             var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
             if (configuration.MemberInfoConfigs.ContainsKey(propertyInfo))
-                value = configuration.MemberInfoConfigs[propertyInfo]
-                    .Aggregate(value, (current, func) => func(current));
+                value = ApplyFunc(configuration.MemberInfoConfigs[propertyInfo], value);
                     
             if (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) || configuration.ExcludedMembers.Contains(propertyInfo))
                 continue;
@@ -62,16 +60,37 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-    private string CollectionToString(Array array)
+    private static string ApplyFunc(List<Func<object, string>> configurationMemberInfoConfig, object value)
+    {
+        var result = new StringBuilder();
+        foreach (var func in configurationMemberInfoConfig)
+            result.Append(func(value));
+        
+        return result.ToString();
+    }
+
+    private string CollectionToString(IEnumerable enumerable)
     {
         var sb = new StringBuilder();
         sb.Append("[");
-        foreach (var item in array)
+        foreach (var item in enumerable)
         {
-            sb.Append($"{item}, ");
+            if (item is IEnumerable enumerate and not string)
+                sb.Append(CollectionToString(enumerate));
+            else
+            {
+                // TODO: Change Binary
+                var type = item.GetType();
+                if (configuration.TypeConfigs.ContainsKey(type))
+                    sb.Append(ApplyFunc(configuration.TypeConfigs[type], item));
+                else
+                    sb.Append(item);
+                sb.Append(", ");
+            }
         }
 
-        sb.Append("]");
+        sb.Remove(sb.Length - 2, 2);
+        sb.AppendLine("]");
         return sb.ToString();
     }
 }
