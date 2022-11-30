@@ -100,7 +100,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void BrakeOnLooping()
+        public void BrakeOnLoopingAndCanReuse()
         {
             person.Parent = new Person {Parent = person};
             var res = printer
@@ -109,6 +109,11 @@ namespace ObjectPrinting.Tests
                 "Person", "\tId = 00000000-0000-0000-0000-000000000000", "\tName = Alex", "\tHeight = 0", "\tAge = 19", "\tDouble = 2,2", "\tParent = Person",
                     "\t\t\tId = 00000000-0000-0000-0000-000000000000", "\t\t\tName = null", "\t\t\tHeight = 0", "\t\t\tAge = 0", "\t\t\tDouble = 0", "\t\t\tParent = this", "");
 
+            var a = new Person();
+            var b = new Person();
+            b.Parent = a;
+            a.Parent = b;
+            var res2 = printer.PrintToString(a);
             res.Should().Be(expected);
         }
 
