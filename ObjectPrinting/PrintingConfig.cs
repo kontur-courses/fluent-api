@@ -38,8 +38,8 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> For<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
             var config = new PropertyPrintingConfig<TOwner, TPropType>(this);
-            var prop = (selector.Body as MemberExpression).Member as PropertyInfo;
-            propsCustomSerializations.Add(prop.Name, obj => config.GetProperty(obj));
+            var memberInfo = (selector.Body as MemberExpression).Member;
+            propsCustomSerializations.Add(memberInfo.Name, obj => config.GetProperty(obj));
             return config;
         }
 
@@ -51,7 +51,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> selector)
         {
-            var prop = (selector.Body as MemberExpression).Member as PropertyInfo;
+            var prop = (selector.Body as MemberExpression).Member;
             excludedNames.Add(prop.Name);
             return this;
         }
@@ -97,30 +97,31 @@ namespace ObjectPrinting
                     valueExtractor = (index) => list.ElementAtOrDefault((int)index);
                     break;
                 default:
-                    properties = type.GetProperties();
-                    valueExtractor = (propertyInfo) => (propertyInfo as PropertyInfo).GetValue(obj);
+                    properties = type.GetFields()
+                        .Concat(type.GetProperties()
+                            .Cast<MemberInfo>());
+                    valueExtractor = (propertyInfo) => (propertyInfo as MemberInfo).GetValue(obj);
                     break;
             }
 
             foreach (var property in properties)
             {
                 var value = valueExtractor(property);
-                var propInfo = (property as PropertyInfo);
-                if (excludedTypes.Contains(propInfo?.PropertyType)
-                    || excludedNames.Contains(propInfo?.Name))
+                var memberInfo = property as MemberInfo;
+                if (excludedTypes.Contains(memberInfo?.GetMemberType()) || excludedNames.Contains(memberInfo?.Name))
                     continue;
 
                 sb.Append(identation);
-                if (propInfo != null)
-                    sb.Append(propInfo.Name);
+                if (memberInfo != null)
+                    sb.Append(memberInfo.Name);
                 else 
                     sb.Append(property);
                 sb.Append(" = ");
 
                 if (value == startObject)
                     sb.Append("this" + Environment.NewLine);
-                else if (propInfo != null && propsCustomSerializations.ContainsKey(propInfo.Name))
-                    sb.Append(propsCustomSerializations[propInfo.Name](value) + Environment.NewLine);
+                else if (memberInfo != null && propsCustomSerializations.ContainsKey(memberInfo.Name))
+                    sb.Append(propsCustomSerializations[memberInfo.Name](value) + Environment.NewLine);
                 else
                     sb.Append(PrintToString(value, nestingLevel + 1));
             }

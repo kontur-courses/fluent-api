@@ -9,7 +9,7 @@ namespace ObjectPrinting
         public static bool IsSimple(this Type type)
         {
             return type.IsPrimitive
-                   || type.Equals(typeof(string));
+                   || type.Equals(typeof(string)) || type.Equals(typeof(Guid));
         }
     }
 }
