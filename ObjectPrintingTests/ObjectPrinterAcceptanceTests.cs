@@ -1,8 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Globalization;
+using ObjectPrinting;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -10,7 +11,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person {Surname = "Foster", Name = "Alex", Age = 19, Height = 180, Weight = 83.65 };
+            var person = new Person { Surname = "Foster", Name = "Alex", Age = 19, Height = 180, Weight = 83.65 };
 
             var printer = ObjectPrinter.For<Person>()
             //1. Исключить из сериализации свойства определенного типа
@@ -22,7 +23,7 @@ namespace ObjectPrinting.Tests
             //4. Настроить сериализацию конкретного свойства
             .Printing(p => p.Age).Using(age => $"{age} years old")
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            .Printing(p => p.Name).TrimmedToLength(1)
+            .Printing(p => p.Name).TrimmedToLength(2)
             //6. Исключить из сериализации конкретного свойства
             .Excluding(p => p.Height);
 

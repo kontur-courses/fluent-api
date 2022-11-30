@@ -1,14 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Globalization;
-using NUnit.Framework;
 
-namespace ObjectPrinting.Solved.Tests
+namespace MyConsole
 {
-    [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    public class Program
     {
-        [Test]
-        public void Demo()
+        public class Person
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public double Height { get; set; }
+            public int Age { get; set; }
+        }
+
+        static void Main(string[] args)
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
@@ -26,15 +35,9 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-            
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            string s2 = person.PrintToString();
-            
-            //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+
             Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
+
         }
     }
 }

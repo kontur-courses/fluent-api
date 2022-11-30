@@ -9,4 +9,8 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
+  </ItemGroup>
+
 </Project>

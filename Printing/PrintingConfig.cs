@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -12,8 +10,9 @@ namespace ObjectPrinting
     {
         private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(bool), typeof(sbyte),  typeof(byte),  typeof(short),  typeof(ushort),
+            typeof(int),  typeof(uint),  typeof(long), typeof(ulong), typeof(float),
+            typeof(double),  typeof(decimal),  typeof(string), typeof(DateTime), typeof(TimeSpan)
         };
 
         private readonly HashSet<Type> ExcludedPropTypes = new HashSet<Type>();
@@ -24,7 +23,7 @@ namespace ObjectPrinting
 
         private readonly Dictionary<PropertyInfo, Delegate> PropertiesSerializationOptions = new Dictionary<PropertyInfo, Delegate>();
 
-        private readonly Dictionary<Type, CultureInfo> TypesCultures = new Dictionary<Type, CultureInfo>();
+        private readonly HashSet<object> PrintedNonFinalObjects = new HashSet<object>();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -69,49 +68,45 @@ namespace ObjectPrinting
             PropertiesSerializationOptions.Add(propertyInfo, printOption);
         }
 
-        public void AddTypeCulture(Type type, CultureInfo culture)
-        {
-            TypesCultures.Add(type, culture);
-        }
-
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            //œ”Õ “ 2
-            if (TypesSerializationOptions.ContainsKey(obj.GetType()))
-                return (string)TypesSerializationOptions[obj.GetType()].DynamicInvoke(obj) + Environment.NewLine;
+            var objectType = obj.GetType();
 
-            //œ”Õ “ 3
-            if (TypesCultures.ContainsKey(obj.GetType()) && obj is IConvertible convertible)
-                return convertible.ToString(TypesCultures[obj.GetType()]) + Environment.NewLine;
+            if (FinalTypes.Contains(objectType))
+            {
+                if (PrintedNonFinalObjects.Contains(obj))
+                    throw new InvalidOperationException($"Object {objectType} has cycled reference");
+                else
+                    PrintedNonFinalObjects.Add(obj);
+            }
 
-            if (FinalTypes.Contains(obj.GetType()))
+            if (TypesSerializationOptions.ContainsKey(objectType))
+                return (string)TypesSerializationOptions[objectType].DynamicInvoke(obj) + Environment.NewLine;
+
+            if (FinalTypes.Contains(objectType))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            sb.AppendLine(objectType.Name);
+
+            foreach (var propertyInfo in objectType.GetProperties())
             {
-                //œ”Õ “ 1, 6
-                if (ExcludedPropTypes.Contains(propertyInfo.PropertyType) || ExcludedProperty.Contains(propertyInfo))
+                if (IsExcluded(propertyInfo))
                     continue;
 
-                //œ”Õ “ 4
+                sb.Append(identation + propertyInfo.Name + " = ");
+
                 if (PropertiesSerializationOptions.ContainsKey(propertyInfo))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                        (string)PropertiesSerializationOptions[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    sb.Append((string)PropertiesSerializationOptions[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
                     continue;
                 }
 
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
             return sb.ToString();
         }
@@ -131,6 +126,11 @@ namespace ObjectPrinting
         private void ExcludeProperty(PropertyInfo propertyInfo)
         {
             ExcludedProperty.Add(propertyInfo);
+        }
+
+        private bool IsExcluded(PropertyInfo propertyInfo)
+        {
+            return ExcludedPropTypes.Contains(propertyInfo.PropertyType) || ExcludedProperty.Contains(propertyInfo);
         }
     }
 }
