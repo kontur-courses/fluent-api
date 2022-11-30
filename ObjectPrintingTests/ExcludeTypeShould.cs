@@ -1,15 +1,7 @@
-﻿using NUnit.Framework.Interfaces;
-using NUnit.Framework;
-using ObjectPrinting.Tests.TestClasses;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrintingTests
 {
     [TestFixture]
-    public class ExcludePropertyShould
+    public class ExcludeTypeShould
     {
         private string printedString;
         public Vehicle VehicleCar;
@@ -23,7 +15,6 @@ namespace ObjectPrinting.Tests
         {
             printer = ObjectPrinter.For<Person>();
             VehicleCar = new Vehicle("Audi", 230, 1400, 2005);
-
             simplePerson = new Person() { Age = 35, Height = 155, Id = new Guid(), Name = "Anna", Car = VehicleCar };
             childPerson = new Person()
             {
@@ -34,7 +25,6 @@ namespace ObjectPrinting.Tests
                 Parent = simplePerson
             };
             printedString = null;
-
         }
 
         [TearDown]
@@ -43,82 +33,90 @@ namespace ObjectPrinting.Tests
             if (TestContext.CurrentContext.Result.Outcome.Status != TestStatus.Failed)
                 Console.WriteLine(printedString);
         }
+
         [Test]
-        public void PrintPersonWithoutIdProperty_WhenExcludeIdField()
+        public void PrintPersonWithoutStringProperties_WhenExcludeStringType()
         {
-            printer = printer.Excluding(x=>x.Id);
-            printedString = printer.PrintToString(simplePerson);
-            printedString.Should().NotContain("Id");
-        }
-        [Test]
-        public void PrintPersonWithoutNameProperty_WhenExcludeNameField()
-        {
-            
-            printer = printer.Excluding(x=>x.Name);
-            printedString = printer.PrintToString(simplePerson);
-            printedString.Should().NotContain("Name");
-        }
-        [Test]
-        public void PrintPersonWithoutHeightProperty_WhenExcludeHeightField()
-        {
-            printer = printer.Excluding(x=>x.Height);
-            printedString = printer.PrintToString(simplePerson);
-            printedString.Should().NotContain("Height");
-        }
-        [Test]
-        public void PrintPersonWithoutHaveCarProperty_WhenExcludeHaveCarField()
-        {
-            printer = printer.Excluding(x=>x.HaveCar);
-            printedString = printer.PrintToString(simplePerson);
-            printedString.Should().NotContain("HaveCar");
-        }
-        [Test]
-        public void PrintPersonWithoutCarBrandProperty_WhenExcludeHaveCarBrandField()
-        {
-            printer = printer.Excluding(x=>x.Car.BrandAuto);
+            printer = printer.Excluding<string>();
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().NotContain("BrandAuto");
         }
 
         [Test]
-        public void PrintPersonWithoutTypeListProperty_WhenExcludeTypeListField()
+        public void PrintPersonWithoutGuidProperties_WhenExcludeGuidType()
         {
-            printer = printer.Excluding(x=>x.TypeList);
+            printer = printer.Excluding<Guid>();
+            printedString = printer.PrintToString(simplePerson);
+            printedString.Should().NotContain("Id");
+        }
+
+        [Test]
+        public void PrintPersonWithoutIntProperties_WhenExcludeIntType()
+        {
+            printer = printer.Excluding<int?>();
+            printedString = printer.PrintToString(simplePerson);
+            printedString.Should().NotContain("Age");
+        }
+
+        [Test]
+        public void PrintPersonWithoutDoubleProperties_WhenExcludeDoubleType()
+        {
+            printer = printer.Excluding<double?>();
+            printedString = printer.PrintToString(simplePerson);
+            printedString.Should().NotContain("Weight");
+        }
+
+        [Test]
+        public void PrintPersonWithoutBoolProperties_WhenExcludeBoolType()
+        {
+            printer = printer.Excluding<bool>();
+            printedString = printer.PrintToString(simplePerson);
+            printedString.Should().NotContain("HaveCar");
+        }
+
+        [Test]
+        public void PrintPersonWithoutListProperties_WhenExcludeListType()
+        {
+            printer = printer.Excluding<List<int>>();
             simplePerson.TypeList = new List<int> { 1, 2, 3 };
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().NotContain("TypeList");
 
         }
+
         [Test]
-        public void PrintPersonWithoutTypeDictProperty_WhenExcludeTypeDictField()
+        public void PrintPersonWithoutDictionaryProperties_WhenExcludeDictionaryType()
         {
-            printer = printer.Excluding(x=>x.TypeDict);
+            printer = printer.Excluding<Dictionary<int, object>>();
             simplePerson.TypeDict = new Dictionary<int, object>() { [1] = "Car", [2] = 2123.3 };
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().NotContain("TypeDict");
         }
+
         [Test]
-        public void PrintPersonWithoutTypeSetProperty_WhenExcludeTypeSetField()
+        public void PrintPersonWithoutIEnumerableOtherCollectionProperties_WhenExcludeIEnumerableOtherCollectionType()
         {
-            printer = printer.Excluding(x=>x.TypeSet);
+            printer = printer.Excluding<HashSet<string>>();
             simplePerson.TypeSet = new HashSet<string> { "something text", "for hashset test" };
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().NotContain("TypeSet");
         }
+
         [Test]
-        public void PrintPersonWithoutTypeArrayProperty_WhenExcludeTypeArrayField()
+        public void PrintPersonWithoutArrayProperties_WhenExcludeArrayType()
         {
-            printer = printer.Excluding(x=>x.TypeArray);
+            printer = printer.Excluding<int[]>();
             simplePerson.TypeArray = new int[] { 1, 2, 3 };
             printedString = printer.PrintToString(simplePerson);
             printedString.Should().NotContain("TypeArray");
         }
+
         [Test]
-        public void PrintPersonWithoutParentProperty_WhenExcludeSelfTypeField()
+        public void PrintPersonWithoutCustomClassProperties_WhenExcludeCustomType()
         {
-            printer = printer.Excluding(x=>x.Parent);
+            printer = printer.Excluding<Vehicle>();
             printedString = printer.PrintToString(simplePerson);
-            printedString.Should().NotContain("Parent");
+            printedString.Should().NotContain("Vehicle");
         }
     }
 }

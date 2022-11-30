@@ -1,23 +1,13 @@
-﻿using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using ObjectPrinting.Tests.TestClasses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using FluentAssertions;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrintingTests
 {
-    [TestFixture]
-    public class CyclicReferenceShould
+    public class CyclicShould
     {
         private string printedString;
         public Vehicle VehicleCar;
         private Person simplePerson;
         private Person childPerson;
         private PrintingConfig<Person> printer;
-        
+
         [SetUp]
         public void SetUp()
         {
@@ -64,9 +54,9 @@ namespace ObjectPrinting.Tests
         [TestCase(200, TestName = "cyclic reference in iteration 200")]
         public void PrintPersonWithoutExceptions_WhenPersonHaveManyIterationsWithoutCyclicReference(int countIteration)
         {
-            var list= new List<Person>();
+            var list = new List<Person>();
             for (var i = 0; i < countIteration; i++)
-                list.Add(new Person(){Age=i});
+                list.Add(new Person() { Age = i });
             for (var i = 1; i < countIteration; i++)
                 list[i].Parent = list[i - 1];
             list.First().Parent = list.LastOrDefault();

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using NUnit.Framework;
-
-namespace ObjectPrinting.Tests.TestClasses
+﻿namespace ObjectPrintingTests.TestClasses
 {
     public class Person
     {

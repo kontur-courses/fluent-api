@@ -1,12 +1,4 @@
-﻿using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using ObjectPrinting.Tests.TestClasses;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrintingTests
 {
     [TestFixture]
     public class TrimStringShould

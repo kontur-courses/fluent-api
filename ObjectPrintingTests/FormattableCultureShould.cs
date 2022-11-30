@@ -1,23 +1,15 @@
-﻿using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using ObjectPrinting.Tests.TestClasses;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
-using FluentAssertions;
+﻿using System.Globalization;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class FormattableCultureShould
     {
         private string printedString;
-        private static CultureInfo ruCultureInfo = new CultureInfo("ru");
-        private static CultureInfo enCultureInfo = new CultureInfo("en");
-        private static CultureInfo euCultureInfo = new CultureInfo("eu");
-        private static CultureInfo cnCultureInfo = new CultureInfo("cn");
-        private static DateTime time= new DateTime(2022,11,29,13,34,56);
+        private static CultureInfo ruCultureInfo = new ("ru");
+        private static CultureInfo enCultureInfo = new ("en");
+        private static CultureInfo euCultureInfo = new ("eu");
+        private static DateTime time= new (2022,11,29,13,34,56);
 
         [SetUp]
         public void SetUp()
@@ -64,14 +56,6 @@ namespace ObjectPrinting.Tests
             printer.Printing<DateTime>().UsingWithFormatting(enCultureInfo);
             printedString = printer.PrintToString(time);
             printedString.Should().Contain("11/29/2022 1:34:56 PM");
-        }
-        [Test]
-        public void ChangeDateFormat_WhenCurrentCultureIsCN()
-        {
-            var printer = ObjectPrinter.For<DateTime>();
-            printer.Printing<DateTime>().UsingWithFormatting(cnCultureInfo);
-            printedString = printer.PrintToString(time);
-            printedString.Should().Contain("11/29/2022 13:34:56");
         }
         [Test]
         public void ChangeDateFormat_WhenCurrentCultureIsRU()

@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Threading;
-using FluentAssertions;
-using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using ObjectPrinting.Tests.TestClasses;
+﻿using System.Globalization;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests

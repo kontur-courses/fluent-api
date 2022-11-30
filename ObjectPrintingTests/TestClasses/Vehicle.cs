@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ObjectPrinting.Tests.TestClasses
+﻿namespace ObjectPrintingTests.TestClasses
 {
     public class Vehicle
     {
