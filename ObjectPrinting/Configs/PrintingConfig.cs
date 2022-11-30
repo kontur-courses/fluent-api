@@ -13,7 +13,7 @@ public class PrintingConfig<TOwner>
     private readonly ObjectConfiguration<TOwner> configuration;
     private readonly Type[] finalTypes = {
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(KeyValuePair)
+        typeof(DateTime), typeof(TimeSpan)
     };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
@@ -40,9 +40,12 @@ public class PrintingConfig<TOwner>
 
         var sb = new StringBuilder();
 
-        if (!type.IsGenericType)
+        if (!type.IsGenericType && type != typeof(Guid))
             sb.AppendLine(type.Name);
-        sb.Append(GetElements(type.GetFields(), nestingLevel, obj));
+        else if (type == typeof(Guid))
+            sb.Append(type.Name);
+        if (type != typeof(Guid))
+            sb.Append(GetElements(type.GetFields(), nestingLevel, obj));
         sb.Append(GetElements(type.GetProperties(), nestingLevel, obj));
 
         return sb.ToString();

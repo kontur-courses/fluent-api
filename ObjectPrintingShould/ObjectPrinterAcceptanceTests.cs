@@ -27,7 +27,6 @@ public class ObjectPrinterAcceptanceTests
         
         var printer = ObjectConfig.For<Person>()
             //1. Исключить из сериализации свойства определенного типа !
-            .Exclude<Guid>()
             //2. Указать альтернативный способ сериализации для определенного типа
             //3. Для числовых типов указать культуру
             .ConfigureType<int>().SetCulture(CultureInfo.InvariantCulture)
@@ -38,11 +37,11 @@ public class ObjectPrinterAcceptanceTests
             .Exclude(p => p.Height)
             .Build();
         
-        var s = printerCol.PrintToString(collections);
-        Console.WriteLine(s);
+        // var s = printerCol.PrintToString(collections);
+        // Console.WriteLine(s);
         
-        // var s1 = printer.PrintToString(person);
-        // Console.WriteLine(s1);
+        var s1 = printer.PrintToString(person);
+        Console.WriteLine(s1);
         //
         // //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
         // var s2 = person.PrintToString();
@@ -74,9 +73,9 @@ public class ObjectPrinterAcceptanceTests
             .Build()
             .PrintToString(persons)
             .Should()
-            .Be("[\nPerson\n\tId = 00000000-0000-0000-0000-000000000000\n\tName = Alex\n\tHeight = 0\n\tAge = 0\n\n" +
-                "Person\n\tId = 00000000-0000-0000-0000-000000000000\n\tName = Vova\n\tHeight = 0\n\tAge = 0\n\n" +
-                "Person\n\tId = 00000000-0000-0000-0000-000000000000\n\tName = Kirill\n\tHeight = 0\n\tAge = 0\n]");
+            .Be("[\nPerson\n\tId = Guid\n\tName = Alex\n\tHeight = 0\n\tAge = 0\n\n" +
+                "Person\n\tId = Guid\n\tName = Vova\n\tHeight = 0\n\tAge = 0\n\n" +
+                "Person\n\tId = Guid\n\tName = Kirill\n\tHeight = 0\n\tAge = 0\n]");
     }
 
     [Test]
