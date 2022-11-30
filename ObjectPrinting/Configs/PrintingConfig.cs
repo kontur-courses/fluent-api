@@ -13,7 +13,7 @@ public class PrintingConfig<TOwner>
     private readonly ObjectConfiguration<TOwner> configuration;
     private readonly Type[] finalTypes = {
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(KeyValuePair)
     };
         
     public PrintingConfig(ObjectConfiguration<TOwner> configuration)
@@ -39,14 +39,16 @@ public class PrintingConfig<TOwner>
             return obj.ToString();
 
         var sb = new StringBuilder();
-        sb.AppendLine(type.Name);
-        sb.Append(GetCollection(type.GetFields(), nestingLevel, obj));
-        sb.Append(GetCollection(type.GetProperties(), nestingLevel, obj));
+
+        if (!type.IsGenericType)
+            sb.AppendLine(type.Name);
+        sb.Append(GetElements(type.GetFields(), nestingLevel, obj));
+        sb.Append(GetElements(type.GetProperties(), nestingLevel, obj));
 
         return sb.ToString();
     }
 
-    private string GetCollection(IEnumerable<MemberInfo> memberInfos, int nestingLevel, object obj)
+    private string GetElements(IEnumerable<MemberInfo> memberInfos, int nestingLevel, object obj)
     {
         var builder = new StringBuilder();
         foreach (var memberInfo in memberInfos)
@@ -54,15 +56,13 @@ public class PrintingConfig<TOwner>
             var propertyInfo = memberInfo as PropertyInfo;
             var fieldInfo = memberInfo as FieldInfo;
             var identation = new string('\t', nestingLevel + 1);
-            if (fieldInfo is null && propertyInfo is null)
-                throw new ArgumentException();
 
-            var value = PrintToString(propertyInfo == null ? fieldInfo.GetValue(obj) : propertyInfo.GetValue(obj),
+            var value = PrintToString(propertyInfo == null ? fieldInfo!.GetValue(obj) : propertyInfo.GetValue(obj),
                 nestingLevel + 1);
             if (configuration.MemberInfoConfigs.ContainsKey(memberInfo))
                 value = configuration.MemberInfoConfigs[memberInfo](value);
 
-            if (propertyInfo != null && (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
+            if (propertyInfo is not null && (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
                                          configuration.ExcludedMembers.Contains(propertyInfo))
                 || fieldInfo is not null && configuration.ExcludedTypes.Contains(fieldInfo.FieldType) ||
                 configuration.ExcludedMembers.Contains(fieldInfo)) 
@@ -78,7 +78,12 @@ public class PrintingConfig<TOwner>
         var result = new StringBuilder();
         result.Append("[");
         foreach (var item in enumerable)
-            result.Append(PrintToString(item, nestingLevel) + (finalTypes.Contains(item.GetType()) ? ", " : ""));
+        {
+            var stringToPrint = PrintToString(item, nestingLevel) + (finalTypes.Contains(item.GetType()) ? ", " : "");
+            if (!finalTypes.Contains(item.GetType()))
+                result.Append("\n");
+            result.Append(stringToPrint);
+        }
         
         if (result[^2] == ',')
             result.Remove(result.Length - 2, 2);
