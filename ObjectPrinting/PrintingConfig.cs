@@ -64,12 +64,13 @@ namespace ObjectPrinting
             {
                 return $"[]{Environment.NewLine}";
             }
+
             var indentation = new string('\t', nestingLevel);
-            
+
             var sb = new StringBuilder();
-            
+
             sb.AppendLine($"{indentation}[");
-            
+
             foreach (var obj in collection)
             {
                 sb.Append(indentation + "\t" + PrintToString(obj, nestingLevel + 1));
@@ -92,9 +93,9 @@ namespace ObjectPrinting
             {
                 if (used.Exists(o => ReferenceEquals(o, memberValue)))
                 {
-                    return !options.AllowCyclicReferences
-                        ? throw new InvalidOperationException("Сyclic reference detected")
-                        : $"{{...}}{Environment.NewLine}";
+                    return options.AllowCyclicReferences
+                        ? $"{{...}}{Environment.NewLine}"
+                        : throw new InvalidOperationException("Сyclic reference detected");
                 }
 
                 used.Add(memberValue);

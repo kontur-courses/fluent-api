@@ -13,9 +13,9 @@ namespace ObjectPrinting
 
         public bool AllowCyclicReferences { get; set; }
 
-        public bool TryGetRule(MemberInfo memberInfo, out Func<object, string> func)
+        public bool TryGetRule(MemberInfo memberInfo, out Func<object, string> rule)
         {
-            return rules.TryGetValue(memberInfo, out func);
+            return rules.TryGetValue(memberInfo, out rule);
         }
         
         public void Exclude(Type type)
@@ -38,14 +38,14 @@ namespace ObjectPrinting
             return excludedMembers.Contains(memberInfo);
         }
         
-        public void AddSerializationRule<TType>(Func<TType, string> func)
+        public void AddSerializationRule<TType>(Func<TType, string> rule)
         {
-            rules.Add(typeof(TType),obj => func((TType)obj));
+            rules.Add(typeof(TType),obj => rule((TType)obj));
         }
 
-        public void AddSerializationRule<TType>(MemberInfo memberInfo, Func<TType, string> func)
+        public void AddSerializationRule<TType>(MemberInfo memberInfo, Func<TType, string> rule)
         {
-            rules.Add(memberInfo,obj => func((TType)obj));
+            rules.Add(memberInfo,obj => rule((TType)obj));
         }
     }
 }
