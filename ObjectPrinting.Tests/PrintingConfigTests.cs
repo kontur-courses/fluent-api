@@ -36,7 +36,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigExcludeStrings()
     {
-        var config = ObjectPrinter.For<Person>().Excluding<string>();
+        var config = PrintingConfig.For<Person>().Excluding<string>();
         var printedObject = _person.PrintToString(config);
         printedObject.Should().NotContainAll(
             "Name = Johnny",
@@ -46,7 +46,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigExcludePersons()
     {
-        var config = ObjectPrinter.For<Person>().Excluding<Person>();
+        var config = PrintingConfig.For<Person>().Excluding<Person>();
         var printedObject = _person.PrintToString(config);
         printedObject.Should().NotContainAll(
             "Father = null",
@@ -57,7 +57,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigExcludeMemberByName()
     {
-        var config = ObjectPrinter.For<Person>().Excluding(person => person.DateOfBirth);
+        var config = PrintingConfig.For<Person>().Excluding(person => person.DateOfBirth);
         var printedObject = _person.PrintToString(config);
         printedObject.Should().NotContainAll(
             "DateOfBirth = 16.11.1988 0:00:00");
@@ -66,7 +66,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigAlternativePrintingForStrings()
     {
-        var config = ObjectPrinter.For<Person>().Printing<string>().Using(str => str.ToLower());
+        var config = PrintingConfig.For<Person>().Printing<string>().Using(str => str.ToLower());
         var printedObject = _person.PrintToString(config);
         printedObject.Should().ContainAll(
             "Name = johnny",
@@ -76,7 +76,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigAlternativePrintingForMemberByName()
     {
-        var config = ObjectPrinter.For<Person>().Printing(person => person.Name).Using(name => name.ToUpper());
+        var config = PrintingConfig.For<Person>().Printing(person => person.Name).Using(name => name.ToUpper());
         var printedObject = _person.PrintToString(config);
         printedObject.Should().ContainAll(
             "Name = JOHNNY");
@@ -85,7 +85,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigTrimStringMember()
     {
-        var config = ObjectPrinter.For<Person>().Printing<string>().TrimmedToLength(4);
+        var config = PrintingConfig.For<Person>().Printing<string>().TrimmedToLength(4);
         var printedObject = _person.PrintToString(config);
         printedObject.Should().ContainAll(
             "Name = John",
@@ -95,7 +95,7 @@ public class PrintingConfigTests
     [Test]
     public void PrintingConfigSetCultureForDouble()
     {
-        var config = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
+        var config = PrintingConfig.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
         var printedObject = _person.PrintToString(config);
         printedObject.Should().ContainAll(
             "Height = 183.5");
@@ -110,5 +110,37 @@ public class PrintingConfigTests
 
         Func<string> printingObject = () => _person.ToString();
         printingObject.Should().NotThrow<StackOverflowException>();
+    }
+
+    [Test]
+    public void PrintingConfigShouldPrintArray()
+    {
+        var array = new[] { 10, 12, 123};
+        var config = PrintingConfig.For<int>();
+        var printedObject = array.PrintToString(config);
+        printedObject.Should().ContainAll("10", "12", "123");
+    }
+    [Test]
+    public void PrintingConfigShouldPrintList()
+    {
+        var list = new List<int>{ 10, 12, 123};
+        var config = PrintingConfig.For<int>();
+        var printedObject = list.PrintToString(config);
+        printedObject.Should().ContainAll("10", "12", "123");
+    }
+    
+    [Test]
+    public void PrintingConfigShouldPrintDictionary()
+    {
+        var array = new Dictionary<int, int>
+        {
+            [10] = 4,
+            [12] = 5,
+            [123] = 6,
+        };
+        var config = PrintingConfig.For<int>();
+        var printedObject = array.PrintToString(config);
+        printedObject.Should().ContainAll("10", "12", "123");
+        printedObject.Should().ContainAll("4", "5", "6");
     }
 }
