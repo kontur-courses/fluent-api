@@ -169,7 +169,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void DictionaryWithClassesInKeyAndValues()
+        public void CorrectWorkDictionaryWithClassesInKeyAndValues()
         {
             var obj = new Dictionary<A, A>
             {

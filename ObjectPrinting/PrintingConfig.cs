@@ -81,28 +81,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
             sb.AppendLine(type.Name);
 
-            IEnumerable properties;
-            Func<object, object> valueExtractor;
-
-            switch (obj)
-            {
-                case IDictionary dict:
-                    properties = dict.Keys;
-                    valueExtractor = (key) => dict[key];
-                    break;
-                case IEnumerable list:
-                    properties = list
-                        .Cast<object>()
-                        .Select((e, index) => index);
-                    valueExtractor = (index) => list.ElementAtOrDefault((int)index);
-                    break;
-                default:
-                    properties = type.GetFields()
-                        .Concat(type.GetProperties()
-                            .Cast<MemberInfo>());
-                    valueExtractor = (propertyInfo) => (propertyInfo as MemberInfo).GetValue(obj);
-                    break;
-            }
+            GetPropertiesAndValueExtractorFunc(obj, out var properties, out var valueExtractor);
 
             foreach (var property in properties)
             {
@@ -131,6 +110,31 @@ namespace ObjectPrinting
                 }
             }
             return sb.ToString();
+        }
+
+        private void GetPropertiesAndValueExtractorFunc(object sourceObj, out IEnumerable properties
+            , out Func<object, object> valueExtractor)
+        {
+            switch (sourceObj)
+            {
+                case IDictionary dict:
+                    properties = dict.Keys;
+                    valueExtractor = (key) => dict[key];
+                    break;
+                case IEnumerable list:
+                    properties = list
+                        .Cast<object>()
+                        .Select((e, index) => index);
+                    valueExtractor = (index) => list.ElementAtOrDefault((int)index);
+                    break;
+                default:
+                    var type = sourceObj.GetType();
+                    properties = type.GetFields()
+                        .Concat(type.GetProperties()
+                            .Cast<MemberInfo>());
+                    valueExtractor = (propertyInfo) => (propertyInfo as MemberInfo).GetValue(sourceObj);
+                    break;
+            }
         }
     }
 }
