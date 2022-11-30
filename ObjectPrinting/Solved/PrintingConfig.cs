@@ -140,11 +140,9 @@ namespace ObjectPrinting.Solved
             List<object> printedObjects)
         {
             if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
-                return _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
-                       + Environment.NewLine;
+                return _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj));
             if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
-                return _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
-                       + Environment.NewLine;
+                return _propertiesPrintSettings[propertyInfo.Name](propertyInfo);
             return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, printedObjects);
         }
     }
