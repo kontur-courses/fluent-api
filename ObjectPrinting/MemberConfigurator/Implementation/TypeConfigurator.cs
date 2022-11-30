@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using ObjectPrinting.ObjectConfiguration;
 using ObjectPrinting.ObjectConfiguration.Implementation;
 
@@ -15,22 +14,12 @@ public class TypeConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
         this.objectConfiguration = objectConfiguration;
     }
 
-    public IObjectConfiguration<TOwner> Configure(CultureInfo cultureInfo)
+    public IObjectConfiguration<TOwner> Configure(Func<string, string> func)
     {
         if (!objectConfiguration.TypeConfigs.ContainsKey(typeof(T)))
             objectConfiguration.TypeConfigs.Add(typeof(T), new List<Func<string, string>>());
         
-        objectConfiguration.TypeConfigs[typeof(T)].Add(s => s.ToString(cultureInfo));
-        return objectConfiguration;
-    }
-
-
-    public IObjectConfiguration<TOwner> Configure(int length)
-    {
-        if (!objectConfiguration.TypeConfigs.ContainsKey(typeof(T)))
-            objectConfiguration.TypeConfigs.Add(typeof(T), new List<Func<string, string>>());
-
-        objectConfiguration.TypeConfigs[typeof(T)].Add(s => s[..length]);
+        objectConfiguration.TypeConfigs[typeof(T)].Add(func);
         return objectConfiguration;
     }
 }

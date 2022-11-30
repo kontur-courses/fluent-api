@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using ObjectPrinting.MemberConfigurator;
 using ObjectPrinting.ObjectConfiguration;
@@ -8,9 +9,8 @@ public static class MemberExtensions
 {
     public static IObjectConfiguration<TOwner> TrimByLength<TOwner>(
         this IMemberConfigurator<TOwner, string> propertyConfig, int length) =>
-        propertyConfig.Configure(length);
+        propertyConfig.Configure(s => s[..length] + Environment.NewLine);
 
     public static IObjectConfiguration<TOwner> SetCulture<TOwner>(this IMemberConfigurator<TOwner, int> propertyConfig,
-        CultureInfo cultureInfo) =>
-        propertyConfig.Configure(cultureInfo);
+        CultureInfo cultureInfo) => propertyConfig.Configure(s => s.ToString(cultureInfo));
 }

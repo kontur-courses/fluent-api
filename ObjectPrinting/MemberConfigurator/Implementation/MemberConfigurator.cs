@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 using ObjectPrinting.ObjectConfiguration;
 using ObjectPrinting.ObjectConfiguration.Implementation;
@@ -18,22 +17,13 @@ public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
         this.objectConfiguration = objectConfiguration;
         this.memberInfo = memberInfo;
     }
-    
-    public IObjectConfiguration<TOwner> Configure(CultureInfo cultureInfo)
+
+    public IObjectConfiguration<TOwner> Configure(Func<string, string> func)
     {
         if (!objectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
             objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<string, string>>());
 
-        objectConfiguration.MemberInfoConfigs[memberInfo].Add(s => s.ToString(cultureInfo));
-        return objectConfiguration;
-    }
-
-    public IObjectConfiguration<TOwner> Configure(int length)
-    {
-        if (!objectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
-            objectConfiguration.MemberInfoConfigs.Add(memberInfo, new List<Func<string, string>>());
-
-        objectConfiguration.MemberInfoConfigs[memberInfo].Add(s => s[..length]);
+        objectConfiguration.MemberInfoConfigs[memberInfo].Add(func);
         return objectConfiguration;
     }
 }
