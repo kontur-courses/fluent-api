@@ -59,5 +59,22 @@ namespace ObjectPrinting.Tests
                 printer.PrintToString(person);
             });
         }
+        
+        [Test]
+        public void Print_ShouldThrowException_WhenCyclicReference()
+        {
+            var a = new CyclicReference() {ID = 0};
+            var b = new CyclicReference() {ID = 1};
+            var c = new CyclicReference() {ID = 2};
+            a.Ref = b;
+            b.Ref = c;
+            c.Ref = a;
+            
+            var ex = Assert.Throws<CyclicReferenceException>(() =>
+            {
+                var printer = ObjectPrinter.For<CyclicReference>();
+                printer.PrintToString(a);
+            });
+        }
     }
 }

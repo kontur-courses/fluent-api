@@ -18,19 +18,21 @@ namespace ObjectPrinting
                     StringCutFunctions[propertyInfo.Name] = (s) => s;
             }
 
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new List<object>());
         }
-
-        private string PrintToString(object obj, int nestingLevel)
+        
+        private readonly Type[] finalTypes = new[]
         {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        
+        private string PrintToString(object obj, int nestingLevel, List<object> parentObjects)
+        {
+            if (parentObjects.Contains(obj)) throw new CyclicReferenceException();
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
@@ -53,9 +55,13 @@ namespace ObjectPrinting
                     sb.AppendLine();
                 }
                 else
-                    sb.Append(PrintToString(value,
-                        nestingLevel + 1));
+                {
 
+                    parentObjects.Add(obj);
+                    sb.Append(PrintToString(value,
+                        nestingLevel + 1, parentObjects));
+                    parentObjects.Remove(parentObjects.Count - 1);
+                }
             }
 
             return sb.ToString();
@@ -71,7 +77,7 @@ namespace ObjectPrinting
                     OverridedConfigs[info.Name].SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
                 }
             }
-
+            
             return this;
         }
 
