@@ -45,19 +45,19 @@ public class ObjectPrinter_Should
     {
         get
         {
-            yield return new TestCaseData(null, "null").SetName("On null");
-            yield return new TestCaseData(0, "0").SetName("On int");
-            yield return new TestCaseData(0.1, 0.1.ToString(CultureInfo.CurrentCulture)).SetName("On double");
-            yield return new TestCaseData(0.1f, 0.1f.ToString(CultureInfo.CurrentCulture)).SetName("On float");
-            yield return new TestCaseData("string", "string").SetName("On string");
+            yield return new TestCaseData(null, "null").SetName("{m}_Null");
+            yield return new TestCaseData(0, "0").SetName("{m}_Int");
+            yield return new TestCaseData(0.1, 0.1.ToString(CultureInfo.CurrentCulture)).SetName("{m}_Double");
+            yield return new TestCaseData(0.1f, 0.1f.ToString(CultureInfo.CurrentCulture)).SetName("{m}_Float");
+            yield return new TestCaseData("string", "string").SetName("{m}_String");
             yield return new TestCaseData(new DateTime(1970, 1, 1),
-                new DateTime(1970, 1, 1).ToString(CultureInfo.CurrentCulture)).SetName("On datetime");
-            yield return new TestCaseData(new TimeSpan(0), "00:00:00").SetName("On timespan");
+                new DateTime(1970, 1, 1).ToString(CultureInfo.CurrentCulture)).SetName("{m}_DateTime");
+            yield return new TestCaseData(new TimeSpan(0), "00:00:00").SetName("{m}_TimeSpan");
         }
     }
 
     [TestCaseSource(nameof(SimpleTypesExamples))]
-    public void DefaultPrintToString_ReturnCorrectString_OnSimpleTypes(object value, string expected)
+    public void DefaultPrintToString_ReturnCorrectString_OnSimpleType(object value, string expected)
     {
         var result = value.PrintToString();
 
@@ -208,10 +208,10 @@ public class ObjectPrinter_Should
         ruResult.Should().NotBe(invResult);
     }
 
-    [TestCase("string", 0, "", TestName = "With zero max length")]
-    [TestCase("string", 3, "str", TestName = "Max length less then string length")]
-    [TestCase("string", 6, "string", TestName = "Max length equals to string length")]
-    [TestCase("string", 9, "string", TestName = "Max length more then string length")]
+    [TestCase("string", 0, "", TestName = "{m}_OnZeroMaxLength")]
+    [TestCase("string", 3, "str", TestName = "{m}_OnMaxLengthLessThenStringLength")]
+    [TestCase("string", 6, "string", TestName = "{m}_OnMaxLengthEqualsToStringLength")]
+    [TestCase("string", 9, "string", TestName = "{m}_OnMaxLengthMoreThenStringLength")]
     public void PrintingStringProperty_WithTrimmedToLength_WorkCorrectly(string value, int maxLen, string expected)
     {
         var printer = ObjectPrinter.For<string>()
