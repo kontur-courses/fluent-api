@@ -70,9 +70,9 @@ namespace ObjectPrinting.Solved
             _printedObjects.Add(obj);
             if (obj == null)
                 return "null" + Environment.NewLine;
-            
+
             if (obj is ICollection collection)
-                return GenerateStringFromCollection(collection);
+                return obj + GenerateStringFromCollection(collection, nestingLevel);
 
             var finalTypes = new[]
             {
@@ -81,7 +81,7 @@ namespace ObjectPrinting.Solved
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-            
+
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -90,23 +90,32 @@ namespace ObjectPrinting.Solved
             {
                 if (!IsValidMember(obj, propertyInfo))
                     continue;
-                
+
                 string toPrint = GetPrintMember(obj, propertyInfo, nestingLevel);
                 sb.Append(identation + propertyInfo.Name + " = " + toPrint);
             }
 
             return sb.ToString();
         }
-        
-        
-        private string GenerateStringFromCollection(ICollection collection)
+
+
+        private string GenerateStringFromCollection(ICollection collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            sb.Append("[");
+            sb.Append(Environment.NewLine)
+                .Append(new string('\t', nestingLevel))
+                .Append("[")
+                .Append(Environment.NewLine);
+
             foreach (var element in collection)
-                sb.Append($" {element}");
-            sb.Append(" ]");
-            sb.Append(Environment.NewLine);
+            {
+                sb.Append($"{new string('\t', nestingLevel + 1)}" +
+                          $"{PrintToString(element, nestingLevel)}");
+            }
+
+            sb.Append(new string('\t', nestingLevel))
+                .Append("]")
+                .Append(Environment.NewLine);
             return sb.ToString();
         }
 
@@ -114,19 +123,19 @@ namespace ObjectPrinting.Solved
         {
             if (_excludedTypes.Contains(propertyInfo.PropertyType))
                 return false;
-            if(_excludedMembers.Contains(propertyInfo))
+            if (_excludedMembers.Contains(propertyInfo))
                 return false;
             return !_printedObjects.Contains(propertyInfo.GetValue(obj));
         }
-        
+
         private string GetPrintMember(object obj, PropertyInfo propertyInfo, int nestingLevel)
         {
             if (_typesPrintSettings.ContainsKey(propertyInfo.PropertyType))
                 return _typesPrintSettings[propertyInfo.PropertyType](propertyInfo.GetValue(obj))
-                        + Environment.NewLine;
+                       + Environment.NewLine;
             if (_propertiesPrintSettings.ContainsKey(propertyInfo.Name))
                 return _propertiesPrintSettings[propertyInfo.Name](propertyInfo)
-                                           + Environment.NewLine;
+                       + Environment.NewLine;
             return PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
         }
     }

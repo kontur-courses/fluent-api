@@ -68,24 +68,73 @@ namespace ObjectPrintingTests
             var result = printer.PrintToString(son);
             result.Should().Contain(resultForFather.Replace("\t", "\t\t"));
         }
-        
+
         [Test]
-        public void ObjectPrinter_ShouldPrintCollectionsInClass()
+        public void ObjectPrinter_ShouldPrintArray()
         {
-            var printer = ObjectPrinter.For<ExampleCollections<int>>();
-            var exampleCollections = new ExampleCollections<int>();
-            exampleCollections.Collection = new int[] {1, 2, 3, 4, 5};
-            exampleCollections.ListCollection = new List<int>(new []{1, 2, 3, 4, 5, 6});;
-            exampleCollections.DictionaryCollection = new Dictionary<int, int>
+            var array = new int[] {1, 2, 3, 4, 5};
+            var result = array.PrintToString();
+            result.Should().Contain("System.Int32[]" +
+                                    "\r\n[" +
+                                    "\r\n\t1" +
+                                    "\r\n\t2" +
+                                    "\r\n\t3" +
+                                    "\r\n\t4" +
+                                    "\r\n\t5" +
+                                    "\r\n]");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintList()
+        {
+            var list = new List<int>(new int[] {1, 2, 3, 4, 5});
+            var result = list.PrintToString();
+            result.Should().Contain("System.Collections.Generic.List`1[System.Int32]" +
+                                    "\r\n[" +
+                                    "\r\n\t1" +
+                                    "\r\n\t2" +
+                                    "\r\n\t3" +
+                                    "\r\n\t4" +
+                                    "\r\n\t5" +
+                                    "\r\n]");
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrintDictionary()
+        {
+            var dict = new Dictionary<int, int>
             {
                 {1, 1},
                 {2, 2}
             };
+            var result = dict.PrintToString();
+            result.Should().Contain("System.Collections.Generic.Dictionary`2[System.Int32,System.Int32]" +
+                                    "\r\n[" +
+                                    "\r\n\tKeyValuePair`2" +
+                                    "\r\n\tKey = 1" +
+                                    "\r\n\tKeyValuePair`2" +
+                                    "\r\n\tKey = 2" +
+                                    "\r\n]");
+        }
 
+        [Test]
+        public void ObjectPrinter_ShouldPrintCollectionsInClass()
+        {
+            var printer = ObjectPrinter.For<ExampleCollections<int>>();
+            var exampleCollections = new ExampleCollections<int>
+            {
+                Collection = new int[] {1, 2, 3, 4, 5},
+                ListCollection = new List<int>(new[] {1, 2, 3, 4, 5, 6}),
+                DictionaryCollection = new Dictionary<int, int>
+                {
+                    {1, 1},
+                    {2, 2}
+                }
+            };
             var result = printer.PrintToString(exampleCollections);
-            result.Should().Contain("Collection = [ 1 2 3 4 5 ]")
-                .And.Contain("ListCollection = [ 1 2 3 4 5 6 ]")
-                .And.Contain("DictionaryCollection = [ [1, 1] [2, 2] ]");
+            result.Should().Contain("Collection")
+                .And.Contain("ListCollection")
+                .And.Contain("DictionaryCollection");
         }
 
         [Test]
