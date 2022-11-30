@@ -1,0 +1,5 @@
+﻿Operation
+	Operator4 = 0,4
+	Operator5 = 0,5
+	Operator6 = 0,6
+	OperationDate = 03.05.1994 0:00:00

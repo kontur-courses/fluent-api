@@ -80,14 +80,26 @@ namespace ObjectPrinting
             return new PropertyConfig<TOwner, T>(this, property);
         }
 
-        public IPropertyConfig<TOwner,T> AlternateForType<T>(Func<TOwner, T> property)
+        public PrintingConfig<TOwner> SetMethodForType<T>(Func<T, string> method)
         {
-            throw new NotImplementedException();
+            foreach (var info in typeof(TOwner).GetProperties().Where(pi=>pi.PropertyType == typeof(T)))
+            {
+                if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
+                OverridedConfigs[info.Name].SetNewSerializeMethod(method);
+            }
+
+            return this;
         }
         
-        public IPropertyConfig<TOwner, T> ExcludeType<T>()
+        public PrintingConfig<TOwner> ExcludeType<T>()
         {
-            throw new NotImplementedException();
+            foreach (var info in typeof(TOwner).GetProperties().Where(pi=>pi.PropertyType == typeof(T)))
+            {
+                if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
+                OverridedConfigs[info.Name].Excluded = true;
+            }
+
+            return this;
         }
 
         public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
