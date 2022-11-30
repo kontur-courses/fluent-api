@@ -44,17 +44,17 @@ namespace ObjectPrinting.PrintingConfiguration
             return PrintToString(obj, 0);
         }
 
-        public string PrintToString(IEnumerable<TOwner> objects)
+        public string PrintEnumerable(IEnumerable objects, int nestingLevel)
         {
             var result = new List<string>();
             foreach (var obj in objects)
             {
-                var convertedObject = PrintToString(obj, 0);
-                result.Add(convertedObject);
+                var convertedObject = PrintToString(obj, nestingLevel + 1);
+                result.Add(new string('\t', nestingLevel + 1) + convertedObject);
             }
 
             var str = string.Join("", result);
-            return $"{objects.GetType().Name} {'{' + "\n" + str + '}'}";
+            return objects.GetType().Name + '{' + "\n" + str + new string('\t', nestingLevel) + '}';
         }
 
 
@@ -66,9 +66,14 @@ namespace ObjectPrinting.PrintingConfiguration
             }
 
             var type = obj.GetType();
-            if (finalTypes.Contains(type))
+            if (finalTypes.Contains(type) && !excludedTypes.Contains(type))
             {
                 return HandleObjectWithFinalType(obj);
+            }
+
+            if (obj is IEnumerable enumerable)
+            {
+                return PrintEnumerable(enumerable, nestingLevel);
             }
 
             if (history.Contains(obj))
@@ -78,7 +83,7 @@ namespace ObjectPrinting.PrintingConfiguration
                     throw new ArgumentException("Cyclic reference");
                 }
 
-                return $"New cyclic reference detected on {type.FullName}";
+                return "New cyclic reference detected";
             }
 
             history.Add(obj);
@@ -145,10 +150,9 @@ namespace ObjectPrinting.PrintingConfiguration
             return new PropertyPrintingConfig<TOwner, TMemberInfo>(this, member);
         }
 
-        public PrintingConfig<TOwner> IgnoreCyclicReference()
+        public void IgnoreCyclicReference()
         {
             ignoringCyclicReferences = true;
-            return this;
         }
 
         protected internal void ExcludeType(Type type)

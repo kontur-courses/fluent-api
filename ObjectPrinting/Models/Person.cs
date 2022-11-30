@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Models
 {
@@ -10,5 +11,8 @@ namespace ObjectPrinting.Models
         public int Age { get; set; }
         public DateTime Birthday { get; set; }
         public Person Parent { get; set; }
+        public string[] Aliases { get; set; }
+        public List<int> FavoriteNumbers { get; set; }
+        public Dictionary<string, DateTime> Tasks { get; set; }
     }
 }

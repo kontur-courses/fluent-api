@@ -141,10 +141,7 @@ public class ObjectPrinter_Should
     public void PrintToString_ShouldWork_WithArrays()
     {
         var collection = new[] { person1, person2, person3 };
-        var str = personConfig.PrintToString(collection);
-        str.Should().Contain(personConfig.PrintToString(person1));
-        str.Should().Contain(personConfig.PrintToString(person2));
-        str.Should().Contain(personConfig.PrintToString(person3));
+        var str = personConfig.PrintEnumerable(collection, 0);
         Console.WriteLine(str);
     }
 
@@ -153,10 +150,7 @@ public class ObjectPrinter_Should
     {
         var collection = new List<Person> { person1, person2, person3 };
         personConfig.For(p => p.Id).Exclude();
-        var str = personConfig.PrintToString(collection);
-        str.Should().Contain(personConfig.PrintToString(person1));
-        str.Should().Contain(personConfig.PrintToString(person2));
-        str.Should().Contain(personConfig.PrintToString(person3));
+        var str = personConfig.PrintEnumerable(collection, 0);
         Console.WriteLine(str);
     }
 
@@ -168,7 +162,7 @@ public class ObjectPrinter_Should
         Action action = () => personConfig.PrintToString(person);
         action.Should().Throw<ArgumentException>();
     }
-    
+
     [Test]
     public void IgnoreCyclicReference_ShouldIgnore_WithCyclicReference()
     {
@@ -179,7 +173,7 @@ public class ObjectPrinter_Should
         str.Should().Contain("New cyclic reference detected");
         Console.WriteLine(str);
     }
-    
+
     [Test]
     public void PrintToString_ShouldPrintParent_WithConfiguration()
     {
@@ -190,6 +184,55 @@ public class ObjectPrinter_Should
         var str = personConfig.PrintToString(person);
         str.Should().NotContain("Age");
         str.Should().NotContain("Id");
+        Console.WriteLine(str);
+    }
+
+    [Test]
+    public void PrintToString_ShouldPrintArrays_InsideClass()
+    {
+        var person = person1;
+        person.Aliases = new[] { "Alex", "Memes", "Tupac" };
+        var str = personConfig.PrintToString(person);
+        str.Should().Contain("Age");
+        str.Should().Contain("Memes");
+        str.Should().Contain("Tupac");
+        Console.WriteLine(str);
+    }
+
+    [Test]
+    public void PrintToString_ShouldPrintLists_InsideClass()
+    {
+        var person = person1;
+        person.FavoriteNumbers = new List<int> { 420, 1337, 69 };
+        var str = personConfig.PrintToString(person);
+        str.Should().Contain("420");
+        str.Should().Contain("1337");
+        str.Should().Contain("69");
+        Console.WriteLine(str);
+    }
+
+    [Test]
+    public void PrintToString_ShouldExclude_ExcludedInsideCollections()
+    {
+        var person = person1;
+        person.FavoriteNumbers = new List<int> { 420, 1337, 69 };
+        var str = personConfig.For<int>().Exclude().PrintToString(person);
+        str.Should().NotContain("420");
+        str.Should().NotContain("1337");
+        str.Should().NotContain("69");
+        Console.WriteLine(str);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldPrintDictionaries_InsideClass()
+    {
+        var person = person1;
+        person.Tasks = new Dictionary<string, DateTime> { {"do homework", DateTime.Today}, {"bake a cake", DateTime.Now}};
+        var str = personConfig.For<int>().Exclude().PrintToString(person);
+        str.Should().Contain("Key = do homework");
+        str.Should().Contain($"Value = {DateTime.Today}");
+        str.Should().Contain("Key = bake a cake");
+        str.Should().Contain($"Value = {DateTime.Now}");
         Console.WriteLine(str);
     }
 }
