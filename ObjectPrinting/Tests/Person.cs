@@ -11,5 +11,7 @@ namespace ObjectPrinting.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public Dictionary<int, string> Pets { get; set; }
+        
+        public List<List<int>> FavoriteNumberSets { get; set; }
     }
 }
