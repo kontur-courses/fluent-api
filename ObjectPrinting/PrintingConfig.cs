@@ -53,7 +53,7 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
             if (alternativeSerialization.ContainsKey(type))
-                return alternativeSerialization[type](obj);
+                return alternativeSerialization[type](obj) + Environment.NewLine;
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -79,7 +79,10 @@ namespace ObjectPrinting
                     continue;
                 if (alternativeSerialization.ContainsKey(propertyInfo.PropertyType))
                 {
-                    sb.Append(alternativeSerialization[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1));
+                              //alternativeSerialization[propertyInfo.PropertyType](propertyInfo.GetValue(obj)));
                     continue;
                 }
 

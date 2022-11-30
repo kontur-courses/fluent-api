@@ -72,6 +72,82 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        public void SerializeType_String()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeType<string>(x => x.ToUpper());
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = ALEX" + Environment.NewLine +
+                            "\tHeight = 70" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            
+            //Console.WriteLine(s1);
+        }
+        [Test]
+        public void SerializeType_Int()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeType<int>(x => x + " лет");
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70" + Environment.NewLine +
+                            "\tAge = 19 лет" + Environment.NewLine;
+            s1.Should().Be(result);
+            
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void SerializeType_Double()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeType<double>(x => x + " кг");
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70 кг" + Environment.NewLine +
+                            "\tAge = 19" + Environment.NewLine;
+            s1.Should().Be(result);
+            
+            //Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void SerializeType_DoubleAndInt()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeType<double>(x => x + " кг")
+                .SerializeType<int>(x => x + " лет");
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70 кг" + Environment.NewLine +
+                            "\tAge = 19 лет" + Environment.NewLine;
+            s1.Should().Be(result);
+            
+            //Console.WriteLine(s1);
+        }
+        
+        [Test]
         public void ExcludeType_Double()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 70, Id = new Guid()};
