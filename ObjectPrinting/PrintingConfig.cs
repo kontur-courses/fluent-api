@@ -16,9 +16,8 @@ namespace ObjectPrinting
         private Dictionary<Type, Func<object, string>> alternativeSerialization = 
             new Dictionary<Type, Func<object, string>>();
         
-        //тут бы название свойства
-        public Dictionary<String, Func<object, string>> propertySerialization = 
-            new Dictionary<String, Func<object, string>>();
+        public Dictionary<string, Func<object, string>> propertySerialization = 
+            new Dictionary<string, Func<object, string>>();
         
         //и тут бы тоже название свойства
         // public Dictionary<MemberInfo, Func<object, string>> crop = 
@@ -42,7 +41,15 @@ namespace ObjectPrinting
             exludingProperty.Add(propertyInfo);
             return this;
         }
-            
+
+        //typeof(Person).GetProperty("Age")
+        public Serialization<TOwner> SerializeProperty(String propertyInfoName)
+        {
+            var serialization = new Serialization<TOwner>();
+            serialization.EditingPropertyInfoName = propertyInfoName;
+            serialization.PrintingConfig = this;
+            return serialization;
+        }
 
         public PrintingConfig<TOwner> SerializeType<T>(Func<T, string> func)
         {
@@ -92,6 +99,14 @@ namespace ObjectPrinting
                 
                 if (exludingProperty.Contains(propertyInfo))
                     continue;
+
+                if (propertySerialization.ContainsKey(propertyInfo.Name))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              propertySerialization[propertyInfo.Name](propertyInfo.GetValue(obj)) 
+                              + Environment.NewLine);
+                    continue;
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),

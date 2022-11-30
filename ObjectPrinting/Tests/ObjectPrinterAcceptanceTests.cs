@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using NUnit.Framework;
 using FluentAssertions;
+using ObjectPrinting.Solved;
 
 
 namespace ObjectPrinting.Tests
@@ -23,9 +24,9 @@ namespace ObjectPrinting.Tests
                 .SerializeType<string>(x => x.ToUpper())
                 //3. Для числовых типов указать культуру
                 .SetCulture<int>(CultureInfo.CurrentCulture)
-                .ExcludeProperty(typeof(Person).GetProperty("Name"));
+                .ExcludeProperty(typeof(Person).GetProperty("Name")).
                 //4. Настроить сериализацию конкретного свойства
-                //.SerializeProperty(p.).SetSerialization(x => { })
+                SerializeProperty("Age").SetSerialization(x => x + " лет");
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //.SelectString(p => p.name).Crop(10)
                 //6. Исключить из сериализации конкретного свойства
@@ -37,6 +38,43 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+        
+        [Test]
+        public void Serialization_AgeAndHeight()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeProperty("Age").SetSerialization(x => x + " years old")
+                .SerializeProperty("Height").SetSerialization(x => x + " kg");
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70.5 kg" + Environment.NewLine +
+                            "\tAge = 19 years old" + Environment.NewLine;
+            s1.Should().Be(result);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
+        public void Serialization_Age()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+
+            var printer = ObjectPrinter.For<Person>()
+                .SerializeProperty("Age").SetSerialization(x => x + " лет");
+            
+            string s1 = printer.PrintToString(person);
+            string result = "Person" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tHeight = 70.5" + Environment.NewLine +
+                            "\tAge = 19 лет" + Environment.NewLine;
+            s1.Should().Be(result);
+            Console.WriteLine(s1);
         }
         
         [Test]
