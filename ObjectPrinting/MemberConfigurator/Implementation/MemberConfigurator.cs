@@ -1,36 +1,37 @@
 using System.Globalization;
 using System.Reflection;
-using ObjectPrinting.BasicConfigurator;
+using ObjectPrinting.ObjectConfiguration;
+using ObjectPrinting.ObjectConfiguration.Implementation;
 
 namespace ObjectPrinting.MemberConfigurator.Implementation;
 
 public class MemberConfigurator<TOwner, T> : IMemberConfigurator<TOwner, T>
 {
+    private ObjectConfiguration<TOwner> ObjectConfiguration { get; }
+    
     private readonly MemberInfo memberInfo;
     
-    public MemberConfigurator(IBasicConfigurator<TOwner> basicConfigurator, MemberInfo memberInfo)
+    public MemberConfigurator(ObjectConfiguration<TOwner> objectConfiguration, MemberInfo memberInfo)
     {
-        BasicConfigurator = basicConfigurator;
+        ObjectConfiguration = objectConfiguration;
         this.memberInfo = memberInfo;
     }
     
-    public IBasicConfigurator<TOwner> BasicConfigurator { get; }
-    
-    public IBasicConfigurator<TOwner> Configure(CultureInfo cultureInfo)
+    public IObjectConfiguration<TOwner> Configure(CultureInfo cultureInfo)
     {
-        if (!BasicConfigurator.MemberInfoConfigs.ContainsKey(memberInfo))
-            BasicConfigurator.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
+        if (!ObjectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
+            ObjectConfiguration.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
         
-        BasicConfigurator.MemberInfoConfigs[memberInfo].CultureInfo = cultureInfo;
-        return BasicConfigurator;
+        ObjectConfiguration.MemberInfoConfigs[memberInfo].CultureInfo = cultureInfo;
+        return ObjectConfiguration;
     }
 
-    public IBasicConfigurator<TOwner> Configure(int length)
+    public IObjectConfiguration<TOwner> Configure(int length)
     {
-        if (!BasicConfigurator.MemberInfoConfigs.ContainsKey(memberInfo))
-            BasicConfigurator.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
+        if (!ObjectConfiguration.MemberInfoConfigs.ContainsKey(memberInfo))
+            ObjectConfiguration.MemberInfoConfigs.Add(memberInfo, new UniversalConfig());
         
-        BasicConfigurator.MemberInfoConfigs[memberInfo].TrimLength = length;
-        return BasicConfigurator;
+        ObjectConfiguration.MemberInfoConfigs[memberInfo].TrimLength = length;
+        return ObjectConfiguration;
     }
 }

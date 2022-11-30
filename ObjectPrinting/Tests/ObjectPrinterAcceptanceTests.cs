@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 using ObjectPrinting.Extentions;
@@ -12,6 +13,12 @@ namespace ObjectPrinting.Tests
         public void Demo()
         {
             var person = new Person {Name = "Alex", Age = 19};
+            var collections = new Collections
+            {
+                Arr = new[] {1, 2, 3}, Lis = new List<string>() {"dafs", "fkda;", "fdjai"},
+                Dict = new Dictionary<int, double>() {{1, 2d}, {2, 3d}, {3, 4d}}
+            };
+            // var printerCol = ObjectConfig.For<Collections>().Build();
 
             var printer = ObjectConfig.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа !
@@ -24,7 +31,10 @@ namespace ObjectPrinting.Tests
                 .ConfigureProperty(p => p.Name).TrimByLength(2)
                 //6. Исключить из сериализации конкретного свойства !
                 .Exclude(p => p.Height)
-                .ConfigurePrinter();
+                .Build();
+
+            // var s = printerCol.PrintToString(collections);
+            // Console.WriteLine(s);
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);
@@ -34,8 +44,15 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s2);
             
             //8. ...с конфигурированием
-            var s3 = person.PrintToString(c => c.Exclude(p => p.Id).ConfigurePrinter());
+            var s3 = person.PrintToString(c => c.Exclude(p => p.Id).Build());
             Console.WriteLine(s3);
         }
     }
+}
+
+public class Collections
+{
+    public int[] Arr { get; set; }
+    public List<string> Lis { get; set; }
+    public Dictionary<int, double> Dict { get; set; }
 }

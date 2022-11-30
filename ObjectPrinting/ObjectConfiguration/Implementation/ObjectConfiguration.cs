@@ -4,35 +4,33 @@ using System.Linq.Expressions;
 using System.Reflection;
 using ObjectPrinting.MemberConfigurator;
 using ObjectPrinting.MemberConfigurator.Implementation;
-using ObjectPrinting.TypeConfigurator;
-using ObjectPrinting.TypeConfigurator.Implementation;
 
-namespace ObjectPrinting.BasicConfigurator.Implementation;
+namespace ObjectPrinting.ObjectConfiguration.Implementation;
 
-public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
+public class ObjectConfiguration<TOwner> : IObjectConfiguration<TOwner>
 {
     public Dictionary<MemberInfo, UniversalConfig> MemberInfoConfigs { get; }
     public Dictionary<Type, UniversalConfig> TypeConfigs { get; }
     public HashSet<Type> ExcludedTypes { get; }
     public HashSet<MemberInfo> ExcludedMembers { get; }
-    
-    public ITypeConfigurator<TOwner, T> ConfigureType<T>() => new TypeConfigurator<TOwner, T>(this);
 
-    public ObjectConfigurator()
+    public ObjectConfiguration()
     {
         MemberInfoConfigs = new Dictionary<MemberInfo, UniversalConfig>();
         TypeConfigs = new Dictionary<Type, UniversalConfig>();
         ExcludedTypes = new HashSet<Type>();
         ExcludedMembers = new HashSet<MemberInfo>();
     }
+    
+    public IMemberConfigurator<TOwner, T> ConfigureType<T>() => new TypeConfigurator<TOwner, T>(this);
 
-    public IBasicConfigurator<TOwner> Exclude<T>()
+    public IObjectConfiguration<TOwner> Exclude<T>()
     {
         ExcludedTypes.Add(typeof(T));
         return this;
     }
 
-    public IBasicConfigurator<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression)
+    public IObjectConfiguration<TOwner> Exclude<T>(Expression<Func<TOwner, T>> expression)
     {
         var memberExpression = (MemberExpression) expression.Body;
         var member = memberExpression.Member;
@@ -47,5 +45,5 @@ public class ObjectConfigurator<TOwner> : IBasicConfigurator<TOwner>
         return new MemberConfigurator<TOwner, T>(this, member);
     }
 
-    public PrintingConfig<TOwner> ConfigurePrinter() => new(this);
+    public PrintingConfig<TOwner> Build() => new(this);
 }

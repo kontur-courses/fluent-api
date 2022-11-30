@@ -1,11 +1,11 @@
-using ObjectPrinting.BasicConfigurator;
-using ObjectPrinting.BasicConfigurator.Implementation;
+using ObjectPrinting.ObjectConfiguration;
+using ObjectPrinting.ObjectConfiguration.Implementation;
 
 namespace ObjectPrinting
 {
     public class ObjectConfig
     {
-        public static IBasicConfigurator<T> For<T>() =>
-            new ObjectConfigurator<T>();
+        public static IObjectConfiguration<T> For<T>() =>
+            new ObjectConfiguration<T>();
     }
 }

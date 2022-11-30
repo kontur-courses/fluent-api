@@ -1,21 +1,21 @@
 using System;
 using System.Linq;
 using System.Text;
-using ObjectPrinting.BasicConfigurator;
+using ObjectPrinting.ObjectConfiguration.Implementation;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly IBasicConfigurator<TOwner> configurator;
+        private readonly ObjectConfiguration<TOwner> configuration;
         private readonly Type[] finalTypes = {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
         
-        public PrintingConfig(IBasicConfigurator<TOwner> configurator)
+        public PrintingConfig(ObjectConfiguration<TOwner> configuration)
         {
-            this.configurator = configurator;
+            this.configuration = configuration;
         }
         
         public string PrintToString(TOwner obj) =>
@@ -28,8 +28,8 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
             var result = obj + Environment.NewLine;
-            if (configurator.TypeConfigs.ContainsKey(type))
-                result = ConfigureItem(result, configurator.TypeConfigs[type]);
+            if (configuration.TypeConfigs.ContainsKey(type))
+                result = ConfigureItem(result, configuration.TypeConfigs[type]);
 
             if (finalTypes.Contains(type))
                 return result;
@@ -40,10 +40,10 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var value = PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-                if (configurator.MemberInfoConfigs.ContainsKey(propertyInfo))
-                    value = ConfigureItem(value, configurator.MemberInfoConfigs[propertyInfo]);
+                if (configuration.MemberInfoConfigs.ContainsKey(propertyInfo))
+                    value = ConfigureItem(value, configuration.MemberInfoConfigs[propertyInfo]);
                     
-                if (configurator.ExcludedTypes.Contains(propertyInfo.PropertyType) || configurator.ExcludedMembers.Contains(propertyInfo))
+                if (configuration.ExcludedTypes.Contains(propertyInfo.PropertyType) || configuration.ExcludedMembers.Contains(propertyInfo))
                     continue;
                 sb.Append(identation + propertyInfo.Name + " = " + value);
             }
