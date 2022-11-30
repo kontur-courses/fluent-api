@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -11,7 +12,7 @@ namespace ObjectPrinting.Tests
         public void Demo()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-
+            
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<int>()
