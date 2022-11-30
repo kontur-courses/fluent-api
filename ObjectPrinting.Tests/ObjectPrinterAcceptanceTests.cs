@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using FluentAssertions;
+﻿using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests

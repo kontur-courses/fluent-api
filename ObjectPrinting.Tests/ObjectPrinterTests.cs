@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
@@ -30,19 +28,19 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToStringDefault_ShouldPrintDefaultValues()
+    public void PrintToStringDefault_ShouldReturnSerializedStringByDefault()
     {
         var expected = new StringBuilder()
-            .AppendLine(nameof(Person))
-            .AppendLine($"\t{nameof(Person.Id)} = {nameof(Guid)}")
-            .AppendLine($"\t{nameof(Person.Name)} = {person.Name}")
-            .AppendLine($"\t{nameof(Person.Height)} = {person.Height}")
-            .AppendLine($"\t{nameof(Person.Age)} = {person.Age}")
-            .AppendLine($"\t{nameof(Person.Parent)} = null")
-            .AppendLine($"\t{nameof(Person.Child)} = null")
-            .AppendLine($"\t{nameof(Person.Items)} = null")
-            .AppendLine($"\t{nameof(Person.SignificantEvents)} = null")
-            .AppendLine($"\t{nameof(Person.weight)} = {person.weight}")
+            .AppendLine("Person")
+            .AppendLine($"\tId = Guid")
+            .AppendLine($"\tName = Bob")
+            .AppendLine($"\tHeight = 170")
+            .AppendLine($"\tAge = 18")
+            .AppendLine($"\tParent = null")
+            .AppendLine($"\tChild = null")
+            .AppendLine($"\tItems = null")
+            .AppendLine($"\tSignificantEvents = null")
+            .AppendLine($"\tweight = 75")
             .ToString();
 
         var serialized = person.PrintToStringDefault();
@@ -243,9 +241,7 @@ public class ObjectPrinterTests
         var config = ObjectPrinter.For<Person>();
 
         var serialized = config.PrintToString(person);
-
-        serialized.Should().ContainAll($"{nameof(Person.SignificantEvents)} = ", "[", "KeyValuePair`2", "Key = 2025",
-            "Value = Купил дом", "KeyValuePair`2", "Key = 2030", "Value = Купил квартиру", "]");
+        serialized.Should().ContainAll($"{nameof(Person.SignificantEvents)} = ","[", "2025 : Купил дом","2030 : Купил квартиру","]");
     }
 
     [Test]
