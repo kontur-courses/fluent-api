@@ -1,18 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO.Compression;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
         private readonly Dictionary<object, object> serializes = new Dictionary<object, object>();
-        private readonly List<object> excludedObjects = new List<object>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<string> excludedProperties = new List<string>();
 
         private readonly Type[] finalTypes = new[]
         {
@@ -20,10 +21,12 @@ namespace ObjectPrinting
             typeof(DateTime), typeof(TimeSpan)
         };
 
+        private int MaxNestingLevel { get; set; } = 10;
+
         public PrintingConfig<TOwner> Excluding<TProperty>()
         {
-            if (!excludedObjects.Contains(typeof(TProperty)))
-                excludedObjects.Add(typeof(TProperty));
+            if (!excludedTypes.Contains(typeof(TProperty)))
+                excludedTypes.Add(typeof(TProperty));
             
             return this;
         }
@@ -33,8 +36,8 @@ namespace ObjectPrinting
             var memberExpression = (MemberExpression)expr.Body;
             var propertyName = memberExpression.Member.Name;
             
-            if (!excludedObjects.Contains(propertyName))
-                excludedObjects.Add(propertyName);
+            if (!excludedProperties.Contains(propertyName))
+                excludedProperties.Add(propertyName);
             
             return this;
         }
@@ -50,62 +53,74 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TProperty>(this, memberExpression.Member, serializes);
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(TOwner obj, int maxNestingLevel = -1)
         {
-            return PrintToString(obj, 0);
+            if (maxNestingLevel > 0)
+                MaxNestingLevel = maxNestingLevel;
+            return Print(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string Print(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (nestingLevel == 5)
-                return "TOO DEEP" + Environment.NewLine;
-            
             var type = obj.GetType();
-            
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            if (finalTypes.Contains(type))
+                return Convert.ToString(obj) + Environment.NewLine;
+            
+            var indentation = new string('\t', nestingLevel + 1);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine(type.Name);
 
             foreach (var memberInfo in type.GetProperties().Cast<MemberInfo>().Concat(type.GetFields()))
             {
-                var memberName = memberInfo.Name;
-                var memberType = memberInfo.GetMemberType();
-                var memberValue = memberInfo.GetMemberValue(obj);
+                var member = Tuple.Create(
+                    memberInfo.Name, memberInfo.GetMemberType(), memberInfo.GetMemberValue(obj)
+                );
 
-                if (excludedObjects.Contains(memberName) || excludedObjects.Contains(memberType))
-                    continue;
-
-                if (serializes.ContainsKey(memberName))
+                if (memberInfo.DeclaringType == typeof(TOwner))
                 {
-                    if (serializes[memberName] is Delegate func)
-                        stringBuilder.AppendLine(identation + InvokeDelegate(func, memberValue));
-                    continue;
-                }
+                    var nextString = CheckAndConvertPropertyToString(member);
 
-                if (serializes.ContainsKey(memberType))
-                {
-                    if (serializes[memberType] is CultureInfo cultureInfo)
+                    if (!string.IsNullOrEmpty(nextString))
                     {
-                        var nextString = PrintToString(Convert.ToString(memberValue, cultureInfo), nestingLevel + 1);
-                        stringBuilder.Append(identation + memberName + " = " + nextString);
+                        stringBuilder.AppendLine(indentation + nextString);
+                        continue;
                     }
-                    
-                    if (serializes[memberType] is Delegate func)
-                        stringBuilder.AppendLine(identation + InvokeDelegate(func, memberValue));
-                    
-                    continue;
                 }
-                
-                stringBuilder.Append(identation + memberName + " = " + PrintToString(memberValue, nestingLevel + 1));
+
+                if (nestingLevel != MaxNestingLevel)
+                    stringBuilder.Append(indentation + member.Item1 + " = " + Print(member.Item3, nestingLevel + 1));
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        private string CheckAndConvertPropertyToString(Tuple<string, object, object> memberInfo)
+        {
+            if (excludedProperties.Contains(memberInfo.Item1) || excludedTypes.Contains(memberInfo.Item2))
+                return null;
+            
+            if (serializes.ContainsKey(memberInfo.Item1))
+            {
+                if (serializes[memberInfo.Item1] is Delegate func)
+                    return (string)InvokeDelegate(func, memberInfo.Item3);
             }
             
-            return stringBuilder.ToString();
+            if (serializes.ContainsKey(memberInfo.Item2))
+            {
+                if (serializes[memberInfo.Item2] is CultureInfo cultureInfo)
+                {
+                    return memberInfo.Item1 + " = " + Convert.ToString(memberInfo.Item3, cultureInfo);
+                }
+                    
+                if (serializes[memberInfo.Item2] is Delegate func)
+                    return (string)InvokeDelegate(func, memberInfo.Item3);
+            }
+
+            return null;
         }
 
         private object InvokeDelegate(Delegate del, object value)

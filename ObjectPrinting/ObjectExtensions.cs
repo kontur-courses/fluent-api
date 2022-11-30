@@ -4,14 +4,14 @@ namespace ObjectPrinting
 {
     public static class ObjectExtensions
     {
-        public static string PrintToString<TOwner>(this TOwner obj)
+        public static string PrintToString<TOwner>(this TOwner obj, int maxNestingLevel)
         {
-            return new PrintingConfig<TOwner>().PrintToString(obj);
+            return new PrintingConfig<TOwner>().PrintToString(obj, maxNestingLevel);
         }
         
-        public static string PrintToString<TOwner>(this TOwner obj, Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> func)
+        public static string PrintToString<TOwner>(this TOwner obj, Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> func, int maxNestingLevel = -1)
         {
-            return func(ObjectPrinter.For<TOwner>()).PrintToString(obj);
+            return func(ObjectPrinter.For<TOwner>()).PrintToString(obj, maxNestingLevel);
         }
     }
 }

@@ -8,9 +8,7 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TProperty>
     {
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
-        public MemberInfo MemberInfo => memberInfo;
-        public IDictionary<object, object> Serializers => serializers;
-
+        
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo memberInfo;
         private readonly IDictionary<object, object> serializers;
