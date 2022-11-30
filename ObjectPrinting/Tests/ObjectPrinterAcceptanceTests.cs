@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -8,6 +9,7 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private PrintingConfig<Person> printingConfig;
+        
         private readonly Person person = new Person { Child = new Person()
         {
             Name = "Maks",
@@ -18,9 +20,19 @@ namespace ObjectPrinting.Tests
         }, Car = new Car()
             {
                 Color = 123,
-                Company = "Tesla"
+                Company = "Tesla",
+                Name = "My lovely car"
             },
             Name = "Alex", Surname = "Tsvetkov", Age = 19, Height = 5.6, Width = 7.2f };
+
+        private readonly object[] objectArray = { new Person(), "322", new Car() { Color = 225 } };
+        private readonly List<int> intList = new List<int>() { 1, 2, 3 };
+        private readonly Dictionary<int, int> dictionary = new Dictionary<int, int>()
+        {
+            { 1, 2 },
+            { 2, 3 },
+            { 3, 4 }
+        };
 
         [SetUp]
         public void SetUp()
@@ -31,21 +43,31 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var printer = ObjectPrinter.For<Person>()
+            var personPrinter = ObjectPrinter.For<Person>()
                 .Excluding(x => x.Age)
+                .Excluding(x => x.Id)
                 .Printing(x => x.Name).Using(x => x.ToString() + "BBB")
                 .Printing<float>().Using(CultureInfo.InvariantCulture)
                 .Printing<double>().Using(x => (x + 100).ToString())
                 .Printing(x => x.Name).TrimmedToLength(5);
-
-            var s1 = printer.PrintToString(person);
+            
+            var s0 = objectArray.PrintToString(2);
+            Console.WriteLine(s0);
+            
+            var s1 = intList.PrintToString(2);
             Console.WriteLine(s1);
-
-            var s2 = person.PrintToString();
+            
+            var s2 = dictionary.PrintToString(2);
             Console.WriteLine(s2);
-
-            var s3 = person.PrintToString(x => x.Excluding(x => x.Age));
+            
+            var s3 = personPrinter.PrintToString(person, 2);
             Console.WriteLine(s3);
+
+            var s4 = person.PrintToString(2);
+            Console.WriteLine(s4);
+
+            var s5 = person.PrintToString(x => x.Excluding(x => x.Age), 2);
+            Console.WriteLine(s5);
         }
 
         [Test]

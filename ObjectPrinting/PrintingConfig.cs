@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO.Compression;
@@ -74,11 +75,17 @@ namespace ObjectPrinting
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine(type.Name);
 
+            if (obj is ICollection collection)
+                return PrintCollection(collection, nestingLevel, stringBuilder, indentation);
+
             foreach (var memberInfo in type.GetProperties().Cast<MemberInfo>().Concat(type.GetFields()))
             {
                 var member = Tuple.Create(
                     memberInfo.Name, memberInfo.GetMemberType(), memberInfo.GetMemberValue(obj)
                 );
+                
+                if (excludedProperties.Contains(member.Item1) || excludedTypes.Contains(member.Item2))
+                    continue;
 
                 if (memberInfo.DeclaringType == typeof(TOwner))
                 {
@@ -98,11 +105,19 @@ namespace ObjectPrinting
             return stringBuilder.ToString();
         }
 
+        private string PrintCollection(IEnumerable collection, int nestingLevel, StringBuilder stringBuilder, string indentation)
+        {
+            foreach (var item in collection)
+            {
+                var itemType = item.GetType();
+                var name = itemType.Name;
+                stringBuilder.Append(indentation + name + " = " + Print(item, nestingLevel + 1));
+            }
+            return stringBuilder.ToString();
+        }
+
         private string CheckAndConvertPropertyToString(Tuple<string, object, object> memberInfo)
         {
-            if (excludedProperties.Contains(memberInfo.Item1) || excludedTypes.Contains(memberInfo.Item2))
-                return null;
-            
             if (serializes.ContainsKey(memberInfo.Item1))
             {
                 if (serializes[memberInfo.Item1] is Delegate func)

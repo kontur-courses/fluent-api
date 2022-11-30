@@ -4,7 +4,7 @@ namespace ObjectPrinting
 {
     public static class ObjectExtensions
     {
-        public static string PrintToString<TOwner>(this TOwner obj, int maxNestingLevel)
+        public static string PrintToString<TOwner>(this TOwner obj, int maxNestingLevel = -1)
         {
             return new PrintingConfig<TOwner>().PrintToString(obj, maxNestingLevel);
         }

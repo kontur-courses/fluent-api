@@ -4,5 +4,6 @@
     {
         public int Color;
         public string Company;
+        public string Name;
     }
 }
