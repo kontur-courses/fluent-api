@@ -10,10 +10,9 @@ namespace ObjectPrinting
         private readonly PrintingConfig<TOwner> printingConfig;
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
 
-
-        public Func<TPropType, string> printFunc;
-        public int strTrimLength;
-        public CultureInfo culture;
+        private Func<TPropType, string> printFunc;
+        private int strTrimLength;
+        private CultureInfo culture;
 
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
         {

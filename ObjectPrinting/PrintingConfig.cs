@@ -85,9 +85,8 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
 
 
-            if (obj is IDictionary)
+            if (obj is IDictionary dict)
             {
-                var dict = obj as IDictionary;
                 foreach (var key in dict.Keys)
                 {
                     sb.Append(identation);
