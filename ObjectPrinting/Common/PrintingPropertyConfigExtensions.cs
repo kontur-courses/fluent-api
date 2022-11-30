@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Common
 {
-    public static class PrintingConfigExtensions
+    public static class PrintingPropertyConfigExtensions
     {
         public static IPrintingPropertyConfig<TOwner, string> SetMaxLength<TOwner>(this IPrintingPropertyBaseConfig<TOwner, string> propConfig, int length)
         {
