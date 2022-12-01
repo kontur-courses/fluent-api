@@ -10,78 +10,9 @@ namespace ObjectPrinting.Common
 {
     public interface IPrintingConfig<TOwner> : IHaveRoot
     {
-        private static readonly Type[] finalTypes = new[]
+        public string PrintToString<TOwner>(TOwner obj)
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-        };
-
-        private static readonly Type[] numericTypes = new[]
-        {
-            typeof(double), typeof(float)
-        };
-
-        private static readonly string propertyFormat = "{0}{1} = {2}";
-
-        public string PrintToString<T>(T obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var currentType = obj.GetType();
-            if (Root.TypeSerializers.ContainsKey(currentType))
-                return Root.TypeSerializers[currentType](obj);
-
-            if (numericTypes.Contains(currentType) && Root.NumericTypeCulture.ContainsKey(currentType))
-            {
-                var currentCulture = CultureInfo.CurrentCulture;
-
-                CultureInfo.CurrentCulture = Root.NumericTypeCulture[currentType];
-                var str = obj.ToString();
-
-                CultureInfo.CurrentCulture = currentCulture;
-                return str;
-            }
-
-            if (finalTypes.Contains(currentType))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-
-            sb.AppendLine(currentType.Name);
-            var properties = currentType.GetProperties();
-            if (properties.Length < 1)
-                return sb.Append(obj.ToString()).ToString();
-
-            foreach (var propertyInfo in currentType.GetProperties())
-            {
-                if (Root.ExcludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-
-                if (Root.ExcludedProperties.Contains(propertyInfo))
-                    continue;
-
-                if (Root.PropertySerializers.ContainsKey(propertyInfo))
-                {
-                    var serializer = Root.PropertySerializers[propertyInfo];
-                    sb.AppendFormat(propertyFormat, identation,
-                                                    propertyInfo.Name,
-                                                    serializer(propertyInfo.GetValue(obj))).AppendLine();
-                    continue;
-                }
-
-                sb.AppendFormat(propertyFormat, identation,
-                                                propertyInfo.Name,
-                                                PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-            }
-            return sb.ToString();
+            return ObjectSerializer.Serialize(obj, Root);
         }
 
         public IPrintingConfig<TOwner> Exclude<TExcluded>()
