@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -13,6 +14,13 @@ namespace ObjectPrinting
         {
             propConfig.PropertyRule = s => s.Substring(0, maxLen);
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner,TPropType>(this PropertyPrintingConfig<TOwner,TPropType> propConfig, CultureInfo culture)
+            where TPropType : IConvertible
+        {
+            propConfig.PropertyRule = t => t.ToString(culture);
+            return ((IPropertyPrintingConfig<TOwner, TPropType>)propConfig).ParentConfig;
         }
 
     }

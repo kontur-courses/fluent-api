@@ -107,9 +107,9 @@ namespace ObjectPrinting
                 if (obj is string stringObj)
                     objValue = ApplyRulesForString(stringObj, prInfo);
                 else if (obj is int intObj)
-                    objValue = ApplyRulesForNumbers(intObj, prInfo);
+                    objValue = ApplyRulesForNotString(intObj, prInfo);
                 else if (obj is double doubleObj)
-                    objValue = ApplyRulesForNumbers(doubleObj, prInfo);
+                    objValue = ApplyRulesForNotString(doubleObj, prInfo);
                 return objValue;
             }
             var sb = new StringBuilder();
@@ -126,7 +126,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string ApplyRulesForNumbers<TPropType>(TPropType obj, PropertyInfo prInfo) where TPropType : IConvertible
+        private string ApplyRulesForNotString<TPropType>(TPropType obj, PropertyInfo prInfo)
         {
             var objValue = obj.ToString();
             if (typesConfig.ContainsKey(typeof(TPropType)) 
@@ -134,8 +134,6 @@ namespace ObjectPrinting
             {
                 if (!(config.PropertyRule is null))
                     objValue = config.PropertyRule(obj);
-                else if (!(config.CultureInfo is null))
-                    objValue = obj.ToString(config.CultureInfo);
             }
 
             if (!(prInfo is null) && propertiesConfig.ContainsKey(prInfo) 
