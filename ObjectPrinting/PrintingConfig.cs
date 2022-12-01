@@ -10,8 +10,20 @@ using System.Text.RegularExpressions;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public partial class PrintingConfig<TOwner>
     {
+        private Dictionary<string, Func<string, string>> StringCutFunctions =
+            new Dictionary<string, Func<string, string>>();
+
+
+        private readonly Type[] finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private CultureInfo DefaultCulture = null;
+
         public string PrintToString(TOwner obj)
         {
             foreach (var propertyInfo in obj.GetType().GetProperties())
@@ -23,11 +35,6 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, new List<object>(), "");
         }
 
-        private readonly Type[] finalTypes = new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
 
         private string PrintToString(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
@@ -56,7 +63,7 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
-            
+
             if (obj is IEnumerable)
             {
                 return PrintIEnumerable(obj as IEnumerable, nestingLevel, parentObjects, tail);
@@ -75,7 +82,7 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 string name = tail + propertyInfo.Name;
-                
+
                 if (AlternativeSerializationMethodConfigs.ContainsKey(name) &&
                     AlternativeSerializationMethodConfigs[name].Excluded ||
                     TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType) &&
@@ -84,7 +91,7 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = ");
                 var value = propertyInfo.GetValue(obj);
                 if (propertyInfo.PropertyType == typeof(string)) value = GetStringCut(value as string, name);
-                
+
                 {
                     parentObjects.Add(obj);
                     sb.Append(PrintToString(value,
@@ -95,6 +102,7 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+
         private string PrintIfHasAlternatedForTypeMethod(object obj)
         {
             StringBuilder sb = new StringBuilder();
@@ -103,6 +111,7 @@ namespace ObjectPrinting
             sb.AppendLine();
             return sb.ToString();
         }
+
         private string PrintIfHasAlternatedMethod(object obj, string tail)
         {
             StringBuilder sb = new StringBuilder();
@@ -150,7 +159,6 @@ namespace ObjectPrinting
             return this;
         }
 
-        private CultureInfo DefaultCulture = null;
 
         public IPropertyConfig<TOwner, T> ConfigForProperty<T>(Expression<Func<TOwner, T>> property)
         {
@@ -167,7 +175,7 @@ namespace ObjectPrinting
         private void CheckExpression<T>(Expression<Func<TOwner, T>> expr)
         {
             if (expr.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
-        } 
+        }
 
         public PrintingConfig<TOwner> ExcludeType<T>()
         {
@@ -175,28 +183,11 @@ namespace ObjectPrinting
             return this;
         }
 
-        private Dictionary<Type, PropertySerializationConfig> TypeDefaultConfigs =
-            new Dictionary<Type, PropertySerializationConfig>();
-
-        private PropertySerializationConfig GetDefaultConfig<T>()
-        {
-            var type = typeof(T);
-            if (!TypeDefaultConfigs.ContainsKey(type)) TypeDefaultConfigs.Add(type, new PropertySerializationConfig());
-            return TypeDefaultConfigs[type];
-        }
-
 
         public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
             GetConfig(propertyExpression).Excluded = true;
             return this;
-        }
-
-        internal void SetSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
-            Func<T, string> newMethod)
-        {
-            CheckExpression(propertyExpression);
-            GetConfig(propertyExpression).SetNewSerializeMethod(newMethod);
         }
 
         private string GetStringCut(string s, string propertyName)
@@ -216,39 +207,10 @@ namespace ObjectPrinting
             };
         }
 
-        private PropertySerializationConfig GetConfig<T>(Expression<Func<TOwner, T>> propertyExpression)
-        {
-            CheckExpression(propertyExpression);
-            var name = GetFullName(propertyExpression);
-            if (!AlternativeSerializationMethodConfigs.ContainsKey(name))
-                AlternativeSerializationMethodConfigs.Add(name, new PropertySerializationConfig());
-            return AlternativeSerializationMethodConfigs[name];
-        }
-
         private string GetFullName<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
             Regex regex = new Regex("([^.]*)(.)(.*)");
             return regex.Match(propertyExpression.ToString()).Groups[3].ToString();
-        }
-
-        private Dictionary<string, Func<string, string>> StringCutFunctions =
-            new Dictionary<string, Func<string, string>>();
-
-        private Dictionary<string, PropertySerializationConfig> AlternativeSerializationMethodConfigs =
-            new Dictionary<string, PropertySerializationConfig>();
-
-        private class PropertySerializationConfig
-        {
-            public bool Excluded { get; set; } = false;
-            private Func<object, string> OverrideFunc;
-
-
-            public void SetNewSerializeMethod<T>(Func<T, string> newMethod)
-            {
-                OverrideFunc = (object obj) => newMethod((T) obj);
-            }
-
-            public string CalculateStringResult<T>(T value) => OverrideFunc(value);
         }
     }
 }
