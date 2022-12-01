@@ -7,13 +7,7 @@ using System.Text;
 
 namespace ObjectPrinting.Common
 {
-    // exclude type
-    // exclude property
-    // check for loop references
-    // apply serializer
-    // 
-
-    public static class ObjectSerializer
+    internal static class ObjectSerializer
     {
         private static readonly Type[] finalTypes = new[]
         {
@@ -21,14 +15,9 @@ namespace ObjectPrinting.Common
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        private static readonly string propertyFormat = "{0}{1} = {2}";
+        private const string propertyFormat = "{0}{1} = {2}";
 
-        public static string Serialize<T>(T obj, IPrintingConfig<T> config)
-        {
-            return Serialize(obj, config.Root);
-        }
-
-        private static string Serialize<T>(T obj, PrintingConfigRoot configRoot)
+        public static string Serialize<T>(T obj, PrintingConfigRoot configRoot)
         {
             var root = BuildObjectTree(obj, configRoot);
             var str = PrintObjectTreeNode(root, 0, configRoot);
@@ -107,8 +96,26 @@ namespace ObjectPrinting.Common
                 return "null";
 
             var currentType = currentLevel == 0 ? node.Value.GetType() : node.PropertyInfo.PropertyType;
+
+            // appling property serializer
+            if (node.PropertyInfo != null && configRoot.PropertySerializers.ContainsKey(node.PropertyInfo))
+            {
+                string str;
+                if(configRoot.MaxStringPropertyLengths.ContainsKey(node.PropertyInfo))
+                {
+                    int maxLength = configRoot.MaxStringPropertyLengths[node.PropertyInfo];
+                    str = (string)node.Value;
+                    str = maxLength < str.Length ? str.Substring(maxLength) : str;
+                    return configRoot.PropertySerializers[node.PropertyInfo](str);
+                }
+
+                return configRoot.PropertySerializers[node.PropertyInfo](node.Value);
+            }
+
+            // checking for final type
             if (finalTypes.Contains(currentType))
             {
+                // appling culture if exists
                 var oldCulture = CultureInfo.CurrentCulture;
                 if (configRoot.NumericTypeCulture.ContainsKey(currentType))
                     CultureInfo.CurrentCulture = configRoot.NumericTypeCulture[currentType];
@@ -116,7 +123,8 @@ namespace ObjectPrinting.Common
                 var str = node.Value.ToString();
                 CultureInfo.CurrentCulture = oldCulture;
 
-                if (node.PropertyInfo != null && 
+                // appling max length for string property
+                if (node.PropertyInfo != null &&
                     configRoot.MaxStringPropertyLengths.ContainsKey(node.PropertyInfo) &&
                     configRoot.MaxStringPropertyLengths[node.PropertyInfo] < str.Length)
                     str = str.Substring(configRoot.MaxStringPropertyLengths[node.PropertyInfo]);
@@ -132,7 +140,7 @@ namespace ObjectPrinting.Common
             var identation = new string('\t', currentLevel + 1);
             foreach (var subNode in node.Nodes)
             {
-                if(subNode.EndsLoop)
+                if (subNode.EndsLoop)
                 {
                     sb.AppendFormat(propertyFormat, identation, subNode.PropertyInfo.Name, "cycle reference").AppendLine();
                     continue;
@@ -143,6 +151,7 @@ namespace ObjectPrinting.Common
                                                 PrintObjectTreeNode(subNode, currentLevel + 1, configRoot)).AppendLine();
             }
 
+            sb.Remove(sb.Length - 2, 2);
             return sb.ToString();
         }
     }
