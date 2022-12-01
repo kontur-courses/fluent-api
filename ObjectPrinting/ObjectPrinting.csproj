@@ -39,16 +39,6 @@
       <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
       <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
     </None>
-    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_Should_ChangeFormat.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCultureInfoTests</ParentFile>
-      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_Should_OverridePreviousMethod.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCultureInfoTests</ParentFile>
-      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
-    </None>
     <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_Should_OverridePreviousSetCulture.approved.txt">
       <ParentExtension>.cs</ParentExtension>
       <ParentFile>ObjectPrinterCultureInfoTests</ParentFile>
@@ -113,6 +103,9 @@
     </None>
     <None Update="Tests\ObjectPrinterIEnumerableTests.Print_Should_CorrectlyDisplayIEnumerables.approved.txt">
       <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_ShouldNot_OverridePreviousMethod.approved.txt">
+      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
     </None>
   </ItemGroup>
 

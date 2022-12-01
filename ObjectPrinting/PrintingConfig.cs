@@ -58,7 +58,7 @@ namespace ObjectPrinting
 
             if (obj is IFormattable && DefaultCulture != null)
             {
-                return (obj as IFormattable).ToString("", DefaultCulture);
+                return (obj as IFormattable).ToString("", DefaultCulture) + Environment.NewLine;
             }
 
             if (finalTypes.Contains(obj.GetType()))
@@ -145,17 +145,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
-            foreach (var info in typeof(TOwner).GetProperties())
-            {
-                if (info.PropertyType.GetInterface("IFormattable") != null)
-                {
-                    if (!AlternativeSerializationMethodConfigs.ContainsKey(info.Name))
-                        AlternativeSerializationMethodConfigs.Add(info.Name, new PropertySerializationConfig());
-                    AlternativeSerializationMethodConfigs[info.Name]
-                        .SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
-                }
-            }
-
+            DefaultCulture = cultureInfo;
             return this;
         }
 

@@ -1,5 +1,5 @@
 ﻿Operation
-	Operator1 = 0,1
+	Operator1 = 123
 	Operator2 = 0,2
 	Operator3 = 0,3
 	Operator4 = 0,4

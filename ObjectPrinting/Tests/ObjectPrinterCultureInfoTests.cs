@@ -41,7 +41,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void SetCulture_Should_OverridePreviousMethod()
+        public void SetCulture_ShouldNot_OverridePreviousMethod()
         {
             var operation = new Operation()
             {
