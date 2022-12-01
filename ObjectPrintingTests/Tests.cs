@@ -82,7 +82,7 @@ public class Tests
         var s = printer.SetStringMaxSize(5).PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = Guid:" + Environment.NewLine + "\tName = Mipos" +
                       Environment.NewLine + "\tHeight = 183" + Environment.NewLine + "\tAge = 22" +
-                      Environment.NewLine + "\tBirthday = 11.10.2000 0:00:00" +
+                      Environment.NewLine + "\tBirthday = 11.10.2000 12:00:00 AM" +
                       Environment.NewLine);
     }
     [Test]
