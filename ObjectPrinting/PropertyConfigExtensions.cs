@@ -4,7 +4,7 @@ using ObjectPrinting.PrintingConfig;
 
 namespace ObjectPrinting
 {
-    public static class PropertyExtensions
+    public static class PropertyConfigExtensions
     {
         public static PrintingConfig<TOwner> CutString<TOwner>(this IPropertyConfig<TOwner, string> config,
             int maxLength)

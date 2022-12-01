@@ -79,20 +79,18 @@ namespace ObjectPrinting.PrintingConfig
                 string name = tail + propertyInfo.Name;
 
                 if (AlternativeSerializationMethodConfigs.ContainsKey(name) &&
-                    AlternativeSerializationMethodConfigs[name].Excluded ||
+                    AlternativeSerializationMethodConfigs[name].IsExcluded ||
                     TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType) &&
-                    TypeDefaultConfigs[propertyInfo.PropertyType].Excluded) continue;
+                    TypeDefaultConfigs[propertyInfo.PropertyType].IsExcluded) continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
                 var value = propertyInfo.GetValue(obj);
                 if (propertyInfo.PropertyType == typeof(string)) value = GetStringCut(value as string, name);
 
-                {
                     parentObjects.Add(obj);
                     sb.Append(PrintToString(value,
                         nestingLevel + 1, parentObjects, name));
                     parentObjects.Remove(parentObjects.Count - 1);
-                }
             }
 
             return sb.ToString();
@@ -102,7 +100,7 @@ namespace ObjectPrinting.PrintingConfig
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(TypeDefaultConfigs[obj.GetType()]
-                .CalculateStringResult(obj));
+                .Serialize(obj));
             sb.AppendLine();
             return sb.ToString();
         }
@@ -111,7 +109,7 @@ namespace ObjectPrinting.PrintingConfig
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(AlternativeSerializationMethodConfigs[tail]
-                .CalculateStringResult(obj));
+                .Serialize(obj));
             sb.AppendLine();
             return sb.ToString();
         }
@@ -121,6 +119,7 @@ namespace ObjectPrinting.PrintingConfig
         {
             StringBuilder sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
+            var newLineLength = Environment.NewLine.Length;
             sb.Append('[');
             sb.AppendLine();
             foreach (var var in (obj as IEnumerable))
@@ -128,8 +127,9 @@ namespace ObjectPrinting.PrintingConfig
                 sb.Append(identation);
                 sb.Append(PrintToString(var,
                     nestingLevel + 1, parentObjects, tail + "."));
-                var newLineLength = Environment.NewLine.Length;
+                
                 sb.Remove(sb.Length - newLineLength, newLineLength);
+                
                 sb.Append(',');
                 sb.AppendLine();
             }
@@ -165,14 +165,14 @@ namespace ObjectPrinting.PrintingConfig
 
         public PrintingConfig<TOwner> ExcludeType<T>()
         {
-            GetDefaultConfig<T>().Excluded = true;
+            GetDefaultConfig<T>().IsExcluded = true;
             return this;
         }
 
 
         public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
-            GetConfig(propertyExpression).Excluded = true;
+            GetConfig(propertyExpression).IsExcluded = true;
             return this;
         }
 

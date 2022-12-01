@@ -14,16 +14,16 @@ namespace ObjectPrinting.PrintingConfig
 
         private class PropertySerializationConfig
         {
-            public bool Excluded { get; set; } = false;
-            private Func<object, string> OverrideFunc;
+            public bool IsExcluded { get; set; }
+            private Func<object, string> AlternativeSerializationMethod;
 
 
             public void SetNewSerializeMethod<T>(Func<T, string> newMethod)
             {
-                OverrideFunc = (object obj) => newMethod((T) obj);
+                AlternativeSerializationMethod = (object obj) => newMethod((T) obj);
             }
 
-            public string CalculateStringResult<T>(T value) => OverrideFunc(value);
+            public string Serialize<T>(T value) => AlternativeSerializationMethod(value);
         }
 
         private PropertySerializationConfig GetDefaultConfig<T>()
