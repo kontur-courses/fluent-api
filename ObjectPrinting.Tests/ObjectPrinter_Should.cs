@@ -25,20 +25,20 @@ public class ObjectPrinter_Should
     [Test]
     public void PrintToString_ShouldReturnObject_WOConfiguration()
     {
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Age = {person1.Age}");
-        str.Should().Contain($"Name = {person1.Name}");
-        str.Should().Contain("Id = Guid");
-        str.Should().Contain($"Height = {person1.Height}");
-        str.Should().Contain($"Birthday = {person1.Birthday}");
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Age = {person1.Age}");
+        configuredPrintToString.Should().Contain($"Name = {person1.Name}");
+        configuredPrintToString.Should().Contain($"Id = {person1.Id.ToString()}");
+        configuredPrintToString.Should().Contain($"Height = {person1.Height}");
+        configuredPrintToString.Should().Contain($"Birthday = {person1.Birthday}");
     }
 
     [Test]
     public void Exclude_ShouldExclude_Type()
     {
         personConfig.For<int>().Exclude();
-        var str = personConfig.PrintToString(person1);
-        str.Should().NotContain("Age");
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Age");
     }
 
     [Test]
@@ -47,64 +47,65 @@ public class ObjectPrinter_Should
         personConfig.For<int>().Exclude()
             .For<string>().Exclude()
             .For<Guid>().Exclude();
-        var str = personConfig.PrintToString(person1);
-        str.Should().NotContain("Id");
-        str.Should().NotContain("Name");
-        str.Should().NotContain("Age");
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Id");
+        configuredPrintToString.Should().NotContain("Name");
+        configuredPrintToString.Should().NotContain("Age");
     }
 
     [Test]
     public void Exclude_ShouldExclude_Property()
     {
-        personConfig.For(p => p.Id).Exclude();
-        var str = personConfig.PrintToString(person1);
-        str.Should().NotContain("Id");
+        personConfig.Exclude(p => p.Id);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Id");
     }
 
     [Test]
     public void Exclude_ShouldExclude_ManyProperties()
     {
-        personConfig.For(p => p.Id).Exclude()
-            .For(p => p.Name).Exclude();
-        var str = personConfig.PrintToString(person1);
-        str.Should().NotContain("Id").And.NotContain("Name");
+        personConfig.Exclude(p => p.Id)
+            .Exclude(p => p.Name);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Id").And.NotContain("Name");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void ChangeSerialization_ShouldCustomizeSerialization_ForProperty()
     {
         personConfig.For(p => p.Height).ChangeSerialization(height => height.ToString("P"));
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Height = {person1.Height:P}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Height = {person1.Height:P}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void ChangeSerialization_ShouldCustomizeSerialization_ForType()
     {
         personConfig.For<double>().ChangeSerialization(d => d.ToString("P"));
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Height = {person1.Height:P}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Height = {person1.Height:P}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void UseCulture_ShouldCustomizeCulture_ForType()
     {
         personConfig.For<double>().UseCulture(CultureInfo.InvariantCulture);
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void UseCulture_ShouldNotCustomizeCulture_ForDifferentType()
     {
         personConfig.For<double>().UseCulture(CultureInfo.InvariantCulture);
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
-        str.Should().Contain($"Birthday = {person1.Birthday.ToString(CultureInfo.CurrentCulture)}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
+        configuredPrintToString.Should().Contain($"Birthday = {person1.Birthday.ToString(CultureInfo.CurrentCulture)}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -112,10 +113,11 @@ public class ObjectPrinter_Should
     {
         personConfig.For<double>().UseCulture(CultureInfo.InvariantCulture)
             .For<DateTime>().UseCulture(CultureInfo.InvariantCulture);
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
-        str.Should().Contain($"Birthday = {person1.Birthday.ToString(CultureInfo.InvariantCulture)}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Height = {person1.Height.ToString(CultureInfo.InvariantCulture)}");
+        configuredPrintToString.Should()
+            .Contain($"Birthday = {person1.Birthday.ToString(CultureInfo.InvariantCulture)}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [TestCase(0)]
@@ -123,44 +125,52 @@ public class ObjectPrinter_Should
     public void SetLength_ShouldTrim_SmallStrings(int count)
     {
         personConfig.For(s => s.Name).SetLength(count);
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Name = {person1.Name[..count] + Environment.NewLine}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name[..count] + Environment.NewLine}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void SetLength_ShouldNotChangeString_IfLengthMoreThanSizeOfAString()
     {
         personConfig.For(s => s.Name).SetLength(person1.Name.Length + 1);
-        var str = personConfig.PrintToString(person1);
-        str.Should().Contain($"Name = {person1.Name + Environment.NewLine}");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name + Environment.NewLine}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void PrintToString_ShouldWork_WithArrays()
     {
         var collection = new[] { person1, person2, person3 };
-        var str = personConfig.PrintEnumerable(collection, 0);
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintEnumerable(collection);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person2.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person3.Name}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
     public void PrintToString_ShouldWork_WithLists()
     {
         var collection = new List<Person> { person1, person2, person3 };
-        personConfig.For(p => p.Id).Exclude();
-        var str = personConfig.PrintEnumerable(collection, 0);
-        Console.WriteLine(str);
+        personConfig.Exclude(p => p.Id);
+        var configuredPrintToString = personConfig.PrintEnumerable(collection);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person2.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person3.Name}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
-    public void PrintToString_ShouldWorkCorrect_WithCyclicReference()
+    public void PrintToString_ShouldWork_WithDictionaries()
     {
-        var person = person1;
-        person.Parent = person;
-        Action action = () => personConfig.PrintToString(person);
-        action.Should().Throw<ArgumentException>();
+        var collection = new Dictionary<Person, int> { { person1, 1 }, { person2, 2 }, { person3, 3 } };
+        var configuredPrintToString = personConfig.PrintDictionary(collection);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person2.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person3.Name}");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -168,10 +178,9 @@ public class ObjectPrinter_Should
     {
         var person = person1;
         person.Parent = person;
-        personConfig.IgnoreCyclicReference();
-        var str = personConfig.PrintToString(person);
-        str.Should().Contain("New cyclic reference detected");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person);
+        configuredPrintToString.Should().Contain("New cyclic reference detected");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -180,11 +189,11 @@ public class ObjectPrinter_Should
         var person = person1;
         person.Parent = person2;
         personConfig.For<int>().Exclude();
-        personConfig.For(p => p.Id).Exclude();
-        var str = personConfig.PrintToString(person);
-        str.Should().NotContain("Age");
-        str.Should().NotContain("Id");
-        Console.WriteLine(str);
+        personConfig.Exclude(p => p.Id);
+        var configuredPrintToString = personConfig.PrintToString(person);
+        configuredPrintToString.Should().NotContain("Age");
+        configuredPrintToString.Should().NotContain("Id");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -192,11 +201,11 @@ public class ObjectPrinter_Should
     {
         var person = person1;
         person.Aliases = new[] { "Alex", "Memes", "Tupac" };
-        var str = personConfig.PrintToString(person);
-        str.Should().Contain("Age");
-        str.Should().Contain("Memes");
-        str.Should().Contain("Tupac");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person);
+        configuredPrintToString.Should().Contain("Age");
+        configuredPrintToString.Should().Contain("Memes");
+        configuredPrintToString.Should().Contain("Tupac");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -204,11 +213,11 @@ public class ObjectPrinter_Should
     {
         var person = person1;
         person.FavoriteNumbers = new List<int> { 420, 1337, 69 };
-        var str = personConfig.PrintToString(person);
-        str.Should().Contain("420");
-        str.Should().Contain("1337");
-        str.Should().Contain("69");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.PrintToString(person);
+        configuredPrintToString.Should().Contain("420");
+        configuredPrintToString.Should().Contain("1337");
+        configuredPrintToString.Should().Contain("69");
+        Console.WriteLine(configuredPrintToString);
     }
 
     [Test]
@@ -216,23 +225,56 @@ public class ObjectPrinter_Should
     {
         var person = person1;
         person.FavoriteNumbers = new List<int> { 420, 1337, 69 };
-        var str = personConfig.For<int>().Exclude().PrintToString(person);
-        str.Should().NotContain("420");
-        str.Should().NotContain("1337");
-        str.Should().NotContain("69");
-        Console.WriteLine(str);
+        var configuredPrintToString = personConfig.For<int>().Exclude().PrintToString(person);
+        configuredPrintToString.Should().NotContain("420");
+        configuredPrintToString.Should().NotContain("1337");
+        configuredPrintToString.Should().NotContain("69");
+        Console.WriteLine(configuredPrintToString);
     }
-    
+
     [Test]
     public void PrintToString_ShouldPrintDictionaries_InsideClass()
     {
         var person = person1;
-        person.Tasks = new Dictionary<string, DateTime> { {"do homework", DateTime.Today}, {"bake a cake", DateTime.Now}};
-        var str = personConfig.For<int>().Exclude().PrintToString(person);
-        str.Should().Contain("Key = do homework");
-        str.Should().Contain($"Value = {DateTime.Today}");
-        str.Should().Contain("Key = bake a cake");
-        str.Should().Contain($"Value = {DateTime.Now}");
-        Console.WriteLine(str);
+        person.Tasks = new Dictionary<string, DateTime>
+            { { "do homework", DateTime.Today }, { "bake a cake", DateTime.Now } };
+        var configuredPrintToString = personConfig.For<int>().Exclude().PrintToString(person);
+        configuredPrintToString.Should().Contain($"do homework : {DateTime.Today}");
+        configuredPrintToString.Should().Contain($"bake a cake : {DateTime.Now}");
+        Console.WriteLine(configuredPrintToString);
+    }
+
+    [Test]
+    public void PrintToString_ShouldPrint_HardObjects()
+    {
+        var person = person1;
+        person2.Tasks = new Dictionary<string, DateTime>
+            { { "make memes", DateTime.Today }, { "create serializer", DateTime.Now } };
+        person.Childrens = new[] { person2, person3 };
+        personConfig.Exclude(p => p.Id);
+        var configuredPrintToString = personConfig.PrintToString(person);
+        configuredPrintToString.Should().Contain($"Name = {person1.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person2.Name}");
+        configuredPrintToString.Should().Contain($"Name = {person3.Name}");
+        Console.WriteLine(configuredPrintToString);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldNotExclude_PropertiesInNestedObjects()
+    {
+        person1.Parent = new Person() { Name = "Vasiliy", Age = 20};
+        personConfig.Exclude(p => p.Age);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain($"Age = {person1.Parent.Age}");
+        Console.WriteLine(configuredPrintToString);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldWork_WithFields()
+    {
+        personConfig.Exclude(p => p.Weight);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Width");
+        Console.WriteLine(configuredPrintToString);
     }
 }

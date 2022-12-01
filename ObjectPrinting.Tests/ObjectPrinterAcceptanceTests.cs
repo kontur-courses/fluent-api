@@ -25,7 +25,7 @@ namespace ObjectPrinting.Tests
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .For(p => p.Name).SetLength(3)
                 //6. Исключить из сериализации конкретного свойства
-                .For(p => p.Age).Exclude();
+                .Exclude(p => p.Age);
 
             var s1 = printer.PrintToString(person);
 
@@ -33,7 +33,7 @@ namespace ObjectPrinting.Tests
             var s2 = person.PrintToString();
 
             //8. ...с конфигурированием
-            var s3 = person.PrintToString(s => s.For(p => p.Age).Exclude());
+            var s3 = person.PrintToString(s => s.Exclude(p => p.Age));
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);

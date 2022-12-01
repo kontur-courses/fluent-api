@@ -10,8 +10,10 @@ namespace ObjectPrinting.Models
         public double Height { get; set; }
         public int Age { get; set; }
         public DateTime Birthday { get; set; }
+        public int Weight;
         public Person Parent { get; set; }
         public string[] Aliases { get; set; }
+        public Person[] Childrens { get; set; }
         public List<int> FavoriteNumbers { get; set; }
         public Dictionary<string, DateTime> Tasks { get; set; }
     }

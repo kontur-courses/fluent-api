@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting.PrintingConfiguration
 {
@@ -22,13 +21,6 @@ namespace ObjectPrinting.PrintingConfiguration
         {
             var type = typeof(TType);
             PrintingConfig.AddSerializationTypeRule(type, func);
-            return PrintingConfig;
-        }
-
-        public PrintingConfig<TOwner> UseCulture(CultureInfo invariantCulture)
-        {
-            var type = typeof(TType);
-            PrintingConfig.AddCultureUsing(type, invariantCulture);
             return PrintingConfig;
         }
     }
