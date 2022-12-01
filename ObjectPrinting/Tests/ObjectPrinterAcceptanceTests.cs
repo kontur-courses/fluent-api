@@ -1,27 +1,131 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
-        public void Demo()
+        private Person _person;
+        
+        [SetUp]
+        public void CreatePerson()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            _person = new Person { Name = "Alex", Age = 19, Height = 200.02, Id = "1", Country = "Russia", Weight = 100 };
+        }
 
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
+        [Test]
+        public void PrintToString_PrintArray()
+        {
+            var persons = new[] { _person, _person };
             
-            string s1 = printer.PrintToString(person);
+            ObjectPrinter
+                .For<Person>()
+                .PrintToString(persons)
+                .Should()
+                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+        }
+        
+        [Test]
+        public void PrintToString_PrintDictionary()
+        {
+            var persons = new Dictionary<string, Person>()
+            {
+                { "1", _person },
+                { "2", _person },
+            };
+            
+            ObjectPrinter
+                .For<Person>()
+                .PrintToString(persons)
+                .Should()
+                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+        }
+        
+        [Test]
+        public void PrintToString_PrintList()
+        {
+            var persons = new List<Person>()
+            {
+                _person,
+                _person
+            };
+            
+            ObjectPrinter
+                .For<Person>()
+                .PrintToString(persons)
+                .Should()
+                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+        }
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+              [Test]
+        public void PrintToString_PrintsDefaultString_WhenNoOptions()
+        {
+            var actualString = ObjectPrinter
+                .For<Person>()
+                .PrintToString(_person);
+
+            var expectedSting = $"Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n";
+
+            expectedSting.Should().Be(actualString);
+        }
+
+        [Test]
+        public void PrintToString_DontPrintPropertyWithExcludedType()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+               .Exclude<Guid>()
+               .PrintToString(_person);
+
+            actualString.Should().NotContain("Guid");
+        }
+
+        [Test]
+        public void PrintToString_DontPrintExcludedProperty()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+               .Exclude(p => p.Height)
+               .PrintToString(_person);
+
+            actualString.Should().NotContain("Height");
+        }
+
+        [Test]
+        public void PrintToString_PrintsPropertiesWithTypeSerializationOption()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .CustomSerialize<string>()
+                .Using(i => i.GetValue(_person) + " :)")
+                .PrintToString(_person);
+
+            actualString.Should().Contain(_person.Name + " :)");
+        }
+
+        [Test]
+        public void PrintToString_PrintsNumericalTypeWithSpecifiedCulture()
+        {
+            var culture = new CultureInfo("en");
+
+            var actualString = ObjectPrinter.For<Person>()
+                .CustomSerialize<double>()
+                .Using(propertyInfo => string.Format(propertyInfo.GetValue(_person).ToString(), culture))
+                .PrintToString(_person);
+
+            actualString.Should().Contain($"\tWeight = {_person.Weight.ToString(null, culture)}\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsPropertyWithSerializationOption()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .CustomSerialize(p => p.Age)
+                .Using(age => $"{age.GetValue(_person)} years old")
+                .PrintToString(_person);
+
+            actualString.Should().Contain($"\tAge = {_person.Age} years old\r\n");
         }
     }
 }
