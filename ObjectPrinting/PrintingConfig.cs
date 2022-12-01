@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -35,18 +36,42 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (AlternativeSerializationMethodConfigs.ContainsKey(tail))
+            {
+                return PrintIfHasAlternatedMethod(obj, tail);
+            }
+
+            if (TypeDefaultConfigs.ContainsKey(obj.GetType()))
+            {
+                return PrintIfHasAlternatedForTypeMethod(obj);
+            }
+
+            if (obj is IFormattable && DefaultCulture != null)
+            {
+                return (obj as IFormattable).ToString("", DefaultCulture);
+            }
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+            
+            if (obj is IEnumerable)
+            {
+                return PrintIEnumerable(obj as IEnumerable, nestingLevel, parentObjects, tail);
+            }
 
+            return PrintNested(obj, nestingLevel, parentObjects, tail);
+        }
+
+        private string PrintNested(object obj, int nestingLevel, List<object> parentObjects, string tail)
+        {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+            if (tail != "") tail += '.';
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                string name = tail;
-                if (name != "") name += '.';
-                name += propertyInfo.Name;
+                string name = tail + propertyInfo.Name;
                 
                 if (AlternativeSerializationMethodConfigs.ContainsKey(name) &&
                     AlternativeSerializationMethodConfigs[name].Excluded ||
@@ -56,24 +81,7 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = ");
                 var value = propertyInfo.GetValue(obj);
                 if (propertyInfo.PropertyType == typeof(string)) value = GetStringCut(value as string, name);
-
-                if (AlternativeSerializationMethodConfigs.ContainsKey(name))
-                {
-                    sb.Append(AlternativeSerializationMethodConfigs[name]
-                        .CalculateStringResult(value));
-                    sb.AppendLine();
-                }
-                else if (TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(TypeDefaultConfigs[propertyInfo.PropertyType]
-                        .CalculateStringResult(value));
-                    sb.AppendLine();
-                }
-                else if (propertyInfo.PropertyType.GetInterface("IFormattable") != null && DefaultCulture != null)
-                {
-                    sb.Append((obj as IFormattable).ToString("", DefaultCulture));
-                }
-                else
+                
                 {
                     parentObjects.Add(obj);
                     sb.Append(PrintToString(value,
@@ -84,8 +92,44 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+        private string PrintIfHasAlternatedForTypeMethod(object obj)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(TypeDefaultConfigs[obj.GetType()]
+                .CalculateStringResult(obj));
+            sb.AppendLine();
+            return sb.ToString();
+        }
+        private string PrintIfHasAlternatedMethod(object obj, string tail)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(AlternativeSerializationMethodConfigs[tail]
+                .CalculateStringResult(obj));
+            sb.AppendLine();
+            return sb.ToString();
+        }
 
+        private string PrintIEnumerable(IEnumerable obj, int nestingLevel, List<object> parentObjects,
+            string tail)
+        {
+            StringBuilder sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            sb.Append('[');
+            sb.AppendLine();
+            foreach (var var in (obj as IEnumerable))
+            {
+                sb.Append(identation);
+                sb.Append(PrintToString(var,
+                    nestingLevel + 1, parentObjects, tail + "."));
+                sb.Remove(sb.Length - 2, 2);
+                sb.Append(',');
+                sb.AppendLine();
+            }
 
+            sb.Append(identation);
+            sb.AppendLine("]");
+            return sb.ToString();
+        }
 
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {

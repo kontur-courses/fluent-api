@@ -111,6 +111,9 @@
     <None Update="Tests\ObjectPrinterNestedPropertiesTests.UseSerializeMethod_ShouldNot_Work_OnOtherLevels.received.txt">
       <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
     </None>
+    <None Update="Tests\ObjectPrinterIEnumerableTests.Print_Should_CorrectlyDisplayIEnumerables.approved.txt">
+      <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

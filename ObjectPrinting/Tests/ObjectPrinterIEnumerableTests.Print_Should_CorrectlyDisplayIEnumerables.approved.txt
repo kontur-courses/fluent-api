@@ -1,0 +1,42 @@
+﻿Enumerics
+	A = [
+		0,
+		0,
+		0,
+		0,
+		]
+	L = [
+		Alex,
+		Vovan,
+		Peter,
+		]
+	D = [
+		KeyValuePair`2
+			Key = Person
+				Id = Guid
+				Name = Anna
+				Height = 0
+				Age = 0
+			Value = Operation
+				Operator1 = 1
+				Operator2 = 0
+				Operator3 = 0
+				Operator4 = 0
+				Operator5 = 0
+				Operator6 = 0
+				OperationDate = 01.01.0001 0:00:00,
+		KeyValuePair`2
+			Key = Person
+				Id = Guid
+				Name = Winona
+				Height = 0
+				Age = 0
+			Value = Operation
+				Operator1 = 3
+				Operator2 = 0
+				Operator3 = 0
+				Operator4 = 0
+				Operator5 = 0
+				Operator6 = 0
+				OperationDate = 01.01.0001 0:00:00,
+		]
