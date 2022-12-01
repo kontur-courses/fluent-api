@@ -66,21 +66,25 @@ namespace ObjectPrinting
             return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel, bool isArray = false)
+        private string PrintToString(object obj, int nestingLevel, string name = "")
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
             if (finalTypes.Contains(obj.GetType()) || obj is string && stringMaxSize < 0 || nestingLevel > 1000)
-                return obj + "\r\n";
+            {
+                if (propertiesOptions.ContainsKey(name))
+                    return String.Format(propertiesOptions[name].Culture, "{0}", obj) + Environment.NewLine;
+                else
+                    return obj + Environment.NewLine;
+            }
+
             if (obj is string)
                 return ((string)obj).Substring(0, stringMaxSize) + "\r\n";
 
-            var identation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(identation + type.Name + ":");
-            identation = new string('\t', nestingLevel + 1);
+            sb.AppendLine(type.Name + ":");
+            var identation = new string('\t', nestingLevel + 1);
             foreach (var propertyInfo in type.GetProperties())
             {
                 var variable = propertyInfo.GetValue(obj);
@@ -90,21 +94,24 @@ namespace ObjectPrinting
 
                 if (propertiesOptions.ContainsKey(propertyInfo.Name) &&
                     propertiesOptions[propertyInfo.Name].OutputMethod != null)
-                    sb.AppendLine(identation + propertiesOptions[propertyInfo.Name].OutputMethod.Invoke(variable));
-                
+                    sb.AppendLine(identation + propertyInfo.Name + " = " +
+                                  propertiesOptions[propertyInfo.Name].OutputMethod.Invoke(variable));
+
                 else if (optionsTypes.ContainsKey(propertyInfo.PropertyType))
-                    sb.AppendLine(identation + optionsTypes[propertyInfo.PropertyType].Invoke(variable));
+                    sb.AppendLine(identation + propertyInfo.Name + " = " +
+                                  optionsTypes[propertyInfo.PropertyType].Invoke(variable));
                 else if (variable is IList)
                 {
                     var list = (IList)variable;
                     for (int i = 0; i < list.Count; i++)
-                        sb.Append(identation + i + " = " + PrintToString(list[i], nestingLevel + 1));
+                        sb.Append(identation + i + " = " + PrintToString(list[i], nestingLevel + 1,
+                            propertyInfo.Name));
                 }
                 else
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
+                              PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1,
+                                  propertyInfo.Name));
                 }
             }
 
