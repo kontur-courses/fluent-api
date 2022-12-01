@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
+using ObjectPrinting.Tests;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     internal class ObjectPrinterTests
