@@ -5,7 +5,7 @@ namespace ObjectPrinting.Common
 {
     public interface IPrintingPropertyBaseConfig<TOwner, T> : IHaveRoot
     {
-        internal PropertyInfo CurrentProperty { get; }
+        internal MemberInfo CurrentProperty { get; }
 
         public IPrintingPropertyConfig<TOwner, T> SetSerializer(Func<T, string> serializer)
         {

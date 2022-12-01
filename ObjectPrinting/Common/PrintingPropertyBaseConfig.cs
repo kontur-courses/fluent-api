@@ -4,13 +4,13 @@ namespace ObjectPrinting.Common
 {
     public class PrintingPropertyBaseConfig<TOwner, T> : IPrintingPropertyConfig<TOwner, T>
     {
-        private PropertyInfo currentProperty;
+        private MemberInfo currentProperty;
         private PrintingConfigRoot root;
 
         PrintingConfigRoot IHaveRoot.Root => root;
-        PropertyInfo IPrintingPropertyBaseConfig<TOwner, T>.CurrentProperty => currentProperty;
+        MemberInfo IPrintingPropertyBaseConfig<TOwner, T>.CurrentProperty => currentProperty;
 
-        internal PrintingPropertyBaseConfig(PropertyInfo property, PrintingConfigRoot root)
+        internal PrintingPropertyBaseConfig(MemberInfo property, PrintingConfigRoot root)
         {
             currentProperty = property;
             this.root = root;

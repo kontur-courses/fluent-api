@@ -10,7 +10,7 @@ namespace ObjectPrinting.Common
 {
     public interface IPrintingConfig<TOwner> : IHaveRoot
     {
-        public string PrintToString<TOwner>(TOwner obj)
+        public string PrintToString(TOwner obj)
         {
             return ObjectSerializer.Serialize(obj, Root);
         }
@@ -44,19 +44,18 @@ namespace ObjectPrinting.Common
             return new PrintingPropertyBaseConfig<TOwner, T>(propertyInfo, Root);
         }
 
-        public IPrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> property)
+        public IPrintingConfig<TOwner> Exclude<T>(Expression<Func<TOwner, T>> property)
         {
             var propertyInfo = GetPropertyInfoFromExpression(property.Body);
             Root.ExcludedProperties.Add(propertyInfo);
             return this;
         }
 
-        private static PropertyInfo GetPropertyInfoFromExpression(Expression expression)
+        private static MemberInfo GetPropertyInfoFromExpression(Expression expression)
         {
             if (!(expression is MemberExpression))
                 throw new ArgumentException($"Can't find property {expression}");
-
-            return (expression as MemberExpression).Member as PropertyInfo;
+            return (expression as MemberExpression).Member;
         }
     }
 
