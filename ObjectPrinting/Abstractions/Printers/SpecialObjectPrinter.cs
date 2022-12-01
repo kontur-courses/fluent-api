@@ -3,7 +3,7 @@ using ObjectPrinting.Infrastructure;
 
 namespace ObjectPrinting.Abstractions.Printers;
 
-public abstract class SpecialObjectPrinter
+public abstract class SpecialObjectPrinter : ISpecialObjectPrinter
 {
     public abstract bool CanPrint(object obj);
 
