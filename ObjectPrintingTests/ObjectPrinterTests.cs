@@ -8,7 +8,7 @@ namespace ObjectPrinting.Tests
 {
     public class ObjectPrinterTests
     {
-        private Person examplePerson = new Person();
+        private Person examplePerson = new();
 
         [SetUp]
         public void SetUp()
@@ -23,7 +23,12 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_ShouldCorrectlySerializeDictionaryInsideClass()
         {
             examplePerson.Pets = new Dictionary<int, string> {{1, "cat"}, {2, "dog"}, {3, "pig"}};
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<int>();
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding<int>()
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -81,7 +86,11 @@ namespace ObjectPrinting.Tests
         {
             examplePerson.FavoriteNumberSets = new List<List<int>>
                 {new List<int> {1, 2, 3}, new List<int> {13, 99, 13}, new List<int>()};
-            var printer = ObjectPrinter.For<Person>().Excluding<Dictionary<int, string>>().Excluding<int>();
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<Dictionary<int, string>>()
+                .Excluding<int>().Printing<double>()
+                .Using(CultureInfo.InvariantCulture);;
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -106,7 +115,12 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyExcludeType()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<int>();
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding<int>()
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);;
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -118,7 +132,12 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyExcludeProperty()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding(p => p.Age);
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding(p => p.Age)
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -130,7 +149,10 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlySetCultureForNumericalTypes()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<Dictionary<int, string>>()
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding<Dictionary<int, string>>()
                 .Printing<double>()
                 .Using(new CultureInfo("ru"));
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
@@ -144,8 +166,13 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyApplySpecialSerializationForType()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Printing<int>()
-                .Using(i => i.ToString("X"));
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Printing<int>()
+                .Using(i => i.ToString("X"))
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -158,9 +185,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyApplySpecialSerializationForProperties()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<Dictionary<int, string>>()
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding<Dictionary<int, string>>()
                 .Printing(p => p.Age)
-                .Using(i => i.ToString("X"));
+                .Using(i => i.ToString("X"))
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);;
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John Doe" +
@@ -172,9 +204,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjectPrinter_ShouldCorrectlyTrimStrings()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<Dictionary<int, string>>()
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding<List<List<int>>>()
+                .Excluding<Dictionary<int, string>>()
                 .Printing(p => p.Name)
-                .TrimmedToLength(5);
+                .TrimmedToLength(5)
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture);;
             printer.PrintToString(examplePerson).Should().Be("Person" + Environment.NewLine + '\t' +
                                                              "Id = 00000000-0000-0000-0000-000000000000" +
                                                              Environment.NewLine + '\t' + "Name = John " +
