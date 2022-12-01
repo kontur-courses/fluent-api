@@ -15,6 +15,10 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
 
     public CyclicInheritanceHandler CyclicInheritanceHandler { get; set; } = CyclicInheritanceHandler.IgnoreMembers;
 
+    public HashSet<Type> DictionaryTypeCheckIgnores { get; } = new();
+
+    public HashSet<Type> CollectionTypeCheckIgnores { get; } = new();
+
     public LinkedList<(Type Type, Func<object, string> Serializer)>
         AssignableTypeSerializers { get; } = new(
         new (Type Type, Func<object, string> Serializer)[]
@@ -38,7 +42,8 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
     {
         nestingLevel = nestingLevel + 1;
         var type = obj.GetType();
-        stringBuilder.AppendLine(type.Name);
+        stringBuilder.AppendTypeName(type);
+
         if (CyclicInheritanceHandler == CyclicInheritanceHandler.IgnoreMembers && type.IsClass)
         {
             if (cyclicInheritanceIgnoredObjects.Contains(obj))
@@ -49,12 +54,25 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
         var internalPrintingConfig = this as IInternalPrintingConfig<TOwner>;
         var root = internalPrintingConfig.GetRoot();
 
-        if (type.IsAssignableTo(typeof(IEnumerable)))
+
+        if (!DictionaryTypeCheckIgnores.Contains(type) && type.IsGenericAssignable(typeof(IReadOnlyDictionary<,>)))
+        {
+            var enumerable = (IEnumerable)obj;
+            root.ConsumeDictionaryItems(enumerable, nestingLevel, stringBuilder, '\t', cyclicInheritanceIgnoredObjects);
+            return;
+        }
+
+        DictionaryTypeCheckIgnores.Add(type);
+
+        if ((!CollectionTypeCheckIgnores.Contains(type) && type.IsAssignableTo(typeof(ICollection))) ||
+            type.IsGenericAssignable(typeof(IReadOnlyCollection<>)))
         {
             var enumerable = (IEnumerable)obj;
             root.ConsumeItems(enumerable, nestingLevel, stringBuilder, '\t', cyclicInheritanceIgnoredObjects);
             return;
         }
+
+        CollectionTypeCheckIgnores.Add(type);
 
         foreach (var propertyInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             root.ConsumeProperty(obj, nestingLevel, stringBuilder, propertyInfo, '\t',
@@ -63,5 +81,62 @@ public class RootPrintingConfig<TOwner> : PrintingConfig<TOwner>, IInternalPrint
         foreach (var fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
             root.ConsumeField(obj, nestingLevel, stringBuilder, fieldInfo, '\t',
                 cyclicInheritanceIgnoredObjects);
+    }
+}
+
+public static class TypeExtensions
+{
+    public static void AppendTypeName(this StringBuilder stringBuilder, Type type, bool newTypeName = true)
+    {
+        if (type.IsGenericType)
+        {
+            var lastIndexOf = type.Name.LastIndexOf('`');
+            var nameWithoutGenericParametersCount = type.Name[..lastIndexOf];
+            stringBuilder.Append(nameWithoutGenericParametersCount)
+                .Append('<');
+            foreach (var typeArgument in type.GenericTypeArguments)
+            {
+                stringBuilder.AppendTypeName(typeArgument, false);
+                stringBuilder.Append(", ");
+            }
+
+            stringBuilder.Length -= 2;
+            stringBuilder.Append('>');
+            if (newTypeName)
+                stringBuilder.AppendLine();
+        }
+        else
+        {
+            if (newTypeName)
+                stringBuilder.AppendLine(type.Name);
+            else stringBuilder.Append(type.Name);
+        }
+    }
+
+    public static bool IsGenericAssignable(this Type original, Type baseTypeGenericType, int maxDeep = 3)
+    {
+        var current = original;
+        var deep = 0;
+        while (current != typeof(object) && deep++ < maxDeep)
+        {
+            if (current.IsGenericType)
+            {
+                var currentGenericTypeArguments = current.GenericTypeArguments;
+                try
+                {
+                    var baseType = baseTypeGenericType.MakeGenericType(currentGenericTypeArguments);
+                    if (original.IsAssignableTo(baseType))
+                        return true;
+                }
+                catch
+                {
+                    // NOOP
+                }
+            }
+
+            current = current.BaseType!;
+        }
+
+        return false;
     }
 }

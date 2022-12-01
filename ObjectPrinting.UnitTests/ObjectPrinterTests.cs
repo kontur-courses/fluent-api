@@ -6,66 +6,33 @@ namespace ObjectPrinting.UnitTests;
 [TestFixture]
 public class ObjectPrinterTests
 {
-    [Test(Description = "minimal requirements p 1.1")]
+    [Test(Description = "minimal requirements p 1")]
     public void For_Exclude_FieldOfType()
     {
-        var input = new For_Exclude_FieldOfType_Type();
-        var printingConfig = ObjectPrinter.For<For_Exclude_FieldOfType_Type>()
-            .ForType<TestingVoid>()
-            .Exclude();
+        var input = new For_Exclude_FieldAndPropertyOfType_Type();
+        var printingConfig = ObjectPrinter.For<For_Exclude_FieldAndPropertyOfType_Type>()
+            .Excluding<TestingVoid>();
 
         var actual = printingConfig.PrintToString(input);
 
-        actual.Should().Be($@"{nameof(For_Exclude_FieldOfType_Type)}
-	{nameof(For_Exclude_FieldOfType_Type.Test)} = {TestingConstants.TestStringValue}
+        actual.Should().Be($@"{nameof(For_Exclude_FieldAndPropertyOfType_Type)}
+	{nameof(For_Exclude_FieldAndPropertyOfType_Type.Test)} = {TestingConstants.TestStringValue}
 ");
     }
 
-
-    [Test(Description = "minimal requirements p 1.2")]
-    public void For_Exclude_PropertyOfType()
-    {
-        var input = new For_Exclude_PropertyOfType_Type();
-        var printingConfig = ObjectPrinter.For<For_Exclude_PropertyOfType_Type>()
-            .ForType<TestingVoid>()
-            .Exclude();
-
-        var actual = printingConfig.PrintToString(input);
-
-        actual.Should().Be($@"{nameof(For_Exclude_PropertyOfType_Type)}
-	{nameof(For_Exclude_PropertyOfType_Type.Test)} = {TestingConstants.TestStringValue}
-");
-    }
-
-
-    [Test(Description = "minimal requirements p 2.1")]
+    [Test(Description = "minimal requirements p 2")]
     public void For_Serialize_FieldOfType()
     {
-        var input = new For_Serialize_FieldOfType_Type();
-        var printingConfig = ObjectPrinter.For<For_Serialize_FieldOfType_Type>()
-            .ForType<string>()
-            .Serialize(x => x.Length.ToString());
+        var input = new For_Serialize_FieldAndPropertyOfType_Type();
+        var printingConfig = ObjectPrinter.For<For_Serialize_FieldAndPropertyOfType_Type>()
+            .Printing<string>()
+            .Using(x => x.Length.ToString());
 
         var actual = printingConfig.PrintToString(input);
 
-        actual.Should().Be($@"{nameof(For_Serialize_FieldOfType_Type)}
-	{nameof(For_Serialize_FieldOfType_Type.Test)} = {TestingConstants.TestStringValue.Length.ToString()}
-");
-    }
-
-
-    [Test(Description = "minimal requirements p 2.2")]
-    public void For_Serialize_PropertyOfType()
-    {
-        var input = new For_Serialize_PropertyOfType_Type();
-        var printingConfig = ObjectPrinter.For<For_Serialize_PropertyOfType_Type>()
-            .ForType<string>()
-            .Serialize(x => x.Length.ToString());
-
-        var actual = printingConfig.PrintToString(input);
-
-        actual.Should().Be($@"{nameof(For_Serialize_PropertyOfType_Type)}
-	{nameof(For_Serialize_PropertyOfType_Type.Test)} = {TestingConstants.TestStringValue.Length.ToString()}
+        actual.Should().Be($@"{nameof(For_Serialize_FieldAndPropertyOfType_Type)}
+	{nameof(For_Serialize_FieldAndPropertyOfType_Type.TestProperty)} = {TestingConstants.TestStringValue.Length.ToString()}
+	{nameof(For_Serialize_FieldAndPropertyOfType_Type.Test)} = {TestingConstants.TestStringValue.Length.ToString()}
 ");
     }
 
@@ -90,49 +57,35 @@ public class ObjectPrinterTests
     }
 
     [Test(Description = "minimal requirements p 4.1")]
-    public void For_Serialize_ConcreteField()
+    public void For_Serialize_ConcreteFieldAndProperty()
     {
-        var input = new For_Serialize_ConcreteField_Type();
-        var config = ObjectPrinter.For<For_Serialize_ConcreteField_Type>()
-            .For(x => x.Serialize)
-            .Serialize(x => x.Length.ToString());
+        var input = new For_Serialize_FieldAndProperty_Type();
+        var config = ObjectPrinter.For<For_Serialize_FieldAndProperty_Type>()
+            .Printing(x => x.SerializeProperty)
+            .Using(x => x.Length.ToString())
+            .Printing(x => x.Serialize)
+            .Using(x => x.Length.ToString());
 
         var actual = config.PrintToString(input);
 
-        actual.Should().Be($@"{nameof(For_Serialize_ConcreteField_Type)}
-	{nameof(For_Serialize_ConcreteField_Type.Serialize)} = {TestingConstants.TestStringValue.Length}
-	{nameof(For_Serialize_ConcreteField_Type.Test)} = {TestingConstants.TestStringValue}
-");
-    }
-
-
-    [Test(Description = "minimal requirements p 4.2")]
-    public void For_Serialize_ConcreteProperty()
-    {
-        var input = new For_Serialize_ConcreteProperty_Type();
-        var config = ObjectPrinter.For<For_Serialize_ConcreteProperty_Type>()
-            .For(x => x.Serialize)
-            .Serialize(x => x.Length.ToString());
-
-        var actual = config.PrintToString(input);
-
-        actual.Should().Be($@"{nameof(For_Serialize_ConcreteProperty_Type)}
-	{nameof(For_Serialize_ConcreteProperty_Type.Serialize)} = {TestingConstants.TestStringValue.Length}
-	{nameof(For_Serialize_ConcreteProperty_Type.Test)} = {TestingConstants.TestStringValue}
+        actual.Should().Be($@"{nameof(For_Serialize_FieldAndProperty_Type)}
+	{nameof(For_Serialize_FieldAndProperty_Type.SerializeProperty)} = {TestingConstants.TestStringValue.Length}
+	{nameof(For_Serialize_FieldAndProperty_Type.Serialize)} = {TestingConstants.TestStringValue.Length}
+	{nameof(For_Serialize_FieldAndProperty_Type.Test)} = {TestingConstants.TestStringValue}
 ");
     }
 
     [Test(Description = "minimal requirements p 5")]
-    public void For_Serialize_CutStrings()
+    public void For_Serialize_TrimmedToLengthStrings()
     {
         var input = new For_Serialize_CutStrings_Type();
         var config = ObjectPrinter.For<For_Serialize_CutStrings_Type>()
-            .For(x => x.CutUpTo50)
-            .Cut(50)
-            .For(x => x.CutUpTo25)
-            .Cut(25)
-            .ForType<string>()
-            .Cut(75);
+            .Printing(x => x.CutUpTo50)
+            .TrimmedToLength(50)
+            .Printing(x => x.CutUpTo25)
+            .TrimmedToLength(25)
+            .Printing<string>()
+            .TrimmedToLength(75);
 
         var actual = config.PrintToString(input);
 
@@ -148,10 +101,8 @@ public class ObjectPrinterTests
     {
         var input = new For_Exclude_ConcreteFieldAndConcreteProperty_Type();
         var printingConfig = ObjectPrinter.For<For_Exclude_ConcreteFieldAndConcreteProperty_Type>()
-            .For(x => x.Property)
-            .Exclude()
-            .For(x => x.Field)
-            .Exclude();
+            .Excluding(x => x.Property)
+            .Excluding(x => x.Field);
 
         var actual = printingConfig.PrintToString(input);
 
@@ -175,9 +126,8 @@ public class ObjectPrinterTests
 ");
     }
 
-
     [Test(Description = "full requirements p 2.1")]
-    public void For_Serialize_EnumerableOfObjects()
+    public void For_Serialize_ArrayOfObjects()
     {
         var input = new For_Serialize_Objects_Type[]
         {
@@ -209,14 +159,43 @@ public class ObjectPrinterTests
 
         var actual = config.PrintToString(input);
 
-        actual.Should().Be(@"Dictionary`2
-	Items
+        actual.Should().Be(@"Dictionary<String, For_Serialize_Objects_Type>
+	KeyValuePairs
 		[first] = For_Serialize_Objects_Type
 			Value = TestValue
 		[second] = For_Serialize_Objects_Type
 			Value = TestValue
 		[third] = For_Serialize_Objects_Type
 			Value = TestValue
+");
+    }
+
+
+    [Test]
+    public void For_Serialize_UsingDefaultPrintToStringSyntax()
+    {
+        var input = new For_Serialize_Objects_Type();
+
+        var actual = input.PrintToString();
+
+        actual.Should().Be($@"{nameof(For_Serialize_Objects_Type)}
+	{nameof(For_Serialize_Objects_Type.Value)} = {TestingConstants.TestStringValue}
+");
+    }
+
+
+    [Test]
+    public void For_Serialize_UsingBoundedPrintToStringSyntax()
+    {
+        var input = new For_Serialize_Objects_Type();
+
+        var actual = input
+            .PrintToString(x => x
+                .Printing(o => o.Value)
+                .Using(v => v + v));
+
+        actual.Should().Be($@"{nameof(For_Serialize_Objects_Type)}
+	{nameof(For_Serialize_Objects_Type.Value)} = {TestingConstants.TestStringValue + TestingConstants.TestStringValue}
 ");
     }
 }

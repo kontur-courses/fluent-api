@@ -19,15 +19,9 @@ public class PropertyPrintingConfig<TOwner, TProperty> : PrintingConfig<TOwner>
             throw new ArgumentException("invalid expression", nameof(body));
     }
 
-    public PropertyPrintingConfig<TOwner, TProperty> Serialize(Func<TProperty, string> func)
+    public PropertyPrintingConfig<TOwner, TProperty> Using(Func<TProperty, string> func)
     {
         ((IInternalPrintingConfig<TOwner>)this).GetRoot().MemberSerializers[memberInfo] = d => func((TProperty)d);
-        return this;
-    }
-
-    public PropertyPrintingConfig<TOwner, TProperty> Exclude()
-    {
-        ((IInternalPrintingConfig<TOwner>)this).GetRoot().MemberExcluding.Add(memberInfo);
         return this;
     }
 }

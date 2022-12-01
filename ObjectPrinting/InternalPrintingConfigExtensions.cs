@@ -9,6 +9,17 @@ namespace ObjectPrinting;
 
 public static class PrintingConfigExtensions
 {
+    public static string PrintToString<TOwner>(this TOwner obj,
+        Action<PrintingConfig<TOwner>>? configurationAction = null)
+    {
+        var config = new RootPrintingConfig<TOwner>();
+        configurationAction?.Invoke(config);
+        return config.PrintToString(obj);
+    }
+}
+
+public static class InternalPrintingConfigExtensions
+{
     public static PrintingConfig<TOwner> WithCyclicInheritanceHandler<TOwner>(
         this PrintingConfig<TOwner> printingConfig, CyclicInheritanceHandler cyclicInheritanceHandler)
     {
@@ -33,6 +44,46 @@ public static class PrintingConfigExtensions
             cyclicInheritanceIgnoredObjects);
     }
 
+
+    public static void ConsumeDictionaryItems<TOwner>(this RootPrintingConfig<TOwner> printingConfig,
+        IEnumerable source,
+        int nestingLevel, StringBuilder stringBuilder, char indentation,
+        HashSet<object> cyclicInheritanceIgnoredObjects)
+    {
+        stringBuilder.Append(indentation, nestingLevel)
+            .AppendLine("KeyValuePairs");
+        Type? itemType = null;
+        PropertyInfo? keyInfo = null;
+        PropertyInfo? valueInfo = null;
+        foreach (var item in source)
+        {
+            itemType ??= item.GetType();
+            keyInfo ??= itemType.GetProperty("Key", BindingFlags.Public | BindingFlags.Instance);
+            valueInfo ??= itemType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
+
+            stringBuilder.Append(indentation, nestingLevel + 1)
+                .Append('[');
+
+            var key = keyInfo!.GetValue(item);
+            var value = valueInfo!.GetValue(item);
+
+            printingConfig.GetPropertyStringValue(nestingLevel + 1,
+                key,
+                keyInfo,
+                stringBuilder,
+                cyclicInheritanceIgnoredObjects,
+                false);
+
+            stringBuilder.Append("] = ");
+
+            printingConfig.GetPropertyStringValue(nestingLevel + 1,
+                value,
+                valueInfo,
+                stringBuilder,
+                cyclicInheritanceIgnoredObjects);
+        }
+    }
+
     public static void ConsumeItems<TOwner>(this RootPrintingConfig<TOwner> printingConfig, IEnumerable source,
         int nestingLevel, StringBuilder stringBuilder, char indentation,
         HashSet<object> cyclicInheritanceIgnoredObjects)
@@ -43,30 +94,19 @@ public static class PrintingConfigExtensions
         foreach (var item in source)
         {
             var itemType = item.GetType();
-            if (itemType.GetProperty("Key", BindingFlags.Public | BindingFlags.Instance) is { } keyInfo &&
-                itemType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance) is { } valueInfo)
-            {
-                stringBuilder.Append(indentation, nestingLevel + 1)
-                    .Append('[');
-                printingConfig.GetPropertyStringValue(nestingLevel + 1, keyInfo.GetValue(item), keyInfo, stringBuilder,
-                    cyclicInheritanceIgnoredObjects, false);
-                stringBuilder.Append("] = ");
-                var value = valueInfo.GetValue(item);
 
-                printingConfig.GetPropertyStringValue(nestingLevel + 1, valueInfo.GetValue(item), valueInfo,
-                    stringBuilder,
-                    cyclicInheritanceIgnoredObjects);
-            }
-            else
-            {
-                stringBuilder.Append(indentation, nestingLevel + 1)
-                    .Append('[')
-                    .Append(counter++)
-                    .Append("] = ");
+            stringBuilder.Append(indentation, nestingLevel + 1)
+                .Append('[')
+                .Append(counter++)
+                .Append("] = ");
 
-                GetItemStringValue(printingConfig, nestingLevel, stringBuilder, cyclicInheritanceIgnoredObjects, item,
-                    itemType);
-            }
+            GetItemStringValue(
+                printingConfig,
+                nestingLevel,
+                stringBuilder,
+                cyclicInheritanceIgnoredObjects,
+                item,
+                itemType);
         }
     }
 
