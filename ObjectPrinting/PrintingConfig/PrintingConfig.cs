@@ -128,7 +128,8 @@ namespace ObjectPrinting.PrintingConfig
                 sb.Append(identation);
                 sb.Append(PrintToString(var,
                     nestingLevel + 1, parentObjects, tail + "."));
-                sb.Remove(sb.Length - 2, 2);
+                var newLineLength = Environment.NewLine.Length;
+                sb.Remove(sb.Length - newLineLength, newLineLength);
                 sb.Append(',');
                 sb.AppendLine();
             }
