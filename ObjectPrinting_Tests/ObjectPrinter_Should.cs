@@ -5,7 +5,7 @@ using ObjectPrinting.Abstractions.Configs;
 
 namespace ObjectPrinting_Tests;
 
-[TestFixture, Parallelizable]
+[TestFixture]
 public class ObjectPrinter_Should
 {
     [Test]
