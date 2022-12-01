@@ -10,7 +10,7 @@ namespace ObjectPrinting.Tests
         public void ExcludeProperty_ShouldThrowException_WhenExcludeObjectItself()
         {
             var person = new Person {Name = "Alex", Age = 19};
-            
+
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()
@@ -18,12 +18,12 @@ namespace ObjectPrinting.Tests
                 printer.PrintToString(person);
             });
         }
-        
+
         [Test]
         public void ExcludeProperty_ShouldThrowException_WhenExcludeNotMember()
         {
             var person = new Person {Name = "Alex", Age = 19};
-            
+
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()
@@ -31,12 +31,12 @@ namespace ObjectPrinting.Tests
                 printer.PrintToString(person);
             });
         }
-        
+
         [Test]
         public void OverrideSerializeMethod_ShouldThrowException_WhenExcludeNotMember()
         {
             var person = new Person {Name = "Alex", Age = 19};
-            
+
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()
@@ -45,12 +45,12 @@ namespace ObjectPrinting.Tests
                 printer.PrintToString(person);
             });
         }
-        
+
         [Test]
         public void OverrideSerializeMethod_ShouldThrowException_WhenExcludeObjectItself()
         {
             var person = new Person {Name = "Alex", Age = 19};
-            
+
             var ex = Assert.Throws<MissingMemberException>(() =>
             {
                 var printer = ObjectPrinter.For<Person>()

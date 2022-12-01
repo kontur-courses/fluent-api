@@ -4,12 +4,10 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-
     [UseReporter(typeof(DiffReporter))]
     [TestFixture]
     public class ObjectPrinterCutStringTests
     {
-        
         [Test]
         public void CutString_Should_CutCorrectly_WhenStringIsLarge()
         {
@@ -19,7 +17,7 @@ namespace ObjectPrinting.Tests
                 .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void CutString_ShouldNot_Cut_WhenStringIsSmall()
         {
@@ -29,7 +27,7 @@ namespace ObjectPrinting.Tests
                 .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void CutString_ShouldNot_Cut_WhenStringIsEqualToMaxLength()
         {
@@ -39,7 +37,7 @@ namespace ObjectPrinting.Tests
                 .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void CutString_ShouldNot_Override_OtherSerializeMethod()
         {
@@ -51,7 +49,7 @@ namespace ObjectPrinting.Tests
                 .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void OverrideStringSerializeMethod_ShouldNot_Override_CutString()
         {
@@ -74,8 +72,6 @@ namespace ObjectPrinting.Tests
                 .ConfigForProperty(p => p.Name)
                 .CutString(4);
             Approvals.Verify(printer.PrintToString(person));
-            
         }
     }
-
 }

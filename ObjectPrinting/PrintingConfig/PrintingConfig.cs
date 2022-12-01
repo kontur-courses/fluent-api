@@ -11,21 +11,19 @@ namespace ObjectPrinting.PrintingConfig
 {
     public partial class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes = new[]
+        private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
-        private CultureInfo DefaultCulture = null;
+        private CultureInfo DefaultCulture;
 
         public string PrintToString(TOwner obj)
         {
             foreach (var propertyInfo in obj.GetType().GetProperties())
-            {
                 if (propertyInfo.PropertyType == typeof(string) && !StringCutFunctions.ContainsKey(propertyInfo.Name))
-                    StringCutFunctions[propertyInfo.Name] = (s) => s;
-            }
+                    StringCutFunctions[propertyInfo.Name] = s => s;
 
             return PrintToString(obj, 0, new List<object>(), "");
         }
@@ -33,36 +31,22 @@ namespace ObjectPrinting.PrintingConfig
 
         private string PrintToString(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
-            if (parentObjects.Contains(obj))
-            {
-                return "!Cyclic_Reference!" + Environment.NewLine;
-            }
+            if (parentObjects.Contains(obj)) return "!Cyclic_Reference!" + Environment.NewLine;
 
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (AlternativeSerializationMethodConfigs.ContainsKey(tail))
-            {
-                return PrintIfHasAlternatedMethod(obj, tail);
-            }
+            if (AlternativeSerializationMethodConfigs.ContainsKey(tail)) return PrintIfHasAlternatedMethod(obj, tail);
 
-            if (TypeDefaultConfigs.ContainsKey(obj.GetType()))
-            {
-                return PrintIfHasAlternatedForTypeMethod(obj);
-            }
+            if (TypeDefaultConfigs.ContainsKey(obj.GetType())) return PrintIfHasAlternatedForTypeMethod(obj);
 
             if (obj is IFormattable && DefaultCulture != null)
-            {
                 return (obj as IFormattable).ToString("", DefaultCulture) + Environment.NewLine;
-            }
 
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            if (obj is IEnumerable)
-            {
-                return PrintIEnumerable(obj as IEnumerable, nestingLevel, parentObjects, tail);
-            }
+            if (obj is IEnumerable) return PrintIEnumerable(obj as IEnumerable, nestingLevel, parentObjects, tail);
 
             return PrintNested(obj, nestingLevel, parentObjects, tail);
         }
@@ -76,21 +60,21 @@ namespace ObjectPrinting.PrintingConfig
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                string name = tail + propertyInfo.Name;
+                var name = tail + propertyInfo.Name;
 
-                if (AlternativeSerializationMethodConfigs.ContainsKey(name) &&
-                    AlternativeSerializationMethodConfigs[name].IsExcluded ||
-                    TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType) &&
-                    TypeDefaultConfigs[propertyInfo.PropertyType].IsExcluded) continue;
+                if ((AlternativeSerializationMethodConfigs.ContainsKey(name) &&
+                     AlternativeSerializationMethodConfigs[name].IsExcluded) ||
+                    (TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType) &&
+                     TypeDefaultConfigs[propertyInfo.PropertyType].IsExcluded)) continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
                 var value = propertyInfo.GetValue(obj);
                 if (propertyInfo.PropertyType == typeof(string)) value = GetStringCut(value as string, name);
 
-                    parentObjects.Add(obj);
-                    sb.Append(PrintToString(value,
-                        nestingLevel + 1, parentObjects, name));
-                    parentObjects.Remove(parentObjects.Count - 1);
+                parentObjects.Add(obj);
+                sb.Append(PrintToString(value,
+                    nestingLevel + 1, parentObjects, name));
+                parentObjects.Remove(parentObjects.Count - 1);
             }
 
             return sb.ToString();
@@ -98,7 +82,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private string PrintIfHasAlternatedForTypeMethod(object obj)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(TypeDefaultConfigs[obj.GetType()]
                 .Serialize(obj));
             sb.AppendLine();
@@ -107,7 +91,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private string PrintIfHasAlternatedMethod(object obj, string tail)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(AlternativeSerializationMethodConfigs[tail]
                 .Serialize(obj));
             sb.AppendLine();
@@ -117,19 +101,19 @@ namespace ObjectPrinting.PrintingConfig
         private string PrintIEnumerable(IEnumerable obj, int nestingLevel, List<object> parentObjects,
             string tail)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
             var newLineLength = Environment.NewLine.Length;
             sb.Append('[');
             sb.AppendLine();
-            foreach (var var in (obj as IEnumerable))
+            foreach (var var in obj)
             {
                 sb.Append(identation);
                 sb.Append(PrintToString(var,
                     nestingLevel + 1, parentObjects, tail + "."));
-                
+
                 sb.Remove(sb.Length - newLineLength, newLineLength);
-                
+
                 sb.Append(',');
                 sb.AppendLine();
             }
@@ -179,7 +163,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private string GetFullName<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
-            Regex regex = new Regex("([^.]*)(.)(.*)");
+            var regex = new Regex("([^.]*)(.)(.*)");
             return regex.Match(propertyExpression.ToString()).Groups[3].ToString();
         }
     }

@@ -16,7 +16,7 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> SetCulture<TOwner, T>(this IPropertyConfig<TOwner, T> config,
             CultureInfo info) where T : IFormattable
         {
-            config.Printer.SetSerializeMethodForProperty(config.PropertyExpression, (f) => f.ToString("", info));
+            config.Printer.SetSerializeMethodForProperty(config.PropertyExpression, f => f.ToString("", info));
             return config.Printer;
         }
     }

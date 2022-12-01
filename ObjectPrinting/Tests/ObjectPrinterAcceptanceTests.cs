@@ -25,7 +25,7 @@ namespace ObjectPrinting.Tests
                 .ExcludeProperty(p => p.Id);
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void OverrideProperty_Should_OverrideCorrectly()
         {
@@ -35,7 +35,7 @@ namespace ObjectPrinting.Tests
                 .UseSerializeMethod(i => "Old");
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void OverrideProperty_Should_DiscardPrevOverrideProperty()
         {
@@ -47,7 +47,7 @@ namespace ObjectPrinting.Tests
                 .UseSerializeMethod(i => i + " Old");
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void OverrideProperty_ShouldNot_Work_OnExcludedProperty()
         {
@@ -58,17 +58,17 @@ namespace ObjectPrinting.Tests
                 .UseSerializeMethod(i => "Old");
             Approvals.Verify(printer.PrintToString(person));
         }
-        
+
         [Test]
         public void Print_ShouldSerialize_WhenCyclicReference()
         {
-            var a = new CyclicReference() {ID = 0};
-            var b = new CyclicReference() {ID = 1};
-            var c = new CyclicReference() {ID = 2};
+            var a = new CyclicReference {ID = 0};
+            var b = new CyclicReference {ID = 1};
+            var c = new CyclicReference {ID = 2};
             a.Ref = b;
             b.Ref = c;
             c.Ref = a;
-            
+
             var printer = ObjectPrinter.For<CyclicReference>();
             Approvals.Verify(printer.PrintToString(a));
         }

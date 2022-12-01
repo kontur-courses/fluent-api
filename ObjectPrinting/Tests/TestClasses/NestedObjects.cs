@@ -8,7 +8,7 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
         public DateTime Date { get; set; }
     }
-    
+
     public class NestedObjectTwo
     {
         public string Surname { get; set; }

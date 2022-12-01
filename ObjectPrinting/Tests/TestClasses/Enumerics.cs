@@ -7,17 +7,17 @@ namespace ObjectPrinting.Tests
     {
         public Array A { get; set; } = new int[4];
 
-        public List<string> L { get; set; } = new List<string>()
+        public List<string> L { get; set; } = new List<string>
         {
             "Alex",
             "Vovan",
             "Peter"
         };
 
-        public Dictionary<Person, Operation> D { get; set; } = new Dictionary<Person, Operation>()
+        public Dictionary<Person, Operation> D { get; set; } = new Dictionary<Person, Operation>
         {
-            {new Person() {Name = "Anna"}, new Operation() {Operator1 = 1}},
-            {new Person() {Name = "Winona"}, new Operation() {Operator1 = 3}}
+            {new Person {Name = "Anna"}, new Operation {Operator1 = 1}},
+            {new Person {Name = "Winona"}, new Operation {Operator1 = 3}}
         };
     }
 }
