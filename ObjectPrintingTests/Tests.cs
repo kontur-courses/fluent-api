@@ -25,7 +25,7 @@ public class Tests
     public void TestWithoutNameProperty()
     {
         var printer = ObjectPrinter.For<Person>();
-        var s = printer.ExceptProperty(o => o.Name).PrintToString(person);
+        var s = printer.SelectProperty(o => o.Name).Except().PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = 	Guid:" + Environment.NewLine + "\tHeight = 183" +
                       Environment.NewLine + "\tAge = 22" + Environment.NewLine);
     }
@@ -43,8 +43,9 @@ public class Tests
     public void TestWithChangerOutputNameProperty()
     {
         var printer = ObjectPrinter.For<Person>();
-        var s = printer.ChangePropertyOutput(o => o.Name,
-                o => "aaa")
+        var s = printer
+            .SelectProperty(o => o.Name)
+            .ChangeOutput(o => "aaa")
             .PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = 	Guid:" + Environment.NewLine + "\taaa" +
                       Environment.NewLine + "\tHeight = 183" + Environment.NewLine + "\tAge = 22" +

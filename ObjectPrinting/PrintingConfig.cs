@@ -9,19 +9,17 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner> : ISerializer<TOwner>
     {
-        private readonly Dictionary<string, Func<object, string>> optionsProperties
-            = new Dictionary<string, Func<object, string>>();
+        private readonly Dictionary<string, PropertySetting<TOwner>> propertiesOptions
+            = new Dictionary<string, PropertySetting<TOwner>>();
 
         private readonly Dictionary<Type, Func<object, string>> optionsTypes
             = new Dictionary<Type, Func<object, string>>();
-
-        private readonly List<string> exceptOptions
-            = new List<string>();
 
         private readonly List<Type> exceptTypes
             = new List<Type>();
 
         private int stringMaxSize = -1;
+
         private Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float),
@@ -45,28 +43,18 @@ namespace ObjectPrinting
             return this;
         }
 
-        public ISerializer<TOwner> ChangePropertyOutput<P>(Expression<Func<TOwner, P>> properties,
-            Func<object, string> method)
+        public PropertySetting<TOwner> SelectProperty<P>(Expression<Func<TOwner, P>> properties)
         {
             var memberExpression = (MemberExpression)properties.Body;
+            var propertySetting = new PropertySetting<TOwner>(this);
+            propertiesOptions[memberExpression.Member.Name] = propertySetting;
 
-            optionsProperties.Add(memberExpression.Member.Name, method);
-
-            return this;
+            return propertySetting;
         }
 
         public ISerializer<TOwner> ChangeTypeOutput(Type type, Func<object, string> method)
         {
             optionsTypes.Add(type, method);
-
-            return this;
-        }
-
-        public ISerializer<TOwner> ExceptProperty<P>(Expression<Func<TOwner, P>> properties)
-        {
-            var memberExpression = (MemberExpression)properties.Body;
-
-            exceptOptions.Add(memberExpression.Member.Name);
 
             return this;
         }
@@ -96,18 +84,21 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties())
             {
                 var variable = propertyInfo.GetValue(obj);
-                if (exceptOptions.Contains(propertyInfo.Name) || exceptTypes.Contains(propertyInfo.PropertyType))
+                if (exceptTypes.Contains(propertyInfo.PropertyType) ||
+                    propertiesOptions.ContainsKey(propertyInfo.Name) && propertiesOptions[propertyInfo.Name].IsExcept)
                     continue;
 
-                if (optionsProperties.ContainsKey(propertyInfo.Name))
-                    sb.AppendLine(identation + optionsProperties[propertyInfo.Name].Invoke(variable));
+                if (propertiesOptions.ContainsKey(propertyInfo.Name) &&
+                    propertiesOptions[propertyInfo.Name].OutputMethod != null)
+                    sb.AppendLine(identation + propertiesOptions[propertyInfo.Name].OutputMethod.Invoke(variable));
+                
                 else if (optionsTypes.ContainsKey(propertyInfo.PropertyType))
                     sb.AppendLine(identation + optionsTypes[propertyInfo.PropertyType].Invoke(variable));
                 else if (variable is IList)
                 {
                     var list = (IList)variable;
-                    for(int i = 0; i < list.Count; i++)
-                        sb.Append(identation + i + " = " + PrintToString(list[i],nestingLevel + 1));
+                    for (int i = 0; i < list.Count; i++)
+                        sb.Append(identation + i + " = " + PrintToString(list[i], nestingLevel + 1));
                 }
                 else
                 {
