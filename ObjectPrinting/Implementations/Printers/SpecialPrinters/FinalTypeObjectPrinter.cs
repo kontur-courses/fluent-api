@@ -11,7 +11,7 @@ public class FinalTypeObjectPrinter : ISpecialObjectPrinter
 {
     private static readonly HashSet<Type> FinalTypes = new()
     {
-        typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(ITuple)
+        typeof(string), typeof(Guid), typeof(DateTime), typeof(TimeSpan), typeof(ITuple)
     };
 
     public bool CanPrint(object obj)
