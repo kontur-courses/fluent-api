@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectPrinting.Core", "ObjectPrinting.Core\ObjectPrinting.Core.csproj", "{C3C8CB6C-8E62-4899-BCCF-9B165EBAB417}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinting.Sandbox", "ObjectPrinting.Sandbox\ObjectPrinting.Sandbox.csproj", "{823AA4AD-275E-430C-8408-3F78A48B8485}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{FF3F6E4A-7820-4DAD-B5A5-076D7445B059}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinting.Core.Tests", "ObjectPrinting.Core.Tests\ObjectPrinting.Core.Tests.csproj", "{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C3C8CB6C-8E62-4899-BCCF-9B165EBAB417}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3C8CB6C-8E62-4899-BCCF-9B165EBAB417}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3C8CB6C-8E62-4899-BCCF-9B165EBAB417}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3C8CB6C-8E62-4899-BCCF-9B165EBAB417}.Release|Any CPU.Build.0 = Release|Any CPU
+		{823AA4AD-275E-430C-8408-3F78A48B8485}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{823AA4AD-275E-430C-8408-3F78A48B8485}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{823AA4AD-275E-430C-8408-3F78A48B8485}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{823AA4AD-275E-430C-8408-3F78A48B8485}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9DFEDF3A-F86A-4111-B7A6-17AD674C6FD4} = {FF3F6E4A-7820-4DAD-B5A5-076D7445B059}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {90BFC476-1812-4A39-B51D-C4C730D9EE2D}
+	EndGlobalSection
+EndGlobal
