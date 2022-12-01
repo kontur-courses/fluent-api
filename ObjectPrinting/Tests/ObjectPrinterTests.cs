@@ -49,6 +49,22 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void ObjectPrinter_ShouldCorrectlySerializeArray()
+        {
+            var arr = new[] {1, 2, 3, 4, 5, 6, 7};
+            var printer = ObjectPrinter.For<int[]>();
+            printer.PrintToString(arr).Should().Be("[" +
+                                                   Environment.NewLine + '\t' + '\t' + "1," +
+                                                   Environment.NewLine + '\t' + '\t' + "2," +
+                                                   Environment.NewLine + '\t' + '\t' + "3," +
+                                                   Environment.NewLine + '\t' + '\t' + "4," +
+                                                   Environment.NewLine + '\t' + '\t' + "5," +
+                                                   Environment.NewLine + '\t' + '\t' + "6," +
+                                                   Environment.NewLine + '\t' + '\t' + "7" +
+                                                   Environment.NewLine + '\t' + ']');
+        }
+
+        [Test]
         public void ObjectPrinter_ShouldCorrectlySerializeList()
         {
             var list = new List<string> {"one", "two", "three"};

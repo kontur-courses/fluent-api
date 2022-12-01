@@ -58,12 +58,14 @@ namespace ObjectPrinting
             return obj is ICollection collection ? PrintCollection(collection, 0) : PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int shiftCount)
+        private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null";
+            if (nestingLevel > 10)
+                throw new ArgumentException("Cycling reference");
             var sb = new StringBuilder();
-            var shift = new string('\t', shiftCount + 1);
+            var shift = new string('\t', nestingLevel + 1);
             sb.Append(obj.GetType().Name + Environment.NewLine);
             if (CultureInfos.ContainsKey(obj.GetType()))
                 CultureInfo.CurrentCulture = CultureInfos[obj.GetType()];
@@ -81,31 +83,33 @@ namespace ObjectPrinting
                     sb.Append(" = " + SpecialSerializationForNames[property.Name](property.GetValue(obj)));
                 else
                     sb.Append(property.GetValue(obj) is ICollection
-                        ? " : " + PrintCollection(((ICollection) property.GetValue(obj))!, shiftCount + 1)
-                        : " = " + PrintToString(property.GetValue(obj), shiftCount + 1));
+                        ? " : " + PrintCollection(((ICollection) property.GetValue(obj))!, nestingLevel + 1)
+                        : " = " + PrintToString(property.GetValue(obj), nestingLevel + 1));
                 sb.Append(Environment.NewLine);
             }
 
             return sb.ToString();
         }
 
-        private string PrintCollection(ICollection collection, int shiftCount)
+        private string PrintCollection(ICollection collection, int nestingLevel)
         {
-            var shift = new string('\t', shiftCount + 2);
+            if (nestingLevel > 10)
+                throw new ArgumentException("Cycling reference");
+            var shift = new string('\t', nestingLevel + 2);
             var collectionLength = collection.Count;
             var sb = new StringBuilder();
             var openBracket = collection is IDictionary ? '{' : '[';
             var closeBracket = collection is IDictionary ? '}' : ']';
             sb.Append(openBracket);
             if (collection is IDictionary dictionary)
-                sb.Append(PrintDictionary(dictionary, shiftCount + 2));
+                sb.Append(PrintDictionary(dictionary, nestingLevel + 2));
             else
             {
                 sb.Append(Environment.NewLine);
                 foreach (var element in collection)
                 {
                     sb.Append(shift);
-                    sb.Append(PrintElementInCollection(element, shiftCount, shift));
+                    sb.Append(PrintElementInCollection(element, nestingLevel, shift));
                     if (collectionLength - 1 > 0)
                         sb.Append(",");
                     sb.Append(Environment.NewLine);
@@ -113,35 +117,35 @@ namespace ObjectPrinting
                 }
             }
 
-            sb.Append(new string('\t', shiftCount + 1) + closeBracket);
+            sb.Append(new string('\t', nestingLevel + 1) + closeBracket);
             return sb.ToString();
         }
 
-        private string PrintElementInCollection(object element, int shiftCount, string shift)
+        private string PrintElementInCollection(object element, int nestinngLevel, string shift)
         {
             if (element is ICollection nestedCollection)
-                return PrintCollection(nestedCollection, shiftCount + 1);
-            var result = PrintToString(element, shiftCount + 2);
+                return PrintCollection(nestedCollection, nestinngLevel + 1);
+            var result = PrintToString(element, nestinngLevel + 2);
             if (!finalTypes.Contains(element.GetType()))
                 return result + shift;
             return result;
         }
 
-        private string PrintDictionary(IDictionary dict, int shiftCount)
+        private string PrintDictionary(IDictionary dict, int nestingLevel)
         {
             var sb = new StringBuilder();
             sb.Append(Environment.NewLine);
             var dictLength = dict.Count;
             foreach (DictionaryEntry e in dict)
             {
-                sb.Append(new string('\t', shiftCount));
+                sb.Append(new string('\t', nestingLevel));
                 sb.Append(e.Key is ICollection key
-                    ? PrintCollection(key, shiftCount)
-                    : PrintToString(e.Key, shiftCount));
+                    ? PrintCollection(key, nestingLevel)
+                    : PrintToString(e.Key, nestingLevel));
                 sb.Append(" : ");
                 sb.Append(e.Value is ICollection value
-                    ? PrintCollection(value, shiftCount)
-                    : PrintToString(e.Value, shiftCount));
+                    ? PrintCollection(value, nestingLevel)
+                    : PrintToString(e.Value, nestingLevel));
                 if (dictLength - 1 > 0)
                     sb.Append(',');
                 sb.Append(Environment.NewLine);
