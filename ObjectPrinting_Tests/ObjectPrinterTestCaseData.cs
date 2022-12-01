@@ -20,7 +20,8 @@ public static class ObjectPrinterTestCaseData
         new TestCaseData(10.54f, "10.54").SetName("Float"),
         new TestCaseData(10.54d, "10.54").SetName("Double"),
         new TestCaseData("abc", "abc").SetName("String"),
-        new TestCaseData(new DateTime(2000, 1, 1), "1/1/2000 12:00:00 AM").SetName("DateTime"),
+        new TestCaseData(new Guid(), "00000000-0000-0000-0000-000000000000").SetName("Guid"),
+        new TestCaseData(new DateTime(2000, 1, 1), "01/01/2000 00:00:00").SetName("DateTime"),
         new TestCaseData(new TimeSpan(2, 0, 0), "02:00:00").SetName("TimeSpan"),
         new TestCaseData((1, "x"), "(1, x)").SetName("Tuple with two values"),
         new TestCaseData((1, "x", 1.5, 'z'), "(1, x, 1.5, z)").SetName("Tuple with many values")
@@ -62,6 +63,14 @@ public static class ObjectPrinterTestCaseData
             "\tStr = abc\r\n" +
             "\tInt2 = 12"
         ).SetName("No configuration"),
+        new TestCaseData(
+            () => new TestObject {Str = null, Int1 = 10, Int2 = 12},
+            new Func<IPrintingConfig<TestObject>, IPrintingConfig<TestObject>>(cfg => cfg),
+            "TestObject\r\n" +
+            "\tInt1 = 10\r\n" +
+            "\tStr = null\r\n" +
+            "\tInt2 = 12"
+        ).SetName("No configuration, null field"),
         new TestCaseData(
             CreateTestObject,
             new Func<IPrintingConfig<TestObject>, IPrintingConfig<TestObject>>(cfg => cfg.Exclude<int>()),
