@@ -16,7 +16,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> UseSerializeMethod(Func<T, string> newMethod)
         {
-            Printer.UseSerializeMethodForProperty(PropertyExpression, newMethod);
+            Printer.SetSerializeMethodForProperty(PropertyExpression, newMethod);
             return Printer;
         }
     }

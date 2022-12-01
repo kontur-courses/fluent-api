@@ -1,7 +1,5 @@
 using System;
-using System.Globalization;
 using ApprovalTests;
-using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
 
@@ -33,7 +31,7 @@ namespace ObjectPrinting.Tests
                 OperationDate = new DateTime(1994, 5, 3)
             };
             var printer = ObjectPrinter.For<Operation>()
-                .SetMethodForType((double d) => d + " hehe");
+                .SetSerializeMethodForType((double d) => d + " hehe");
             Approvals.Verify(printer.PrintToString(operation));
         }
     }

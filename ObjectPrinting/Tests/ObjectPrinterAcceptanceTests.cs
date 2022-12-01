@@ -1,5 +1,4 @@
 ﻿using ApprovalTests;
-using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
 

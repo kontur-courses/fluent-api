@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using ApprovalTests;
-using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
 
