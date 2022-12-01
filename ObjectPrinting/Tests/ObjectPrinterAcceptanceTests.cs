@@ -60,8 +60,8 @@ namespace ObjectPrinting.Tests
                 .Should()
                 .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
         }
-
-              [Test]
+        
+        [Test]
         public void PrintToString_PrintsDefaultString_WhenNoOptions()
         {
             var actualString = ObjectPrinter
@@ -126,6 +126,18 @@ namespace ObjectPrinting.Tests
                 .PrintToString(_person);
 
             actualString.Should().Contain($"\tAge = {_person.Age} years old\r\n");
+        }
+        
+        [Test]
+        public void PrintToString_PrintsWithMaxLength()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .MaxLength(10)
+                .PrintToString(_person);
+
+            var expectedSting = $"Person\r\n\tId = 1\r\n\tName = A\r\n\tHeight =\r\n\tAge = 19\r\n\tWeight =\r\n\tCountry \r\n";
+            
+            actualString.Should().Be(expectedSting);
         }
     }
 }

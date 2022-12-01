@@ -57,7 +57,6 @@ namespace ObjectPrinting
         private StringBuilder PrintToString(object obj, int nestingLevel)
         {
             Serialize(obj, nestingLevel);
-            Console.WriteLine($"Result {_serializedResult}");
             return _serializedResult;
         }
 
@@ -116,12 +115,10 @@ namespace ObjectPrinting
 
         private void AppendWithLineBreak(string serializedProperty)
         {
-            var idx = 0;
-            foreach (var symbol in serializedProperty)
-                _serializedResult.Append(idx == _maxLength ? '\n' : symbol);
+            _serializedResult.Append(serializedProperty.Substring(0, _maxLength - 1) + Environment.NewLine);
         }
 
-        private bool IsTooLongLine(string line) => line.Length >= _maxLength;
+        private bool IsTooLongLine(string line) => line.Length > _maxLength;
         
         public PrintingConfig<TOwner> Exclude<TOwnerProperty>()
         {
