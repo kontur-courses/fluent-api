@@ -55,7 +55,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TType obj)
         {
-            return PrintToString(obj, 0);
+            return obj is ICollection collection ? PrintCollection(collection, 0) : PrintToString(obj, 0);
         }
 
         private string PrintToString(object obj, int shiftCount)
@@ -106,7 +106,7 @@ namespace ObjectPrinting
                 {
                     sb.Append(shift);
                     sb.Append(PrintElementInCollection(element, shiftCount, shift));
-                    if (collectionLength > 0)
+                    if (collectionLength - 1 > 0)
                         sb.Append(",");
                     sb.Append(Environment.NewLine);
                     collectionLength--;
@@ -131,6 +131,7 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             sb.Append(Environment.NewLine);
+            var dictLength = dict.Count;
             foreach (DictionaryEntry e in dict)
             {
                 sb.Append(new string('\t', shiftCount));
@@ -141,7 +142,10 @@ namespace ObjectPrinting
                 sb.Append(e.Value is ICollection value
                     ? PrintCollection(value, shiftCount)
                     : PrintToString(e.Value, shiftCount));
-                sb.Append(',' + Environment.NewLine);
+                if (dictLength - 1 > 0)
+                    sb.Append(',');
+                sb.Append(Environment.NewLine);
+                dictLength--;
             }
 
             return sb.ToString();

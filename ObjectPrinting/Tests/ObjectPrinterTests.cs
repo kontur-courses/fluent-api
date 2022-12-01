@@ -20,7 +20,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void ObjectPrinter_ShouldCorrectlySerializeDictionary()
+        public void ObjectPrinter_ShouldCorrectlySerializeDictionaryInsideClass()
         {
             examplePerson.Pets = new Dictionary<int, string> {{1, "cat"}, {2, "dog"}, {3, "pig"}};
             var printer = ObjectPrinter.For<Person>().Excluding<List<List<int>>>().Excluding<int>();
@@ -31,9 +31,33 @@ namespace ObjectPrinting.Tests
                                                              Environment.NewLine + '\t' + "Pets : {" +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "1 : cat," +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "2 : dog," +
-                                                             Environment.NewLine + '\t' + '\t' + '\t' + "3 : pig," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + "3 : pig" +
                                                              Environment.NewLine + '\t' + '\t' + '}' +
                                                              Environment.NewLine);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldCorrectlySerializeDictionary()
+        {
+            var dict = new Dictionary<int, string> {{1, "cat"}, {2, "dog"}, {3, "pig"}};
+            var printer = ObjectPrinter.For<Dictionary<int, string>>();
+            printer.PrintToString(dict).Should().Be("{" +
+                                                    Environment.NewLine + '\t' + '\t' + "1 : cat," +
+                                                    Environment.NewLine + '\t' + '\t' + "2 : dog," +
+                                                    Environment.NewLine + '\t' + '\t' + "3 : pig" +
+                                                    Environment.NewLine + '\t' + '}');
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldCorrectlySerializeList()
+        {
+            var list = new List<string> {"one", "two", "three"};
+            var printer = ObjectPrinter.For<List<string>>();
+            printer.PrintToString(list).Should().Be("[" +
+                                                    Environment.NewLine + '\t' + '\t' + "one," +
+                                                    Environment.NewLine + '\t' + '\t' + "two," +
+                                                    Environment.NewLine + '\t' + '\t' + "three" +
+                                                    Environment.NewLine + '\t' + ']');
         }
 
         [Test]
@@ -50,15 +74,15 @@ namespace ObjectPrinting.Tests
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "[" +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "1," +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "2," +
-                                                             Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "3," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "3" +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "]," +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "[" +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "13," +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "99," +
-                                                             Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "13," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + '\t' + "13" +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "]," +
                                                              Environment.NewLine + '\t' + '\t' + '\t' + "[" +
-                                                             Environment.NewLine + '\t' + '\t' + '\t' + "]," +
+                                                             Environment.NewLine + '\t' + '\t' + '\t' + "]" +
                                                              Environment.NewLine + '\t' + '\t' + ']' +
                                                              Environment.NewLine);
         }
