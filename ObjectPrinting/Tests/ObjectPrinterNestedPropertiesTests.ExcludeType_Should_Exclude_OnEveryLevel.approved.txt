@@ -1,0 +1,4 @@
+﻿NestedObjectOne
+	Ref = NestedObjectTwo
+		Birthday = 02.02.0002 0:00:00
+	Date = 01.01.0001 0:00:00

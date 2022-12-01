@@ -19,18 +19,19 @@ namespace ObjectPrinting
                     StringCutFunctions[propertyInfo.Name] = (s) => s;
             }
 
-            return PrintToString(obj, 0, new List<object>());
+            return PrintToString(obj, 0, new List<object>(), "");
         }
-        
+
         private readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
-        private string PrintToString(object obj, int nestingLevel, List<object> parentObjects)
+
+        private string PrintToString(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
             if (parentObjects.Contains(obj)) throw new CyclicReferenceException();
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -43,89 +44,123 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                string name = propertyInfo.Name;
-                if (OverridedConfigs.ContainsKey(name) && OverridedConfigs[name].Excluded) continue;
+                string name = tail;
+                if (name != "") name += '.';
+                name += propertyInfo.Name;
                 
+                if (AlternativeSerializationMethodConfigs.ContainsKey(name) &&
+                    AlternativeSerializationMethodConfigs[name].Excluded ||
+                    TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType) &&
+                    TypeDefaultConfigs[propertyInfo.PropertyType].Excluded) continue;
+
                 sb.Append(identation + propertyInfo.Name + " = ");
                 var value = propertyInfo.GetValue(obj);
-                if (propertyInfo.PropertyType == typeof(string)) value = StringCutFunctions[name](value as string);
-                if (OverridedConfigs.ContainsKey(name))
+                if (propertyInfo.PropertyType == typeof(string)) value = GetStringCut(value as string, name);
+
+                if (AlternativeSerializationMethodConfigs.ContainsKey(name))
                 {
-                    sb.Append(OverridedConfigs[name]
+                    sb.Append(AlternativeSerializationMethodConfigs[name]
                         .CalculateStringResult(value));
                     sb.AppendLine();
+                }
+                else if (TypeDefaultConfigs.ContainsKey(propertyInfo.PropertyType))
+                {
+                    sb.Append(TypeDefaultConfigs[propertyInfo.PropertyType]
+                        .CalculateStringResult(value));
+                    sb.AppendLine();
+                }
+                else if (propertyInfo.PropertyType.GetInterface("IFormattable") != null && DefaultCulture != null)
+                {
+                    sb.Append((obj as IFormattable).ToString("", DefaultCulture));
                 }
                 else
                 {
                     parentObjects.Add(obj);
                     sb.Append(PrintToString(value,
-                        nestingLevel + 1, parentObjects));
+                        nestingLevel + 1, parentObjects, name));
                     parentObjects.Remove(parentObjects.Count - 1);
                 }
             }
 
             return sb.ToString();
         }
-        
-        //TODO
+
+
+
         public PrintingConfig<TOwner> SetCulture(CultureInfo cultureInfo)
         {
             foreach (var info in typeof(TOwner).GetProperties())
             {
-                if (info.PropertyType.GetInterface("IFormattable")!=null)
+                if (info.PropertyType.GetInterface("IFormattable") != null)
                 {
-                    if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
-                    OverridedConfigs[info.Name].SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
+                    if (!AlternativeSerializationMethodConfigs.ContainsKey(info.Name))
+                        AlternativeSerializationMethodConfigs.Add(info.Name, new PropertySerializationConfig());
+                    AlternativeSerializationMethodConfigs[info.Name]
+                        .SetNewSerializeMethod<IFormattable>((f) => f.ToString("", cultureInfo));
                 }
             }
-            
+
             return this;
         }
+
+        private CultureInfo DefaultCulture = null;
 
         public IPropertyConfig<TOwner, T> ConfigForProperty<T>(Expression<Func<TOwner, T>> property)
         {
+            CheckExpression(property);
             return new PropertyConfig<TOwner, T>(this, property);
         }
 
-        //TODO
         public PrintingConfig<TOwner> SetSerializeMethodForType<T>(Func<T, string> method)
         {
-            foreach (var info in typeof(TOwner).GetProperties().Where(pi=>pi.PropertyType == typeof(T)))
-            {
-                if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
-                OverridedConfigs[info.Name].SetNewSerializeMethod(method);
-            }
-
+            GetDefaultConfig<T>().SetNewSerializeMethod(method);
             return this;
         }
-        
-        
-        //TODO
-        //change behaviour
+
+        private void CheckExpression<T>(Expression<Func<TOwner, T>> expr)
+        {
+            if (expr.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
+        } 
+
         public PrintingConfig<TOwner> ExcludeType<T>()
         {
-            foreach (var info in typeof(TOwner).GetProperties().Where(pi=>pi.PropertyType == typeof(T)))
-            {
-                if (!OverridedConfigs.ContainsKey(info.Name)) OverridedConfigs.Add(info.Name, new PropertySerializationConfig());
-                OverridedConfigs[info.Name].Excluded = true;
-            }
-
+            GetDefaultConfig<T>().Excluded = true;
             return this;
         }
+
+        private Dictionary<Type, PropertySerializationConfig> TypeDefaultConfigs =
+            new Dictionary<Type, PropertySerializationConfig>();
+
+        private PropertySerializationConfig GetDefaultConfig<T>()
+        {
+            var type = typeof(T);
+            if (!TypeDefaultConfigs.ContainsKey(type)) TypeDefaultConfigs.Add(type, new PropertySerializationConfig());
+            return TypeDefaultConfigs[type];
+        }
+
 
         public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
             GetConfig(propertyExpression).Excluded = true;
             return this;
         }
+
         internal void SetSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
             Func<T, string> newMethod)
         {
+            CheckExpression(propertyExpression);
             GetConfig(propertyExpression).SetNewSerializeMethod(newMethod);
+        }
+
+        private string GetStringCut(string s, string propertyName)
+        {
+            if (!StringCutFunctions.ContainsKey(propertyName)) return s;
+            else return StringCutFunctions[propertyName](s);
         }
 
         internal void SetStringCut(Expression<Func<TOwner, string>> propertyExpression, int maxLength)
         {
+            CheckExpression(propertyExpression);
             var name = GetFullName(propertyExpression);
             StringCutFunctions[name] = (s) =>
             {
@@ -134,27 +169,27 @@ namespace ObjectPrinting
             };
         }
 
-        private PropertyInfo ExtractProperty<T>(Expression<Func<TOwner, T>> property)
-        {
-            if (property.Body.NodeType != ExpressionType.MemberAccess) throw new MissingMemberException();
-            return (PropertyInfo) ((MemberExpression) property.Body).Member;
-        }
-
         private PropertySerializationConfig GetConfig<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
+            CheckExpression(propertyExpression);
             var name = GetFullName(propertyExpression);
-            if (!OverridedConfigs.ContainsKey(name)) OverridedConfigs.Add(name, new PropertySerializationConfig());
-            return OverridedConfigs[name];
+            if (!AlternativeSerializationMethodConfigs.ContainsKey(name))
+                AlternativeSerializationMethodConfigs.Add(name, new PropertySerializationConfig());
+            return AlternativeSerializationMethodConfigs[name];
         }
 
         private string GetFullName<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
-            Regex regex = new Regex("([^.]*)(.*)");
-            return regex.Match(propertyExpression.ToString()).Groups[2].ToString();
+            Regex regex = new Regex("([^.]*)(.)(.*)");
+            return regex.Match(propertyExpression.ToString()).Groups[3].ToString();
         }
+
         private Dictionary<string, Func<string, string>> StringCutFunctions =
             new Dictionary<string, Func<string, string>>();
-        private Dictionary<string, PropertySerializationConfig> OverridedConfigs = new Dictionary<string, PropertySerializationConfig>();
+
+        private Dictionary<string, PropertySerializationConfig> AlternativeSerializationMethodConfigs =
+            new Dictionary<string, PropertySerializationConfig>();
+
         private class PropertySerializationConfig
         {
             public bool Excluded { get; set; } = false;

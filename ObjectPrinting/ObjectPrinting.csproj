@@ -99,6 +99,18 @@
       <ParentFile>ObjectPrinterForTypeMethods</ParentFile>
       <DependentUpon>ObjectPrinterForTypeMethods.cs</DependentUpon>
     </None>
+    <None Update="Tests\ObjectPrinterNestedPropertiesTests.ExcludeType_Should_Exclude_OnEveryLevel.approved.txt">
+      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterNestedPropertiesTests.ExcludeType_Should_Exclude_OnEveryLevel.received.txt">
+      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterNestedPropertiesTests.SetCulture_Should_Set_OnEveryLevel.received.txt">
+      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterNestedPropertiesTests.UseSerializeMethod_ShouldNot_Work_OnOtherLevels.received.txt">
+      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>
