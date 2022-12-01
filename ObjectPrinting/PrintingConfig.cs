@@ -15,25 +15,19 @@ namespace ObjectPrinting
         
         public PrintingConfig(BasePrintingConfig<TOwner> printingConfig) : base(printingConfig) { }
 
-        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, Dictionary<MemberInfo, object> serializedProperties) : base(printingConfig)
-        {
-            SerializedProperties = serializedProperties;
-        }
-        
-        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, Dictionary<Type, object> serializedTypes) : base(printingConfig)
-        {
-            SerializedTypes = serializedTypes;
-        }
-        
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, 
+            Dictionary<MemberInfo, object> serializedProperties) : base(printingConfig)
+            => SerializedProperties = serializedProperties;
+
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, 
+            Dictionary<Type, object> serializedTypes) : base(printingConfig)
+            => SerializedTypes = serializedTypes;
+
         public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, List<Type> excludedTypes) : base(printingConfig)
-        {
-            ExcludedTypes = excludedTypes;
-        }
-        
+            => ExcludedTypes = excludedTypes;
+
         public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, List<string> excludedProperties) : base(printingConfig)
-        {
-            ExcludedProperties = excludedProperties;
-        }
+            => ExcludedProperties = excludedProperties;
 
         public PrintingConfig<TOwner> Excluding<TProperty>()
         {
