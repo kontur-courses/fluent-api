@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
@@ -21,14 +22,16 @@ namespace ObjectPrinting.Tests
         [TestCase(typeof(DateTimeOffset))]
         [TestCase(typeof(TimeSpan))]
         [TestCase(typeof(TestedEnum))]
-        public void TypeIsFinal_IsTrue_WhenTypeIs(Type type)
+        public void Should_BeTrue_When_TypeIs(Type type)
         {
-            Assert.IsTrue(type.IsFinal());
+            type.IsFinal().Should().BeTrue();
         }
+
         struct TestedStruct
         {
             int a;
         }
+
         class TestedClass
         {
             int a;
@@ -43,9 +46,9 @@ namespace ObjectPrinting.Tests
         [TestCase(typeof(List<TestedClass>))]
         [TestCase(typeof(List<TestedStruct>))]
         [TestCase(typeof(IEnumerable<TestedStruct>))]
-        public void TypeIsFinal_IsFalse_WhenTypeIs(Type type)
+        public void Should_BeFalse_When_TypeIs(Type type)
         {
-            Assert.IsFalse(type.IsFinal());
+            type.IsFinal().Should().BeFalse();
         }
     }
 }

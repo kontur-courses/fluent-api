@@ -6,7 +6,7 @@ using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
-    class PropertyPrintingConfigTests
+    public class PropertyPrintingConfigTests
     {
         private readonly Person person = new Person { Name = "Alex", Age = 19 };
         private PrintingConfig<Person> printingConfig;
@@ -18,7 +18,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsingFunction_PropertyByName_Success()
+        public void Should_AssignRule_When_RuleIsAssignedOnceForSingeMember()
         {
             var printedObject = printingConfig.Printing(p => p.Age).Using(val => $"{val} years").PrintToString(person);
 
@@ -28,7 +28,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsingFunction_PropertyByNameTwice_ThrowException()
+        public void Should_ThrowInvalidOperationException_When_RulesAreAssignedTwiceForSingeMember()
         {
             Action act = () => printingConfig.Printing(p => p.Age).Using(val => $"{val} years")
                 .Printing(p => p.Age).Using(val => val.ToString("X8"));
@@ -37,7 +37,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsingCulture_PropertyByName_Success()
+        public void Should_AssignCultureInfo_When_CultureInfoIsAssignedOnceForSingeMember()
         {
             person.Height = 18.3M;
 
@@ -46,11 +46,11 @@ namespace ObjectPrinting.Tests
 
             printedObject.Should().Contain("18.3");
 
-            //TODO: printingConfig.PrintToString(person).Should().NotContain("18.3");
+            printingConfig.PrintToString(person).Should().NotContain("18.3");
         }
 
         [Test]
-        public void PrintingUsingCulture_PropertyByNameTwice_ThrowException()
+        public void Should_ThrowInvalidOperationException_When_CultureInfoAreAssignedTwiceForSingeMember()
         {
             Action act = () => printingConfig.Printing(p => p.Height).
                 Using(CultureInfo.InvariantCulture).Printing(p => p.Height).
@@ -60,7 +60,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsingFunction_PropertyByType_Success()
+        public void Should_AssignRule_When_RuleIsAssignedOnceForSingeType()
         {
             var printedObject = printingConfig.Printing<Guid>().Using(val => $"{val} (GUID)").PrintToString(person);
 
@@ -70,7 +70,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsingFunction_PropertyByTypeTwice_ThrowException()
+        public void Should_ThrowInvalidOperationException_When_RulesAreAssignedTwiceForSingeType()
         {
             Action act = () => printingConfig.Printing<Guid>().Using(val => $"{val} (GUID)")
                 .Printing<Guid>().Using(val => val.ToString());
@@ -79,20 +79,22 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingUsing_PropertyTrim_Success()
+        public void Should_TrimmedMember_When_MemberValueTrimmedToPositiveLength()
         {
-            var printedObject = printingConfig.Printing(p=>p.Name).TrimmedToLength(3).PrintToString(person);
+            var printedObject = printingConfig.Printing(p=>p.Name).TrimmedToLength(1).PrintToString(person);
 
-            printedObject.Should().Contain($"{nameof(Person.Name)} = {person.Name.Substring(0,3)}");
+            printedObject.Should().Contain($"{nameof(Person.Name)} = {person.Name.Substring(0,1)}");
 
-            printingConfig.PrintToString(person).Should().NotContain("(GUID)");
+            printingConfig.PrintToString(person).Should().Contain(person.Name);
         }
 
         [Test]
-        public void PrintingUsing_PropertyTrimZero_ThrowException()
+        public void Should_ThrowArgumentException_When_MemberValueTrimmedToZeroLengthOrLess()
         {
             Action act = () => printingConfig.Printing(p => p.Name).TrimmedToLength(0);
+            act.Should().Throw<ArgumentException>();
 
+            act = () => printingConfig.Printing(p => p.Name).TrimmedToLength(-100);
             act.Should().Throw<ArgumentException>();
         }
     }

@@ -17,7 +17,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void CreateNullObject()
+        public void Should_CreatePrintingConfig_WhenCtorHasNullArgument()
         {
             Action act = () => new PrintingConfig<Person>();
 
@@ -25,7 +25,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintPrivateFields()
+        public void Should_NotPrint_PrivateMembersOfObject()
         {
             printingConfig.PrintToString(person).Should().
                 NotContain("secretNumber").
@@ -33,26 +33,9 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Excluding_PropertyByName_Success()
+        public void Should_ExcludingPropertyByName()
         {
             CheckThatNotContainIn(printingConfig.Excluding(p => p.Name), nameof(Person.Name));
-        }
-        
-        [Test]
-        public void Excluding_PropertyByType_Success()
-        {
-            CheckThatNotContainIn(printingConfig.Excluding<string>(), nameof(Person.Name));
-            CheckThatNotContainIn(printingConfig.Excluding<Guid>(), nameof(Person.Id));
-            CheckThatNotContainIn(printingConfig.Excluding<decimal>(), nameof(Person.Height));
-            CheckThatNotContainIn(printingConfig.Excluding<int>(), nameof(Person.Age));
-        }
-
-        [Test]
-        public void Excluding_Inherited_Success()
-        {
-            CheckThatNotContainIn(printingConfig.Excluding<string>(), nameof(Person.Name));
-            var printedObject = printingConfig.PrintToString(person);
-            printedObject.Should().Contain(nameof(Person.Name));
         }
 
         private void CheckThatNotContainIn(PrintingConfig<Person> printer, string propertyNames)
@@ -62,7 +45,24 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_LoopedReferencedMembers_PrintedOnce()
+        public void Should_ExcludingPropertyByType()
+        {
+            CheckThatNotContainIn(printingConfig.Excluding<string>(), nameof(Person.Name));
+            CheckThatNotContainIn(printingConfig.Excluding<Guid>(), nameof(Person.Id));
+            CheckThatNotContainIn(printingConfig.Excluding<decimal>(), nameof(Person.Height));
+            CheckThatNotContainIn(printingConfig.Excluding<int>(), nameof(Person.Age));
+        }
+
+        [Test]
+        public void Should_ExcludingPropertyByType_ThatNotInherited()
+        {
+            CheckThatNotContainIn(printingConfig.Excluding<string>(), nameof(Person.Name));
+            var printedObject = printingConfig.PrintToString(person);
+            printedObject.Should().Contain(nameof(Person.Name));
+        }
+
+        [Test]
+        public void Should_PrintedOnce_LoopedReferencedMembers()
         {
             person.BestFriend = new Person() { Name = "Igor", BestFriend = person };
 
@@ -72,7 +72,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ListOfPerson_Success()
+        public void Should_PrintToString_ListOfPerson()
         {
             var persons = new List<Person>
             {
@@ -84,7 +84,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ArrayOfPerson_Success()
+        public void Should_PrintToString_ArrayOfPerson()
         {
             var persons = new [] {person, new Person() { Name = "Igor", Age = 17} };
             var printedObject = ObjectPrinter.For<Person[]>().PrintToString(persons);
@@ -92,7 +92,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_DictionaryOfPerson_Success()
+        public void Should_PrintToString_DictionaryOfPerson()
         {
             var persons = new Dictionary<int, Person>
             {
@@ -102,23 +102,5 @@ namespace ObjectPrinting.Tests
             var printedObject = ObjectPrinter.For<Dictionary<int, Person>>().PrintToString(persons);
             printedObject.Should().ContainAll(persons[1].Name, persons[2].Name);
         }
-
-        /*
-        //TODO: удалить или доделать
-        [TestCase(typeof(string), nameof(Person.Name))]
-        [TestCase(typeof(Guid), nameof(Person.Id))]
-        [TestCase(typeof(double), nameof(Person.Height))]
-        [TestCase(typeof(int), nameof(Person.Age))]
-        public void Excluding_PropertyByType_Success(Type propertyType, string propertyNames)
-        {
-            var methodName = nameof(PrintingConfig<Person>.Excluding);
-            var method = propertyType.GetMethod(nameof(PrintingConfig<Person>.Excluding));
-            var method2 = typeof(PrintingConfig<Person>).getg(methodName, new[] { propertyType });
-            var printedObject = (method.Invoke(printingConfig, null) as PrintingConfig<Person>).PrintToString();
-            //propertyType.GetMethod(nameof(PrintingConfig<Person>.Excluding)).Invoke(printingConfig, null);
-            //var printedObject = printingConfig.Excluding<propertyType>().PrintToString(person);
-
-            printedObject.Should().NotContainAll(propertyNames.Split());
-        }*/
     }
 }
