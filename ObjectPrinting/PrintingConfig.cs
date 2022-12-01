@@ -5,9 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Equivalency;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
 
 namespace ObjectPrinting
 {

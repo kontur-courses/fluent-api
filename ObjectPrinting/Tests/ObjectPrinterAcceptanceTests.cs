@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
-using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
@@ -139,8 +138,8 @@ namespace ObjectPrinting.Tests
         {
             var persons = new List<Person>
             {
-                new Person { Name = "Alex", Age = 19 }
-                , new Person { Name = "Anna", Age = 16 }
+                new Person { Name = "Alex", Age = 19 },
+                new Person { Name = "Anna", Age = 16 }
             };
 
             var expected = "[Person Name = ALEX Age = 19, Person Name = ANNA Age = 16]";
