@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfig
 {
     public partial class PrintingConfig<TOwner>
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using ObjectPrinting.PrintingConfig;
 
 namespace ObjectPrinting
 {

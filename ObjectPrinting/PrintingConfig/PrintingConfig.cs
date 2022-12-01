@@ -4,18 +4,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.PrintingConfig
 {
     public partial class PrintingConfig<TOwner>
     {
-        private Dictionary<string, Func<string, string>> StringCutFunctions =
-            new Dictionary<string, Func<string, string>>();
-
-
         private readonly Type[] finalTypes = new[]
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
@@ -180,22 +175,6 @@ namespace ObjectPrinting
             return this;
         }
 
-        private string GetStringCut(string s, string propertyName)
-        {
-            if (!StringCutFunctions.ContainsKey(propertyName)) return s;
-            else return StringCutFunctions[propertyName](s);
-        }
-
-        internal void SetStringCut(Expression<Func<TOwner, string>> propertyExpression, int maxLength)
-        {
-            CheckExpression(propertyExpression);
-            var name = GetFullName(propertyExpression);
-            StringCutFunctions[name] = (s) =>
-            {
-                if (s.Length > maxLength) return s.Substring(0, maxLength);
-                else return s;
-            };
-        }
 
         private string GetFullName<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
