@@ -8,6 +8,12 @@ namespace ObjectPrinting_Tests;
 [TestFixture]
 public class ObjectPrinterExtensions_Should
 {
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+    }
+
     [TestCaseSource(typeof(ObjectPrinterTestCaseData), nameof(ObjectPrinterTestCaseData.PrimitiveAndFinalTypes))]
     public void ReturnCorrectResult_WithPrimitiveAndFinalTypes<T>(T obj, string expected)
     {

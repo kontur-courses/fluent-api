@@ -8,6 +8,12 @@ namespace ObjectPrinting_Tests;
 [TestFixture]
 public class ObjectPrinter_Should
 {
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+    }
+
     [Test]
     public void ReturnCorrectResult_ForNull()
     {
