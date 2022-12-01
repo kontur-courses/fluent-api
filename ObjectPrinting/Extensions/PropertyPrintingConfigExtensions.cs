@@ -1,7 +1,8 @@
 using System;
 using System.Globalization;
+using ObjectPrinting.PropertyPrintingConfig;
 
-namespace ObjectPrinting.PropertyPrintingConfig
+namespace ObjectPrinting.Extensions
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -29,9 +30,9 @@ namespace ObjectPrinting.PropertyPrintingConfig
             var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
 
             Func<string, string> function = str =>
-                string.IsNullOrEmpty(str) || str.Length <= maxLength ? 
-                str : 
-                str.Substring(0, maxLength);
+                string.IsNullOrEmpty(str) || str.Length <= maxLength 
+                    ? str 
+                    : str.Substring(0, maxLength);
 
             parentConfig.MemberSerializationRule.AddRule(propConfig.MemberInfo, function);
 

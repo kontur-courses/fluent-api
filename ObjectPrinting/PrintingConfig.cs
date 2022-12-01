@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 using ObjectPrinting.PropertyPrintingConfig;
 
 namespace ObjectPrinting
@@ -17,25 +17,14 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
         internal readonly Dictionary<MemberInfo, Delegate> MemberSerializationRule = new Dictionary<MemberInfo, Delegate>();
         internal readonly Dictionary<Type, Delegate> TypeSerializationRule = new Dictionary<Type, Delegate>();
-        private readonly Type[] finalTypes = {
-            typeof(int),
-            typeof(double),
-            typeof(float),
-            typeof(string),
-            typeof(DateTime),
-            typeof(TimeSpan),
-            typeof(Guid)
-        };
 
         private readonly char leveler = '\t';
-
-        public PrintingConfig()
+        
+        public PrintingConfig(PrintingConfig<TOwner> parent = null)
         {
+            if (parent == null)
+                return;
 
-        }
-
-        private PrintingConfig(PrintingConfig<TOwner> parent)
-        {
             excludedTypes.AddRange(parent.excludedTypes);
             excludedMembers.AddRange(parent.excludedMembers);
             MemberSerializationRule.AddRange(parent.MemberSerializationRule);
@@ -66,26 +55,29 @@ namespace ObjectPrinting
             return configClone;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             var configClone = new PrintingConfig<TOwner>(this);
             configClone.excludedTypes.Add(typeof(TPropType));
             return configClone;
         }
 
-        public string PrintToString(TOwner obj)
+        public string PrintToString(object obj, int nestingLevel = 0)
         {
-            return PrintToString(obj, 0);
-        }
+            if (printedObjects.Contains(obj))
+                return "recursive reference" + Environment.NewLine;
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null || printedObjects.Contains(obj))
+            if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (finalTypes.Contains(obj.GetType()))
+            if (obj.GetType().IsFinal())
                 return obj + Environment.NewLine;
 
+            return PrintDetailedInformation(obj, nestingLevel);
+        }
+
+        private string PrintDetailedInformation(object obj, int nestingLevel)
+        {
             var identation = new string(leveler, nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -95,35 +87,38 @@ namespace ObjectPrinting
                 sb.AppendLine("[");
                 foreach (var el in enumerable)
                 {
-                    sb.Append(identation + PrintToString(el, nestingLevel + 1));
+                    var value = PrintToString(el, nestingLevel + 1);
+                    sb.Append($"{identation}{value}");
                 }
                 printedObjects.Add(enumerable);
                 sb.AppendLine("]");
             }
             else
             {
-                foreach (var propertyInfo in type.GetProperties().Where(AreNotExcludedProperty))
+                foreach (var memberInfo in type.GetMembers().Where(m =>
+                             (m is PropertyInfo || m is FieldInfo) && AreNotExcludedProperty(m)))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(GetValue(obj, propertyInfo), nestingLevel + 1));
+                    var value = PrintToString(GetValue(obj, memberInfo), nestingLevel + 1);
+                    sb.Append($"{identation}{memberInfo.Name} = {value}");
                     printedObjects.Add(obj);
                 }
             }
             return sb.ToString();
         }
 
-        private bool AreNotExcludedProperty(PropertyInfo propertyInfo) =>
-            !excludedTypes.Contains(propertyInfo.PropertyType) &&
-            !excludedMembers.Contains(propertyInfo);
+        private bool AreNotExcludedProperty(MemberInfo memberInfo) =>
+            !excludedTypes.Contains(memberInfo.GetUnderlyingType()) &&
+            !excludedMembers.Contains(memberInfo);
 
-        private object GetValue(object obj, PropertyInfo propertyInfo)
+        private object GetValue(object obj, MemberInfo memberInfo)
         {
-            var val = propertyInfo.GetValue(obj);
-            return MemberSerializationRule.ContainsKey(propertyInfo) ?
-                MemberSerializationRule[propertyInfo].DynamicInvoke(val) :
-                TypeSerializationRule.ContainsKey(propertyInfo.PropertyType) ?
-                TypeSerializationRule[propertyInfo.PropertyType].DynamicInvoke(val) :
-                val;
+            var val = memberInfo.GetValue(obj);
+            var memberType = memberInfo.GetUnderlyingType();
+            return MemberSerializationRule.ContainsKey(memberInfo) 
+                ? MemberSerializationRule[memberInfo].DynamicInvoke(val) 
+                : TypeSerializationRule.ContainsKey(memberType) 
+                    ? TypeSerializationRule[memberType].DynamicInvoke(val) 
+                    : val;
         }
     }
 }

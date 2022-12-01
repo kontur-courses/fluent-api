@@ -17,6 +17,22 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void CreateNullObject()
+        {
+            Action act = () => new PrintingConfig<Person>();
+
+            act.Should().NotThrow("valid constructor");
+        }
+
+        [Test]
+        public void PrintPrivateFields()
+        {
+            printingConfig.PrintToString(person).Should().
+                NotContain("secretNumber").
+                And.NotContain("SecretNumber");
+        }
+
+        [Test]
         public void Excluding_PropertyByName_Success()
         {
             CheckThatNotContainIn(printingConfig.Excluding(p => p.Name), nameof(Person.Name));
@@ -27,7 +43,7 @@ namespace ObjectPrinting.Tests
         {
             CheckThatNotContainIn(printingConfig.Excluding<string>(), nameof(Person.Name));
             CheckThatNotContainIn(printingConfig.Excluding<Guid>(), nameof(Person.Id));
-            CheckThatNotContainIn(printingConfig.Excluding<double>(), nameof(Person.Height));
+            CheckThatNotContainIn(printingConfig.Excluding<decimal>(), nameof(Person.Height));
             CheckThatNotContainIn(printingConfig.Excluding<int>(), nameof(Person.Age));
         }
 
@@ -52,7 +68,7 @@ namespace ObjectPrinting.Tests
 
             var printedObject = printingConfig.PrintToString(person);
 
-            printedObject.Should().Contain(person.Name, Exactly.Once());
+            printedObject.Should().Contain(person.Name, Exactly.Once()).And.Contain("recursive reference", Exactly.Once());
         }
 
         [Test]

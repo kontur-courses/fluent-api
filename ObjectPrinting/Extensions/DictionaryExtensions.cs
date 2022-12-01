@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Extensions
 {
     public static class DictionaryExtensions
     {
