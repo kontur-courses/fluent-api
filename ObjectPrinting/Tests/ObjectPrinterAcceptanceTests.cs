@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting.Tests.TestClasses;
 
 namespace ObjectPrinting.Tests
 {
@@ -10,20 +11,20 @@ namespace ObjectPrinting.Tests
     {
         private PrintingConfig<Person> printingConfig;
         
-        private readonly Person person = new Person { Child = new Person()
+        private readonly Person person = new Person 
         {
-            Name = "Maks",
-            Surname = "Davletbaev",
-            Height = 7.2,
-            Width = 1.8f,
-            Age = 0
-        }, Car = new Car()
+            Child = new Person()
+            {
+                Name = "Volodya",
+                Age = 2
+            },
+            Car = new Car()
             {
                 Color = 123,
                 Company = "Tesla",
                 Name = "My lovely car"
             },
-            Name = "Alex", Surname = "Tsvetkov", Age = 19, Height = 5.6, Width = 7.2f };
+            Company = "Kontur", Name = "Alex", Surname = "Tsvetkov", Age = 19, Height = 5.6, Width = 7.2f };
 
         private readonly object[] objectArray = { new Person(), "322", new Car() { Color = 225 } };
         private readonly List<int> intList = new List<int>() { 1, 2, 3 };
@@ -39,35 +40,46 @@ namespace ObjectPrinting.Tests
         {
             printingConfig = ObjectPrinter.For<Person>();
         }
-        
+
         [Test]
         public void Demo()
         {
             var personPrinter = ObjectPrinter.For<Person>()
                 .Excluding(x => x.Age)
-                .Excluding(x => x.Id)
                 .Printing(x => x.Name).Using(x => x.ToString() + "BBB")
+                .Printing(x => x.Car.Company).Using(x => "COMPANY")
                 .Printing<float>().Using(CultureInfo.InvariantCulture)
                 .Printing<double>().Using(x => (x + 100).ToString())
-                .Printing(x => x.Name).TrimmedToLength(5);
-            
-            var s0 = objectArray.PrintToString(2);
-            Console.WriteLine(s0);
-            
-            var s1 = intList.PrintToString(2);
-            Console.WriteLine(s1);
-            
-            var s2 = dictionary.PrintToString(2);
-            Console.WriteLine(s2);
-            
-            var s3 = personPrinter.PrintToString(person, 2);
+                .Printing(x => x.Name).TrimmedToLength(50);
+
+            var s3 = personPrinter.PrintToString(person);
             Console.WriteLine(s3);
-
-            var s4 = person.PrintToString(2);
+            
+            var s4 = person.PrintToString();
             Console.WriteLine(s4);
-
-            var s5 = person.PrintToString(x => x.Excluding(x => x.Age), 2);
+            
+            var s5 = person.PrintToString(x => x.Excluding(x => x.Age));
             Console.WriteLine(s5);
+            
+            Console.WriteLine(objectArray.PrintToString());
+            Console.WriteLine(intList.PrintToString());
+            Console.WriteLine(dictionary.PrintToString());
+        }
+
+        [Test]
+        public void PrintingConfig_ImmutableObject()
+        {
+            var printer = ObjectPrinter.For<Person>().Printing<int>().Using(x => "AAAAAA");
+            var printer1 = printer.Printing<float>().Using(x => "BBBBBBB");;
+            var printer2 = printer.Printing<double>().Using(x => "CCCCCCCC");;
+
+            var s1 = printer.PrintToString(person);
+            var s2 = printer1.PrintToString(person);
+            var s3 = printer2.PrintToString(person);
+            
+            StringAssert.AreNotEqualIgnoringCase(s1, s2);
+            StringAssert.AreNotEqualIgnoringCase(s1, s3);
+            StringAssert.AreNotEqualIgnoringCase(s2, s3);
         }
 
         [Test]
