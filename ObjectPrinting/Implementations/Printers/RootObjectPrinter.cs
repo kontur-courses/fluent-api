@@ -14,12 +14,12 @@ public class RootObjectPrinter : IRootObjectPrinter
     public IExcludingRules ExcludingRules => _defaultObjectPrinter.ExcludingRules;
 
     private readonly IDefaultObjectPrinter _defaultObjectPrinter;
-    private readonly IEnumerable<ISpecialObjectPrinter> _specialObjectPrinters;
+    private readonly IEnumerable<SpecialObjectPrinter> _specialObjectPrinters;
 
     public RootObjectPrinter(
         IDefaultObjectPrinter defaultObjectPrinter,
         ICustomPrintersCollector customPrintersCollector,
-        IEnumerable<ISpecialObjectPrinter> specialObjectPrinters
+        IEnumerable<SpecialObjectPrinter> specialObjectPrinters
     )
     {
         _defaultObjectPrinter = defaultObjectPrinter;

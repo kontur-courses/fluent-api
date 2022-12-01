@@ -1,28 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using ObjectPrinting.Abstractions.Printers;
 using ObjectPrinting.Infrastructure;
 
 namespace ObjectPrinting.Implementations.Printers.SpecialPrinters;
 
-public class KeyValueObjectPrinter : ISpecialObjectPrinter
+public class KeyValueObjectPrinter : SpecialObjectPrinter
 {
     private const char OpeningBrace = '{';
     private const char ClosingBrace = '}';
 
-    public bool CanPrint(object obj)
+    public override bool CanPrint(object obj)
     {
         var type = obj.GetType();
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>);
     }
 
-    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
+    protected override string InternalPrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
     {
-        var obj = memberData.Member;
-        if (obj is null || !CanPrint(obj))
-            throw new ArgumentException("Unable to print this member, using this printer!");
-        var kvp = (dynamic) obj;
+        var kvp = (dynamic) memberData.Member!;
         var key = (object) kvp.Key;
         var value = (object) kvp.Value;
 

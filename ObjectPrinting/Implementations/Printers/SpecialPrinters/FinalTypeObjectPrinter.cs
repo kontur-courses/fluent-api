@@ -7,14 +7,14 @@ using ObjectPrinting.Infrastructure;
 
 namespace ObjectPrinting.Implementations.Printers.SpecialPrinters;
 
-public class FinalTypeObjectPrinter : ISpecialObjectPrinter
+public class FinalTypeObjectPrinter : SpecialObjectPrinter
 {
     private static readonly HashSet<Type> FinalTypes = new()
     {
         typeof(string), typeof(Guid), typeof(DateTime), typeof(TimeSpan), typeof(ITuple)
     };
 
-    public bool CanPrint(object obj)
+    public override bool CanPrint(object obj)
     {
         var type = obj.GetType();
         if (type.IsPrimitive)
@@ -24,12 +24,6 @@ public class FinalTypeObjectPrinter : ISpecialObjectPrinter
         return FinalTypes.Any(final => final.IsAssignableFrom(type));
     }
 
-    public string PrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter)
-    {
-        var obj = memberData.Member;
-        if (obj is null || !CanPrint(obj))
-            throw new ArgumentException("Unable to print this member, using this printer!");
-
-        return obj.ToString()!;
-    }
+    protected override string InternalPrintToString(PrintingMemberData memberData, IRootObjectPrinter rootPrinter) =>
+        memberData.Member!.ToString()!;
 }
