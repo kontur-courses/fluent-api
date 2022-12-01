@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -11,52 +12,54 @@ namespace ObjectPrinting
         
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo memberInfo;
-        private readonly IDictionary<object, object> serializers;
+        private Dictionary<Type, object> serializedTypes;
+        private Dictionary<MemberInfo, object> serializedProperties;
         
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo, IDictionary<object, object> serializers)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo, 
+            Dictionary<Type, object> serializedTypes,  Dictionary<MemberInfo, object> serializedProperties)
         {
             this.printingConfig = printingConfig;
             this.memberInfo = memberInfo;
-            this.serializers = serializers;
+            this.serializedTypes = serializedTypes;
+            this.serializedProperties = serializedProperties;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProperty, string> func)
         {
             if (memberInfo != null)
+            {
                 UsingToProperty(func);
-            else
-                UsingToType(func);
-
-            return printingConfig;
+                return new PrintingConfig<TOwner>(printingConfig, serializedProperties);
+            }
+            UsingToType(func);
+            return new PrintingConfig<TOwner>(printingConfig, serializedTypes);
         }
         
         public PrintingConfig<TOwner> Using(CultureInfo cultureInfo)
         {
-            if (!serializers.ContainsKey(typeof(TProperty)))
-                serializers.Add(typeof(TProperty), cultureInfo);
+            if (!serializedTypes.ContainsKey(typeof(TProperty)))
+                serializedTypes.Add(typeof(TProperty), cultureInfo);
             else
-                serializers[typeof(TProperty)] = cultureInfo;
+                serializedTypes[typeof(TProperty)] = cultureInfo;
             
-            return printingConfig;
+            return new PrintingConfig<TOwner>(printingConfig, serializedTypes);
         }
 
         private void UsingToProperty(Func<TProperty, string> func)
         {
-            var propertyName = memberInfo.Name;
-            
-            if (!serializers.ContainsKey(propertyName))
-                serializers.Add(propertyName, func);
+            if (!serializedProperties.ContainsKey(memberInfo))
+                serializedProperties.Add(memberInfo, func);
             else
-                serializers[propertyName] = Delegate.Combine((Delegate)serializers[propertyName], func);
+                serializedProperties[memberInfo] = Delegate.Combine((Delegate)serializedProperties[memberInfo], func);
         }
         
         private void UsingToType(Func<TProperty, string> func)
         {
-            if (!serializers.ContainsKey(typeof(TProperty)))
-                serializers.Add(typeof(TProperty), func);
+            if (!serializedTypes.ContainsKey(typeof(TProperty)))
+                serializedTypes.Add(typeof(TProperty), func);
             else
             {
-                serializers[typeof(TProperty)] = func;
+                serializedTypes[typeof(TProperty)] = func;
             }
         }
     }

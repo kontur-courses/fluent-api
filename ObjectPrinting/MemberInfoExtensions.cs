@@ -7,6 +7,9 @@ namespace ObjectPrinting
     {
         public static object GetMemberValue(this MemberInfo memberInfo, object forObject)
         {
+            if (forObject == null)
+                return null;
+            
             switch (memberInfo.MemberType)
             {
                 case MemberTypes.Field:

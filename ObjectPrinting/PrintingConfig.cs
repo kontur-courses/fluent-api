@@ -9,43 +9,43 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingBasePrintingConfig<TOwner> : BasePrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : BasePrintingConfig<TOwner>
     {
-        public PrintingBasePrintingConfig() { }
+        public PrintingConfig() { }
         
-        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig) : base(printingBasePrintingConfig) { }
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig) : base(printingConfig) { }
 
-        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, Dictionary<MemberInfo, object> serializedProperties) : base(printingBasePrintingConfig)
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, Dictionary<MemberInfo, object> serializedProperties) : base(printingConfig)
         {
             SerializedProperties = serializedProperties;
         }
         
-        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, Dictionary<Type, object> serializedTypes) : base(printingBasePrintingConfig)
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, Dictionary<Type, object> serializedTypes) : base(printingConfig)
         {
             SerializedTypes = serializedTypes;
         }
         
-        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, List<Type> excludedTypes) : base(printingBasePrintingConfig)
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, List<Type> excludedTypes) : base(printingConfig)
         {
             ExcludedTypes = excludedTypes;
         }
         
-        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, List<string> excludedProperties) : base(printingBasePrintingConfig)
+        public PrintingConfig(BasePrintingConfig<TOwner> printingConfig, List<string> excludedProperties) : base(printingConfig)
         {
             ExcludedProperties = excludedProperties;
         }
 
-        public PrintingBasePrintingConfig<TOwner> Excluding<TProperty>()
+        public PrintingConfig<TOwner> Excluding<TProperty>()
         {
             var copyExcludedTypes = new List<Type>(ExcludedTypes);
             
             if (!copyExcludedTypes.Contains(typeof(TProperty)))
                 copyExcludedTypes.Add(typeof(TProperty));
 
-            return new PrintingBasePrintingConfig<TOwner>(this, copyExcludedTypes);
+            return new PrintingConfig<TOwner>(this, copyExcludedTypes);
         }
         
-        public PrintingBasePrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> expr)
+        public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> expr)
         {
             var copyExcludedProperties = new List<string>(ExcludedProperties);
             var memberExpression = (MemberExpression)expr.Body;
@@ -54,7 +54,7 @@ namespace ObjectPrinting
             if (!copyExcludedProperties.Contains(propertyName))
                 copyExcludedProperties.Add(propertyName);
             
-            return new PrintingBasePrintingConfig<TOwner>(this, copyExcludedProperties);
+            return new PrintingConfig<TOwner>(this, copyExcludedProperties);
         }
         
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>()
