@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO.Compression;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,65 +9,83 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingBasePrintingConfig<TOwner> : BasePrintingConfig<TOwner>
     {
-        private readonly Dictionary<object, object> serializes = new Dictionary<object, object>();
-        private readonly List<Type> excludedTypes = new List<Type>();
-        private readonly List<string> excludedProperties = new List<string>();
+        public PrintingBasePrintingConfig() { }
+        
+        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig) : base(printingBasePrintingConfig) { }
 
-        private readonly Type[] finalTypes = new[]
+        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, Dictionary<MemberInfo, object> serializedProperties) : base(printingBasePrintingConfig)
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
-        private int MaxNestingLevel { get; set; } = 10;
-
-        public PrintingConfig<TOwner> Excluding<TProperty>()
-        {
-            if (!excludedTypes.Contains(typeof(TProperty)))
-                excludedTypes.Add(typeof(TProperty));
-            
-            return this;
+            SerializedProperties = serializedProperties;
         }
         
-        public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> expr)
+        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, Dictionary<Type, object> serializedTypes) : base(printingBasePrintingConfig)
         {
+            SerializedTypes = serializedTypes;
+        }
+        
+        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, List<Type> excludedTypes) : base(printingBasePrintingConfig)
+        {
+            ExcludedTypes = excludedTypes;
+        }
+        
+        public PrintingBasePrintingConfig(PrintingBasePrintingConfig<TOwner> printingBasePrintingConfig, List<string> excludedProperties) : base(printingBasePrintingConfig)
+        {
+            ExcludedProperties = excludedProperties;
+        }
+
+        public PrintingBasePrintingConfig<TOwner> Excluding<TProperty>()
+        {
+            var copyExcludedTypes = new List<Type>(ExcludedTypes);
+            
+            if (!copyExcludedTypes.Contains(typeof(TProperty)))
+                copyExcludedTypes.Add(typeof(TProperty));
+
+            return new PrintingBasePrintingConfig<TOwner>(this, copyExcludedTypes);
+        }
+        
+        public PrintingBasePrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> expr)
+        {
+            var copyExcludedProperties = new List<string>(ExcludedProperties);
             var memberExpression = (MemberExpression)expr.Body;
             var propertyName = memberExpression.Member.Name;
             
-            if (!excludedProperties.Contains(propertyName))
-                excludedProperties.Add(propertyName);
+            if (!copyExcludedProperties.Contains(propertyName))
+                copyExcludedProperties.Add(propertyName);
             
-            return this;
+            return new PrintingBasePrintingConfig<TOwner>(this, copyExcludedProperties);
         }
         
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>()
         {
-            return new PropertyPrintingConfig<TOwner, TProperty>(this, null, serializes);
+            var copySerializedTypes = new Dictionary<Type, object>(SerializedTypes);
+            
+            return new PropertyPrintingConfig<TOwner, TProperty>(this, null, copySerializedTypes, SerializedProperties);
         }
 
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>(Expression<Func<TOwner, TProperty>> expr)
         {
+            var copySerializedProperties = new Dictionary<MemberInfo, object>(SerializedProperties);
             var memberExpression = (MemberExpression)expr.Body;
-            return new PropertyPrintingConfig<TOwner, TProperty>(this, memberExpression.Member, serializes);
+            return new PropertyPrintingConfig<TOwner, TProperty>(this, memberExpression.Member, SerializedTypes, copySerializedProperties);
         }
 
         public string PrintToString(TOwner obj, int maxNestingLevel = -1)
         {
             if (maxNestingLevel > 0)
                 MaxNestingLevel = maxNestingLevel;
-            return Print(obj, 0);
+            return Print(obj, null,0);
         }
 
-        private string Print(object obj, int nestingLevel)
+        private string Print(object obj, Member prevMember, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             var type = obj.GetType();
 
-            if (finalTypes.Contains(type))
+            if (FinalTypes.Contains(type))
                 return Convert.ToString(obj) + Environment.NewLine;
             
             var indentation = new string('\t', nestingLevel + 1);
@@ -80,26 +97,37 @@ namespace ObjectPrinting
 
             foreach (var memberInfo in type.GetProperties().Cast<MemberInfo>().Concat(type.GetFields()))
             {
-                var member = Tuple.Create(
-                    memberInfo.Name, memberInfo.GetMemberType(), memberInfo.GetMemberValue(obj)
-                );
-                
-                if (excludedProperties.Contains(member.Item1) || excludedTypes.Contains(member.Item2))
+                var member = new Member()
+                {
+                    Name = memberInfo.Name, Type = (Type)memberInfo.GetMemberType(),
+                    Value = memberInfo.GetMemberValue(obj)
+                };
+
+                if (prevMember != null && prevMember.Equals(member))
+                {
+                    stringBuilder.Append(indentation + member.Name + " = " + member.Type.Name + "..." +
+                                         Environment.NewLine);
+                    continue;
+                }
+
+                if (ExcludedProperties.Contains(member.Name) || ExcludedTypes.Contains(member.Type))
                     continue;
 
-                if (memberInfo.DeclaringType == typeof(TOwner))
-                {
-                    var nextString = CheckAndConvertPropertyToString(member);
+                var nextString = CheckAndConvertPropertyToString(memberInfo, member);
 
-                    if (!string.IsNullOrEmpty(nextString))
-                    {
-                        stringBuilder.AppendLine(indentation + nextString);
-                        continue;
-                    }
+                if (!string.IsNullOrEmpty(nextString))
+                {
+                    stringBuilder.AppendLine(indentation + nextString);
+                    continue;
                 }
 
                 if (nestingLevel != MaxNestingLevel)
-                    stringBuilder.Append(indentation + member.Item1 + " = " + Print(member.Item3, nestingLevel + 1));
+                {
+                    stringBuilder.Append(indentation + member.Name + " = " +
+                                         Print(member.Value, member, nestingLevel + 1));
+                    continue;
+                }
+                break;
             }
 
             return stringBuilder.ToString();
@@ -111,28 +139,28 @@ namespace ObjectPrinting
             {
                 var itemType = item.GetType();
                 var name = itemType.Name;
-                stringBuilder.Append(indentation + name + " = " + Print(item, nestingLevel + 1));
+                stringBuilder.Append(indentation + name + " = " + Print(item, null,nestingLevel + 1));
             }
             return stringBuilder.ToString();
         }
 
-        private string CheckAndConvertPropertyToString(Tuple<string, object, object> memberInfo)
+        private string CheckAndConvertPropertyToString(MemberInfo memberInfo, Member member)
         {
-            if (serializes.ContainsKey(memberInfo.Item1))
+            if (SerializedProperties.ContainsKey(memberInfo))
             {
-                if (serializes[memberInfo.Item1] is Delegate func)
-                    return (string)InvokeDelegate(func, memberInfo.Item3);
+                if (SerializedProperties[memberInfo] is Delegate func)
+                    return (string)InvokeDelegate(func, member.Value);
             }
             
-            if (serializes.ContainsKey(memberInfo.Item2))
+            if (SerializedTypes.ContainsKey(member.Type))
             {
-                if (serializes[memberInfo.Item2] is CultureInfo cultureInfo)
+                if (SerializedTypes[member.Type] is CultureInfo cultureInfo)
                 {
-                    return memberInfo.Item1 + " = " + Convert.ToString(memberInfo.Item3, cultureInfo);
+                    return member.Name + " = " + Convert.ToString(member.Value, cultureInfo);
                 }
                     
-                if (serializes[memberInfo.Item2] is Delegate func)
-                    return (string)InvokeDelegate(func, memberInfo.Item3);
+                if (SerializedTypes[member.Type] is Delegate func)
+                    return (string)InvokeDelegate(func, member.Value);
             }
 
             return null;
@@ -140,7 +168,7 @@ namespace ObjectPrinting
 
         private object InvokeDelegate(Delegate del, object value)
         {
-            return del.GetInvocationList().Aggregate(value, (current, func) => func.DynamicInvoke(current));
+            return value != null ? del.GetInvocationList().Aggregate(value, (current, func) => func.DynamicInvoke(current)) : null;
         }
     }
 }

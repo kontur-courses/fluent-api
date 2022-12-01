@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Tests
+﻿namespace ObjectPrinting.Tests.TestClasses
 {
     public class Car
     {
