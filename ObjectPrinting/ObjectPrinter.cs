@@ -20,8 +20,7 @@ public static class ObjectPrinter
 
         Container.Register(
             Classes.FromAssemblyContaining(typeof(ObjectPrinter))
-                .Where(component =>
-                    component.Namespace is not null && component.Namespace.Contains(nameof(Implementations)))
+                .Where(component => component.Namespace?.Contains(nameof(Implementations)) ?? false)
                 .WithService.AllInterfaces()
                 .LifestyleTransient()
         );
