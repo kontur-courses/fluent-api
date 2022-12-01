@@ -270,9 +270,29 @@ public class ObjectPrinter_Should
     }
     
     [Test]
+    public void PrintToString_ShouldExclude_ConfiguredPropertiesInNestedObjects()
+    {
+        person1.Parent = new Person() { Name = "Vasiliy", Age = 20};
+        personConfig.Exclude(p => p.Parent.Age);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain($"Age = {person1.Parent.Age}");
+        configuredPrintToString.Should().Contain($"Age = {person1.Age}");
+        Console.WriteLine(configuredPrintToString);
+    }
+    
+    [Test]
     public void PrintToString_ShouldWork_WithFields()
     {
         personConfig.Exclude(p => p.Weight);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().NotContain("Width");
+        Console.WriteLine(configuredPrintToString);
+    }
+    
+    [Test]
+    public void Exclude_ShouldExclude_FieldsWithExcludedType()
+    {
+        personConfig.For<int>().Exclude();
         var configuredPrintToString = personConfig.PrintToString(person1);
         configuredPrintToString.Should().NotContain("Width");
         Console.WriteLine(configuredPrintToString);
