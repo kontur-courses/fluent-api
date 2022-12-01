@@ -106,7 +106,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ObjectPrinter_ShouldPrint_WhenCollections()
+        public void ObjectPrinter_ShouldPrint_WhenArray()
         {
             const string excepted =
                 "Person\r\n\tWeight = 80\r\n\tParents = Person[] {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t}\r\n";
@@ -118,6 +118,29 @@ namespace ObjectPrintingTests
             var result = ObjectPrinter.For<Person>()
                 .Excluding(t => t.OtherInfo)
                 .Excluding(t => t.Children)
+                .Excluding<Guid>()
+                .Excluding<double>()
+                .Excluding<bool>()
+                .Excluding<string>()
+                .Excluding<int>()
+                .PrintToString(person);
+            Console.WriteLine(result);
+            result.Should().Be(excepted);
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldPrint_WhenList()
+        {
+            const string excepted =
+                "Person\r\n\tWeight = 80\r\n\tChildren = List`1 {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t}\r\n";
+            person.Children = new List<Person>()
+            {
+                new (),
+                new ()
+            };
+            var result = ObjectPrinter.For<Person>()
+                .Excluding(t => t.OtherInfo)
+                .Excluding(t => t.Parents)
                 .Excluding<Guid>()
                 .Excluding<double>()
                 .Excluding<bool>()

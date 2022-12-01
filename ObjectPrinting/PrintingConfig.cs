@@ -45,7 +45,7 @@ namespace ObjectPrinting
 
             if (obj is IDictionary dictionary)
                 return SerializeDictionary(dictionary, depth);
-            if (obj is IEnumerable collection)
+            if (obj is IList collection)
                 return SerializeCollection(collection, depth);
             return SerializeObject(obj, depth);
         }
