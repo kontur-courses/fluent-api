@@ -95,8 +95,6 @@ namespace ObjectPrinting
         {
             if (nestingLevel > 10)
                 throw new ArgumentException("Cycling reference");
-            var shift = new string('\t', nestingLevel + 2);
-            var collectionLength = collection.Count;
             var sb = new StringBuilder();
             var openBracket = collection is IDictionary ? '{' : '[';
             var closeBracket = collection is IDictionary ? '}' : ']';
@@ -104,20 +102,27 @@ namespace ObjectPrinting
             if (collection is IDictionary dictionary)
                 sb.Append(PrintDictionary(dictionary, nestingLevel + 2));
             else
-            {
-                sb.Append(Environment.NewLine);
-                foreach (var element in collection)
-                {
-                    sb.Append(shift);
-                    sb.Append(PrintElementInCollection(element, nestingLevel, shift));
-                    if (collectionLength - 1 > 0)
-                        sb.Append(",");
-                    sb.Append(Environment.NewLine);
-                    collectionLength--;
-                }
-            }
+                sb.Append(Environment.NewLine + PrintCollectionElements(collection, nestingLevel));
 
             sb.Append(new string('\t', nestingLevel + 1) + closeBracket);
+            return sb.ToString();
+        }
+
+        private string PrintCollectionElements(ICollection collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var shift = new string('\t', nestingLevel + 2);
+            var collectionLength = collection.Count;
+            foreach (var element in collection)
+            {
+                sb.Append(shift);
+                sb.Append(PrintElementInCollection(element, nestingLevel, shift));
+                if (collectionLength - 1 > 0)
+                    sb.Append(",");
+                sb.Append(Environment.NewLine);
+                collectionLength--;
+            }
+
             return sb.ToString();
         }
 
