@@ -52,15 +52,17 @@ namespace ObjectPrinting
             return propertySetting;
         }
 
-        public ISerializer<TOwner> ChangeTypeOutput(Type type, Func<object, string> method)
+        public ISerializer<TOwner> ChangeTypeOutput<T2>(Func<object, string> method)
         {
+            var type = typeof(T2);
             optionsTypes.Add(type, method);
 
             return this;
         }
 
-        public ISerializer<TOwner> ExceptType(Type type)
+        public ISerializer<TOwner> ExceptType<T2>()
         {
+            var type = typeof(T2);
             exceptTypes.Add(type);
 
             return this;

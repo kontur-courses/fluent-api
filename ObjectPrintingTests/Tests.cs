@@ -42,7 +42,7 @@ public class Tests
     public void TestWithoutStringType()
     {
         var printer = ObjectPrinter.For<Person>();
-        var s = printer.ExceptType(typeof(string)).PrintToString(person);
+        var s = printer.ExceptType<string>().PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = Guid:" + Environment.NewLine + "\tHeight = 183" +
                       Environment.NewLine + "\tAge = 22" + Environment.NewLine + "\tBirthday = 11.10.2000 0:00:00" +
                       Environment.NewLine);
@@ -66,8 +66,7 @@ public class Tests
     public void TestWithChangerOutputStringTypeProperty()
     {
         var printer = ObjectPrinter.For<Person>();
-        var s = printer.ChangeTypeOutput(typeof(string),
-                o => "aaa")
+        var s = printer.ChangeTypeOutput<string>(o => "aaa")
             .PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = Guid:" + Environment.NewLine + "\tName = aaa" +
                       Environment.NewLine + "\tHeight = 183" + Environment.NewLine + "\tAge = 22" +
@@ -82,7 +81,7 @@ public class Tests
         var s = printer.SetStringMaxSize(5).PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = Guid:" + Environment.NewLine + "\tName = Mipos" +
                       Environment.NewLine + "\tHeight = 183" + Environment.NewLine + "\tAge = 22" +
-                      Environment.NewLine + "\tBirthday = 11.10.2000 12:00:00 AM" +
+                      Environment.NewLine + "\tBirthday = 11.10.2000 0:00:00" +
                       Environment.NewLine);
     }
     [Test]
@@ -92,7 +91,7 @@ public class Tests
         var s = printer.SelectProperty(o => o.Birthday).ChangeCulture(new CultureInfo("en-US")).PrintToString(person);
         s.Should().Be("Person:" + Environment.NewLine + "\tId = Guid:" + Environment.NewLine + "\tName = Miposhka" +
                       Environment.NewLine + "\tHeight = 183" + Environment.NewLine + "\tAge = 22" +
-                      Environment.NewLine + "\tBirthday = 10/11/2000 0:00:00" +
+                      Environment.NewLine + "\tBirthday = 10/11/2000 12:00:00 AM" +
                       Environment.NewLine);
     }
 }

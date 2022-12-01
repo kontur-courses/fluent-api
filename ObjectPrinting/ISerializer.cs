@@ -7,7 +7,7 @@ namespace ObjectPrinting
     {
         string PrintToString(TOwner obj);
         PropertySetting<TOwner> SelectProperty<P>(Expression<Func<TOwner, P>> properties);
-        ISerializer<TOwner> ChangeTypeOutput(Type type, Func<object, string> method);
-        ISerializer<TOwner> ExceptType(Type type);
+        ISerializer<TOwner> ChangeTypeOutput<T2>(Func<object, string> method);
+        ISerializer<TOwner> ExceptType<T2>();
     }
 }
