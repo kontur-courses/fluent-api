@@ -11,7 +11,7 @@ namespace ObjectPrinting.Extensions
             return config.Using(x => x.ToString(null, culture));
         }
 
-        public static PrintingConfig<TOwner> Trim<TOwner>(
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
             this PropertyPrintingConfig<TOwner, string> config, int maxLength)
         {
             return config.Using(x => x[..(maxLength > x.Length ? x.Length : maxLength)]);

@@ -88,7 +88,7 @@ namespace ObjectPrintingTests
             const int length = 5;
             var result = ObjectPrinter.For<Person>()
                 .Printing<string>()
-                .Trim(5)
+                .TrimmedToLength(5)
                 .PrintToString(person);
             var excepted = nameof(Person.Name) + " = " + person.Name[..length] + Environment.NewLine;
             result.Should().Contain(excepted);
