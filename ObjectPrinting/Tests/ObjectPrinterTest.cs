@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -15,9 +16,9 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<string>();
-            var s = printer.PrintToString(person);
-            s.Should().NotContain("Alex").And.NotContain("Rubanov").And.Contain("Age");
-            Console.WriteLine(s);
+            
+            printer.PrintToString(person)
+                .Should().NotContain("Alex").And.NotContain("Rubanov").And.Contain("Age");
         }
         
         [Test]
@@ -26,9 +27,9 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Age);
-            var s = printer.PrintToString(person);
-            s.Should().NotContain("Age").And.Contain("Alex");
-            Console.WriteLine(s);
+            
+            printer.PrintToString(person)
+                .Should().NotContain("Age").And.Contain("Alex");
         }
 
         [Test]
@@ -37,12 +38,12 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>()
                 .Printing<string>().Using(s => "\"" + s + "\"");
-            var s = printer.PrintToString(person);
-            s.Should().Contain("\"Alex\"")
+            
+            printer.PrintToString(person)
+                .Should().Contain("\"Alex\"")
                 .And.Contain("\"Rubanov\"")
                 .And.Contain("\"\"")
                 .And.NotContain("\"19\"");
-            Console.WriteLine(s);
         }
         
         [Test]
@@ -51,10 +52,10 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Patronymic).Using(s => "\"" + s + "\"");
-            var s = printer.PrintToString(person);
-            s.Should().NotContain("\"Alex\"")
+            
+            printer.PrintToString(person)
+                .Should().NotContain("\"Alex\"")
                 .And.Contain("\"\"");
-            Console.WriteLine(s);
         }
 
         [Test]
@@ -66,16 +67,8 @@ namespace ObjectPrinting.Tests
             var printerRu = ObjectPrinter.For<Person>()
                 .Printing<double>().Using(new CultureInfo("ru-RU"));
 
-            var ru = printerRu.PrintToString(person);
-            var en = printerEn.PrintToString(person);
-
-            Console.WriteLine("ru-RU - " + new CultureInfo("ru-RU").NumberFormat.NumberDecimalSeparator);
-            Console.WriteLine(ru);
-            Console.WriteLine("en-US - " + new CultureInfo("en-US").NumberFormat.NumberDecimalSeparator);
-            Console.WriteLine(en);
-            
-            ru.Should().Contain("174,8");
-            en.Should().Contain("174.8");
+            printerRu.PrintToString(person).Should().Contain("174,8");
+            printerEn.PrintToString(person).Should().Contain("174.8");
         }
 
         [Test]
@@ -85,10 +78,8 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(10);
 
-            var s = printer.PrintToString(person);
-            
-            Console.WriteLine(s);
-            s.Should().Contain("Alex").And.NotContain("Alex...");
+            printer.PrintToString(person)
+                .Should().Contain("Alex").And.NotContain("Alex...");
         }
         
         [Test]
@@ -98,10 +89,8 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Name).TrimmedToLength(10);
 
-            var s = printer.PrintToString(person);
-            
-            Console.WriteLine(s);
-            s.Should().Contain("Very Long ...");
+            printer.PrintToString(person)
+                .Should().Contain("Very Long ...");
         }
 
         [Test]
@@ -112,9 +101,9 @@ namespace ObjectPrinting.Tests
             sun.Father = dad;
             dad.Father = sun;
             var printer = ObjectPrinter.For<Person>();
-            var s = printer.PrintToString(sun);
-            Console.WriteLine(s);
-            s.Should().Contain("...");
+            
+            printer.PrintToString(sun)
+                .Should().Contain("...");
         }
 
         [Test]
@@ -122,9 +111,9 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>();
-            var s = person.PrintToString();
-            s.Should().Be(printer.PrintToString(person));
-            Console.WriteLine(s);
+            
+            person.PrintToString()
+                .Should().Be(printer.PrintToString(person));
         }
 
         [Test]
@@ -132,9 +121,9 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Surname = "Rubanov", Patronymic = "", Age = 19 };
             var printer = ObjectPrinter.For<Person>().Excluding<string>();
-            var s = person.PrintToString(config => config.Excluding<string>());
-            s.Should().Be(printer.PrintToString(person));
-            Console.WriteLine(s);
+            
+            person.PrintToString(config => config.Excluding<string>())
+                .Should().Be(printer.PrintToString(person));
         }
 
         [Test]
@@ -142,9 +131,9 @@ namespace ObjectPrinting.Tests
         {
             var array = new[] { 1, 2, 3, 4, 5 };
             const string expectedResult = "[ 1, 2, 3, 4, 5 ]";
-            var s = array.PrintToString();
-            s.Should().Contain(expectedResult);
-            Console.WriteLine(s);
+            
+            array.PrintToString()
+                .Should().Contain(expectedResult);
         }
         
         [Test]
@@ -152,9 +141,9 @@ namespace ObjectPrinting.Tests
         {
             var list = new List<int>{ 1, 2, 3, 4, 5 };
             const string expectedResult = "[ 1, 2, 3, 4, 5 ]";
-            var s = list.PrintToString();
-            s.Should().Contain(expectedResult);
-            Console.WriteLine(s);
+            
+            list.PrintToString()
+                .Should().Contain(expectedResult);
         }
 
         [Test]
@@ -177,9 +166,43 @@ namespace ObjectPrinting.Tests
                                           "\t\tReal = 6" + Environment.NewLine +
                                           "\t\tImaginary = 8" + Environment.NewLine +
                                           "]";
-            var s = array.PrintToString();
-            s.Should().Contain(expectedResult);
-            Console.WriteLine(s);
+            
+            array.PrintToString()
+                .Should().Contain(expectedResult);
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintIEnumerableOfBaseType_AsList()
+        {
+            var enumerable = Enumerable.Range(7, 5);
+            const string expectedResult = "[ 7, 8, 9, 10, 11 ]";
+            
+            enumerable.PrintToString()
+                .Should().Contain(expectedResult);
+        }
+
+        [Test]
+        public void PrintToString_ShouldPrintIEnumerableOfComplexType_AsList()
+        {
+            var complexes = Enumerable.Range(5, 4)
+                .Select((n, i) => new ComplexNumber(n, i));
+            var expectedResult = "[ " + Environment.NewLine +
+                                 "\tComplexNumber" + Environment.NewLine +
+                                 "\t\tReal = 5" + Environment.NewLine +
+                                 "\t\tImaginary = 0, " + Environment.NewLine +
+                                 "\tComplexNumber" + Environment.NewLine +
+                                 "\t\tReal = 6" + Environment.NewLine +
+                                 "\t\tImaginary = 1, " + Environment.NewLine +
+                                 "\tComplexNumber" + Environment.NewLine +
+                                 "\t\tReal = 7" + Environment.NewLine +
+                                 "\t\tImaginary = 2, " + Environment.NewLine +
+                                 "\tComplexNumber" + Environment.NewLine +
+                                 "\t\tReal = 8" + Environment.NewLine +
+                                 "\t\tImaginary = 3" + Environment.NewLine +
+                                 "]";
+            
+            complexes.PrintToString()
+                .Should().Contain(expectedResult);
         }
 
         [Test]
@@ -196,9 +219,9 @@ namespace ObjectPrinting.Tests
                                           "\tfabric : 15, " + Environment.NewLine +
                                           "\trailway station : 6" + Environment.NewLine +
                                           "}";
-            var s = dict.PrintToString();
-            s.Should().Contain(expectedResult);
-            Console.WriteLine(s);
+            
+            dict.PrintToString()
+                .Should().Contain(expectedResult);
         }
         
         [Test]
@@ -224,9 +247,9 @@ namespace ObjectPrinting.Tests
                                  "\t\t\tReal = 1" + Environment.NewLine +
                                  "\t\t\tImaginary = 0" + Environment.NewLine +
                                  "}";
-            var s = dict.PrintToString();
-            s.Should().Contain(expectedResult);
-            Console.WriteLine(s);
+            
+            dict.PrintToString()
+                .Should().Contain(expectedResult);
         }
     }
 

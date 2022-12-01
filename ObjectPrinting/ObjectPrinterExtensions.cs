@@ -2,10 +2,10 @@
 
 namespace ObjectPrinting
 {
-    public static class ObjectExtensions
+    public static class ObjectPrinterExtensions
     {
         /// <summary>
-        /// Метод, который позволяет сериализовать объект, используюя настройки сериализации по умолчанию
+        /// Метод, который позволяет сериализовать объект, используя настройки сериализации по умолчанию
         /// </summary>
         /// <param name="obj">Объект для сериализации</param>
         /// <typeparam name="T">Тип, который необходимо сериализовать</typeparam>

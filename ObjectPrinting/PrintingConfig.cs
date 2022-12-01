@@ -63,11 +63,11 @@ namespace ObjectPrinting
             if (TryPrintFinalType(obj, out var finalTypeResult))
                 return finalTypeResult;
 
-            if (TryPrintIList(obj, nestingLevel, out var arrayResult))
-                return arrayResult;
-
             if (TryPrintIDictionary(obj, nestingLevel, out var dictResult))
                 return dictResult;
+
+            if (TryPrintIEnumerable(obj, nestingLevel, out var arrayResult))
+                return arrayResult;
 
             var type = obj.GetType();
             return GetObjectView(type, obj, nestingLevel);
@@ -100,16 +100,16 @@ namespace ObjectPrinting
 
         }
 
-        private bool TryPrintIList(object obj, int nestingLevel, out string result)
+        private bool TryPrintIEnumerable(object obj, int nestingLevel, out string result)
         {
-            if (!(obj is IList list))
+            if (!(obj is IEnumerable enumerable))
             {
                 result = null;
                 return false;
             }
 
             var serializedItems = (
-                from object item in list
+                from object item in enumerable
                 select GetStringValueWithIdentationAndNewLine(item, nestingLevel))
                 .ToList();
 
@@ -196,7 +196,6 @@ namespace ObjectPrinting
 
         #region Serializer rules changer
         
-        // В тестах IDE будет предлагать эти методы. Но если это использовать как библиотеку, то они будут скрыты?
         internal void AddSerializer<T>(PropertyInfo property, Func<T, string> serializer)
         {
             if (typeof(T) != property.PropertyType)
