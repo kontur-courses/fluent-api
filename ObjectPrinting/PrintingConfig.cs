@@ -58,10 +58,10 @@ namespace ObjectPrinting
                 {
                     var itemDictionary = (DictionaryEntry)item;
                     str.Append("[");
-                    str.Append(PrintToString(itemDictionary.Key, 0));
+                    str.Append(PrintToString(itemDictionary.Key, 1));
                     str.Append("]");
                     str.Append(" = ");
-                    str.Append(PrintToString(itemDictionary.Value, 0));
+                    str.Append(PrintToString(itemDictionary.Value, 1));
                     str.Append(", ");
                 }
                 if (str.Length > 2)
@@ -90,6 +90,9 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, PropertyInfo prInfo = null)
         {
+            if (nestingLevel > 50)
+                return " ";
+            
             if (obj == null)
                 return "null" + ' ';
 
@@ -107,6 +110,12 @@ namespace ObjectPrinting
                     objValue = ApplyRulesForNotString(intObj, prInfo);
                 else if (obj is double doubleObj)
                     objValue = ApplyRulesForNotString(doubleObj, prInfo);
+                else if (obj is DateTime dateTimeObj)
+                    objValue = ApplyRulesForNotString(dateTimeObj, prInfo);
+                else if (obj is float floatObj)
+                    objValue = ApplyRulesForNotString(floatObj, prInfo);
+                else if (obj is TimeSpan timeSpanObj)
+                    objValue = ApplyRulesForNotString(timeSpanObj, prInfo);
                 return objValue;
             }
             var sb = new StringBuilder();
@@ -143,7 +152,7 @@ namespace ObjectPrinting
 
         private string ApplyRulesForString(string obj, PropertyInfo prInfo) 
         {
-            var objValue = obj.ToString();
+            var objValue = obj;
             if (typesConfig.ContainsKey(typeof(string)) && typesConfig[typeof(string)] is PropertyPrintingConfig<TOwner, string> config)
             {
                 if (!(config.PropertyRule is null))
