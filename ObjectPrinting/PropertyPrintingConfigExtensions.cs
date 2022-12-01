@@ -1,14 +1,19 @@
 ﻿using System;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
+            int maxLen)
         {
             propConfig.Parent.MaxStringLength[propConfig.MemberInfo] = maxLen;
             return propConfig.Parent;
+        }
+
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        {
+            return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
     }
 }
