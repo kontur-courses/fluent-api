@@ -58,5 +58,19 @@ namespace ObjectPrinting.Tests
                 .UseSerializeMethod(i => "Old");
             Approvals.Verify(printer.PrintToString(person));
         }
+        
+        [Test]
+        public void Print_ShouldSerialize_WhenCyclicReference()
+        {
+            var a = new CyclicReference() {ID = 0};
+            var b = new CyclicReference() {ID = 1};
+            var c = new CyclicReference() {ID = 2};
+            a.Ref = b;
+            b.Ref = c;
+            c.Ref = a;
+            
+            var printer = ObjectPrinter.For<CyclicReference>();
+            Approvals.Verify(printer.PrintToString(a));
+        }
     }
 }

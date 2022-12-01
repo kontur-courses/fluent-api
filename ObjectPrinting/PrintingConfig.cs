@@ -31,7 +31,10 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
-            if (parentObjects.Contains(obj)) throw new CyclicReferenceException();
+            if (parentObjects.Contains(obj))
+            {
+                return "!Cyclic_Reference!" + Environment.NewLine;
+            }
 
             if (obj == null)
                 return "null" + Environment.NewLine;

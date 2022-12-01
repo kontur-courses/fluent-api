@@ -1,0 +1,7 @@
+﻿CyclicReference
+	Ref = CyclicReference
+		Ref = CyclicReference
+			Ref = !Cyclic_Reference!
+			ID = 2
+		ID = 1
+	ID = 0
