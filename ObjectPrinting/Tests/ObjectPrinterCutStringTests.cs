@@ -6,7 +6,6 @@ using NUnit.Framework;
 namespace ObjectPrinting.Tests
 {
 
-    [UseApprovalSubdirectory("ObjectPrinterCutStringTests")]
     [UseReporter(typeof(DiffReporter))]
     [TestFixture]
     public class ObjectPrinterCutStringTests

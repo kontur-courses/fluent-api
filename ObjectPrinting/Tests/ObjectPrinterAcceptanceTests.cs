@@ -5,7 +5,6 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-    [UseApprovalSubdirectory("ObjectPrinterAcceptanceTests")]
     [UseReporter(typeof(DiffReporter))]
     [TestFixture]
     public class ObjectPrinterAcceptanceTests

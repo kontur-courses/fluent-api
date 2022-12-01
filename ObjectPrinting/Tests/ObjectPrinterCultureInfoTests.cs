@@ -7,7 +7,6 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
-    [UseApprovalSubdirectory("ObjectPrinterCulturalInfoTests")]
     [UseReporter(typeof(DiffReporter))]
     [TestFixture]
     public class ObjectPrinterCultureInfoTests
