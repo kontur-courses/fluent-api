@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using NUnit.Framework;
+using ObjectPrinting;
+using ObjectPrinting.Configuration;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -10,7 +14,11 @@ namespace ObjectPrinting.Solved.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person
+            {
+                Name = "Alex",
+                Age = 19
+            };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
@@ -26,10 +34,10 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-            
+
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();
-            
+
             //8. ...с конфигурированием
             string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
             Console.WriteLine(s1);
