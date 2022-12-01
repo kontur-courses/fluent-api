@@ -38,7 +38,6 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
-            person.Should().BeEquivalentTo(person, opt => opt.Excluding(p => p));
         }
     }
 }

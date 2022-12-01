@@ -16,5 +16,6 @@ namespace ObjectPrinting.Models
         public Person[] Childrens { get; set; }
         public List<int> FavoriteNumbers { get; set; }
         public Dictionary<string, DateTime> Tasks { get; set; }
+        public Location Location { get; set; }
     }
 }

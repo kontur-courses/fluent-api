@@ -297,4 +297,26 @@ public class ObjectPrinter_Should
         configuredPrintToString.Should().NotContain("Width");
         Console.WriteLine(configuredPrintToString);
     }
+    
+    [Test]
+    public void Exclude_ShouldNotExclude_PropertiesWithSameName()
+    {
+        person1.Location = new Location { Name = "Yekat" };
+        personConfig.Exclude(p => p.Name);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain("Yekat");
+        Console.WriteLine(configuredPrintToString);
+    }
+    
+    [Test]
+    public void SetLength_ShouldNot_CutLineWithSameName()
+    {
+        person1.Location = new Location { Name = "Yekat" };
+        personConfig.For(p => p.Name).SetLength(3);
+        var configuredPrintToString = personConfig.PrintToString(person1);
+        configuredPrintToString.Should().Contain(person1.Location.Name);
+        configuredPrintToString.Should().Contain(person1.Name[..3]);
+        configuredPrintToString.Should().NotContain(person1.Name);
+        Console.WriteLine(configuredPrintToString);
+    }
 }
