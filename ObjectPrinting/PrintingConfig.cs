@@ -16,7 +16,7 @@ namespace ObjectPrinting
         public PrintingConfig()
         {
             configurations = new Configurations();
-            finalTypes = new Type[] 
+            finalTypes = new Type[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan), typeof(Guid)
@@ -31,8 +31,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> expression)
         {
-            if (expression.Body is MemberExpression memberExpression)
-            if (memberExpression.Member is PropertyInfo propertyInfo)
+            if (expression.Body is MemberExpression { Member: PropertyInfo propertyInfo })
             {
                 configurations.ExcludedProperties.Add(propertyInfo);
                 return this;
@@ -49,8 +48,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>(
             Expression<Func<TOwner, TProperty>> expression)
         {
-            if (expression.Body is MemberExpression memberExpression)
-            if (memberExpression.Member is PropertyInfo propertyInfo)
+            if (expression.Body is MemberExpression { Member: PropertyInfo propertyInfo })
             {
                 return new PropertyPrintingConfig<TOwner, TProperty>(
                     this, configurations, propertyInfo);
@@ -75,7 +73,7 @@ namespace ObjectPrinting
             if (finalTypes.Contains(type))
                 return Convert.ToString(obj, culture);
 
-            if (IsCollection(type))
+            if (type.IsCollection())
             {
                 var print = TryGetCollectionPrint(obj);
                 return print.Method.Invoke(print.Target, new[] { obj }).ToString();
@@ -114,14 +112,14 @@ namespace ObjectPrinting
 
         private Func<object, object> TryGetCollectionPrint(object obj)
         {
-            if (IsCollection(obj.GetType()))
+            if (obj.GetType().IsCollection())
             {
                 return (collection) =>
                 {
                     var elements = string.Join(", ", (collection as ICollection).Cast<object>());
-                    if (IsDictionary(obj.GetType()))
+                    if (obj.GetType().IsDictionary())
                     {
-                        var keyValuePairs = (collection as IDictionary).Cast()
+                        var keyValuePairs = (collection as IDictionary).Cast<DictionaryEntry>()
                             .Select(entry => $"[{entry.Key}] = {entry.Value}");
                         elements = string.Join(", ", keyValuePairs);
                     }
@@ -130,8 +128,5 @@ namespace ObjectPrinting
             }
             return null;
         }
-
-        private bool IsDictionary(Type type) => typeof(IDictionary).IsAssignableFrom(type);
-        private bool IsCollection(Type type) => typeof(ICollection).IsAssignableFrom(type);
     }
 }

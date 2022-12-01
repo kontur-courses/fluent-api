@@ -7,11 +7,11 @@ namespace ObjectPrinting
 {
     public class Configurations
     {
-        public List<Type> ExcludedTypes { get; }
-        public List<PropertyInfo> ExcludedProperties { get; }
-        public Dictionary<Type, CultureInfo> Cultures { get; }
-        public Dictionary<Type, Delegate> SerializationOfTypes { get; }
-        public Dictionary<PropertyInfo, Delegate> SerializationOfProperties { get; }
+        public IList<Type> ExcludedTypes { get; }
+        public IList<PropertyInfo> ExcludedProperties { get; }
+        public IDictionary<Type, CultureInfo> Cultures { get; }
+        public IDictionary<Type, Delegate> SerializationOfTypes { get; }
+        public IDictionary<PropertyInfo, Delegate> SerializationOfProperties { get; }
 
         public Configurations()
         {

@@ -118,19 +118,18 @@ namespace ObjectPrinting.Tests
             });
         }
 
-        [TestCase("Alexander", 4)]
-        [TestCase("Maksim", 4)]
-        [TestCase("Alex", 5)]
+        [TestCase("Alexander", 4, "Ale")]
+        [TestCase("Maksim", 4, "Maks")]
+        [TestCase("Alex", 5, "Alex")]
         public void PrintToString_WithTrimmedToLength_ShouldPrintPropertyCorrectly(
-            string name, int maxLength)
+            string name, int maxLength, string expected)
         {
             person.Name = name;
-            var expected = name[..Math.Min(maxLength, name.Length)];
             var str = ObjectPrinter.For<Person>()
                 .Printing(person => person.Name)
                 .TrimmedToLength(maxLength)
                 .PrintToString(person);
-            str.Should().Contain(expected);
+            str.Should().Contain($"Name = {expected}");
         }
 
         [Test]
