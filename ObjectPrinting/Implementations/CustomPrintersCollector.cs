@@ -15,10 +15,7 @@ public class CustomPrintersCollector : ICustomPrintersCollector
         new(new EnumerableEqualityComparer<string>());
 
     public void AddPrinterFor<T>(ICustomPrinterProvider printerProvider) =>
-        AddPrinterFor(typeof(T), printerProvider);
-
-    public void AddPrinterFor(Type type, ICustomPrinterProvider printerProvider) =>
-        _customTypesPrintingRules[type] = printerProvider;
+        _customTypesPrintingRules[typeof(T)] = printerProvider;
 
     public void AddPrinterFor(IReadOnlyList<string> memberPath, ICustomPrinterProvider printerProvider) =>
         _customMembersPrintingRules[memberPath] = printerProvider;
