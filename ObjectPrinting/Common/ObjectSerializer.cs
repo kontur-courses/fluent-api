@@ -1,116 +1,69 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting.Common
 {
     internal static class ObjectSerializer
     {
-        private static readonly Type[] finalTypes = new[]
+        private static readonly IReadOnlyCollection<Type> finalTypes = new[]
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(long),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
+        private static readonly ObjectTreeBuilder builder = new ObjectTreeBuilder(finalTypes);
+
         private const string propertyFormat = "{0}{1} = {2}";
+
+        private const string openCollectionString = "[";
+        private const string closeCollectionString = "]";
+
+        private const string openDictionaryObjectString = "{";
+        private const string closeDictionaryObjectString = "}";
+
+        private const string collectionItemSeparator = ",";
+
+        private const char tabSymbol = '\t';
+
+        private const string nullMark = "null";
+        private const string loopReferenceMark = "loop reference";
+
+        private static readonly Type iDictionaryType = typeof(IDictionary);
+        private static readonly Type iCollectionType = typeof(ICollection);
 
         public static string Serialize<T>(T obj, PrintingConfigRoot configRoot)
         {
-            var root = BuildObjectTree(obj, configRoot);
-            var str = PrintObjectTreeNode(root, 0, configRoot);
-
-            return str;
-        }
-
-        private static ObjectTreeNode BuildObjectTree(object obj, PrintingConfigRoot configRoot)
-        {
-            var root = new ObjectTreeNode()
-            {
-                Parent = null,
-                Value = obj
-            };
-
-            var nodeStack = new Stack<ObjectTreeNode>();
-            nodeStack.Push(root);
-
-            while (nodeStack.Count > 0)
-            {
-                var currentNode = nodeStack.Pop();
-                var currentType = currentNode.Value.GetType();
-
-                if (configRoot.ExcludedTypes.Contains(currentType))
-                    continue;
-
-                if (finalTypes.Contains(currentType))
-                    continue;
-
-                var properties = currentType.GetProperties()
-                                            .Where(prop => !configRoot.ExcludedProperties.Contains(prop) &&
-                                                           !configRoot.ExcludedTypes.Contains(prop.PropertyType))
-                                            .ToArray();
-
-                foreach (var property in properties)
-                {
-                    var propertyValue = property.GetValue(currentNode.Value);
-
-                    var propertyEndsLoop = false;
-                    if (!finalTypes.Contains(property.PropertyType))
-                    {
-                        var parentNode = currentNode;
-                        do
-                        {
-                            if (parentNode.Value.GetType().IsValueType || parentNode.Value != propertyValue)
-                            {
-                                parentNode = parentNode.Parent;
-                                continue;
-                            }
-
-                            propertyEndsLoop = true;
-                            break;
-                        } while (parentNode != null);
-                    }
-
-                    var subNode = new ObjectTreeNode()
-                    {
-                        Value = propertyValue,
-                        EndsLoop = propertyEndsLoop,
-                        Parent = currentNode,
-                        PropertyInfo = property
-                    };
-                    currentNode.Nodes.Add(subNode);
-                }
-
-                foreach (var subNode in currentNode.Nodes.Reverse<ObjectTreeNode>())
-                    nodeStack.Push(subNode);
-            }
-
-            return root;
+            var root = builder.BuildTree(obj, configRoot);
+            return PrintObjectTreeNode(root, 0, configRoot);
         }
 
         private static string PrintObjectTreeNode(ObjectTreeNode node, int currentLevel, PrintingConfigRoot configRoot)
         {
-            if (node.Value == null)
-                return "null";
+            if (node.Object.Value == null)
+                return nullMark;
 
-            var currentType = currentLevel == 0 ? node.Value.GetType() : node.PropertyInfo.PropertyType;
+            var fieldPropertyObject = node.Object;
+            var currentType = fieldPropertyObject.Type;
+            var memberInfo = fieldPropertyObject.Info;
+            var value = fieldPropertyObject.Value;
 
             // appling property serializer
-            if (node.PropertyInfo != null && configRoot.PropertySerializers.ContainsKey(node.PropertyInfo))
+            var hasPropertySerializator = memberInfo != null && configRoot.PropertySerializers.ContainsKey(memberInfo);
+            if (hasPropertySerializator)
             {
-                string str;
-                if(configRoot.MaxStringPropertyLengths.ContainsKey(node.PropertyInfo))
-                {
-                    int maxLength = configRoot.MaxStringPropertyLengths[node.PropertyInfo];
-                    str = (string)node.Value;
-                    str = maxLength < str.Length ? str.Substring(maxLength) : str;
-                    return configRoot.PropertySerializers[node.PropertyInfo](str);
-                }
-
-                return configRoot.PropertySerializers[node.PropertyInfo](node.Value);
+                var str = configRoot.PropertySerializers[memberInfo](value);
+                return configRoot.MaxStringPropertyLengths.ContainsKey(memberInfo) ?
+                       GetSubstring(str, configRoot.MaxStringPropertyLengths[memberInfo]) :
+                       str;
             }
+
+            // appling type serializer
+            if (configRoot.TypeSerializers.ContainsKey(currentType))
+                return configRoot.TypeSerializers[currentType](value);
 
             // checking for final type
             if (finalTypes.Contains(currentType))
@@ -120,39 +73,108 @@ namespace ObjectPrinting.Common
                 if (configRoot.NumericTypeCulture.ContainsKey(currentType))
                     CultureInfo.CurrentCulture = configRoot.NumericTypeCulture[currentType];
 
-                var str = node.Value.ToString();
+                var str = node.Object.Value.ToString();
                 CultureInfo.CurrentCulture = oldCulture;
 
                 // appling max length for string property
-                if (node.PropertyInfo != null &&
-                    configRoot.MaxStringPropertyLengths.ContainsKey(node.PropertyInfo) &&
-                    configRoot.MaxStringPropertyLengths[node.PropertyInfo] < str.Length)
-                    str = str.Substring(configRoot.MaxStringPropertyLengths[node.PropertyInfo]);
+                if (memberInfo != null && configRoot.MaxStringPropertyLengths.ContainsKey(memberInfo))
+                    str = GetSubstring(str, configRoot.MaxStringPropertyLengths[memberInfo]);
                 return str;
             }
 
+            return PrintObjectTreeSubNodes(node, currentLevel, configRoot);
+        }
+
+        private static string PrintObjectTreeSubNodes(ObjectTreeNode node, int currentLevel, PrintingConfigRoot configRoot)
+        {
+            var type = node.Object.Type;
+
+            if (iDictionaryType.IsAssignableFrom(type))
+                return PrintDictionary(node, currentLevel, configRoot);
+
+            if (iCollectionType.IsAssignableFrom(type))
+                return PrintCollection(node, currentLevel, configRoot);
+
+            return PrintFieldProperties(node, currentLevel, configRoot);
+        }
+
+        private static string PrintDictionary(ObjectTreeNode node, int currentLevel, PrintingConfigRoot configRoot)
+        {
+            if (node.Nodes.Count < 1)
+                return openDictionaryObjectString + closeDictionaryObjectString;
+
+            var identation = new string(tabSymbol, currentLevel + 1);
+            var elementContentIdentation = new string(tabSymbol, currentLevel + 2);
+
+            var sb = new StringBuilder();
+            sb.AppendLine(openDictionaryObjectString);
+
+            foreach (var subNode in node.Nodes)
+            {
+                var key = subNode.Nodes[0];
+                var value = subNode.Nodes[1];
+
+                sb.Append(identation).AppendLine(openDictionaryObjectString);
+                sb.AppendFormat(propertyFormat, elementContentIdentation,
+                                                "Key",
+                                                PrintObjectTreeNode(key, currentLevel + 2, configRoot)).AppendLine();
+                sb.AppendFormat(propertyFormat, elementContentIdentation,
+                                                "Value",
+                                                PrintObjectTreeNode(value, currentLevel + 2, configRoot)).AppendLine();
+                sb.Append(identation).Append(closeDictionaryObjectString).AppendLine(collectionItemSeparator);
+            }
+
+            sb.Remove(sb.Length - Environment.NewLine.Length - 1, 1);
+            sb.Append(new string(tabSymbol, currentLevel)).Append(closeDictionaryObjectString);
+
+            return sb.ToString();
+        }
+
+        private static string PrintCollection(ObjectTreeNode node, int currentLevel, PrintingConfigRoot configRoot)
+        {
+            if (node.Nodes.Count < 1)
+                return openCollectionString + closeCollectionString;
+
+            var identation = new string(tabSymbol, currentLevel + 1);
+
+            var sb = new StringBuilder();
+            sb.AppendLine(openCollectionString);
+
+            foreach (var subNode in node.Nodes)
+            {
+                string str = subNode.EndsLoop ? loopReferenceMark : PrintObjectTreeNode(subNode, currentLevel + 1, configRoot);
+                sb.Append(identation).Append(str).AppendLine(collectionItemSeparator);
+            }
+
+            // Removing last ','
+            sb.Remove(sb.Length - Environment.NewLine.Length - 1, 1);
+            sb.Append(new string(tabSymbol, currentLevel)).Append(closeCollectionString);
+
+            return sb.ToString();
+        }
+
+        private static string PrintFieldProperties(ObjectTreeNode node, int currentLevel, PrintingConfigRoot configRoot)
+        {
             if (node.Nodes.Count < 1)
                 return string.Empty;
 
-            var sb = new StringBuilder();
-            sb.AppendLine(currentType.Name);
+            var identation = new string(tabSymbol, currentLevel + 1);
 
-            var identation = new string('\t', currentLevel + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine(node.Object.Type.Name);
+
             foreach (var subNode in node.Nodes)
             {
-                if (subNode.EndsLoop)
-                {
-                    sb.AppendFormat(propertyFormat, identation, subNode.PropertyInfo.Name, "cycle reference").AppendLine();
-                    continue;
-                }
-
-                sb.AppendFormat(propertyFormat, identation,
-                                                subNode.PropertyInfo.Name,
-                                                PrintObjectTreeNode(subNode, currentLevel + 1, configRoot)).AppendLine();
+                string str = subNode.EndsLoop ? loopReferenceMark : PrintObjectTreeNode(subNode, currentLevel + 1, configRoot);
+                sb.AppendFormat(propertyFormat, identation, subNode.Object.Name, str).AppendLine();
             }
 
-            sb.Remove(sb.Length - 2, 2);
-            return sb.ToString();
+            return sb.Remove(sb.Length - Environment.NewLine.Length, 2).ToString();
+        }
+
+        private static string GetSubstring(string str, int maxLength)
+        {
+            return maxLength < str.Length ? str.Substring(0, maxLength) : str;
         }
     }
 }
