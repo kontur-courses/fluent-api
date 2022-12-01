@@ -35,6 +35,7 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }

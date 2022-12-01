@@ -16,16 +16,16 @@ namespace ObjectPrinting.Solved
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-        
+
         private HashSet<Type> excludedTypes;
         private HashSet<PropertyInfo> excludedProperties;
         private HashSet<object> recursedProperties;
-        
+
         private Dictionary<Type, Func<object, string>> alternativeSerializationForType;
         private Dictionary<PropertyInfo, Func<object, string>> alternativeSerializationForProperty;
-        
+
         private Dictionary<Type, CultureInfo> cultureInfoForType;
-        
+
         private Dictionary<PropertyInfo, int> stringPropertiesMaxLenght;
 
         public PrintingConfig()
@@ -46,8 +46,10 @@ namespace ObjectPrinting.Solved
                 cultureInfoForType[type] = info;
                 return;
             }
+
             cultureInfoForType.Add(type, info);
         }
+
         public void AddAlternativeSerializationForType(Type type, Func<object, string> serializer)
         {
             if (alternativeSerializationForType.ContainsKey(type))
@@ -55,8 +57,10 @@ namespace ObjectPrinting.Solved
                 alternativeSerializationForType[type] = serializer;
                 return;
             }
+
             alternativeSerializationForType.Add(type, serializer);
         }
+
         public void AddAlternativeSerializationForProperty(PropertyInfo property, Func<object, string> serializer)
         {
             if (alternativeSerializationForProperty.ContainsKey(property))
@@ -64,8 +68,10 @@ namespace ObjectPrinting.Solved
                 alternativeSerializationForProperty[property] = serializer;
                 return;
             }
+
             alternativeSerializationForProperty.Add(property, serializer);
         }
+
         public void AddMaxLenghtForStringProperty(PropertyInfo info, int maxLenght)
         {
             if (stringPropertiesMaxLenght.ContainsKey(info))
@@ -73,14 +79,17 @@ namespace ObjectPrinting.Solved
                 stringPropertiesMaxLenght[info] = maxLenght;
                 return;
             }
+
             stringPropertiesMaxLenght.Add(info, maxLenght);
         }
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyFromMemberSelector(memberSelector));
         }
@@ -116,12 +125,12 @@ namespace ObjectPrinting.Solved
             }
 
             DeleteRecursion(obj);
-            
+
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            
-            if(obj is IDictionary dictionary)
+
+            if (obj is IDictionary dictionary)
                 return SerialzieDictionary(dictionary, nestingLevel);
             if (obj is IEnumerable enumerable)
                 return SerialzieEnumerable(enumerable, nestingLevel);
@@ -130,25 +139,28 @@ namespace ObjectPrinting.Solved
                 var header = identation + propertyInfo.Name + " = ";
                 var propType = propertyInfo.PropertyType;
                 var propertyObj = propertyInfo.GetValue(obj);
-                
-                if(excludedTypes.Contains(propType) || excludedProperties.Contains(propertyInfo))
+
+                if (excludedTypes.Contains(propType) || excludedProperties.Contains(propertyInfo))
                     continue;
-                if (recursedProperties.Contains(propertyObj)) 
+                if (recursedProperties.Contains(propertyObj))
                 {
                     sb.Append(header + "Recursion");
                     continue;
                 }
+
                 if (alternativeSerializationForProperty.ContainsKey(propertyInfo))
                 {
-                    sb.Append(header + alternativeSerializationForProperty[propertyInfo](propertyObj)+Environment.NewLine);
+                    sb.Append(header + alternativeSerializationForProperty[propertyInfo](propertyObj) +
+                              Environment.NewLine);
                     continue;
                 }
+
                 if (alternativeSerializationForType.ContainsKey(propType))
                 {
                     sb.Append(header + alternativeSerializationForType[propType](propertyObj));
                     continue;
                 }
-                
+
                 if (propType == typeof(string))
                 {
                     var value = (string)propertyObj;
@@ -163,10 +175,12 @@ namespace ObjectPrinting.Solved
                                   nestingLevel + 1));
                     continue;
                 }
+
                 sb.Append(header +
                           PrintToString(propertyObj,
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
 
@@ -185,56 +199,59 @@ namespace ObjectPrinting.Solved
 
             return sb.ToString();
         }
-        
+
         private string SerialzieDictionary(IDictionary dictionary, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder("Dictionary\n");
-            
+
             var keys = dictionary.Keys.Cast<object>().ToArray();
             var values = dictionary.Values.Cast<object>().ToArray();
             if (keys.Length != values.Length)
                 throw new Exception();
-            
-            for(int i =0; i<keys.Length; i++)
+
+            for (int i = 0; i < keys.Length; i++)
             {
-                sb.Append(identation + 
+                sb.Append(identation +
                           "Key:" +
                           PrintToString(keys[i], nestingLevel + 1) +
                           identation +
-                          "Value:" + 
+                          "Value:" +
                           PrintToString(values[i], nestingLevel + 1));
             }
 
             return sb.ToString();
         }
-        
+
         private void DeleteRecursion(object parentObj) => DeleteRecursion(parentObj, parentObj);
+
         private void DeleteRecursion(object parentObj, object childObject)
         {
-            if(childObject == null)
+            if (childObject == null)
                 return;
-            if(recursedProperties.Contains(childObject))
+            if (recursedProperties.Contains(childObject))
                 return;
             var type = childObject.GetType();
             if (type.GetProperties().Length == 0 || finalTypes.Contains(type))
                 return;
             if (childObject is IDictionary dict)
                 DeleteRecursionInDictionary(parentObj, dict);
-            else if(childObject is IEnumerable enumerable)
+            else if (childObject is IEnumerable enumerable)
                 DeleteRecursionInEnumerable(parentObj, enumerable);
-            else foreach (var propertyInfo in type.GetProperties())
-            {
-                var childPropertyObj = propertyInfo.GetValue(childObject);
-                if(childPropertyObj == null)
-                    continue;
-                if (childPropertyObj == parentObj)
+            else
+                foreach (var propertyInfo in type.GetProperties())
                 {
-                    recursedProperties.Add(childPropertyObj);
-                    continue;
+                    var childPropertyObj = propertyInfo.GetValue(childObject);
+                    if (childPropertyObj == null)
+                        continue;
+                    if (childPropertyObj == parentObj)
+                    {
+                        recursedProperties.Add(childPropertyObj);
+                        continue;
+                    }
+
+                    DeleteRecursion(parentObj, childPropertyObj);
                 }
-                DeleteRecursion(parentObj, childPropertyObj);
-            }
         }
 
         private void DeleteRecursionInEnumerable(object parentObj, IEnumerable enumerable)
@@ -264,7 +281,8 @@ namespace ObjectPrinting.Solved
             }
         }
 
-        private PropertyInfo GetPropertyFromMemberSelector<TOwner, TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        private PropertyInfo GetPropertyFromMemberSelector<TOwner, TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var member = memberSelector.Body as MemberExpression;
             if (member == null)

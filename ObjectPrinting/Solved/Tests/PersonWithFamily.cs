@@ -13,6 +13,6 @@ namespace ObjectPrinting.Solved.Tests
             Family = new Dictionary<string, Person>();
         }
 
-        public void AddFamilyMember(string degreeOfConsanguinity,Person p) => Family.Add(degreeOfConsanguinity,p);
+        public void AddFamilyMember(string degreeOfConsanguinity, Person p) => Family.Add(degreeOfConsanguinity, p);
     }
 }

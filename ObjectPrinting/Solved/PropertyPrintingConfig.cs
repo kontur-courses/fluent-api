@@ -16,14 +16,15 @@ namespace ObjectPrinting.Solved
             typeConfig = typeof(TPropType);
         }
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo property) : this(printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo property) : this(
+            printingConfig)
         {
             PropertyConfig = property;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if(PropertyConfig != null)
+            if (PropertyConfig != null)
                 printingConfig.AddAlternativeSerializationForProperty(PropertyConfig, obj => print((TPropType)obj));
             if (typeConfig != null)
                 printingConfig.AddAlternativeSerializationForType(typeConfig, obj => print((TPropType)obj));
@@ -34,7 +35,7 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            if(typeConfig != null)
+            if (typeConfig != null)
                 printingConfig.AddCultureForType(typeConfig, culture);
             else
                 throw new ArgumentException("Missing type for change culture info");
