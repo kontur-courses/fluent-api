@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -134,5 +135,35 @@ public class ObjectPrintingTest
         var result = printer.PrintToString(person);
 
         result.Should().Be("Person\r\n\tId = Guid\r\n\tName = A\r\n\tHeight = 163,21\r\n\tAge = 20\r\n");
+    }
+
+    [Test]
+    public void ObjectPrinter_Should_SerializeDictionary()
+    {
+        var dictionary = new Dictionary<string, int> { ["A"] = 1, ["B"] = 2 };
+
+        var result = dictionary.PrintToString();
+
+        result.Should().Be("Dictionary`2{[A] = 1\r\n[B] = 2\r\n }");
+    }
+
+    [Test]
+    public void ObjectPrinter_Should_SerializeArray()
+    {
+        var array = new[] { 1, 2, 3, 4, 5 };
+
+        var result = array.PrintToString();
+
+        result.Should().Be("Int32[]{1\r\n2\r\n3\r\n4\r\n5\r\n }");
+    }
+
+    [Test]
+    public void ObjectPrinter_Should_SerializeList()
+    {
+        var list = new List<string> { "A", "B", "C" };
+
+        var result = list.PrintToString();
+
+        result.Should().Be("List`1{A\r\nB\r\nC\r\n }");
     }
 }

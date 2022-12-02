@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -96,6 +97,8 @@ namespace ObjectPrinting
             if (objects.Any(o => ReferenceEquals(o, obj)))
                 return type.Name;
 
+            if (obj is IEnumerable enumerable) return GetIEnumerable(enumerable, objects);
+
             objects.Add(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
@@ -131,6 +134,20 @@ namespace ObjectPrinting
                 str = str.Substring(0, MaxStringLength[memberInfo]) + "\r\n";
 
             return str;
+        }
+
+        public string GetIEnumerable(IEnumerable enumerable, HashSet<object> objects)
+        {
+            var sb = new StringBuilder(enumerable.GetType().Name + "{");
+            if (enumerable is IDictionary dictionary)
+                foreach (var key in dictionary.Keys)
+                    sb.Append($"[{key}] = {PrintToString(dictionary[key], objects.Count + 1, objects)}");
+            else
+                foreach (var item in enumerable)
+                    sb.Append($"{PrintToString(item, objects.Count + 1, objects)}");
+
+            sb.Append(" }");
+            return sb.ToString();
         }
     }
 }
