@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -14,7 +15,22 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void CreatePerson()
         {
-            _person = new Person { Name = "Alex", Age = 19, Height = 200.02, Id = "1", Country = "Russia", Weight = 100 };
+            _person = new Person
+            {
+                Name = "Alex", 
+                Age = 19, 
+                Height = 200.02, 
+                Country = "Russia", 
+                Weight = 100,
+                Friend = new Person()
+                {
+                    Name = "Anton", 
+                    Age = 20, 
+                    Height = 160, 
+                    Country = "Russia", 
+                    Weight = 80
+                }
+            };
         }
 
         [Test]
@@ -22,11 +38,15 @@ namespace ObjectPrinting.Tests
         {
             var persons = new[] { _person, _person };
             
+            var friendOfMyFriend = _person.Friend.Friend == null ? "null" : _person.Friend.Friend.GetType().ToString();
+            var expectedResult = 
+                $"Person\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\nPerson\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\n";
+            
             ObjectPrinter
                 .For<Person>()
                 .PrintToString(persons)
                 .Should()
-                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+                .Be(expectedResult);
         }
         
         [Test]
@@ -37,12 +57,17 @@ namespace ObjectPrinting.Tests
                 { "1", _person },
                 { "2", _person },
             };
+
+            var friendOfMyFriend = _person.Friend.Friend == null ? "null" : _person.Friend.Friend.GetType().ToString();
+            
+            var expectedResult = 
+                $"Person\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\nPerson\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\n";
             
             ObjectPrinter
                 .For<Person>()
                 .PrintToString(persons)
                 .Should()
-                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+                .Be(expectedResult);
         }
         
         [Test]
@@ -54,11 +79,16 @@ namespace ObjectPrinting.Tests
                 _person
             };
             
+            var friendOfMyFriend = _person.Friend.Friend == null ? "null" : _person.Friend.Friend.GetType().ToString();
+            var expectedResult = 
+                $"Person\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\nPerson\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\n";
+            
             ObjectPrinter
                 .For<Person>()
                 .PrintToString(persons)
                 .Should()
-                .Be("Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\nPerson\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n");
+                .Be(expectedResult);
+            
         }
         
         [Test]
@@ -68,7 +98,9 @@ namespace ObjectPrinting.Tests
                 .For<Person>()
                 .PrintToString(_person);
 
-            var expectedSting = $"Person\r\n\tId = 1\r\n\tName = Alex\r\n\tHeight = 200,02\r\n\tAge = 19\r\n\tWeight = 100\r\n\tCountry = Russia\r\n";
+            var friendOfMyFriend = _person.Friend.Friend == null ? "null" : _person.Friend.Friend.GetType().ToString();
+            var expectedSting =
+                $"Person\r\n\tId = {_person.Id}\r\n\tName = {_person.Name}\r\n\tHeight = {_person.Height}\r\n\tAge = {_person.Age}\r\n\tFriend = Person\r\n\t\tId = {_person.Friend.Id}\r\n\t\tName = {_person.Friend.Name}\r\n\t\tHeight = {_person.Friend.Height}\r\n\t\tAge = {_person.Friend.Age}\r\n\t\tFriend = {friendOfMyFriend}\r\n\t\tWeight = {_person.Friend.Weight}\r\n\t\tCountry = {_person.Friend.Country}\r\n\tWeight = {_person.Weight}\r\n\tCountry = {_person.Country}\r\n";
 
             expectedSting.Should().Be(actualString);
         }
@@ -80,7 +112,7 @@ namespace ObjectPrinting.Tests
                .Exclude<Guid>()
                .PrintToString(_person);
 
-            actualString.Should().NotContain("Guid");
+            actualString.Should().NotContain(_person.Id.ToString());
         }
 
         [Test]
@@ -131,13 +163,15 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintsWithMaxLength()
         {
-            var actualString = ObjectPrinter.For<Person>()
-                .MaxLength(10)
-                .PrintToString(_person);
-
-            var expectedSting = $"Person\r\n\tId = 1\r\n\tName = A\r\n\tHeight =\r\n\tAge = 19\r\n\tWeight =\r\n\tCountry \r\n";
-            
-            actualString.Should().Be(expectedSting);
+            var maxStringLength = 10;
+            ObjectPrinter.For<Person>()
+                .MaxLength(maxStringLength)
+                .PrintToString(_person)
+                .Split(Environment.NewLine)
+                .ToList()
+                .Any(s => s.Trim().Length >= 10)
+                .Should()
+                .BeFalse();
         }
     }
 }

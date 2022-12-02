@@ -4,11 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text;
-using System.Threading;
-using System.Xml.Schema;
-using FluentAssertions;
 
 namespace ObjectPrinting
 {
@@ -18,11 +14,13 @@ namespace ObjectPrinting
         private int _nestingLevel;
         private string _identation;
         private int _maxLength;
+        private ObjectSerializer<TOwner> _serializer;
 
-        private readonly Type[] _finalTypes = new[]
+        private readonly HashSet<Type> _finalTypes = new HashSet<Type>()
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(bool), typeof(sbyte),  typeof(byte),  typeof(short),  typeof(ushort),
+            typeof(int),  typeof(uint),  typeof(long), typeof(ulong), typeof(float),
+            typeof(double),  typeof(decimal),  typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
         
         private List<Type> _excludingTypes = new List<Type>();
@@ -32,8 +30,47 @@ namespace ObjectPrinting
         private Dictionary<Type, Func<PropertyInfo, string>> _serializeTypeFunctions = new Dictionary<Type, Func<PropertyInfo, string>>();
         private Dictionary<Type, CultureInfo> _cultureInfos = new Dictionary<Type, CultureInfo>();
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0).ToString();
+        public HashSet<Type> FinalTypes
+        {
+            get => _finalTypes;
+        }
 
+        public int MaxLineLength
+        {
+            get => _maxLength;
+        }
+
+        public Dictionary<PropertyInfo, Func<PropertyInfo, string>> SerializeFunctions
+        {
+            get => _serializeFunctions;
+        }
+
+        public Dictionary<Type, Func<PropertyInfo, string>> SerializeTypeFunctions
+        {
+            get => _serializeTypeFunctions;
+        }
+
+        public Dictionary<Type, CultureInfo> CultureInfos
+        {
+            get => _cultureInfos;
+        }
+
+        public List<Type> ExcludedTypes
+        {
+            get => _excludingTypes;
+        }
+
+        public List<string> ExcludedProperties
+        {
+            get => _excludingProperties;
+        }
+
+        public PrintingConfig()
+        {
+            _serializer = new ObjectSerializer<TOwner>(this);
+        }
+
+        public string PrintToString(TOwner obj) => PrintToString(obj, -1).ToString();
         public string PrintToString(TOwner[] objs) => PrintCollections(objs).ToString();
         public string PrintToString(List<TOwner> objs) => PrintCollections(objs).ToString();
         public string PrintToString(Dictionary<string, TOwner> objs)
@@ -47,8 +84,8 @@ namespace ObjectPrinting
             var result = new StringBuilder();
             foreach (var collection in collections)
             {
-                result.Append(PrintToString(collection, 0));
-                _serializedResult.Clear();
+                result.Append(PrintToString(collection, -1));
+                _serializer.Clear();
             }
 
             return result;
@@ -56,69 +93,9 @@ namespace ObjectPrinting
 
         private StringBuilder PrintToString(object obj, int nestingLevel)
         {
-            Serialize(obj, nestingLevel);
-            return _serializedResult;
+            _serializer.Serialize("", obj, nestingLevel);
+            return _serializer.Result;
         }
-
-        private string Serialize(object obj, int nestingLevel) 
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-            
-            var identation = new string('\t', nestingLevel + 1);
-            var objectType = obj.GetType();
-
-            if (_finalTypes.Contains(objectType))
-                return obj + Environment.NewLine;
-            
-            _serializedResult.Append(objectType.Name + Environment.NewLine);
-            foreach (var propertyInfo in objectType.GetProperties())
-            {
-                if (IsExcluded(propertyInfo))
-                    continue;
-                
-                var serializedProperty = identation + propertyInfo.Name + " = ";
-
-                var anotherSerialization = HaveAnotherSerialization(propertyInfo);
-
-                if (anotherSerialization != "")
-                    serializedProperty += anotherSerialization + Environment.NewLine;
-                else
-                    serializedProperty += Serialize(propertyInfo.GetValue(obj), nestingLevel + 1);
-
-                if (_maxLength != 0 && IsTooLongLine(serializedProperty))
-                {
-                    AppendWithLineBreak(serializedProperty);
-                    continue;
-                }
-                    
-                _serializedResult.Append(serializedProperty);
-            }
-
-            return "";
-        }
-        
-        private bool IsExcluded(PropertyInfo propertyInfo)
-        {
-            return _excludingProperties.Contains(propertyInfo.Name) 
-                   || _excludingTypes.Contains(propertyInfo.PropertyType);
-        }
-
-        private string HaveAnotherSerialization(PropertyInfo propertyInfo)
-        {
-            if (_serializeFunctions.ContainsKey(propertyInfo))
-                return _serializeFunctions[propertyInfo](propertyInfo);
-            if (_serializeTypeFunctions.ContainsKey(propertyInfo.PropertyType))
-                return _serializeTypeFunctions[propertyInfo.PropertyType](propertyInfo);
-            return "";
-        }
-
-        private void AppendWithLineBreak(string serializedProperty)
-        {
-            _serializedResult.Append(serializedProperty.Substring(0, _maxLength - 1) + Environment.NewLine);
-        }
-
-        private bool IsTooLongLine(string line) => line.Length > _maxLength;
         
         public PrintingConfig<TOwner> Exclude<TOwnerProperty>()
         {
@@ -164,13 +141,6 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> MaxLength(int maxLength)
         {
             _maxLength = maxLength;
-            
-            return this;
-        }
-        
-        public PrintingConfig<TOwner> WithCulture<TOwnerProperty>(CultureInfo cultureInfo)
-        {
-            _cultureInfos.Add(typeof(TOwnerProperty), cultureInfo);
             
             return this;
         }
