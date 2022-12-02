@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Globalization;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using NUnit.Framework;
 using FluentAssertions;
-using ObjectPrinting.Solved;
 
 
 namespace ObjectPrinting.Tests
@@ -38,6 +35,26 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+        
+        [Test]
+        public void Serialization_NoCircularRecursion()
+        {
+            var person1 = new Person2 {Id = new Guid(), Name = "Alex"};
+            var person2 = new Person2 {Id = new Guid(), Friend = person1, Name = "Joe", };
+            person1.Friend = person2;
+            var printer = ObjectPrinter.For<Person2>();
+            string s1 = printer.PrintToString(person1);
+            string result = "Person2" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tFriend = Person2" + Environment.NewLine +
+                            "\t\tId = " + Environment.NewLine +
+                            "\t\tName = Joe" + Environment.NewLine +
+                            "\t\tFriend = " + Environment.NewLine;
+
+            s1.Should().Be(result);
+            //Console.WriteLine(s1);
         }
         
         [Test]

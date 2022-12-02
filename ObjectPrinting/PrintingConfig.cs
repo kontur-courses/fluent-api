@@ -4,26 +4,28 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using FluentAssertions.Execution;
 
 namespace ObjectPrinting
 {
-    
     public class PrintingConfig<TOwner>
     {
         private List<Type> removedTypes = new List<Type>();
         private Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
 
-        private Dictionary<Type, Func<object, string>> alternativeSerialization = 
+        private Dictionary<Type, Func<object, string>> alternativeSerialization =
             new Dictionary<Type, Func<object, string>>();
-        
-        public Dictionary<string, Func<object, string>> PropertySerialization = 
+
+        public Dictionary<string, Func<object, string>> PropertySerialization =
             new Dictionary<string, Func<object, string>>();
-        
-        
-        public Dictionary<string, int> PropertiesToCrop = 
+
+        public Dictionary<string, int> PropertiesToCrop =
             new Dictionary<string, int>();
-        
+
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
+
+        private HashSet<object> viewedObjects = new HashSet<object>();
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -42,7 +44,6 @@ namespace ObjectPrinting
             return this;
         }
 
-        //typeof(Person).GetProperty("Age")
         public Serialization<TOwner> SerializeProperty(String propertyInfoName)
         {
             var serialization = new Serialization<TOwner>();
@@ -70,52 +71,57 @@ namespace ObjectPrinting
             cultures.Add(typeof(T), culture);
             return this;
         }
-        
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
             var type = obj.GetType();
-            
+
             if (alternativeSerialization.ContainsKey(type))
                 return alternativeSerialization[type](obj) + Environment.NewLine;
-            
+
             if (cultures.ContainsKey(type))
                 return ((IFormattable)obj).ToString(null, cultures[type]) + Environment.NewLine;
-            
+
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            
+
             if (finalTypes.Contains(type))
             {
                 return obj + Environment.NewLine;
             }
 
+            if (viewedObjects.Contains(obj))
+            {
+                return Environment.NewLine;
+            }
 
+            viewedObjects.Add(obj);
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            
+
 
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (removedTypes.Contains(propertyInfo.PropertyType))
                     continue;
-                
+
                 if (exludingProperty.Contains(propertyInfo))
                     continue;
 
                 if (PropertySerialization.ContainsKey(propertyInfo.Name))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              PropertySerialization[propertyInfo.Name](propertyInfo.GetValue(obj)) 
+                              PropertySerialization[propertyInfo.Name](propertyInfo.GetValue(obj))
                               + Environment.NewLine);
                     continue;
                 }
-                
+
                 if (PropertiesToCrop.ContainsKey(propertyInfo.Name))
                 {
                     var propertyInfoType = propertyInfo.PropertyType;
@@ -126,18 +132,17 @@ namespace ObjectPrinting
 
                     var propInfoValue = propertyInfo.GetValue(obj).ToString();
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              propInfoValue.Substring(0, 
+                              propInfoValue.Substring(0,
                                   Math.Min(PropertiesToCrop[propertyInfo.Name], propInfoValue.Length))
-                                                        + Environment.NewLine);
+                              + Environment.NewLine);
                     continue;
                 }
-                
+
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
-
-
+            
             return sb.ToString();
         }
     }
