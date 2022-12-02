@@ -12,21 +12,15 @@ namespace ObjectPrinting
             _parent = parent;
         }
 
-
         public string PrintObject(object obj)
         {
             return _serializer((TSerializator)obj);
         }
 
-        public PrinterConfigSerialization<TOwner, TSerializator> SetSerialization(
+        public PrintingConfig<TOwner> SetSerialization(
             Func<TSerializator, string> serializer)
         {
             _serializer = serializer;
-            return this;
-        }
-
-        public PrintingConfig<TOwner> ApplyConfig()
-        {
             return _parent;
         }
     }

@@ -43,8 +43,7 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .ForMember(p => p.Age)
-                .SetSerialization(age => (age + 10).ToString())
-                .ApplyConfig();
+                .SetSerialization(age => (age + 10).ToString());
             var expected =
                 "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165,5\r\n\tAge = 29\tFather = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
@@ -70,8 +69,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person>()
                 .Excluding<double>()
                 .Excluding(p => p.Height)
-                .ForMember(p => p.Age).SetSerialization(age => (age + 42).ToString())
-                .ApplyConfig();
+                .ForMember(p => p.Age).SetSerialization(age => (age + 42).ToString());
             var expected =
                 "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 61\tFather = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Jack\r\n\t\tAge = 87\t\tFather = null\r\n\t\tSon = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
@@ -81,7 +79,7 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_WhenCultureSet_WorksCorrectly()
         {
             var printer = ObjectPrinter.For<Person>()
-                .With<double>().SetCulture(new CultureInfo("en")).ApplyConfig();
+                .With<double>().SetCulture(new CultureInfo("en"));
 
 
             var expected =
@@ -93,7 +91,7 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_SetMaxStringLength_WorksCorrectly()
         {
             var printer = ObjectPrinter.For<Person>()
-                .With<string>().SetMaxStringLength(1).ApplyConfig();
+                .With<string>().SetMaxStringLength(1);
 
             var expected =
                 "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = A\tHeight = 165,5\r\n\tAge = 19\r\n\tFather = null\r\n\tSon = null\r\n";
