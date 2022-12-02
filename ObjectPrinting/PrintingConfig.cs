@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -12,10 +13,10 @@ namespace ObjectPrinting
 
         private readonly HashSet<PropertyInfo> ExcludedProperty = new HashSet<PropertyInfo>();
 
-        private readonly Dictionary<Type, Delegate> TypesSerializationOptions = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, Delegate> TypesPrintOptions = new Dictionary<Type, Delegate>();
 
-        private readonly Dictionary<PropertyInfo, Delegate> PropertiesSerializationOptions = new Dictionary<PropertyInfo, Delegate>();
-        //private readonly Dictionary<PropertyInfo, List<Delegate>> PropertiesSerializationOptions = new Dictionary<PropertyInfo, List<Delegate>>();
+        //private readonly Dictionary<PropertyInfo, Delegate> PropertiesSerializationOptions = new Dictionary<PropertyInfo, Delegate>();
+        private readonly Dictionary<PropertyInfo, List<Delegate>> PropertiesPrintOptions = new Dictionary<PropertyInfo, List<Delegate>>();
 
         private readonly HashSet<object> PrintedNonFinalObjects = new HashSet<object>();
 
@@ -52,14 +53,17 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        public void AddTypeSerializationOption<TPropType>(Type type, Func<TPropType, string> printOption)
+        public void AddTypePrintOption<TPropType>(Type type, Func<TPropType, string> printOption)
         {
-            TypesSerializationOptions.Add(typeof(TPropType), printOption);
+            TypesPrintOptions.Add(typeof(TPropType), printOption);
         }
 
-        public void AddPropertySerializationOption<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> printOption)
+        public void AddPropertyPrintOption<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> printOption)
         {
-            PropertiesSerializationOptions.Add(propertyInfo, printOption);
+            if (!PropertiesPrintOptions.ContainsKey(propertyInfo))
+                PropertiesPrintOptions.Add(propertyInfo, new List<Delegate> { printOption });
+            else
+                PropertiesPrintOptions[propertyInfo].Add(printOption);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -77,8 +81,8 @@ namespace ObjectPrinting
                     PrintedNonFinalObjects.Add(obj);
             }
 
-            if (TypesSerializationOptions.ContainsKey(objectType))
-                return (string)TypesSerializationOptions[objectType].DynamicInvoke(obj) + Environment.NewLine;
+            if (TypesPrintOptions.ContainsKey(objectType))
+                return (string)TypesPrintOptions[objectType].DynamicInvoke(obj) + Environment.NewLine;
 
             if (IsFinalType(objectType))
                 return obj + Environment.NewLine;
@@ -94,9 +98,9 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = ");
 
-                if (PropertiesSerializationOptions.ContainsKey(propertyInfo))
+                if (HasPrintOption(propertyInfo))
                 {
-                    sb.Append((string)PropertiesSerializationOptions[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    sb.Append(PrintPropertyWithOptions(obj, propertyInfo) + Environment.NewLine);
                     continue;
                 }
 
@@ -104,7 +108,6 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
-
 
         private bool IsFinalType(Type type)
         {
@@ -131,6 +134,21 @@ namespace ObjectPrinting
         private bool IsExcluded(PropertyInfo propertyInfo)
         {
             return ExcludedPropTypes.Contains(propertyInfo.PropertyType) || ExcludedProperty.Contains(propertyInfo);
+        }
+
+        private bool HasPrintOption(PropertyInfo propertyInfo)
+        {
+            return PropertiesPrintOptions.ContainsKey(propertyInfo);
+        }
+
+        private string PrintPropertyWithOptions(object obj, PropertyInfo propertyInfo)
+        {
+            var propertyValue = propertyInfo.GetValue(obj);
+
+            foreach (var printOption in PropertiesPrintOptions[propertyInfo])
+                propertyValue = (string)printOption.DynamicInvoke(propertyValue);
+
+            return (string)propertyValue;
         }
     }
 }
