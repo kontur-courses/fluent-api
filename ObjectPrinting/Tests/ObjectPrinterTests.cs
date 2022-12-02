@@ -122,7 +122,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_PrintsMultipleConfigs()
+        public void PrintToString_PrintsPropertyWithIntersectingConfigs()
         {
             var actualString = ObjectPrinter.For<Person>()
                 .Printing(x => x.Name).Using(x => x.ToUpper())
@@ -130,6 +130,17 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
 
             actualString.Should().Contain("\tSurname = Fos\r\n").And.Contain("\tName = ALE\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsTypeWithMultipleConfigs()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .Printing<string>().Using(x => x.ToUpper())
+                .Printing<string>().TrimmedToLength(4)
+                .PrintToString(person);
+
+            actualString.Should().Contain("\tSurname = FOST\r\n").And.Contain("\tName = ALEX\r\n");
         }
 
     }

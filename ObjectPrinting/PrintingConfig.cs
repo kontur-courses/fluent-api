@@ -13,9 +13,8 @@ namespace ObjectPrinting
 
         private readonly HashSet<PropertyInfo> ExcludedProperty = new HashSet<PropertyInfo>();
 
-        private readonly Dictionary<Type, Delegate> TypesPrintOptions = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<Type, List<Delegate>> TypesPrintOptions = new Dictionary<Type, List<Delegate>>();
 
-        //private readonly Dictionary<PropertyInfo, Delegate> PropertiesSerializationOptions = new Dictionary<PropertyInfo, Delegate>();
         private readonly Dictionary<PropertyInfo, List<Delegate>> PropertiesPrintOptions = new Dictionary<PropertyInfo, List<Delegate>>();
 
         private readonly HashSet<object> PrintedNonFinalObjects = new HashSet<object>();
@@ -55,7 +54,10 @@ namespace ObjectPrinting
 
         public void AddTypePrintOption<TPropType>(Type type, Func<TPropType, string> printOption)
         {
-            TypesPrintOptions.Add(typeof(TPropType), printOption);
+            if (!TypesPrintOptions.ContainsKey(type))
+                TypesPrintOptions.Add(type, new List<Delegate> { printOption });
+            else
+                TypesPrintOptions[type].Add(printOption);
         }
 
         public void AddPropertyPrintOption<TPropType>(PropertyInfo propertyInfo, Func<TPropType, string> printOption)
@@ -81,8 +83,8 @@ namespace ObjectPrinting
                     PrintedNonFinalObjects.Add(obj);
             }
 
-            if (TypesPrintOptions.ContainsKey(objectType))
-                return (string)TypesPrintOptions[objectType].DynamicInvoke(obj) + Environment.NewLine;
+            if (HasPrintOption(objectType))
+                return PrintTypeWithOptions(obj) + Environment.NewLine;
 
             if (IsFinalType(objectType))
                 return obj + Environment.NewLine;
@@ -100,13 +102,15 @@ namespace ObjectPrinting
 
                 if (HasPrintOption(propertyInfo))
                 {
-                    sb.Append(PrintPropertyWithOptions(obj, propertyInfo) + Environment.NewLine);
+                    var printedPropertyValue = PrintPropertyWithOptions(obj, propertyInfo);
+
+                    sb.Append(PrintStringTypeWithOptions(printedPropertyValue) + Environment.NewLine);
                     continue;
                 }
 
                 sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
-            return sb.ToString();
+            return sb.ToString();   
         }
 
         private bool IsFinalType(Type type)
@@ -141,6 +145,11 @@ namespace ObjectPrinting
             return PropertiesPrintOptions.ContainsKey(propertyInfo);
         }
 
+        private bool HasPrintOption(Type type)
+        {
+            return TypesPrintOptions.ContainsKey(type);
+        }
+
         private string PrintPropertyWithOptions(object obj, PropertyInfo propertyInfo)
         {
             var propertyValue = propertyInfo.GetValue(obj);
@@ -150,5 +159,24 @@ namespace ObjectPrinting
 
             return (string)propertyValue;
         }
+
+        private string PrintStringTypeWithOptions(string inputString)
+        {
+            if (HasPrintOption(typeof(string)))
+                return PrintTypeWithOptions(inputString);
+
+            return inputString;
+        }
+
+        private string PrintTypeWithOptions(object obj)
+        {
+            var printedObject = obj;
+
+            foreach (var printOption in TypesPrintOptions[obj.GetType()])
+                printedObject = (string)printOption.DynamicInvoke(printedObject);
+
+            return (string)printedObject;
+        }
+
     }
 }
