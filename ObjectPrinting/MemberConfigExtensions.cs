@@ -8,14 +8,14 @@ namespace ObjectPrinting
 {
     public static class MemberConfigExtensions
     {
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config, int nestingLevel)
         {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
+            return config(ObjectPrinter.For<T>()).PrintToString(obj, nestingLevel);
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this MemberConfig<TOwner, string> propConfig, int maxLen)
         {
-            propConfig.PrintAs(x => x.Substring(0, x.Length - maxLen));
+            propConfig.PrintAs(x => x[..^maxLen]);
             return propConfig.ParentConfig;
         }
     }

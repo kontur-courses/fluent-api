@@ -5,31 +5,30 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class TypeConfig<TOwner, TPropType> : IConfig<TOwner, TPropType>
+    public class TypeConfig<TOwner, TPropType>
     {
-        public readonly PrintingConfig<TOwner> printingConfig;
-        public PrintingConfig<TOwner> ParentConfig => printingConfig;
-        public Settings serializerSettings;
+        public PrintingConfig<TOwner> ParentConfig { get; private set; }
+        public SerializerSettings settings;
         public Type typeToConfig;
 
-        public TypeConfig(PrintingConfig<TOwner> printingConfig, Settings serializerSettings)
+        public TypeConfig(PrintingConfig<TOwner> printingConfig, SerializerSettings serializerSettings)
         {
-            this.printingConfig = printingConfig;
-            this.serializerSettings = serializerSettings;
+            ParentConfig = printingConfig;
+            this.settings = serializerSettings;
             typeToConfig = typeof(TPropType);
         }
 
         public PrintingConfig<TOwner> IgnoreType()
         {
-            serializerSettings.typesToIgnore.Add(typeToConfig);
+            settings.TypesToIgnore.Add(typeToConfig);
             return ParentConfig;
         }
 
         public PrintingConfig<TOwner> PrintAs(Func<TPropType, string> print)
         {
             var objFunc = new Func<object, string>(x => print((TPropType)x));
-            serializerSettings.customTypes.Add(typeof(TPropType), objFunc);
-            return printingConfig;
+            settings.CustomTypes.Add(typeof(TPropType), objFunc);
+            return ParentConfig;
         }
     }
 }

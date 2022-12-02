@@ -7,30 +7,28 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class MemberConfig<TOwner, TPropType> : IConfig<TOwner, TPropType>
+    public class MemberConfig<TOwner, TPropType>
     {
-        public readonly PrintingConfig<TOwner> printingConfig;
-        public PrintingConfig<TOwner> ParentConfig => printingConfig;
-        public Settings serializerSettings;
-        public MemberInfo propertyInfo;
+        public PrintingConfig<TOwner> ParentConfig { get; private set; }
+        private SerializerSettings settings;
+        private MemberInfo memberInfo;
 
-        public MemberConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member, Settings serializerSettings)
+        public MemberConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member, SerializerSettings serializerSettings)
         {
-            this.printingConfig = printingConfig;
-            this.serializerSettings = serializerSettings;
-            propertyInfo = member;
+            ParentConfig = printingConfig;
+            this.settings = serializerSettings;
+            memberInfo = member;
         }
 
         public PrintingConfig<TOwner> PrintAs(Func<TPropType, string> print)
         {
-            var objFunc = new Func<object, string>(x => print((TPropType)x));
-            serializerSettings.customMembs.Add(propertyInfo, objFunc);
-            return printingConfig;
+            settings.CustomMembs.Add(memberInfo, x => print((TPropType)x));
+            return ParentConfig;
         }
 
         public PrintingConfig<TOwner> IgnoreProperty()
         {
-            serializerSettings.membersToIgnor.Add(propertyInfo);
+            settings.MembersToIgnor.Add(memberInfo);
             return ParentConfig;
         }
     }

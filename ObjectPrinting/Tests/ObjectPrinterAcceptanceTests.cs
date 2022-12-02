@@ -15,18 +15,12 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private string text;
-        private Person person;
-
-        [SetUp]
-        public void PreparePerson()
+        private Person person = new Person
         {
-            person = new Person
-            {
-                Name = "Bill",
-                Height = 175.3,
-                Age = 35
-            };
-        }
+            Name = "Bill",
+            Height = 175.3,
+            Age = 35
+        };
 
         [Test]
         public void PrintingConfig_EmptyInput_ShouldReturnEmptyLine()
@@ -34,7 +28,7 @@ namespace ObjectPrinting.Tests
             var common = "";
             var config = ObjectPrinter.For<string>();
 
-            text = config.PrintToString(common);
+            text = config.PrintToString(common, 10);
             var expected = "";
 
             text.Should().Be(expected);
@@ -46,40 +40,40 @@ namespace ObjectPrinting.Tests
             var common = "some text";
             var config = ObjectPrinter.For<string>();
 
-            text = config.PrintToString(common);
+            text = config.PrintToString(common, 10);
             var expected = "some text";
 
             text.Should().Be(expected);
         }
 
         [Test]
-        public void PrintingConfig_MassiveInput_ShouldReturnExpectedLine()
+        public void PrintingConfig_MassiveInput()
         {
             var common = new [] { 2.0, 5.3, 10.154, 13.15, -1.65 };
             var config = ObjectPrinter.For<double[]>();
 
-            text = config.PrintToString(common);
-            var expected = "(coll) \n" +
-                           "[2, 5,3, 10,154, 13,15, -1,65]";
+            text = config.PrintToString(common, 10);
+            var expected = @"(coll) 
+[2, 5,3, 10,154, 13,15, -1,65]";
 
             text.Should().Be(expected);
         }
 
         [Test]
-        public void PrintingConfig_ListInput_ShouldReturnExpectedLine()
+        public void PrintingConfig_ListInput()
         {
             var common = new List<int>() { 2, 5, 10, 13, -1 };
             var config = ObjectPrinter.For<List<int>>();
 
-            text = config.PrintToString(common);
-            var expected = "(coll) \n" +
-                           "[2, 5, 10, 13, -1]";
+            text = config.PrintToString(common, 10);
+            var expected = @"(coll) 
+[2, 5, 10, 13, -1]";
 
             text.Should().Be(expected);
         }
 
         [Test]
-        public void PrintingConfig_DictionaryIntIntInput_ShouldReturnExpectedLine()
+        public void PrintingConfig_DictionaryIntIntInput()
         {
             var common = new Dictionary<int, int>()
             {
@@ -89,17 +83,17 @@ namespace ObjectPrinting.Tests
             };
             var config = ObjectPrinter.For<Dictionary<int, int>>();
 
-            text = config.PrintToString(common);
-            var expected = "(dict) \n" +
-                           "\t2 = 5;\n" +
-                           "\t10 = 13;\n" +
-                           "\t4 = -1;\n";
+            text = config.PrintToString(common, 10);
+            var expected = @"(dict) 
+    2 = 5;
+    10 = 13;
+    4 = -1;";
 
             text.Should().Be(expected);
         }
 
         [Test]
-        public void PrintingConfig_DictionaryStringIntInput_ShouldReturnExpectedLine()
+        public void PrintingConfig_DictionaryStringIntInput()
         {
             var common = new Dictionary<string, int>()
             {
@@ -109,7 +103,7 @@ namespace ObjectPrinting.Tests
             };
             var config = ObjectPrinter.For<Dictionary<string, int>>();
 
-            text = config.PrintToString(common);
+            text = config.PrintToString(common, 10);
             var expected = "(dict) \n" +
                            "\tfive = 5;\n" +
                            "\tthirteen = 13;\n" +
@@ -119,12 +113,12 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_ListOfPersonInput_ShouldReturnExpectedLine()
+        public void PrintingConfig_ListOfPersonInput()
         {
             var common = new List<Person>() { person, person, person };
             var config = ObjectPrinter.For<List<Person>>();
 
-            text = config.PrintToString(common);
+            text = config.PrintToString(common, 10);
             var expected = "(coll) \n" +
                            "[Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -147,12 +141,12 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_DeleteIntTypeFromPerson_ShouldReturnExpectedLine()
+        public void PrintingConfig_DeleteIntTypeFromPerson()
         {
             var config = ObjectPrinter.For<Person>();
 
             config.SelectType<int>().IgnoreType();
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -171,7 +165,7 @@ namespace ObjectPrinting.Tests
                 .IgnoreType()
                 .SelectProperty(x => x.Age)
                 .PrintAs(x => x + " полных лет");
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -190,7 +184,7 @@ namespace ObjectPrinting.Tests
                 .PrintAs(x => x.ToUpper())
                 .SelectProperty(x => x.Name)
                 .PrintAs(x => x.ToLower());
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -202,12 +196,12 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_DeletePropertyFromPerson_ShouldReturnExpectedLine()
+        public void PrintingConfig_DeletePropertyFromPerson()
         {
             var config = ObjectPrinter.For<Person>();
 
             config.SelectProperty(x => x.Name).IgnoreProperty();
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -218,14 +212,14 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_CustomTypeSerialize_ShouldReturnExpectedLine()
+        public void PrintingConfig_CustomTypeSerialize()
         {
             var config = ObjectPrinter.For<Person>();
 
             config.SelectType<string>().PrintAs(x => x.ToUpper());
             person.FriendsNames = new List<string>() { "Alex", "Allay", "King" };
 
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -239,13 +233,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_CustomPropSerialize_ShouldReturnExpectedLine()
+        public void PrintingConfig_CustomPropSerialize()
         {
             var config = ObjectPrinter.For<Person>();
 
             config.SelectProperty(x => x.Age).PrintAs(x => x + " полных лет");
 
-            text = config.PrintToString(person);
+            text = config.PrintToString(person, 10);
 
             var expected = "Person:\n" +
                            "\tId = 00000000-0000-0000-0000-000000000000;\n" +
@@ -257,13 +251,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_SetCultureForDouble_ShouldReturnExpectedLine()
+        public void PrintingConfig_SetCultureForDouble()
         {
             var config = ObjectPrinter.For<double>();
 
             config.SelectType<double>().SetCulture(CultureInfo.InvariantCulture);
 
-            text = config.PrintToString(153.2);
+            text = config.PrintToString(153.2, 10);
 
             var expected = "153.2";
 
@@ -271,7 +265,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingConfig_BigObject_ShouldReturnExpectedLine()
+        public void PrintingConfig_BigObject()
         {
             var person = new Person
             {
@@ -325,7 +319,6 @@ namespace ObjectPrinting.Tests
         public void TearDown()
         {
             var testCont = TestContext.CurrentContext;
-            var result = testCont.Result.Outcome.Status;
 
             var fileName = testCont.Test.ID;
             File.WriteAllText(@"..\\text.txt", text);
