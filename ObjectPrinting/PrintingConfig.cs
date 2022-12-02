@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Reflection;
@@ -71,23 +72,29 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
+
+            if (obj is IList list)
+                return PrintIListCollection(list, nestingLevel);
+
+            if (obj is IDictionary dictionary)
+                return PrintIDictionaryCollection(dictionary, nestingLevel);
 
             var objectType = obj.GetType();
 
             if (!IsFinalType(objectType))
             {
                 if (PrintedNonFinalObjects.Contains(obj))
-                    return $"Cycled reference detected. Object <{objectType.Name}> doesn't printed" + Environment.NewLine;
+                    return $"Cycled reference detected. Object <{objectType.Name}> doesn't printed";
                 else
                     PrintedNonFinalObjects.Add(obj);
             }
 
             if (HasPrintOption(objectType))
-                return PrintTypeWithOptions(obj) + Environment.NewLine;
+                return PrintTypeWithOptions(obj);
 
             if (IsFinalType(objectType))
-                return obj + Environment.NewLine;
+                return obj.ToString();
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -99,7 +106,7 @@ namespace ObjectPrinting
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
-
+           
                 if (HasPrintOption(propertyInfo))
                 {
                     var printedPropertyValue = PrintPropertyWithOptions(obj, propertyInfo);
@@ -108,7 +115,7 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1) + Environment.NewLine);
             }
             return sb.ToString();   
         }
@@ -177,6 +184,43 @@ namespace ObjectPrinting
 
             return (string)printedObject;
         }
+       
+        private string PrintIListCollection(IList list, int nestingLevel)
+        {
+            var sb = new StringBuilder();
 
+            sb.Append("[ ");
+
+            foreach (var item in list)
+                sb.Append(PrintToString(item, nestingLevel) + ", ");
+
+            sb.Remove(sb.Length - 2, 2);
+
+            sb.Append(" ]");
+
+            return sb.ToString();
+        }
+
+        private string PrintIDictionaryCollection(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+
+            var identation = new string('\t', nestingLevel + 1);
+
+            foreach (var item in dictionary)
+            {
+                var dictionaryItem = (DictionaryEntry)item;
+
+                sb.Append("\n" + identation + "[ ");
+                sb.Append(PrintToString(dictionaryItem.Key, 0));
+                sb.Append(" ] = ");
+                sb.Append(PrintToString(dictionaryItem.Value, 0));
+                sb.Append(",");
+            }
+
+            sb.Remove(sb.Length - 1, 1);
+
+            return sb.ToString();
+        }
     }
 }

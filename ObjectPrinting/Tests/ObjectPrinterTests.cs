@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using FluentAssertions;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -21,8 +22,18 @@ namespace ObjectPrinting.Tests
         {
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            var expectedSting = $"Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tSurname = Foster\r\n\tName = Alex\r\n\tAge = 19\r\n\tHeight = 180\r\n\tWeight = 83,65\r\n\tCar = null\r\n";
-
+            var expectedSting = $"Person\r\n" +
+                $"\tId = 00000000-0000-0000-0000-000000000000\r\n" +
+                $"\tSurname = Foster\r\n" +
+                $"\tName = Alex\r\n" +
+                $"\tAge = 19\r\n" +
+                $"\tHeight = 180\r\n" +
+                $"\tWeight = 83,65\r\n" +
+                $"\tCar = null\r\n" +
+                $"\tVisitedCountries = null\r\n" +
+                $"\tCitizenships = null\r\n" +
+                $"\tIncomeTaxByYear = null\r\n";
+          
             expectedSting.Should().Be(actualString);
         }
 
@@ -141,6 +152,41 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
 
             actualString.Should().Contain("\tSurname = FOST\r\n").And.Contain("\tName = ALEX\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsListSimpleTypeProperty()
+        {
+            person.VisitedCountries = new List<string>() { "Cyprus", "Austria", "Hungary" };
+
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            actualString.Should().Contain("\tVisitedCountries = [ Cyprus, Austria, Hungary ]\r\n");
+        } 
+
+        [Test]
+        public void PrintToString_PrintsArraySimpleTypeProperty()
+        {
+            person.Citizenships = new string[] { "Russia", "Israel" };
+
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            actualString.Should().Contain("\tCitizenships = [ Russia, Israel ]\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsDictionarySimpleTypeProperty()
+        {
+            person.IncomeTaxByYear = new Dictionary<int, int>
+            {
+                {2019, 111111 },
+                {2020, 222222 },
+                {2021, 333333 },
+            };
+
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            actualString.Should().Contain("\tIncomeTaxByYear = \n\t\t[ 2019 ] = 111111,\n\t\t[ 2020 ] = 222222,\n\t\t[ 2021 ] = 333333\r\n");
         }
 
     }
