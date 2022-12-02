@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinter;
@@ -9,6 +10,8 @@ namespace ObjectPrinterTests;
 [TestFixture]
 public class ObjectPrinterTests
 {
+	private static string NewLine => Environment.NewLine;
+
 	[Test]
 	public void Excluding_Types_ShouldNotPrinting()
 	{
@@ -171,6 +174,36 @@ public class ObjectPrinterTests
 	}
 
 	[Test]
+	public void PrintToString_CanPrintList()
+	{
+		var numbers = new List<int> { 1, 2, 3, 4, 5, 6 };
+
+		var result = numbers.PrintToString();
+
+		result.Should().Be($"(1, 2, 3, 4, 5, 6){NewLine}");
+	}
+
+	[TestCase(new int[] { }, "[]")]
+	[TestCase(new[] { 1, 2, 3, 4 }, "[1, 2, 3, 4]")]
+	public void PrintToString_CanPrintArray(Array array, string expected)
+	{
+		var result = array.PrintToString();
+
+		result.Should().Be($"{expected}{NewLine}");
+	}
+
+	[Test]
+	public void PrintToString_CanPrintDictionary()
+	{
+		var numbers = new Dictionary<int, string> { { 1, "a" }, { 2, "b" } };
+
+		var result = numbers.PrintToString();
+
+		result.Should().Be($"{{{NewLine}\t1 : a{NewLine}\t2 : b{NewLine}}}{NewLine}");
+	}
+
+
+	[Test]
 	public void AcceptanceTests()
 	{
 		var person = new Person { Name = "Alex", Age = 19, Height = 179.2, Id = new Guid() };
@@ -206,6 +239,7 @@ public class ObjectPrinterTests
 	{
 		public static int MaxAge = int.MaxValue;
 		public string LastName;
+
 		public static int MinAge => 0;
 
 		public Guid Id { get; set; }
