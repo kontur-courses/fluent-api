@@ -1,9 +1,9 @@
 ﻿LibraryRecords
-	ActiveUsers = Empty
+	ActiveUsers = Empty_Collection
 	ReadersVisits = [
 		KeyValuePair`2
 			Value = 01.01.0001 0:00:00,
 		KeyValuePair`2
 			Value = 03.03.0003 0:00:00
 		]
-	BooksCollection = Empty
+	BooksCollection = Collection_Of_ExcludedType

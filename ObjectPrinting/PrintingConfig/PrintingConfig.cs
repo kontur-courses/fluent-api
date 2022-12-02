@@ -140,11 +140,14 @@ namespace ObjectPrinting.PrintingConfig
             string tail)
         {
             IEnumerator enumerator = obj.GetEnumerator();
-            if (!enumerator.MoveNext() ||
-            TypeDefaultConfigs.ContainsKey(enumerator.Current.GetType()) &&
+            if (!enumerator.MoveNext())
+            {
+                return "Empty_Collection" + Environment.NewLine;
+            }
+            if(TypeDefaultConfigs.ContainsKey(enumerator.Current.GetType()) &&
             TypeDefaultConfigs[enumerator.Current.GetType()].IsExcluded)
             {
-                return "Empty" + Environment.NewLine;
+                return "Collection_Of_ExcludedType" + Environment.NewLine;
             }
                 
             var sb = new StringBuilder();

@@ -62,7 +62,7 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
-        public void Print_ShouldSerializeAsEmpty_EmptyIEnumerable_Or_WithExcludedType()
+        public void Print_ShouldSerializeCorrectly_EmptyCollection_And_CollectionOfExcludedType()
         {
             var r = new LibraryRecords()
             {

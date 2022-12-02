@@ -50,7 +50,7 @@
     <None Update="Tests\ObjectPrinterIEnumerableTests.ExcludeType_ShouldExclude_CollectionsElements.approved.txt">
       <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
     </None>
-    <None Update="Tests\ObjectPrinterIEnumerableTests.Print_ShouldSerializeAsEmpty_EmptyIEnumerable_Or_WithExcludedType.approved.txt">
+    <None Update="Tests\ObjectPrinterIEnumerableTests.Print_ShouldSerializeCorrectly_EmptyCollection_And_CollectionOfExcludedType.approved.txt">
       <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
     </None>
   </ItemGroup>
