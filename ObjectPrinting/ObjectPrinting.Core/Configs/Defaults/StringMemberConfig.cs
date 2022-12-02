@@ -9,7 +9,8 @@ namespace ObjectPrinting.Core.Configs.Defaults
 
         public StringMemberConfig<TOwner> WithTrimLength(int length)
         {
-            throw new NotImplementedException();
+            Container.TrimEnd(Member, length);
+            return this;
         }
     }
 }

@@ -11,12 +11,13 @@
 
         public void Exclude()
         {
-            throw new NotImplementedException();
+            Container.Exclude<T>();
         }
 
         public BasicTypeConfig<T, TOwner> WithSerializer(Func<T, string> serializer)
         {
-            throw new NotImplementedException();
+            Container.WithSerializer(serializer);
+            return this;
         }
     }
 }

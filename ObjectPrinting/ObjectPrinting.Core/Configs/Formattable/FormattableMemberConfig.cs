@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Globalization;
 using ObjectPrinting.Core.Configs.Basics;
+using System.Diagnostics.Metrics;
 
 
 namespace ObjectPrinting.Core.Configs.Formattable
@@ -11,7 +12,8 @@ namespace ObjectPrinting.Core.Configs.Formattable
 
         public FormattableMemberConfig<T, TOwner> WithCulture(CultureInfo cultureInfo)
         {
-            throw new NotImplementedException();
+            Container.WithCulture(Member, cultureInfo);
+            return this;
         }
     }
 }

@@ -9,7 +9,8 @@ namespace ObjectPrinting.Core.Configs.Formattable
 
         public FormattableTypeConfig<T, TOwner> WithCulture(CultureInfo cultureInfo)
         {
-            throw new NotImplementedException();
+            Container.WithCulture<T>(cultureInfo);
+            return this;
         }
     }
 }
