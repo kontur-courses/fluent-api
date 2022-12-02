@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ObjectPrinting
@@ -11,6 +13,8 @@ namespace ObjectPrinting
     {
         private readonly Dictionary<string, PropertySetting<TOwner>> propertiesOptions
             = new Dictionary<string, PropertySetting<TOwner>>();
+        private readonly Dictionary<string, StringSetting<TOwner>> stringOptions
+            = new Dictionary<string, StringSetting<TOwner>>();
 
         private readonly Dictionary<Type, Func<object, string>> optionsTypes
             = new Dictionary<Type, Func<object, string>>();
@@ -18,29 +22,15 @@ namespace ObjectPrinting
         private readonly List<Type> exceptTypes
             = new List<Type>();
 
-        private int stringMaxSize = -1;
-
         private Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float),
+            typeof(int), typeof(double), typeof(float), typeof(bool),
             typeof(DateTime), typeof(TimeSpan)
         };
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
-        }
-
-        public ISerializer<TOwner> SetStringMaxSize(int length)
-        {
-            stringMaxSize = length;
-            return this;
-        }
-
-        public ISerializer<TOwner> SetupDefaultStringSize()
-        {
-            stringMaxSize = -1;
-            return this;
         }
 
         public PropertySetting<TOwner> SelectProperty<P>(Expression<Func<TOwner, P>> properties)
@@ -51,7 +41,15 @@ namespace ObjectPrinting
 
             return propertySetting;
         }
+        public StringSetting<TOwner> SelectProperty(Expression<Func<TOwner, string>> properties)
+        {
+            var memberExpression = (MemberExpression)properties.Body;
+            var stringSetting = new StringSetting<TOwner>(this);
+            stringOptions[memberExpression.Member.Name] = stringSetting;
+            propertiesOptions[memberExpression.Member.Name] = stringSetting;
 
+            return stringSetting;
+        }
         public ISerializer<TOwner> ChangeTypeOutput<T2>(Func<object, string> method)
         {
             var type = typeof(T2);
@@ -60,28 +58,42 @@ namespace ObjectPrinting
             return this;
         }
 
-        public ISerializer<TOwner> ExceptType<T2>()
+        public ISerializer<TOwner> Except<T2>()
         {
             var type = typeof(T2);
             exceptTypes.Add(type);
 
             return this;
         }
+        public PrintingConfig<TOwner> Except<P>(Expression<Func<TOwner, P>> properties)
+        {
+            var memberExpression = (MemberExpression)properties.Body;
+            var propertySetting = new PropertySetting<TOwner>(this, true);
+            propertiesOptions[memberExpression.Member.Name] = propertySetting;
 
+            return this;
+        }
         private string PrintToString(object obj, int nestingLevel, string name = "")
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-            if (finalTypes.Contains(obj.GetType()) || obj is string && stringMaxSize < 0 || nestingLevel > 1000)
+            if (finalTypes.Contains(obj.GetType()) || nestingLevel > 1000)
             {
+                CultureInfo cultureInfo = CultureInfo.CurrentCulture;
                 if (propertiesOptions.ContainsKey(name))
-                    return String.Format(propertiesOptions[name].Culture, "{0}", obj) + Environment.NewLine;
-                else
-                    return obj + Environment.NewLine;
+                    cultureInfo = propertiesOptions[name].Culture;
+                return String.Format(cultureInfo, "{0}", obj) + Environment.NewLine;
             }
 
             if (obj is string)
-                return ((string)obj).Substring(0, stringMaxSize) + "\r\n";
+            {
+                int maxLength = -1;
+                if (stringOptions.ContainsKey(name))
+                    maxLength = stringOptions[name].MaxLength;
+                if(maxLength < 0)
+                    return obj + Environment.NewLine;
+                return ((string)obj).Substring(0, maxLength) + Environment.NewLine;
+            }
 
             var sb = new StringBuilder();
             var type = obj.GetType();

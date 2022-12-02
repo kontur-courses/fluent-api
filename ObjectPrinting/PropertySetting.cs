@@ -5,34 +5,28 @@ namespace ObjectPrinting
 {
     public class PropertySetting<T>
     {
-        public bool IsExcept { private set; get; }
-        public Func<object, string> OutputMethod { private set; get; }
-        private readonly PrintingConfig<T> config;
-        public CultureInfo Culture { get; set; }
-        public PropertySetting(PrintingConfig<T> config)
+        protected internal bool IsExcept { get; }
+        protected internal Func<object, string> OutputMethod { protected set; get; }
+        protected PrintingConfig<T> Config { get; private set; }
+        protected internal CultureInfo Culture { get; protected set; }
+        public PropertySetting(PrintingConfig<T> config, bool isExcept = false)
         {
-            IsExcept = false;
+            IsExcept = isExcept;
             OutputMethod = null;
-            this.config = config;
+            this.Config = config;
             Culture = CultureInfo.CurrentCulture;
-        }
-
-        public PrintingConfig<T> Except()
-        {
-            IsExcept = true;
-            return config;
         }
 
         public PrintingConfig<T> ChangeOutput(Func<object, string> func)
         {
             OutputMethod = func;
-            return config;
+            return Config;
         }
 
         public PrintingConfig<T> ChangeCulture(CultureInfo culture)
         {
             Culture = culture;
-            return config;
+            return Config;
         }
     }
 }
