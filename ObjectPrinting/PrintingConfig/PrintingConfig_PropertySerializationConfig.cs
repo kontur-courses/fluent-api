@@ -21,7 +21,6 @@ namespace ObjectPrinting.PrintingConfig
 
         private PropertySerializationConfig GetConfig<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
-            CheckExpression(propertyExpression);
             var name = GetFullName(propertyExpression);
             if (!AlternativeSerializationMethodConfigs.ContainsKey(name))
                 AlternativeSerializationMethodConfigs.Add(name, new PropertySerializationConfig());
@@ -31,10 +30,8 @@ namespace ObjectPrinting.PrintingConfig
         internal void SetSerializeMethodForProperty<T>(Expression<Func<TOwner, T>> propertyExpression,
             Func<T, string> newMethod)
         {
-            CheckExpression(propertyExpression);
             GetConfig(propertyExpression).SetNewSerializeMethod(newMethod);
         }
-
         private class PropertySerializationConfig
         {
             private Func<object, string> AlternativeSerializationMethod;

@@ -155,6 +155,7 @@ namespace ObjectPrinting.PrintingConfig
             var newLineLength = Environment.NewLine.Length;
             sb.Append('[');
             sb.AppendLine();
+            var elementName = tail + ".element";
             foreach (var var in obj)
             {
                 var type = var.GetType();
@@ -163,7 +164,7 @@ namespace ObjectPrinting.PrintingConfig
 
                 sb.Append(identation);
                 sb.Append(PrintToString(var,
-                    nestingLevel + 1, parentObjects, tail + "."));
+                    nestingLevel + 1, parentObjects, elementName));
 
                 sb.Remove(sb.Length - newLineLength, newLineLength);
 
@@ -211,6 +212,7 @@ namespace ObjectPrinting.PrintingConfig
 
         public PrintingConfig<TOwner> ExcludeProperty<T>(Expression<Func<TOwner, T>> propertyExpression)
         {
+            CheckExpression(propertyExpression);
             GetConfig(propertyExpression).IsExcluded = true;
             return this;
         }
