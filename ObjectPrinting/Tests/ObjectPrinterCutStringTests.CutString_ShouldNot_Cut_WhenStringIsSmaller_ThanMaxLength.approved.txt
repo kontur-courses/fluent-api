@@ -1,6 +1,5 @@
 ﻿Person
-	Id = Guid
-		Empty = !Cyclic_Reference!
+	Id = 00000000-0000-0000-0000-000000000000
 	Name = Al
 	Height = 0
 	Weight = 0

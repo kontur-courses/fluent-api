@@ -15,7 +15,7 @@ namespace ObjectPrinting.PrintingConfig
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         private CultureInfo DefaultCulture;

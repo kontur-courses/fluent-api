@@ -1,6 +1,5 @@
 ﻿Person
-	Id = Guid
-		Empty = !Cyclic_Reference!
+	Id = 00000000-0000-0000-0000-000000000000
 	Name = Alex
 	Height = 35,5
 	Weight = 83,3
@@ -9,7 +8,7 @@
 	Age = 0
 	RunSpeed = 0
 	Parent = Person
-		Id = !Cyclic_Reference!
+		Id = 00000000-0000-0000-0000-000000000000
 		Name = Masha
 		Height = 53
 		Weight = 53
