@@ -91,7 +91,6 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -100,33 +99,29 @@ namespace ObjectPrinting
 
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (_excludedTypes.Contains(propertyInfo.PropertyType))
+                if (_excludedTypes.Contains(propertyInfo.PropertyType) || _excludedMembers.Contains(propertyInfo))
                     continue;
-
-                if (_excludedMembers.Contains(propertyInfo))
-                    continue;
-
-                if (_typeSerializers.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " + _typeSerializers[propertyInfo.PropertyType]
-                        .PrintObject(propertyInfo.GetValue(obj)));
-                    continue;
-                }
-
-                if (_memberSerializers.ContainsKey(propertyInfo))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              _memberSerializers[propertyInfo].PrintObject(propertyInfo.GetValue(obj)));
-                    continue;
-                }
 
                 var val = propertyInfo.GetValue(obj);
-                if (!propertyInfo.PropertyType.IsClass)
-                    val = val?.ToString();
-                
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(val,
-                              nestingLevel + 1));
+                if (_typeSerializers.ContainsKey(propertyInfo.PropertyType))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              _typeSerializers[propertyInfo.PropertyType].PrintObject(val) + '\n');
+                }
+                else if (_memberSerializers.ContainsKey(propertyInfo))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              _memberSerializers[propertyInfo].PrintObject(val) + '\n');
+                }
+                else
+                {
+                    if (!propertyInfo.PropertyType.IsClass)
+                        val = val?.ToString();
+
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(val,
+                                  nestingLevel + 1));
+                }
             }
 
             return sb.ToString();

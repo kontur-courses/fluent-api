@@ -34,7 +34,7 @@ namespace ObjectPrinting.Tests
                 .With<int>(_ => "Num serialized");
 
             var expected =
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165,5\r\n\tAge = Num serialized\tFather = null\r\n\tSon = null\r\n";
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165,5\r\n\tAge = Num serialized\n\tFather = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
         }
 
@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
                 .ForMember(p => p.Age)
                 .SetSerialization(age => (age + 10).ToString());
             var expected =
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165,5\r\n\tAge = 29\tFather = null\r\n\tSon = null\r\n";
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165,5\r\n\tAge = 29\n\tFather = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
         }
 
@@ -71,7 +71,7 @@ namespace ObjectPrinting.Tests
                 .Excluding(p => p.Height)
                 .ForMember(p => p.Age).SetSerialization(age => (age + 42).ToString());
             var expected =
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 61\tFather = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Jack\r\n\t\tAge = 87\t\tFather = null\r\n\t\tSon = null\r\n\tSon = null\r\n";
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 61\n\tFather = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Jack\r\n\t\tAge = 87\n\t\tFather = null\r\n\t\tSon = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
         }
 
@@ -83,7 +83,7 @@ namespace ObjectPrinting.Tests
 
 
             var expected =
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165.5\tAge = 19\r\n\tFather = null\r\n\tSon = null\r\n";
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 165.5\n\tAge = 19\r\n\tFather = null\r\n\tSon = null\r\n";
             printer.PrintToString(_person).Should().Be(expected);
         }
 
@@ -94,7 +94,7 @@ namespace ObjectPrinting.Tests
                 .With<string>().SetMaxStringLength(1);
 
             var expected =
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = A\tHeight = 165,5\r\n\tAge = 19\r\n\tFather = null\r\n\tSon = null\r\n";
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = A\n\tHeight = 165,5\r\n\tAge = 19\r\n\tFather = null\r\n\tSon = null\r\n";
             var a = printer.PrintToString(_person);
             printer.PrintToString(_person).Should().Be(expected);
         }
