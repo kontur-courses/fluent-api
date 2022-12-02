@@ -2,7 +2,7 @@
 
 public class For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type
 {
-    public double Field = TestingConstants.TestDoubleValue;
+    public float Field = TestingConstants.TestFloatValue;
 
     public double Property { get; set; } = TestingConstants.TestDoubleValue;
 }

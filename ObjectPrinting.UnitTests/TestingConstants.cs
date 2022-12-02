@@ -8,4 +8,6 @@ public class TestingConstants
 
     public const string LongTestStringValue =
         "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+    public static float TestFloatValue { get; set; } = 1234.1234f;
 }

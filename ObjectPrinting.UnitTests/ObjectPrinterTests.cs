@@ -36,22 +36,39 @@ public class ObjectPrinterTests
 ");
     }
 
-    [Test(Description = "minimal requirements p 3")]
+    [Test(Description = "minimal requirements p 3.1")]
+    public void For_Serialize_FieldOrPropertyThatIsNumber()
+    {
+        var tempCultureInfo = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ru-ru");
+        var input = new For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type();
+        var printingConfig = ObjectPrinter.For<For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type>()
+            .Printing<double>()
+            .Using(CultureInfo.GetCultureInfo("en-us"));
+
+        var actual = printingConfig.PrintToString(input);
+
+        actual.Should().Be($@"{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type)}
+	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Property)} = {TestingConstants.TestDoubleValue.ToString(null, CultureInfo.GetCultureInfo("en-us"))}
+	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Field)} = {TestingConstants.TestFloatValue}
+");
+        CultureInfo.CurrentCulture = tempCultureInfo;
+    }
+
+    [Test(Description = "minimal requirements p 3.2")]
     public void For_Serialize_FieldOrPropertyThatImplementsIFormattable()
     {
         var tempCultureInfo = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ru-ru");
         var input = new For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type();
         var printingConfig = ObjectPrinter.For<For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type>()
-            .SpecifyCulture(CultureInfo.GetCultureInfo("en-us"));
-        var expectedTestDoubleValue =
-            TestingConstants.TestDoubleValue.ToString(null, CultureInfo.GetCultureInfo("en-us"));
+            .Using(CultureInfo.GetCultureInfo("en-us"));
 
         var actual = printingConfig.PrintToString(input);
 
         actual.Should().Be($@"{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type)}
-	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Property)} = {expectedTestDoubleValue}
-	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Field)} = {expectedTestDoubleValue}
+	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Property)} = {TestingConstants.TestDoubleValue.ToString(null, CultureInfo.GetCultureInfo("en-us"))}
+	{nameof(For_Serialize_FieldOrPropertyThatImplementsIFormattable_Type.Field)} = {TestingConstants.TestFloatValue.ToString(null, CultureInfo.GetCultureInfo("en-us"))}
 ");
         CultureInfo.CurrentCulture = tempCultureInfo;
     }
