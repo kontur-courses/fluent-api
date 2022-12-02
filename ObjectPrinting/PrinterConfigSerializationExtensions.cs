@@ -5,19 +5,17 @@ namespace ObjectPrinting
 {
     public static class PrinterConfigSerializationExtensions
     {
-        public static PrinterConfigSerialization<TOwner, TSer> SetCulture<TOwner, TSer>(
-            this PrinterConfigSerialization<TOwner, TSer> config, CultureInfo cultureInfo)
-            where TSer : IFormattable
+        public static PrintingConfig<TOwner> SetCulture<TOwner, TSerialization>(
+            this PrinterConfigSerialization<TOwner, TSerialization> config, CultureInfo cultureInfo)
+            where TSerialization : IFormattable
         {
-            config.SetSerialization(x => x.ToString(null, cultureInfo));
-            return config;
+            return config.SetSerialization(x => x.ToString(null, cultureInfo));
         }
 
-        public static PrinterConfigSerialization<TOwner, string> SetMaxStringLength<TOwner>(
+        public static PrintingConfig<TOwner> SetMaxStringLength<TOwner>(
             this PrinterConfigSerialization<TOwner, string> config, int maxLength)
         {
-            config.SetSerialization(x => x[..maxLength]);
-            return config;
+            return config.SetSerialization(x => x[..maxLength]);
         }
     }
 }
