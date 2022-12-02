@@ -10,5 +10,7 @@ namespace ObjectPrinting.Tests
         public int Age { get; set; }
 
         public Person Father { get; set; }
+
+        public Person Son { get; set; }
     }
 }

@@ -23,11 +23,18 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> With<TSer>(Func<TSer, string> serializer)
+        public PrinterConfigSerialization<TOwner, TSerializator> With<TSerializator>()
         {
-            var typeSerializationConfig = new PrinterConfigSerialization<TOwner, TSer>(this);
+            var typeSerializationConfig = new PrinterConfigSerialization<TOwner, TSerializator>(this);
+            _typeSerializers[typeof(TSerializator)] = typeSerializationConfig;
+            return typeSerializationConfig;
+        }
+
+        public PrintingConfig<TOwner> With<TSerializator>(Func<TSerializator, string> serializer)
+        {
+            var typeSerializationConfig = new PrinterConfigSerialization<TOwner, TSerializator>(this);
             typeSerializationConfig.SetSerialization(serializer);
-            _typeSerializers[typeof(TSer)] = typeSerializationConfig;
+            _typeSerializers[typeof(TSerializator)] = typeSerializationConfig;
             return this;
         }
 
@@ -66,24 +73,31 @@ namespace ObjectPrinting
             return members;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, int recursionLimit = 50)
         {
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            if (nestingLevel >= recursionLimit)
+                return "";
 
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
+
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (_excludedTypes.Contains(propertyInfo.PropertyType))
@@ -106,9 +120,12 @@ namespace ObjectPrinting
                     continue;
                 }
 
-                sb.Append(identation + propertyInfo.Name + " = " +
+
+                var val = identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                              nestingLevel + 1);
+
+                sb.Append(val);
             }
 
             return sb.ToString();

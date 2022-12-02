@@ -2,22 +2,24 @@
 
 namespace ObjectPrinting
 {
-    public class PrinterConfigSerialization<TOwner, TSer> : IPrintingConfig
+    public class PrinterConfigSerialization<TOwner, TSerializator> : IPrintingConfig
     {
         private readonly PrintingConfig<TOwner> _parent;
-        private Func<TSer, string> _serializer;
+        private Func<TSerializator, string> _serializer;
 
         public PrinterConfigSerialization(PrintingConfig<TOwner> parent)
         {
             _parent = parent;
         }
 
+
         public string PrintObject(object obj)
         {
-            return _serializer((TSer)obj);
+            return _serializer((TSerializator)obj);
         }
 
-        public PrinterConfigSerialization<TOwner, TSer> SetSerialization(Func<TSer, string> serializer)
+        public PrinterConfigSerialization<TOwner, TSerializator> SetSerialization(
+            Func<TSerializator, string> serializer)
         {
             _serializer = serializer;
             return this;
