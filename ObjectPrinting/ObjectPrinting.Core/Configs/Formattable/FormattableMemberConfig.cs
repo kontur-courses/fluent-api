@@ -1,0 +1,17 @@
+﻿using System.Reflection;
+using System.Globalization;
+using ObjectPrinting.Core.Configs.Basics;
+
+
+namespace ObjectPrinting.Core.Configs.Formattable
+{
+    public class FormattableMemberConfig<T, TOwner> : BasicMemberConfig<T, TOwner> where T : IFormattable
+    {
+        internal FormattableMemberConfig(PrintingConfig<TOwner> container, MemberInfo member) : base(container, member) { }
+
+        public FormattableMemberConfig<T, TOwner> WithCulture(CultureInfo cultureInfo)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
