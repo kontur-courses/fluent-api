@@ -1,5 +1,7 @@
 ﻿Person
-	Name = Alex
+	Id = Guid
+		Empty = !Cyclic_Reference!
+	Name = Al
 	Height = 0
 	Weight = 0
 	Birthday = 01.01.0001 0:00:00

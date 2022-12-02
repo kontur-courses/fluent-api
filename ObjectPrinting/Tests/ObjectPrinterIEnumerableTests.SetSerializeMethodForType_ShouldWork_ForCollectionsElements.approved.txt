@@ -1,21 +1,21 @@
 ﻿LibraryRecords
 	ActiveUsers = [
-		Alex,
-		Mary,
-		Stan
+		Alex123,
+		Mary123,
+		Stan123
 		]
 	ReadersVisits = [
 		KeyValuePair`2
-			Key = Alex
+			Key = Alex123
 			Value = 01.01.0001 0:00:00,
 		KeyValuePair`2
-			Key = Winona
+			Key = Winona123
 			Value = 03.03.0003 0:00:00
 		]
 	BooksCollection = [
-		A,
-		B,
-		C,
-		D,
-		E
+		A123,
+		B123,
+		C123,
+		D123,
+		E123
 		]

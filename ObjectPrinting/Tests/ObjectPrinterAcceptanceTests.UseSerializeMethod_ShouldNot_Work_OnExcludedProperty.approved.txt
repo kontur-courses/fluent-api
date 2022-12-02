@@ -1,10 +1,10 @@
 ﻿Person
-	Id = 00000000-0000-0000-0000-000000000000
+	Id = Guid
+		Empty = !Cyclic_Reference!
 	Name = Alex
-	Height = 35,5
-	Weight = 83,3
+	Height = 0
+	Weight = 0
 	Birthday = 01.01.0001 0:00:00
 	RunRatio = 0
-	Age = 0
 	RunSpeed = 0
 	Parent = null

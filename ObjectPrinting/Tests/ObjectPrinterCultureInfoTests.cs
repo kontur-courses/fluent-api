@@ -13,63 +13,47 @@ namespace ObjectPrinting.Tests
         [Test]
         public void SetCulture_Should_ChangeFormat()
         {
-            var operation = new Operation
-            {
-                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
-                OperationDate = new DateTime(1994, 5, 3)
-            };
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
             var cultureInfo = new CultureInfo("ru");
-            var printer = ObjectPrinter.For<Operation>()
+            var printer = ObjectPrinter.For<Person>()
                 .SetCulture(cultureInfo);
-            Approvals.Verify(printer.PrintToString(operation));
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void SetCulture_Should_OverridePreviousSetCulture()
         {
-            var operation = new Operation
-            {
-                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
-                OperationDate = new DateTime(1994, 5, 3)
-            };
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
             var cultureInfo1 = new CultureInfo("ru");
             var cultureInfo2 = new CultureInfo("en");
-            var printer = ObjectPrinter.For<Operation>()
+            var printer = ObjectPrinter.For<Person>()
                 .SetCulture(cultureInfo1)
                 .SetCulture(cultureInfo2);
-            Approvals.Verify(printer.PrintToString(operation));
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void SetCulture_ShouldNot_OverridePreviousMethod()
         {
-            var operation = new Operation
-            {
-                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
-                OperationDate = new DateTime(1994, 5, 3)
-            };
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
             var cultureInfo = new CultureInfo("ru");
-            var printer = ObjectPrinter.For<Operation>()
-                .ConfigForProperty(op => op.Operator1)
-                .UseSerializeMethod(f => "123")
+            var printer = ObjectPrinter.For<Person>()
+                .ConfigForProperty(p => p.Height)
+                .UseSerializeMethod(f => "123haha")
                 .SetCulture(cultureInfo);
-            Approvals.Verify(printer.PrintToString(operation));
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void UseSerializeMethod_Should_OverridePreviousSetCulture()
         {
-            var operation = new Operation
-            {
-                Operator1 = 0.1f, Operator2 = 0.2f, Operator3 = 0.3f, Operator4 = 0.4, Operator5 = 0.5, Operator6 = 0.6,
-                OperationDate = new DateTime(1994, 5, 3)
-            };
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
             var cultureInfo = new CultureInfo("ru");
-            var printer = ObjectPrinter.For<Operation>()
+            var printer = ObjectPrinter.For<Person>()
                 .SetCulture(cultureInfo)
-                .ConfigForProperty(op => op.Operator1)
-                .UseSerializeMethod(f => "123");
-            Approvals.Verify(printer.PrintToString(operation));
+                .ConfigForProperty(p => p.Height)
+                .UseSerializeMethod(f => "123haha");
+            Approvals.Verify(printer.PrintToString(p));
         }
     }
 }

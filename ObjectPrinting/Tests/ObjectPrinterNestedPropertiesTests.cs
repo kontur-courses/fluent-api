@@ -13,67 +13,56 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Print_Should_SerializeNestedProperties()
         {
-            var no = new NestedObjectOne
-            {
-                Date = new DateTime(1, 1, 1),
-                Name = "Al",
-                Ref = new NestedObjectTwo {Birthday = new DateTime(2, 2, 2), Surname = "Fer"}
-            };
-            var printer = ObjectPrinter.For<NestedObjectOne>();
-            Approvals.Verify(printer.PrintToString(no));
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
+            var parent = new Person() {Name = "Masha", Height = 53, Weight = 53};
+            p.Parent = parent;
+            var printer = ObjectPrinter.For<Person>();
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void Print_ShouldNot_Serialize_ExcludedNestedProperties()
         {
-            var no = new NestedObjectOne
-            {
-                Date = new DateTime(1, 1, 1),
-                Name = "Al",
-                Ref = new NestedObjectTwo {Birthday = new DateTime(2, 2, 2), Surname = "Fer"}
-            };
-            var printer = ObjectPrinter.For<NestedObjectOne>()
-                .ExcludeProperty(s => s.Ref.Surname);
-            Approvals.Verify(printer.PrintToString(no));
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
+            var parent = new Person() {Name = "Masha", Height = 53, Weight = 53};
+            p.Parent = parent;
+            var printer = ObjectPrinter.For<Person>()
+                .ExcludeProperty(p => p.Parent.Age);
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void ExcludeType_Should_Exclude_OnEveryLevel()
         {
-            var no = new NestedObjectOne
-            {
-                Date = new DateTime(1, 1, 1),
-                Name = "Al",
-                Ref = new NestedObjectTwo {Birthday = new DateTime(2, 2, 2), Surname = "Fer"}
-            };
-            var printer = ObjectPrinter.For<NestedObjectOne>()
-                .ExcludeType<string>();
-            Approvals.Verify(printer.PrintToString(no));
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
+            var parent = new Person() {Name = "Masha", Height = 53, Weight = 53};
+            p.Parent = parent;
+            var printer = ObjectPrinter.For<Person>()
+                .ExcludeType<Guid>();
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void SetCulture_Should_Set_OnEveryLevel()
         {
-            var no = new NestedObjectOne
-            {
-                Date = new DateTime(1, 1, 1),
-                Name = "Al",
-                Ref = new NestedObjectTwo {Birthday = new DateTime(2, 2, 2), Surname = "Fer"}
-            };
-            var printer = ObjectPrinter.For<NestedObjectOne>()
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
+            var parent = new Person() {Name = "Masha", Height = 53, Weight = 53};
+            p.Parent = parent;
+            var printer = ObjectPrinter.For<Person>()
                 .SetCulture(new CultureInfo("ru"));
-            Approvals.Verify(printer.PrintToString(no));
+            Approvals.Verify(printer.PrintToString(p));
         }
 
         [Test]
         public void UseSerializeMethod_ShouldNot_Work_OnOtherLevels()
         {
-            var cyc = new CyclicReference {ID = 0};
-            cyc.Ref = new CyclicReference {ID = 1};
-            var printer = ObjectPrinter.For<CyclicReference>()
-                .ConfigForProperty(c => c.ID)
-                .UseSerializeMethod(i => "123");
-            Approvals.Verify(printer.PrintToString(cyc));
+            var p = new Person() {Name = "Alex", Height = 35.5, Weight = 83.3};
+            var parent = new Person() {Name = "Masha", Height = 53, Weight = 53};
+            p.Parent = parent;
+            var printer = ObjectPrinter.For<Person>()
+                .ConfigForProperty(p=>p.Age)
+                .UseSerializeMethod(i => "Old");
+            Approvals.Verify(printer.PrintToString(p));
         }
     }
 }

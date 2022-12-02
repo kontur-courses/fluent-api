@@ -14,84 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Tests\ObjectPrinterAcceptanceTests.Demo.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
-      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterAcceptanceTests.ExcludeProperty_Should_Exclude.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
-      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterAcceptanceTests.OverrideProperty_Should_DiscardPrevOverrideProperty.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
-      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterAcceptanceTests.OverrideProperty_Should_OverrideCorrectly.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
-      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterAcceptanceTests.OverrideProperty_ShouldNot_Work_OnExcludedProperty.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterAcceptanceTests</ParentFile>
-      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_Should_OverridePreviousSetCulture.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCultureInfoTests</ParentFile>
-      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCultureInfoTests.UseSerializeMethod_Should_OverridePreviousSetCulture.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCultureInfoTests</ParentFile>
-      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.CutString_Should_CutCorrectly_WhenStringIsLarge.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.CutString_Should_Override_PrevCutString.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.CutString_ShouldNot_Cut_WhenStringIsEqualToMaxLength.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.CutString_ShouldNot_Cut_WhenStringIsSmall.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.CutString_ShouldNot_Override_OtherSerializeMethod.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterCutStringTests.OverrideStringSerializeMethod_ShouldNot_Override_CutString.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterCutStringTests</ParentFile>
-      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterForTypeMethods.AlternateType_Should_Alternate.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterForTypeMethods</ParentFile>
-      <DependentUpon>ObjectPrinterForTypeMethods.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterForTypeMethods.ExcludeType_Should_Exclude.approved.txt">
-      <ParentExtension>.cs</ParentExtension>
-      <ParentFile>ObjectPrinterForTypeMethods</ParentFile>
-      <DependentUpon>ObjectPrinterForTypeMethods.cs</DependentUpon>
-    </None>
-    <None Update="Tests\ObjectPrinterNestedPropertiesTests.ExcludeType_Should_Exclude_OnEveryLevel.approved.txt">
-      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
-    </None>
     <None Update="Tests\ObjectPrinterNestedPropertiesTests.ExcludeType_Should_Exclude_OnEveryLevel.received.txt">
       <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
     </None>
@@ -101,11 +23,35 @@
     <None Update="Tests\ObjectPrinterNestedPropertiesTests.UseSerializeMethod_ShouldNot_Work_OnOtherLevels.received.txt">
       <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
     </None>
-    <None Update="Tests\ObjectPrinterIEnumerableTests.Print_Should_CorrectlyDisplayIEnumerables.approved.txt">
+    <None Update="Tests\ObjectPrinterAcceptanceTests.Print_ShouldSerialize_WhenCyclicReference.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.UseSerializeMethod_Should_DiscardPreviuosOne.received.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.UseSerializeMethod_Should_OverridePreviousOne.received.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterCutStringTests.CutString_Should_CutCorrectly_WhenStringIsLarger_ThanMaxLength.approved.txt">
+      <DependentUpon>ObjectPrinterCutStringTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_Should_ChangeFormat.approved.txt">
+      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterForTypeMethods.AlternateType_Should_Alternate.approved.txt">
+      <DependentUpon>ObjectPrinterForTypeMethods.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterNestedPropertiesTests.ExcludeType_Should_Exclude_OnEveryLevel.approved.txt">
+      <DependentUpon>ObjectPrinterNestedPropertiesTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.UseSerializeMethod_Should_DiscardPreviousOne.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterIEnumerableTests.ExcludeType_ShouldExclude_CollectionsElements.approved.txt">
       <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
     </None>
-    <None Update="Tests\ObjectPrinterCultureInfoTests.SetCulture_ShouldNot_OverridePreviousMethod.approved.txt">
-      <DependentUpon>ObjectPrinterCultureInfoTests.cs</DependentUpon>
+    <None Update="Tests\ObjectPrinterIEnumerableTests.Print_ShouldSerializeAsEmpty_EmptyIEnumerable_Or_WithExcludedType.approved.txt">
+      <DependentUpon>ObjectPrinterIEnumerableTests.cs</DependentUpon>
     </None>
   </ItemGroup>
 

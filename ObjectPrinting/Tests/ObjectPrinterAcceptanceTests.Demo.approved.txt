@@ -1,5 +1,14 @@
 ﻿Person
-	Id = Guid
-	Name = Alex
-	Height = 0
+	Name = Alexander, Captain Alexander
+	Birthday = 11.11.2011 0:00:00
+	RunRatio = 4
 	Age = 19
+	RunSpeed = 20
+	Parent = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Dude, Captain Dude
+		Birthday = 11.11.1990 0:00:00
+		RunRatio = 2
+		Age = Old
+		RunSpeed = 10
+		Parent = null

@@ -1,8 +1,10 @@
-﻿Operation
-	Operator1 = 123
-	Operator2 = 0,2
-	Operator3 = 0,3
-	Operator4 = 0,4
-	Operator5 = 0,5
-	Operator6 = 0,6
-	OperationDate = 03.05.1994 0:00:00
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 123haha
+	Weight = 83,3
+	Birthday = 01.01.0001 0:00:00
+	RunRatio = 0
+	Age = 0
+	RunSpeed = 0
+	Parent = null

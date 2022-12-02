@@ -1,5 +1,20 @@
-﻿CyclicReference
-	Ref = CyclicReference
-		Ref = null
-		ID = 1
-	ID = 123
+﻿Person
+	Id = Guid
+		Empty = !Cyclic_Reference!
+	Name = Alex
+	Height = 35,5
+	Weight = 83,3
+	Birthday = 01.01.0001 0:00:00
+	RunRatio = 0
+	Age = Old
+	RunSpeed = 0
+	Parent = Person
+		Id = !Cyclic_Reference!
+		Name = Masha
+		Height = 53
+		Weight = 53
+		Birthday = 01.01.0001 0:00:00
+		RunRatio = 0
+		Age = 0
+		RunSpeed = 0
+		Parent = null

@@ -1,21 +1,9 @@
 ﻿LibraryRecords
-	ActiveUsers = [
-		Alex,
-		Mary,
-		Stan
-		]
+	ActiveUsers = Empty
 	ReadersVisits = [
 		KeyValuePair`2
-			Key = Alex
 			Value = 01.01.0001 0:00:00,
 		KeyValuePair`2
-			Key = Winona
 			Value = 03.03.0003 0:00:00
 		]
-	BooksCollection = [
-		A,
-		B,
-		C,
-		D,
-		E
-		]
+	BooksCollection = Empty

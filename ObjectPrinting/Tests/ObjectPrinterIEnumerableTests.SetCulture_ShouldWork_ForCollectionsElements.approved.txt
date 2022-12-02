@@ -7,10 +7,10 @@
 	ReadersVisits = [
 		KeyValuePair`2
 			Key = Alex
-			Value = 01.01.0001 0:00:00,
+			Value = 1/1/0001 12:00:00 AM,
 		KeyValuePair`2
 			Key = Winona
-			Value = 03.03.0003 0:00:00
+			Value = 3/3/0003 12:00:00 AM
 		]
 	BooksCollection = [
 		A,

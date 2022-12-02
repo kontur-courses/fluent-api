@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -58,6 +59,16 @@ namespace ObjectPrinting.PrintingConfig
             var type = obj.GetType();
             if (tail != "") tail += '.';
             sb.AppendLine(type.Name);
+            sb.Append(PrintNestedProperties(obj, nestingLevel, parentObjects, tail));
+            sb.Append(PrintNestedFields(obj, nestingLevel, parentObjects, tail));
+            return sb.ToString();
+        }
+
+        private string PrintNestedProperties(object obj, int nestingLevel, List<object> parentObjects, string tail)
+        {
+            StringBuilder sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var type = obj.GetType();
             foreach (var propertyInfo in type.GetProperties())
             {
                 var name = tail + propertyInfo.Name;
@@ -75,6 +86,33 @@ namespace ObjectPrinting.PrintingConfig
                 sb.Append(PrintToString(value,
                     nestingLevel + 1, parentObjects, name));
                 parentObjects.Remove(parentObjects.Count - 1);
+            }
+
+            return sb.ToString();
+        }
+
+        private string PrintNestedFields(object obj, int nestingLevel, List<object> parentObjects, string tail)
+        {
+            StringBuilder sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            var type = obj.GetType();
+            foreach (var fieldInfo in type.GetFields())
+            {
+                var name = tail + fieldInfo.Name;
+                if ((AlternativeSerializationMethodConfigs.ContainsKey(name) &&
+                     AlternativeSerializationMethodConfigs[name].IsExcluded) ||
+                    (TypeDefaultConfigs.ContainsKey(fieldInfo.FieldType) &&
+                     TypeDefaultConfigs[fieldInfo.FieldType].IsExcluded)) continue;
+                
+                sb.Append(identation + fieldInfo.Name + " = ");
+                var value = fieldInfo.GetValue(obj);
+                if (fieldInfo.FieldType == typeof(string)) value = GetStringCut(value as string, name);
+
+                parentObjects.Add(obj);
+                sb.Append(PrintToString(value,
+                    nestingLevel + 1, parentObjects, name));
+                parentObjects.Remove(parentObjects.Count - 1);
+                
             }
 
             return sb.ToString();
@@ -101,6 +139,14 @@ namespace ObjectPrinting.PrintingConfig
         private string PrintIEnumerable(IEnumerable obj, int nestingLevel, List<object> parentObjects,
             string tail)
         {
+            IEnumerator enumerator = obj.GetEnumerator();
+            if (!enumerator.MoveNext() ||
+            TypeDefaultConfigs.ContainsKey(enumerator.Current.GetType()) &&
+            TypeDefaultConfigs[enumerator.Current.GetType()].IsExcluded)
+            {
+                return "Empty" + Environment.NewLine;
+            }
+                
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
             var newLineLength = Environment.NewLine.Length;
@@ -108,6 +154,10 @@ namespace ObjectPrinting.PrintingConfig
             sb.AppendLine();
             foreach (var var in obj)
             {
+                var type = var.GetType();
+                if (TypeDefaultConfigs.ContainsKey(type) && TypeDefaultConfigs[type].IsExcluded)
+                    continue;
+
                 sb.Append(identation);
                 sb.Append(PrintToString(var,
                     nestingLevel + 1, parentObjects, tail + "."));
@@ -118,6 +168,8 @@ namespace ObjectPrinting.PrintingConfig
                 sb.AppendLine();
             }
 
+            sb.Remove(sb.Length - newLineLength - 1, newLineLength + 1);
+            sb.AppendLine();
             sb.Append(identation);
             sb.AppendLine("]");
             return sb.ToString();

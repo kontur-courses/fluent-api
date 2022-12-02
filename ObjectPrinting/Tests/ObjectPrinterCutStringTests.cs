@@ -9,7 +9,7 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterCutStringTests
     {
         [Test]
-        public void CutString_Should_CutCorrectly_WhenStringIsLarge()
+        public void CutString_Should_CutCorrectly_WhenStringIsLarger_ThanMaxLength()
         {
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()
@@ -19,7 +19,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void CutString_ShouldNot_Cut_WhenStringIsSmall()
+        public void CutString_ShouldNot_Cut_WhenStringIsSmaller_ThanMaxLength()
         {
             var person = new Person {Name = "Al", Age = 19};
             var printer = ObjectPrinter.For<Person>()
@@ -29,7 +29,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void CutString_ShouldNot_Cut_WhenStringIsEqualToMaxLength()
+        public void CutString_ShouldNot_Cut_WhenStringIsEqual_ToMaxLength()
         {
             var person = new Person {Name = "Alex", Age = 19};
             var printer = ObjectPrinter.For<Person>()
@@ -39,7 +39,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void CutString_ShouldNot_Override_OtherSerializeMethod()
+        public void CutString_Should_Work_And_ShouldNot_OverrideOtherSerializeMethod()
         {
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()
@@ -51,7 +51,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void OverrideStringSerializeMethod_ShouldNot_Override_CutString()
+        public void UseSerializeMethod_Should_Work_And_ShouldNot_OverrideCutString()
         {
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()
@@ -63,7 +63,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void CutString_Should_Override_PrevCutString()
+        public void CutString_Should_Override_PreviousCutString()
         {
             var person = new Person {Name = "Alexander", Age = 19};
             var printer = ObjectPrinter.For<Person>()

@@ -1,6 +1,19 @@
-﻿NestedObjectOne
-	Ref = NestedObjectTwo
-		Surname = Fer
-		Birthday = 02.02.0002 0:00:00
-	Name = Al
-	Date = 01.01.0001 0:00:00
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 35,5
+	Weight = 83,3
+	Birthday = 01.01.0001 0:00:00
+	RunRatio = 0
+	Age = 0
+	RunSpeed = 0
+	Parent = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Masha
+		Height = 53
+		Weight = 53
+		Birthday = 01.01.0001 0:00:00
+		RunRatio = 0
+		Age = 0
+		RunSpeed = 0
+		Parent = null
