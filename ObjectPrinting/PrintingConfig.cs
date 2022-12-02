@@ -16,6 +16,12 @@ namespace ObjectPrinting
             new Dictionary<MemberInfo, IPrintingConfig>();
 
         private readonly Dictionary<Type, IPrintingConfig> _typeSerializers = new Dictionary<Type, IPrintingConfig>();
+        
+        private readonly Type[] _finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        };
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
@@ -82,13 +88,7 @@ namespace ObjectPrinting
             if (nestingLevel >= recursionLimit)
                 return "";
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
-            if (finalTypes.Contains(obj.GetType()))
+            if (_finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
@@ -102,29 +102,22 @@ namespace ObjectPrinting
                 if (_excludedTypes.Contains(propertyInfo.PropertyType) || _excludedMembers.Contains(propertyInfo))
                     continue;
 
-                var val = propertyInfo.GetValue(obj);
-                if (_typeSerializers.ContainsKey(propertyInfo.PropertyType))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              _typeSerializers[propertyInfo.PropertyType].PrintObject(val) + '\n');
-                }
-                else if (_memberSerializers.ContainsKey(propertyInfo))
-                {
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              _memberSerializers[propertyInfo].PrintObject(val) + '\n');
-                }
-                else
-                {
-                    if (!propertyInfo.PropertyType.IsClass)
-                        val = val?.ToString();
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(val,
-                                  nestingLevel + 1));
-                }
+                sb.Append(identation + propertyInfo.Name + " = " + GetPartToAppend(propertyInfo, obj, nestingLevel));
             }
 
             return sb.ToString();
+        }
+
+        private string GetPartToAppend(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            var val = propertyInfo.GetValue(obj);
+            if (_typeSerializers.ContainsKey(propertyInfo.PropertyType))
+                return _typeSerializers[propertyInfo.PropertyType].PrintObject(val) + '\n';
+
+            if (_memberSerializers.ContainsKey(propertyInfo))
+                return _memberSerializers[propertyInfo].PrintObject(val) + '\n';
+
+            return PrintToString(val,  nestingLevel + 1);
         }
     }
 }
