@@ -5,7 +5,7 @@ namespace ObjectPrinting.Tests
 {
     public class LibraryRecords
     {
-        public readonly string[] BooksCollection = new string[]
+        public readonly string[] BooksCollection =
         {
             "A",
             "B",

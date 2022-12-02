@@ -32,6 +32,7 @@ namespace ObjectPrinting.PrintingConfig
         {
             GetConfig(propertyExpression).SetNewSerializeMethod(newMethod);
         }
+
         private class PropertySerializationConfig
         {
             private Func<object, string> AlternativeSerializationMethod;

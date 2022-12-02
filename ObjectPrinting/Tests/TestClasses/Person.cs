@@ -4,6 +4,9 @@ namespace ObjectPrinting.Tests
 {
     public class Person
     {
+        public Person Parent;
+
+        private readonly float waklSpeed = 5;
         public Guid Id { get; set; }
         public string Name { get; set; }
         public double Height { get; set; }
@@ -12,9 +15,5 @@ namespace ObjectPrinting.Tests
         public float RunRatio { get; set; }
         public int Age { get; set; }
         public float RunSpeed => waklSpeed * RunRatio;
-
-        public Person Parent;
-        
-        private float waklSpeed = 5;
     }
 }

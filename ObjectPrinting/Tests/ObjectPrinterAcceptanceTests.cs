@@ -79,8 +79,8 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Print_ShouldSerialize_WhenCyclicReference()
         {
-            var p1 = new Person() {Name = "Alex"};
-            var p2 = new Person() {Name = "Boris"};
+            var p1 = new Person {Name = "Alex"};
+            var p2 = new Person {Name = "Boris"};
             p1.Parent = p2;
             p2.Parent = p1;
 

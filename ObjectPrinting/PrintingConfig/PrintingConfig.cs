@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -66,7 +65,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private string PrintNestedProperties(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
             foreach (var propertyInfo in type.GetProperties())
@@ -93,7 +92,7 @@ namespace ObjectPrinting.PrintingConfig
 
         private string PrintNestedFields(object obj, int nestingLevel, List<object> parentObjects, string tail)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
             var type = obj.GetType();
             foreach (var fieldInfo in type.GetFields())
@@ -103,7 +102,7 @@ namespace ObjectPrinting.PrintingConfig
                      AlternativeSerializationMethodConfigs[name].IsExcluded) ||
                     (TypeDefaultConfigs.ContainsKey(fieldInfo.FieldType) &&
                      TypeDefaultConfigs[fieldInfo.FieldType].IsExcluded)) continue;
-                
+
                 sb.Append(identation + fieldInfo.Name + " = ");
                 var value = fieldInfo.GetValue(obj);
                 if (fieldInfo.FieldType == typeof(string)) value = GetStringCut(value as string, name);
@@ -112,7 +111,6 @@ namespace ObjectPrinting.PrintingConfig
                 sb.Append(PrintToString(value,
                     nestingLevel + 1, parentObjects, name));
                 parentObjects.Remove(parentObjects.Count - 1);
-                
             }
 
             return sb.ToString();
@@ -139,17 +137,12 @@ namespace ObjectPrinting.PrintingConfig
         private string PrintIEnumerable(IEnumerable obj, int nestingLevel, List<object> parentObjects,
             string tail)
         {
-            IEnumerator enumerator = obj.GetEnumerator();
-            if (!enumerator.MoveNext())
-            {
-                return "Empty_Collection" + Environment.NewLine;
-            }
-            if(TypeDefaultConfigs.ContainsKey(enumerator.Current.GetType()) &&
-            TypeDefaultConfigs[enumerator.Current.GetType()].IsExcluded)
-            {
+            var enumerator = obj.GetEnumerator();
+            if (!enumerator.MoveNext()) return "Empty_Collection" + Environment.NewLine;
+            if (TypeDefaultConfigs.ContainsKey(enumerator.Current.GetType()) &&
+                TypeDefaultConfigs[enumerator.Current.GetType()].IsExcluded)
                 return "Collection_Of_ExcludedType" + Environment.NewLine;
-            }
-                
+
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel + 1);
             var newLineLength = Environment.NewLine.Length;
