@@ -19,5 +19,9 @@ namespace ObjectPrinting.Tests
         public string[] Citizenships { get; set; }
 
         public Dictionary<int, int> IncomeTaxByYear { get; set; }
+
+        public List<Person> Children { get; set; }
+
+        public Dictionary<string, Person> Parents { get; set; }
     }
 }

@@ -106,7 +106,7 @@ namespace ObjectPrinting
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = ");
-           
+
                 if (HasPrintOption(propertyInfo))
                 {
                     var printedPropertyValue = PrintPropertyWithOptions(obj, propertyInfo);
@@ -117,7 +117,7 @@ namespace ObjectPrinting
 
                 sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1) + Environment.NewLine);
             }
-            return sb.ToString();   
+            return sb.ToString();
         }
 
         private bool IsFinalType(Type type)
@@ -184,19 +184,19 @@ namespace ObjectPrinting
 
             return (string)printedObject;
         }
-       
+
         private string PrintIListCollection(IList list, int nestingLevel)
         {
             var sb = new StringBuilder();
 
-            sb.Append("[ ");
+            var identation = new string('\t', nestingLevel + 1);
+
+            sb.Append("\n" + identation + "[ ");
 
             foreach (var item in list)
-                sb.Append(PrintToString(item, nestingLevel) + ", ");
+                sb.Append("\n" + identation + PrintToString(item, identation.Length + 1));
 
-            sb.Remove(sb.Length - 2, 2);
-
-            sb.Append(" ]");
+            sb.Append("\n" + identation + "]");
 
             return sb.ToString();
         }
@@ -212,13 +212,10 @@ namespace ObjectPrinting
                 var dictionaryItem = (DictionaryEntry)item;
 
                 sb.Append("\n" + identation + "[ ");
-                sb.Append(PrintToString(dictionaryItem.Key, 0));
+                sb.Append(PrintToString(dictionaryItem.Key, identation.Length));
                 sb.Append(" ] = ");
-                sb.Append(PrintToString(dictionaryItem.Value, 0));
-                sb.Append(",");
+                sb.Append(PrintToString(dictionaryItem.Value, identation.Length));
             }
-
-            sb.Remove(sb.Length - 1, 1);
 
             return sb.ToString();
         }

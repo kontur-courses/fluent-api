@@ -14,8 +14,9 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            person = new Person { Surname = "Foster", Name = "Alex", Age = 19, Height = 180, Weight = 83.65 };
+            person = new Person { Surname = "Foster", Name = "Alex", Age = 50, Height = 180, Weight = 83.65 };
         }
+
 
         [Test]
         public void PrintToString_PrintsDefaultString_WhenNoOptions()
@@ -26,14 +27,16 @@ namespace ObjectPrinting.Tests
                 $"\tId = 00000000-0000-0000-0000-000000000000\r\n" +
                 $"\tSurname = Foster\r\n" +
                 $"\tName = Alex\r\n" +
-                $"\tAge = 19\r\n" +
+                $"\tAge = 50\r\n" +
                 $"\tHeight = 180\r\n" +
                 $"\tWeight = 83,65\r\n" +
                 $"\tCar = null\r\n" +
                 $"\tVisitedCountries = null\r\n" +
                 $"\tCitizenships = null\r\n" +
-                $"\tIncomeTaxByYear = null\r\n";
-          
+                $"\tIncomeTaxByYear = null\r\n" +
+                $"\tChildren = null\r\n" +
+                $"\tParents = null\r\n";
+
             expectedSting.Should().Be(actualString);
         }
 
@@ -43,6 +46,8 @@ namespace ObjectPrinting.Tests
             var actualString = ObjectPrinter.For<Person>()
                .Excluding<Guid>()
                .PrintToString(person);
+
+            Console.WriteLine(actualString);
 
             actualString.Should().NotContain("Id");
         }
@@ -54,6 +59,8 @@ namespace ObjectPrinting.Tests
                .Excluding(p => p.Height)
                .PrintToString(person);
 
+            Console.WriteLine(actualString);
+
             actualString.Should().NotContain("Height");
         }
 
@@ -63,6 +70,8 @@ namespace ObjectPrinting.Tests
             var actualString = ObjectPrinter.For<Person>()
                 .Printing<string>().Using(i => i.ToUpper())
                 .PrintToString(person);
+
+            Console.WriteLine(actualString);
 
             actualString.Should().Contain(person.Surname.ToUpper()).And.Contain(person.Name.ToUpper());
         }
@@ -76,6 +85,8 @@ namespace ObjectPrinting.Tests
                 .Printing<double>().Using(culture)
                 .PrintToString(person);
 
+            Console.WriteLine(actualString);
+
             actualString.Should().Contain($"\tWeight = {person.Weight.ToString(null, culture)}\r\n");
         }
 
@@ -85,6 +96,8 @@ namespace ObjectPrinting.Tests
             var actualString = ObjectPrinter.For<Person>()
                 .Printing(p => p.Age).Using(age => $"{age} years old")
                 .PrintToString(person);
+
+            Console.WriteLine(actualString);
 
             actualString.Should().Contain($"\tAge = {person.Age} years old\r\n");
         }
@@ -98,6 +111,8 @@ namespace ObjectPrinting.Tests
                  .Printing(p => p.Name).TrimmedToLength(maxLength)
                  .PrintToString(person);
 
+            Console.WriteLine(actualString);
+
             actualString.Should().Contain($"\tName = {person.Name.Substring(0, maxLength)}\r\n");
         }
 
@@ -109,6 +124,8 @@ namespace ObjectPrinting.Tests
             car.Owner = person;
 
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            Console.WriteLine(actualString);
 
             actualString.Should().Contain($"Cycled reference detected. Object <{person.GetType().Name}> doesn't printed\r\n");
         }
@@ -124,23 +141,35 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_PrintsPropertyWithMultipleConfigs()
         {
+            var maxLength = 3;
+
             var actualString = ObjectPrinter.For<Person>()
                 .Printing(x => x.Name).Using(x => x.ToUpper())
-                .Printing(x => x.Name).TrimmedToLength(3)
+                .Printing(x => x.Name).TrimmedToLength(maxLength)
                 .PrintToString(person);
 
-            actualString.Should().Contain("ALE");
+            Console.WriteLine(actualString);
+
+            actualString.Should().Contain(person.Name.Substring(0, maxLength).ToUpper());
         }
 
         [Test]
         public void PrintToString_PrintsPropertyWithIntersectingConfigs()
         {
+            var maxLength = 3;
+
             var actualString = ObjectPrinter.For<Person>()
                 .Printing(x => x.Name).Using(x => x.ToUpper())
-                .Printing<string>().TrimmedToLength(3)
+                .Printing<string>().TrimmedToLength(maxLength)
                 .PrintToString(person);
 
-            actualString.Should().Contain("\tSurname = Fos\r\n").And.Contain("\tName = ALE\r\n");
+            Console.WriteLine(actualString);
+
+            actualString
+                .Should()
+                .Contain($"\tSurname = {person.Surname.Substring(0, maxLength)}\r\n")
+                .And
+                .Contain($"\tName = {person.Name.Substring(0, maxLength).ToUpper()}\r\n");
         }
 
         [Test]
@@ -150,6 +179,8 @@ namespace ObjectPrinting.Tests
                 .Printing<string>().Using(x => x.ToUpper())
                 .Printing<string>().TrimmedToLength(4)
                 .PrintToString(person);
+
+            Console.WriteLine(actualString);
 
             actualString.Should().Contain("\tSurname = FOST\r\n").And.Contain("\tName = ALEX\r\n");
         }
@@ -161,8 +192,30 @@ namespace ObjectPrinting.Tests
 
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            actualString.Should().Contain("\tVisitedCountries = [ Cyprus, Austria, Hungary ]\r\n");
-        } 
+            Console.WriteLine(actualString);
+
+            actualString.Should().Contain("\tVisitedCountries = \n\t\t[ \n\t\tCyprus\n\t\tAustria\n\t\tHungary\n\t\t]\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsListComplexTypeProperty()
+        {
+            person.Children = new List<Person>()
+            {
+                new Person { Surname = "Foster", Name = "George", Age = 25 },
+                new Person { Surname = "Foster", Name = "Anna", Age = 20 }
+            };
+
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            Console.WriteLine(actualString);
+
+            actualString
+                .Should()
+                .Contain("\t\t\t\tSurname = Foster\r\n\t\t\t\tName = George\r\n")
+                .And
+                .Contain("\t\t\t\tSurname = Foster\r\n\t\t\t\tName = Anna\r\n");
+        }
 
         [Test]
         public void PrintToString_PrintsArraySimpleTypeProperty()
@@ -171,7 +224,9 @@ namespace ObjectPrinting.Tests
 
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            actualString.Should().Contain("\tCitizenships = [ Russia, Israel ]\r\n");
+            Console.WriteLine(actualString);
+
+            actualString.Should().Contain("\tCitizenships = \n\t\t[ \n\t\tRussia\n\t\tIsrael\n\t\t]\r\n");
         }
 
         [Test]
@@ -186,7 +241,29 @@ namespace ObjectPrinting.Tests
 
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            actualString.Should().Contain("\tIncomeTaxByYear = \n\t\t[ 2019 ] = 111111,\n\t\t[ 2020 ] = 222222,\n\t\t[ 2021 ] = 333333\r\n");
+            Console.WriteLine(actualString);
+
+            actualString.Should().Contain("\tIncomeTaxByYear = \n\t\t[ 2019 ] = 111111\n\t\t[ 2020 ] = 222222\n\t\t[ 2021 ] = 333333\r\n");
+        }
+
+        [Test]
+        public void PrintToString_PrintsDictionaryComplexTypeProperty()
+        {
+            person.Parents = new Dictionary<string, Person>
+            {
+                {"Parent 1", new Person { Surname = "Foster", Name = "Нarry", Age = 75 } },
+                {"Parent 2", new Person { Surname = "Foster", Name = "Ginny", Age = 50 } }
+            };
+
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
+
+            Console.WriteLine(actualString);
+
+            actualString
+                .Should()
+                .Contain("\t\t\tSurname = Foster\r\n\t\t\tName = Нarry\r\n")
+                .And
+                .Contain("\t\t\tSurname = Foster\r\n\t\t\tName = Ginny\r\n");
         }
 
     }
