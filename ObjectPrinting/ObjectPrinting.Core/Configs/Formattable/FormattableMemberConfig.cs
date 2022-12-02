@@ -1,8 +1,6 @@
 ﻿using System.Reflection;
 using System.Globalization;
 using ObjectPrinting.Core.Configs.Basics;
-using System.Diagnostics.Metrics;
-
 
 namespace ObjectPrinting.Core.Configs.Formattable
 {
