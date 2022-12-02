@@ -54,7 +54,7 @@ namespace ObjectPrinting.Tests
                             "\t\tFriend = " + Environment.NewLine;
 
             s1.Should().Be(result);
-            //Console.WriteLine(s1);
+            Console.WriteLine(s1);
         }
         
         [Test]

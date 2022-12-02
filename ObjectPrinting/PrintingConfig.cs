@@ -24,7 +24,8 @@ namespace ObjectPrinting
 
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
 
-        private HashSet<object> viewedObjects = new HashSet<object>();
+        //private HashSet<object> viewedObjects = new HashSet<object>();
+        private List<object> viewedObjects = new List<object>();
 
         public string PrintToString(TOwner obj)
         {
