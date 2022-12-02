@@ -109,7 +109,7 @@ namespace ObjectPrintingTests
         public void ObjectPrinter_ShouldPrint_WhenArray()
         {
             const string excepted =
-                "Person\r\n\tWeight = 80\r\n\tParents = Person[] {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t}\r\n";
+                "Person\r\n\tWeight = 80\r\n\tParents = Person[] {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tParents = null\r\n\t}";
             person.Parents = new[]
             {
                 new Person(),
@@ -132,11 +132,11 @@ namespace ObjectPrintingTests
         public void ObjectPrinter_ShouldPrint_WhenList()
         {
             const string excepted =
-                "Person\r\n\tWeight = 80\r\n\tChildren = List`1 {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t}\r\n";
+                "Person\r\n\tWeight = 80\r\n\tChildren = List`1 {\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t\tPerson\r\n\t\t\tWeight = 0\r\n\t\t\tChildren = null\r\n\t}";
             person.Children = new List<Person>()
             {
-                new (),
-                new ()
+                new(),
+                new()
             };
             var result = ObjectPrinter.For<Person>()
                 .Excluding(t => t.OtherInfo)
@@ -156,7 +156,7 @@ namespace ObjectPrintingTests
         public void ObjectPrinter_ShouldPrint_WhenDictionaries()
         {
             const string expected =
-                "Person\r\n\tWeight = 80\r\n\tOtherInfo = Dictionary`2 {\r\n\t\tPassport = 1234 123456\r\n\t\tUniversity = MSU\r\n\t}\r\n";
+                "Person\r\n\tWeight = 80\r\n\tOtherInfo = Dictionary`2 {\r\n\t\tPassport = 1234 123456\r\n\t\tUniversity = MSU\r\n\t}";
             person.OtherInfo = new Dictionary<string, string>
             {
                 { "Passport", "1234 123456" },
@@ -179,7 +179,7 @@ namespace ObjectPrintingTests
         {
             var ivan = new Person
             {
-                Name = "Ivan Ivanov", 
+                Name = "Ivan Ivanov",
                 Height = 190,
                 Weight = 801,
                 Age = 30
@@ -200,7 +200,10 @@ namespace ObjectPrintingTests
                     Height = 160,
                     Weight = 40,
                     Name = "Vanya",
-                    Parents = new []{ ivan }
+                    Parents = new []{ ivan },
+                    OtherInfo = new Dictionary<string, string>() {
+                        {"aaaa", "bbbbb"}, //must be a = b
+                    }
                 }
             };
             var result = ObjectPrinter.For<Person>()
@@ -209,9 +212,24 @@ namespace ObjectPrintingTests
                 .Printing(p => p.Age).Using(t => $"{t} years")
                 .Printing(p => p.Height).Using(t => $"{t} cm")
                 .Printing(p => p.Weight).Using(t => $"{t} kg")
+                .Printing<string>().TrimmedToLength(1)
                 .PrintToString(ivan);
 
             Console.WriteLine(result);
+        }
+
+        [Test]
+        public void Demo2()
+        {
+            Console.WriteLine((new List<List<Person>> { new List<Person> { new(), new(), new() } }).PrintToString());
+            Console.WriteLine();
+            Console.WriteLine(new List<int> { 1, 2, 3 }.PrintToString());
+            Console.WriteLine();
+            Console.WriteLine(new Dictionary<string, Person>
+            {
+                { "123", new Person { Age = 18, Id = Guid.NewGuid() } },
+                { "Astn", new Person { Age = 19, Id = Guid.NewGuid() } }
+            }.PrintToString());
         }
     }
 }

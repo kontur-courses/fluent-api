@@ -31,53 +31,63 @@ namespace ObjectPrinting
             memberSerializers = new Dictionary<MemberInfo, Func<object, string>>();
         }
 
-        public string PrintToString(object obj, int depth = 0)
+        public string PrintToString(object obj, int depth = 0, bool startDepth = true)
         {
+            var indent = new string('\t', startDepth ? depth : 0);
             if (obj == null)
-                return "null";
+                return indent + "null";
 
             if (finalTypes.Contains(obj.GetType()))
-                return obj.ToString();
+            {
+                if (memberSerializers.TryGetValue(obj.GetType(), out var serializer))
+                {
+                    return indent + serializer(obj);
+                }
+                return indent + obj;
+            }
 
             if (serializedObjects.Contains(obj))
-                return "Обнаружен цикл! Объект будет пропущен." + Environment.NewLine;
+                return indent + "Обнаружен цикл! Объект будет пропущен.";
             serializedObjects.Add(obj);
 
             if (obj is IDictionary dictionary)
-                return SerializeDictionary(dictionary, depth);
+                return SerializeDictionary(dictionary, depth, startDepth);
             if (obj is IList collection)
-                return SerializeCollection(collection, depth);
-            return SerializeObject(obj, depth);
+                return SerializeCollection(collection, depth, startDepth);
+            return SerializeObject(obj, depth, startDepth);
         }
 
-        private string SerializeCollection(IEnumerable collection, int depth)
+        private string SerializeCollection(IEnumerable collection, int depth, bool startDepth)
         {
-            var sb = new StringBuilder(collection.GetType().Name + " {" + Environment.NewLine);
+            var sb = new StringBuilder(new string('\t', startDepth ? depth : 0) + collection.GetType().Name + " {" + Environment.NewLine);
             foreach (var item in collection)
+            {
                 sb.Append(PrintToString(item, depth + 1));
+                sb.AppendLine();
+            }
             sb.Append(new string('\t', depth) + '}');
             return sb.ToString();
         }
 
-        private string SerializeDictionary(IDictionary dictionary, int depth)
+        private string SerializeDictionary(IDictionary dictionary, int depth, bool startDepth)
         {
-            var sb = new StringBuilder(dictionary.GetType().Name + " {" + Environment.NewLine);
+            var sb = new StringBuilder(new string('\t', startDepth ? depth : 0) + dictionary.GetType().Name + " {" + Environment.NewLine);
             foreach (var key in dictionary.Keys)
             {
                 sb.Append(new string('\t', depth + 1));
                 sb.Append(PrintToString(key, depth + 1).Trim() + " = ");
-                sb.Append(PrintToString(dictionary[key]).Trim());
-                sb.Append(Environment.NewLine);
+                sb.Append(PrintToString(dictionary[key], depth + 1, false));
+                sb.AppendLine();
             }
             sb.Append(new string('\t', depth) + '}');
 
             return sb.ToString();
         }
 
-        private string SerializeObject(object obj, int depth)
+        private string SerializeObject(object obj, int depth, bool startDepth)
         {
             var objType = obj.GetType();
-            var indent = new string('\t', depth);
+            var indent = startDepth ? new string('\t', depth) : "";
 
             var name = indent + obj.GetType().Name + Environment.NewLine;
 
@@ -85,16 +95,16 @@ namespace ObjectPrinting
             foreach (var memberInfo in GetSerializedMembers(objType, t => !IsExcluded(t)))
             {
                 var memberIndent = new string('\t', depth + 1);
-                sb.Append($"{memberIndent}{memberInfo.Name} = {SerializeMember(obj, memberInfo, depth)}" +
+                sb.Append($"{memberIndent}{memberInfo.Name} = {SerializeMember(obj, memberInfo, depth, false)}" +
                           Environment.NewLine);
             }
-
+            sb.Remove(sb.Length - Environment.NewLine.Length, Environment.NewLine.Length);
             return sb.ToString();
         }
 
         private static IEnumerable<MemberInfo> GetSerializedMembers(Type type, Predicate<MemberInfo> selector)
         {
-            return type.GetMembers()
+            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                 .Where(t => t.MemberType == MemberTypes.Field || t.MemberType == MemberTypes.Property)
                 .Where(t => selector(t));
         }
@@ -105,12 +115,12 @@ namespace ObjectPrinting
                    excludedTypes.Contains(memberInfo.GetMemberType());
         }
 
-        private string SerializeMember(object obj, MemberInfo memberInfo, int depth)
+        private string SerializeMember(object obj, MemberInfo memberInfo, int depth, bool startDepth)
         {
             if (TryGetCustomSerializer(memberInfo, out var serializer))
                 return serializer.Invoke(memberInfo.GetValue(obj));
 
-            return PrintToString(memberInfo.GetValue(obj), depth + 1);
+            return PrintToString(memberInfo.GetValue(obj), depth + 1, startDepth);
         }
 
         private bool TryGetCustomSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
