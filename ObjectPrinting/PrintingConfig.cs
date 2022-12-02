@@ -120,12 +120,13 @@ namespace ObjectPrinting
                     continue;
                 }
 
-
-                var val = identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1);
-
-                sb.Append(val);
+                var val = propertyInfo.GetValue(obj);
+                if (!propertyInfo.PropertyType.IsClass)
+                    val = val?.ToString();
+                
+                sb.Append(identation + propertyInfo.Name + " = " +
+                          PrintToString(val,
+                              nestingLevel + 1));
             }
 
             return sb.ToString();
