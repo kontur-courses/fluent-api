@@ -100,7 +100,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_objectHasCyclicReferences_notBeStackOverflow()
+        public void ObjectPrinter_WhenObjectHasCyclicReferences_notBeStackOverflow()
         {
             var father = new Person { Name = "Jack", Age = 45, Son = _person };
             _person.Father = father;
