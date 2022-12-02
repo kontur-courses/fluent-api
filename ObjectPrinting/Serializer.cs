@@ -13,8 +13,8 @@ namespace ObjectPrinting
     public class Serializer
     {
         private SerializerSettings settings;
-        private object serializeObj;
         private int nesting;
+        private HashSet<object> visitedObjects = new HashSet<object>();
         private Type[] finalTypes = new[]
             {
                 typeof(int),
@@ -31,13 +31,20 @@ namespace ObjectPrinting
         public Serializer(SerializerSettings settings, object serializeObj, int finalNestingLevel)
         {
             this.settings = settings;
-            this.serializeObj = serializeObj;
             nesting = finalNestingLevel;
+            SerializeObject(serializeObj, 0);
         }
 
-        private void SerializeObject(object obj, int level)
+        public void SerializeObject(object obj, int level)
         {
             if (level > nesting) return;
+            
+            //Как можно упростить это условие? 
+            if (obj is IDictionary || obj is ICollection || obj is IFormattable || obj is string)
+            {
+                SerializeMember(null, obj, level);
+                return;
+            }
 
             var objType = obj.GetType();
             var members = objType.GetFields()
@@ -45,7 +52,17 @@ namespace ObjectPrinting
                 .Concat(objType.GetProperties())
                 .ToArray();
 
-            builder.Append(objType.Name + ":\n");
+            builder.Append('\t', level);
+            builder.Append(objType.Name + ":");
+
+            if (visitedObjects.Contains(obj))
+            {
+                builder.Append(" cycle;\r\n");
+                return;
+            }
+
+            visitedObjects.Add(obj);
+            builder.Append("\r\n");
 
             foreach (var member in members)
             {
@@ -60,43 +77,56 @@ namespace ObjectPrinting
                     SerializeMember(propertyMember, (propertyMember).GetValue(obj), level + 1);
                 }
             }
+
+            visitedObjects.Remove(obj);
         }
 
         private void SerializeMember(MemberInfo member, object value, int level = 1)
         {
-            if (level > nesting) return;
+            if (value == null) return;
+            
             var valueType = value.GetType();
 
-            if (value == null || 
-                settings.MembersToIgnor.Contains(member) ||
-                settings.CustomTypes.ContainsKey(valueType)) return;
-
-            if (value is IDictionary)
+            if (member != null && (settings.MembersToIgnor.Contains(member) ||
+                settings.TypesToIgnore.Contains(valueType))) return;
+            
+            if (member != null && settings.CustomMembs.ContainsKey(member))
             {
                 builder.Append('\t', level);
-                builder.Append($"(dict) {member.Name}:\n") ;
+                builder.Append(settings.CustomMembs[member](value) + "\r\n");
+            }
+            else if (value is IDictionary)
+            {
+                builder.Append('\t', level);
+                builder.Append("(dict) ") ;
+                if (member != null) builder.Append($"{member.Name}:");
+                builder.Append("\r\n");
                 SerializeCommonType(value, level + 1);
             }
             else if (value is ICollection)
             {
                 builder.Append('\t', level);
-                builder.Append($"(enum) {member.Name}:\n");
+                builder.Append("(enum) ");
+                if (member != null) builder.Append($"{member.Name}:");
+                builder.Append("\r\n");
                 SerializeCommonType(value, level);
-                builder.Append(";\n");
+                builder.Append("\r\n");
             }
             else if (finalTypes.Contains(valueType))
             {
+                builder.Append('\t', level);
+                if (member != null) builder.Append($"{member.Name}: ");
                 SerializeCommonType(value, level);
+                builder.Append(";\r\n");
             }
             else
             {
-                SerializeObject(value, level + 1);
+                SerializeObject(value, level);
             }
 
         }
         private void SerializeCommonType(object finalObj, int level)
         {
-            if (level > nesting) return;
             var finalObjType = finalObj.GetType();
             
             if (finalObj is IDictionary)
@@ -111,7 +141,7 @@ namespace ObjectPrinting
             {
                 if (finalObj is IFormattable)
                 {
-                    finalObj = TryChangeCulture(finalObjType);
+                    finalObj = TryChangeCulture(finalObj);
                 }
 
                 if (settings.CustomTypes.ContainsKey(finalObjType)) 
@@ -122,7 +152,10 @@ namespace ObjectPrinting
 
                 builder.Append(finalObj.ToString());
             }
-            else throw new ArgumentException();
+            else
+            {
+                SerializeObject(finalObj, level);
+            };
         }
 
         private void AddDictionary(IDictionary dictionary, int level)
@@ -133,21 +166,22 @@ namespace ObjectPrinting
 
             foreach (DictionaryEntry entry in dictionary)
             {
-                builder.Append('\t', level + 1);
+                builder.Append('\t', level);
                 SerializeCommonType(entry.Key, 0);
                 builder.Append(" = ");
                 SerializeCommonType(entry.Value, 0);
-                builder.Append(";\n");
+                builder.Append(";\r\n");
             }
         }
 
-        private void AddCollection(ICollection collection, int tabLevel)
+        private void AddCollection(ICollection collection, int level)
         {
             var collectionType = collection.GetType();
             var generics = collectionType.GetGenericArguments();
 
             if (generics.Any(x => settings.TypesToIgnore.Contains(x))) return;
-
+            
+            builder.Append('\t', level + 1);
             builder.Append("[");
             var index = 0;
 
@@ -157,12 +191,8 @@ namespace ObjectPrinting
                
                 if (index + 1 != collection.Count)
                 {
-                    builder.Append(item + ", ");
+                    builder.Append(", ");
                     index++;
-                }
-                else
-                {
-                    builder.Append(item);
                 }
             }
 

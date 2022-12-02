@@ -46,13 +46,9 @@ namespace ObjectPrinting
             return new MemberConfig<TOwner, TPropType>(this, member, settings);
         }
 
-        public string PrintToString(TOwner obj, int nestingLevel)
+        public string PrintToString(object obj, int nestingLevel)
         {
-            return PrintToString(obj, nestingLevel);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
+            if (obj == string.Empty) return string.Empty;
             var serializer = new Serializer(settings, obj, nestingLevel);
             var objectString = serializer.ToString();
 

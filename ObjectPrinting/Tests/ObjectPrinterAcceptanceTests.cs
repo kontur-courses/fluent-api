@@ -15,12 +15,18 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         private string text;
-        private Person person = new Person
+        private Person person;
+
+        [SetUp]
+        public void CreatePerson()
         {
-            Name = "Bill",
-            Height = 175.3,
-            Age = 35
-        };
+            person = new Person
+            {
+                Name = "Bill",
+                Height = 175.3,
+                Age = 35
+            };
+        }
 
         [Test]
         public void PrintingConfig_EmptyInput_ShouldReturnEmptyLine()
@@ -41,7 +47,8 @@ namespace ObjectPrinting.Tests
             var config = ObjectPrinter.For<string>();
 
             text = config.PrintToString(common, 10);
-            var expected = "some text";
+            var expected = @"some text;
+";
 
             text.Should().Be(expected);
         }
@@ -53,8 +60,9 @@ namespace ObjectPrinting.Tests
             var config = ObjectPrinter.For<double[]>();
 
             text = config.PrintToString(common, 10);
-            var expected = @"(coll) 
-[2, 5,3, 10,154, 13,15, -1,65]";
+            var expected = @"(enum) 
+	[2, 5,3, 10,154, 13,15, -1,65]
+";
 
             text.Should().Be(expected);
         }
@@ -66,8 +74,9 @@ namespace ObjectPrinting.Tests
             var config = ObjectPrinter.For<List<int>>();
 
             text = config.PrintToString(common, 10);
-            var expected = @"(coll) 
-[2, 5, 10, 13, -1]";
+            var expected = @"(enum) 
+	[2, 5, 10, 13, -1]
+";
 
             text.Should().Be(expected);
         }
@@ -85,9 +94,10 @@ namespace ObjectPrinting.Tests
 
             text = config.PrintToString(common, 10);
             var expected = @"(dict) 
-    2 = 5;
-    10 = 13;
-    4 = -1;";
+	2 = 5;
+	10 = 13;
+	4 = -1;
+";
 
             text.Should().Be(expected);
         }
@@ -104,10 +114,11 @@ namespace ObjectPrinting.Tests
             var config = ObjectPrinter.For<Dictionary<string, int>>();
 
             text = config.PrintToString(common, 10);
-            var expected = "(dict) \n" +
-                           "\tfive = 5;\n" +
-                           "\tthirteen = 13;\n" +
-                           "\tminus one = -1;\n";
+            var expected = @"(dict) 
+	five = 5;
+	thirteen = 13;
+	minus one = -1;
+";
 
             text.Should().Be(expected);
         }
@@ -119,24 +130,24 @@ namespace ObjectPrinting.Tests
             var config = ObjectPrinter.For<List<Person>>();
 
             text = config.PrintToString(common, 10);
-            var expected = "(coll) \n" +
-                           "[Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n" +
-                           ", Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n" +
-                           ", Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n" +
-                           "]";
-
+            var expected = @"(enum) 
+	[Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Age: 35;
+, Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Age: 35;
+, Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Age: 35;
+]
+";
             text.Should().Be(expected);
         }
 
@@ -148,10 +159,11 @@ namespace ObjectPrinting.Tests
             config.SelectType<int>().IgnoreType();
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+";
 
             text.Should().Be(expected);
         }
@@ -167,10 +179,11 @@ namespace ObjectPrinting.Tests
                 .PrintAs(x => x + " полных лет");
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+";
 
             text.Should().Be(expected);
         }
@@ -183,14 +196,15 @@ namespace ObjectPrinting.Tests
             config.SelectType<string>()
                 .PrintAs(x => x.ToUpper())
                 .SelectProperty(x => x.Name)
-                .PrintAs(x => x.ToLower());
+                .PrintAs(x => $"Lower name: {x.ToLower()}");
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = bill;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Lower name: bill
+	Height: 175,3;
+	Age: 35;
+";
 
             text.Should().Be(expected);
         }
@@ -203,10 +217,11 @@ namespace ObjectPrinting.Tests
             config.SelectProperty(x => x.Name).IgnoreProperty();
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Height: 175,3;
+	Age: 35;
+";
 
             text.Should().Be(expected);
         }
@@ -221,13 +236,14 @@ namespace ObjectPrinting.Tests
 
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = BILL;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35;\n" +
-                           "\t(coll) FriendsNames: \n" +
-                           "\t\t[ALEX, ALLAY, KING];\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: BILL;
+	Height: 175,3;
+	Age: 35;
+	(enum) FriendsNames:
+		[ALEX, ALLAY, KING]
+";
 
             text.Should().Be(expected);
         }
@@ -237,15 +253,16 @@ namespace ObjectPrinting.Tests
         {
             var config = ObjectPrinter.For<Person>();
 
-            config.SelectProperty(x => x.Age).PrintAs(x => x + " полных лет");
+            config.SelectProperty(x => x.Age).PrintAs(x => $"Возраст: {x} полных лет;");
 
             text = config.PrintToString(person, 10);
 
-            var expected = "Person:\n" +
-                           "\tId = 00000000-0000-0000-0000-000000000000;\n" +
-                           "\tName = Bill;\n" +
-                           "\tHeight = 175,3;\n" +
-                           "\tAge = 35 полных лет;\n";
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Возраст: 35 полных лет;
+";
 
             text.Should().Be(expected);
         }
@@ -259,7 +276,81 @@ namespace ObjectPrinting.Tests
 
             text = config.PrintToString(153.2, 10);
 
-            var expected = "153.2";
+            var expected = @"153.2;
+";
+
+            text.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingConfig_TrimmedName()
+        {
+            var config = ObjectPrinter.For<Person>();
+
+            config.SelectProperty(x => x.Name).TrimmedToLength(2);
+
+            text = config.PrintToString(person, 10);
+
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Bi
+	Height: 175,3;
+	Age: 35;
+";
+
+            text.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingConfig_CyclingObjectReference()
+        {
+            var config = ObjectPrinter.For<Person>();
+
+            person.Dad = person;
+            text = config.PrintToString(person, 10);
+
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Age: 35;
+	Person: cycle;
+";
+
+            text.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintingConfig_LowNesting()
+        {
+            var config = ObjectPrinter.For<Person>();
+
+            person.Dad = new Person
+            {
+                Name = "Ron",
+                Height = 170,
+                Age = 78,
+                Dad = new Person
+                {
+                    Name = "Lay",
+                    Height = 189,
+                    Age = 69
+                }
+            };
+
+            text = config.PrintToString(person, 1);
+
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 175,3;
+	Age: 35;
+	Person:
+		Id: 00000000-0000-0000-0000-000000000000;
+		Name: Ron;
+		Height: 170;
+		Age: 78;
+";
 
             text.Should().Be(expected);
         }
@@ -292,34 +383,39 @@ namespace ObjectPrinting.Tests
             };
 
             var printer = ObjectPrinter.For<Person>();
-       
-            printer.SelectType<string>().IgnoreType()
-                .SelectType<char>().IgnoreType()
-            //2. Указать альтернативный способ сериализации для определенного типа
-                .SelectType<string>().PrintAs(x => $"№{x}")
-            //3. Для числовых типов указать культуру
-                .SelectType<int>().SetCulture(CultureInfo.InvariantCulture)
-            //4. Настроить сериализацию конкретного свойства                
-                .SelectProperty(x => x.Age).PrintAs(x => $"№{x}")
-            //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .SelectProperty(x => x.Name).TrimmedToLength(10)
-            //6. Исключить из сериализации конкретного свойства
-                .SelectProperty(x => x.Name).IgnoreProperty();
+             
+            text = person.PrintToString(10);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            text = person.PrintToString();
+            var expected = @"Person:
+	Id: 00000000-0000-0000-0000-000000000000;
+	Name: Bill;
+	Height: 0;
+	Age: 35;
+	Person:
+		Id: 00000000-0000-0000-0000-000000000000;
+		Name: Alex;
+		Height: 0;
+		Age: 65;
+		(dict) Awards:
+			Mayor = 40;
+			President = 55;
+	(enum) ArmsLenght:
+		[540, 600]
+	(enum) FriendsNames:
+		[Rick, Morgan, Alex]
+	(dict) Awards:
+		Best friend = 12;
+		Best dad = 25;
+		Best worker = 29;
+";
 
-            //8. ...с конфигурированием
-            //var configLine = person.PrintToString(s => s.Excluding(p => p.Age));
-      
-
+            text.Should().Be(expected);
         }
 
         [TearDown]
         public void TearDown()
         {
             var testCont = TestContext.CurrentContext;
-
             var fileName = testCont.Test.ID;
             File.WriteAllText(@"..\\text.txt", text);
             text = null;
