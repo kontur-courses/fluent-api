@@ -8,13 +8,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly HashSet<Type> FinalTypes = new HashSet<Type>
-        {
-            typeof(bool), typeof(sbyte),  typeof(byte),  typeof(short),  typeof(ushort),
-            typeof(int),  typeof(uint),  typeof(long), typeof(ulong), typeof(float),
-            typeof(double),  typeof(decimal),  typeof(string), typeof(DateTime), typeof(TimeSpan)
-        };
-
         private readonly HashSet<Type> ExcludedPropTypes = new HashSet<Type>();
 
         private readonly HashSet<PropertyInfo> ExcludedProperty = new HashSet<PropertyInfo>();
@@ -22,6 +15,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> TypesSerializationOptions = new Dictionary<Type, Delegate>();
 
         private readonly Dictionary<PropertyInfo, Delegate> PropertiesSerializationOptions = new Dictionary<PropertyInfo, Delegate>();
+        //private readonly Dictionary<PropertyInfo, List<Delegate>> PropertiesSerializationOptions = new Dictionary<PropertyInfo, List<Delegate>>();
 
         private readonly HashSet<object> PrintedNonFinalObjects = new HashSet<object>();
 
@@ -75,10 +69,10 @@ namespace ObjectPrinting
 
             var objectType = obj.GetType();
 
-            if (FinalTypes.Contains(objectType))
+            if (!IsFinalType(objectType))
             {
                 if (PrintedNonFinalObjects.Contains(obj))
-                    throw new InvalidOperationException($"Object {objectType} has cycled reference");
+                    return $"Cycled reference detected. Object <{objectType.Name}> doesn't printed" + Environment.NewLine;
                 else
                     PrintedNonFinalObjects.Add(obj);
             }
@@ -86,7 +80,7 @@ namespace ObjectPrinting
             if (TypesSerializationOptions.ContainsKey(objectType))
                 return (string)TypesSerializationOptions[objectType].DynamicInvoke(obj) + Environment.NewLine;
 
-            if (FinalTypes.Contains(objectType))
+            if (IsFinalType(objectType))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
@@ -109,6 +103,12 @@ namespace ObjectPrinting
                 sb.Append(PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+
+        private bool IsFinalType(Type type)
+        {
+            return type.IsValueType || type == typeof(string);
         }
 
         private PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)

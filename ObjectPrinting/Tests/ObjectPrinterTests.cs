@@ -21,23 +21,23 @@ namespace ObjectPrinting.Tests
         {
             var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            var expectedSting = $"Person\r\n\tId = Guid\r\n\tSurname = Foster\r\n\tName = Alex\r\n\tAge = 19\r\n\tHeight = 180\r\n\tWeight = 83,65\r\n\tCar = null\r\n";
+            var expectedSting = $"Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tSurname = Foster\r\n\tName = Alex\r\n\tAge = 19\r\n\tHeight = 180\r\n\tWeight = 83,65\r\n\tCar = null\r\n";
 
             expectedSting.Should().Be(actualString);
         }
 
         [Test]
-        public void PrintToString_DontPrintPropertyWithExcludedType()
+        public void PrintToString_DoesNotPrintPropertyWithExcludedType()
         {
             var actualString = ObjectPrinter.For<Person>()
                .Excluding<Guid>()
                .PrintToString(person);
 
-            actualString.Should().NotContain("Guid");
+            actualString.Should().NotContain("Id");
         }
 
         [Test]
-        public void PrintToString_DontPrintExcludedProperty()
+        public void PrintToString_DoesNotPrintExcludedProperty()
         {
             var actualString = ObjectPrinter.For<Person>()
                .Excluding(p => p.Height)
@@ -85,21 +85,52 @@ namespace ObjectPrinting.Tests
 
             var actualString = ObjectPrinter.For<Person>()
                  .Printing(p => p.Name).TrimmedToLength(maxLength)
-                .PrintToString(person);
+                 .PrintToString(person);
 
             actualString.Should().Contain($"\tName = {person.Name.Substring(0, maxLength)}\r\n");
         }
 
         [Test]
-        public void PrintToString_ThrowsInvalidOperationException_WnenCycledReferenceExists()
+        public void PrintToString_InformsAboutCycledReference_WnenCycledReferenceExists()
         {
             var car = new Car { Id = 777 };
             person.Car = car;
             car.Owner = person;
 
-            Action action = () => ObjectPrinter.For<Person>().PrintToString(person);
+            var actualString = ObjectPrinter.For<Person>().PrintToString(person);
 
-            action.Should().Throw<InvalidOperationException>();
+            actualString.Should().Contain($"Cycled reference detected. Object <{person.GetType().Name}> doesn't printed\r\n");
         }
+
+        [Test]
+        public void PrintToString_DoesNotThrowException_OnEmptyObject()
+        {
+            Action action = () => ObjectPrinter.For<Person>().PrintToString(new Person());
+
+            action.Should().NotThrow<Exception>();
+        }
+
+        [Test]
+        public void PrintToString_PrintsPropertyWithMultipleConfigs()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .Printing(x => x.Name).Using(x => x.ToUpper())
+                .Printing(x => x.Name).TrimmedToLength(3)
+                .PrintToString(person);
+
+            actualString.Should().Contain("ALE");
+        }
+
+        [Test]
+        public void PrintToString_PrintsMultipleConfigs()
+        {
+            var actualString = ObjectPrinter.For<Person>()
+                .Printing(x => x.Name).Using(x => x.ToUpper())
+                .Printing<string>().TrimmedToLength(3)
+                .PrintToString(person);
+
+            actualString.Should().Contain("\tSurname = Fos\r\n").And.Contain("\tName = ALE\r\n");
+        }
+
     }
 }
