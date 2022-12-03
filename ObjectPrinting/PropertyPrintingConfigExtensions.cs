@@ -7,6 +7,8 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
             int maxLen)
         {
+            if (propConfig.Parent.MaxStringLength.ContainsKey(propConfig.MemberInfo))
+                throw new InvalidOperationException("The string length for this property/field has already been set before");
             propConfig.Parent.MaxStringLength[propConfig.MemberInfo] = maxLen;
             return propConfig.Parent;
         }

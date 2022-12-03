@@ -31,7 +31,8 @@ public class ObjectPrintingTest
     {
         var result = person.PrintToString();
 
-        result.Should().Be("Person\r\n\tId = Guid\r\n\tName = Andy\r\n\tHeight = 163,21\r\n\tAge = 20\r\n");
+        result.Should()
+            .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Andy\r\n\tHeight = 163,21\r\n\tAge = 20\r\n");
     }
 
     [Test]
@@ -43,8 +44,7 @@ public class ObjectPrintingTest
         var result = second.PrintToString();
 
         result.Should()
-            .Be(
-                "NestedClass\r\n\tNumber = 2\r\n\tParent = NestedClass\r\n\t\t\tNumber = 1\r\n\t\t\tParent = null\r\n");
+            .Be("NestedClass\r\n\tNumber = 2\r\n\tParent = NestedClass\r\n\t\t\tNumber = 1\r\n\t\t\tParent = null\r\n");
     }
 
     [Test]
@@ -76,13 +76,49 @@ public class ObjectPrintingTest
     }
 
     [Test]
+    public void PrintToString_Fail_If_Add_More_Than_One_AlternativeSerialization_For_Type()
+    {
+        Action action = () => ObjectPrinter.For<Person>().Print<double>().As(d => "1").Print<double>().As(d => "2");
+
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void PrintToString_Fail_If_Add_More_Than_One_AlternativeSerialization_For_Property()
+    {
+        Action action = () =>
+            ObjectPrinter.For<Person>().Print(p => p.Height).As(d => "1").Print(p => p.Height).As(d => "2");
+
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void PrintToString_Fail_If_Add_More_Than_One_CultureInfo_For_Type()
+    {
+        Action action = () =>
+            ObjectPrinter.For<Person>().Print<double>().As(CultureInfo.CurrentCulture).Print<double>()
+                .As(new CultureInfo("es-ES", false));
+
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void PrintToString_Fail_If_Add_More_Than_One_MaxLength_For_Type()
+    {
+        Action action = () => ObjectPrinter.For<Person>().Print(p => p.Name).Cut(5).Print(p => p.Name).Cut(6);
+
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
     public void Excluding_Should_ExcludingType()
     {
         var printer = ObjectPrinter.For<Person>().Excluding<int>();
 
         var result = printer.PrintToString(person);
 
-        result.Should().Be("Person\r\n\tId = Guid\r\n\tName = Andy\r\n\tHeight = 163,21\r\n");
+        result.Should()
+            .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Andy\r\n\tHeight = 163,21\r\n");
     }
 
     [Test]
@@ -102,7 +138,8 @@ public class ObjectPrintingTest
 
         var result = printer.PrintToString(person);
 
-        result.Should().Be("Person\r\n\tId = Guid\r\n\tName = Andy\r\n\tHeight = 163,21\r\n\tAge = 20 y.o");
+        result.Should()
+            .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Andy\r\n\tHeight = 163,21\r\n\tAge = 20 y.o");
     }
 
     [Test]
@@ -113,7 +150,9 @@ public class ObjectPrintingTest
 
         var result = printer.PrintToString(person);
 
-        result.Should().Be("Person\r\n\tId = Guid\r\n\tName = Andy Warhol\r\n\tHeight = 163,21\r\n\tAge = 20 y.o\r\n");
+        result.Should()
+            .Be(
+                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Andy Warhol\r\n\tHeight = 163,21\r\n\tAge = 20 y.o\r\n");
     }
 
     [Test]
@@ -134,7 +173,8 @@ public class ObjectPrintingTest
 
         var result = printer.PrintToString(person);
 
-        result.Should().Be("Person\r\n\tId = Guid\r\n\tName = A\r\n\tHeight = 163,21\r\n\tAge = 20\r\n");
+        result.Should()
+            .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = A\r\n\tHeight = 163,21\r\n\tAge = 20\r\n");
     }
 
     [Test]

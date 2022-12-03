@@ -17,7 +17,7 @@ namespace ObjectPrinting
 
         private readonly Type[] finalTypes =
         {
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(Guid), typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
 
@@ -28,16 +28,16 @@ namespace ObjectPrinting
             excludingMembers = new HashSet<MemberInfo>();
             excludingTypes = new HashSet<Type>();
             AlternativePrintingForTypes = new Dictionary<Type, Delegate>();
-            Cultures = new Dictionary<Type, CultureInfo>();
+            AlternativeCulturesForTypes = new Dictionary<Type, CultureInfo>();
         }
 
-        public Dictionary<MemberInfo, int> MaxStringLength { get; }
+        internal Dictionary<MemberInfo, int> MaxStringLength { get; }
 
-        public Dictionary<Type, Delegate> AlternativePrintingForTypes { get; }
+        internal Dictionary<Type, Delegate> AlternativePrintingForTypes { get; }
 
-        public Dictionary<MemberInfo, Delegate> AlternativePrintForMembers { get; }
+        internal Dictionary<MemberInfo, Delegate> AlternativePrintForMembers { get; }
 
-        public Dictionary<Type, CultureInfo> Cultures { get; }
+        internal Dictionary<Type, CultureInfo> AlternativeCulturesForTypes { get; }
 
         public TypePrintingConfig<TOwner, TPropType> Print<TPropType>()
         {
@@ -81,35 +81,20 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (AlternativePrintingForTypes.ContainsKey(type))
-                return AlternativePrintingForTypes[obj.GetType()].DynamicInvoke(obj)!.ToString();
-
-            if (Cultures.ContainsKey(type))
-            {
-                var result = obj as IFormattable;
-                var culture = Cultures[type];
-                return result!.ToString(null, culture);
-            }
-
-            if (finalTypes.Contains(type))
-                return obj + Environment.NewLine;
-
-            if (objects.Any(o => ReferenceEquals(o, obj)))
-                return type.Name;
-
-            if (obj is IEnumerable enumerable) return GetIEnumerable(enumerable, objects);
+            if (IsNonNestedCase(obj, objects))
+                return GetNonNestedCaseStrings(obj, objects);
 
             objects.Add(obj);
 
             var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
+            var sb = new StringBuilder(type.Name+Environment.NewLine);
 
             var properties = type.GetProperties().Where(p =>
                 !excludingTypes.Contains(p.PropertyType) && !excludingMembers.Contains(p));
 
             var fields = type.GetFields()
-                .Where(f => !excludingTypes.Contains(f.FieldType) && !excludingMembers.Contains(f) && f.IsPublic &&
+                .Where(f => !excludingTypes.Contains(f.FieldType) &&
+                            !excludingMembers.Contains(f) && f.IsPublic &&
                             (type.IsClass || !f.IsStatic));
 
             foreach (var propertyInfo in properties)
@@ -123,7 +108,41 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public string GetMemberInfoStrings(object obj, MemberInfo memberInfo, HashSet<object> objects)
+        private bool IsNonNestedCase(object obj, HashSet<object> objects)
+        {
+            return AlternativePrintingForTypes.ContainsKey(obj.GetType()) ||
+                   AlternativeCulturesForTypes.ContainsKey(obj.GetType()) ||
+                   finalTypes.Contains(obj.GetType()) ||
+                   objects.Any(o => ReferenceEquals(o, obj)) ||
+                   obj is IEnumerable;
+        }
+
+        private string GetNonNestedCaseStrings(object obj, HashSet<object> objects)
+        {
+            var type = obj.GetType();
+
+            if (AlternativePrintingForTypes.ContainsKey(type))
+                return AlternativePrintingForTypes[obj.GetType()].DynamicInvoke(obj)!.ToString();
+
+            if (AlternativeCulturesForTypes.ContainsKey(type))
+            {
+                var result = obj as IFormattable;
+                var culture = AlternativeCulturesForTypes[type];
+                return result!.ToString(null, culture);
+            }
+
+            if (finalTypes.Contains(type))
+                return obj + Environment.NewLine;
+
+            if (objects.Any(o => ReferenceEquals(o, obj)))
+                return type.Name;
+
+            if (obj is IEnumerable enumerable) return GetIEnumerable(enumerable, objects);
+
+            return type.Name;
+        }
+
+        private string GetMemberInfoStrings(object obj, MemberInfo memberInfo, HashSet<object> objects)
         {
             var str = "";
             if (AlternativePrintForMembers.ContainsKey(memberInfo))
@@ -136,7 +155,7 @@ namespace ObjectPrinting
             return str;
         }
 
-        public string GetIEnumerable(IEnumerable enumerable, HashSet<object> objects)
+        private string GetIEnumerable(IEnumerable enumerable, HashSet<object> objects)
         {
             var sb = new StringBuilder(enumerable.GetType().Name + "{");
             if (enumerable is IDictionary dictionary)

@@ -9,7 +9,9 @@ namespace ObjectPrinting
             CultureInfo cultureInfo)
             where T : IFormattable
         {
-            propConfig.Parent.Cultures[typeof(T)] = cultureInfo;
+            if (propConfig.Parent.AlternativeCulturesForTypes.ContainsKey(typeof(T)))
+                throw new InvalidOperationException("The culture for this type has already been set");
+            propConfig.Parent.AlternativeCulturesForTypes[typeof(T)] = cultureInfo;
             return propConfig.Parent;
         }
     }

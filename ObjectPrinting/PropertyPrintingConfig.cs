@@ -16,6 +16,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> As(Func<TPropertyType, string> print)
         {
+            if (Parent.AlternativePrintForMembers.ContainsKey(MemberInfo))
+                throw new InvalidOperationException("An alternative serialization method for this property/field has already been set before");
             Parent.AlternativePrintForMembers[MemberInfo] = print;
             return Parent;
         }
