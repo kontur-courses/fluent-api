@@ -39,7 +39,6 @@ namespace ObjectPrinting
         {
             if (level > nesting) return;
             
-            //Как можно упростить это условие? 
             if (obj is IDictionary || obj is ICollection || obj is IFormattable || obj is string)
             {
                 SerializeMember(null, obj, level);
@@ -129,13 +128,13 @@ namespace ObjectPrinting
         {
             var finalObjType = finalObj.GetType();
             
-            if (finalObj is IDictionary)
+            if (finalObj is IDictionary dict)
             {
-                AddDictionary((IDictionary) finalObj, level);
+                AddDictionary(dict, level);
             }
-            else if (finalObj is ICollection)
+            else if (finalObj is ICollection collection)
             {
-                AddCollection((ICollection)finalObj, level);
+                AddCollection(collection, level);
             }
             else if (finalTypes.Contains(finalObjType))
             {
@@ -203,9 +202,9 @@ namespace ObjectPrinting
         {
             var objType = formattableObj.GetType();
 
-            if (formattableObj is IFormattable && settings.CustomCultures.ContainsKey(objType))
+            if (formattableObj is IFormattable formattable && settings.CustomCultures.ContainsKey(objType))
             {
-                var formatStr = ((IFormattable)formattableObj).ToString(null, settings.CustomCultures[objType]);
+                var formatStr = (formattable).ToString(null, settings.CustomCultures[objType]);
                 return formatStr;
             }
 

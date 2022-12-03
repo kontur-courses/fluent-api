@@ -1,21 +1,11 @@
-using Microsoft.VisualBasic;
-using Newtonsoft.Json.Linq;
-using ObjectPrinting.Solved;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private SerializerSettings settings;
+        private readonly SerializerSettings settings;
         
         public PrintingConfig()
         {
@@ -35,7 +25,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetCulture<T>(IFormatProvider culture) where T : IFormattable
         {
-            settings.CustomCultures.Add(typeof(TOwner), culture);
+            settings.CustomCultures.Add(typeof(T), culture);
             return this;
         }
 
