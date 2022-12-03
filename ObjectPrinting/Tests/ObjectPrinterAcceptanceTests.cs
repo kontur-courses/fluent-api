@@ -5,6 +5,7 @@ using System;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace ObjectPrinting.Tests
@@ -31,11 +32,11 @@ namespace ObjectPrinting.Tests
             "\t" + "]" + Environment.NewLine +
             "\t" + "Dictionary = {" + Environment.NewLine +
             "\t\t" + "{" + Environment.NewLine +
-            "\t\t\t" + "Key = 1" + Environment.NewLine +
+            "\t\t\t" + "Key = ignored" + Environment.NewLine +
             "\t\t\t" + "Value = 2,02" + Environment.NewLine +
             "\t\t" + "}," + Environment.NewLine +
             "\t\t" + "{" + Environment.NewLine +
-            "\t\t\t" + "Key = 3" + Environment.NewLine +
+            "\t\t\t" + "Key = ignored" + Environment.NewLine +
             "\t\t\t" + "Value = 4,04" + Environment.NewLine +
             "\t\t" + "}" + Environment.NewLine +
             "\t" + "}";
