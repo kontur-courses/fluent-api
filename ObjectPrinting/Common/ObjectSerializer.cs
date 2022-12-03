@@ -31,6 +31,7 @@ namespace ObjectPrinting.Common
 
         private const string nullMark = "null";
         private const string loopReferenceMark = "loop reference";
+        private const string ignoredMark = "ignored";
 
         private static readonly Type iDictionaryType = typeof(IDictionary);
         private static readonly Type iCollectionType = typeof(ICollection);
@@ -113,17 +114,18 @@ namespace ObjectPrinting.Common
 
             foreach (var subNode in node.Nodes)
             {
-                var key = subNode.Nodes[0];
-                var value = subNode.Nodes[1];
+                var key = subNode.Nodes[0].Object.Info.Name == "Key" ?
+                          PrintObjectTreeNode(subNode.Nodes[0], currentLevel + 2, configRoot) :
+                          ignoredMark;
 
-                sb.Append(identation).AppendLine(openDictionaryObjectString);
-                sb.AppendFormat(propertyFormat, elementContentIdentation,
-                                                "Key",
-                                                PrintObjectTreeNode(key, currentLevel + 2, configRoot)).AppendLine();
-                sb.AppendFormat(propertyFormat, elementContentIdentation,
-                                                "Value",
-                                                PrintObjectTreeNode(value, currentLevel + 2, configRoot)).AppendLine();
-                sb.Append(identation).Append(closeDictionaryObjectString).AppendLine(collectionItemSeparator);
+                var value = subNode.Nodes.Count < 2 && key != ignoredMark ?
+                            ignoredMark :
+                            PrintObjectTreeNode(subNode.Nodes.Last(), currentLevel + 2, configRoot);
+
+                sb.Append(indentation).AppendLine(openDictionaryObjectString);
+                sb.AppendFormat(propertyFormat, elementContentIndentation, "Key", key).AppendLine();
+                sb.AppendFormat(propertyFormat, elementContentIndentation, "Value", value).AppendLine();
+                sb.Append(indentation).Append(closeDictionaryObjectString).AppendLine(collectionItemSeparator);
             }
 
             sb.Remove(sb.Length - Environment.NewLine.Length - 1, 1);
