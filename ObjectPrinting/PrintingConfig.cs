@@ -121,9 +121,7 @@ namespace ObjectPrinting
 
         private bool IsFieldExcluded(FieldInfo fieldInfo)
         {
-            return fieldInfo.IsStatic
-                   || !fieldInfo.IsPublic
-                   || excludedTypes.Contains(fieldInfo.FieldType)
+            return excludedTypes.Contains(fieldInfo.FieldType)
                    || excludedMembers.Contains(fieldInfo);
         }
 
@@ -218,8 +216,9 @@ namespace ObjectPrinting
 
         private IEnumerable<MemberInfo> GetPublicPropertiesAndFieldsInfos(Type type)
         {
-            return type.GetProperties().Where(info => !IsPropertyExcluded(info))
-                .Concat<MemberInfo>(type.GetFields().Where(info => !IsFieldExcluded(info)));
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
+            return type.GetProperties(flags).Where(info => !IsPropertyExcluded(info))
+                .Concat<MemberInfo>(type.GetFields(flags).Where(info => !IsFieldExcluded(info)));
         }
     }
 }
