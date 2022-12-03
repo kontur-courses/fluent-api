@@ -75,8 +75,8 @@ public class PrinterConfigTests
         loopPerson.Parent2 = loopPerson;
         var printer = ObjectPrinter.For<Person>();
         printer.PrintToString(loopPerson);
-        
-        
+
+
         Console.WriteLine();
 
         var p = new Person();
@@ -131,7 +131,8 @@ public class PrinterConfigTests
         var str = dictionary.PrintToString();
         foreach (var pair in dictionary)
         {
-            str.Should().Contain($"[{pair.Key}] = {pair.Value.PrintToString()}");
+            str.Should().Contain($"[{pair.Key}] = ");
+            pair.Value.ForEach(value => str.Should().Contain(value));
             foreach (var value in pair.Value)
                 str.Should().Contain(value);
         }
@@ -149,8 +150,12 @@ public class PrinterConfigTests
 
         var serializedPerson1 = WithIndention(person1.PrintToString(), 1);
         var serializedPerson2 = person2.PrintToString();
-        serializedPerson2.Should().Contain($"Parent1 = {serializedPerson1}");
-        serializedPerson2.Should().Contain($"Parent2 = {serializedPerson1}");
+        serializedPerson2.Should()
+            .Contain(
+                $"Parent1 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine + new string('\t', 1))}");
+        serializedPerson2.Should()
+            .Contain(
+                $"Parent2 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine + new string('\t', 1))}");
     }
 
     private static string WithIndention(string str, int level)

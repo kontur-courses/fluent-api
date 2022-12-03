@@ -33,4 +33,30 @@ public class ObjectPrinterAcceptanceTests
         var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
         Console.WriteLine(s3);
     }
+
+    private class Bar
+    {
+        public string Name { get; set; }
+        public Bar Next { get; set; }
+        public List<Bar> List { get; set; } = new();
+        public Dictionary<int, Bar> Dict { get; set; } = new();
+    }
+
+    [Test]
+    public void Demo2()
+    {
+        var a = new Bar { Name = "Bar1" };
+        var b = new Bar { Name = "Bar2", Next = a };
+        a.List.Add(b);
+        a.List.Add(b);
+        a.Dict.Add(0, b);
+        a.Dict.Add(1, b);
+        b.List.Add(a);
+        b.List.Add(a);
+        b.Dict.Add(0, a);
+        b.Dict.Add(1, a);
+        var printer = ObjectPrinter.For<Bar>();
+        var actual = printer.PrintToString(a);
+        Console.WriteLine(actual);
+    }
 }

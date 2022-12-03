@@ -11,10 +11,16 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private class Comparator<T> : EqualityComparer<T>
+        {
+            public override bool Equals(T x, T y) => x != null && ReferenceEquals(x, y);
+            public override int GetHashCode(T obj) => 0;
+        }
+
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<object> currentPassed = new HashSet<object>(new Comparator<object>());
 
-        private readonly HashSet<object> printed = new HashSet<object>();
         public Dictionary<Type, Delegate> TypeSerializers { get; } = new Dictionary<Type, Delegate>();
         public Dictionary<MemberInfo, Delegate> PropertySerializers { get; } = new Dictionary<MemberInfo, Delegate>();
         public Dictionary<Type, CultureInfo> TypesCultures { get; } = new Dictionary<Type, CultureInfo>();
@@ -41,13 +47,15 @@ namespace ObjectPrinting
         {
             if (memberSelector.Body is MemberExpression memberExpression)
                 excludedMembers.Add(memberExpression.Member);
+            else
+                throw new ArgumentException("Expression contains not MemberExpression");
             return this;
         }
 
         public string PrintToString(TOwner obj)
         {
             var result = PrintToString(obj, 0);
-            printed.Clear();
+            currentPassed.Clear();
             return result;
         }
 
@@ -56,49 +64,55 @@ namespace ObjectPrinting
             if (obj is null)
                 return "null";
 
-            if (printed.Contains(obj))
+            var hasLoop = currentPassed.Contains(obj);
+            if (hasLoop)
                 return obj.GetType().FullName;
 
             var isFinalType = IsFinalType(obj.GetType());
 
             if (!isFinalType)
-                printed.Add(obj);
+                currentPassed.Add(obj);
+
+            var indentation = GetIndentation(nestingLevel);
 
             if (TypeSerializers.TryGetValue(obj.GetType(), out var serializer))
-                return (string)serializer.DynamicInvoke(obj);
+            {
+                currentPassed.Remove(obj);
+                return indentation + (string)serializer.DynamicInvoke(obj);
+            }
+
             if (TypesCultures.TryGetValue(obj.GetType(), out var cultureInfo) && obj is IFormattable formattable)
-                return formattable.ToString(null, cultureInfo);
-            if (obj.GetType() != typeof(string) &&
-                TryPrintIDictionary(obj as IDictionary, nestingLevel, out var serializedDictionary))
-                return serializedDictionary;
-            if (obj.GetType() != typeof(string) &&
-                TryPrintIEnumerable(obj as IEnumerable, nestingLevel, out var serializedEnumerable))
-                return serializedEnumerable;
+            {
+                currentPassed.Remove(obj);
+                return indentation + formattable.ToString(null, cultureInfo);
+            }
 
             if (isFinalType)
             {
-                printed.Remove(obj);
+                currentPassed.Remove(obj);
                 return obj.ToString();
             }
 
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.Append(type.Name);
-            var propertiesAndFieldInfos = type.GetProperties().Where(info => !IsPropertyExcluded(info))
-                .Concat<MemberInfo>(type.GetFields().Where(info => !IsFieldExcluded(info)));
-            foreach (var info in propertiesAndFieldInfos)
-                sb.Append(PrintMember(GetValue(obj, info), info, nestingLevel));
+            if (TryPrintIDictionary(obj as IDictionary, nestingLevel, out var serialized)
+                || TryPrintIEnumerable(obj as IEnumerable, nestingLevel, out serialized))
+            {
+                currentPassed.Remove(obj);
+                return serialized;
+            }
 
-            printed.Remove(obj);
+            var result = /*Environment.NewLine + */PrintPublicMembers(obj, nestingLevel + 1);
+            currentPassed.Remove(obj);
 
-            return sb.ToString();
+            return result;
         }
 
         private static bool IsFinalType(Type type)
         {
-            return type.GetProperties().Length + type.GetFields().Length == 0
-                   || typeof(IFormattable).IsAssignableFrom(type)
-                   || type.IsDefined(typeof(SerializableAttribute));
+            return (type.IsValueType
+                    || type.IsPrimitive
+                    || type == typeof(string))
+                   && !typeof(IList).IsAssignableFrom(type)
+                   && !typeof(IDictionary).IsAssignableFrom(type);
         }
 
         private static string GetIndentation(int nestingLevel)
@@ -138,30 +152,21 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
 
             var hasElements = false;
-            var hasBasicTypes = false;
             foreach (var i in obj)
             {
-                sb.Append(PrintToString(i, nestingLevel + 1) + ", ");
+                sb.Append(GetIndentation(nestingLevel + 2));
+                sb.Append(PrintToString(i, nestingLevel + 1));
+                sb.AppendLine(",");
+
                 hasElements = true;
-                hasBasicTypes = IsFinalType(i.GetType());
             }
 
-            var removeCount = hasElements ? 2 : 1;
+            var removeCount = Environment.NewLine.Length;
+            removeCount += hasElements ? 1 : 0;
             if (sb.Length >= removeCount)
                 sb.Remove(sb.Length - removeCount, removeCount);
-            var indention = GetIndentation(nestingLevel);
-            if (hasBasicTypes)
-            {
-                sb.Insert(0, "[ ");
-                sb.Append(" ]");
-            }
-            else
-            {
-                sb.Insert(0, "[" + Environment.NewLine + indention);
-                sb.Append(Environment.NewLine + indention + "]");
-            }
 
-            result = sb.ToString();
+            result = PrintInBrackets("[", "]", sb.ToString(), nestingLevel + 1);
             return true;
         }
 
@@ -171,23 +176,33 @@ namespace ObjectPrinting
             if (obj is null)
                 return false;
 
-            var indention = GetIndentation(nestingLevel);
             var sb = new StringBuilder();
-            sb.Append("{" + Environment.NewLine + indention);
             var hasElements = false;
 
             foreach (var i in obj.Keys)
             {
-                sb.Append(GetIndentation(nestingLevel + 1) + $"[{i}] = {PrintToString(obj[i], nestingLevel + 1)}," +
-                          Environment.NewLine);
+                sb.Append(GetIndentation(nestingLevel + 2));
+                sb.AppendLine($"[{i}] = {PrintToString(obj[i], nestingLevel + 2)},");
                 hasElements = true;
             }
 
-            var removeCount = hasElements ? 2 : 1;
-            sb.Remove(sb.Length - removeCount, removeCount);
-            sb.Append(Environment.NewLine + indention + "}");
-            result = sb.ToString();
+            var removeCount = Environment.NewLine.Length;
+            removeCount += hasElements ? 1 : 0;
+            if (sb.Length >= removeCount)
+                sb.Remove(sb.Length - removeCount, removeCount);
+
+            result = PrintInBrackets("{", "}", sb.ToString(), nestingLevel + 1);
             return true;
+        }
+
+        private static string PrintInBrackets(string openBracket, string endBracket, string text, int nestingLevel)
+        {
+            var sb = new StringBuilder(text);
+            var indention = GetIndentation(nestingLevel);
+            sb.Insert(0, Environment.NewLine + indention + openBracket + Environment.NewLine);
+            sb.Append(Environment.NewLine + indention + endBracket);
+
+            return sb.ToString();
         }
 
         private string PrintMember(object value, MemberInfo memberInfo, int nestingLevel)
@@ -203,6 +218,24 @@ namespace ObjectPrinting
                 valueString = valueString?[..length];
 
             return Environment.NewLine + GetIndentation(nestingLevel + 1) + memberInfo.Name + " = " + valueString;
+        }
+
+        private string PrintPublicMembers(object obj, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.Append(type.Name);
+            sb.Append(":");
+            foreach (var info in GetPublicPropertiesAndFieldsInfos(type))
+                sb.Append(PrintMember(GetValue(obj, info), info, nestingLevel));
+
+            return sb.ToString();
+        }
+
+        private IEnumerable<MemberInfo> GetPublicPropertiesAndFieldsInfos(Type type)
+        {
+            return type.GetProperties().Where(info => !IsPropertyExcluded(info))
+                .Concat<MemberInfo>(type.GetFields().Where(info => !IsFieldExcluded(info)));
         }
     }
 }

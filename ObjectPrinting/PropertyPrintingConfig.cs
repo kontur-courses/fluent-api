@@ -8,6 +8,9 @@ namespace ObjectPrinting
         public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
             Expression<Func<TOwner, TProperty>> memberSelector = null)
         {
+            if (memberSelector != null && !(memberSelector.Body is MemberExpression))
+                throw new ArgumentException("Expression contains not MemberExpression");
+
             PrintingConfig = printingConfig;
             MemberSelector = memberSelector;
         }
