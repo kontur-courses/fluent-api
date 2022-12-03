@@ -14,7 +14,7 @@ namespace ObjectPrinting
         private class ReferenceComparator<T> : EqualityComparer<T>
         {
             public override bool Equals(T x, T y) => x != null && ReferenceEquals(x, y);
-            public override int GetHashCode(T obj) => 0;
+            public override int GetHashCode(T obj) => obj.GetHashCode();
         }
 
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
@@ -67,14 +67,12 @@ namespace ObjectPrinting
             if (currentPassed.Contains(obj))
                 return "<Cycle>:" + obj.GetType().FullName;
 
-            var indentation = GetIndentation(nestingLevel);
-
             if (TypeSerializers.TryGetValue(obj.GetType(), out var serializer)
                 || PropertySerializers.TryGetValue(obj.GetType(), out serializer))
                 return (string)serializer.DynamicInvoke(obj);
 
             if (TypeCultures.TryGetValue(obj.GetType(), out var cultureInfo) && obj is IFormattable formattable)
-                return indentation + formattable.ToString(null, cultureInfo);
+                return GetIndentation(nestingLevel) + formattable.ToString(null, cultureInfo);
 
             if (IsFinalType(obj.GetType()))
                 return obj.ToString();
@@ -96,11 +94,9 @@ namespace ObjectPrinting
 
         private static bool IsFinalType(Type type)
         {
-            return (type.IsPrimitive
-                    || type == typeof(string)
-                    || typeof(IFormattable).IsAssignableFrom(type))
-                   && !typeof(IList).IsAssignableFrom(type)
-                   && !typeof(IDictionary).IsAssignableFrom(type);
+            return type.IsPrimitive
+                   || type == typeof(string)
+                   || typeof(IFormattable).IsAssignableFrom(type);
         }
 
         private static string GetIndentation(int nestingLevel)
