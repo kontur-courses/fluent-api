@@ -7,26 +7,19 @@ namespace ObjectPrinting.Configuration
 {
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> _typesForExcluding;
-        private readonly HashSet<MemberInfo> _membersForExcluding;
-        private readonly Dictionary<Type, Delegate> _typesAlternativeSerializer;
-        private readonly Dictionary<MemberInfo, Delegate> _membersAlternativeSerializer;
-        private bool _ignoreCyclicReferences;
-
-
-        public HashSet<Type> TypesForExcluding => _typesForExcluding;
-        public HashSet<MemberInfo> MembersForExcluding => _membersForExcluding;
-        public Dictionary<Type, Delegate> TypesAlternativeSerializer => _typesAlternativeSerializer;
-        public Dictionary<MemberInfo, Delegate> MembersAlternativeSerializer => _membersAlternativeSerializer;
-        public bool IgnoreCyclicReferences => _ignoreCyclicReferences;
+        public HashSet<Type> TypesForExcluding { get; private set; }
+        public HashSet<MemberInfo> MembersForExcluding { get; private set; }
+        public Dictionary<Type, Delegate> TypesAlternativeSerializer { get; private set; }
+        public Dictionary<MemberInfo, Delegate> MembersAlternativeSerializer { get; private set; }
+        public bool IgnoreCyclicReferences { get; private set; }
 
 
         public PrintingConfig()
         {
-            _typesForExcluding = new HashSet<Type>();
-            _membersForExcluding = new HashSet<MemberInfo>();
-            _typesAlternativeSerializer = new Dictionary<Type, Delegate>();
-            _membersAlternativeSerializer = new Dictionary<MemberInfo, Delegate>();
+            TypesForExcluding = new HashSet<Type>();
+            MembersForExcluding = new HashSet<MemberInfo>();
+            TypesAlternativeSerializer = new Dictionary<Type, Delegate>();
+            MembersAlternativeSerializer = new Dictionary<MemberInfo, Delegate>();
         }
 
 
@@ -43,32 +36,32 @@ namespace ObjectPrinting.Configuration
 
         public PrintingConfig<TOwner> AddAlternativeTypeSerializer<TMember>(Delegate alternativeSerializer)
         {
-            _typesAlternativeSerializer[typeof(TMember)] = alternativeSerializer;
+            TypesAlternativeSerializer[typeof(TMember)] = alternativeSerializer;
             return this;
         }
 
         public PrintingConfig<TOwner> AddAlternativeTypeSerializer(MemberInfo memberInfo, Delegate alternativeSerializer)
         {
-            _membersAlternativeSerializer[memberInfo] = alternativeSerializer;
+            MembersAlternativeSerializer[memberInfo] = alternativeSerializer;
             return this;
         }
 
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            _membersForExcluding.Add(((MemberExpression)memberSelector.Body).Member);
+            MembersForExcluding.Add(((MemberExpression)memberSelector.Body).Member);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            _typesForExcluding.Add(typeof(TPropType));
+            TypesForExcluding.Add(typeof(TPropType));
             return this;
         }
 
         public PrintingConfig<TOwner> IgnoringCyclicReferences(bool ignore = true)
         {
-            _ignoreCyclicReferences = ignore;
+            IgnoreCyclicReferences = ignore;
             return this;
         }
 
