@@ -29,7 +29,7 @@ namespace ObjectPrinting.Common
             return this;
         }
 
-        public IPrintingConfig<TOwner> SetNumericTypeCulture<T>(CultureInfo culture)
+        public IPrintingConfig<TOwner> SetNumericTypeCulture<T>(CultureInfo culture) where T : IConvertible
         {
             var type = typeof(T);
             if (!Root.NumericTypeCulture.ContainsKey(type))
@@ -53,15 +53,14 @@ namespace ObjectPrinting.Common
 
         private static MemberInfo GetPropertyInfoFromExpression(Expression expression)
         {
-            if (!(expression is MemberExpression))
+            if (!(expression is MemberExpression memberExpression))
                 throw new ArgumentException($"Can't find property {expression}");
-            return (expression as MemberExpression).Member;
+            return memberExpression.Member;
         }
     }
 
     public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
-        private PrintingConfigRoot root = new PrintingConfigRoot();
-        PrintingConfigRoot IHaveRoot.Root { get => root; }
+        PrintingConfigRoot IHaveRoot.Root { get; } = new PrintingConfigRoot();
     }
 }

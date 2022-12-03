@@ -70,7 +70,9 @@ namespace ObjectPrinting.Common
             {
                 // appling culture if exists
                 var oldCulture = CultureInfo.CurrentCulture;
-                if (configRoot.NumericTypeCulture.ContainsKey(currentType))
+                var typeAllowsCulture = typeof(IConvertible).IsAssignableFrom(currentType) &&
+                                        configRoot.NumericTypeCulture.ContainsKey(currentType);
+                if (typeAllowsCulture)
                     CultureInfo.CurrentCulture = configRoot.NumericTypeCulture[currentType];
 
                 var str = node.Object.Value.ToString();
@@ -103,8 +105,8 @@ namespace ObjectPrinting.Common
             if (node.Nodes.Count < 1)
                 return openDictionaryObjectString + closeDictionaryObjectString;
 
-            var identation = new string(tabSymbol, currentLevel + 1);
-            var elementContentIdentation = new string(tabSymbol, currentLevel + 2);
+            var indentation = new string(tabSymbol, currentLevel + 1);
+            var elementContentIndentation = new string(tabSymbol, currentLevel + 2);
 
             var sb = new StringBuilder();
             sb.AppendLine(openDictionaryObjectString);
@@ -135,7 +137,7 @@ namespace ObjectPrinting.Common
             if (node.Nodes.Count < 1)
                 return openCollectionString + closeCollectionString;
 
-            var identation = new string(tabSymbol, currentLevel + 1);
+            var indentation = new string(tabSymbol, currentLevel + 1);
 
             var sb = new StringBuilder();
             sb.AppendLine(openCollectionString);
@@ -143,7 +145,7 @@ namespace ObjectPrinting.Common
             foreach (var subNode in node.Nodes)
             {
                 string str = subNode.EndsLoop ? loopReferenceMark : PrintObjectTreeNode(subNode, currentLevel + 1, configRoot);
-                sb.Append(identation).Append(str).AppendLine(collectionItemSeparator);
+                sb.Append(indentation).Append(str).AppendLine(collectionItemSeparator);
             }
 
             // Removing last ','
@@ -158,7 +160,7 @@ namespace ObjectPrinting.Common
             if (node.Nodes.Count < 1)
                 return string.Empty;
 
-            var identation = new string(tabSymbol, currentLevel + 1);
+            var indentation = new string(tabSymbol, currentLevel + 1);
 
             var sb = new StringBuilder();
             sb.AppendLine(node.Object.Type.Name);
@@ -166,7 +168,7 @@ namespace ObjectPrinting.Common
             foreach (var subNode in node.Nodes)
             {
                 string str = subNode.EndsLoop ? loopReferenceMark : PrintObjectTreeNode(subNode, currentLevel + 1, configRoot);
-                sb.AppendFormat(propertyFormat, identation, subNode.Object.Name, str).AppendLine();
+                sb.AppendFormat(propertyFormat, indentation, subNode.Object.Name, str).AppendLine();
             }
 
             return sb.Remove(sb.Length - Environment.NewLine.Length, 2).ToString();
@@ -174,7 +176,7 @@ namespace ObjectPrinting.Common
 
         private static string GetSubstring(string str, int maxLength)
         {
-            return maxLength < str.Length ? str.Substring(0, maxLength) : str;
+            return maxLength < str.Length ? str[..maxLength] : str;
         }
     }
 }
