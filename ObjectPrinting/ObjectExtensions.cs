@@ -1,18 +1,15 @@
 using System;
-using System.Data;
 
 namespace ObjectPrinting
 {
     public static class ObjectExtensions
     {
-        public static string PrintToString<T>(this T obj) where T : notnull
+        public static string PrintToString<T>(this T obj)
         {
-            if (typeof(T) == typeof(CustomSerializablePrintingConfig<>))
-                throw new ConstraintException();
             return ObjectPrinter.For<T>().PrintToString(obj);
         }
-        
-        public static string PrintToString<T>(this T obj, Func<CustomSerializablePrintingConfig<T>, CustomSerializablePrintingConfig<T>> config)
+
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
         {
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }

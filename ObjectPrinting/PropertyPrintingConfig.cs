@@ -5,24 +5,24 @@ namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TProperty>
     {
-        public CustomSerializablePrintingConfig<TOwner> CustomSerializablePrintingConfig { get; }
-        public Expression<Func<TOwner, TProperty>>  MemberSelector { get; }
-        public Type PropertyType => typeof(TProperty);
-        
-
-        public PropertyPrintingConfig(CustomSerializablePrintingConfig<TOwner> customSerializablePrintingConfig, Expression<Func<TOwner, TProperty>> memberSelector = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig,
+            Expression<Func<TOwner, TProperty>> memberSelector = null)
         {
-            CustomSerializablePrintingConfig = customSerializablePrintingConfig;
+            PrintingConfig = printingConfig;
             MemberSelector = memberSelector;
         }
 
-        public CustomSerializablePrintingConfig<TOwner> Serialize(Func<TProperty, string> print)
+        public PrintingConfig<TOwner> PrintingConfig { get; }
+        public Expression<Func<TOwner, TProperty>> MemberSelector { get; }
+        public Type PropertyType => typeof(TProperty);
+
+        public PrintingConfig<TOwner> Serialize(Func<TProperty, string> print)
         {
             if (MemberSelector == null)
-                ((ICustomSerializablePrintingConfig) CustomSerializablePrintingConfig).TypeSerializers[typeof(TProperty)] = print;
+                PrintingConfig.TypeSerializers[typeof(TProperty)] = print;
             else if (MemberSelector.Body is MemberExpression memberExpression)
-                ((ICustomSerializablePrintingConfig) CustomSerializablePrintingConfig).PropertySerializers[memberExpression.Member] = print;
-            return CustomSerializablePrintingConfig;
+                PrintingConfig.PropertySerializers[memberExpression.Member] = print;
+            return PrintingConfig;
         }
     }
 }

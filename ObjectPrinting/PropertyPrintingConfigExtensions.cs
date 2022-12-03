@@ -6,18 +6,23 @@ namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static CustomSerializablePrintingConfig<TOwner> TrimToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
+        public static PrintingConfig<TOwner> TrimToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLength)
         {
-            var parentConfig = propConfig.CustomSerializablePrintingConfig;
+            if (maxLength < 0)
+                throw new ArgumentException("Length can't be negative");
+
+            var parentConfig = propConfig.PrintingConfig;
             if (propConfig.MemberSelector.Body is MemberExpression memberExpression)
                 parentConfig.StringPropertyLengths[memberExpression.Member] = maxLength;
-            return propConfig.CustomSerializablePrintingConfig;
+            return propConfig.PrintingConfig;
         }
-        
-        public static CustomSerializablePrintingConfig<TOwner> Use<TOwner, TProp>(this PropertyPrintingConfig<TOwner, TProp> propertyConfig, CultureInfo culture) where TProp: IFormattable
+
+        public static PrintingConfig<TOwner> Use<TOwner, TProp>(
+            this PropertyPrintingConfig<TOwner, TProp> propertyConfig, CultureInfo culture) where TProp : IFormattable
         {
             var type = propertyConfig.PropertyType;
-            var config = propertyConfig.CustomSerializablePrintingConfig;
+            var config = propertyConfig.PrintingConfig;
             var cultures = config.TypesCultures;
             if (cultures.ContainsKey(type))
                 cultures[type] = culture;

@@ -2,6 +2,9 @@ namespace ObjectPrinting
 {
     public static class ObjectPrinter
     {
-        public static CustomSerializablePrintingConfig<T> For<T>() => new CustomSerializablePrintingConfig<T>();
+        public static PrintingConfig<T> For<T>()
+        {
+            return new PrintingConfig<T>();
+        }
     }
 }
