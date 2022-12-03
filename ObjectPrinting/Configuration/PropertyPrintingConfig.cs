@@ -1,32 +1,30 @@
 ﻿using System;
-using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting.Configuration
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly PrintingConfig<TOwner> _printingConfig;
+        private readonly MemberInfo? _memberInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo? memberInfo)
         {
-            this.printingConfig = printingConfig;
+            _printingConfig = printingConfig;
+            _memberInfo = memberInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            return printingConfig;
+            if (_memberInfo == null)
+                return _printingConfig.AddAlternativeTypeSerializer<TPropType>(print);
+
+            return _printingConfig.AddAlternativeTypeSerializer(_memberInfo!, print);
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            return printingConfig;
-        }
 
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentPrinter => _printingConfig;
     }
 }

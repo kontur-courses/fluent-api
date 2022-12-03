@@ -1,62 +1,80 @@
-﻿using System;
-using System.Linq;
+using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
+using System.Reflection;
 
 namespace ObjectPrinting.Configuration
 {
-    public class PrintingConfig<TOwner>
+    public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> _typesForExcluding;
+        private readonly HashSet<MemberInfo> _membersForExcluding;
+        private readonly Dictionary<Type, Delegate> _typesAlternativeSerializer;
+        private readonly Dictionary<MemberInfo, Delegate> _membersAlternativeSerializer;
+        private bool _ignoreCyclicReferences;
+
+
+        public HashSet<Type> TypesForExcluding => _typesForExcluding;
+        public HashSet<MemberInfo> MembersForExcluding => _membersForExcluding;
+        public Dictionary<Type, Delegate> TypesAlternativeSerializer => _typesAlternativeSerializer;
+        public Dictionary<MemberInfo, Delegate> MembersAlternativeSerializer => _membersAlternativeSerializer;
+        public bool IgnoreCyclicReferences => _ignoreCyclicReferences;
+
+
+        public PrintingConfig()
+        {
+            _typesForExcluding = new HashSet<Type>();
+            _membersForExcluding = new HashSet<MemberInfo>();
+            _typesAlternativeSerializer = new Dictionary<Type, Delegate>();
+            _membersAlternativeSerializer = new Dictionary<MemberInfo, Delegate>();
+        }
+
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, null);
         }
+
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, ((MemberExpression)memberSelector.Body).Member);
         }
+
+        public PrintingConfig<TOwner> AddAlternativeTypeSerializer<TMember>(Delegate alternativeSerializer)
+        {
+            _typesAlternativeSerializer[typeof(TMember)] = alternativeSerializer;
+            return this;
+        }
+
+        public PrintingConfig<TOwner> AddAlternativeTypeSerializer(MemberInfo memberInfo, Delegate alternativeSerializer)
+        {
+            _membersAlternativeSerializer[memberInfo] = alternativeSerializer;
+            return this;
+        }
+
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            _membersForExcluding.Add(((MemberExpression)memberSelector.Body).Member);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            _typesForExcluding.Add(typeof(TPropType));
             return this;
         }
 
-        public string PrintToString(TOwner obj)
+        public PrintingConfig<TOwner> IgnoringCyclicReferences(bool ignore = true)
         {
-            return PrintToString(obj, 0);
+            _ignoreCyclicReferences = ignore;
+            return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public ObjectPrinter<TOwner> Build()
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
+            return new ObjectPrinter<TOwner>(this);
         }
     }
 }

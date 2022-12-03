@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection.PortableExecutable;
+using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 using ObjectPrinting.Configuration;
@@ -16,33 +18,34 @@ namespace ObjectPrintingTests
         {
             var person = new Person
             {
-                Name = "Alex",
+                Name = "max",
                 Age = 19
             };
 
-            var printer = ObjectPrinter.For<Person>()
+            var printer = new ObjectPrinter<Person>();
+            printer.Configurate()
                 //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
+                .Excluding<double>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
+                .Printing<int>().Using(
+                    i => i.ToString("X"))
+                //3. Для числовых типов указать культуру 
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
                 //4. Настроить сериализацию конкретного свойства
+                .Printing(p => p.Id).Using(guid => $"this is guid {guid}")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
 
-            string s1 = printer.PrintToString(person);
+            var s1 = printer.PrintToString(person);
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            string s2 = person.PrintToString();
-
-            //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
+            var s2 = person.PrintToString();
+            
+            //8.с конфигурированием
+            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
+            var s4 = new ObjectPrinter<Person>(s => s.Excluding<int>()).PrintToString(person);
         }
     }
 }
