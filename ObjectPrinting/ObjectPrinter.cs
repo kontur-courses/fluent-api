@@ -171,7 +171,7 @@ namespace ObjectPrinting
 
         private List<MemberInfo> ExcludeMembers(IEnumerable<MemberInfo> membersToCheck)
         {
-            var membersNoExcluded = new List<MemberInfo>();
+            var includeMembers = new List<MemberInfo>();
 
             foreach (var memberInfo in membersToCheck)
             {
@@ -195,10 +195,10 @@ namespace ObjectPrinting
                 if (_config.MembersForExcluding.Contains(memberInfo))
                     continue;
 
-                membersNoExcluded.Add(memberInfo);
+                includeMembers.Add(memberInfo);
             }
 
-            return membersNoExcluded;
+            return includeMembers;
         }
 
 
