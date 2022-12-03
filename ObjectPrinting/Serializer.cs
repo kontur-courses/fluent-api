@@ -12,10 +12,10 @@ namespace ObjectPrinting
 {
     public class Serializer
     {
-        private SerializerSettings settings;
-        private int nesting;
-        private HashSet<object> visitedObjects = new HashSet<object>();
-        private Type[] finalTypes = new[]
+        private readonly SerializerSettings settings;
+        private readonly int nesting;
+        private readonly HashSet<object> visitedObjects = new HashSet<object>();
+        private readonly Type[] finalTypes = new[]
             {
                 typeof(int),
                 typeof(double),
@@ -26,7 +26,7 @@ namespace ObjectPrinting
                 typeof(TimeSpan)
         };
 
-        private StringBuilder builder = new StringBuilder();
+        private readonly StringBuilder builder = new StringBuilder();
 
         public Serializer(SerializerSettings settings, object serializeObj, int finalNestingLevel)
         {

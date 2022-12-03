@@ -1,35 +1,31 @@
-﻿using ObjectPrinting.Solved;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
     public class MemberConfig<TOwner, TPropType>
     {
-        public PrintingConfig<TOwner> ParentConfig { get; private set; }
-        private SerializerSettings settings;
-        private MemberInfo memberInfo;
+        private readonly PrintingConfig<TOwner> parentConfig;
+        private readonly SerializerSettings settings;
+        private readonly MemberInfo memberInfo;
 
         public MemberConfig(PrintingConfig<TOwner> printingConfig, MemberInfo member, SerializerSettings serializerSettings)
         {
-            ParentConfig = printingConfig;
-            this.settings = serializerSettings;
+            parentConfig = printingConfig;
+            settings = serializerSettings;
             memberInfo = member;
         }
 
         public PrintingConfig<TOwner> PrintAs(Func<TPropType, string> print)
         {
             settings.CustomMembs.Add(memberInfo, x => print((TPropType)x));
-            return ParentConfig;
+            return parentConfig;
         }
 
         public PrintingConfig<TOwner> IgnoreProperty()
         {
             settings.MembersToIgnor.Add(memberInfo);
-            return ParentConfig;
+            return parentConfig;
         }
     }
 }

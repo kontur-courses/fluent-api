@@ -15,23 +15,10 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public SerializerSettings settings;
-        public Type configType;
-
-        private Type[] finalTypes = new[]
-            {
-                typeof(int),
-                typeof(double),
-                typeof(float),
-                typeof(string),
-                typeof(Guid),
-                typeof(DateTime),
-                typeof(TimeSpan)
-        };
-
+        private SerializerSettings settings;
+        
         public PrintingConfig()
         {
-            configType = typeof(TOwner);
             settings = new SerializerSettings();
         }
 
@@ -44,6 +31,12 @@ namespace ObjectPrinting
         {
             var member = ((MemberExpression)memberExpression.Body).Member;
             return new MemberConfig<TOwner, TPropType>(this, member, settings);
+        }
+
+        public PrintingConfig<TOwner> SetCulture<T>(IFormatProvider culture) where T : IFormattable
+        {
+            settings.CustomCultures.Add(typeof(TOwner), culture);
+            return this;
         }
 
         public string PrintToString(object obj, int nestingLevel)

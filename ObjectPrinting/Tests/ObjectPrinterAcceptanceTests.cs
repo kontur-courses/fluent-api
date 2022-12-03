@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Xml.Serialization;
 using FluentAssertions;
-using Microsoft.VisualBasic;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -272,7 +267,7 @@ namespace ObjectPrinting.Tests
         {
             var config = ObjectPrinter.For<double>();
 
-            config.SelectType<double>().SetCulture(CultureInfo.InvariantCulture);
+            config.SetCulture<double>(CultureInfo.InvariantCulture);
 
             text = config.PrintToString(153.2, 10);
 
