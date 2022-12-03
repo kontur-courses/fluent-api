@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
@@ -13,8 +15,17 @@ namespace ObjectPrinting
                 throw new ArgumentException("Length can't be negative");
 
             var parentConfig = propConfig.PrintingConfig;
-            if (propConfig.MemberSelector.Body is MemberExpression memberExpression)
+            if (propConfig.MemberSelector is { Body: MemberExpression memberExpression })
                 parentConfig.StringPropertyLengths[memberExpression.Member] = maxLength;
+            else
+            {
+                var type = typeof(TOwner);
+                var members = type.GetProperties().Where(x => x.PropertyType == typeof(string))
+                    .Concat<MemberInfo>(type.GetFields().Where(x => x.FieldType == typeof(string)));
+                foreach (var info in members)
+                    parentConfig.StringPropertyLengths[info] = maxLength;
+            }
+
             return propConfig.PrintingConfig;
         }
 
@@ -23,7 +34,7 @@ namespace ObjectPrinting
         {
             var type = propertyConfig.PropertyType;
             var config = propertyConfig.PrintingConfig;
-            var cultures = config.TypesCultures;
+            var cultures = config.TypeCultures;
             if (cultures.ContainsKey(type))
                 cultures[type] = culture;
             else

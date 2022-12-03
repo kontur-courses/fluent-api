@@ -1,5 +1,15 @@
 ﻿namespace ObjectPrintingTests;
 
+public struct Struct
+{
+    public Struct()
+    {
+        DateTime = DateTime.Now;
+    }
+
+    public DateTime DateTime { get; set; }
+}
+
 public class Person
 {
     public Guid Id { get; set; }
@@ -11,6 +21,10 @@ public class Person
     public Person Parent2 { get; set; }
 
     public int[] SomeArray = new[] { 1, 2, 3 };
+
+    public object Data = new object();
+
+    public Struct Struct { get; set; }
 
     protected bool Equals(Person other) => Name == other.Name;
 

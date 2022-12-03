@@ -152,14 +152,72 @@ public class PrinterConfigTests
         var serializedPerson2 = person2.PrintToString();
         serializedPerson2.Should()
             .Contain(
-                $"Parent1 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine + new string('\t', 1))}");
+                $"Parent1 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine)}");
         serializedPerson2.Should()
             .Contain(
-                $"Parent2 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine + new string('\t', 1))}");
+                $"Parent2 = {serializedPerson1.Replace(Environment.NewLine, Environment.NewLine)}");
     }
 
     private static string WithIndention(string str, int level)
     {
         return str.Replace(Environment.NewLine, Environment.NewLine + new string('\t', level));
+    }
+
+    [Test]
+    public void ApplyForPropertyByType()
+    {
+        const int length = 3;
+        var printer = ObjectPrinter.For<Person>().ForType<string>().TrimToLength(length);
+        printer.PrintToString(person).Should()
+            .Contain(string.Concat(person.Name.AsSpan(0, length), Environment.NewLine));
+    }
+
+    struct S
+    {
+        public int A => 666;
+        public int B => 69;
+    }
+
+    [Test]
+    public void StructPrints()
+    {
+        var s = new S();
+        var printer = ObjectPrinter.For<S>();
+        var serialized = printer.PrintToString(s);
+        serialized.Should().Contain(s.A.ToString());
+        serialized.Should().Contain(s.B.ToString());
+        Console.WriteLine(serialized);
+    }
+
+    class CustomSerializationTestClass
+    {
+        public int A => 0;
+        public int B => 1;
+        public double C => 2.7182;
+    }
+
+    [Test]
+    public void CustomSerializeForProperty()
+    {
+        var s = new CustomSerializationTestClass();
+        var printer = ObjectPrinter.For<CustomSerializationTestClass>().ForProperty(x => x.A)
+            .Serialize(_ => "AAAAAAA!!!");
+        var serialized = printer.PrintToString(s);
+        serialized.Should().Contain("A = AAAAAAA!!!");
+        serialized.Should().Contain(s.B.ToString());
+        serialized.Should().Contain(s.C.ToString());
+        Console.WriteLine(serialized);
+    }
+
+    [Test]
+    public void CustomSerializeForType()
+    {
+        var s = new CustomSerializationTestClass();
+        var printer = ObjectPrinter.For<CustomSerializationTestClass>().ForType<double>().Serialize(_ => "e");
+        var serialized = printer.PrintToString(s);
+        serialized.Should().Contain(s.A.ToString());
+        serialized.Should().Contain(s.B.ToString());
+        serialized.Should().Contain("C = e");
+        Console.WriteLine(serialized);
     }
 }

@@ -11,7 +11,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private class Comparator<T> : EqualityComparer<T>
+        private class ReferenceComparator<T> : EqualityComparer<T>
         {
             public override bool Equals(T x, T y) => x != null && ReferenceEquals(x, y);
             public override int GetHashCode(T obj) => 0;
@@ -19,11 +19,11 @@ namespace ObjectPrinting
 
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<object> currentPassed = new HashSet<object>(new Comparator<object>());
+        private readonly HashSet<object> currentPassed = new HashSet<object>(new ReferenceComparator<object>());
 
         public Dictionary<Type, Delegate> TypeSerializers { get; } = new Dictionary<Type, Delegate>();
         public Dictionary<MemberInfo, Delegate> PropertySerializers { get; } = new Dictionary<MemberInfo, Delegate>();
-        public Dictionary<Type, CultureInfo> TypesCultures { get; } = new Dictionary<Type, CultureInfo>();
+        public Dictionary<Type, CultureInfo> TypeCultures { get; } = new Dictionary<Type, CultureInfo>();
         public Dictionary<MemberInfo, int> StringPropertyLengths { get; } = new Dictionary<MemberInfo, int>();
 
         public PropertyPrintingConfig<TOwner, TProperty> ForType<TProperty>()
@@ -45,10 +45,10 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            if (memberSelector.Body is MemberExpression memberExpression)
-                excludedMembers.Add(memberExpression.Member);
-            else
+            if (!(memberSelector.Body is MemberExpression memberExpression))
                 throw new ArgumentException("Expression contains not MemberExpression");
+
+            excludedMembers.Add(memberExpression.Member);
             return this;
         }
 
@@ -64,34 +64,22 @@ namespace ObjectPrinting
             if (obj is null)
                 return "null";
 
-            var hasLoop = currentPassed.Contains(obj);
-            if (hasLoop)
-                return obj.GetType().FullName;
-
-            var isFinalType = IsFinalType(obj.GetType());
-
-            if (!isFinalType)
-                currentPassed.Add(obj);
+            if (currentPassed.Contains(obj))
+                return "<Cycle>:" + obj.GetType().FullName;
 
             var indentation = GetIndentation(nestingLevel);
 
-            if (TypeSerializers.TryGetValue(obj.GetType(), out var serializer))
-            {
-                currentPassed.Remove(obj);
-                return indentation + (string)serializer.DynamicInvoke(obj);
-            }
+            if (TypeSerializers.TryGetValue(obj.GetType(), out var serializer)
+                || PropertySerializers.TryGetValue(obj.GetType(), out serializer))
+                return (string)serializer.DynamicInvoke(obj);
 
-            if (TypesCultures.TryGetValue(obj.GetType(), out var cultureInfo) && obj is IFormattable formattable)
-            {
-                currentPassed.Remove(obj);
+            if (TypeCultures.TryGetValue(obj.GetType(), out var cultureInfo) && obj is IFormattable formattable)
                 return indentation + formattable.ToString(null, cultureInfo);
-            }
 
-            if (isFinalType)
-            {
-                currentPassed.Remove(obj);
+            if (IsFinalType(obj.GetType()))
                 return obj.ToString();
-            }
+
+            currentPassed.Add(obj);
 
             if (TryPrintIDictionary(obj as IDictionary, nestingLevel, out var serialized)
                 || TryPrintIEnumerable(obj as IEnumerable, nestingLevel, out serialized))
@@ -100,7 +88,7 @@ namespace ObjectPrinting
                 return serialized;
             }
 
-            var result = /*Environment.NewLine + */PrintPublicMembers(obj, nestingLevel + 1);
+            var result = PrintPublicMembers(obj, nestingLevel);
             currentPassed.Remove(obj);
 
             return result;
@@ -108,9 +96,9 @@ namespace ObjectPrinting
 
         private static bool IsFinalType(Type type)
         {
-            return (type.IsValueType
-                    || type.IsPrimitive
-                    || type == typeof(string))
+            return (type.IsPrimitive
+                    || type == typeof(string)
+                    || typeof(IFormattable).IsAssignableFrom(type))
                    && !typeof(IList).IsAssignableFrom(type)
                    && !typeof(IDictionary).IsAssignableFrom(type);
         }
