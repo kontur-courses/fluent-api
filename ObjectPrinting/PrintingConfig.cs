@@ -4,12 +4,17 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using FluentAssertions.Execution;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
         private List<Type> removedTypes = new List<Type>();
         private Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
 
@@ -24,7 +29,6 @@ namespace ObjectPrinting
 
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
 
-        //private HashSet<object> viewedObjects = new HashSet<object>();
         private List<object> viewedObjects = new List<object>();
 
         public string PrintToString(TOwner obj)
@@ -85,17 +89,13 @@ namespace ObjectPrinting
             if (cultures.ContainsKey(type))
                 return ((IFormattable)obj).ToString(null, cultures[type]) + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
             if (finalTypes.Contains(type))
             {
                 return obj + Environment.NewLine;
             }
 
+            //возвращение пустой строки, если уже обрабатывали такой объект
+            //предотвращение цикла при обработке циклических объектов
             if (viewedObjects.Contains(obj))
             {
                 return Environment.NewLine;
@@ -143,7 +143,7 @@ namespace ObjectPrinting
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
-            
+
             return sb.ToString();
         }
     }

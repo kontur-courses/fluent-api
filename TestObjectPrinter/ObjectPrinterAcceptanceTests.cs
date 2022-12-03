@@ -36,7 +36,7 @@ namespace ObjectPrinting.Tests
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
         }
-        
+
         [Test]
         public void Serialization_NoCircularRecursion()
         {
@@ -184,7 +184,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
 
             var printer = ObjectPrinter.For<Person>()
-                .SetCulture<double>(CultureInfo.CurrentCulture);
+                .SetCulture<double>(CultureInfo.GetCultureInfo("en-GB"));
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
