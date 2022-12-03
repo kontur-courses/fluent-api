@@ -116,7 +116,7 @@ namespace ObjectPrinting.Common
 
         private static bool IsMemberExcluded(FieldPropertyObject obj, PrintingConfigRoot configRoot)
         {
-            return configRoot.ExcludedProperties.Contains(obj.Info) &&
+            return configRoot.ExcludedProperties.Contains(obj.Info) ||
                    configRoot.ExcludedTypes.Contains(obj.Type);
         }
 
