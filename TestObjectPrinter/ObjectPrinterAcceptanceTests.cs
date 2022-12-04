@@ -38,6 +38,33 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void Serialization_NoCircularRecursion_SameObjectsOneLevel()
+        {
+            var person1 = new Person3 {Id = new Guid(), Name = "Alex"};
+            var person2 = new Person3 {Id = new Guid(), Name = "Joe", };
+            person1.Friend1 = person2;
+            person1.Friend2 = person2;
+            var printer = ObjectPrinter.For<Person3>();
+            string s1 = printer.PrintToString(person1);
+            string result = "Person3" + Environment.NewLine +
+                            "\tId = Guid" + Environment.NewLine +
+                            "\tName = Alex" + Environment.NewLine +
+                            "\tFriend1 = Person3" + Environment.NewLine +
+                            "\t\tId = Guid" + Environment.NewLine +
+                            "\t\tName = Joe" + Environment.NewLine +
+                            "\t\tFriend1 = null" + Environment.NewLine +
+                            "\t\tFriend2 = null" + Environment.NewLine +
+                            "\tFriend2 = Person3" + Environment.NewLine +
+                            "\t\tId = Guid" + Environment.NewLine +
+                            "\t\tName = Joe" + Environment.NewLine +
+                            "\t\tFriend1 = null" + Environment.NewLine +
+                            "\t\tFriend2 = null" + Environment.NewLine;
+
+            s1.Should().Be(result);
+            Console.WriteLine(s1);
+        }
+        
+        [Test]
         public void Serialization_NoCircularRecursion()
         {
             var person1 = new Person2 {Id = new Guid(), Name = "Alex"};
@@ -49,7 +76,7 @@ namespace ObjectPrinting.Tests
                             "\tId = Guid" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tFriend = Person2" + Environment.NewLine +
-                            "\t\tId = " + Environment.NewLine +
+                            "\t\tId = Guid" + Environment.NewLine +
                             "\t\tName = Joe" + Environment.NewLine +
                             "\t\tFriend = " + Environment.NewLine;
 

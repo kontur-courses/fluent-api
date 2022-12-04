@@ -29,7 +29,9 @@ namespace ObjectPrinting
 
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
 
-        private List<object> viewedObjects = new List<object>();
+        //private List<object> viewedObjects = new List<object>();
+        
+        private List<ObjectAndNestingLevel> viewedObjects = new List<ObjectAndNestingLevel>();
 
         public string PrintToString(TOwner obj)
         {
@@ -96,12 +98,16 @@ namespace ObjectPrinting
 
             //возвращение пустой строки, если уже обрабатывали такой объект
             //предотвращение цикла при обработке циклических объектов
-            if (viewedObjects.Contains(obj))
+
+            for (int i = 0; i < viewedObjects.Count; i++)
             {
-                return Environment.NewLine;
+                if (viewedObjects[i].Object == obj && nestingLevel != viewedObjects[i].NestingLevel)
+                {
+                    return Environment.NewLine;    
+                }
             }
 
-            viewedObjects.Add(obj);
+            viewedObjects.Add(new ObjectAndNestingLevel(obj, nestingLevel));
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
