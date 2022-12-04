@@ -66,18 +66,16 @@ namespace ObjectPrinting.Common
             if (configRoot.TypeSerializers.ContainsKey(currentType))
                 return configRoot.TypeSerializers[currentType](value);
 
+            // serializing with Culture if type is IConvertible
+            var typeAllowsCulture = typeof(IConvertible).IsAssignableFrom(currentType) &&
+                                    configRoot.TypeCulture.ContainsKey(currentType);
+            if (typeAllowsCulture)
+                return (node.Object.Value as IConvertible)!.ToString(configRoot.TypeCulture[currentType]);
+
             // checking for final type
             if (finalTypes.Contains(currentType))
             {
-                // appling culture if exists
-                var oldCulture = CultureInfo.CurrentCulture;
-                var typeAllowsCulture = typeof(IConvertible).IsAssignableFrom(currentType) &&
-                                        configRoot.NumericTypeCulture.ContainsKey(currentType);
-                if (typeAllowsCulture)
-                    CultureInfo.CurrentCulture = configRoot.NumericTypeCulture[currentType];
-
                 var str = node.Object.Value.ToString();
-                CultureInfo.CurrentCulture = oldCulture;
 
                 // appling max length for string property
                 if (memberInfo != null && configRoot.MaxStringPropertyLengths.ContainsKey(memberInfo))

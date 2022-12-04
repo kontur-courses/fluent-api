@@ -52,7 +52,7 @@ namespace ObjectPrinting.Tests
                 //2. Указать альтернативный способ сериализации для определенного типа
                 .SerializeTypeAs<double>(number => number.ToString() + "(TypeSerializer)")
                 //3. Для числовых типов указать культуру
-                .SetNumericTypeCulture<float>(CultureInfo.GetCultureInfo("ru"))
+                .SetTypeCulture<float>(CultureInfo.GetCultureInfo("ru"))
                 //4. Настроить сериализацию конкретного свойства
                 .ConfigurePropertySerialization(person => person.Name)
                     .SetSerializer(name => name.ToUpper())
@@ -74,7 +74,7 @@ namespace ObjectPrinting.Tests
 
             var actual = person.PrintToString(config => config.Exclude<int>()
                                                               .SerializeTypeAs<double>(n => n.ToString() + "(TypeSerializer)")
-                                                              .SetNumericTypeCulture<float>(CultureInfo.GetCultureInfo("ru"))
+                                                              .SetTypeCulture<float>(CultureInfo.GetCultureInfo("ru"))
                                                               .ConfigurePropertySerialization(person => person.Name)
                                                                   .SetSerializer(name => name.ToUpper())
                                                                   .SetMaxLength(2)

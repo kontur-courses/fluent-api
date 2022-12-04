@@ -29,11 +29,11 @@ namespace ObjectPrinting.Common
             return this;
         }
 
-        public IPrintingConfig<TOwner> SetNumericTypeCulture<T>(CultureInfo culture) where T : IConvertible
+        public IPrintingConfig<TOwner> SetTypeCulture<T>(CultureInfo culture) where T : IConvertible
         {
             var type = typeof(T);
-            if (!Root.NumericTypeCulture.ContainsKey(type))
-                Root.NumericTypeCulture.Add(type, culture);
+            if (!Root.TypeCulture.ContainsKey(type))
+                Root.TypeCulture.Add(type, culture);
 
             return this;
         }

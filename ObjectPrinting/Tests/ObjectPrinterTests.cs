@@ -66,7 +66,7 @@ namespace ObjectPrinting.Tests
                 tab + nameof(TestClass.IntegerProperty) + equal + obj.IntegerProperty + newline +
                 tab + nameof(TestClass.DoubleProperty) + equal + obj.DoubleProperty.ToString(doubleCulture);
 
-            var actual = obj.PrintToString(config => config.SetNumericTypeCulture<double>(doubleCulture));
+            var actual = obj.PrintToString(config => config.SetTypeCulture<double>(doubleCulture));
 
             actual.Should().Be(expected);
         }
