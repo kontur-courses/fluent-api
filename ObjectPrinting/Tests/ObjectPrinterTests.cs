@@ -9,6 +9,8 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
+using static System.Environment;
+
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
@@ -26,14 +28,12 @@ namespace ObjectPrinting.Tests
 
         private const string ignoredMark = "ignored";
 
-        private readonly static string newline = Environment.NewLine;
-
         [Test]
         public void Should_ExcludeProperty()
         {
             var obj = new TestClass() { DoubleProperty = 50 };
             var expected =
-                nameof(TestClass) + newline +
+                nameof(TestClass) + NewLine +
                 tab + nameof(TestClass.DoubleProperty) + equal + obj.DoubleProperty;
 
             var actual = obj.PrintToString(config => config.Exclude(o => o.IntegerProperty));
@@ -47,8 +47,8 @@ namespace ObjectPrinting.Tests
             var obj = new TestClass() { IntegerProperty = 10, DoubleProperty = 50 };
             var doubleSerializator = new Func<double, string>(number => number.ToString() + "(double)");
             var expected =
-                nameof(TestClass) + newline +
-                tab + nameof(TestClass.IntegerProperty) + equal + obj.IntegerProperty + newline +
+                nameof(TestClass) + NewLine +
+                tab + nameof(TestClass.IntegerProperty) + equal + obj.IntegerProperty + NewLine +
                 tab + nameof(TestClass.DoubleProperty) + equal + doubleSerializator(obj.DoubleProperty);
 
             var actual = obj.PrintToString(config => config.SerializeTypeAs(doubleSerializator));
@@ -62,8 +62,8 @@ namespace ObjectPrinting.Tests
             var obj = new TestClass() { IntegerProperty = 10, DoubleProperty = 50.01 };
             var doubleCulture = CultureInfo.GetCultureInfo("ru");
             var expected =
-                nameof(TestClass) + newline +
-                tab + nameof(TestClass.IntegerProperty) + equal + obj.IntegerProperty + newline +
+                nameof(TestClass) + NewLine +
+                tab + nameof(TestClass.IntegerProperty) + equal + obj.IntegerProperty + NewLine +
                 tab + nameof(TestClass.DoubleProperty) + equal + obj.DoubleProperty.ToString(doubleCulture);
 
             var actual = obj.PrintToString(config => config.SetTypeCulture<double>(doubleCulture));
@@ -77,8 +77,8 @@ namespace ObjectPrinting.Tests
             var obj = new TestClass() { IntegerProperty = 1, DoubleProperty = 5 };
             var serializer = new Func<int, string>(number => "Integer" + number.ToString());
             var expected =
-                nameof(TestClass) + newline +
-                tab + nameof(TestClass.IntegerProperty) + equal + serializer(obj.IntegerProperty) + newline +
+                nameof(TestClass) + NewLine +
+                tab + nameof(TestClass.IntegerProperty) + equal + serializer(obj.IntegerProperty) + NewLine +
                 tab + nameof(TestClass.DoubleProperty) + equal + obj.DoubleProperty;
 
             var actual = obj.PrintToString(config => config.ConfigurePropertySerialization(o => o.IntegerProperty)
@@ -93,7 +93,7 @@ namespace ObjectPrinting.Tests
             var obj = new TestClassWithString() { Field = "1234567" };
             var maxLength = obj.Field.Length - 4;
             var expected =
-                nameof(TestClassWithString) + newline +
+                nameof(TestClassWithString) + NewLine +
                 tab + nameof(TestClassWithString.Field) + equal + obj.Field[..maxLength];
 
             var actual = obj.PrintToString(config => config.ConfigurePropertySerialization(o => o.Field)
@@ -108,7 +108,7 @@ namespace ObjectPrinting.Tests
             var obj = new TestClassWithString() { Field = "1234567" };
             var maxLength = obj.Field.Length + 1;
             var expected =
-                nameof(TestClassWithString) + newline +
+                nameof(TestClassWithString) + NewLine +
                 tab + nameof(TestClassWithString.Field) + equal + obj.Field;
 
             var actual = obj.PrintToString(config => config.ConfigurePropertySerialization(o => o.Field)
@@ -123,8 +123,8 @@ namespace ObjectPrinting.Tests
             var obj = new TestClassWithLoopReference() { Property = 10 };
             obj.LoopReference = obj;
             var expected =
-                nameof(TestClassWithLoopReference) + newline +
-                tab + nameof(TestClassWithLoopReference.Property) + equal + obj.Property.ToString() + newline +
+                nameof(TestClassWithLoopReference) + NewLine +
+                tab + nameof(TestClassWithLoopReference.Property) + equal + obj.Property.ToString() + NewLine +
                 tab + nameof(TestClassWithLoopReference.LoopReference) + equal + "loop reference";
 
             var actual = obj.PrintToString();
@@ -137,11 +137,11 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithArray() { Array = new int[] { 1, 2, 3 } };
             var expected =
-                nameof(TestClassWithArray) + newline +
-                tab + nameof(TestClassWithArray.Array) + equal + openCollectionString + newline +
-                tab + tab + obj.Array[0] + comma + newline +
-                tab + tab + obj.Array[1] + comma + newline +
-                tab + tab + obj.Array[2] + newline +
+                nameof(TestClassWithArray) + NewLine +
+                tab + nameof(TestClassWithArray.Array) + equal + openCollectionString + NewLine +
+                tab + tab + obj.Array[0] + comma + NewLine +
+                tab + tab + obj.Array[1] + comma + NewLine +
+                tab + tab + obj.Array[2] + NewLine +
                 tab + closeCollectionString;
 
             var actual = obj.PrintToString();
@@ -154,11 +154,11 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithList() { List = new List<int>() { 1, 2, 3 } };
             var expected =
-                nameof(TestClassWithList) + newline +
-                tab + nameof(TestClassWithList.List) + equal + openCollectionString + newline +
-                tab + tab + obj.List[0] + comma + newline +
-                tab + tab + obj.List[1] + comma + newline +
-                tab + tab + obj.List[2] + newline +
+                nameof(TestClassWithList) + NewLine +
+                tab + nameof(TestClassWithList.List) + equal + openCollectionString + NewLine +
+                tab + tab + obj.List[0] + comma + NewLine +
+                tab + tab + obj.List[1] + comma + NewLine +
+                tab + tab + obj.List[2] + NewLine +
                 tab + closeCollectionString;
 
             var actual = obj.PrintToString();
@@ -171,16 +171,16 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithDictionary() { Dictionary = new Dictionary<int, long>() { { 1, 2 }, { 3, 4 } } };
             var expected =
-                nameof(TestClassWithDictionary) + newline +
-                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + 1 + newline +
-                tab + tab + tab + "Value" + equal + obj.Dictionary[1] + newline +
-                tab + tab + closeFigureBracket + comma + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + 3 + newline +
-                tab + tab + tab + "Value" + equal + obj.Dictionary[3] + newline +
-                tab + tab + closeFigureBracket + newline +
+                nameof(TestClassWithDictionary) + NewLine +
+                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + 1 + NewLine +
+                tab + tab + tab + "Value" + equal + obj.Dictionary[1] + NewLine +
+                tab + tab + closeFigureBracket + comma + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + 3 + NewLine +
+                tab + tab + tab + "Value" + equal + obj.Dictionary[3] + NewLine +
+                tab + tab + closeFigureBracket + NewLine +
                 tab + closeFigureBracket;
 
             var actual = obj.PrintToString();
@@ -193,16 +193,16 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithDictionary() { Dictionary = new Dictionary<int, long>() { { 1, 2 }, { 3, 4 } } };
             var expected =
-                nameof(TestClassWithDictionary) + newline +
-                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + ignoredMark + newline +
-                tab + tab + tab + "Value" + equal + obj.Dictionary[1] + newline +
-                tab + tab + closeFigureBracket + comma + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + ignoredMark + newline +
-                tab + tab + tab + "Value" + equal + obj.Dictionary[3] + newline +
-                tab + tab + closeFigureBracket + newline +
+                nameof(TestClassWithDictionary) + NewLine +
+                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + ignoredMark + NewLine +
+                tab + tab + tab + "Value" + equal + obj.Dictionary[1] + NewLine +
+                tab + tab + closeFigureBracket + comma + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + ignoredMark + NewLine +
+                tab + tab + tab + "Value" + equal + obj.Dictionary[3] + NewLine +
+                tab + tab + closeFigureBracket + NewLine +
                 tab + closeFigureBracket;
 
             var actual = obj.PrintToString(config => config.Exclude<int>());
@@ -215,16 +215,16 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithDictionary() { Dictionary = new Dictionary<int, long>() { { 1, 2 }, { 3, 4 } } };
             var expected =
-                nameof(TestClassWithDictionary) + newline +
-                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + 1 + newline +
-                tab + tab + tab + "Value" + equal + ignoredMark + newline +
-                tab + tab + closeFigureBracket + comma + newline +
-                tab + tab + openFigureBracket + newline +
-                tab + tab + tab + "Key" + equal + 3 + newline +
-                tab + tab + tab + "Value" + equal + ignoredMark + newline +
-                tab + tab + closeFigureBracket + newline +
+                nameof(TestClassWithDictionary) + NewLine +
+                tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + 1 + NewLine +
+                tab + tab + tab + "Value" + equal + ignoredMark + NewLine +
+                tab + tab + closeFigureBracket + comma + NewLine +
+                tab + tab + openFigureBracket + NewLine +
+                tab + tab + tab + "Key" + equal + 3 + NewLine +
+                tab + tab + tab + "Value" + equal + ignoredMark + NewLine +
+                tab + tab + closeFigureBracket + NewLine +
                 tab + closeFigureBracket;
 
             var actual = obj.PrintToString(config => config.Exclude<long>());
@@ -237,7 +237,7 @@ namespace ObjectPrinting.Tests
         {
             var obj = new TestClassWithDictionary() { Dictionary = new Dictionary<int, long>() { { 1, 2 }, { 3, 4 } } };
             var expected =
-                nameof(TestClassWithDictionary) + newline +
+                nameof(TestClassWithDictionary) + NewLine +
                 tab + nameof(TestClassWithDictionary.Dictionary) + equal + openFigureBracket + closeFigureBracket;
 
             var actual = obj.PrintToString(config => config.Exclude<int>()

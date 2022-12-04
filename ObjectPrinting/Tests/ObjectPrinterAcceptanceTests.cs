@@ -8,37 +8,39 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
+using static System.Environment;
+
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        private static readonly string expectedDemo = "Person" + Environment.NewLine +
-            "\t" + "Id = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
-            "\t" + "Name = AL" + Environment.NewLine +
-            "\t" + "Height = 0" + Environment.NewLine +
-            "\t" + "Parent = loop reference" + Environment.NewLine +
-            "\t" + "SubPerson = SubPerson" + Environment.NewLine +
-            "\t\t" + "Name = lowercase" + Environment.NewLine +
-            "\t\t" + "Values = [" + Environment.NewLine +
-            "\t\t\t" + "1," + Environment.NewLine +
-            "\t\t\t" + "2," + Environment.NewLine +
-            "\t\t\t" + "3" + Environment.NewLine +
-            "\t\t" + "]" + Environment.NewLine +
-            "\t" + "Doubles = [" + Environment.NewLine +
-            "\t\t" + "1.01(TypeSerializer)," + Environment.NewLine +
-            "\t\t" + "2.02(TypeSerializer)," + Environment.NewLine +
-            "\t\t" + "3.03(TypeSerializer)" + Environment.NewLine +
-            "\t" + "]" + Environment.NewLine +
-            "\t" + "Dictionary = {" + Environment.NewLine +
-            "\t\t" + "{" + Environment.NewLine +
-            "\t\t\t" + "Key = ignored" + Environment.NewLine +
-            "\t\t\t" + "Value = 2,02" + Environment.NewLine +
-            "\t\t" + "}," + Environment.NewLine +
-            "\t\t" + "{" + Environment.NewLine +
-            "\t\t\t" + "Key = ignored" + Environment.NewLine +
-            "\t\t\t" + "Value = 4,04" + Environment.NewLine +
-            "\t\t" + "}" + Environment.NewLine +
+        private static readonly string expectedDemo = "Person" + NewLine +
+            "\t" + "Id = 00000000-0000-0000-0000-000000000000" + NewLine +
+            "\t" + "Name = AL" + NewLine +
+            "\t" + "Height = 0" + NewLine +
+            "\t" + "Parent = loop reference" + NewLine +
+            "\t" + "SubPerson = SubPerson" + NewLine +
+            "\t\t" + "Name = lowercase" + NewLine +
+            "\t\t" + "Values = [" + NewLine +
+            "\t\t\t" + "1," + NewLine +
+            "\t\t\t" + "2," + NewLine +
+            "\t\t\t" + "3" + NewLine +
+            "\t\t" + "]" + NewLine +
+            "\t" + "Doubles = [" + NewLine +
+            "\t\t" + "1.01(TypeSerializer)," + NewLine +
+            "\t\t" + "2.02(TypeSerializer)," + NewLine +
+            "\t\t" + "3.03(TypeSerializer)" + NewLine +
+            "\t" + "]" + NewLine +
+            "\t" + "Dictionary = {" + NewLine +
+            "\t\t" + "{" + NewLine +
+            "\t\t\t" + "Key = ignored" + NewLine +
+            "\t\t\t" + "Value = 2,02" + NewLine +
+            "\t\t" + "}," + NewLine +
+            "\t\t" + "{" + NewLine +
+            "\t\t\t" + "Key = ignored" + NewLine +
+            "\t\t\t" + "Value = 4,04" + NewLine +
+            "\t\t" + "}" + NewLine +
             "\t" + "}";
 
         [Test]
