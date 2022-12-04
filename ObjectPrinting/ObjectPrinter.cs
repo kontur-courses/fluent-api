@@ -90,21 +90,12 @@ namespace ObjectPrinting
             var (memberValue, memberType) = GetMemberTypeAndValue(obj, memberInfo);
 
             sb.Append(identation + memberInfo.Name + " = ");
-            // if (memberValue?.GetType().IsClass == true)
-            //     if (!printedObjects.Add(memberValue))
-            //     {
-            //         if (!_config.IgnoreCyclicReferences)
-            //             throw new StackOverflowException($"Member: {memberInfo.DeclaringType?.Name}.{memberInfo.Name} cyclic reference");
-            //
-            //         sb.Append("cyclic reference" + Environment.NewLine);
-            //         return;
-            //     }
 
             if (CheckAlternativeSerializer(memberInfo, memberType, out var alternativeSerializer))
             {
                 AlternativeMemberSerializing(sb, alternativeSerializer, memberValue);
             }
-            else if (obj is ICollection collection)
+            else if (obj is IEnumerable collection)
             {
                 CollectionSerializing(sb, collection, printedObjects, nestingLevel);
             }
@@ -114,7 +105,7 @@ namespace ObjectPrinting
             }
         }
 
-        private void CollectionSerializing(StringBuilder sb, ICollection collection, HashSet<object> printedObjects, int nestingLevel)
+        private void CollectionSerializing(StringBuilder sb, IEnumerable collection, HashSet<object> printedObjects, int nestingLevel)
         {
             if (collection is IDictionary dict)
                 sb.Append(PrintDictionary(dict, printedObjects, nestingLevel));
@@ -202,7 +193,7 @@ namespace ObjectPrinting
         }
 
 
-        private StringBuilder PrintCollection(ICollection collection, HashSet<object> printedObjects, int nestingLevel)
+        private StringBuilder PrintCollection(IEnumerable collection, HashSet<object> printedObjects, int nestingLevel)
         {
             var start = "(";
             var end = ")";
