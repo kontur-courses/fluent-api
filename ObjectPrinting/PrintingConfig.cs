@@ -9,12 +9,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private Type[] finalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
         private List<Type> removedTypes = new List<Type>();
         private Dictionary<Type, CultureInfo> cultures = new Dictionary<Type, CultureInfo>();
 
@@ -29,9 +23,9 @@ namespace ObjectPrinting
 
         private List<PropertyInfo> exludingProperty = new List<PropertyInfo>();
 
-        //private List<object> viewedObjects = new List<object>();
-        
         private List<ObjectAndNestingLevel> viewedObjects = new List<ObjectAndNestingLevel>();
+        
+        private Type iFormattableType = typeof(IFormattable);
 
         public string PrintToString(TOwner obj)
         {
@@ -90,15 +84,19 @@ namespace ObjectPrinting
 
             if (cultures.ContainsKey(type))
                 return ((IFormattable)obj).ToString(null, cultures[type]) + Environment.NewLine;
-
-            if (finalTypes.Contains(type))
+            
+            if (type.GetInterfaces().Contains(iFormattableType))
+            {
+                return obj + Environment.NewLine;
+            }
+            
+            if (obj.ToString() != obj.GetType().ToString())
             {
                 return obj + Environment.NewLine;
             }
 
             //возвращение пустой строки, если уже обрабатывали такой объект
             //предотвращение цикла при обработке циклических объектов
-
             for (int i = 0; i < viewedObjects.Count; i++)
             {
                 if (viewedObjects[i].Object == obj && nestingLevel != viewedObjects[i].NestingLevel)

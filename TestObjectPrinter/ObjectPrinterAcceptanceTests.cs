@@ -47,15 +47,15 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person3>();
             string s1 = printer.PrintToString(person1);
             string result = "Person3" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tFriend1 = Person3" + Environment.NewLine +
-                            "\t\tId = Guid" + Environment.NewLine +
+                            "\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\t\tName = Joe" + Environment.NewLine +
                             "\t\tFriend1 = null" + Environment.NewLine +
                             "\t\tFriend2 = null" + Environment.NewLine +
                             "\tFriend2 = Person3" + Environment.NewLine +
-                            "\t\tId = Guid" + Environment.NewLine +
+                            "\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\t\tName = Joe" + Environment.NewLine +
                             "\t\tFriend1 = null" + Environment.NewLine +
                             "\t\tFriend2 = null" + Environment.NewLine;
@@ -73,10 +73,10 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Person2>();
             string s1 = printer.PrintToString(person1);
             string result = "Person2" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tFriend = Person2" + Environment.NewLine +
-                            "\t\tId = Guid" + Environment.NewLine +
+                            "\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\t\tName = Joe" + Environment.NewLine +
                             "\t\tFriend = " + Environment.NewLine;
 
@@ -108,7 +108,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
@@ -126,7 +126,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
@@ -146,7 +146,7 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70.5 kg" + Environment.NewLine +
                             "\tAge = 19 years old" + Environment.NewLine;
             s1.Should().Be(result);
@@ -156,7 +156,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Serialization_Age()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
+            var person = new Person { Name = "Alex", Id = new Guid(), Age = 19, Height = 70.5};
 
             var printer = ObjectPrinter.For<Person>()
                 .SerializeProperty("Age").SetSerialization(x => x + " лет");
@@ -164,7 +164,7 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19 лет" + Environment.NewLine;
             s1.Should().Be(result);
@@ -182,7 +182,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine;
             s1.Should().Be(result);
             //Console.WriteLine(s1);
@@ -198,7 +198,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
             s1.Should().Be(result);
@@ -215,7 +215,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70.5" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
@@ -236,7 +236,7 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70" + Environment.NewLine;
             s1.Should().Be(result);
         }
@@ -251,7 +251,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tHeight = 70" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
             s1.Should().Be(result);
@@ -269,7 +269,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = ALEX" + Environment.NewLine +
                             "\tHeight = 70" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
@@ -287,7 +287,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70" + Environment.NewLine +
                             "\tAge = 19 лет" + Environment.NewLine;
@@ -306,7 +306,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70 кг" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
@@ -326,7 +326,7 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
                             "\tHeight = 70 кг" + Environment.NewLine +
                             "\tAge = 19 лет" + Environment.NewLine;
@@ -346,7 +346,7 @@ namespace ObjectPrinting.Tests
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +
                             "\tName = Alex" + Environment.NewLine +
-                            "\tId = Guid" + Environment.NewLine +
+                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\tAge = 19" + Environment.NewLine;
             s1.Should().Be(result);
             
