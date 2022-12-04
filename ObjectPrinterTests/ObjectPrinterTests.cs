@@ -7,7 +7,7 @@ using FluentAssertions;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    public class ObjectPrinterTests
     {
         [Test]
         public void Demo()
@@ -25,7 +25,7 @@ namespace ObjectPrinting.Tests
                 //4. Настроить сериализацию конкретного свойства
                 SerializeProperty("Age").SetSerialization(x => x + " лет")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .SelectString("Name").Crop(10);
+                .SelectString("Name").Trim(10);
                 //6. Исключить из сериализации конкретного свойства
                 //.ExcludeProperty(p => p.name);
             
@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
                             "\t\tFriend2 = null" + Environment.NewLine;
 
             s1.Should().Be(result);
-            Console.WriteLine(s1);
+            //Console.WriteLine(s1);
         }
         
         [Test]
@@ -78,10 +78,10 @@ namespace ObjectPrinting.Tests
                             "\tFriend = Person2" + Environment.NewLine +
                             "\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                             "\t\tName = Joe" + Environment.NewLine +
-                            "\t\tFriend = " + Environment.NewLine;
+                            "\t\tFriend = (cycle reference)" + Environment.NewLine;
 
             s1.Should().Be(result);
-            Console.WriteLine(s1);
+            //Console.WriteLine(s1);
         }
         
         [Test]
@@ -90,7 +90,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex Ivanov", Age = 19, Height = 70.5, Id = new Guid()};
 
             var printer = ObjectPrinter.For<Person>()
-                .SelectString("Age").Crop(4);
+                .SelectString("Age").Trim(4);
             
             Action act = () => printer.PrintToString(person);
 
@@ -104,16 +104,11 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19, Height = 70.5, Id = new Guid()};
 
             var printer = ObjectPrinter.For<Person>()
-                .SelectString("Name").Crop(10);
+                .SelectString("Name").Trim(10);
             
-            string s1 = printer.PrintToString(person);
-            string result = "Person" + Environment.NewLine +
-                            "\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
-                            "\tName = Alex" + Environment.NewLine +
-                            "\tHeight = 70.5" + Environment.NewLine +
-                            "\tAge = 19" + Environment.NewLine;
-            s1.Should().Be(result);
-            //Console.WriteLine(s1);
+            Action act = () => printer.PrintToString(person);
+
+            act.Should().Throw<ArgumentException>();
         }
         
         [Test]
@@ -122,7 +117,7 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex Ivanov", Age = 19, Height = 70.5, Id = new Guid()};
 
             var printer = ObjectPrinter.For<Person>()
-                .SelectString("Name").Crop(4);
+                .SelectString("Name").Trim(4);
             
             string s1 = printer.PrintToString(person);
             string result = "Person" + Environment.NewLine +

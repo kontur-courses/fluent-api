@@ -34,8 +34,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> ExcludeType<T>()
         {
-            var tType = typeof(T);
-            removedTypes.Add(tType);
+            var type = typeof(T);
+            removedTypes.Add(type);
             return this;
         }
 
@@ -53,9 +53,9 @@ namespace ObjectPrinting
             return serialization;
         }
 
-        public Cropper<TOwner> SelectString(String propertyInfoName)
+        public Trimmer<TOwner> SelectString(String propertyInfoName)
         {
-            var cropper = new Cropper<TOwner>();
+            var cropper = new Trimmer<TOwner>();
             cropper.EditingPropertyInfoName = propertyInfoName;
             cropper.PrintingConfig = this;
             return cropper;
@@ -101,7 +101,7 @@ namespace ObjectPrinting
             {
                 if (viewedObjects[i].Object == obj && nestingLevel != viewedObjects[i].NestingLevel)
                 {
-                    return Environment.NewLine;    
+                    return "(cycle reference)" + Environment.NewLine;    
                 }
             }
 
@@ -134,11 +134,16 @@ namespace ObjectPrinting
                     {
                         throw new ArgumentException();
                     }
-
                     var propInfoValue = propertyInfo.GetValue(obj).ToString();
+                    var length = PropertiesToCrop[propertyInfo.Name];
+                    
+                    if (propInfoValue.Length < length)
+                    {
+                        throw new ArgumentException();
+                    }
+                    
                     sb.Append(identation + propertyInfo.Name + " = " +
-                              propInfoValue.Substring(0,
-                                  Math.Min(PropertiesToCrop[propertyInfo.Name], propInfoValue.Length))
+                              propInfoValue.Substring(0, length)
                               + Environment.NewLine);
                     continue;
                 }

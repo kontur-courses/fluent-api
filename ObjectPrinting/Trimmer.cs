@@ -2,12 +2,12 @@
 
 namespace ObjectPrinting
 {
-    public class Cropper<TOwner>
+    public class Trimmer<TOwner>
     {
         public String EditingPropertyInfoName;
         public PrintingConfig<TOwner> PrintingConfig; 
         
-        public PrintingConfig<TOwner> Crop(int length)
+        public PrintingConfig<TOwner> Trim(int length)
         {
             PrintingConfig.PropertiesToCrop.Add(EditingPropertyInfoName, length);
             return PrintingConfig;
