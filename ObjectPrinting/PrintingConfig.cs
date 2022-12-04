@@ -122,7 +122,10 @@ namespace ObjectPrinting
 
         private bool IsFinalType(Type type)
         {
-            return type.IsValueType || type == typeof(string);
+            var implementedInterfaces = type.GetInterfaces();
+
+            return (implementedInterfaces.Contains(typeof(IConvertible)) ||
+                    implementedInterfaces.Contains(typeof(IFormattable)));
         }
 
         private PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -191,12 +194,16 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
 
-            sb.Append("\n" + identation + "[ ");
+            sb.Append("\n")
+              .Append(identation)
+              .Append("[ ");
 
             foreach (var item in list)
                 sb.Append("\n" + identation + PrintToString(item, identation.Length + 1));
 
-            sb.Append("\n" + identation + "]");
+            sb.Append("\n")
+              .Append(identation)
+              .Append("]");
 
             return sb.ToString();
         }
@@ -211,10 +218,12 @@ namespace ObjectPrinting
             {
                 var dictionaryItem = (DictionaryEntry)item;
 
-                sb.Append("\n" + identation + "[ ");
-                sb.Append(PrintToString(dictionaryItem.Key, identation.Length));
-                sb.Append(" ] = ");
-                sb.Append(PrintToString(dictionaryItem.Value, identation.Length));
+                sb.Append("\n")
+                  .Append(identation)
+                  .Append("[ ")
+                  .Append(PrintToString(dictionaryItem.Key, identation.Length))
+                  .Append(" ] = ")
+                  .Append(PrintToString(dictionaryItem.Value, identation.Length));
             }
 
             return sb.ToString();
