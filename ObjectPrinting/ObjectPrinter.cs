@@ -13,6 +13,10 @@ namespace ObjectPrinting
     {
         private readonly PrintingConfig<TOwner> _config;
 
+        private readonly Type[] _finalTypes = new[]
+        {
+            typeof(string), typeof(StringBuilder)
+        };
 
         public ObjectPrinter()
         {
@@ -52,13 +56,13 @@ namespace ObjectPrinting
                 return string.Empty;
 
             var sb = new StringBuilder();
-            if (obj is ICollection collection)
+            if (obj is IEnumerable enumerableObj && !_finalTypes.Contains(currentType))
             {
-                CollectionSerializing(sb, collection, printedObjects, nestingLevel);
+                EnumerableSerializing(sb, enumerableObj, printedObjects, nestingLevel);
                 return sb.ToString();
             }
 
-            if (currentType.IsValueType || currentType.IsSerializable)
+            if (currentType.IsValueType || _finalTypes.Contains(currentType) || currentType.IsSerializable)
                 return returnOnNewLine ? obj + Environment.NewLine : obj.ToString();
 
             sb.AppendLine(currentType.Name);
@@ -97,7 +101,7 @@ namespace ObjectPrinting
             }
             else if (obj is IEnumerable collection)
             {
-                CollectionSerializing(sb, collection, printedObjects, nestingLevel);
+                EnumerableSerializing(sb, collection, printedObjects, nestingLevel);
             }
             else
             {
@@ -105,13 +109,13 @@ namespace ObjectPrinting
             }
         }
 
-        private void CollectionSerializing(StringBuilder sb, IEnumerable collection, HashSet<object> printedObjects, int nestingLevel)
+        private void EnumerableSerializing(StringBuilder sb, IEnumerable enumerableObj, HashSet<object> printedObjects, int nestingLevel)
         {
-            if (collection is IDictionary dict)
+            if (enumerableObj is IDictionary dict)
                 sb.Append(PrintDictionary(dict, printedObjects, nestingLevel));
             else
             {
-                sb.Append(PrintCollection(collection, printedObjects, nestingLevel));
+                sb.Append(PrintEnumerable(enumerableObj, printedObjects, nestingLevel));
             }
         }
 
@@ -193,7 +197,7 @@ namespace ObjectPrinting
         }
 
 
-        private StringBuilder PrintCollection(IEnumerable collection, HashSet<object> printedObjects, int nestingLevel)
+        private StringBuilder PrintEnumerable(IEnumerable collection, HashSet<object> printedObjects, int nestingLevel)
         {
             var start = "(";
             var end = ")";

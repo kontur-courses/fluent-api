@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using NUnit.Framework;
@@ -299,6 +300,17 @@ public class ObjectPrintingTests
         var result = numbers.PrintToString();
         var expected = $"{{{Environment.NewLine}\t{{{Environment.NewLine}\t\tkey: 1{Environment.NewLine}\t\tvalue: a{Environment.NewLine}\t}}," +
             $"{Environment.NewLine}\t{{{Environment.NewLine}\t\tkey: 2{Environment.NewLine}\t\tvalue: b{Environment.NewLine}\t}}{Environment.NewLine}}}{Environment.NewLine}";
+        result.Should().Be(expected);
+    }
+
+
+    [Test]
+    public void PrintToString_StringBuilder_PrintAsString()
+    {
+        var sb = new StringBuilder("test123");
+        var result = sb.PrintToString();
+
+        var expected = $"test123{Environment.NewLine}";
         result.Should().Be(expected);
     }
 }
