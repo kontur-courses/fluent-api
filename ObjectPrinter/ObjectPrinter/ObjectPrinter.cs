@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using ObjectPrinter.PrintingConfigs;
 
@@ -31,26 +32,40 @@ public class ObjectPrinter<TFor>
 
 	private string PrintObject(object? obj, int nestingLevel)
 	{
+
 		if (obj is null)
 			return $"null{NewLine}";
 
 		var type = obj.GetType();
 
-		if (obj is IEnumerable collection and not string)
-			return PrintCollection(collection, nestingLevel);
-
-		if (type.IsClass)
-			if (!printedMembers.Add(obj))
-				return config.CyclicReferenceRule(obj);
-
-		if (type.IsSerializable)
+		if (IsSimple(type))
 			return $"{obj}{NewLine}";
 
+		if (!printedMembers.Add(obj))
+			return config.CyclicReferenceRule(obj);
+
+		if (obj is IEnumerable collection)
+			return PrintCollection(collection, nestingLevel);
+		
 		var instances = InstanceInfo.GetInstances(obj, BindingFlags.Public | BindingFlags.Instance);
 		var printedProperties = PrintInstances(instances, nestingLevel + 1);
 
 		return $"{type.Name}{NewLine}{printedProperties}";
 	}
+
+	private static bool IsSimple(Type type)
+	{
+		if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+		{
+			// nullable type, check if the nested type is simple.
+			return IsSimple(type.GetGenericArguments()[0]);
+		}
+
+		return IsPrimitive(type);
+	}
+
+	private static bool IsPrimitive(Type type) => type.IsPrimitive || type.IsValueType || type == typeof(string);
+	
 
 	private string PrintInstances(IEnumerable<InstanceInfo> instances, int nestingLevel)
 	{
