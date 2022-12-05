@@ -104,7 +104,7 @@ public class ObjectPrinterTests
 	}
 
 	[Test]
-	public void PrintToString_NestedTypesWithCyclicReferences_ShouldNotThrow()
+	public void PrintToString_CyclicReferences_ShouldThrowOnDefault()
 	{
 		var person = new Person
 		{
@@ -115,7 +115,39 @@ public class ObjectPrinterTests
 
 		var action = () => person.PrintToString();
 
+		action.Should().Throw<ArgumentException>();
+	}
+
+	[Test]
+	public void PrintToString_CyclicReferences_ShouldNotThrowWithCustomRule()
+	{
+		var person = new Person
+		{
+			Name = "Alex",
+			Age = 19
+		};
+		person.Parent = person;
+
+		var action = () => person
+			.PrintToString(c => c.CyclingRefPrinting(_ => "already printed"));
+
 		action.Should().NotThrow();
+	}
+
+	[Test]
+	public void PrintToString_CyclicReferences_ShouldNotPrintEmptyRef()
+	{
+		var person = new Person
+		{
+			Name = "Alex",
+			Age = 19
+		};
+		person.Parent = person;
+
+		var result = person
+			.PrintToString(c => c.CyclingRefPrinting(o => string.Empty));
+
+		result.Should().NotContain("Parent");
 	}
 
 	[Test]
@@ -202,6 +234,25 @@ public class ObjectPrinterTests
 		result.Should().Be($"{{{NewLine}\t1 : a{NewLine}\t2 : b{NewLine}}}{NewLine}");
 	}
 
+	[Test]
+	public void PrintToString_CanPrintFiniteIEnumerable()
+	{
+		var numbers = Enumerable.Range(1, 6);
+
+		var result = numbers.PrintToString();
+
+		result.Should().Be($"(1, 2, 3, 4, 5, 6){NewLine}");
+	}
+
+	[Test]
+	public void PrintToString_CanPrintInfiniteIEnumerable()
+	{
+		var numbers = GetInfiniteEnumerable();
+
+		var result = numbers.PrintToString(c => c.MaxElementInCollection(5));
+
+		result.Should().Be($"(0, 1, 2, 3, 4, ...){NewLine}");
+	}
 
 	[Test]
 	public void AcceptanceTests()
@@ -233,6 +284,12 @@ public class ObjectPrinterTests
 		Console.WriteLine(s1);
 		Console.WriteLine(s2);
 		Console.WriteLine(s3);
+	}
+
+	private IEnumerable GetInfiniteEnumerable()
+	{
+		var i = 0;
+		while (true) yield return $"{i++}";
 	}
 
 	private class Person

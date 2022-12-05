@@ -11,6 +11,8 @@ public class PrintingConfig<TOwner>
 		ExcludingProperties = new HashSet<MemberInfo>();
 		TypesPrintingRules = new Dictionary<Type, Delegate>();
 		MembersPrintingRules = new Dictionary<MemberInfo, Delegate>();
+		CyclicReferenceRule = _ => throw new ArgumentException("Cycling reference");
+		MaxCollectionElementPrinted = int.MaxValue;
 	}
 
 	public HashSet<Type> ExcludingTypes { get; }
@@ -18,6 +20,10 @@ public class PrintingConfig<TOwner>
 
 	public Dictionary<Type, Delegate> TypesPrintingRules { get; }
 	public Dictionary<MemberInfo, Delegate> MembersPrintingRules { get; }
+
+	public Func<object, string> CyclicReferenceRule { get; private set; }
+
+	public int MaxCollectionElementPrinted { get; private set; }
 
 	public InstancePrintingConfig<TOwner, TPropType> Printing<TPropType>()
 	{
@@ -41,6 +47,18 @@ public class PrintingConfig<TOwner>
 	public PrintingConfig<TOwner> Excluding<TPropType>()
 	{
 		ExcludingTypes.Add(typeof(TPropType));
+		return this;
+	}
+
+	public PrintingConfig<TOwner> CyclingRefPrinting(Func<object, string> rule)
+	{
+		CyclicReferenceRule = rule;
+		return this;
+	}
+
+	public PrintingConfig<TOwner> MaxElementInCollection(int max)
+	{
+		MaxCollectionElementPrinted = max;
 		return this;
 	}
 

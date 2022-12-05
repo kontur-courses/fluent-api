@@ -10,6 +10,7 @@ public class ObjectPrinter<TFor>
 	private readonly PrintingConfig<TFor> config;
 	private HashSet<object> printedMembers;
 
+
 	public ObjectPrinter(PrintingConfig<TFor> config)
 	{
 		this.config = config;
@@ -35,12 +36,12 @@ public class ObjectPrinter<TFor>
 
 		var type = obj.GetType();
 
-		if (obj is ICollection collection)
+		if (obj is IEnumerable collection and not string)
 			return PrintCollection(collection, nestingLevel);
 
 		if (type.IsClass)
 			if (!printedMembers.Add(obj))
-				return $"Cycling reference{NewLine}";
+				return config.CyclicReferenceRule(obj);
 
 		if (type.IsSerializable)
 			return $"{obj}{NewLine}";
@@ -68,14 +69,14 @@ public class ObjectPrinter<TFor>
 			if (InstanceContainSelfPrintingRule(instance.MemberInfo))
 			{
 				var result = config.MembersPrintingRules[instance.MemberInfo].DynamicInvoke(value);
-				Append(instance.Name, result);
+				Append(instance.Name, result.ToString());
 				continue;
 			}
 
 			if (TypeContainSelfPrintingRule(instance.Type))
 			{
 				var result = config.TypesPrintingRules[instance.Type].DynamicInvoke(value);
-				Append(instance.Name, result);
+				Append(instance.Name, result.ToString());
 				continue;
 			}
 
@@ -90,14 +91,16 @@ public class ObjectPrinter<TFor>
 		bool TypeContainSelfPrintingRule(Type type) => config.TypesPrintingRules.ContainsKey(type);
 		bool InstanceContainSelfPrintingRule(MemberInfo member) => config.MembersPrintingRules.ContainsKey(member);
 
-		void Append(string typeName, object? value, bool withNewLine = true)
+		void Append(string typeName, string value, bool withNewLine = true)
 		{
+			if (value == string.Empty) return;
+
 			var ending = withNewLine ? NewLine : string.Empty;
 			printedInstances.Append($"{tabulation}{typeName} = {value}{ending}");
 		}
 	}
 
-	private string PrintCollection(ICollection collection, int nestingLevel)
+	private string PrintCollection(IEnumerable collection, int nestingLevel)
 	{
 		if (collection is IDictionary dict)
 			return PrintDictionary(dict, nestingLevel);
@@ -107,7 +110,18 @@ public class ObjectPrinter<TFor>
 		var end = collection is Array ? "]" : ")";
 
 		var sb = new StringBuilder();
-		foreach (var element in collection) sb.Append($"{element}{separator}");
+		var printedElementsCount = 0;
+		foreach (var element in collection)
+		{
+			if (printedElementsCount >= config.MaxCollectionElementPrinted)
+			{
+				sb.Append($"...{separator}");
+				break;
+			}
+
+			printedElementsCount++;
+			sb.Append($"{element}{separator}");
+		}
 
 		if (sb.Length > start.Length + separator.Length + end.Length)
 			sb.Remove(sb.Length - separator.Length, separator.Length);
