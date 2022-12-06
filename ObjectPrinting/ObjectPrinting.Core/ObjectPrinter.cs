@@ -41,7 +41,10 @@ namespace ObjectPrinting.Core
 
             var type = obj.GetType();
 
-            serialized = TrySerializeCollection(obj, nestingLevel, config);
+            serialized = (obj is not IEnumerable or not ICollection) 
+                            ? null 
+                            : TrySerializeCollection((IEnumerable)obj, nestingLevel, config);
+
             if (serialized != null)
                 return serialized;
 
@@ -75,11 +78,8 @@ namespace ObjectPrinting.Core
             return sb.ToString();
         }
 
-        private string? TrySerializeCollection(object obj, int nestingLevel, Config config)
+        private string? TrySerializeCollection(IEnumerable collection, int nestingLevel, Config config)
         {
-            if (obj is not ICollection collection)
-                return null;
-
             var identation = new string(Separator, nestingLevel + 1);
 
             if (collection is IDictionary dictionary)
@@ -103,11 +103,11 @@ namespace ObjectPrinting.Core
             return sb.ToString();
         }
 
-        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation, Config config)
+        private string SerializeDictionary(IEnumerable dictionary, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"{{{Environment.NewLine}");
 
-            foreach (DictionaryEntry obj in dictionary)
+            foreach (DictionaryEntry obj in (IDictionary)dictionary)
             {
                 sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1, config)} : " +
                           $"{PrintToString(obj.Value, nestingLevel + 1, config)},{Environment.NewLine}");
