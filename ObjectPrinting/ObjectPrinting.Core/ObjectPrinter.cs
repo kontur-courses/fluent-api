@@ -10,7 +10,7 @@ namespace ObjectPrinting.Core
         private readonly Config? _config;
         private const char Separator = '\t';
         private readonly Dictionary<object, Guid> _alreadyPrinted = new();
-
+        public static int MaxCollectionSize { get; set; } = 1024;
         private ObjectPrinter(Config? config)
         {
             this._config = config;
@@ -80,6 +80,11 @@ namespace ObjectPrinting.Core
 
         private string? TrySerializeCollection(IEnumerable collection, int nestingLevel, Config config)
         {
+            if (collection.Cast<object>().Count() > MaxCollectionSize)
+            {
+                throw new ArgumentOutOfRangeException("Maximum collection size exceeded");
+            }
+
             var identation = new string(Separator, nestingLevel + 1);
 
             if (collection is IDictionary dictionary)
@@ -103,11 +108,11 @@ namespace ObjectPrinting.Core
             return sb.ToString();
         }
 
-        private string SerializeDictionary(IEnumerable dictionary, int nestingLevel, string identation, Config config)
+        private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"{{{Environment.NewLine}");
 
-            foreach (DictionaryEntry obj in (IDictionary)dictionary)
+            foreach (DictionaryEntry obj in dictionary)
             {
                 sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1, config)} : " +
                           $"{PrintToString(obj.Value, nestingLevel + 1, config)},{Environment.NewLine}");
