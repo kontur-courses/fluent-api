@@ -80,11 +80,6 @@ namespace ObjectPrinting.Core
 
         private string? TrySerializeCollection(IEnumerable collection, int nestingLevel, Config config)
         {
-            if (collection.Cast<object>().Count() > MaxCollectionSize)
-            {
-                throw new ArgumentOutOfRangeException("Maximum collection size exceeded");
-            }
-
             var identation = new string(Separator, nestingLevel + 1);
 
             if (collection is IDictionary dictionary)
@@ -96,13 +91,26 @@ namespace ObjectPrinting.Core
         private string SerializeCollection(IEnumerable collection, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"[{Environment.NewLine}");
+            var count = 0;
+            bool overflow = false;
 
             foreach (var obj in collection)
             {
+                if (count == MaxCollectionSize)
+                {
+                    overflow = true;
+                    break;
+                }
+
+                count++;
                 sb.Append($"{identation}{PrintToString(obj, nestingLevel + 1, config)},{Environment.NewLine}");
             }
 
             sb.Remove(sb.Length - 2, 2);
+
+            if(overflow)
+                sb.Append($"{Environment.NewLine}{identation}...");
+            
             sb.Append($"{Environment.NewLine}{identation}]");
 
             return sb.ToString();
@@ -111,12 +119,24 @@ namespace ObjectPrinting.Core
         private string SerializeDictionary(IDictionary dictionary, int nestingLevel, string identation, Config config)
         {
             var sb = new StringBuilder($"{{{Environment.NewLine}");
+            var count = 0;
+            bool overflow = false;
 
             foreach (DictionaryEntry obj in dictionary)
             {
+                if (count == MaxCollectionSize)
+                {
+                    overflow = true;
+                    break;
+                }
+
+                count++;
                 sb.Append($"{identation}{PrintToString(obj.Key, nestingLevel + 1, config)} : " +
                           $"{PrintToString(obj.Value, nestingLevel + 1, config)},{Environment.NewLine}");
             }
+
+            if (overflow)
+                sb.Append($"{Environment.NewLine}{identation}...");
 
             sb.Append($"{identation}}}");
             return sb.ToString();
