@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = second
+	Age = 33
+	Height = 192,2
