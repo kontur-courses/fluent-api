@@ -35,4 +35,15 @@ public class PrintingConfigCutStringTests
 
         await Verify(printer.PrintToString(TestDataFactory.ComplexPerson));
     }
+
+    [Test]
+    public async Task SetStringMaxLength_OverwritesPreviousCallResult_WhenCalledMoreThanOnce()
+    {
+        var printer = ObjectPrinter.For<ComplexPerson>()
+            .SelectMember(p => p.Name)
+            .SetStringMaxLength(100)
+            .SetStringMaxLength(2);
+
+        await Verify(printer.PrintToString(TestDataFactory.ComplexPerson));
+    }
 }

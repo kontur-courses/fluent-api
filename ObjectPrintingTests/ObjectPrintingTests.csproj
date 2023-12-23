@@ -45,6 +45,9 @@
       <None Update="PrintingConfigCutStringTests.SetStringMaxLength_PrintsCutString_WhenValueLengthIsLessThanMaxLength.verified.txt">
         <DependentUpon>PrintingConfigCutStringTests.cs</DependentUpon>
       </None>
+      <None Update="PrintingConfigCutStringTests.SetStringMaxLength_OverwritesPreviousCallResult_WhenCalledMoreThanOnce.verified.txt">
+        <DependentUpon>PrintingConfigCutStringTests.cs</DependentUpon>
+      </None>
     </ItemGroup>
 
 </Project>

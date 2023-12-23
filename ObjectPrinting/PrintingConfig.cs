@@ -14,6 +14,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, CultureInfo> specifiedCultureInfo = new();
     protected readonly Dictionary<string, Func<object, string>> CustomMemberSerialization = new();
     protected readonly Dictionary<string, int> MemberMaxStringLength = new();
+    protected readonly HashSet<string> ExcludedMembers = new();
     
     private readonly Type[] finalTypes =
     {
@@ -32,6 +33,7 @@ public class PrintingConfig<TOwner>
         specifiedCultureInfo = printingConfig.specifiedCultureInfo;
         CustomMemberSerialization = printingConfig.CustomMemberSerialization;
         MemberMaxStringLength = printingConfig.MemberMaxStringLength;
+        ExcludedMembers = printingConfig.ExcludedMembers;
     }
 
     public string PrintToString(TOwner obj)
@@ -85,7 +87,7 @@ public class PrintingConfig<TOwner>
         if (obj is null)
             return "null" + Environment.NewLine;
 
-        if (excludedTypes.Contains(obj.GetType()))
+        if (excludedTypes.Contains(obj.GetType()) || ExcludedMembers.Contains(memberPrefix))
             return "";
 
         if (CustomMemberSerialization.TryGetValue(memberPrefix, out var memberSerialization))
@@ -141,7 +143,7 @@ public class PrintingConfig<TOwner>
     {
         var sb = new StringBuilder();
 
-        if (excludedTypes.Contains(type))
+        if (excludedTypes.Contains(type) || ExcludedMembers.Contains(memberPrefix + name))
             return "";
 
         sb.Append(indentation + name + " = ");

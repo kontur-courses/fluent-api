@@ -12,6 +12,13 @@ public class PrintingMemberConfig<TOwner, T> : PrintingConfig<TOwner>
     {
         Member = member;
     }
+
+    public PrintingMemberConfig<TOwner, T> ExcludeMember()
+    {
+        var memberName = PrintingMemberConfigUtils.GetFullMemberName(Member);
+        ExcludedMembers.Add(memberName);
+        return this;
+    }
     
     public PrintingMemberConfig<TOwner, T> WithSerialization(Func<T, string> serializationFunc)
     {
