@@ -3,7 +3,7 @@ using ObjectPrintingTests.TestData;
 
 namespace ObjectPrintingTests;
 
-public class PrintingConfigSerializationTests
+public class PrintingConfigTypeSerializationTests
 {
     [Test]
     public async Task WithSerializationForType_ReturnsCorrectResult_WhenAlternativeFinalTypeSerializationIsSpecified()

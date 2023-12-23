@@ -1,5 +1,5 @@
 ﻿Person
-	Id = Guid
+	Id = 00000000-0000-0000-0000-000000000000
 	Name = second
 	Age = 33
 	Height = 192,2

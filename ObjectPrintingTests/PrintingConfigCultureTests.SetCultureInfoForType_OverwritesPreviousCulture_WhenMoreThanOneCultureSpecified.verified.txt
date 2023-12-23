@@ -1,4 +1,5 @@
-Person
+﻿Person
 	Id = 00000000-0000-0000-0000-000000000000
 	Name = Alex
-	Height = 192,2
+	Age = 33
+	Height = 192.2

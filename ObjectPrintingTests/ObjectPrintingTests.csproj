@@ -33,11 +33,17 @@
       <None Update="PrintingConfigExcludeTypeTests.PrintToString_ReturnsCorrectResult_WithExcludedComplexTypeItself.verified.txt">
         <DependentUpon>PrintingConfigExcludeTypeTests.cs</DependentUpon>
       </None>
-      <None Update="PrintingConfigSerializationTests.WithSerializationForType_OverwritesPreviousSerialization_WhenNewSerializationIsProvided.verified.txt">
-        <DependentUpon>PrintingConfigSerializationTests.cs</DependentUpon>
+      <None Update="PrintingConfigTypeSerializationTests.WithSerializationForType_OverwritesPreviousSerialization_WhenNewSerializationIsProvided.verified.txt">
+        <DependentUpon>PrintingConfigTypeSerializationTests.cs</DependentUpon>
       </None>
-      <None Update="PrintingConfigSerializationTests.WithSerializationForType_ReturnsCorrectResult_WhenUsingPropertiesOfComplexType.verified.txt">
-        <DependentUpon>PrintingConfigSerializationTests.cs</DependentUpon>
+      <None Update="PrintingConfigTypeSerializationTests.WithSerializationForType_ReturnsCorrectResult_WhenUsingPropertiesOfComplexType.verified.txt">
+        <DependentUpon>PrintingConfigTypeSerializationTests.cs</DependentUpon>
+      </None>
+      <None Update="PrintingConfigCultureTests.SetCultureInfoForType_MakesFloatingPointTypesDisplayComma_WhenCultureInfoIsRu.verified.txt">
+        <DependentUpon>PrintingConfigCultureTests.cs</DependentUpon>
+      </None>
+      <None Update="PrintingConfigCutStringTests.SetStringMaxLength_PrintsCutString_WhenValueLengthIsLessThanMaxLength.verified.txt">
+        <DependentUpon>PrintingConfigCutStringTests.cs</DependentUpon>
       </None>
     </ItemGroup>
 
