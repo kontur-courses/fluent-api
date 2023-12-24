@@ -86,7 +86,7 @@ namespace ObjectPrinting_Should
 
             //var change = 19.ToString("X"); //13
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179.5", "\tAge = 13", "");
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "\tAge = 13", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
         }
@@ -96,7 +96,7 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(1);
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = A", "\tHeight = 179.5", "\tAge = 19", "");
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = A", "\tHeight = 179,5", "\tAge = 19", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
         }

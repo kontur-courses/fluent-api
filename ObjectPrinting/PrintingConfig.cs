@@ -9,17 +9,23 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-        private HashSet<PropertyInfo> excludedProperites = new HashSet<PropertyInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+        private readonly HashSet<PropertyInfo> excludedProperites = new HashSet<PropertyInfo>();
+        internal readonly Dictionary<Type, Func<object, string>> typeSerializers =
+            new Dictionary<Type, Func<object, string>>();
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        internal readonly Dictionary<PropertyInfo, Func<object, string>> propertySerializers =
+            new Dictionary<PropertyInfo, Func<object, string>>();
+
+        public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -51,17 +57,27 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
+            var objType = obj.GetType();
+            if (finalTypes.Contains(objType))
+            {
+                if (typeSerializers.TryGetValue(objType, out var serializer))
+                    return serializer(obj) + Environment.NewLine;
                 return obj + Environment.NewLine;
+            }
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            sb.AppendLine(objType.Name);
+            foreach (var propertyInfo in objType.GetProperties())
             {
                 if (Excluded(propertyInfo))
                     continue;
+
+                if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    continue;
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
