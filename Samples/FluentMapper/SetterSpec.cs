@@ -21,7 +21,7 @@ namespace FluentMapping
         public SetterSpec(
             TypeMappingSpec<TTgt, TSrc> spec,
             PropertyInfo targetProperty
-            )
+        )
         {
             _spec = spec;
             _targetProperty = targetProperty;
@@ -31,7 +31,8 @@ namespace FluentMapping
         {
             var srcParam = Expression.Parameter(typeof(TSrc));
             var tgtParam = Expression.Parameter(typeof(TTgt));
-            var srcExpr = Expression.Property(srcParam, ((MemberExpression)propertyExpression.Body).Member as PropertyInfo);
+            var srcExpr = Expression.Property(srcParam,
+                ((MemberExpression) propertyExpression.Body).Member as PropertyInfo);
             var tgtSetterInfo = _targetProperty.GetSetMethod();
             var tgtSetterExpr = Expression.Call(tgtParam, tgtSetterInfo, srcExpr);
 
@@ -41,21 +42,21 @@ namespace FluentMapping
             var specProperties = _spec.Properties();
 
             return _spec
-                .Transforms().WithMappingActions(
-                    specProperties.MappingActions
-                        .Concat(new[] { setterAction })
-                        .ToArray()
-                )
-                .Transforms().WithSourceProperties(
-                    specProperties.SourceProperties
-                        .Where(x => x != srcExpr.Member)
-                        .ToArray()
-                )
-                .Transforms().WithTargetProperties(
-                    specProperties.TargetProperties
-                        .Where(x => x != _targetProperty)
-                        .ToArray()
-                )
+                    .Transforms().WithMappingActions(
+                        specProperties.MappingActions
+                            .Concat(new[] {setterAction})
+                            .ToArray()
+                    )
+                    .Transforms().WithSourceProperties(
+                        specProperties.SourceProperties
+                            .Where(x => x != srcExpr.Member)
+                            .ToArray()
+                    )
+                    .Transforms().WithTargetProperties(
+                        specProperties.TargetProperties
+                            .Where(x => x != _targetProperty)
+                            .ToArray()
+                    )
                 ;
         }
 

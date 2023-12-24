@@ -1,0 +1,9 @@
+﻿EnumerableTest
+	Array = [
+		1,2,
+		2,12,
+		3,2,
+		4
+	]
+	List = EMPTY_COLLECTION
+	Dictionary = EMPTY_COLLECTION

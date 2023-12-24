@@ -1,0 +1,6 @@
+﻿ComplexPerson
+	Parent = null
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Ivan
+	Height = 190,1
+	Weight = 0
