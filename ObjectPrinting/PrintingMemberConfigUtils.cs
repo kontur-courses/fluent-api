@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 namespace ObjectPrinting;
 
-public class PrintingMemberConfigUtils
+public static class PrintingMemberConfigUtils
 {
     public static string GetFullMemberName<TOwner, T>(Expression<Func<TOwner, T>> expression)
     {
