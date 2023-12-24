@@ -9,20 +9,30 @@ public static class PrintingMemberConfigUtils
     public static string GetFullMemberName<TOwner, T>(Expression<Func<TOwner, T>> expression)
     {
         PrintingConfigUtils.ValidateMemberExpression(expression);
-        var memberExpression = expression.Body as MemberExpression;
-        
+        var expressionBody = expression.Body;
+
         var memberNames = new List<string>();
-        while (memberExpression != null)
+        while (expressionBody != null)
         {
-            memberNames.Add(memberExpression.Member.Name);
-            if (memberExpression.Expression is MemberExpression nestedMemberExpression)
-                memberExpression = nestedMemberExpression;
-            else
-                memberExpression = null;
+            switch (expressionBody)
+            {
+                case MemberExpression memberExpression:
+                    memberNames.Add(memberExpression.Member.Name);
+                    expressionBody = memberExpression.Expression;
+                    continue;
+                case MethodCallExpression {Method.Name: "get_Item"} methodCallExpression:
+                    memberNames.Add($"get_Item({methodCallExpression.Arguments[0]})");
+                    expressionBody = methodCallExpression.Object;
+                    continue;
+                default:
+                    expressionBody = null;
+                    break;
+            }
         }
-        
+
         memberNames.Reverse();
         memberNames.Insert(0, typeof(TOwner).Name);
+
         return string.Join(".", memberNames);
     }
 }

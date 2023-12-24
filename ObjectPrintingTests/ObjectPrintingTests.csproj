@@ -48,6 +48,12 @@
       <None Update="PrintingConfigCutStringTests.SetStringMaxLength_OverwritesPreviousCallResult_WhenCalledMoreThanOnce.verified.txt">
         <DependentUpon>PrintingConfigCutStringTests.cs</DependentUpon>
       </None>
+      <None Update="PrintingConfigEnumerableTests.PrintToString_AppliesConfigToMembersOfIndexedElementsOnly_WhenSpecified.verified.txt">
+        <DependentUpon>PrintingConfigEnumerableTests.cs</DependentUpon>
+      </None>
+      <None Update="ObjectPrinterAcceptanceTests.AcceptanceTest.verified.txt">
+        <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+      </None>
     </ItemGroup>
 
 </Project>

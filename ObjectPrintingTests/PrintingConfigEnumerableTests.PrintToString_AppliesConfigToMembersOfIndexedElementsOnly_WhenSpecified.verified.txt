@@ -1,0 +1,28 @@
+﻿ComplexEnumerable
+	List = [
+		[
+			2
+		],
+		[
+			2,
+			3
+		]
+	]
+	Persons = [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = 123123
+			Age = 33
+			Height = 192,2
+	]
+	Dictionary = {
+		DictionaryEntry
+			Key = asd
+			Value = ComplexPerson
+				Parent = null
+				Id = 00000000-0000-0000-0000-000000000000
+				Name = Ivan
+				Age = 30
+				Height = 190,1
+				Weight = 0
+	}

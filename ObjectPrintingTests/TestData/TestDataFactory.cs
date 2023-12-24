@@ -13,4 +13,6 @@ public static class TestDataFactory
 
     public static readonly EnumerableTest
         EnumerableEmptyTest = new(new List<ComplexPerson>(), new Dictionary<int, DateTime>());
+
+    public static readonly ComplexEnumerable ComplexEnumerable = new();
 }

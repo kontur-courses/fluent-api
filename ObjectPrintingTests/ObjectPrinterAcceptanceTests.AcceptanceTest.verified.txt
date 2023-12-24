@@ -1,0 +1,4 @@
+﻿Person
+	Id = this is guid
+	Name = Al
+	Height = 192,8

@@ -88,7 +88,7 @@ public class PrintingConfig<TOwner>
     {
         if (parents.Contains(obj))
             return "CYCLIC_REFERENCE" + Environment.NewLine;
-        
+
         if (obj is null)
             return "null" + Environment.NewLine;
 
@@ -107,28 +107,68 @@ public class PrintingConfig<TOwner>
         if (finalTypes.Contains(obj.GetType()))
             return PrintWithCultureIfExists(obj, obj + Environment.NewLine);
 
-        // if (obj is IEnumerable enumerable)
-        //     return PrintEnumerable(enumerable, nestingLevel, memberPrefix, parents);
-       
+        if (obj is IEnumerable enumerable)
+            return PrintEnumerable(enumerable, nestingLevel, memberPrefix, parents);
+
         return PrintObjectMembers(obj, nestingLevel, memberPrefix, parents);
     }
 
-    /*private string PrintEnumerable(IEnumerable obj, int nestingLevel, string memberPrefix, List<object> parents)
+    private string PrintEnumerable(IEnumerable obj, int nestingLevel, string memberPrefix, List<object> parents)
     {
         var enumerator = obj.GetEnumerator();
         using var disposable = enumerator as IDisposable;
         if (!enumerator.MoveNext())
             return "EMPTY_COLLECTION" + Environment.NewLine;
-        if (excludedTypes.Contains(enumerator.Current!.GetType()))
-            return "";
 
+        if (obj is IList indexed)
+            return PrintIndexed(indexed, nestingLevel, memberPrefix, parents);
+        if (obj is IDictionary dictionary)
+            return PrintDictionary(dictionary, nestingLevel, memberPrefix, parents);
+        return "NOT_SUPPORTED_COLLECTION" + Environment.NewLine;
+    }
+
+    private string PrintCollectionElement(string memberPrefix, string itemIdentificator, string indentation,
+        object element, int nestingLevel, List<object> parents)
+    {
         var sb = new StringBuilder();
-        enumerator.Reset();
-        while (enumerator.MoveNext())
+        var elementName = memberPrefix + $".get_Item({itemIdentificator})";
+        sb.Append(indentation);
+        sb.Append(PrintToString(element, nestingLevel + 1, elementName, parents));
+        sb.Remove(sb.Length - Environment.NewLine.Length, Environment.NewLine.Length);
+        return sb.ToString();
+    }
+
+    private string PrintDictionary(IDictionary dictionary, int nestingLevel, string memberPrefix, List<object> parents)
+    {
+        var indentation = new string('\t', nestingLevel + 1);
+        var sb = new StringBuilder("{" + Environment.NewLine);
+        foreach (DictionaryEntry entry in dictionary)
         {
-            
+            sb.Append(PrintCollectionElement(memberPrefix, "DICTIONARY_ELEMENT", indentation, entry, nestingLevel, parents));
+            sb.AppendLine(",");
         }
-    }*/
+
+        sb.Remove(sb.Length - Environment.NewLine.Length - 1, Environment.NewLine.Length + 1);
+        sb.AppendLine();
+        sb.AppendLine(indentation[..^1] + "}");
+        return sb.ToString();
+    }
+
+    private string PrintIndexed(IList indexed, int nestingLevel, string memberPrefix, List<object> parents)
+    {
+        var indentation = new string('\t', nestingLevel + 1);
+        var sb = new StringBuilder("[" + Environment.NewLine);
+        for (var i = 0; i < indexed.Count; i++)
+        {
+            sb.Append(PrintCollectionElement(memberPrefix, i.ToString(), indentation, indexed[i], nestingLevel, parents));
+            if (i != indexed.Count - 1)
+                sb.AppendLine(",");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine(indentation[..^1] + "]");
+        return sb.ToString();
+    }
 
     private static string CutString(string s, int maxLength)
     {
@@ -172,7 +212,7 @@ public class PrintingConfig<TOwner>
             return "";
 
         sb.Append(indentation + name + " = ");
-            
+
         sb.Append(CustomMemberSerialization.TryGetValue(memberPrefix + name, out var serialization)
             ? serialization(value) + Environment.NewLine
             : PrintToString(value, nestingLevel + 1, memberPrefix + name, parents));
