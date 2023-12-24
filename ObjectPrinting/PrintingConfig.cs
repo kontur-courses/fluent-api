@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,6 +12,15 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<PropertyInfo> excludedProperites = new HashSet<PropertyInfo>();
+
+        private readonly Type[] finalTypes =
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        private readonly HashSet<int> serializedPropertiesMetadataToken = new HashSet<int>();
+
         internal readonly Dictionary<Type, Func<object, string>> typeSerializers =
             new Dictionary<Type, Func<object, string>>();
 
@@ -46,17 +56,28 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
+        public string SerializeIEnumerable(IEnumerable enumerable)
+        {
+            var sb = new StringBuilder();
+            var openingBracket = enumerable is IDictionary ? "{ " : "[ ";
+            var closingBracket = enumerable is IDictionary ? "}" : "]";
+            sb.Append(openingBracket);
+            foreach (var element in enumerable)
+            {
+                sb.Append(element);
+                sb.Append(" ");
+            }
+
+            sb.Append(closingBracket);
+            return sb.ToString();
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
             var objType = obj.GetType();
             if (finalTypes.Contains(objType))
             {
@@ -65,14 +86,18 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             }
 
+            if (obj is IEnumerable enumerable)
+                return SerializeIEnumerable(enumerable) + Environment.NewLine;
+
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(objType.Name);
             foreach (var propertyInfo in objType.GetProperties())
             {
-                if (Excluded(propertyInfo))
+                if (Excluded(propertyInfo) || serializedPropertiesMetadataToken.Contains(propertyInfo.MetadataToken))
                     continue;
 
+                serializedPropertiesMetadataToken.Add(propertyInfo.MetadataToken);
                 if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)) + Environment.NewLine);
