@@ -18,40 +18,9 @@ namespace ObjectPrinting_Should
         }
 
         [Test]
-        public void Demo()
-        {
-            var printer = ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
-                //4. Настроить сериализацию конкретного свойства
-                .Printing(p => p.Age).Using(i => i.ToString("X"))
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
-
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            string s2 = person.PrintToString();
-
-            //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19", "");
-        }
-
-        [Test]
         public void PrintToString_SkipsExcludedTypes()
         {
             var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
-
             var expectedString = string.Join(Environment.NewLine, "Person", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -72,8 +41,6 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(i => i.ToString("X"));
 
-            //var change = 19.ToString("X"); //13
-
             var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "\tAge = 13", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -83,8 +50,6 @@ namespace ObjectPrinting_Should
         public void PrintToString_UsesCustomSerialization_WhenGivenToProperty()
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i.ToString("X"));
-
-            //var change = 19.ToString("X"); //13
 
             var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "\tAge = 13", "");
             var outputString = printer.PrintToString(person);
@@ -106,10 +71,63 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            //var change = 179.5.ToString(CultureInfo.InvariantCulture); 179.5
-
             var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179.5", "\tAge = 19", "");
             var outputString = printer.PrintToString(person);
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesClass_WhenCalledFromItInstance()
+        {
+            var outputString = person.PrintToString();
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19", "");
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesClass_WhenCalledFromItInstanceWithConfig()
+        {
+            var outputString = person.PrintToString(s => s.Excluding(p => p.Age));
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "");
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesCyclicReferences()
+        {
+            var firstPerson = new Person() { Age = 20, Name = "Ben" };
+            var secondPerson = new Person() { Age = 20, Name = "John", Sibling = firstPerson};
+            firstPerson.Sibling = secondPerson;
+
+            var outputString = firstPerson.PrintToString();
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "");
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesArray()
+        {
+            var numbers = new[] { 1.1, 2.2, 3.3, 4.4, 5.5 };
+            var outputString = numbers.PrintToString();
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "");
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesList()
+        {
+            var numbers = new List<double> { 1.1, 2.2, 3.3, 4.4, 5.5 };
+            var outputString = numbers.PrintToString();
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "");
+            outputString.Should().Be(expectedString);
+        }
+
+        [Test]
+        public void PrintToString_SerializesDictionary()
+        {
+            var numbers = new Dictionary<string, double> { { "a", 1 }, { "b", 2 }, { "c", 3 } };
+            var outputString = numbers.PrintToString();
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid", "\tName = Alex", "\tHeight = 179,5", "");
             outputString.Should().Be(expectedString);
         }
     }
