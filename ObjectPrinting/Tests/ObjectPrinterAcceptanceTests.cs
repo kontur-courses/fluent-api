@@ -1,4 +1,9 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -6,22 +11,135 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Demo()
+        public void ObjectPrinter_ExcludingIntType_ObjectWithoutInt()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-
+    
             var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
-            
-            string s1 = printer.PrintToString(person);
+            var s1 = printer.Excluding<int>().PrintToString(person);
+            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n";
+            s1.Should().Be(expected);
+        }
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+        [Test]
+        public void ObjectPrinter_ExcludingHeight_ObjectWithoutHeight()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n";
+            var s1 = printer.Excluding(x => x.Height).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_Property_Object()
+        {
+            var person = new Person { Name = "Alex", Age = 15 };
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = F\r\n";
+            var s1 = printer.Printing(x => x.Age).Using(x=> x.ToString("X")).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_Type_Object()
+        {
+            var person = new Person { Name = "Alex", Age = 15, Height = 1.2};
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
+            var s1 = printer.Printing<double>().Using(x=> (x * 2).ToString()).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+        
+        [Test]
+        public void ObjectPrinter_MixPrinting_Object()
+        {
+            var person = new Person { Name = "Alex", Age = 15, Height = 1.2};
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = F\r\n";
+            var s1 = printer.Printing<double>().Using(x=> (x * 2).ToString())
+                .Printing(x => x.Age).Using(x => x.ToString("X")).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+
+        [Test]
+        public void ObjectPrinter_UsingCulture_Object()
+        {
+            var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2.4\r\n\tAge = 15\r\n";
+            var s1 = printer.Printing<double>().Using(CultureInfo.InvariantCulture).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_Trimmed_Object()
+        {
+            var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
+            var printer = ObjectPrinter.For<Person>();
+            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
+            var s1 = printer.Printing<string>().TrimmedToLength(-10).PrintToString(person);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_HrefSelf_Object()
+        {
+            var kid = new Kid { Name = "Pasha"};
+            var parent = new Kid{Name = "Lev"};
+            kid.Parent = parent;
+            parent.Parent = kid;
+            
+            
+            
+            var printer = ObjectPrinter.For<Kid>();
+            const string expected = "Kid\r\n\tName = Pasha\r\n\tParent = Kid\r\n\t\tName = Lev\r\n\t\tParent = (Cycle) ObjectPrinting.Tests.Kid\r\n";
+            var s1 = printer.PrintToString(kid);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_DictionaryObject_Object()
+        {
+            var collections = new Collections();
+            collections.Dictionary = new Dictionary<int, string>()
+            {
+                {1, "hello"},
+                {2, "hell"},
+                {3, "hel"},
+                {4, "he"},
+                {5, "h"},
+            };
+            var printer = ObjectPrinter.For<Collections>();
+            const string expected = "Collections\r\n\tDictionary = \r\n\t\t" +
+                                    "1\r\n : hello\r\n\t\t" +
+                                    "2\r\n : hell\r\n\t\t" +
+                                    "3\r\n : hel\r\n\t\t" +
+                                    "4\r\n : he\r\n\t\t" +
+                                    "5\r\n : h\r\n\t" +
+                                    "Array = \r\nnull\r\n\tList = \r\nnull\r\n\tPersons = \r\nnull\r\n";
+            var s1 = printer.PrintToString(collections);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_ListObject_Object()
+        {
+            var collections = new Collections();
+            collections.List = new List<int>() { 1, 2, 3 };
+            collections.Array = new int[] { 1, 2, 3 };
+            var printer = ObjectPrinter.For<Collections>();
+            const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = \r\n1\r\n2\r\n3\r\n\tList = \r\n1\r\n2\r\n3\r\n\t" +
+                                    "Persons = \r\nnull\r\n";
+            var s1 = printer.PrintToString(collections);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_ListObjects_Object()
+        {
+            var collections = new Collections();
+            collections.List = null;
+            collections.Array = null;
+            collections.Persons = new List<Person> {new Person(){Name = "Lev"} };
+            var printer = ObjectPrinter.For<Collections>();
+            const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = \r\nnull\r\n\tList = \r\nnull\r\n\t" +
+                                    "Persons = \r\nPerson\r\n\t\tId = Guid\r\n\t\tName = Lev\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n";
+            var s1 = printer.PrintToString(collections);
+            s1.Should().Be(expected);
         }
     }
 }
