@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
 {
@@ -51,18 +52,31 @@ namespace ObjectPrinting.Tests
         public void ObjectPrinter_Should_Excluding_Property()
         {
             var printer = ObjectPrinter.For<Person>();
-            var actual = printer.Exclude<string>(person=>person.Name).PrintToString(simplePerson);
+            var actual = printer.Exclude(person=>person.Name).PrintToString(simplePerson);
             actual.Should().Be("Person Id = Guid Height = 180 Age = 45 Parents = null");
         }
 
+        [Test]
+        public void ObjectPrinter_Should_Serialize_By_Type()
+        {
+            var printer = ObjectPrinter.For<Person>();
+            var actual = printer.SetCustomTypeSerializer<int>(i=>0.ToString()).PrintToString(simplePerson);
+            actual.Should().Be("");
+        }
 
-        //1. Исключить из сериализации свойства определенного типа
-        //2. Указать альтернативный способ сериализации для определенного типа
+        public void ObjectPrinter_Shoult_Serialize_By_Property()
+        {
+            var printer = ObjectPrinter.For<Person>();
+        }
+
+
+        //1. Исключить из сериализации свойства определенного типа +
+        //2. Указать альтернативный способ сериализации для определенного типа+
         //3. Для числовых типов указать культуру
-        //4. Настроить сериализацию конкретного свойства
+        //4. Настроить сериализацию конкретного свойства 
         //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-        //6. Исключить из сериализации конкретного свойства
-        //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-        //8. ...с конфигурированием
+        //6. Исключить из сериализации конкретного свойства 
+        //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию   +   
+        //8. ...с конфигурированием +
     }
 }

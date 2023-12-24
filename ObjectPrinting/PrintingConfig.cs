@@ -11,16 +11,21 @@ namespace ObjectPrinting
     {
         private static readonly HashSet<Type> FinalTypes = new HashSet<Type>()
         {
-            typeof(int), 
-            typeof(double), 
-            typeof(float), 
+            typeof(int),
+            typeof(double),
+            typeof(float),
             typeof(string),
-            typeof(DateTime), 
+            typeof(DateTime),
             typeof(TimeSpan),
         };
 
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedProperty = new HashSet<MemberInfo>();
+
+        private readonly Dictionary<MemberInfo, Delegate> customPropertySerialize =
+            new Dictionary<MemberInfo, Delegate>();
+
+        private readonly Dictionary<Type, Delegate> customTypeSerializers = new Dictionary<Type, Delegate>();
 
         public string PrintToString(TOwner obj)
         {
@@ -32,7 +37,11 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null";
-            
+
+            if (customTypeSerializers.ContainsKey(obj.GetType()))
+            {
+                return (string)customTypeSerializers[obj.GetType()].DynamicInvoke(obj);
+            }
             if (FinalTypes.Contains(obj.GetType()))
                 return obj.ToString();
 
@@ -66,5 +75,21 @@ namespace ObjectPrinting
             excludedProperty.Add(memberInfo.Member);
             return this;
         }
+
+
+        public PrintingConfig<TOwner> SetCustomTypeSerializer<TType>(Func<TType, string> serializer)
+        {
+            customTypeSerializers[typeof(TType)] = serializer;
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> SetCustomPropertySerializer<TProperty>(Expression<Func<TOwner,Func<TProperty,string>>> serializer)
+        {
+            var serializerInfo = serializer.Parameters[1] as Expression<Func<TProperty,string>>;
+            var Tpropertyinfo = serializerInfo.Parameters[1];
+            
+            return this;
+        }
+        
     }
 }
