@@ -10,8 +10,7 @@ public class ObjectPrinterAcceptanceTests
         var person = new Person { Name = "Alex", Age = 19 };
 
         var printer = ObjectPrinter.For<Person>()
-            .ExcludeProperty(p => p.Id)
-            .SetCulture(typeof(double), CultureInfo.InvariantCulture);
+            .ExcludeProperty(p => p.Id);
         //1. Исключить из сериализации свойства определенного типа
         //2. Указать альтернативный способ сериализации для определенного типа
         //3. Для числовых типов указать культуру

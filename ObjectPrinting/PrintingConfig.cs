@@ -1,30 +1,51 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> excludedTypes;
+        private readonly HashSet<PropertyInfo> excludedProperties;
+        private readonly Dictionary<Type, Delegate> customTypeSerializers;
+        private readonly Dictionary<PropertyInfo, Delegate> customPropertySerializers;
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        internal Dictionary<Type, Delegate> CustomTypeSerializers => customTypeSerializers;
+        internal Dictionary<PropertyInfo, Delegate> CustomPropertySerializers => customPropertySerializers;
+
+        public PrintingConfig()
+        {
+            excludedTypes = new HashSet<Type>();
+            excludedProperties = new HashSet<PropertyInfo>();
+            customTypeSerializers = new Dictionary<Type, Delegate>();
+            customPropertySerializers = new Dictionary<PropertyInfo, Delegate>();
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> SetPrintingFor<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> SetPrintingFor<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var expression = (MemberExpression)memberSelector.Body;
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)expression.Member);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PrintingConfig<TOwner> ExcludeProperty<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var expression = (MemberExpression)memberSelector.Body;
+            excludedProperties.Add((PropertyInfo)expression.Member);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> ExcludePropertyType<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
         
@@ -52,9 +73,20 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
+            
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
+                    continue;
+                
+                if (customTypeSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              typeSerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else if (customPropertySerializers.TryGetValue(propertyInfo, out var propertySerializer))
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              propertySerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                else
+                    sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
