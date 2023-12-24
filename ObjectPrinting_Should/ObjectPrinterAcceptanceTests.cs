@@ -110,8 +110,8 @@ namespace ObjectPrinting_Should
 
             var outputString = firstPerson.PrintToString();
             var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
-                "\tSibling = Person", "\t\tName = John", "\t\tHeight = 0", "\t\tAge = 20",
-                "\t\tFavouriteNumbers = null", "\tHeight = 0", "\tAge = 20",
+                "\tSibling = Person", "\t\tId = Guid", "\t\tName = John", "\t\tHeight = 0", "\t\tAge = 20",
+                "\t\tFavouriteNumbers = null", "\tName = Ben", "\tHeight = 0", "\tAge = 20",
                 "\tFavouriteNumbers = null", "");
             outputString.Should().Be(expectedString);
         }
@@ -148,9 +148,33 @@ namespace ObjectPrinting_Should
         [Test]
         public void PrintToString_SerializesDictionary()
         {
-            var numbers = new Dictionary<string, double> { { "a", 1 }, { "b", 2 }, { "c", 3 } };
-            var outputString = numbers.PrintToString();
-            var expectedString = string.Join(Environment.NewLine, "{ [a, 1] [b, 2] [c, 3] }", "");
+            var numbers = new Dictionary<Person, double> { { new Person(), 1 }, { new Person(), 2 } };
+            var printer = ObjectPrinter.For<Dictionary<Person, double>>().Excluding<Guid>();
+
+            var outputString = printer.PrintToString(numbers);
+            var expectedString = @"{
+	[
+	Person
+		Sibling = null
+		Name = null
+		Height = 0
+		Age = 0
+		FavouriteNumbers = null
+	:
+	1
+	],
+	[
+	Person
+		Sibling = null
+		Name = null
+		Height = 0
+		Age = 0
+		FavouriteNumbers = null
+	:
+	2
+	],
+}
+";
             outputString.Should().Be(expectedString);
         }
     }

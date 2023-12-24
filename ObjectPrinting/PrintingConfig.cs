@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,8 +19,6 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string),
             typeof(DateTime), typeof(TimeSpan)
         };
-
-        private readonly HashSet<int> serializedPropertiesMetadataToken = new HashSet<int>();
 
         internal readonly Dictionary<Type, Func<object, string>> typeSerializers =
             new Dictionary<Type, Func<object, string>>();
@@ -53,26 +52,45 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, ImmutableHashSet<object>.Empty);
         }
 
-        public string SerializeIEnumerable(IEnumerable enumerable)
+        private string SerializeIEnumerable(IEnumerable enumerable, ImmutableHashSet<object> nestedObjects)
         {
             var sb = new StringBuilder();
-            var openingBracket = enumerable is IDictionary ? "{ " : "[ ";
-            var closingBracket = enumerable is IDictionary ? "}" : "]";
-            sb.Append(openingBracket);
+            if (enumerable is IDictionary)
+                return SerializeIDictionary((IDictionary)enumerable, nestedObjects);
+            sb.Append("[ ");
             foreach (var element in enumerable)
             {
-                sb.Append(element);
+                sb.Append(PrintToString(element, nestedObjects).TrimEnd());
                 sb.Append(" ");
             }
 
-            sb.Append(closingBracket);
+            sb.Append("]");
             return sb.ToString();
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string SerializeIDictionary(IDictionary dictionary, ImmutableHashSet<object> nestedObjects)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestedObjects.Count);
+            sb.Append(identation + "{" + Environment.NewLine);
+            nestedObjects = nestedObjects.Add(dictionary);
+            foreach (DictionaryEntry dictionaryEntry in dictionary)
+            {
+                sb.Append(identation + "\t[" + Environment.NewLine);
+                sb.Append("\t" + PrintToString(dictionaryEntry.Key, nestedObjects));
+                sb.Append(identation + "\t:" + Environment.NewLine);
+                sb.Append("\t" + PrintToString(dictionaryEntry.Value, nestedObjects));
+                sb.Append(identation + "\t]," + Environment.NewLine);
+            }
+
+            sb.Append(identation + "}" + Environment.NewLine);
+            return sb.ToString().TrimEnd();
+        }
+
+        private string PrintToString(object obj, ImmutableHashSet<object> nestedObjects)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -86,26 +104,26 @@ namespace ObjectPrinting
             }
 
             if (obj is IEnumerable enumerable)
-                return SerializeIEnumerable(enumerable) + Environment.NewLine;
+                return SerializeIEnumerable(enumerable, nestedObjects) + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var identation = new string('\t', nestedObjects.Count + 1);
             var sb = new StringBuilder();
             sb.AppendLine(objType.Name);
+            nestedObjects = nestedObjects.Add(obj);
             foreach (var propertyInfo in objType.GetProperties())
             {
-                if (Excluded(propertyInfo) || serializedPropertiesMetadataToken.Contains(propertyInfo.MetadataToken))
+                var propertyValue = propertyInfo.GetValue(obj);
+                if (Excluded(propertyInfo) || nestedObjects.Contains(propertyValue))
                     continue;
 
-                serializedPropertiesMetadataToken.Add(propertyInfo.MetadataToken);
                 if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyValue) + Environment.NewLine);
                     continue;
                 }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                          PrintToString(propertyInfo.GetValue(obj), nestedObjects));
             }
             return sb.ToString();
         }
