@@ -26,7 +26,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Using<IFormatable>(CultureInfo cultureInfo)
         {
-            ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddCultureForType(typeof(TPropType), cultureInfo);
+            ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddCultureForType(typeof(TPropType),
+                cultureInfo);
 
             return printingConfig;
         }
@@ -36,7 +37,8 @@ namespace ObjectPrinting
             if (propertyInfo == null)
                 ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddTypeSerialization(printProperty);
             else
-                ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddPropertySerialization(propertyInfo, printProperty);
+                ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddPropertySerialization(propertyInfo,
+                    printProperty);
 
             return printingConfig;
         }

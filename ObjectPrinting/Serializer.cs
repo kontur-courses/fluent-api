@@ -1,8 +1,8 @@
-﻿using System.Reflection;
-using System;
-using System.Text;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 
 namespace ObjectPrinting
 {
@@ -40,7 +40,8 @@ namespace ObjectPrinting
             {
                 if (!TrySerializeProperty(propertyInfo, obj, nestingLevel, out var propertySerialization))
                     continue;
-                objectSerialization.Append(identation + propertyInfo.Name + " = " + propertySerialization + Environment.NewLine);
+                objectSerialization.Append(identation + propertyInfo.Name + " = " + propertySerialization +
+                                           Environment.NewLine);
             }
 
             return objectSerialization.ToString();
@@ -70,22 +71,25 @@ namespace ObjectPrinting
             return false;
         }
 
-        private bool TrySerializeProperty(PropertyInfo propertyInfo, object obj, int nestingLevel, out string serializedProperty)
+        private bool TrySerializeProperty(PropertyInfo propertyInfo, object obj, int nestingLevel,
+            out string serializedProperty)
         {
             serializedProperty = "";
             if (settings.GetExcludingProperties().Contains(propertyInfo)
                 || settings.GetExcludingTypes().Contains(propertyInfo.PropertyType))
                 return false;
 
-            var propertyMaxLength = settings.GetPropertiesToTrim().ContainsKey(propertyInfo) ?
-                settings.GetPropertiesToTrim()[propertyInfo] : -1;
+            var propertyMaxLength = settings.GetPropertiesToTrim().ContainsKey(propertyInfo)
+                ? settings.GetPropertiesToTrim()[propertyInfo]
+                : -1;
 
-            serializedProperty = settings.GetPropertiesSerializations().ContainsKey(propertyInfo) ?
-                settings.GetPropertiesSerializations()[propertyInfo].Invoke(propertyInfo.GetValue(obj)) :
-                SerializeObject(propertyInfo.GetValue(obj), nestingLevel + 1).TrimEnd();
+            serializedProperty = settings.GetPropertiesSerializations().ContainsKey(propertyInfo)
+                ? settings.GetPropertiesSerializations()[propertyInfo].Invoke(propertyInfo.GetValue(obj))
+                : SerializeObject(propertyInfo.GetValue(obj), nestingLevel + 1).TrimEnd();
 
-            serializedProperty = propertyMaxLength >= 0 ?
-                serializedProperty[..settings.GetPropertiesToTrim()[propertyInfo]] : serializedProperty;
+            serializedProperty = propertyMaxLength >= 0
+                ? serializedProperty[..settings.GetPropertiesToTrim()[propertyInfo]]
+                : serializedProperty;
 
             return true;
         }
@@ -100,12 +104,14 @@ namespace ObjectPrinting
             if (type.IsArray || type.GetGenericTypeDefinition() == typeof(List<>))
             {
                 serializedCollection = SerializeEnumerable(obj, nestingLevel);
+
                 return true;
             }
 
             if (type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 serializedCollection = SerializeDictionary(obj, nestingLevel);
+
                 return true;
             }
 
@@ -134,7 +140,8 @@ namespace ObjectPrinting
             {
                 var key = ((DictionaryEntry)pair).Key;
                 var value = ((DictionaryEntry)pair).Value;
-                serializedDict.Append(identation + SerializeObject(key, nestingLevel) + " : " + SerializeObject(value, nestingLevel));
+                serializedDict.Append(identation + SerializeObject(key, nestingLevel) + " : " +
+                                      SerializeObject(value, nestingLevel));
             }
 
             return serializedDict.ToString();

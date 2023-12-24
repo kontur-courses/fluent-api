@@ -1,4 +1,3 @@
-using ObjectPrinting.Solved;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -11,12 +10,12 @@ namespace ObjectPrinting
     {
         private readonly SerializationSettings _serializationSettings;
 
-        SerializationSettings IPrintingConfig<TOwner>.SerializationSettings => _serializationSettings;
-
         public PrintingConfig()
         {
             _serializationSettings = new SerializationSettings();
         }
+
+        SerializationSettings IPrintingConfig<TOwner>.SerializationSettings => _serializationSettings;
 
         public string PrintToString(TOwner obj)
         {
@@ -64,7 +63,8 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> printProperty)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> printProperty)
         {
             var memberBody = (MemberExpression)printProperty.Body;
             var propertyInfo = memberBody.Member as PropertyInfo;

@@ -2,7 +2,8 @@
 {
     public static class PropertyPrintingConfigExtension
     {
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int length)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int length)
         {
             var printingConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
             var property = ((IPropertyPrintingConfig<TOwner, string>)propConfig).PropertyInfo;
