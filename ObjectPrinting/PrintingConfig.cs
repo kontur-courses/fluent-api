@@ -75,17 +75,13 @@ namespace ObjectPrinting
                     sb.Append(identation + propertyInfo.Name + " = " +
                               (MemberSerializers.TryGetValue(member, out var memberSerializator) 
                                     ? memberSerializator(propertyInfo.GetValue(obj)) + Environment.NewLine
-                                    : MemberSerializers.TryGetValue(member, out var typeSerializator)
-                                        ? typeSerializator(propertyInfo.GetValue(obj)) + Environment.NewLine
-                                        : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)));
+                                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)));
                 if (member is FieldInfo fieldInfo && !excludedTypes.Contains(fieldInfo.FieldType))
                 {
                     sb.Append(identation + fieldInfo.Name + " = " +
-                              (MemberSerializers.TryGetValue(member, out var memberSerializator)
+                              (MemberSerializers.TryGetValue(member, out var memberSerializator) 
                                   ? memberSerializator(fieldInfo.GetValue(obj)) + Environment.NewLine
-                                  : MemberSerializers.TryGetValue(member, out var typeSerializator)
-                                      ? typeSerializator(fieldInfo.GetValue(obj)) + Environment.NewLine
-                                      : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)));
+                                  : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)));
                 }
             }
 
