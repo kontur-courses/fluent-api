@@ -158,11 +158,11 @@ namespace ObjectPrinting_Should
         public void PrintToString_SerializesDictionary()
         {
             var numbers = new Dictionary<Person, double> { { new Person(), 1 }, { new Person(), 2 } };
-            var a = new[] { numbers , new Dictionary<Person, double>()};
-            var b = new HashSet<Dictionary<Person,double>[]> {a,};
+            var arrayOfDictionaries = new[] { numbers , new Dictionary<Person, double>()};
+            var arrayOfDictionariesHashSet = new HashSet<Dictionary<Person,double>[]> {arrayOfDictionaries,};
             var printer = ObjectPrinter.For<HashSet<Dictionary<Person,double>[]>>().Excluding<Guid>();
 
-            var outputString = printer.PrintToString(b);
+            var outputString = printer.PrintToString(arrayOfDictionariesHashSet);
             var expectedString = @"[
 	[
 		{
