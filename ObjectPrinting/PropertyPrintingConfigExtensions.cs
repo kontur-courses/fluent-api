@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
@@ -11,8 +13,17 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            var propertyInfo = propConfig.PropertyInfo;
+            propConfig.PrintingConfig.TrimmedProperties[propertyInfo] = maxLen;
+            
+            return propConfig.PrintingConfig;
         }
-
+        
+        public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(this PropertyPrintingConfig<TOwner, TPropType> propertyConfig, CultureInfo culture) where TPropType : IFormattable
+        {
+            propertyConfig.PrintingConfig.CulturesForTypes[typeof(TPropType)] = culture;
+            
+            return propertyConfig.PrintingConfig;
+        }
     }
 }
