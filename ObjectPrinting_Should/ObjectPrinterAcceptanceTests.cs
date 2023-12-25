@@ -1,7 +1,5 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using FluentAssertions;
-using NUnit.Framework;
 using ObjectPrinting;
 
 namespace ObjectPrinting_Should
@@ -43,7 +41,7 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(i => i.ToString("X"));
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tAge = 13", "\tFavouriteNumbers = null", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -54,7 +52,7 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i.ToString("X"));
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tAge = 13", "\tFavouriteNumbers = null", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -65,7 +63,7 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(1);
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = A", "\tHeight = 179,5", "\tAge = 19", "\tFavouriteNumbers = null", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -76,7 +74,7 @@ namespace ObjectPrinting_Should
         {
             var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
 
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179.5", "\tAge = 19", "\tFavouriteNumbers = null", "");
             var outputString = printer.PrintToString(person);
             outputString.Should().Be(expectedString);
@@ -86,7 +84,7 @@ namespace ObjectPrinting_Should
         public void PrintToString_SerializesClass_WhenCalledFromItInstance()
         {
             var outputString = person.PrintToString();
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19", "\tFavouriteNumbers = null", "");
             outputString.Should().Be(expectedString);
         }
@@ -95,7 +93,7 @@ namespace ObjectPrinting_Should
         public void PrintToString_SerializesClass_WhenCalledFromItInstanceWithConfig()
         {
             var outputString = person.PrintToString(s => s.Excluding(p => p.Age));
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
+            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tFavouriteNumbers = null", "");
             outputString.Should().Be(expectedString);
         }
@@ -109,10 +107,11 @@ namespace ObjectPrinting_Should
             //var printer = ObjectPrinter.For<Person>().Excluding<double>().Excluding<Guid>();
 
             var outputString = firstPerson.PrintToString();
-            var expectedString = string.Join(Environment.NewLine, "Person", "\tId = Guid",
-                "\tSibling = Person", "\t\tId = Guid", "\t\tName = John", "\t\tHeight = 0", "\t\tAge = 20",
-                "\t\tFavouriteNumbers = null", "\tName = Ben", "\tHeight = 0", "\tAge = 20",
-                "\tFavouriteNumbers = null", "");
+            var expectedString = string.Join(Environment.NewLine, "Person", 
+                "\tId = 00000000-0000-0000-0000-000000000000",
+                "\tSibling = Person", "\t\tId = 00000000-0000-0000-0000-000000000000", 
+                "\t\tName = John", "\t\tHeight = 0", "\t\tAge = 20", "\t\tFavouriteNumbers = null", 
+                "\tName = Ben", "\tHeight = 0", "\tAge = 20", "\tFavouriteNumbers = null", "");
             outputString.Should().Be(expectedString);
         }
 
@@ -122,7 +121,8 @@ namespace ObjectPrinting_Should
             person.FavouriteNumbers = new[] { 1.1, 2.2, 3.3, 4.4, 5.5 };
             var outputString = person.PrintToString();
             var expectedString = string.Join(Environment.NewLine, "Person",
-                "\tId = Guid", "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19",
+                "\tId = 00000000-0000-0000-0000-000000000000", 
+                "\tSibling = null", "\tName = Alex", "\tHeight = 179,5", "\tAge = 19",
                 "\tFavouriteNumbers = [ 1,1 2,2 3,3 4,4 5,5 ]", "");
             outputString.Should().Be(expectedString);
         }
@@ -149,10 +149,12 @@ namespace ObjectPrinting_Should
         public void PrintToString_SerializesDictionary()
         {
             var numbers = new Dictionary<Person, double> { { new Person(), 1 }, { new Person(), 2 } };
-            var printer = ObjectPrinter.For<Dictionary<Person, double>>().Excluding<Guid>();
+            var a = new[] { numbers };
+            var b = new HashSet<Dictionary<Person,double>[]> {a,};
+            var printer = ObjectPrinter.For<HashSet<Dictionary<Person,double>[]>>().Excluding<Guid>();
 
-            var outputString = printer.PrintToString(numbers);
-            var expectedString = @"{
+            var outputString = printer.PrintToString(b);
+            var expectedString = @"[ [ {
 	[
 	Person
 		Sibling = null
@@ -173,7 +175,7 @@ namespace ObjectPrinting_Should
 	:
 	2
 	],
-}
+} ] ]
 ";
             outputString.Should().Be(expectedString);
         }

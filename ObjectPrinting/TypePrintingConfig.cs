@@ -20,5 +20,13 @@ namespace ObjectPrinting
             printingConfig.typeSerializers.Add(typeof(TPropType), castedFunc);
             return printingConfig;
         }
+        
+        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        {
+            var culturedFunc = new Func<TPropType, string>(d => ((IConvertible)d).ToString(culture));
+            var castedFunc = new Func<object, string>(obj => culturedFunc((TPropType)obj));
+            printingConfig.typeSerializers.Add(typeof(TPropType), castedFunc);
+            return printingConfig;
+        }
     }
 }

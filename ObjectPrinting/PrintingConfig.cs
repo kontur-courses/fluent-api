@@ -12,13 +12,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<PropertyInfo> excludedProperites = new HashSet<PropertyInfo>();
-
-        private readonly Type[] finalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
+        private readonly HashSet<PropertyInfo> excludedProperties = new HashSet<PropertyInfo>();
 
         internal readonly Dictionary<Type, Func<object, string>> typeSerializers =
             new Dictionary<Type, Func<object, string>>();
@@ -40,7 +34,7 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            excludedProperites.Add(propInfo);
+            excludedProperties.Add(propInfo);
             return this;
         }
 
@@ -58,8 +52,8 @@ namespace ObjectPrinting
         private string SerializeIEnumerable(IEnumerable enumerable, ImmutableHashSet<object> nestedObjects)
         {
             var sb = new StringBuilder();
-            if (enumerable is IDictionary)
-                return SerializeIDictionary((IDictionary)enumerable, nestedObjects);
+            if (enumerable is IDictionary dictionary)
+                return SerializeIDictionary(dictionary, nestedObjects);
             sb.Append("[ ");
             foreach (var element in enumerable)
             {
@@ -96,7 +90,7 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
 
             var objType = obj.GetType();
-            if (finalTypes.Contains(objType))
+            if (obj.GetType().IsValueType || obj is string)
             {
                 if (typeSerializers.TryGetValue(objType, out var serializer))
                     return serializer(obj) + Environment.NewLine;
@@ -113,7 +107,7 @@ namespace ObjectPrinting
             foreach (var propertyInfo in objType.GetProperties())
             {
                 var propertyValue = propertyInfo.GetValue(obj);
-                if (Excluded(propertyInfo) || nestedObjects.Contains(propertyValue))
+                if (ExcludedFromSerialization(propertyInfo) || nestedObjects.Contains(propertyValue))
                     continue;
 
                 if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
@@ -128,9 +122,9 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private bool Excluded(PropertyInfo propertyInfo)
+        private bool ExcludedFromSerialization(PropertyInfo propertyInfo)
         {
-            return excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperites.Contains(propertyInfo);
+            return excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo);
         }
     }
 }
