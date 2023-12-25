@@ -61,8 +61,8 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (TypeSerializers.TryGetValue(obj.GetType(), out var serializator))
-                return serializator(obj) + Environment.NewLine;
+            if (TypeSerializers.TryGetValue(obj.GetType(), out var serializer))
+                return serializer(obj) + Environment.NewLine;
             if (finalTypes.Contains(type) || nestingLevel == MaxNestingLevel)
                 return obj + Environment.NewLine;
 

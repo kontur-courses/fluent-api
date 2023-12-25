@@ -19,7 +19,7 @@ namespace ObjectPrinting.Tests
                 .Printing(x => x.Age).Using(x => x > 18 ? "Старый" : "Молодой")
                 .Printing<int>().Using(i => i.ToString("X"))
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
-                .Printing(p => p.Name).TrimmedToLength(10);
+                .Printing(p => p.Name).TrimmedToLength(2);
 
             string s1 = printer.PrintToString(person);
             
