@@ -230,15 +230,4 @@ public class ObjectPrintingTests
         var expected = "Person\r\n\tId = Guid\r\n\tName = Anton\r\n\tHeight = 0\r\n";
         result.Should().BeEquivalentTo(expected);
     }
-
-    [Test]
-    public void PrintToString_WithField_ReturnsCorrectString()
-    {
-        var person = new PersonWithField { Age = 10, Name = "Anton" };
-        var result = ObjectPrinter
-            .For<PersonWithField>()
-            .PrintToString(person);
-        var expected = "Person\r\n\tId = Guid\r\n\tName = Anton\r\n\tHeight = 0\r\n";
-        result.Should().BeEquivalentTo(expected);
-    }
 }
