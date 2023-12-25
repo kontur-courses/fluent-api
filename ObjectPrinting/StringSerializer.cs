@@ -1,5 +1,6 @@
 using ObjectPrinting.Contracts;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -23,23 +24,27 @@ public sealed class StringSerializer<TObject> : ISerializer
     private readonly Dictionary<Type, CultureInfo> typeCultures = new();
     private readonly Dictionary<Type, Delegate> typeSerializers = new();
     private readonly HashSet<object> visitedObjects = new();
-    private int? maxLength;
+
+    private int? lineLength;
 
     string ISerializer.Serialize(object instance, int nestingLevel)
     {
         var instanceType = instance.GetType();
+        var properties = instanceType.GetProperties();
+
+        var stringBuilder = new StringBuilder();
+        var indentation = new string('\t', nestingLevel + 1);
 
         if (finalTypes.Contains(instanceType))
         {
-            if (instanceType != typeof(string) || maxLength == null)
+            if (instanceType != typeof(string) || lineLength == null)
                 return ApplyCultureToString(instance, instanceType);
 
             return GetTrimmedString(instance) + Environment.NewLine;
         }
 
-        var properties = instanceType.GetProperties();
-        var stringBuilder = new StringBuilder();
-        var indentation = new string(' ', (nestingLevel + 1) * 3);
+        if (instance is IEnumerable enumerable)
+            return SerializeEnumerable(enumerable, nestingLevel);
 
         stringBuilder.AppendLine(instanceType.Name);
 
@@ -64,21 +69,13 @@ public sealed class StringSerializer<TObject> : ISerializer
             if (visitedObjects.Contains(propertyValue))
                 continue;
 
-            string? output;
             var serializer = FindSerializer(propertyInfo);
 
-            if (serializer != null)
-            {
-                output = serializer.Method
-                    .Invoke(serializer.Target, new[] { propertyValue })!
-                    .ToString()!;
+            var output = serializer != null
+                ? serializer.Method.Invoke(serializer.Target, new[] { propertyValue })!.ToString()!
+                : (this as ISerializer).Serialize(propertyValue, nestingLevel + 1);
 
-                stringBuilder.Append($"{indentation}{propertyName} = {output}{Environment.NewLine}");
-                continue;
-            }
-
-            output = (this as ISerializer).Serialize(propertyValue, nestingLevel + 1);
-            stringBuilder.Append($"{indentation}{propertyName} = {output}");
+            stringBuilder.Append($"{indentation}{propertyName} = {output}{Environment.NewLine}");
         }
 
         return stringBuilder.ToString();
@@ -112,7 +109,7 @@ public sealed class StringSerializer<TObject> : ISerializer
 
     public StringSerializer<TObject> TrimLinesTo(int length)
     {
-        maxLength = length;
+        lineLength = length;
         return this;
     }
 
@@ -122,10 +119,68 @@ public sealed class StringSerializer<TObject> : ISerializer
         return this;
     }
 
+    private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
+    {
+        const int customOffset = 4;
+
+        var stringBuilder = new StringBuilder();
+
+        var previousIndent = new string('\t', nestingLevel);
+        var elementOffset = new string(' ', customOffset);
+
+        stringBuilder.AppendLine("[");
+
+        if (enumerable is IDictionary dict) FillDictionaryBody();
+        else FillSequenceBody();
+
+        stringBuilder.Append($"{previousIndent}]");
+
+        return stringBuilder.ToString();
+
+        void FillSequenceBody()
+        {
+            foreach (var element in enumerable)
+            {
+                var output = (this as ISerializer).Serialize(element, nestingLevel);
+                stringBuilder.AppendLine($"{previousIndent}{elementOffset}{output.TrimEnd()},");
+            }
+        }
+
+        void FillDictionaryBody()
+        {
+            foreach (var key in dict.Keys)
+            {
+                var output = (this as ISerializer).Serialize(dict[key]!, nestingLevel);
+                stringBuilder.AppendLine($"{previousIndent}{elementOffset}[{key}] => {output.TrimEnd()},");
+            }
+        }
+    }
+
+    private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
+    {
+        const int customOffset = 4;
+
+        var stringBuilder = new StringBuilder();
+        var previousIndent = new string('\t', nestingLevel);
+        var elementOffset = new string(' ', customOffset);
+
+        stringBuilder.AppendLine("[");
+
+        foreach (var key in dictionary.Keys)
+        {
+            var output = (this as ISerializer).Serialize(dictionary[key]!, nestingLevel);
+            stringBuilder.AppendLine($"{previousIndent}{elementOffset}[{key}] => {output.TrimEnd()},");
+        }
+
+        stringBuilder.Append($"{previousIndent}]");
+
+        return stringBuilder.ToString();
+    }
+
     private string ApplyCultureToString(object instance, Type instanceType)
     {
         var culture = typeCultures.GetValueOrDefault(instanceType) ?? CultureInfo.CurrentCulture;
-        return ((IConvertible)instance).ToString(culture) + Environment.NewLine;
+        return ((IConvertible)instance).ToString(culture);
     }
 
     private Delegate? FindSerializer(PropertyInfo propertyInfo)
@@ -139,9 +194,9 @@ public sealed class StringSerializer<TObject> : ISerializer
     {
         var stringValue = instance.ToString()!;
 
-        if (maxLength == null)
+        if (lineLength == null)
             return stringValue;
 
-        return stringValue.Length < maxLength ? stringValue : stringValue[..maxLength.Value];
+        return stringValue.Length < lineLength ? stringValue : stringValue[..lineLength.Value];
     }
 }
