@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.InnerPrintingConfig
 {
     public class MemberPrintingConfig<TOwner, TMemberType> : IInnerPrintingConfig<TOwner, TMemberType>
     {
@@ -29,6 +28,7 @@ namespace ObjectPrinting
             printingConfig.MemberSerializers[memberInfo] = isSerialized 
                 ? obj => prevSerializer(obj).Truncate(maxLen) 
                 : obj => obj.ToString().Truncate(maxLen);
+
             return printingConfig;
         }
     }

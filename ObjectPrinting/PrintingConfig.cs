@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using ObjectPrinting.Extensions;
+using ObjectPrinting.InnerPrintingConfig;
 
 namespace ObjectPrinting
 {
@@ -13,7 +14,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
@@ -67,22 +68,13 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            foreach (var member in type.GetFieldsAndProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !excludedMembers.Contains(x)))
+            var sb = new StringBuilder(type.Name + Environment.NewLine);
+            foreach (var propertyOrField in type.GetFieldsAndProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !excludedMembers.Contains(x.UnderlyingMember) && !excludedTypes.Contains(x.DataType)))
             {
-                if (member is PropertyInfo propertyInfo && !excludedTypes.Contains(propertyInfo.PropertyType))
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              (MemberSerializers.TryGetValue(member, out var memberSerializator) 
-                                    ? memberSerializator(propertyInfo.GetValue(obj)) + Environment.NewLine
-                                    : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)));
-                if (member is FieldInfo fieldInfo && !excludedTypes.Contains(fieldInfo.FieldType))
-                {
-                    sb.Append(identation + fieldInfo.Name + " = " +
-                              (MemberSerializers.TryGetValue(member, out var memberSerializator) 
-                                  ? memberSerializator(fieldInfo.GetValue(obj)) + Environment.NewLine
-                                  : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)));
-                }
+                sb.Append(identation + propertyOrField.Name + " = " +
+                          (MemberSerializers.TryGetValue(propertyOrField.UnderlyingMember, out var propertyOrFieldSerializer) 
+                              ? propertyOrFieldSerializer(propertyOrField.GetValue(obj)) + Environment.NewLine
+                              : PrintToString(propertyOrField.GetValue(obj), nestingLevel + 1)));
             }
 
             return sb.ToString();

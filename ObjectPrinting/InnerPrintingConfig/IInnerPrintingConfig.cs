@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting
+﻿namespace ObjectPrinting.InnerPrintingConfig
 {
     public interface IInnerPrintingConfig<TOwner, TTypeOrPropType>
     {

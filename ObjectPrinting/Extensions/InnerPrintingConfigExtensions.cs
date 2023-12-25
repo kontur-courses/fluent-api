@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-using System.Linq;
+using ObjectPrinting.InnerPrintingConfig;
 
 namespace ObjectPrinting.Extensions
 {

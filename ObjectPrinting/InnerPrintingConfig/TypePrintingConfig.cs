@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Globalization;
 using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.InnerPrintingConfig
 {
     public class TypePrintingConfig<TOwner, TType> : IInnerPrintingConfig<TOwner, TType>
     {

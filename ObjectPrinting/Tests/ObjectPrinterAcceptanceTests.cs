@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
-using FluentAssertions;
 using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests
@@ -12,9 +11,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19, Parent = new Person {Name = "Andrew", Age = 90}};
+            var person = new Person {Name = "Alex", Age = 19, Parent = new Person {Name = "Andrew", Age = 90}};
 
-            var printer = ObjectPrinter.For<Person>(1)
+            var printer = ObjectPrinter.For<Person>()
                 .Excluding<Guid>()
                 .Printing(x => x.Age).Using(x => x > 18 ? "Старый" : "Молодой")
                 .Printing<int>().Using(i => i.ToString("X"))
