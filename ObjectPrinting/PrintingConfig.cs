@@ -25,7 +25,8 @@ namespace ObjectPrinting
             return new TypePrintingConfig<TOwner, TPropType>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, propInfo);
@@ -51,37 +52,67 @@ namespace ObjectPrinting
 
         private string SerializeIEnumerable(IEnumerable enumerable, ImmutableHashSet<object> nestedObjects)
         {
-            var sb = new StringBuilder();
             if (enumerable is IDictionary dictionary)
                 return SerializeIDictionary(dictionary, nestedObjects);
-            sb.Append("[ ");
-            foreach (var element in enumerable)
+            var enumerator = enumerable.GetEnumerator();
+            var hasFirstElement = enumerator.MoveNext();
+            if (!hasFirstElement)
+                return "[]";
+            var firstItemType = enumerator.Current;
+            if (firstItemType.GetType().IsValueType || firstItemType is string)
             {
-                sb.Append(PrintToString(element, nestedObjects).TrimEnd());
-                sb.Append(" ");
+                return SerializeValueTypeIEnumerable(enumerable, nestedObjects);
             }
 
-            sb.Append("]");
-            return sb.ToString();
+            return SerializeReferenceTypeIEnumerable(enumerable, nestedObjects);
+        }
+
+        private string SerializeValueTypeIEnumerable(IEnumerable enumerable, ImmutableHashSet<object> nestedObjects)
+        {
+            var sb = new List<string>();
+            sb.Add("[");
+            foreach (var element in enumerable)
+            {
+                var serializedString = PrintToString(element, nestedObjects).Trim();
+                sb.Add(serializedString);
+            }
+
+            sb.Add("]");
+            return string.Join(' ', sb);
+        }
+
+        private string SerializeReferenceTypeIEnumerable(IEnumerable enumerable, ImmutableHashSet<object> nestedObjects)
+        {
+            var sb = new List<string>();
+            var identation = new string('\t', nestedObjects.Count);
+            sb.Add(identation + "[");
+            foreach (var element in enumerable)
+            {
+                var serializedString = PrintToString(element, nestedObjects.Add(sb)).TrimEnd();
+                sb.Add(serializedString);
+            }
+
+            sb.Add(identation + "]");
+            return string.Join(Environment.NewLine, sb);
         }
 
         private string SerializeIDictionary(IDictionary dictionary, ImmutableHashSet<object> nestedObjects)
         {
-            var sb = new StringBuilder();
+            var sb = new List<string>();
             var identation = new string('\t', nestedObjects.Count);
-            sb.Append(identation + "{" + Environment.NewLine);
+            sb.Add(identation + "{");
             nestedObjects = nestedObjects.Add(dictionary);
             foreach (DictionaryEntry dictionaryEntry in dictionary)
             {
-                sb.Append(identation + "\t[" + Environment.NewLine);
-                sb.Append("\t" + PrintToString(dictionaryEntry.Key, nestedObjects));
-                sb.Append(identation + "\t:" + Environment.NewLine);
-                sb.Append("\t" + PrintToString(dictionaryEntry.Value, nestedObjects));
-                sb.Append(identation + "\t]," + Environment.NewLine);
+                sb.Add(identation + '\t' + "[");
+                sb.Add(identation + '\t' + PrintToString(dictionaryEntry.Key, nestedObjects).TrimEnd());
+                sb.Add(identation + '\t' + ":");
+                sb.Add(identation + '\t' + PrintToString(dictionaryEntry.Value, nestedObjects).TrimEnd());
+                sb.Add(identation + '\t' + "]");
             }
 
-            sb.Append(identation + "}" + Environment.NewLine);
-            return sb.ToString().TrimEnd();
+            sb.Add(identation + "}");
+            return string.Join(Environment.NewLine, sb);
         }
 
         private string PrintToString(object obj, ImmutableHashSet<object> nestedObjects)
@@ -119,6 +150,7 @@ namespace ObjectPrinting
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj), nestedObjects));
             }
+
             return sb.ToString();
         }
 

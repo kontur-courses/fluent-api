@@ -21,10 +21,10 @@ namespace ObjectPrinting
             return printingConfig;
         }
         
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
+        public PrintingConfig<TOwner> Using<TFormattable>(CultureInfo culture) where TFormattable : IFormattable
         {
-            var culturedFunc = new Func<TPropType, string>(d => ((IConvertible)d).ToString(culture));
-            var castedFunc = new Func<object, string>(obj => culturedFunc((TPropType)obj));
+            var culturedFunc = new Func<TFormattable, string>(d => d.ToString(null, culture));
+            var castedFunc = new Func<object, string>(obj => culturedFunc((TFormattable)obj));
             printingConfig.typeSerializers.Add(typeof(TPropType), castedFunc);
             return printingConfig;
         }
