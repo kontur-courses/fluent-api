@@ -143,7 +143,7 @@ namespace ObjectPrinting
             return excludedTypes.Contains(member.GetType()) || excludedProperty.Contains(member);
         }
 
-        public PrintingConfig<TOwner> Exclude<TType>()
+        public PrintingConfig<TOwner> Exclude<TType>() where TType: Type
         {
             excludedTypes.Add(typeof(TType));
             return this;
