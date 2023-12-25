@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -40,18 +39,21 @@ public class PrintingConfig<TOwner>
     {
         var expression = (MemberExpression)memberSelector.Body;
         excludedProperties.Add((PropertyInfo)expression.Member);
+
         return this;
     }
 
     public PrintingConfig<TOwner> ExcludePropertyType<TMemberType>()
     {
         excludedTypes.Add(typeof(TMemberType));
+
         return this;
     }
 
     public string PrintToString(TOwner obj)
     {
         printedObjects = new HashSet<object>();
+
         return PrintToString(obj, 0);
     }
 
@@ -59,9 +61,10 @@ public class PrintingConfig<TOwner>
     {
         if (obj == null)
             return "null" + Environment.NewLine;
-        
+
         if (!obj.GetType().IsValueType && printedObjects.Contains(obj))
             return "Cycle reference detected" + Environment.NewLine;
+
         printedObjects.Add(obj);
 
         var indentation = GetIndentation(nestingLevel);
@@ -94,28 +97,31 @@ public class PrintingConfig<TOwner>
 
     private string GetPrintedCollection(IEnumerable obj, int nestingLevel)
     {
-        var sb = new StringBuilder();
         if (obj is IDictionary dict)
-            GetPrintedDictionary(dict, sb, nestingLevel);
+            return GetPrintedDictionary(dict, nestingLevel);
         else
-            GetPrintedSequence(obj, sb, nestingLevel);
-
-        return sb.ToString();
+            return GetPrintedSequence(obj, nestingLevel);
     }
 
-    private void GetPrintedSequence(IEnumerable obj, StringBuilder sb, int nestingLevel)
+    private string GetPrintedSequence(IEnumerable obj, int nestingLevel)
     {
+        var sb = new StringBuilder();
         var indentation = GetIndentation(nestingLevel);
         var index = 0;
         foreach (var element in obj)
             sb.Append($"{indentation}{index++}: {PrintToString(element, nestingLevel + 1)}");
+
+        return sb.ToString();
     }
 
-    private void GetPrintedDictionary(IDictionary dict, StringBuilder sb, int nestingLevel)
+    private string GetPrintedDictionary(IDictionary dict, int nestingLevel)
     {
+        var sb = new StringBuilder();
         var indentation = GetIndentation(nestingLevel);
         foreach (DictionaryEntry pair in dict)
             sb.Append($"{indentation}{pair.Key}: {PrintToString(pair.Value, nestingLevel + 1)}");
+
+        return sb.ToString();
     }
 
     private string GetPrintingResult(Object obj, PropertyInfo propertyInfo, int nestingLevel)
@@ -145,6 +151,6 @@ public class PrintingConfig<TOwner>
     {
         return type.IsValueType || type == typeof(string);
     }
-    
-    private string GetIndentation(int nestingLevel) => new string('\t', nestingLevel + 1);
+
+    private static string GetIndentation(int nestingLevel) => new string('\t', nestingLevel + 1);
 }

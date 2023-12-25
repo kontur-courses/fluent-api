@@ -102,7 +102,7 @@ public class ObjectPrinterTests
         var typePrinting = "Type printing";
         var propertyPrinting = "Property printing";
         var culture = CultureInfo.CreateSpecificCulture("fr-FR");
-        
+
         var printer = ObjectPrinter.For<Person>()
             .ExcludePropertyType<Guid>()
             .SetPrintingFor<int>().Using(prop => typePrinting)
@@ -117,7 +117,7 @@ public class ObjectPrinterTests
         var result = printer.PrintToString(person);
 
         result.Should().Be($"{nameof(Person)}{newLine}" +
-                           $"\t{nameof(person.Name)} = {propertyPrinting[..10]}{newLine}" + 
+                           $"\t{nameof(person.Name)} = {propertyPrinting[..10]}{newLine}" +
                            $"\t{nameof(person.Height)} = {person.Height.ToString(culture)}{newLine}" +
                            $"\t{nameof(person.Age)} = {typePrinting}{newLine}" +
                            $"\t{nameof(person.Friend)} = null{newLine}");
