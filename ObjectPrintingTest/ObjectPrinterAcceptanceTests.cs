@@ -77,7 +77,7 @@ namespace ObjectPrintingTest
         }
 
         [Test]
-        public void CultureInfoForType()
+        public void CultureInfoForIFormattableType()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.23 };
             sut
@@ -93,7 +93,7 @@ namespace ObjectPrintingTest
         }
 
         [Test]
-        public void CultureInfoForProperty()
+        public void CultureInfoForIFormattableProperty()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.23 };
             sut
@@ -133,13 +133,13 @@ namespace ObjectPrintingTest
                     """
                     Node
                     	Name = A
-                    	Nodes:
+                    	Nodes: 
                     		0: Node
                     			Name = B
                     			Nodes: <empty>
                     		1: Node
                     			Name = C
-                    			Nodes:
+                    			Nodes: 
                     				0: Node
                     					Name = D
                     					Nodes: <empty>
@@ -169,7 +169,7 @@ namespace ObjectPrintingTest
                     """
                     PhoneBook
                     	Town = New York
-                    	NumberToPerson:
+                    	NumberToPerson: 
                     		0 element:
                     			Key: +1 (646) 555-3456
                     			Value: Person
@@ -201,7 +201,7 @@ namespace ObjectPrintingTest
                     """
                     Node
                     	Name = A
-                    	Nodes:
+                    	Nodes: 
                     		0: Node
                     			Name = B
                     			Nodes: <empty>
