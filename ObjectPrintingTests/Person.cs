@@ -10,6 +10,11 @@ namespace ObjectPrintingTests
         public int Age { get; set; }
 
         public Person Friend { get; set; }
+        
+        public List<Person> Friends { get; set; }
+        
+        public Person[] Relatives { get; set; }
+        public Dictionary<int, Person> Neighbours { get; set; }
 
         public override int GetHashCode()
         {

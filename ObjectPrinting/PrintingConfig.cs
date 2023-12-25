@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -55,17 +57,17 @@ public class PrintingConfig<TOwner>
 
     private string PrintToString(object obj, int nestingLevel)
     {
-        if (printedObjects.Contains(obj) && !obj.GetType().IsValueType)
+        if (obj == null)
+            return "null" + Environment.NewLine;
+        
+        if (!obj.GetType().IsValueType && printedObjects.Contains(obj))
             return "Cycle reference detected" + Environment.NewLine;
         printedObjects.Add(obj);
 
-        if (obj == null)
-            return "null" + Environment.NewLine;
-
-        var indentation = new string('\t', nestingLevel + 1);
+        var indentation = GetIndentation(nestingLevel);
 
         if (CulturesForTypes.TryGetValue(obj.GetType(), out var culture))
-            return indentation + ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
+            return ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
 
         if (IsTypeFinal(obj.GetType()))
             return obj + Environment.NewLine;
@@ -74,17 +76,46 @@ public class PrintingConfig<TOwner>
         var type = obj.GetType();
         sb.AppendLine(type.Name);
 
-        foreach (var propertyInfo in type.GetProperties())
-        {
-            if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
-                continue;
+        if (obj is IEnumerable enumerable)
+            sb.Append(GetPrintedCollection(enumerable, nestingLevel));
+        else
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
+                    continue;
 
-            var printingResult = GetPrintingResult(obj, propertyInfo, nestingLevel);
+                var printingResult = GetPrintingResult(obj, propertyInfo, nestingLevel);
 
-            sb.Append(indentation + propertyInfo.Name + " = " + printingResult);
-        }
+                sb.Append(indentation + propertyInfo.Name + " = " + printingResult);
+            }
 
         return sb.ToString();
+    }
+
+    private string GetPrintedCollection(IEnumerable obj, int nestingLevel)
+    {
+        var sb = new StringBuilder();
+        if (obj is IDictionary dict)
+            GetPrintedDictionary(dict, sb, nestingLevel);
+        else
+            GetPrintedSequence(obj, sb, nestingLevel);
+
+        return sb.ToString();
+    }
+
+    private void GetPrintedSequence(IEnumerable obj, StringBuilder sb, int nestingLevel)
+    {
+        var indentation = GetIndentation(nestingLevel);
+        var index = 0;
+        foreach (var element in obj)
+            sb.Append($"{indentation}{index++}: {PrintToString(element, nestingLevel + 1)}");
+    }
+
+    private void GetPrintedDictionary(IDictionary dict, StringBuilder sb, int nestingLevel)
+    {
+        var indentation = GetIndentation(nestingLevel);
+        foreach (DictionaryEntry pair in dict)
+            sb.Append($"{indentation}{pair.Key}: {PrintToString(pair.Value, nestingLevel + 1)}");
     }
 
     private string GetPrintingResult(Object obj, PropertyInfo propertyInfo, int nestingLevel)
@@ -92,13 +123,9 @@ public class PrintingConfig<TOwner>
         string printingResult;
 
         if (CustomTypeSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-        {
             printingResult = typeSerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine;
-        }
         else if (CustomPropertySerializers.TryGetValue(propertyInfo, out var propertySerializer))
-        {
             printingResult = propertySerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine;
-        }
         else
             printingResult = PrintToString(propertyInfo.GetValue(obj),
                 nestingLevel + 1);
@@ -109,7 +136,7 @@ public class PrintingConfig<TOwner>
     private string TrimResultIfNeeded(PropertyInfo propertyInfo, string printingResult)
     {
         if (TrimmedProperties.TryGetValue(propertyInfo, out var length))
-            printingResult = printingResult.Substring(0, length) + Environment.NewLine;
+            printingResult = printingResult[..length] + Environment.NewLine;
 
         return printingResult;
     }
@@ -118,4 +145,6 @@ public class PrintingConfig<TOwner>
     {
         return type.IsValueType || type == typeof(string);
     }
+    
+    private string GetIndentation(int nestingLevel) => new string('\t', nestingLevel + 1);
 }

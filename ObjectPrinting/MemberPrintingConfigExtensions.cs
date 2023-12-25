@@ -13,6 +13,9 @@ public static class MemberPrintingConfigExtensions
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
         this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
+        if (maxLen < 0)
+            throw new ArgumentException("Length to trim must be non negative");
+        
         var propertyInfo = propConfig.PropertyInfo;
         propConfig.PrintingConfig.TrimmedProperties[propertyInfo] = maxLen;
 
