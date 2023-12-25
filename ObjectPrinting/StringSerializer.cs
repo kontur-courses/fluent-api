@@ -40,7 +40,7 @@ public sealed class StringSerializer<TObject> : ISerializer
             if (instanceType != typeof(string) || lineLength == null)
                 return ApplyCultureToString(instance, instanceType);
 
-            return GetTrimmedString(instance) + Environment.NewLine;
+            return GetTrimmedString(instance);
         }
 
         if (instance is IEnumerable enumerable)
@@ -154,27 +154,6 @@ public sealed class StringSerializer<TObject> : ISerializer
                 stringBuilder.AppendLine($"{previousIndent}{elementOffset}[{key}] => {output.TrimEnd()},");
             }
         }
-    }
-
-    private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
-    {
-        const int customOffset = 4;
-
-        var stringBuilder = new StringBuilder();
-        var previousIndent = new string('\t', nestingLevel);
-        var elementOffset = new string(' ', customOffset);
-
-        stringBuilder.AppendLine("[");
-
-        foreach (var key in dictionary.Keys)
-        {
-            var output = (this as ISerializer).Serialize(dictionary[key]!, nestingLevel);
-            stringBuilder.AppendLine($"{previousIndent}{elementOffset}[{key}] => {output.TrimEnd()},");
-        }
-
-        stringBuilder.Append($"{previousIndent}]");
-
-        return stringBuilder.ToString();
     }
 
     private string ApplyCultureToString(object instance, Type instanceType)

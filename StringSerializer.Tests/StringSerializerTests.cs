@@ -32,6 +32,21 @@ public class StringSerializerTests
     private Random random;
 
     [Test]
+    public void Serializer_Demo()
+    {
+        var serialized = testObject
+            .IntoString(config => config
+                .TrimLinesTo(3)
+                .Ignoring<double>()
+                .Ignoring(obj => obj.IntNumber)
+                .SetCultureTo<DateTime>(CultureInfo.InvariantCulture)
+                .ChangeSerializingFor(obj => obj.Line, line => $"<{line}>"));
+
+        Console.WriteLine(serialized);
+        Assert.Pass();
+    }
+
+    [Test]
     public void Serializer_MustBeAbleTo_IgnoreTypes()
     {
         var actual = testObject
@@ -42,7 +57,8 @@ public class StringSerializerTests
                 .Ignoring<DateTime>()
                 .Ignoring<TestObject>()
                 .Ignoring<Dictionary<int, TestObject>>()
-                .Ignoring<List<string>>());
+                .Ignoring<List<string>>()
+                .Ignoring<List<TestObject.InnerClass>>());
 
         Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
@@ -58,7 +74,8 @@ public class StringSerializerTests
                 .Ignoring(test => test.Date)
                 .Ignoring(test => test.CircularReference!)
                 .Ignoring(test => test.Dict!)
-                .Ignoring(test => test.List));
+                .Ignoring(test => test.List)
+                .Ignoring(test => test.InnerClasses));
 
         Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
@@ -128,5 +145,25 @@ public class StringSerializerTests
         testObject.CircularReference = testObject;
         testObject.IntoString();
         Assert.Pass();
+    }
+
+    [Test]
+    public void Serializer_Must_WorkWithCollections()
+    {
+        var list = new List<int> { 1, 2, 3 };
+        Assert.AreEqual("[\n    1,\n    2,\n    3,\n]", list.IntoString());
+    }
+
+    [Test]
+    public void Serializer_Must_WorkWithDictionaries()
+    {
+        var dict = new Dictionary<int, string>
+        {
+            [0] = "Zero",
+            [1] = "One",
+            [2] = "Two"
+        };
+
+        Assert.AreEqual("[\n    [0] => Zero,\n    [1] => One,\n    [2] => Two,\n]", dict.IntoString());
     }
 }

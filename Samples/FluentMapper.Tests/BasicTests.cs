@@ -9,9 +9,9 @@ namespace FluentMapping.Tests
         public void BasicMapping()
         {
             var mapper = FluentMapper
-                    .ThatMaps<Target>()
-                    .From<Source>()
-                    .Create();
+                .ThatMaps<Target>()
+                .From<Source>()
+                .Create();
 
             Assert.That(mapper, Is.Not.Null);
 

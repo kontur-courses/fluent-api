@@ -12,7 +12,7 @@ namespace FluentMapping.Tests.Unit
             var spec = new TypeMappingSpec<Target, Source>();
 
             var testee = spec.ThatSets(tgt => tgt.TargetProp)
-                as ISetterSpecProperties<Target, Source>
+                    as ISetterSpecProperties<Target, Source>
                 ;
 
             Assert.That(testee.Spec, Is.SameAs(spec));
@@ -25,8 +25,8 @@ namespace FluentMapping.Tests.Unit
         public void From_Creates_Mapping()
         {
             var result = new TypeMappingSpec<Target, Source>()
-                .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
-                as ITypeMappingSpecProperties<Target, Source>
+                        .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
+                    as ITypeMappingSpecProperties<Target, Source>
                 ;
 
             Assert.That(
@@ -48,9 +48,9 @@ namespace FluentMapping.Tests.Unit
         public void MultipleMappings()
         {
             var result = new TypeMappingSpec<Target, Source>()
-                .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
-                .ThatSets(tgt => tgt.MatchingProp).From(src => src.MatchingProp)
-                as ITypeMappingSpecProperties<Target, Source>
+                        .ThatSets(tgt => tgt.TargetProp).From(src => src.SourceProp)
+                        .ThatSets(tgt => tgt.MatchingProp).From(src => src.MatchingProp)
+                    as ITypeMappingSpecProperties<Target, Source>
                 ;
 
             Assert.That(result.SourceProperties, Is.Empty);
