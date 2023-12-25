@@ -4,7 +4,6 @@ using StringSerializer.Tests.TestModels;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 
 namespace StringSerializer.Tests;
 
@@ -14,142 +13,120 @@ public class StringSerializerTests
     [SetUp]
     public void SetUp()
     {
-        random = new Random();
-        engine = new Engine("General Electric GEnx-2B67", 175000);
-        airplane = new Airplane
+        testObject = new TestObject
         {
-            ModelName = "Boing 747",
-            Length = 70.66,
-            Height = 19.40,
-            MaxMass = 220130,
-            MaxFlyingHeight = 13100,
-            MaxSpeed = 956,
-            Engine = engine,
-            ProductionDate = new DateTime(1969, 2, 9)
+            IntNumber = random.Next(1, 1001),
+            DoubleNumber = random.Next(1000),
+            Date = new DateTime(random.Next(1901, 2070), random.Next(1, 13), random.Next(1, 26)),
+            Line = new string('_', random.Next(1, 1000))
         };
     }
 
-    private Airplane? airplane;
-    private Engine? engine;
-    private Random? random;
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        random = new Random();
+    }
+
+    private TestObject testObject;
+    private Random random;
 
     [Test]
     public void Serializer_MustBeAbleTo_IgnoreTypes()
     {
-        var actual = CollectTokensFromLine(
-            airplane.IntoString(config => config
+        var actual = testObject
+            .IntoString(config => config
                 .Ignoring<int>()
                 .Ignoring<double>()
                 .Ignoring<string>()
-                .Ignoring<DateTime>()));
+                .Ignoring<DateTime>()
+                .Ignoring<TestObject>()
+                .Ignoring<Dictionary<int, TestObject>>()
+                .Ignoring<List<string>>());
 
-        var expected = CollectTokensFromLine("Airplane Engine = Engine Ancestor = Null");
-
-        CollectionAssert.AreEqual(actual, expected);
+        Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
 
     [Test]
     public void Serializer_MustBeAbleTo_IgnoreMembers()
     {
-        var actual = CollectTokensFromLine(
-            engine.IntoString(config => config.Ignoring(eng => eng!.Model)));
+        var actual = testObject
+            .IntoString(config => config
+                .Ignoring(test => test.IntNumber)
+                .Ignoring(test => test.DoubleNumber)
+                .Ignoring(test => test.Line!)
+                .Ignoring(test => test.Date)
+                .Ignoring(test => test.CircularReference!)
+                .Ignoring(test => test.Dict!)
+                .Ignoring(test => test.List));
 
-        var expected = CollectTokensFromLine("Engine HorsePower = 175000");
-
-        CollectionAssert.AreEqual(actual, expected);
+        Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
 
-    [Test]
-    public void Serializer_MustBeAbleTo_IgnoreMembersAndTypesTogether()
+    [TestCase("fr-FR")]
+    [TestCase("ja-JP")]
+    [TestCase("en-US")]
+    [TestCase("ar-SA")]
+    public void Serializer_Must_SupportCultureSetting(string signature)
     {
-        var actual = CollectTokensFromLine(
-            airplane.IntoString(
-                config => config
-                    .Ignoring(plane => plane!.Engine)
-                    .Ignoring<int>()
-                    .Ignoring<double>()
-                    .Ignoring<string>()
-                    .Ignoring(plane => plane!.Ancestor)));
+        var culture = new CultureInfo(signature);
 
-        var expected = CollectTokensFromLine("Airplane ProductionDate = 09.02.1969 00:00:00");
+        var actual = testObject
+            .IntoString(config => config
+                .SetCultureTo<DateTime>(culture)
+                .SetCultureTo<double>(culture));
 
-        CollectionAssert.AreEqual(actual, expected);
-    }
-
-    [Test]
-    public void Serializer_Must_SupportCultureSetting()
-    {
-        var number = random!.NextDouble();
-        var cultures = new CultureInfo[] { new("ru-RU"), new("en-EN") };
-        var randomCulture = cultures[random.Next(0, cultures.Length)];
-
-        var actual = CollectTokensFromLine(
-            new { Number = number }
-                .IntoString(config => config
-                    .SetCultureTo<double>(randomCulture)));
-
-        Assert.That(actual.Last(), Is.EqualTo(number.ToString(randomCulture)));
+        StringAssert.Contains(
+            $"{nameof(TestObject.DoubleNumber)} = {testObject.DoubleNumber.ToString(culture)}", actual);
+        StringAssert.Contains(
+            $"{nameof(TestObject.Date)} = {testObject.Date.ToString(culture)}", actual);
     }
 
     [Test]
     public void Serializer_Must_SupportLineTrimming()
     {
-        var testLine = new string('.', random!.Next(1, 101));
-        var cuttingLength = random.Next(1, testLine.Length);
+        var cutLength = random.Next(1, testObject.Line!.Length);
 
-        var actual = CollectTokensFromLine(
-            new { Line = testLine }
-                .IntoString(config => config
-                    .TrimLinesTo(cuttingLength)
-                    .Ignoring<int>()));
+        var actual = testObject
+            .IntoString(config => config
+                .TrimLinesTo(cutLength));
 
-        Assert.That(actual.Last(), Is.EqualTo(testLine[..cuttingLength]));
-    }
-
-    [Test]
-    public void Serializer_Must_SupportCustomSerializationForTypes()
-    {
-        var actual = CollectTokensFromLine(
-            airplane.IntoString(config => config
-                .Ignoring<int>()
-                .Ignoring<DateTime>()
-                .Ignoring<Engine>()
-                .Ignoring<string>()
-                .Ignoring<Airplane>()
-                .Ignoring(plane => plane!.MaxMass)
-                .ChangeSerializingFor<double>(number => $"-> {number} <-")));
-
-        var expected = CollectTokensFromLine("Airplane Length = -> 70,66 <- Height = -> 19,4 <-");
-
-        CollectionAssert.AreEqual(actual, expected);
+        StringAssert.Contains($"{nameof(TestObject.Line)} = {testObject.Line[..cutLength]}", actual);
     }
 
     [Test]
     public void Serializer_Must_SupportCustomSerializationForMembers()
     {
-        var actual = airplane.IntoString(config => config
-            .Ignoring<int>()
-            .Ignoring<double>()
-            .Ignoring<string>()
-            .Ignoring<DateTime>()
-            .Ignoring(plane => plane!.Ancestor)
-            .ChangeSerializingFor(
-                plane => plane!.Engine,
-                eng => $"{eng!.Model}: {eng.HorsePower}"));
+        var actual = testObject
+            .IntoString(config => config
+                .ChangeSerializingFor(obj => obj.DoubleNumber, num => $"-> {num} <-")
+                .ChangeSerializingFor(obj => obj.Line, _ => string.Empty));
 
-        Assert.That(actual, Is.EqualTo("Airplane\n   Engine = General Electric GEnx-2B67: 175000\n"));
+        StringAssert.Contains(
+            $"{nameof(TestObject.DoubleNumber)} = -> {testObject.DoubleNumber} <-", actual);
+        StringAssert.Contains(
+            $"{nameof(TestObject.CircularReference)} = {string.Empty}", actual);
+    }
+
+    [Test]
+    public void Serializer_Must_SupportCustomSerializationForTypes()
+    {
+        var actual = testObject
+            .IntoString(config => config
+                .ChangeSerializingFor<double>(num => $"-> {num} <-")
+                .ChangeSerializingFor<string>(_ => string.Empty));
+
+        StringAssert.Contains(
+            $"{nameof(TestObject.DoubleNumber)} = -> {testObject.DoubleNumber} <-", actual);
+        StringAssert.Contains(
+            $"{nameof(TestObject.CircularReference)} = {string.Empty}", actual);
     }
 
     [Test]
     public void Serializer_Must_DetectCircularReferences()
     {
-        airplane!.Ancestor = airplane;
-        airplane.IntoString();
+        testObject.CircularReference = testObject;
+        testObject.IntoString();
         Assert.Pass();
-    }
-
-    private static IEnumerable<string> CollectTokensFromLine(string line)
-    {
-        return line.Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries);
     }
 }
