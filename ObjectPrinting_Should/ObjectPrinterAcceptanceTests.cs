@@ -72,7 +72,7 @@ namespace ObjectPrinting_Should
         [Test]
         public void PrintToString_UsesCustomCulture_WhenGivenToNumericType()
         {
-            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
+            var printer = ObjectPrinter.For<Person>().Printing<double>().Using<double>(CultureInfo.InvariantCulture);
 
             var expectedString = string.Join(Environment.NewLine, "Person", "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tSibling = null", "\tName = Alex", "\tHeight = 179.5", "\tAge = 19", "\tFavouriteNumbers = null", "");
@@ -149,33 +149,39 @@ namespace ObjectPrinting_Should
         public void PrintToString_SerializesDictionary()
         {
             var numbers = new Dictionary<Person, double> { { new Person(), 1 }, { new Person(), 2 } };
-            var a = new[] { numbers };
+            var a = new[] { numbers , new Dictionary<Person, double>()};
             var b = new HashSet<Dictionary<Person,double>[]> {a,};
             var printer = ObjectPrinter.For<HashSet<Dictionary<Person,double>[]>>().Excluding<Guid>();
 
             var outputString = printer.PrintToString(b);
-            var expectedString = @"[ [ {
+            var expectedString = @"[
 	[
-	Person
-		Sibling = null
-		Name = null
-		Height = 0
-		Age = 0
-		FavouriteNumbers = null
-	:
-	1
-	],
-	[
-	Person
-		Sibling = null
-		Name = null
-		Height = 0
-		Age = 0
-		FavouriteNumbers = null
-	:
-	2
-	],
-} ] ]
+		{
+			[
+			Person
+				Sibling = null
+				Name = null
+				Height = 0
+				Age = 0
+				FavouriteNumbers = null
+			:
+			1
+			]
+			[
+			Person
+				Sibling = null
+				Name = null
+				Height = 0
+				Age = 0
+				FavouriteNumbers = null
+			:
+			2
+			]
+		}
+		{
+		}
+	]
+]
 ";
             outputString.Should().Be(expectedString);
         }
