@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19\n");
         }
-        
+
         [Test]
         public void SpecificTypeSerialization()
         {
@@ -57,7 +57,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = double180,5double\n\tAge = 19\n");
         }
-        
+
         [Test]
         public void NumberCulture()
         {
@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19\n");
         }
-        
+
         [Test]
         public void SpecificFieldSerialization()
         {
@@ -81,7 +81,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19y.o.\n");
         }
-        
+
         [Test]
         public void TrimString()
         {
@@ -93,7 +93,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person");
         }
-        
+
         [Test]
         public void ExcludeField()
         {
@@ -105,7 +105,7 @@ namespace ObjectPrinting.Tests
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n");
         }
-        
+
         [Test]
         public void MixFilters()
         {
@@ -120,6 +120,65 @@ namespace ObjectPrinting.Tests
 
             printer.PrintToString(actual).Should()
                 .Be("Person\n\tHeight = double180,5double\n\tAge = 19y.o.\n");
+        }
+
+        [Test]
+        public void CycleRefsCheck()
+        {
+            var parent = new CycleRef { Id = 0, Child = null };
+            var child = new CycleRef { Id = 1, Child = null };
+            parent.Child = child;
+            child.Child = parent;
+
+            var printer = ObjectPrinter.For<CycleRef>()
+                .Exclude<int>();
+
+            printer.PrintToString(parent).Should()
+                .Be("CycleRef\n\tChild = CycleRef\n\t\tChild = cycled... No more this field\n");
+        }
+
+        [Test]
+        public void ListSerialize()
+        {
+            var col = new List<int>
+            {
+                5, 2, 19
+            };
+
+            var printer = ObjectPrinter.For<List<int>>();
+            var str = printer.PrintToString(col);
+
+            printer.PrintToString(col).Should()
+                .Be("List`1<Int32>\n\t[0] = 5\n\t[1] = 2\n\t[2] = 19\n");
+        }
+
+        [Test]
+        public void ArraySerialize()
+        {
+            var arr = new[] { 5, 2, 19 };
+
+            var printer = ObjectPrinter.For<int[]>();
+            var str = printer.PrintToString(arr);
+
+            printer.PrintToString(arr).Should()
+                .Be("Int32[]\n\t[0] = 5\n\t[1] = 2\n\t[2] = 19\n");
+        }
+
+        [Test]
+        public void DictionarySerialize()
+        {
+            var dict = new Dictionary<string, int>
+            {
+                { "a", 1 },
+                { "b", 7 },
+                { "abc", 2 }
+            };
+
+            var printer = ObjectPrinter.For<Dictionary<string, int>>();
+            var str = printer.PrintToString(dict);
+
+            printer.PrintToString(dict).Should()
+                .Be("Dictionary`2<Int32>\n\t[0] = a : 1\n\t[1] = b : 7\n\t[2] = abc : 2\n");
         }
     }
 }

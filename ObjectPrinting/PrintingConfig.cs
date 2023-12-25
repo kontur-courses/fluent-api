@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<object> objects = new HashSet<object>();
+
         private readonly List<Type> excludedTypes = new List<Type>();
 
         protected MemberInfo FieldInfo;
@@ -54,16 +57,21 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            objects.Clear();
             return MaxLength == -1
                 ? PrintToString(obj, 0)
                 : PrintToString(obj, 0)[..MaxLength];
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, bool newLine = true)
         {
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            if (objects.Contains(obj))
+                return "cycled... No more this field" + Environment.NewLine;
+            objects.Add(obj);
 
             var finalTypes = new[]
             {
@@ -71,51 +79,93 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+                return newLine ? obj + Environment.NewLine : obj.ToString();
 
+            var sb = new StringBuilder(obj.GetType().Name);
+            if (obj.GetType().IsGenericType)
+                sb.Append("<" + obj.GetType().GetProperty("Item")?.PropertyType.Name + ">");
+            sb.Append(Environment.NewLine);
+
+            if (obj is IEnumerable enumerable)
+                return enumerable is IDictionary dictionary
+                    ? sb.Append(PrintDictionary(dictionary, nestingLevel)).ToString()
+                    : sb.Append(PrintArray(enumerable, nestingLevel)).ToString();
+
+            return sb.Append(PropertiesAppend(obj, nestingLevel)).ToString();
+        }
+
+        private StringBuilder PropertiesAppend(object obj, int nestingLevel)
+        {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+
             foreach (var propertyInfo in type.GetProperties())
             {
+                var prefix = identation + propertyInfo.Name + " = ";
+
                 var propertyType = propertyInfo.PropertyType;
-                if (excludedTypes.Contains(propertyType))
+
+                if (excludedTypes.Contains(propertyType) || ExcludedFields.Contains(propertyInfo))
                     continue;
 
-                if (ExcludedFields.Contains(propertyInfo))
+                if (fieldSerialize.TryGetValue(propertyInfo, out var fieldSerializer))
+                {
+                    sb.Append(prefix +
+                              PrintToString(fieldSerializer(propertyInfo.GetValue(obj)),
+                                  nestingLevel + 1));
                     continue;
+                }
 
                 if (typeSerialize.TryGetValue(propertyType, out var typeSerializer))
                 {
-                    var specificSerialized = typeSerializer(propertyInfo.GetValue(obj));
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(specificSerialized, nestingLevel + 1));
-                }
-                else if (fieldSerialize.TryGetValue(propertyInfo, out var fieldSerializer))
-                {
-                    var specificSerialized = fieldSerializer(propertyInfo.GetValue(obj));
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(specificSerialized, nestingLevel + 1));
-                }
-                else if (CultureInfos.TryGetValue(propertyType, out var cultureInfo))
-                {
-                    var culturedNum = Convert.ChangeType(
-                        propertyInfo.GetValue(obj),
-                        Type.GetTypeCode(propertyInfo.GetValue(obj)?.GetType()),
-                        cultureInfo
-                    )?.ToString();
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(culturedNum, nestingLevel + 1));
-                }
-                else
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
+                    sb.Append(prefix +
+                              PrintToString(typeSerializer(propertyInfo.GetValue(obj)),
                                   nestingLevel + 1));
+                    continue;
+                }
+
+                if (CultureInfos.TryGetValue(propertyType, out var cultureInfo))
+                {
+                    sb.Append(prefix +
+                              PrintToString(Convert.ChangeType(
+                                      propertyInfo.GetValue(obj),
+                                      Type.GetTypeCode(propertyInfo.GetValue(obj)?.GetType()),
+                                      cultureInfo
+                                  )?.ToString(),
+                                  nestingLevel + 1));
+                    continue;
+                }
+
+                sb.Append(prefix +
+                          PrintToString(propertyInfo.GetValue(obj),
+                              nestingLevel + 1));
             }
+
+            return sb;
+        }
+
+        private string PrintArray(IEnumerable enumerable, int nestingLevel)
+        {
+            return PrintEnumerable(enumerable, nestingLevel,
+                el => PrintToString(el, nestingLevel + 1));
+        }
+
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            return PrintEnumerable(dictionary.Keys, nestingLevel,
+                kvp => PrintToString(kvp, nestingLevel + 2, false) +
+                       " : " + PrintToString(dictionary[kvp], nestingLevel + 2));
+        }
+
+        private string PrintEnumerable(IEnumerable enumerable, int nestingLevel, Func<object, string> serializeElement)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
+
+            var index = 0;
+            foreach (var el in enumerable)
+                sb.Append(identation + "[" + index++ + "] = " + serializeElement(el));
 
             return sb.ToString();
         }
