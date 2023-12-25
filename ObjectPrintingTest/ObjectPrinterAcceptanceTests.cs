@@ -1,113 +1,121 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
 using FluentAssertions;
-using NUnit.Framework;
-using ObjectPrintingTest;
+using ObjectPrinting;
 using ObjectPrintingTest.TestTypes;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTest
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-        private IBaseConfig<Person> printer;
+        private IBaseConfig<Person> sut;
+
         [SetUp]
         public void SetUp()
         {
-            printer = ObjectPrinter.For<Person>();
+            sut = ObjectPrinter.For<Person>();
         }
 
         [Test]
         public void ExcludeType()
         {
-            var person = new Person { Name = "Alex", Age = 19};
-            printer
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.23 };
+            sut
                 .Exclude<double>()
                 .Exclude<int>()
                 .PrintToString(person)
                 .Should()
                 .NotContainAll("Height", "Age");
         }
-        
+
         [Test]
         public void ExcludeProperty()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            printer
+            sut
                 .Exclude(p => p.Name)
                 .Exclude(p => p.Age)
                 .PrintToString(person)
                 .Should()
-                .NotContainAll(new [] { "Name", "Age" });
+                .NotContainAll(new[] { "Name", "Age" });
         }
-        
+
         [Test]
         public void SerializeType()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            printer
+            sut
                 .Printing<string>()
-                .SerializeAs(s => s+s)
+                .SerializeAs(s => s + s)
                 .PrintToString(person)
                 .Should()
                 .Contain("Name = AlexAlex");
         }
-        
+
         [Test]
         public void SerializeProperty()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            printer
+            sut
                 .Printing(p => p.Age)
-                .SerializeAs(age => $"{age*3}")
+                .SerializeAs(age => $"{age * 3}")
                 .PrintToString(person)
                 .Should()
                 .Contain("Age = 57");
         }
-        
+
         [Test]
         public void Truncate()
         {
             var person = new Person { Name = "Alex", Age = 19 };
-            printer
-                .Printing( p => p.Name)
+            sut
+                .Printing(p => p.Name)
                 .Truncate(1, 3)
                 .PrintToString(person)
                 .Should()
                 .Contain("Name = lex");
         }
-        
+
         [Test]
         public void CultureInfoForType()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 1.23};
-            printer
-                .Printing<double>()
-                .SetCulture(System.Globalization.CultureInfo.CurrentCulture)
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.23 };
+            sut
                 .PrintToString(person)
                 .Should()
                 .Contain("Height = 1,23");
+            sut
+                .Printing<double>()
+                .SetCulture(CultureInfo.InvariantCulture)
+                .PrintToString(person)
+                .Should()
+                .Contain("Height = 1.23");
         }
-        
+
         [Test]
         public void CultureInfoForProperty()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 1.23};
-            printer
-                .Printing(p => p.Height)
-                .SetCulture(System.Globalization.CultureInfo.CurrentCulture)
+            var person = new Person { Name = "Alex", Age = 19, Height = 1.23 };
+            sut
                 .PrintToString(person)
                 .Should()
                 .Contain("Height = 1,23");
+            sut
+                .Printing(p => p.Height)
+                .SetCulture(CultureInfo.InvariantCulture)
+                .PrintToString(person)
+                .Should()
+                .Contain("Height = 1.23");
         }
-        
+
         [Test]
         public void PrintList()
         {
             var node = new Node(
-                "A", 
+                "A",
                 new List<Node>
                 {
-                    new Node("B"), 
+                    new Node("B"),
                     new Node(
                         "C",
                         new List<Node>()
@@ -121,9 +129,27 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(result);
             result
                 .Should()
-                .Be("Node\r\n\tName = A\r\n\tNodes: \r\n\t\t1: Node\r\n\t\t\tName = B\r\n\t\t\tNodes: <empty>\r\n\t\t2: Node\r\n\t\t\tName = C\r\n\t\t\tNodes: \r\n\t\t\t\t1: Node\r\n\t\t\t\t\tName = D\r\n\t\t\t\t\tNodes: <empty>\r\n\t\t\t\t2: Node\r\n\t\t\t\t\tName = E\r\n\t\t\t\t\tNodes: <empty>\r\n");
+                .Be(
+                    """
+                    Node
+                    	Name = A
+                    	Nodes:
+                    		0: Node
+                    			Name = B
+                    			Nodes: <empty>
+                    		1: Node
+                    			Name = C
+                    			Nodes:
+                    				0: Node
+                    					Name = D
+                    					Nodes: <empty>
+                    				1: Node
+                    					Name = E
+                    					Nodes: <empty>
+
+                    """);
         }
-        
+
         [Test]
         public void PrintDictionaries()
         {
@@ -131,15 +157,35 @@ namespace ObjectPrinting.Tests
                 "New York",
                 new Dictionary<string, Person>()
                 {
-                    { "+1 (646) 555-3456", new Person(){Name="John Doe", Age = 30} },
-                    { "+1 (646) 555-4567", new Person(){Name="Jane Doe", Age = 30} }
+                    { "+1 (646) 555-3456", new Person() { Name = "John Doe", Age = 30 } },
+                    { "+1 (646) 555-4567", new Person() { Name = "Jane Doe", Age = 30 } }
                 }
             );
             var result = ObjectPrinter.For<PhoneBook>().PrintToString(phone);
             Console.WriteLine(result);
             result
                 .Should()
-                .Be("PhoneBook\r\n\tTown = New York\r\n\tNumberToPerson: \r\n\t\t1 element:\r\n\t\t\tKey: +1 (646) 555-3456\r\n\t\t\tValue: Person\r\n\t\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\t\tName = John Doe\r\n\t\t\t\tHeight = 0\r\n\t\t\t\tAge = 30\r\n\t\t2 element:\r\n\t\t\tKey: +1 (646) 555-4567\r\n\t\t\tValue: Person\r\n\t\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\t\tName = Jane Doe\r\n\t\t\t\tHeight = 0\r\n\t\t\t\tAge = 30\r\n");
+                .Be(
+                    """
+                    PhoneBook
+                    	Town = New York
+                    	NumberToPerson:
+                    		0 element:
+                    			Key: +1 (646) 555-3456
+                    			Value: Person
+                    				Id = 00000000-0000-0000-0000-000000000000
+                    				Name = John Doe
+                    				Height = 0
+                    				Age = 30
+                    		1 element:
+                    			Key: +1 (646) 555-4567
+                    			Value: Person
+                    				Id = 00000000-0000-0000-0000-000000000000
+                    				Name = Jane Doe
+                    				Height = 0
+                    				Age = 30
+
+                    """);
         }
 
         [Test]
@@ -151,7 +197,17 @@ namespace ObjectPrinting.Tests
             Console.WriteLine(result);
             result
                 .Should()
-                .Be("Node\r\n\tName = A\r\n\tNodes: \r\n\t\t1: Node\r\n\t\t\tName = B\r\n\t\t\tNodes: <empty>\r\n\t\t2: cycled\r\n");
+                .Be(
+                    """
+                    Node
+                    	Name = A
+                    	Nodes:
+                    		0: Node
+                    			Name = B
+                    			Nodes: <empty>
+                    		1: cycled
+
+                    """);
         }
     }
 }
