@@ -1,29 +1,51 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+        private readonly Type[] finalTypes =
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
+        internal readonly Dictionary<Type, Func<object, string>> TypeSerializers = new();
+        internal readonly Dictionary<MemberInfo, Func<object, string>> MemberSerializers = new();
+        private int MaxNestingLevel { get; }
+        public PrintingConfig(int maxNestingLevel = 10)
+        {
+            MaxNestingLevel = maxNestingLevel;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public TypePrintingConfig<TOwner, TType> Printing<TType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new TypePrintingConfig<TOwner, TType>(this);
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            return this;
+            var memberInfo = ((MemberExpression) memberSelector.Body).Member;
+            return new MemberPrintingConfig<TOwner, TMemberType>(this, memberInfo);
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
+            var memberInfo = ((MemberExpression) memberSelector.Body).Member;
+            excludedMembers.Add(memberInfo);
+            return Excluding<TMemberType>();
+        }
+
+        public PrintingConfig<TOwner> Excluding<TType>()
+        {
+            excludedTypes.Add(typeof(TType));
             return this;
         }
 
@@ -34,28 +56,39 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+
+            if (TypeSerializers.TryGetValue(obj.GetType(), out var serializator))
+                return serializator(obj) + Environment.NewLine;
+            if (finalTypes.Contains(type) || nestingLevel == MaxNestingLevel)
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var member in type.GetFieldsAndProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !excludedMembers.Contains(x)))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (member is PropertyInfo propertyInfo && !excludedTypes.Contains(propertyInfo.PropertyType))
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              (MemberSerializers.TryGetValue(member, out var memberSerializator) 
+                                    ? memberSerializator(propertyInfo.GetValue(obj)) + Environment.NewLine
+                                    : MemberSerializers.TryGetValue(member, out var typeSerializator)
+                                        ? typeSerializator(propertyInfo.GetValue(obj)) + Environment.NewLine
+                                        : PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)));
+                if (member is FieldInfo fieldInfo && !excludedTypes.Contains(fieldInfo.FieldType))
+                {
+                    sb.Append(identation + fieldInfo.Name + " = " +
+                              (MemberSerializers.TryGetValue(member, out var memberSerializator)
+                                  ? memberSerializator(fieldInfo.GetValue(obj)) + Environment.NewLine
+                                  : MemberSerializers.TryGetValue(member, out var typeSerializator)
+                                      ? typeSerializator(fieldInfo.GetValue(obj)) + Environment.NewLine
+                                      : PrintToString(fieldInfo.GetValue(obj), nestingLevel + 1)));
+                }
             }
+
             return sb.ToString();
         }
     }
