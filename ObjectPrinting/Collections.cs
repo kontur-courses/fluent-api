@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NUnit.Framework;
 using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
@@ -6,7 +7,7 @@ namespace ObjectPrinting
     public class Collections
     {
         public Dictionary<int, string> Dictionary { set; get; }
-        public int[] Array { set; get; }
+        public List<int>[] Array { set; get; }
         public List<int> List { set; get; }
         
         public List<Person> Persons { set; get; }

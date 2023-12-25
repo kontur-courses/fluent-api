@@ -19,11 +19,11 @@ namespace ObjectPrinting
         {
             if (propertyInfo != null)
             {
-                printingConfig.AddSerializateProperty(print, propertyInfo);
+                printingConfig.AddSerializeProperty(print, propertyInfo);
             }
             else
             {
-                printingConfig.AddSerializateByType(typeof(TPropType), print);
+                printingConfig.AddSerializeByType(typeof(TPropType), print);
             }
 
             return printingConfig;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,42 +10,39 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private List<Type> excludedTypes = new List<Type>();
-        private List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
-        private Dictionary<Type, Delegate> serializedByType = new Dictionary<Type, Delegate>();
-        private Dictionary<PropertyInfo, Delegate> serializedByPropertyInfo = new Dictionary<PropertyInfo, Delegate>();
-        private HashSet<object> printedObjects = new HashSet<object>();
+        private readonly List<Type> excludedTypes = new List<Type>();
+        private readonly List<PropertyInfo> excludedProperties = new List<PropertyInfo>();
+        private readonly Dictionary<Type, Delegate> serializedByType = new Dictionary<Type, Delegate>();
+
+        private readonly Dictionary<PropertyInfo, Delegate> serializedByPropertyInfo =
+            new Dictionary<PropertyInfo, Delegate>();
+
+        private readonly HashSet<object> printedObjects = new HashSet<object>();
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
-        
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, null);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var member = ((MemberExpression)memberSelector.Body).Member;
             return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)member);
         }
+
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (!(memberSelector.Body is MemberExpression memberExpression))
-            {
-                throw new ArgumentException(string.Format(
-                    "Expression '{0}' refers to a method, not a property.",
-                    memberSelector.ToString()));
-            }
+                throw new ArgumentException($"Expression '{memberSelector}' refers to a method, not a property.");
 
             if (!(memberExpression.Member is PropertyInfo propInfo))
-            {
-                throw new ArgumentException(string.Format(
-                    "Expression '{0}' refers to a field, not a property.",
-                    memberSelector.ToString()));
-            }
+                throw new ArgumentException($"Expression '{memberSelector}' refers to a field, not a property.");
             excludedProperties.Add(propInfo);
             return this;
         }
@@ -56,90 +52,124 @@ namespace ObjectPrinting
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
-        
-        private bool IsFinalType(Type type)
+
+        private static bool IsFinalType(Type type)
         {
-            return type.IsValueType ||
-                   (type.IsPrimitive || type == typeof(string));
+            return type == typeof(string)
+                   || type.IsPrimitive
+                   || typeof(IFormattable).IsAssignableFrom(type);
         }
+
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
+            if (IsFinalType(type))
+                return obj + Environment.NewLine;
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
             if (printedObjects.Contains(obj))
                 return sb.AppendLine("(Cycle) " + type.FullName).ToString();
+
             sb.AppendLine(type.Name);
+            if (IsArrayOrList(type))
+            {
+                return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
+            }
+
+            if (IsDictionary(type))
+            {
+                return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
+            }
+
             printedObjects.Add(obj);
-            foreach (var propertyInfo in type.GetProperties())
+
+            foreach (var propertyInfo in type.GetProperties().Where(prop => !IsExcluded(prop)))
             {
-                if (IsExcluded(propertyInfo)) continue;
-                if (serializedByPropertyInfo.ContainsKey(propertyInfo))
+                if (TrySerializeProperty(obj, propertyInfo, propertyInfo.PropertyType, out var serializedValue))
                 {
-                    var serializedValue = serializedByPropertyInfo[propertyInfo].DynamicInvoke(propertyInfo.GetValue(obj));;
-                    sb.AppendLine(identation + propertyInfo.Name + " = " + serializedValue);
+                    sb.AppendLine($"{indentation}{propertyInfo.Name} = {serializedValue}");
                     continue;
                 }
 
-                if (serializedByType.ContainsKey(propertyInfo.PropertyType))
+                if (IsArrayOrList(propertyInfo.PropertyType))
                 {
-                    var serializedValue = serializedByType[propertyInfo.PropertyType].DynamicInvoke(propertyInfo.GetValue(obj));;
-                    sb.AppendLine(identation + propertyInfo.Name + " = " + serializedValue);
-                    continue;
+                    sb.AppendLine(indentation + propertyInfo.Name + " = ");
+                    sb.Append(SerializeEnumerable(propertyInfo.GetValue(obj), nestingLevel + 1));
                 }
-                
-                if (propertyInfo.PropertyType.IsArray || (propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(List<>)))
+                else if (IsDictionary(propertyInfo.PropertyType))
                 {
-                    sb.AppendLine(identation + propertyInfo.Name + " = ");
-                    var list = (IList)propertyInfo.GetValue(obj);
-                    sb.Append(SerializateEnumerable(list, nestingLevel + 1));
-                    continue;
+                    sb.AppendLine(indentation + propertyInfo.Name + " = ");
+                    sb.Append(SerializeDictionary(propertyInfo.GetValue(obj), nestingLevel + 1));
                 }
-                
-                if (propertyInfo.PropertyType.IsGenericType && (propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>) || propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>)))
+                else
                 {
-                        sb.AppendLine(identation + propertyInfo.Name + " = ");
-                        var dictionary = (IDictionary)propertyInfo.GetValue(obj);
-                        sb.Append(SerializateDictionary(dictionary, nestingLevel + 1));
-                        continue;
+                    sb.Append(
+                        $"{indentation}{propertyInfo.Name} = " +
+                        $"{PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}");
                 }
-                
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
             }
+
             return sb.ToString();
         }
 
-        private string SerializateEnumerable(IEnumerable dictionary, int nestingLevel)
+        private bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, Type propertyType,
+            out string serializedValue)
         {
+            serializedValue = null;
+            Delegate valueToUse = null;
+            if (serializedByPropertyInfo.TryGetValue(propertyInfo, out var propertyValue))
+                valueToUse = propertyValue;
+            if (serializedByType.TryGetValue(propertyType, out var typeValue))
+                valueToUse = typeValue;
+
+            return valueToUse != null && TrySerializeValue(valueToUse, propertyInfo.GetValue(obj), out serializedValue);
+        }
+
+        private static bool TrySerializeValue(Delegate serializer, object value, out string serializedValue)
+        {
+            serializedValue = serializer.DynamicInvoke(value)?.ToString();
+            return true;
+        }
+
+        private static bool IsArrayOrList(Type type)
+        {
+            return type.IsArray || (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>)
+                                                           || type.GetGenericTypeDefinition() == typeof(IList<>)));
+        }
+
+        private static bool IsDictionary(Type type)
+        {
+            return type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
+                                          type.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+        }
+
+        private string SerializeEnumerable(object obj, int nestingLevel)
+        {
+            var enumerable = (IEnumerable)obj;
             var sb = new StringBuilder();
-            if(dictionary == null) return "null" + Environment.NewLine;
-            foreach (var value in dictionary)
+            if (enumerable == null) return "null" + Environment.NewLine;
+            var indentation = new string('\t', nestingLevel + 1);
+            foreach (var value in enumerable)
             {
+                sb.Append(indentation);
                 sb.Append(PrintToString(value, nestingLevel));
+                nestingLevel++;
             }
+
             return sb.ToString();
         }
-        private string SerializateDictionary(IDictionary dictionary, int nestingLevel)
+
+        private string SerializeDictionary(object obj, int nestingLevel)
         {
+            var dictionary = (IDictionary)obj;
             var sb = new StringBuilder();
-            if(dictionary == null) return "null" + Environment.NewLine;
+            if (dictionary == null) return "null" + Environment.NewLine;
+            var indentation = new string('\t', nestingLevel + 1);
             foreach (var keyVal in dictionary)
             {
-                var identation = new string('\t', nestingLevel + 1);
-                sb.Append(identation);
+                sb.Append(indentation);
                 var key = ((DictionaryEntry)keyVal).Key;
                 var value = ((DictionaryEntry)keyVal).Value;
                 sb.Append(PrintToString(key, nestingLevel) + " : " + PrintToString(value, nestingLevel));
@@ -147,17 +177,18 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+
         private bool IsExcluded(PropertyInfo propertyInfo)
         {
             return excludedProperties.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType);
         }
-        
-        public void AddSerializateProperty<TPropType>(Func<TPropType, string> print, PropertyInfo propertyInfo)
+
+        public void AddSerializeProperty<TPropType>(Func<TPropType, string> print, PropertyInfo propertyInfo)
         {
             serializedByPropertyInfo.Add(propertyInfo, print);
         }
-        
-        public void AddSerializateByType<TPropType>(Type type, Func<TPropType, string> print)
+
+        public void AddSerializeByType<TPropType>(Type type, Func<TPropType, string> print)
         {
             serializedByType.Add(type, print);
         }

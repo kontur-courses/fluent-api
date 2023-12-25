@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests
 {
@@ -11,13 +10,13 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void ObjectPrinter_ExcludingIntType_ObjectWithoutInt()
+        public void ObjectPrinter_ExcludingIntType_ObjectWithoutIntProperties()
         {
             var person = new Person { Name = "Alex", Age = 19 };
     
             var printer = ObjectPrinter.For<Person>();
             var s1 = printer.Excluding<int>().PrintToString(person);
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n";
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 0\r\n";
             s1.Should().Be(expected);
         }
 
@@ -26,60 +25,60 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
             var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tAge = 19\r\n";
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tAge = 19\r\n";
             var s1 = printer.Excluding(x => x.Height).PrintToString(person);
             s1.Should().Be(expected);
         }
-        [Test]
-        public void ObjectPrinter_Property_Object()
+
+        [Test] public void ObjectPrinter_PrintingPropertyUsingSomeConditional_ObjectWithModifiedProperty()
         {
             var person = new Person { Name = "Alex", Age = 15 };
             var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = F\r\n";
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = F\r\n";
             var s1 = printer.Printing(x => x.Age).Using(x=> x.ToString("X")).PrintToString(person);
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_Type_Object()
+        public void ObjectPrinter_ChangingPropertiesByType_ObjectWithModifiedProperty()
         {
             var person = new Person { Name = "Alex", Age = 15, Height = 1.2};
             var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
             var s1 = printer.Printing<double>().Using(x=> (x * 2).ToString()).PrintToString(person);
-            s1.Should().Be(expected);
-        }
-        
-        [Test]
-        public void ObjectPrinter_MixPrinting_Object()
-        {
-            var person = new Person { Name = "Alex", Age = 15, Height = 1.2};
-            var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = F\r\n";
-            var s1 = printer.Printing<double>().Using(x=> (x * 2).ToString())
-                .Printing(x => x.Age).Using(x => x.ToString("X")).PrintToString(person);
             s1.Should().Be(expected);
         }
 
         [Test]
-        public void ObjectPrinter_UsingCulture_Object()
+        public void ObjectPrinter_ChangingPropertiesUsingCulture_ObjectWithModifiedProperty()
         {
             var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
             var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2.4\r\n\tAge = 15\r\n";
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 2.4\r\n\tAge = 15\r\n";
             var s1 = printer.Printing<double>().Using(CultureInfo.InvariantCulture).PrintToString(person);
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_Trimmed_Object()
+        public void ObjectPrinter_TrimmedStringProperties_ObjectWithModifiedProperty()
         {
-            var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
+            var person = new Person { Name = "Alex", Age = 15, Height = 2.4, Id = Guid.Empty};
             var printer = ObjectPrinter.For<Person>();
-            const string expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
-            var s1 = printer.Printing<string>().TrimmedToLength(-10).PrintToString(person);
+            const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 2,4\r\n\tAge = 15\r\n";
+            var s1 = printer.Printing<string>().TrimmedToLength(10).PrintToString(person);
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_HrefSelf_Object()
+        public void ObjectPrinter_TrimmedStringPropertiesButCroppingLengthLess0_ObjectWithModifiedProperty()
+        {
+            var person = new Person { Name = "Alex", Age = 15, Height = 2.4, Id = Guid.Empty};
+            var printer = ObjectPrinter.For<Person>();
+            Action action = () =>
+            {
+                printer.Printing<string>().TrimmedToLength(-10).PrintToString(person);
+            };
+            action.Should().Throw<ArgumentException>("Error: The length of the truncated string cannot be negative");
+        }
+        [Test]
+        public void ObjectPrinter_PropertyRefersItself_Object()
         {
             var kid = new Kid { Name = "Pasha"};
             var parent = new Kid{Name = "Lev"};
@@ -94,7 +93,7 @@ namespace ObjectPrinting.Tests
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_DictionaryObject_Object()
+        public void ObjectPrinter_PrintingDictionaryProperty_Object()
         {
             var collections = new Collections();
             collections.Dictionary = new Dictionary<int, string>()
@@ -117,19 +116,39 @@ namespace ObjectPrinting.Tests
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_ListObject_Object()
+        public void ObjectPrinter_PrintObjectWithListProperty_Object()
         {
             var collections = new Collections();
             collections.List = new List<int>() { 1, 2, 3 };
-            collections.Array = new int[] { 1, 2, 3 };
             var printer = ObjectPrinter.For<Collections>();
-            const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = \r\n1\r\n2\r\n3\r\n\tList = \r\n1\r\n2\r\n3\r\n\t" +
+            const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = \r\nnull\r\n\tList = \r\n\t\t1\r\n\t\t2\r\n\t\t3\r\n\t" +
                                     "Persons = \r\nnull\r\n";
             var s1 = printer.PrintToString(collections);
             s1.Should().Be(expected);
         }
         [Test]
-        public void ObjectPrinter_ListObjects_Object()
+        public void ObjectPrinter_InArrayGenericObjects_Object()
+        {
+            var collections = new Collections();
+            collections.List = new List<int>() { 1, 2, 3 };
+            collections.Array = new [] { collections.List };
+            var printer = ObjectPrinter.For<Collections>();
+            const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = " +
+                                    "\r\n\t\tList`1" +
+                                    "\r\n\t\t1" +
+                                    "\r\n\t\t2" +
+                                    "\r\n\t\t3" +
+                                    "\r\n\tList = " +
+                                    "\r\n\t\t1" +
+                                    "\r\n\t\t2" +
+                                    "\r\n\t\t" +
+                                    "3\r\n\t" +
+                                    "Persons = \r\nnull\r\n";
+            var s1 = printer.PrintToString(collections);
+            s1.Should().Be(expected);
+        }
+        [Test]
+        public void ObjectPrinter_SomeClassesInList_Object()
         {
             var collections = new Collections();
             collections.List = null;
@@ -137,7 +156,7 @@ namespace ObjectPrinting.Tests
             collections.Persons = new List<Person> {new Person(){Name = "Lev"} };
             var printer = ObjectPrinter.For<Collections>();
             const string expected = "Collections\r\n\tDictionary = \r\nnull\r\n\tArray = \r\nnull\r\n\tList = \r\nnull\r\n\t" +
-                                    "Persons = \r\nPerson\r\n\t\tId = Guid\r\n\t\tName = Lev\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n";
+                                    "Persons = \r\n\t\tPerson\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Lev\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n";
             var s1 = printer.PrintToString(collections);
             s1.Should().Be(expected);
         }
