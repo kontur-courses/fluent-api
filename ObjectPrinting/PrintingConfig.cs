@@ -32,27 +32,31 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var member = ((MemberExpression)memberSelector.Body).Member;
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, (PropertyInfo)member);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyInfo(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            if (!(memberSelector.Body is MemberExpression memberExpression))
-                throw new ArgumentException($"Expression '{memberSelector}' refers to a method, not a property.");
-
-            if (!(memberExpression.Member is PropertyInfo propInfo))
-                throw new ArgumentException($"Expression '{memberSelector}' refers to a field, not a property.");
-            excludedProperties.Add(propInfo);
+            excludedProperties.Add( GetPropertyInfo(memberSelector));
             return this;
         }
-
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
+        
+        private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            if (memberSelector.Body is not MemberExpression memberExpression)
+                throw new ArgumentException($"Expression '{memberSelector}' refers to a method, not a property.");
 
+            if (memberExpression.Member is not PropertyInfo propInfo)
+                throw new ArgumentException($"Expression '{memberSelector}' refers to a field, not a property.");
+            
+            return propInfo;
+        }
+        
         private static bool IsFinalType(Type type)
         {
             return type == typeof(string)

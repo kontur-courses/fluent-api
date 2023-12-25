@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
