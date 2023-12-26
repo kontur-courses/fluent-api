@@ -12,12 +12,6 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Type[] finalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
 

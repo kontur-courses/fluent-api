@@ -15,19 +15,19 @@ namespace ObjectPrinting
         public readonly Dictionary<MemberInfo, CultureInfo> MemberCultures;
         public readonly Dictionary<MemberInfo, Func<string, string>> MemberTrimToLength;
         public readonly Func<string, string> GlobalTrimToLength;
-        
-        public readonly Type[] FinalTypes =
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
+        public readonly HashSet<Type> FinalTypes = new HashSet<Type>
+            {typeof(int), typeof(double), typeof(float), typeof(uint), typeof(char), typeof(short), typeof(decimal),
+            typeof(string), typeof(Guid), typeof(DateTime), typeof(TimeSpan)};
 
-
-        public SerializationConfig(HashSet<Type> excludedTypes, HashSet<MemberInfo> excludedMembers,
+        public SerializationConfig(
+            HashSet<Type> excludedTypes, 
+            HashSet<MemberInfo> excludedMembers,
             Dictionary<Type, Func<object, string>> typePrintingRules,
             Dictionary<MemberInfo, Func<object, string>> memberPrintingRules,
-            Dictionary<Type, CultureInfo> typeCultures, Dictionary<MemberInfo, CultureInfo> memberCultures,
-            Dictionary<MemberInfo, Func<string, string>> memberTrimToLength, Func<string, string> globalTrimToLength)
+            Dictionary<Type, CultureInfo> typeCultures, 
+            Dictionary<MemberInfo, CultureInfo> memberCultures,
+            Dictionary<MemberInfo, Func<string, string>> memberTrimToLength, 
+            Func<string, string> globalTrimToLength)
         {
             ExcludedTypes = excludedTypes;
             ExcludedMembers = excludedMembers;

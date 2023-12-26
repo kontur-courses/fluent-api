@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
-using NUnit.Framework;
+using ObjectPrinting;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests;
+
+public class Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -131,36 +131,33 @@ namespace ObjectPrinting.Tests
                 .And.Contain($"{nameof(person.FamilyName)} = {person.FamilyName}");
         }
         
-        [Test]
-        public void SetCulture_ForProperty()
+        [TestCase("ru")]
+        [TestCase("en")]
+        public void SetCulture_ForProperty(string culture)
         {
-            var englishFormat = person.PrintToString(x => x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture("ru")));
+            var format = person.PrintToString(x => x.Printing(y => y.Height).Using(CultureInfo.CreateSpecificCulture(culture)));
 
-            englishFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            format.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture(culture))}");
         }
 
-        [Test]
-        public void SetCulture_ForType()
+        [TestCase("ru")]
+        [TestCase("en")]
+        public void SetCulture_ForType(string culture)
         {
-            var englishFormat = person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing<double>().Using(CultureInfo.CreateSpecificCulture("ru")));
+            var format = person.PrintToString(x =>
+                x.Printing<double>().Using(CultureInfo.CreateSpecificCulture(culture)));
 
-            englishFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("en"))}")
-                         .And.Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture("ru"))}")
-                         .And.Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            format.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(CultureInfo.CreateSpecificCulture(culture))}")
+                         .And.Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture(culture))}");
         }
 
-        [Test]
-        public void SetCulture_ForField()
+        [TestCase("ru")]
+        [TestCase("en")]
+        public void SetCulture_ForField(string culture)
         {
-            var englishFormat = person.PrintToString(x => x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("en")));
-            var russianFormat = person.PrintToString(x => x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture("ru")));
+            var format = person.PrintToString(x => x.Printing(y => y.HeightField).Using(CultureInfo.CreateSpecificCulture(culture)));
 
-            englishFormat.Should().Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("en"))}");
-            russianFormat.Should().Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture("ru"))}");
+            format.Should().Contain($"{nameof(person.HeightField)} = {person.HeightField.ToString(CultureInfo.CreateSpecificCulture(culture))}");
         }
     }
 }

@@ -1,3 +1,5 @@
+using ObjectPrinting.Solved;
+
 namespace ObjectPrinting
 {
     public class ObjectPrinter

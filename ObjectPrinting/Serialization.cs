@@ -26,8 +26,7 @@ namespace ObjectPrinting
 
             if (obj == null)
                 return "null";
-
-
+            
             if (serializationConfig.TypePrintingRules.TryGetValue(obj.GetType(), out var typePrintingRule))
                 return typePrintingRule(obj).ToString();
 
@@ -49,28 +48,28 @@ namespace ObjectPrinting
         private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             sb.AppendLine("{");
             foreach (var key in dictionary.Keys)
             {
-                sb.Append(identation + "{" + PrintToString(key, nestingLevel + 1) + Environment.NewLine
-                          + identation + ":" + PrintToString(dictionary[key], nestingLevel + 1) + "},"
+                sb.Append(indentation + "{" + PrintToString(key, nestingLevel + 1) + Environment.NewLine
+                          + indentation + ":" + PrintToString(dictionary[key], nestingLevel + 1) + "},"
                           + Environment.NewLine);
             }
 
-            sb.Append(identation + "}");
+            sb.Append(indentation + "}");
             return sb.ToString();
         }
 
         private string SerializeIEnumerable(IEnumerable obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("[");
             foreach (var key in obj)
-                stringBuilder.AppendLine(identation + PrintToString(key, nestingLevel + 1) + ",");
+                stringBuilder.AppendLine(indentation + PrintToString(key, nestingLevel + 1) + ",");
 
-            stringBuilder.Append(identation + "]");
+            stringBuilder.Append(indentation + "]");
             var serializedIEnumerable = stringBuilder.ToString();
 
             var lastIndexOf = serializedIEnumerable.LastIndexOf(",", StringComparison.Ordinal);
@@ -91,11 +90,10 @@ namespace ObjectPrinting
 
             return false;
         }
-
-
+        
         private string SerializeMembers(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.Append(type.Name);
@@ -107,7 +105,7 @@ namespace ObjectPrinting
                 if (value != null && value.Equals(obj))
                     continue;
 
-                sb.Append(Environment.NewLine + identation + memberInfo.Name + " = " +
+                sb.Append(Environment.NewLine + indentation + memberInfo.Name + " = " +
                           SerializeValue(nestingLevel, memberInfo, value));
             }
 
@@ -134,8 +132,7 @@ namespace ObjectPrinting
 
         private static bool IsFieldOrProperty(MemberInfo memberInfo) =>
             memberInfo.MemberType == MemberTypes.Field || memberInfo.MemberType == MemberTypes.Property;
-
-
+        
         private static object GetValue(object obj, MemberInfo memberInfo)
         {
             if ((memberInfo.MemberType & MemberTypes.Field) != 0)
