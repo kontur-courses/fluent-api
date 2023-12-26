@@ -12,6 +12,8 @@ namespace ObjectPrinting.Tests
         private Person simplePerson;
         private Person personWithNesting;
         private Person personWithCyclicReference;
+        private List<Person> persons;
+        private Dictionary<string, Person> dictPersons;
 
         [SetUp]
         public void SetUp()
@@ -21,6 +23,12 @@ namespace ObjectPrinting.Tests
             personWithNesting = new Person {Name = "Oleg", Surname = "Ponso", Age = 5, Parent = simplePerson};
             personWithCyclicReference = new Person {Name = "IAmCyclic", Surname = "ThatsHorrible", Age = 19};
             personWithCyclicReference.Parent = personWithCyclicReference;
+            persons = new List<Person> {simplePerson, personWithNesting};
+            dictPersons = new Dictionary<string, Person>
+            {
+                [simplePerson.Name] = simplePerson,
+                [personWithNesting.Name] = personWithNesting
+            };
         }
 
         [Test]
@@ -62,6 +70,20 @@ namespace ObjectPrinting.Tests
                     simplePerson.Id.ToString(),
                     "null", 
                     simplePerson.Surname);
+        }
+
+        [Test]
+        public void PrintToString_WorksCorrect_OnCollections()
+        {
+            persons.PrintToString()
+                .Should()
+                .ContainAll(simplePerson.Name, personWithNesting.Name, personWithNesting.Parent.Name)
+                .And.ContainAll("[0]:", "[1]:");
+            
+            dictPersons.PrintToString()
+                .Should()
+                .ContainAll(simplePerson.Name, personWithNesting.Name, personWithNesting.Parent.Name)
+                .And.ContainAll($"[{simplePerson.Name}]:", $"[{personWithNesting.Name}]:");
         }
         
         [Test]
