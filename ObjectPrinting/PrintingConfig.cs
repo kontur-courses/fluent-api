@@ -12,6 +12,9 @@ namespace ObjectPrinting
     {
         private readonly HashSet<MemberInfo> excludedProperties = new HashSet<MemberInfo>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+
+        private readonly HashSet<FieldInfo> excludedFields = new HashSet<FieldInfo>();
+
         private readonly Dictionary<object, int> complexObjectLinks = new Dictionary<object, int>();
         private int maxRecursion = 2;
 
@@ -61,7 +64,8 @@ namespace ObjectPrinting
         {
             Func<object, string> func = p => serialize((TPropType)p);
 
-            typeSerializesInfos[typeof(TPropType)] = func;
+            if (!typeSerializesInfos.ContainsKey(typeof(TPropType)))
+                typeSerializesInfos[typeof(TPropType)] = func;
 
             return this;
         }
@@ -96,7 +100,7 @@ namespace ObjectPrinting
             return SerializeWith(property, func);
         }
 
-        public PrintingConfig<TOwner> Trim(int length) //
+        public PrintingConfig<TOwner> Trim(int length)
         {
             Func<string, string> func = value => value.Length <= length
                 ? value
@@ -128,31 +132,61 @@ namespace ObjectPrinting
             var type = obj.GetType();
             var sb = new StringBuilder().AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (excludedProperties.Any(memberInfo => memberInfo.Name == propertyInfo.Name) ||
-                    excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
 
-                if (membersSerializesInfos.TryGetValue(propertyInfo, out var serializeMember))
-                {
-                    sb.Append(GetSerializedString(obj, propertyInfo, indentation, serializeMember));
-                    continue;
-                }
-
-                if (typeSerializesInfos.TryGetValue(propertyInfo.PropertyType, out var serializeType))
-                {
-                    sb.Append(GetSerializedString(obj, propertyInfo, indentation, serializeType));
-                    continue;
-                }
-
-                sb.Append($"{indentation}{propertyInfo.Name} = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-
+            HandleMembers(type, sb, indentation, obj, nestingLevel);
+        
+           
+                
+                
             return sb.ToString();
         }
+
+        private void HandleMembers(Type type, StringBuilder sb, string indentation, object obj, int nestingLevel)
+        {
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                DataMember data = new DataMember(propertyInfo);
+
+                HandleMember(sb, data, obj, indentation, nestingLevel);
+            }
+
+            foreach (var fieldInfo in type.GetFields())
+            {
+                DataMember data = new DataMember(fieldInfo);
+
+                HandleMember(sb, data, obj, indentation, nestingLevel);
+            }
+        }
+
+        private void HandleMember(StringBuilder sb, DataMember member, object obj, string indentation, int nestingLevel)
+        {
+            if (excludedProperties.Any(memberInfo => memberInfo.Name == member.Name) ||
+                excludedTypes.Contains(member.Type))
+                return;
+
+            if (membersSerializesInfos.TryGetValue(member.MemberInfo, out var serializeMember))
+            {
+                sb.Append(GetSerializedString(obj, member, indentation, serializeMember));
+                return;
+            }
+
+            if (typeSerializesInfos.TryGetValue(member.Type, out var serializeType))
+            {
+                sb.Append(GetSerializedString(obj, member, indentation, serializeType));
+                return;
+            }
+
+            sb.Append(
+                GetSerializedString(
+                    obj, 
+                    member, 
+                    indentation, 
+                    (value) => PrintToString(
+                        value,
+                        nestingLevel + 1),
+                    false));
+        }
+
 
         private bool MaxRecursionHasBeenReached(object obj)
         {
@@ -162,12 +196,17 @@ namespace ObjectPrinting
             return complexObjectLinks[obj] == maxRecursion;
         }
 
-        private string GetSerializedString(object obj, PropertyInfo propertyInfo, string indentation, Func<object, string> serializeMember)
+        private string GetSerializedString(
+            object obj,
+            DataMember memberInfo,
+            string indentation,
+            Func<object, string> serializeMember,
+            bool needNewLine = true)
         {
-            var serializedString = serializeMember(propertyInfo.GetValue(obj));
+            var serializedString = serializeMember(memberInfo.GetValue(obj));
+            var stringEnd = needNewLine ? Environment.NewLine : string.Empty;
 
-            return $"{indentation}{propertyInfo.Name} = {serializedString}{Environment.NewLine}";
+            return $"{indentation}{memberInfo.Name} = {serializedString}{stringEnd}";
         }
-
     }
 }
