@@ -5,14 +5,8 @@ namespace ObjectPrinting
 {
     public class DataMember
     {
-        public string Name { get; set; }
-        public Type Type { get; set; }
-
-        public Func<object, object> GetValue;
-        public MemberInfo MemberInfo { get; set; }
-
         public DataMember(FieldInfo fieldInfo)
-        { 
+        {
             Name = fieldInfo.Name;
             GetValue = fieldInfo.GetValue;
             Type = fieldInfo.FieldType;
@@ -26,5 +20,10 @@ namespace ObjectPrinting
             Type = property.PropertyType;
             MemberInfo = property;
         }
+
+        public string Name { get; }
+        public Type Type { get; }
+        public Func<object, object> GetValue { get; }
+        public MemberInfo MemberInfo { get; }
     }
 }

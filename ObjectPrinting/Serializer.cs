@@ -1,33 +1,35 @@
-﻿using System.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace ObjectPrinting
 {
     public class Serializer
     {
+        private const BindingFlags SerializingMembersFlag = BindingFlags.Public | BindingFlags.Instance;
         private readonly Dictionary<object, int> complexObjectLinks = new Dictionary<object, int>();
+
+        private readonly HashSet<MemberInfo> excludedMembers;
+        private readonly HashSet<Type> excludedTypes;
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
-        private readonly HashSet<MemberInfo> excludedMembers;
-        private readonly HashSet<Type> excludedTypes;
-        private readonly Dictionary<MemberInfo, Func<object, string>> membersSerializesInfos;
-        private readonly Dictionary<Type, Func<object, string>> typeSerializesInfos;
-        private readonly int maxRecursion = 2;
+        private readonly int maxRecursion;
+        private readonly Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos;
+        private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos;
 
         public Serializer(
-            HashSet<MemberInfo> excludedMembers, 
+            HashSet<MemberInfo> excludedMembers,
             HashSet<Type> excludedTypes,
-            Dictionary<MemberInfo, Func<object, string>> membersSerializesInfos,
-            Dictionary<Type, Func<object, string>> typeSerializesInfos,
+            Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos,
+            Dictionary<Type, IHasSerializationFunc> typeSerializesInfos,
             int maxRecursion)
-        {                     
+        {
             this.typeSerializesInfos = typeSerializesInfos;
             this.excludedMembers = excludedMembers;
             this.excludedTypes = excludedTypes;
@@ -41,7 +43,7 @@ namespace ObjectPrinting
                 return $"null{Environment.NewLine}";
 
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+                return obj + Environment.NewLine; // todo
 
             if (MaxRecursionHasBeenReached(obj))
                 return $"Maximum recursion has been reached{Environment.NewLine}";
@@ -54,12 +56,11 @@ namespace ObjectPrinting
             HandleMembers(type, sb, indentation, obj, nestingLevel);
 
             return sb.ToString();
-
         }
 
         private void HandleMembers(Type type, StringBuilder sb, string indentation, object obj, int nestingLevel)
         {
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var propertyInfo in type.GetProperties(SerializingMembersFlag))
             {
                 var data = new DataMember(propertyInfo);
                 var serializedValue = HandleMember(sb, data, obj, indentation, nestingLevel);
@@ -67,7 +68,7 @@ namespace ObjectPrinting
                     sb.Append(serializedValue);
             }
 
-            foreach (var fieldInfo in type.GetFields())
+            foreach (var fieldInfo in type.GetFields(SerializingMembersFlag))
             {
                 var data = new DataMember(fieldInfo);
                 var serializedValue = HandleMember(sb, data, obj, indentation, nestingLevel);
@@ -83,11 +84,11 @@ namespace ObjectPrinting
                 excludedTypes.Contains(member.Type))
                 return null;
 
-            if (membersSerializesInfos.TryGetValue(member.MemberInfo, out var serializeMember))
-                return GetSerializedString(obj, member, indentation, serializeMember);
+            if (membersSerializesInfos.TryGetValue(member.MemberInfo, out var memberSerialization))
+                return GetSerializedString(obj, member, indentation, memberSerialization.SerializationFunc);
 
-            if (typeSerializesInfos.TryGetValue(member.Type, out var serializeType))
-                return GetSerializedString(obj, member, indentation, serializeType);
+            if (typeSerializesInfos.TryGetValue(member.Type, out var typeSerialization))
+                return GetSerializedString(obj, member, indentation, typeSerialization.SerializationFunc);
 
             return GetSerializedString(
                 obj,

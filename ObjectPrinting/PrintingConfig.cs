@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -12,11 +10,11 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
 
-        private readonly Dictionary<MemberInfo, Func<object, string>> membersSerializesInfos =
-            new Dictionary<MemberInfo, Func<object, string>>();
+        private readonly Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos =
+            new Dictionary<MemberInfo, IHasSerializationFunc>();
 
-        private readonly Dictionary<Type, Func<object, string>> typeSerializesInfos =
-            new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos =
+            new Dictionary<Type, IHasSerializationFunc>();
 
         private int maxRecursion = 2;
 
@@ -36,37 +34,11 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> exclude)
         {
+            if (exclude == null)
+                throw new ArgumentNullException();
+
             var memberInfo = GetMemberInfo(exclude);
-
             excludedMembers.Add(memberInfo);
-
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Using<TPropType>(CultureInfo culture)
-            where TPropType : IFormattable
-        {
-            return Using<TPropType>(
-                p => p.ToString(null, culture));
-        }
-
-        public PrintingConfig<TOwner> Using<TPropType>(Func<TPropType, string> serialize)
-        {
-            Func<object, string> func = p => serialize((TPropType)p);
-
-            typeSerializesInfos[typeof(TPropType)] = func;
-
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Using<TPropType>(
-            Expression<Func<TOwner, TPropType>> property,
-            Func<TPropType, string> serialize)
-        {
-            var memberInfo = GetMemberInfo(property);
-            Func<object, string> func = p => serialize((TPropType)p);
-
-            membersSerializesInfos[memberInfo] = func;
 
             return this;
         }
@@ -80,33 +52,6 @@ namespace ObjectPrinting
             return memberExpression.Member;
         }
 
-        public PrintingConfig<TOwner> Trim(Expression<Func<TOwner, string>> property, int length)
-        {
-            Func<string, string> finalFunc = value => TrimString(value, length);
-
-            var memberInfo = GetMemberInfo(property);
-            if (membersSerializesInfos.TryGetValue(memberInfo, out var serialize))
-                finalFunc = value => TrimString(serialize(value), length);
-
-            return Using(property, finalFunc);
-        }
-
-        public PrintingConfig<TOwner> Trim(int length)
-        {
-            Func<string, string> finalFunc = value => TrimString(value, length);
-
-            if (typeSerializesInfos.TryGetValue(typeof(string), out var serialize))
-                finalFunc = value => TrimString(serialize(value), length);
-
-            return Using(finalFunc);
-        }
-
-        private string TrimString(string value, int length)
-        {
-            return value.Length <= length
-                ? value
-                : value[..length];
-        }
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -125,6 +70,27 @@ namespace ObjectPrinting
                 maxRecursion);
 
             return serializer.Serialize(obj, nestingLevel);
+        }
+
+        public IUsing<TOwner, T> Printing<T>()
+        {
+            var config = new SerializationConfig<TOwner, T>(this);
+            typeSerializesInfos[typeof(T)] = config;
+
+            return config;
+        }
+
+        public IUsing<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> property)
+        {
+            if (property == null)
+                throw new ArgumentNullException();
+
+            var memberInfo = GetMemberInfo(property);
+
+            var config = new SerializationConfig<TOwner, T>(this);
+            membersSerializesInfos[memberInfo] = config;
+
+            return config;
         }
     }
 }
