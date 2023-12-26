@@ -40,6 +40,7 @@ namespace ObjectPrinting
             var memberExpression = (MemberExpression)properties.Body;
             var propertySetting = new PropertySetting<TOwner>(this);
             propertiesOptions[memberExpression.Member.Name] = propertySetting;
+            
             return propertySetting;
         }
 
@@ -49,6 +50,7 @@ namespace ObjectPrinting
             var stringSetting = new StringSetting<TOwner>(this);
             stringOptions[memberExpression.Member.Name] = stringSetting;
             propertiesOptions[memberExpression.Member.Name] = stringSetting;
+            
             return stringSetting;
         }
 
@@ -69,6 +71,7 @@ namespace ObjectPrinting
             var memberExpression = (MemberExpression)properties.Body;
             var propertySetting = new PropertySetting<TOwner>(this, true);
             propertiesOptions[memberExpression.Member.Name] = propertySetting;
+            
             return this;
         }
 
@@ -76,12 +79,13 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null";
-            
+
             if (types.Contains(obj.GetType()) || id > 1)
             {
                 var cultureInfo = CultureInfo.CurrentCulture;
                 if (propertiesOptions.TryGetValue(name, out var option))
                     cultureInfo = option.Culture;
+                
                 return string.Format(cultureInfo, "{0}", obj);
             }
 
@@ -92,6 +96,7 @@ namespace ObjectPrinting
                     maxLength = option.MaxLength;
                 if (maxLength < 0)
                     return obj as string;
+                
                 return s[..maxLength];
             }
 
@@ -105,28 +110,35 @@ namespace ObjectPrinting
                     propertiesOptions.ContainsKey(propertyInfo.Name) &&
                     propertiesOptions[propertyInfo.Name].IsExcept)
                     continue;
-                
                 if (propertiesOptions.ContainsKey(propertyInfo.Name) &&
                     propertiesOptions[propertyInfo.Name].OutputMethod != null)
+                {
                     sb.Append(propertyInfo.Name + " = " +
-                                  propertiesOptions[propertyInfo.Name].OutputMethod.Invoke(variable));
-                
+                              propertiesOptions[propertyInfo.Name].OutputMethod.Invoke(variable));
+                }
                 else if (optionsTypes.TryGetValue(propertyInfo.PropertyType, out var optionsType))
+                {
                     sb.Append(propertyInfo.Name + " = " +
-                                  optionsType.Invoke(variable));
-                
+                              optionsType.Invoke(variable));
+                }
                 else if (variable is IList list)
                 {
                     for (var i = 0; i < list.Count; i++)
-                        sb.Append(i + " = " +
+                        sb.Append("\n" + i + " = " +
                                   PrintToString(list[i], id + 1, propertyInfo.Name));
                 }
-
+                else if (variable is IDictionary dict)
+                {
+                    foreach (var key in dict.Keys)
+                    {
+                        var value = dict[key];
+                        sb.Append($"\n{key} = {PrintToString(value, id + 1, name)}");
+                    }
+                }
                 else
                 {
                     sb.Append(propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj), id + 1,
-                                  propertyInfo.Name));
+                              PrintToString(propertyInfo.GetValue(obj), id + 1, propertyInfo.Name));
                 }
             }
             

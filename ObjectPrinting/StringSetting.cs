@@ -2,7 +2,7 @@ namespace ObjectPrinting
 {
     public class StringSetting<T> : PropertySetting<T>
     {
-        protected internal int MaxLength { protected set; get; }
+        protected internal int MaxLength { get; private set; }
 
         public StringSetting(PrintingConfig<T> config, bool isExcept = false) : base(config, isExcept)
         {
