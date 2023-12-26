@@ -68,9 +68,11 @@ namespace ObjectPrinting
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+            
             var type = obj.GetType();
             if (IsFinalType(type))
                 return obj + Environment.NewLine;
+            
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             if (printedObjects.Contains(obj))
@@ -117,7 +119,7 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
-
+        
         private bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, Type propertyType,
             out string serializedValue)
         {
@@ -133,20 +135,26 @@ namespace ObjectPrinting
 
         private static bool TrySerializeValue(Delegate serializer, object value, out string serializedValue)
         {
-            serializedValue = serializer.DynamicInvoke(value)?.ToString();
-            return true;
+            try
+            {
+                serializedValue = serializer.DynamicInvoke(value)?.ToString();
+                return true;
+            }
+            catch
+            {
+                serializedValue = null;
+                return false;
+            }
         }
 
         private static bool IsArrayOrList(Type type)
         {
-            return type.IsArray || (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>)
-                                                           || type.GetGenericTypeDefinition() == typeof(IList<>)));
+            return typeof(IList).IsAssignableFrom(type);
         }
 
         private static bool IsDictionary(Type type)
         {
-            return type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
-                                          type.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+            return typeof(IDictionary).IsAssignableFrom(type);
         }
 
         private string SerializeEnumerable(object obj, int nestingLevel)

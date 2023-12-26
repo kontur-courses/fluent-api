@@ -54,8 +54,8 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
             var printer = ObjectPrinter.For<Person>();
             const string expected = "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 2.4\r\n\tAge = 15\r\n";
-            var s1 = printer.Printing<double>().Using(CultureInfo.InvariantCulture).PrintToString(person);
-            s1.Should().Be(expected);
+            var s1 = printer.Printing(x => x.Height).Using(new CultureInfo("en-GB")).PrintToString(person);
+            s1.Should().Be(expected); 
         }
         [Test]
         public void ObjectPrinter_TrimmedStringProperties_ObjectWithModifiedProperty()
