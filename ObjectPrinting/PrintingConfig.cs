@@ -25,11 +25,11 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<MemberInfo> excludedProperty = new HashSet<MemberInfo>();
 
-        private readonly Dictionary<MemberInfo, Delegate> customPropertySerialize =
-            new Dictionary<MemberInfo, Delegate>();
+        private readonly Dictionary<MemberInfo, Func<object,string>> customPropertySerialize =
+            new Dictionary<MemberInfo, Func<object,string>>();
 
-        private readonly Dictionary<Type, Delegate> customTypeSerializers = new Dictionary<Type, Delegate>();
-        private HashSet<object> visitedObjects = new HashSet<object>();
+        private readonly Dictionary<Type, Func<object,string>> customTypeSerializers = new Dictionary<Type, Func<object,string>>();
+        private readonly HashSet<object> visitedObjects = new HashSet<object>();
 
 
         public string PrintToString(TOwner obj)
@@ -49,19 +49,19 @@ namespace ObjectPrinting
                 return $"Cycling references";
             }
 
-            visitedObjects.Add(obj);
+            //visitedObjects.Add(obj);
 
             if (FinalTypes.Contains(obj.GetType()))
                 return obj.ToString();
 
-            if (obj is IDictionary)
+            if (obj is IDictionary dictionary)
             {
-                return PrintToStringIDictionary((IDictionary)obj, nestingLevel + 1);
+                return PrintToStringIDictionary(dictionary, nestingLevel + 1);
             }
 
-            if (obj is IEnumerable)
+            if (obj is IEnumerable collection)
             {
-                return PrintToStringIEnumerable((IEnumerable)obj, nestingLevel + 1);
+                return PrintToStringIEnumerable(collection, nestingLevel + 1);
             }
 
             return PrintToStringProperties(obj, nestingLevel + 1);
@@ -73,6 +73,7 @@ namespace ObjectPrinting
             var builder = new StringBuilder();
             var objType = obj.GetType();
             builder.Append($"{objType.Name}");
+            visitedObjects.Add(obj);
             foreach (var propertyInfo in GetIncludedProperties(objType))
             {
                 var value = propertyInfo.GetValue(obj);
@@ -81,7 +82,6 @@ namespace ObjectPrinting
                     : PrintToString(value, nestingLevel + 1);
                 builder.Append('\n' + identation + propertyInfo.Name + " = " + customSerializeStr);
             }
-
             visitedObjects.Remove(obj);
             return builder.ToString();
         }
@@ -90,7 +90,7 @@ namespace ObjectPrinting
         {
             var identation = new string('\t', nestingLevel);
             var builder = new StringBuilder();
-
+            visitedObjects.Add(collection);
             foreach (var item in collection)
             {
                 builder.Append('\n' + identation + PrintToString(item, nestingLevel + 1));
@@ -105,6 +105,8 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel);
             var builder = new StringBuilder();
 
+            visitedObjects.Add(dictionary);
+
             foreach (var key in dictionary.Keys)
             {
                 builder.Append('\n' + identation + PrintToString(key, nestingLevel + 1) + " = " +
@@ -115,18 +117,19 @@ namespace ObjectPrinting
             return builder.ToString();
         }
 
-        private bool TryUseCustomSerializer(object value, MemberInfo memberInfo, out string str)
+        private bool TryUseCustomSerializer(object value, PropertyInfo propertyInfo, out string str)
         {
             str = null;
-            if (customPropertySerialize.ContainsKey(memberInfo))
+            if (customPropertySerialize.ContainsKey(propertyInfo))
             {
-                str = (string)customPropertySerialize[memberInfo].DynamicInvoke(value);
+                str = (string)customPropertySerialize[propertyInfo].DynamicInvoke(value);
                 return true;
             }
 
-            if (customTypeSerializers.ContainsKey(memberInfo.GetType()))
+            var type = propertyInfo.PropertyType;
+            if (customTypeSerializers.ContainsKey(propertyInfo.PropertyType))
             {
-                str = (string)customTypeSerializers[memberInfo.GetType()].DynamicInvoke(value);
+                str = (string)customTypeSerializers[propertyInfo.PropertyType].DynamicInvoke(value);
                 return true;
             }
 
@@ -138,9 +141,9 @@ namespace ObjectPrinting
             return type.GetRuntimeProperties().Where(p => !IsExclude(p));
         }
 
-        private bool IsExclude(MemberInfo member)
+        private bool IsExclude(PropertyInfo member)
         {
-            return excludedTypes.Contains(member.GetType()) || excludedProperty.Contains(member);
+            return excludedTypes.Contains(member.PropertyType) || excludedProperty.Contains(member);
         }
 
         public PrintingConfig<TOwner> Exclude<TType>()
@@ -161,7 +164,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> SetCustomTypeSerializer<TType>(Func<TType, string> serializer)
         {
-            customTypeSerializers[typeof(TType)] = serializer;
+            customTypeSerializers[typeof(TType)] = obj =>serializer((TType)obj);
             return this;
         }
 
@@ -177,11 +180,13 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> SetCustomPropertySerializer<TProperty>(MemberInfo property,
             Func<TProperty, string> serializer)
         {
-            customPropertySerialize[property] = serializer;
+            customPropertySerialize[property] = obj =>serializer((TProperty)obj);
             return this;
         }
 
-        public PrintingConfig<TOwner> SetCulture<TType>(string format, CultureInfo culture) where TType : IFormattable
+        public PrintingConfig<TOwner> SetCulture<TType>(string format, CultureInfo culture)
+            where TType : IFormattable
+
         {
             return SetCustomTypeSerializer((TType obj) => obj.ToString(format, culture));
         }

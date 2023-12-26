@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
@@ -18,7 +19,7 @@ namespace ObjectPrinting.Tests
         {
             simplePerson = new Person
             {
-                Id = new Guid("0f8fad5b-d9cb-469f-a165-70867728950e"), Name = "simplePerson", Age = 45, Height = 180
+                Id = new Guid("0f8fad5b-d9cb-469f-a165-70867728950e"), Name = "simplePerson", Age = 45, Height = 180,
             };
             personWithCyclingReference = new Person
                 { Id = new Guid("b1754c14-d296-4b0f-a09a-030017f4461f"), Name = "Cycle", Age = 34, Height = 192 };
@@ -60,7 +61,9 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>();
             var actual = printer.SetCustomTypeSerializer<int>(i => 0.ToString()).PrintToString(simplePerson);
-            actual.Should().Be("");
+            actual.Should()
+                .Be(
+                    $"Person\n\tId = 0f8fad5b-d9cb-469f-a165-70867728950e\n\tName = simplePerson\n\tHeight = 180\n\tAge = 0\n\tParents = null");
         }
 
         [Test]
@@ -143,6 +146,23 @@ namespace ObjectPrinting.Tests
             actual.Should()
                 .Be(
                     $"Person\n\tId = 0f8fad5b-d9cb-469f-a165-70867728950e\n\tHeight = 180\n\tAge = 45\n\tParents = null");
+        }
+
+        [Test]
+        public void ObjectPrinter_Parallel_Using_With_Same_Object()
+        {
+            var person = new Person()
+                { Id = new Guid("b1754c14-d296-4b0f-a09a-030027f4461f"), Name = "Parallel", Age = 94, Height = 200 };
+            person.Parents = new[]
+                { personWithCyclingReference, personWithCyclingReference, simplePerson, simplePerson };
+            var actual1 = "";
+            var actual2 = "";
+            Task task1 = Task.Run(() => { actual1 = person.PrintToString(); });
+            Task task2 = Task.Run(() => { actual2 = person.PrintToString(); });
+
+            Task.WaitAll(task1, task2);
+
+            actual1.Should().Be(actual2);
         }
     }
 }
