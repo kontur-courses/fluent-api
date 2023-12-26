@@ -13,30 +13,12 @@ public static class EnumerableExtensions
         PrintingConfig<T> printingConfig,
         ImmutableList<object> previous)
     {
-        // var sb = new StringBuilder("[");
-        // sb.Append(Environment.NewLine);
-        //
-        // var identation = new string('\t', previous.Count);
-        // previous = previous.Add(enumerable);
-        //
-        // foreach (var obj in enumerable)
-        // {
-        //     sb.Append(identation);
-        //     sb.Append(printingConfig.PrintToString1(obj, previous));
-        //     sb.Append(',');
-        //     sb.Append(Environment.NewLine);
-        // }
-        //
-        // sb.Append(new string('\t', previous.Count - 1));
-        // sb.Append(']');
-        //
-        // return sb.ToString();
         
         previous = previous.Add(enumerable);
 
         return enumerable.EnumerateForObjectPrinting(
-            "{", "}",
-            obj => printingConfig.PrintToString1(obj, previous),
+            "[", "]",
+            obj => $"{printingConfig.PrintToString1(obj, previous)},",
             previous);
     }
 
@@ -44,23 +26,22 @@ public static class EnumerableExtensions
         this IEnumerable<T> enumerable,
         string startSymbol,
         string endSymbol,
-        Func<T, string> getStringElement,
+        Func<T, string> getRow,
         ImmutableList<object> previous)
     {
         var sb = new StringBuilder();
         sb.AppendLine(startSymbol);
         
-        var identation = new string('\t', previous.Count - 1);
+        var identation = new string('\t', previous.Count);
         
         foreach (var obj in enumerable)
         {
             sb.Append(identation);
-            sb.Append(getStringElement(obj));
-            sb.AppendLine(",");
+            sb.AppendLine(getRow(obj));
         }
 
         sb.Append(new string('\t', previous.Count - 1));
-        sb.AppendLine(endSymbol);
+        sb.Append(endSymbol);
 
         return sb.ToString();
     }
