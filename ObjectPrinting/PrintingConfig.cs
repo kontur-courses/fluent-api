@@ -72,10 +72,8 @@ public class PrintingConfig<TOwner>
         sb.Add("[");
         foreach (var element in enumerable)
         {
-            var serializedString = PrintToString(element, nestedObjects).Trim();
-            sb.Add(serializedString);
+            sb.Add(PrintToString(element, nestedObjects).Trim());
         }
-
         sb.Add("]");
         return string.Join(' ', sb);
     }
@@ -84,14 +82,12 @@ public class PrintingConfig<TOwner>
     {
         var sb = new List<string>();
         var identation = new string('\t', nestedObjects.Count);
-        sb.Add(identation + "[");
+        sb.Add($"{identation}[");
         foreach (var element in enumerable)
         {
-            var serializedString = PrintToString(element, nestedObjects.Add(sb)).TrimEnd();
-            sb.Add(serializedString);
+            sb.Add(PrintToString(element, nestedObjects.Add(sb)).TrimEnd());
         }
-
-        sb.Add(identation + "]");
+        sb.Add($"{identation}]");
         return string.Join(Environment.NewLine, sb);
     }
 
@@ -99,18 +95,17 @@ public class PrintingConfig<TOwner>
     {
         var sb = new List<string>();
         var identation = new string('\t', nestedObjects.Count);
-        sb.Add(identation + "{");
+        sb.Add($"{identation}{{");
         nestedObjects = nestedObjects.Add(dictionary);
         foreach (DictionaryEntry dictionaryEntry in dictionary)
         {
-            sb.Add(identation + '\t' + "[");
-            sb.Add(identation + '\t' + PrintToString(dictionaryEntry.Key, nestedObjects).TrimEnd());
-            sb.Add(identation + '\t' + ":");
-            sb.Add(identation + '\t' + PrintToString(dictionaryEntry.Value, nestedObjects).TrimEnd());
-            sb.Add(identation + '\t' + "]");
+            sb.Add($"{identation}\t[");
+            sb.Add($"{identation}\t{PrintToString(dictionaryEntry.Key, nestedObjects).TrimEnd()}");
+            sb.Add($"{identation}\t:");
+            sb.Add($"{identation}\t{PrintToString(dictionaryEntry.Value, nestedObjects).TrimEnd()}");
+            sb.Add($"{identation}\t]");
         }
-
-        sb.Add(identation + "}");
+        sb.Add($"{identation}}}");
         return string.Join(Environment.NewLine, sb);
     }
 
