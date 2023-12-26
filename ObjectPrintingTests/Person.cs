@@ -4,18 +4,19 @@ namespace ObjectPrintingTests
 {
     public class Person
     {
-        public int Field = 10;
         public Guid Id { get; set; }
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
 
         public Person Friend { get; set; }
-        
+
         public List<Person> Friends { get; set; }
-        
+
         public Person[] Relatives { get; set; }
         public Dictionary<int, Person> Neighbours { get; set; }
+
+        public int Field = 10;
 
         public override int GetHashCode()
         {
@@ -27,7 +28,6 @@ namespace ObjectPrintingTests
             if (obj.GetType() != GetType()) return false;
             var person = (Person)obj;
             return person.Name == Name && person.Age == Age;
-
         }
     }
 }

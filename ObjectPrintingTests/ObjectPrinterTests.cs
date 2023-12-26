@@ -35,7 +35,7 @@ public class ObjectPrinterTests
 
         result.Should().NotContain($"{nameof(person.Name)} = {person.Name}");
     }
-    
+
     [Test]
     public void PrintingConfig_ExcludeField_ShouldExcludeGivenProperty()
     {
