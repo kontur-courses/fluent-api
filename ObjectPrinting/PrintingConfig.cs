@@ -36,7 +36,7 @@ public class PrintingConfig<TOwner>
         return new MemberPrintingConfig<TOwner, TMemberType>(this, expression.Member);
     }
 
-    public PrintingConfig<TOwner> ExcludeProperty<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+    public PrintingConfig<TOwner> ExcludeMember<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
         var expression = (MemberExpression)memberSelector.Body;
         excludedMembers.Add(expression.Member);
@@ -44,7 +44,7 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> ExcludePropertyType<TMemberType>()
+    public PrintingConfig<TOwner> ExcludeMemberType<TMemberType>()
     {
         excludedTypes.Add(typeof(TMemberType));
 
@@ -80,15 +80,12 @@ public class PrintingConfig<TOwner>
         var type = obj.GetType();
         sb.AppendLine(type.Name);
 
-        var fields = type.GetFields();
-        var props = type.GetProperties();
-
         if (obj is IEnumerable enumerable)
             sb.Append(GetPrintedCollection(enumerable, nestingLevel));
         else
-            foreach (var memberInfo in type.GetMembers().Where(m => IsPropertyOrField(m)))
+            foreach (var memberInfo in type.GetMembers().Where(IsPropertyOrField))
             {
-                if (excludedTypes.Contains(memberInfo) || excludedMembers.Contains(memberInfo))
+                if (excludedTypes.Contains(GetMemberType(memberInfo)) || excludedMembers.Contains(memberInfo))
                     continue;
 
                 var printingResult = GetPrintingResult(obj, memberInfo, nestingLevel);

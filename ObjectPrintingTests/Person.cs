@@ -4,7 +4,7 @@ namespace ObjectPrintingTests
 {
     public class Person
     {
-        public int X = 10;
+        public int Field = 10;
         public Guid Id { get; set; }
         public string Name { get; set; }
         public double Height { get; set; }

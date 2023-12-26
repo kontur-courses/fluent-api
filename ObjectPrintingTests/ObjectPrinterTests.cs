@@ -15,10 +15,10 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintingConfig_ExcludePropertyType_ShouldExcludeGivenType()
+    public void PrintingConfig_ExcludeMemberType_ShouldExcludeGivenType()
     {
         var printer = ObjectPrinter.For<Person>()
-            .ExcludePropertyType<Guid>();
+            .ExcludeMemberType<Guid>();
 
         var result = printer.PrintToString(person);
 
@@ -29,11 +29,22 @@ public class ObjectPrinterTests
     public void PrintingConfig_ExcludeProperty_ShouldExcludeGivenProperty()
     {
         var printer = ObjectPrinter.For<Person>()
-            .ExcludeProperty(p => p.Name);
+            .ExcludeMember(p => p.Name);
 
         var result = printer.PrintToString(person);
 
         result.Should().NotContain($"{nameof(person.Name)} = {person.Name}");
+    }
+    
+    [Test]
+    public void PrintingConfig_ExcludeField_ShouldExcludeGivenProperty()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .ExcludeMember(p => p.Field);
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Field)} = {person.Field}");
     }
 
     [Test]
@@ -104,15 +115,15 @@ public class ObjectPrinterTests
         var culture = CultureInfo.CreateSpecificCulture("fr-FR");
 
         var printer = ObjectPrinter.For<Person>()
-            .ExcludePropertyType<Guid>()
+            .ExcludeMemberType<Guid>()
             .SetPrintingFor<int>().Using(prop => typePrinting)
             .SetPrintingFor<double>().WithCulture(culture)
             .SetPrintingFor(person => person.Name).Using(prop => propertyPrinting)
             .SetPrintingFor(person => person.Name).TrimmedToLength(10)
-            .ExcludeProperty(person => person.Id)
-            .ExcludeProperty(person => person.Friends)
-            .ExcludeProperty(person => person.Relatives)
-            .ExcludeProperty(person => person.Neighbours);
+            .ExcludeMember(person => person.Id)
+            .ExcludeMember(person => person.Friends)
+            .ExcludeMember(person => person.Relatives)
+            .ExcludeMember(person => person.Neighbours);
 
         var result = printer.PrintToString(person);
 
@@ -120,7 +131,8 @@ public class ObjectPrinterTests
                            $"\t{nameof(person.Name)} = {propertyPrinting[..10]}{newLine}" +
                            $"\t{nameof(person.Height)} = {person.Height.ToString(culture)}{newLine}" +
                            $"\t{nameof(person.Age)} = {typePrinting}{newLine}" +
-                           $"\t{nameof(person.Friend)} = null{newLine}");
+                           $"\t{nameof(person.Friend)} = null{newLine}" +
+                           $"\t{nameof(person.Field)} = {typePrinting}{newLine}");
     }
 
     [Test]
