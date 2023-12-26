@@ -9,5 +9,8 @@ namespace ObjectPrinting.Tests
         public double Height { get; set; }
         public int Age { get; set; }
         public SubPerson SubPerson { get; set; }
+
+        public string PublicField;
+        private string privateField;
     }
 }

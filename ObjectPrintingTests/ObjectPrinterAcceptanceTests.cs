@@ -10,7 +10,42 @@ namespace ObjectPrintingTests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void WhenExcludeType_ShouldReturnWithoutThisType()
+        public void Demo()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 180.5, SubPerson = new SubPerson() };
+            person.SubPerson.Age = 15;
+            person.SubPerson.Person = person;
+
+            var printer = ObjectPrinter.For<Person>();
+
+            //Исключение из сериализации свойства/ поля определенного типа
+            //Альтернативный способ сериализации для определенного типа
+            //Для всех типов, имеющих культуру, есть возможность ее указать
+            //printer.Exclude<double>()
+            //    .SerializeWith(p => p.Age, age => (age + 1000).ToString())
+            //    .SetCulture<double>(CultureInfo.InvariantCulture)
+            //    .SerializeWith<string>((p) => p.ToUpper())
+            //    .Trim<string>(p => p.Name, 1)
+            //    .Exclude(p => p.Name)
+            //    .
+
+            
+            //Корректная обработка циклических ссылок между объектами(не должны приводить к StackOverflowException)
+        }
+
+        [Test]
+        public void DoSomething_WhenSomething()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.SerializeWith(p => p.Name, n => $"{n} :))")
+                .Trim(p => p.Name, 1)
+                .Trim(1);
+        }
+
+        [Test]
+        public void ShouldExcludeMember_WhenItsTypeSpecified()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
@@ -18,23 +53,13 @@ namespace ObjectPrintingTests
             printer.Exclude(p => p.Age)
                 .Exclude<double>();
 
-            //1. Исключить из сериализации свойства определенного типа
-            //2. Указать альтернативный способ сериализации для определенного типа
-            //3. Для числовых типов указать культуру
-            //4. Настроить сериализацию конкретного свойства
-            //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            //6. Исключить из сериализации конкретного свойства
-
             var s1 = printer.PrintToString(person);
             s1.Should().Be(
                 "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tSubPerson = null\r\n");
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
         }
 
         [Test]
-        public void TrimString_ShouldReturnSubstring()
+        public void ShouldUseTrimming_WhenItsSpecifiedForType()
         {
             var person = new Person { Name = "Petr", Age = 20, Height = 180 };
             var printer = ObjectPrinter.For<Person>();
@@ -51,7 +76,7 @@ namespace ObjectPrintingTests
             var person = new Person { Name = "Petr", Age = 20, Height = 180 };
             var printer = ObjectPrinter.For<Person>();
 
-            var s1 = printer.SerializeWith(person => person.Age, age => (age + 1000).ToString()).PrintToString(person);
+            var s1 = printer.SerializeWith(p => p.Age, age => (age + 1000).ToString()).PrintToString(person);
 
             s1.Should().Be(
                 "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Petr\r\n\tHeight = 180\r\n\tAge = 1020\r\n\tSubPerson = null\r\n");
