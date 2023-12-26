@@ -20,8 +20,8 @@ namespace ObjectPrinting
         };
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
-        protected readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
-        protected readonly Dictionary<MemberInfo, Func<object, string>> memberSerializers = new();
+        protected readonly Dictionary<Type, Func<object, string>> TypeSerializers = new();
+        protected readonly Dictionary<MemberInfo, Func<object, string>> MemberSerializers = new();
         private int MaxNestingLevel { get; }
 
         public PrintingConfig(int maxNestingLevel = 10)
@@ -33,27 +33,36 @@ namespace ObjectPrinting
         {
             excludedTypes = new HashSet<Type>(parent.excludedTypes);
             excludedMembers = new HashSet<MemberInfo>(parent.excludedMembers);
-            typeSerializers = new Dictionary<Type, Func<object, string>>(parent.typeSerializers);
-            memberSerializers = new Dictionary<MemberInfo, Func<object, string>>(parent.memberSerializers);
+            TypeSerializers = new Dictionary<Type, Func<object, string>>(parent.TypeSerializers);
+            MemberSerializers = new Dictionary<MemberInfo, Func<object, string>>(parent.MemberSerializers);
             MaxNestingLevel = parent.MaxNestingLevel;
         }
 
-        public TypePrintingConfig<TOwner, TType> Printing<TType>()
+        public IInnerPrintingConfig<TOwner, TType> Printing<TType>()
         {
             var config = new PrintingConfig<TOwner>(this);
             return new TypePrintingConfig<TOwner, TType>(config);
         }
 
-        public MemberPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+        public IInnerPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
+            if (memberSelector.Body is not MemberExpression memberExpression)
+                throw new ArgumentException("memberSelector should me MemberExpression");
+            var memberInfo = memberExpression.Member;
+            if (memberInfo.DeclaringType != typeof(TOwner))
+                throw new ArgumentException($"You should access {typeof(TOwner)} property or field");
+            
             var config = new PrintingConfig<TOwner>(this);
-            var memberInfo = ((MemberExpression) memberSelector.Body).Member;
             return new MemberPrintingConfig<TOwner, TMemberType>(config, memberInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
         {
-            var memberInfo = ((MemberExpression) memberSelector.Body).Member;
+            if (memberSelector.Body is not MemberExpression memberExpression)
+                throw new ArgumentException("memberSelector should me MemberExpression");
+            var memberInfo = memberExpression.Member;
+            if (memberInfo.DeclaringType != typeof(TOwner))
+                throw new ArgumentException($"You should access {typeof(TOwner)} property or field");
             var config = new PrintingConfig<TOwner>(this);
             config.excludedMembers.Add(memberInfo);
             return config;
@@ -78,7 +87,7 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (typeSerializers.TryGetValue(type, out var serializer))
+            if (TypeSerializers.TryGetValue(type, out var serializer))
                 return serializer(obj) + Environment.NewLine;
             if (finalTypes.Contains(type) || nestingLevel == MaxNestingLevel)
                 return obj + Environment.NewLine;
@@ -102,11 +111,11 @@ namespace ObjectPrinting
 
         private string GetSerializedMemberOrDefault(object obj, IPropertyOrField member, int nestingLevel)
         {
-            var isMemberSerialized = memberSerializers.ContainsKey(member.UnderlyingMember);
+            var isMemberSerialized = MemberSerializers.ContainsKey(member.UnderlyingMember);
             var memberValue = member.GetValue(obj);
             
             return isMemberSerialized
-                ? memberSerializers[member.UnderlyingMember](memberValue) + Environment.NewLine
+                ? MemberSerializers[member.UnderlyingMember](memberValue) + Environment.NewLine
                 : PrintToString(memberValue, nestingLevel);
         }
 

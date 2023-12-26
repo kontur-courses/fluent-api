@@ -8,7 +8,7 @@ namespace ObjectPrinting.Extensions
 {
     public static class TypeExtensions
     {
-        public static IEnumerable<IPropertyOrField> GetFieldsAndProperties(this Type type, BindingFlags bindingAttr)
+        internal static IEnumerable<IPropertyOrField> GetFieldsAndProperties(this Type type, BindingFlags bindingAttr)
         {
             return type.GetFields(bindingAttr)
                 .Select(x => new PropertyOrField.PropertyOrField(x))

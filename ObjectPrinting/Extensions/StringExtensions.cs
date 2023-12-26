@@ -2,7 +2,7 @@
 {
     public static class StringExtensions
     {
-        public static string Truncate(this string text, int maxLength, string truncationSuffix = "")
+        internal static string Truncate(this string text, int maxLength, string truncationSuffix = "")
         {
             return text.Length > maxLength
                 ? text[..maxLength] + truncationSuffix

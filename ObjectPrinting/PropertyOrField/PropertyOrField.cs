@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.PropertyOrField
 {
-    public class PropertyOrField : IPropertyOrField
+    internal class PropertyOrField : IPropertyOrField
     {
         public string Name { get; }
         public Type DataType { get; }

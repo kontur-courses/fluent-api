@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.PropertyOrField
 {
-    public interface IPropertyOrField
+    internal interface IPropertyOrField
     {
         string Name { get; }
         Type DataType { get; }
