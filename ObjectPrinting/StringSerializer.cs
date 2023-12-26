@@ -21,13 +21,12 @@ public sealed class StringSerializer<TObject> : ISerializer
     private readonly HashSet<MemberInfo> ignoredProperties = new();
     private readonly HashSet<Type> ignoredTypes = new();
     private readonly Dictionary<MemberInfo, Delegate> propertySerializers = new();
-    private readonly Dictionary<Type, CultureInfo> typeCultures = new();
     private readonly Dictionary<Type, Delegate> typeSerializers = new();
     private readonly HashSet<object> visitedObjects = new();
 
     private int? lineLength;
 
-    string ISerializer.Serialize(object instance, int nestingLevel)
+    public string Serialize(object instance, int nestingLevel = 0)
     {
         var instanceType = instance.GetType();
         var properties = instanceType.GetProperties();
@@ -36,47 +35,18 @@ public sealed class StringSerializer<TObject> : ISerializer
         var indentation = new string('\t', nestingLevel + 1);
 
         if (finalTypes.Contains(instanceType))
-        {
-            if (instanceType != typeof(string) || lineLength == null)
-                return ApplyCultureToString(instance, instanceType);
-
-            return GetTrimmedString(instance);
-        }
+            return ((IConvertible)instance).ToString(CultureInfo.CurrentCulture);
 
         if (instance is IEnumerable enumerable)
             return SerializeEnumerable(enumerable, nestingLevel);
 
         stringBuilder.AppendLine(instanceType.Name);
 
-        var prefilter = properties
-            .Where(property => !ignoredProperties.Contains(property))
-            .Where(property => !ignoredTypes.Contains(property.PropertyType));
+        var filteredProperties = ExcludeIgnoredProperties(properties);
 
         visitedObjects.Add(instance);
 
-        foreach (var propertyInfo in prefilter)
-        {
-            var propertyValue = propertyInfo.GetValue(instance);
-            var propertyName = propertyInfo.Name;
-
-            if (propertyValue == null)
-            {
-                stringBuilder.Append($"{indentation}{propertyName} = Null{Environment.NewLine}");
-                continue;
-            }
-
-            // Check for circular reference:
-            if (visitedObjects.Contains(propertyValue))
-                continue;
-
-            var serializer = FindSerializer(propertyInfo);
-
-            var output = serializer != null
-                ? serializer.Method.Invoke(serializer.Target, new[] { propertyValue })!.ToString()!
-                : (this as ISerializer).Serialize(propertyValue, nestingLevel + 1);
-
-            stringBuilder.Append($"{indentation}{propertyName} = {output}{Environment.NewLine}");
-        }
+        SerializeField(instance, nestingLevel, filteredProperties, stringBuilder, indentation);
 
         return stringBuilder.ToString();
     }
@@ -113,53 +83,96 @@ public sealed class StringSerializer<TObject> : ISerializer
         return this;
     }
 
-    public StringSerializer<TObject> SetCultureTo<TPropertyType>(CultureInfo culture)
+    private void SerializeField(
+        object instance,
+        int nestingLevel,
+        IEnumerable<PropertyInfo> filteredProperties,
+        StringBuilder stringBuilder, string indentation)
     {
-        typeCultures.TryAdd(typeof(TPropertyType), culture);
-        return this;
+        foreach (var propertyInfo in filteredProperties)
+        {
+            var propertyValue = propertyInfo.GetValue(instance);
+            var propertyName = propertyInfo.Name;
+
+            if (propertyValue == null)
+            {
+                AppendSerializedPropertyToBuilder(stringBuilder, indentation, propertyName, "Null");
+                continue;
+            }
+
+            // Check for circular reference:
+            if (visitedObjects.Contains(propertyValue))
+                continue;
+
+            var serializer = FindSerializer(propertyInfo);
+
+            var output = serializer != null
+                ? serializer.Method.Invoke(serializer.Target, new[] { propertyValue })!.ToString()!
+                : Serialize(propertyValue, nestingLevel + 1);
+
+            AppendSerializedPropertyToBuilder(stringBuilder, indentation, propertyName, output);
+        }
+    }
+
+    private void AppendSerializedPropertyToBuilder(
+        StringBuilder stringBuilder,
+        string indentation,
+        string propertyName,
+        string output)
+    {
+        var stringValue = $"{propertyName} = {output}";
+        stringBuilder.Append(indentation + GetTrimmedString(stringValue) + Environment.NewLine);
+    }
+
+    private IEnumerable<PropertyInfo> ExcludeIgnoredProperties(IEnumerable<PropertyInfo> properties)
+    {
+        var filteredProperties = properties
+            .Where(property => !ignoredProperties.Contains(property))
+            .Where(property => !ignoredTypes.Contains(property.PropertyType));
+
+        return filteredProperties;
     }
 
     private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
     {
-        const int customOffset = 4;
+        const int itemOffset = 4;
 
         var stringBuilder = new StringBuilder();
-
-        var previousIndent = new string('\t', nestingLevel);
-        var elementOffset = new string(' ', customOffset);
+        var options = new SerializingOptions
+        {
+            ElementOffset = new string(' ', itemOffset),
+            PreviousIndent = new string('\t', nestingLevel),
+            NestingLevel = nestingLevel
+        };
 
         stringBuilder.AppendLine("[");
 
-        if (enumerable is IDictionary dict) FillDictionaryBody();
-        else FillSequenceBody();
+        if (enumerable is IDictionary dict)
+            FillDictionaryBody(dict, stringBuilder, options);
+        else
+            FillSequenceBody(enumerable, stringBuilder, options);
 
-        stringBuilder.Append($"{previousIndent}]");
+        stringBuilder.Append($"{options.PreviousIndent}]");
 
         return stringBuilder.ToString();
+    }
 
-        void FillSequenceBody()
+    private void FillDictionaryBody(IDictionary dict, StringBuilder stringBuilder, SerializingOptions options)
+    {
+        foreach (var key in dict.Keys)
         {
-            foreach (var element in enumerable)
-            {
-                var output = (this as ISerializer).Serialize(element, nestingLevel);
-                stringBuilder.AppendLine($"{previousIndent}{elementOffset}{output.TrimEnd()},");
-            }
-        }
-
-        void FillDictionaryBody()
-        {
-            foreach (var key in dict.Keys)
-            {
-                var output = (this as ISerializer).Serialize(dict[key]!, nestingLevel);
-                stringBuilder.AppendLine($"{previousIndent}{elementOffset}[{key}] => {output.TrimEnd()},");
-            }
+            var output = Serialize(dict[key]!, options.NestingLevel);
+            stringBuilder.AppendLine($"{options.PreviousIndent}{options.ElementOffset}[{key}] => {output.TrimEnd()},");
         }
     }
 
-    private string ApplyCultureToString(object instance, Type instanceType)
+    private void FillSequenceBody(IEnumerable enumerable, StringBuilder stringBuilder, SerializingOptions options)
     {
-        var culture = typeCultures.GetValueOrDefault(instanceType) ?? CultureInfo.CurrentCulture;
-        return ((IConvertible)instance).ToString(culture);
+        foreach (var element in enumerable)
+        {
+            var output = Serialize(element, options.NestingLevel);
+            stringBuilder.AppendLine($"{options.PreviousIndent}{options.ElementOffset}{output.TrimEnd()},");
+        }
     }
 
     private Delegate? FindSerializer(PropertyInfo propertyInfo)
@@ -169,13 +182,11 @@ public sealed class StringSerializer<TObject> : ISerializer
         return memberSerializer ?? typeSerializer;
     }
 
-    private string GetTrimmedString(object instance)
+    private string GetTrimmedString(string value)
     {
-        var stringValue = instance.ToString()!;
-
         if (lineLength == null)
-            return stringValue;
+            return value;
 
-        return stringValue.Length < lineLength ? stringValue : stringValue[..lineLength.Value];
+        return value.Length <= lineLength ? value : value[..lineLength.Value];
     }
 }

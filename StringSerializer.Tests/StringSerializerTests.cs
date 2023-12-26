@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using ObjectPrinting.Extensions;
+using ObjectPrinting;
 using StringSerializer.Tests.TestModels;
 using System;
 using System.Collections.Generic;
@@ -16,10 +16,11 @@ public class StringSerializerTests
         testObject = new TestObject
         {
             IntNumber = random.Next(1, 1001),
-            DoubleNumber = random.Next(1000),
+            DoubleNumber = random.NextDouble(),
             Date = new DateTime(random.Next(1901, 2070), random.Next(1, 13), random.Next(1, 26)),
-            Line = new string('_', random.Next(1, 1000))
+            Line = new string('_', random.Next(1, 100))
         };
+        serializer = new StringSerializer<TestObject>();
     }
 
     [OneTimeSetUp]
@@ -29,53 +30,53 @@ public class StringSerializerTests
     }
 
     private TestObject testObject;
+    private StringSerializer<TestObject> serializer;
     private Random random;
 
     [Test]
     public void Serializer_Demo()
     {
-        var serialized = testObject
-            .IntoString(config => config
-                .TrimLinesTo(3)
-                .Ignoring<double>()
-                .Ignoring(obj => obj.IntNumber)
-                .SetCultureTo<DateTime>(CultureInfo.InvariantCulture)
-                .ChangeSerializingFor(obj => obj.Line, line => $"<{line}>"));
+        var serialized = serializer
+            .Ignoring<DateTime>()
+            .Ignoring(obj => obj.IntNumber)
+            .ChangeSerializingFor(obj => obj.Line, line => $"<{line}>")
+            .ChangeSerializingFor<double>(num => num.ToString(new CultureInfo("en")))
+            .Serialize(testObject);
 
         Console.WriteLine(serialized);
         Assert.Pass();
     }
 
     [Test]
-    public void Serializer_MustBeAbleTo_IgnoreTypes()
+    public void Serializer_Should_IgnoreTypes()
     {
-        var actual = testObject
-            .IntoString(config => config
-                .Ignoring<int>()
-                .Ignoring<double>()
-                .Ignoring<string>()
-                .Ignoring<DateTime>()
-                .Ignoring<TestObject>()
-                .Ignoring<Dictionary<int, TestObject>>()
-                .Ignoring<List<string>>()
-                .Ignoring<List<TestObject.InnerClass>>());
+        var actual = serializer
+            .Ignoring<int>()
+            .Ignoring<double>()
+            .Ignoring<string>()
+            .Ignoring<DateTime>()
+            .Ignoring<TestObject>()
+            .Ignoring<Dictionary<int, TestObject>>()
+            .Ignoring<List<string>>()
+            .Ignoring<List<TestObject.InnerClass>>()
+            .Serialize(testObject);
 
         Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
 
     [Test]
-    public void Serializer_MustBeAbleTo_IgnoreMembers()
+    public void Serializer_Should_IgnoreMembers()
     {
-        var actual = testObject
-            .IntoString(config => config
-                .Ignoring(test => test.IntNumber)
-                .Ignoring(test => test.DoubleNumber)
-                .Ignoring(test => test.Line!)
-                .Ignoring(test => test.Date)
-                .Ignoring(test => test.CircularReference!)
-                .Ignoring(test => test.Dict!)
-                .Ignoring(test => test.List)
-                .Ignoring(test => test.InnerClasses));
+        var actual = serializer
+            .Ignoring(test => test.IntNumber)
+            .Ignoring(test => test.DoubleNumber)
+            .Ignoring(test => test.Line!)
+            .Ignoring(test => test.Date)
+            .Ignoring(test => test.CircularReference!)
+            .Ignoring(test => test.Dict!)
+            .Ignoring(test => test.List)
+            .Ignoring(test => test.InnerClasses)
+            .Serialize(testObject);
 
         Assert.AreEqual(actual, nameof(TestObject) + Environment.NewLine);
     }
@@ -84,14 +85,14 @@ public class StringSerializerTests
     [TestCase("ja-JP")]
     [TestCase("en-US")]
     [TestCase("ar-SA")]
-    public void Serializer_Must_SupportCultureSetting(string signature)
+    public void Serializer_Should_SupportCultureSetting(string signature)
     {
         var culture = new CultureInfo(signature);
 
-        var actual = testObject
-            .IntoString(config => config
-                .SetCultureTo<DateTime>(culture)
-                .SetCultureTo<double>(culture));
+        var actual = serializer
+            .ChangeSerializingFor<DateTime>(date => date.ToString(culture))
+            .ChangeSerializingFor<double>(num => num.ToString(culture))
+            .Serialize(testObject);
 
         StringAssert.Contains(
             $"{nameof(TestObject.DoubleNumber)} = {testObject.DoubleNumber.ToString(culture)}", actual);
@@ -100,24 +101,28 @@ public class StringSerializerTests
     }
 
     [Test]
-    public void Serializer_Must_SupportLineTrimming()
+    public void Serializer_Should_SupportLineTrimming()
     {
-        var cutLength = random.Next(1, testObject.Line!.Length);
+        var cutLength = random.Next(10, 70);
+        var actual = serializer
+            .TrimLinesTo(cutLength)
+            .Serialize(testObject);
 
-        var actual = testObject
-            .IntoString(config => config
-                .TrimLinesTo(cutLength));
+        var expected = $"{nameof(TestObject.Line)} = {testObject.Line}";
 
-        StringAssert.Contains($"{nameof(TestObject.Line)} = {testObject.Line[..cutLength]}", actual);
+        if (cutLength <= expected.Length)
+            expected = expected[..cutLength];
+
+        StringAssert.Contains(expected, actual);
     }
 
     [Test]
-    public void Serializer_Must_SupportCustomSerializationForMembers()
+    public void Serializer_Should_SupportCustomSerializationForMembers()
     {
-        var actual = testObject
-            .IntoString(config => config
-                .ChangeSerializingFor(obj => obj.DoubleNumber, num => $"-> {num} <-")
-                .ChangeSerializingFor(obj => obj.Line, _ => string.Empty));
+        var actual = serializer
+            .ChangeSerializingFor(obj => obj.DoubleNumber, num => $"-> {num} <-")
+            .ChangeSerializingFor(obj => obj.Line, _ => string.Empty)
+            .Serialize(testObject);
 
         StringAssert.Contains(
             $"{nameof(TestObject.DoubleNumber)} = -> {testObject.DoubleNumber} <-", actual);
@@ -126,12 +131,12 @@ public class StringSerializerTests
     }
 
     [Test]
-    public void Serializer_Must_SupportCustomSerializationForTypes()
+    public void Serializer_Should_SupportCustomSerializationForTypes()
     {
-        var actual = testObject
-            .IntoString(config => config
-                .ChangeSerializingFor<double>(num => $"-> {num} <-")
-                .ChangeSerializingFor<string>(_ => string.Empty));
+        var actual = serializer
+            .ChangeSerializingFor<double>(num => $"-> {num} <-")
+            .ChangeSerializingFor<string>(_ => string.Empty)
+            .Serialize(testObject);
 
         StringAssert.Contains(
             $"{nameof(TestObject.DoubleNumber)} = -> {testObject.DoubleNumber} <-", actual);
@@ -140,22 +145,38 @@ public class StringSerializerTests
     }
 
     [Test]
-    public void Serializer_Must_DetectCircularReferences()
+    public void Serializer_Should_DetectCircularReferences()
     {
         testObject.CircularReference = testObject;
-        testObject.IntoString();
+        serializer.Serialize(testObject);
         Assert.Pass();
     }
 
     [Test]
-    public void Serializer_Must_WorkWithCollections()
+    public void Serializer_Should_StopAtFinalTypes()
     {
-        var list = new List<int> { 1, 2, 3 };
-        Assert.AreEqual("[\n    1,\n    2,\n    3,\n]", list.IntoString());
+        var actual = serializer
+            .Ignoring<List<TestObject.InnerClass>>()
+            .Ignoring<TestObject>()
+            .Ignoring<List<string>>()
+            .Ignoring<Dictionary<int, TestObject>>()
+            .Serialize(testObject);
+
+        // \t\t will appear in actual only if final type will be opened.
+        StringAssert.DoesNotContain("\t\t", actual);
     }
 
     [Test]
-    public void Serializer_Must_WorkWithDictionaries()
+    public void Serializer_Should_WorkWithCollections()
+    {
+        var list = new List<int> { 1, 2, 3 };
+        var actual = serializer.Serialize(list);
+
+        Assert.AreEqual("[\n    1,\n    2,\n    3,\n]", actual);
+    }
+
+    [Test]
+    public void Serializer_Should_WorkWithDictionaries()
     {
         var dict = new Dictionary<int, string>
         {
@@ -164,6 +185,8 @@ public class StringSerializerTests
             [2] = "Two"
         };
 
-        Assert.AreEqual("[\n    [0] => Zero,\n    [1] => One,\n    [2] => Two,\n]", dict.IntoString());
+        var actual = serializer.Serialize(dict);
+
+        Assert.AreEqual("[\n    [0] => Zero,\n    [1] => One,\n    [2] => Two,\n]", actual);
     }
 }
