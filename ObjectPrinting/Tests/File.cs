@@ -4,6 +4,7 @@ namespace ObjectPrinting.Tests
 {
     public class File
     {
+        public string field;
         public string Name { get; set; }
 
         public Dictionary<string, string> Attributes { get; set; }

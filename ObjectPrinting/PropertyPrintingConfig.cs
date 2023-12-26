@@ -1,46 +1,32 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public class PropertyPrintingConfig<TOwner, TPropType> : PrintingConfig<TOwner>
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly MemberInfo propertyInfo;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> config, MemberInfo propertyInfo) : base(config)
         {
-            this.printingConfig = printingConfig;
-        }
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
-        {
-            this.printingConfig = printingConfig;
             this.propertyInfo = propertyInfo;
         }
 
-        PropertyInfo IPropertyPrintingConfig<TOwner, TPropType>.PropertyInfo => propertyInfo;
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-
-        public PrintingConfig<TOwner> Using<IFormatable>(CultureInfo cultureInfo)
+        public PropertyPrintingConfig<TOwner, TPropType> Using(Func<TPropType, string> printProperty)
         {
-            ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddCultureForType(typeof(TPropType),
-                cultureInfo);
+            propertiesSerialization.TryAdd(propertyInfo, type => printProperty((TPropType)type));
 
-            return printingConfig;
+            return this;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> printProperty)
+        public PropertyPrintingConfig<TOwner, TPropType> TrimToLength(int length)
         {
-            if (propertyInfo == null)
-                ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddTypeSerialization(printProperty);
-            else
-                ((IPrintingConfig<TOwner>)printingConfig).SerializationSettings.AddPropertySerialization(propertyInfo,
-                    printProperty);
+            if (length < 0)
+                throw new ArgumentException("length can not be negative");
 
-            return printingConfig;
+            propertiesMaxLength.Add(propertyInfo, length);
+
+            return this;
         }
     }
 }
