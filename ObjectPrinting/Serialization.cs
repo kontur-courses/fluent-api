@@ -33,7 +33,14 @@ namespace ObjectPrinting
             if (serializationConfig.FinalTypes.Contains(obj.GetType()))
             {
                 if (serializationConfig.TypeCultures.TryGetValue(obj.GetType(), out var cultureInfo))
-                    return ((dynamic) obj).ToString(cultureInfo);
+                {
+                    if (serializationConfig.GlobalTrimToLength != null)
+                        return serializationConfig.GlobalTrimToLength((dynamic)obj).ToString(cultureInfo);
+                    return ((dynamic)obj).ToString(cultureInfo);
+                }
+
+                if (serializationConfig.GlobalTrimToLength != null)
+                    return serializationConfig.GlobalTrimToLength(obj.ToString());
                 return obj.ToString();
             }
 
