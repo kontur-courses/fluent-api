@@ -121,9 +121,9 @@ namespace ObjectPrinting
         private string SerializeListElements(object obj, int nesting)
         {
             var sb = new StringBuilder();
-            var list = obj as IEnumerable;
+            var list = obj as IList;
             var identation = new string('\t', nesting + 1);
-            if (list == null || !list.Cast<object>().Any())
+            if (list == null || list.Count == 0)
                 return "<empty>" + Environment.NewLine;
             sb.Append(Environment.NewLine);
             var index = 0;
