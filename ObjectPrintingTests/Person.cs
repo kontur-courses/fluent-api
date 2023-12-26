@@ -18,7 +18,7 @@
 
         public override int GetHashCode()
         {
-            return Name.GetHashCode() + Age;
+            return Name != null ? Name.GetHashCode() : 0 + Age;
         }
 
         public override bool Equals(object obj)

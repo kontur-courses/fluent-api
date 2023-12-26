@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,23 +9,13 @@ namespace ObjectPrinting;
 
 public class Serializer<TOwner>
 {
-    private readonly HashSet<Type> excludedTypes;
-    private readonly HashSet<MemberInfo> excludedMembers;
-    private readonly Dictionary<Type, Delegate> customTypeSerializers;
-    private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers;
-    private readonly Dictionary<Type, CultureInfo> culturesForTypes;
-    private readonly Dictionary<MemberInfo, int> trimmedMembers;
+    private PrintingConfig<TOwner> config;
 
     private HashSet<object> printedObjects;
 
     public Serializer(PrintingConfig<TOwner> config)
     {
-        excludedTypes = config.ExcludedTypes;
-        excludedMembers = config.ExcludedMembers;
-        customTypeSerializers = config.CustomTypeSerializers;
-        customMemberSerializers = config.CustomMemberSerializers;
-        culturesForTypes = config.CulturesForTypes;
-        trimmedMembers = config.TrimmedMembers;
+        this.config = config;
     }
 
     public string SerializeObject(TOwner obj)
@@ -41,18 +30,22 @@ public class Serializer<TOwner>
         if (obj == null)
             return "null" + Environment.NewLine;
 
-        if (!obj.GetType().IsValueType && printedObjects.Contains(obj))
+        if (!obj.GetType().IsValueType && !printedObjects.Add(obj))
             return "Cycle reference detected" + Environment.NewLine;
-
-        printedObjects.Add(obj);
 
         var indentation = GetIndentation(nestingLevel);
 
-        if (culturesForTypes.TryGetValue(obj.GetType(), out var culture))
+        if (config.CulturesForTypes.TryGetValue(obj.GetType(), out var culture))
             return ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
 
         if (IsTypeFinal(obj.GetType()))
-            return obj + Environment.NewLine;
+        {
+            var trimLen = config.TrimStringValue;
+            var printObj = obj.ToString();
+            if (obj is string && trimLen != null)
+                printObj = printObj?.Length >= trimLen ? printObj[..(int)trimLen] : printObj;
+            return printObj + Environment.NewLine;
+        }
 
         var sb = new StringBuilder();
         var type = obj.GetType();
@@ -63,7 +56,8 @@ public class Serializer<TOwner>
         else
             foreach (var memberInfo in type.GetMembers().Where(IsPropertyOrField))
             {
-                if (excludedTypes.Contains(GetMemberType(memberInfo)) || excludedMembers.Contains(memberInfo))
+                if (config.ExcludedTypes.Contains(GetMemberType(memberInfo)) ||
+                    config.ExcludedMembers.Contains(memberInfo))
                     continue;
 
                 var printingResult = GetPrintingResult(obj, memberInfo, nestingLevel);
@@ -107,9 +101,9 @@ public class Serializer<TOwner>
     {
         string printingResult;
 
-        if (customTypeSerializers.TryGetValue(GetMemberType(memberInfo), out var typeSerializer))
+        if (config.CustomTypeSerializers.TryGetValue(GetMemberType(memberInfo), out var typeSerializer))
             printingResult = typeSerializer.DynamicInvoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine;
-        else if (customMemberSerializers.TryGetValue(memberInfo, out var propertySerializer))
+        else if (config.CustomMemberSerializers.TryGetValue(memberInfo, out var propertySerializer))
             printingResult = propertySerializer.DynamicInvoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine;
         else
             printingResult = PrintToString(GetMemberValue(memberInfo, obj),
@@ -120,8 +114,10 @@ public class Serializer<TOwner>
 
     private string TrimResultIfNeeded(MemberInfo memberInfo, string printingResult)
     {
-        if (trimmedMembers.TryGetValue(memberInfo, out var length))
-            printingResult = printingResult[..length] + Environment.NewLine;
+        if (config.TrimmedMembers.TryGetValue(memberInfo, out var length))
+            printingResult = printingResult.Length >= length
+                ? printingResult[..length] + Environment.NewLine
+                : printingResult;
 
         return printingResult;
     }
@@ -153,7 +149,7 @@ public class Serializer<TOwner>
 
     private static bool IsTypeFinal(Type type)
     {
-        return type.IsValueType || type == typeof(string);
+        return type.IsPrimitive || type == typeof(string) || type == typeof(Guid);
     }
 
     private static string GetIndentation(int nestingLevel) => new string('\t', nestingLevel + 1);

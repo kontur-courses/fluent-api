@@ -17,7 +17,11 @@ public static class MemberPrintingConfigExtensions
             throw new ArgumentException("Length to trim must be non negative");
 
         var memberInfo = memberConfig.MemberInfo;
-        memberConfig.PrintingConfig.TrimmedMembers[memberInfo] = maxLen;
+
+        if (memberInfo == null)
+            memberConfig.PrintingConfig.TrimStringValue = maxLen;
+        else
+            memberConfig.PrintingConfig.TrimmedMembers[memberInfo] = maxLen;
 
         return memberConfig.PrintingConfig;
     }

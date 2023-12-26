@@ -11,6 +11,7 @@ public class PrintingConfig<TOwner>
     internal readonly HashSet<Type> ExcludedTypes = new();
     internal readonly HashSet<MemberInfo> ExcludedMembers = new();
 
+    internal int? TrimStringValue;
     internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
     internal Dictionary<MemberInfo, Delegate> CustomMemberSerializers { get; } = new();
     internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
@@ -28,7 +29,7 @@ public class PrintingConfig<TOwner>
         return new MemberPrintingConfig<TOwner, TMemberType>(this, expression.Member);
     }
 
-    public PrintingConfig<TOwner> ExcludeMember<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+    public PrintingConfig<TOwner> Exclude<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
         var expression = (MemberExpression)memberSelector.Body;
         ExcludedMembers.Add(expression.Member);
@@ -36,7 +37,7 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> ExcludeMemberType<TMemberType>()
+    public PrintingConfig<TOwner> Exclude<TMemberType>()
     {
         ExcludedTypes.Add(typeof(TMemberType));
 

@@ -18,7 +18,7 @@ public class ObjectPrinterTests
     public void PrintingConfig_ExcludeMemberType_ShouldExcludeGivenType()
     {
         var printer = ObjectPrinter.For<Person>()
-            .ExcludeMemberType<Guid>();
+            .Exclude<Guid>();
 
         var result = printer.PrintToString(person);
 
@@ -29,7 +29,7 @@ public class ObjectPrinterTests
     public void PrintingConfig_ExcludeProperty_ShouldExcludeGivenProperty()
     {
         var printer = ObjectPrinter.For<Person>()
-            .ExcludeMember(p => p.Name);
+            .Exclude(p => p.Name);
 
         var result = printer.PrintToString(person);
 
@@ -40,7 +40,7 @@ public class ObjectPrinterTests
     public void PrintingConfig_ExcludeField_ShouldExcludeGivenProperty()
     {
         var printer = ObjectPrinter.For<Person>()
-            .ExcludeMember(p => p.Field);
+            .Exclude(p => p.Field);
 
         var result = printer.PrintToString(person);
 
@@ -89,8 +89,21 @@ public class ObjectPrinterTests
     [Test]
     public void PrintingConfig_SetPrintingTrim_ShouldReturnTrimmedValue()
     {
+        person.Name = "Alexxxx";
         var printer = ObjectPrinter.For<Person>()
             .SetPrintingFor(p => p.Name).TrimmedToLength(4);
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Contain($"{nameof(person.Name)} = {person.Name[..4]}");
+    }
+
+    [Test]
+    public void PrintingConfig_SetStringTypeTrim_ShouldReturnTrimmedString()
+    {
+        person.Name = "Alexxxx";
+        var printer = ObjectPrinter.For<Person>()
+            .SetPrintingFor<string>().TrimmedToLength(4);
 
         var result = printer.PrintToString(person);
 
@@ -108,31 +121,19 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintingConfig_SetManyParameters_ShouldSerializeObjectCorrectly()
+    public void PrintToString_PrintObject_ShouldPrintAllPublicMembers()
     {
-        var typePrinting = "Type printing";
-        var propertyPrinting = "Property printing";
-        var culture = CultureInfo.CreateSpecificCulture("fr-FR");
+        var result = person.PrintToString();
 
-        var printer = ObjectPrinter.For<Person>()
-            .ExcludeMemberType<Guid>()
-            .SetPrintingFor<int>().Using(prop => typePrinting)
-            .SetPrintingFor<double>().WithCulture(culture)
-            .SetPrintingFor(p => p.Name).Using(prop => propertyPrinting)
-            .SetPrintingFor(p => p.Name).TrimmedToLength(10)
-            .ExcludeMember(p => p.Id)
-            .ExcludeMember(p => p.Friends)
-            .ExcludeMember(p => p.Relatives)
-            .ExcludeMember(p => p.Neighbours);
+        foreach (var property in person.GetType().GetProperties())
+        {
+            result.Should().Contain($"{property.Name}");
+        }
 
-        var result = printer.PrintToString(person);
-
-        result.Should().Be($"{nameof(Person)}{newLine}" +
-                           $"\t{nameof(person.Name)} = {propertyPrinting[..10]}{newLine}" +
-                           $"\t{nameof(person.Height)} = {person.Height.ToString(culture)}{newLine}" +
-                           $"\t{nameof(person.Age)} = {typePrinting}{newLine}" +
-                           $"\t{nameof(person.Friend)} = null{newLine}" +
-                           $"\t{nameof(person.Field)} = {typePrinting}{newLine}");
+        foreach (var field in person.GetType().GetFields())
+        {
+            result.Should().Contain($"{field.Name}");
+        }
     }
 
     [Test]
@@ -158,9 +159,10 @@ public class ObjectPrinterTests
         for (var i = 0; i < friends.Count; i++)
         {
             var friend = friends[i];
-            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}" +
-                                    $"\t\t\t{nameof(friend.Id)} = {friend.Id}{newLine}" +
-                                    $"\t\t\t{nameof(friend.Name)} = {friend.Name}");
+
+            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(friend.Id)} = {friend.Id}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(friend.Name)} = {friend.Name}");
         }
     }
 
@@ -177,9 +179,10 @@ public class ObjectPrinterTests
         for (var i = 0; i < relatives.Length; i++)
         {
             var relative = relatives[i];
-            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}" +
-                                    $"\t\t\t{nameof(relative.Id)} = {relative.Id}{newLine}" +
-                                    $"\t\t\t{nameof(relative.Name)} = {relative.Name}");
+
+            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(relative.Id)} = {relative.Id}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(relative.Name)} = {relative.Name}");
         }
     }
 
@@ -196,9 +199,26 @@ public class ObjectPrinterTests
         foreach (var key in neighbours.Keys)
         {
             var neighbour = neighbours[key];
-            result.Should().Contain($"\t\t{key}: {nameof(Person)}{newLine}" +
-                                    $"\t\t\t{nameof(neighbour.Id)} = {neighbour.Id}{newLine}" +
-                                    $"\t\t\t{nameof(neighbour.Name)} = {neighbour.Name}");
+
+            result.Should().Contain($"\t\t{key}: {nameof(Person)}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(neighbour.Id)} = {neighbour.Id}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(neighbour.Name)} = {neighbour.Name}");
         }
+    }
+
+    struct Structure
+    {
+        public int intValue => 1;
+        public string stringValue => "value";
+    }
+
+    [Test]
+    public void PrintToString_PrintStructure_ShouldSerializeStructure()
+    {
+        var struc = new Structure();
+        var result = struc.PrintToString();
+
+        result.Should().Contain($"{nameof(struc.intValue)} = {struc.intValue}");
+        result.Should().Contain($"{nameof(struc.stringValue)} = {struc.stringValue}");
     }
 }

@@ -11,7 +11,7 @@ public class ObjectPrinterAcceptanceTests
 
         var printer = ObjectPrinter.For<Person>()
             //1. Исключить из сериализации свойства определенного типа
-            .ExcludeMemberType<Guid>()
+            .Exclude<Guid>()
 
             //2. Указать альтернативный способ сериализации для определенного типа
             .SetPrintingFor<int>().Using(prop => "Type printing")
@@ -24,9 +24,12 @@ public class ObjectPrinterAcceptanceTests
 
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
             .SetPrintingFor(p => p.Name).TrimmedToLength(10)
-
+            
+            //5.1 Обрезание всех строковых свойств
+            .SetPrintingFor<string>().TrimmedToLength(10)
+            
             //6. Исключить из сериализации конкретного свойства
-            .ExcludeMember(p => p.Id);
+            .Exclude(p => p.Id);
 
         string s1 = printer.PrintToString(person);
         Console.WriteLine(s1);
@@ -36,7 +39,7 @@ public class ObjectPrinterAcceptanceTests
         Console.WriteLine(s2);
 
         //8. ...с конфигурированием
-        string s3 = person.PrintToString(c => c.ExcludeMemberType<int>());
+        string s3 = person.PrintToString(c => c.Exclude<int>());
         Console.WriteLine(s3);
     }
 }
