@@ -37,6 +37,38 @@ namespace ObjectPrinting.Tests
         }
         
         [Test]
+        public void Excluding_DoNotAffectsPreviousConfig_OnExcludeType()
+        {
+            var first = sut.Excluding<string>();
+            var second = first.Excluding<Guid>();
+            first.PrintToString(simplePerson).Should().NotBeSameAs(second.PrintToString(simplePerson));
+        }
+        
+        [Test]
+        public void Excluding_DoNotAffectsPreviousConfig_OnExcludeMember()
+        {
+            var first = sut.Excluding(x => x.Age);
+            var second = first.Excluding(x => x.Id);
+            first.PrintToString(simplePerson).Should().NotBeSameAs(second.PrintToString(simplePerson));
+        }
+        
+        [Test]
+        public void Using_DoNotAffectsPreviousConfig_OnProvidingTypeSerializer()
+        {
+            var first = sut.Printing<int>().Using(x => "X");
+            var second = first.Printing<int>().Using(x => "Y");
+            first.PrintToString(simplePerson).Should().NotBeSameAs(second.PrintToString(simplePerson));
+        }
+        
+        [Test]
+        public void Using_DoNotAffectsPreviousConfig_OnProvidingMemberSerializer()
+        {
+            var first = sut.Printing(x => x.Id).Using(x => "X");
+            var second = first.Printing(x => x.Id).Using(x => "Y");
+            first.PrintToString(simplePerson).Should().NotBeSameAs(second.PrintToString(simplePerson));
+        }
+        
+        [Test]
         public void Excluding_ExcludeTypeMembersFromString_OnExcludeType()
         {
             sut.Excluding<string>().PrintToString(simplePerson).Should().NotContainAny("Name");
