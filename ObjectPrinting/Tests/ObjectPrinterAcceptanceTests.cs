@@ -36,9 +36,9 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_UseCustomSerializerForCertainType()
         {
-            var printer = ObjectPrinter.For<Person>().Serialize<int>().Using(x=> "Type Serializer");
+            var printer = ObjectPrinter.For<Person>().Serialize<double>().Using(x=>x.ToString("f0"));
             var serialized = printer.PrintToString(person);
-            serialized.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 12,34\r\nType Serializer\tparent = null\r\n");
+            serialized.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 12\r\n\tAge = 19\r\n\tparent = null\r\n");
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>().Serialize<double>().Using<Double>(CultureInfo.InvariantCulture);
             var serialized = printer.PrintToString(person);
-            serialized.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 12,34\r\n\tAge = 19\r\n\tparent = null\r\n");
+            serialized.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 12.34\r\n\tAge = 19\r\n\tparent = null\r\n");
         }
 
         [Test]

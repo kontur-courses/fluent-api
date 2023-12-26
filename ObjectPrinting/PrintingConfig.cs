@@ -5,7 +5,6 @@ using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ObjectPrinting
@@ -84,15 +83,6 @@ namespace ObjectPrinting
                 return obj.GetType().GetTypeInfo().Name + Environment.NewLine;
 
             serializedObjects.Add(obj);
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
 
