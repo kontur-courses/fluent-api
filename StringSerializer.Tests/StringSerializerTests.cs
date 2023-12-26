@@ -36,6 +36,13 @@ public class StringSerializerTests
     [Test]
     public void Serializer_Demo()
     {
+        testObject.Dict = new Dictionary<int, TestObject>
+        {
+            [0] = new(),
+            [1] = new(),
+            [2] = new()
+        };
+
         var serialized = serializer
             .Ignoring<DateTime>()
             .Ignoring(obj => obj.IntNumber)
@@ -178,15 +185,13 @@ public class StringSerializerTests
     [Test]
     public void Serializer_Should_WorkWithDictionaries()
     {
-        var dict = new Dictionary<int, string>
+        var dict = new Dictionary<int, Dictionary<int, string>>
         {
-            [0] = "Zero",
-            [1] = "One",
-            [2] = "Two"
+            [0] = new() { [1] = "One" },
+            [1] = new() { [2] = "Two" }
         };
 
-        var actual = serializer.Serialize(dict);
-
-        Assert.AreEqual("[\n    [0] => Zero,\n    [1] => One,\n    [2] => Two,\n]", actual);
+        const string expected = "[\n    [0] => [\n\t    [1] => One,\n\t],\n    [1] => [\n\t    [2] => Two,\n\t],\n]";
+        Assert.AreEqual(expected, serializer.Serialize(dict));
     }
 }

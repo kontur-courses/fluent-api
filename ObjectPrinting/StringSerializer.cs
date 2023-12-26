@@ -96,7 +96,7 @@ public sealed class StringSerializer<TObject> : ISerializer
 
             if (propertyValue == null)
             {
-                AppendSerializedPropertyToBuilder(stringBuilder, indentation, propertyName, "Null");
+                AddPropertyToBuilder(stringBuilder, indentation, propertyName, "Null");
                 continue;
             }
 
@@ -110,11 +110,11 @@ public sealed class StringSerializer<TObject> : ISerializer
                 ? serializer.Method.Invoke(serializer.Target, new[] { propertyValue })!.ToString()!
                 : Serialize(propertyValue, nestingLevel + 1);
 
-            AppendSerializedPropertyToBuilder(stringBuilder, indentation, propertyName, output);
+            AddPropertyToBuilder(stringBuilder, indentation, propertyName, output);
         }
     }
 
-    private void AppendSerializedPropertyToBuilder(
+    private void AddPropertyToBuilder(
         StringBuilder stringBuilder,
         string indentation,
         string propertyName,
@@ -148,29 +148,29 @@ public sealed class StringSerializer<TObject> : ISerializer
         stringBuilder.AppendLine("[");
 
         if (enumerable is IDictionary dict)
-            FillDictionaryBody(dict, stringBuilder, options);
+            AddDictionaryBody(dict, stringBuilder, options);
         else
-            FillSequenceBody(enumerable, stringBuilder, options);
+            AddSequenceBody(enumerable, stringBuilder, options);
 
         stringBuilder.Append($"{options.PreviousIndent}]");
 
         return stringBuilder.ToString();
     }
 
-    private void FillDictionaryBody(IDictionary dict, StringBuilder stringBuilder, SerializingOptions options)
+    private void AddDictionaryBody(IDictionary dict, StringBuilder stringBuilder, SerializingOptions options)
     {
         foreach (var key in dict.Keys)
         {
-            var output = Serialize(dict[key]!, options.NestingLevel);
+            var output = Serialize(dict[key]!, options.NestingLevel + 1);
             stringBuilder.AppendLine($"{options.PreviousIndent}{options.ElementOffset}[{key}] => {output.TrimEnd()},");
         }
     }
 
-    private void FillSequenceBody(IEnumerable enumerable, StringBuilder stringBuilder, SerializingOptions options)
+    private void AddSequenceBody(IEnumerable enumerable, StringBuilder stringBuilder, SerializingOptions options)
     {
         foreach (var element in enumerable)
         {
-            var output = Serialize(element, options.NestingLevel);
+            var output = Serialize(element, options.NestingLevel + 1);
             stringBuilder.AppendLine($"{options.PreviousIndent}{options.ElementOffset}{output.TrimEnd()},");
         }
     }
