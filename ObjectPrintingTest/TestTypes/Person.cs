@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ObjectPrinting.Tests
+﻿namespace ObjectPrintingTest.TestTypes
 {
     public class Person
     {
