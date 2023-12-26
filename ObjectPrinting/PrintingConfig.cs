@@ -73,7 +73,6 @@ namespace ObjectPrinting
             if (IsFinalType(type))
                 return obj + Environment.NewLine;
             
-            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             if (printedObjects.Contains(obj))
                 return sb.AppendLine("(Cycle) " + type.FullName).ToString();
@@ -91,6 +90,15 @@ namespace ObjectPrinting
 
             printedObjects.Add(obj);
 
+            sb.Append(PrintProperties(obj, nestingLevel, type));
+
+            return sb.ToString();
+        }
+
+        private string PrintProperties(object obj, int nestingLevel, Type type)
+        {
+            var indentation = new string('\t', nestingLevel + 1);
+            var sb = new StringBuilder();
             foreach (var propertyInfo in type.GetProperties().Where(prop => !IsExcluded(prop)))
             {
                 if (TrySerializeProperty(obj, propertyInfo, propertyInfo.PropertyType, out var serializedValue))
@@ -119,6 +127,7 @@ namespace ObjectPrinting
 
             return sb.ToString();
         }
+        
         
         private bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, Type propertyType,
             out string serializedValue)
