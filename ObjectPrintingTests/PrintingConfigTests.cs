@@ -11,12 +11,16 @@ namespace ObjectPrinting.Tests
         private PrintingConfig<Person> sut;
         private Person simplePerson;
         private Person personWithNesting;
+        private Person personWithCyclicReference;
 
         [SetUp]
         public void SetUp()
         {
             sut = new PrintingConfig<Person>();
-            simplePerson = new Person {Name = "Alex", Age = 19};
+            simplePerson = new Person {Name = "Alex", Surname = "Obama", Age = 19};
+            personWithNesting = new Person {Name = "Oleg", Surname = "Ponso", Age = 5, Parent = simplePerson};
+            personWithCyclicReference = new Person {Name = "IAmCyclic", Surname = "ThatsHorrible", Age = 19};
+            personWithCyclicReference.Parent = personWithCyclicReference;
         }
 
         [Test]
@@ -34,6 +38,30 @@ namespace ObjectPrinting.Tests
             var a = () => sut.Printing(x => differentObj.Item1);
 
             a.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void Printing_NotThrowsStackOverflowException_OnPrintingObjectWithCyclicReference()
+        {
+            var a = () => sut.PrintToString(personWithCyclicReference);
+
+            a.Should().NotThrow<StackOverflowException>();
+        }
+        
+        [Test]
+        public void Printing_ReturnsStringWithAllFieldAndProperties_OnDefault()
+        {
+            sut.PrintToString(simplePerson)
+                .Should()
+                .ContainAll(nameof(Person.Age), nameof(Person.Id), nameof(Person.Height), nameof(Person.Name),
+                    nameof(Person.Surname), nameof(Person.Parent))
+                .And.ContainAll(
+                    simplePerson.Name, 
+                    simplePerson.Height.ToString(CultureInfo.InvariantCulture), 
+                    simplePerson.Age.ToString(), 
+                    simplePerson.Id.ToString(),
+                    "null", 
+                    simplePerson.Surname);
         }
         
         [Test]
@@ -158,6 +186,31 @@ namespace ObjectPrinting.Tests
                 .ContainAny("Старый")
                 .And
                 .NotContainAny("Молодой");
+        }
+
+        [Test]
+        public void TrimmedToLength_TrimsStrings_OfProvidedType()
+        {
+            sut.Printing<string>()
+                .TrimmedToLength(2)
+                .PrintToString(simplePerson)
+                .Should()
+                .Contain("Al")
+                .And.Contain("Ob")
+                .And.NotContain("Alex")
+                .And.NotContain("Obama");
+        }
+        
+        [Test]
+        public void TrimmedToLength_TrimsStrings_OfProvidedMember()
+        {
+            sut.Printing(x => x.Name)
+                .TrimmedToLength(2)
+                .PrintToString(simplePerson)
+                .Should()
+                .Contain("Al")
+                .And.NotContain("Alex")
+                .And.Contain("Obama");
         }
     }
 }
