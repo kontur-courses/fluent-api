@@ -10,7 +10,7 @@ using System.Text;
 
 namespace ObjectPrinting;
 
-public sealed class StringSerializer<TObject> : ISerializer
+public sealed class StringSerializer<TObject> : ISerializer<string>
 {
     private readonly Type[] finalTypes =
     {
@@ -35,7 +35,12 @@ public sealed class StringSerializer<TObject> : ISerializer
         var indentation = new string('\t', nestingLevel + 1);
 
         if (finalTypes.Contains(instanceType))
-            return ((IConvertible)instance).ToString(CultureInfo.CurrentCulture);
+        {
+            if (instance is IConvertible convertible)
+                return convertible.ToString(CultureInfo.CurrentCulture);
+
+            return instance.ToString()!;
+        }
 
         if (instance is IEnumerable enumerable)
             return SerializeEnumerable(enumerable, nestingLevel);

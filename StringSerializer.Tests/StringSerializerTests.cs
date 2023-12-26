@@ -160,6 +160,22 @@ public class StringSerializerTests
     }
 
     [Test]
+    public void Serializer_Should_SerializeFinalTypesCorrectly()
+    {
+        var finalTypes = new[]
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+
+        foreach (var type in finalTypes)
+        {
+            var instance = type == typeof(string) ? "Hello, world!" : Activator.CreateInstance(type);
+            Assert.That(instance!.ToString(), Is.EqualTo(serializer.Serialize(instance)));
+        }
+    }
+
+    [Test]
     public void Serializer_Should_StopAtFinalTypes()
     {
         var actual = serializer

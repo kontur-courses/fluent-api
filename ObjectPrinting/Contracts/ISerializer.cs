@@ -1,6 +1,6 @@
 namespace ObjectPrinting.Contracts;
 
-public interface ISerializer
+public interface ISerializer<out T>
 {
-    public string Serialize(object instance, int nestingLevel);
+    public T Serialize(object instance, int nestingLevel);
 }
