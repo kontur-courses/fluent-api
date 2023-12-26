@@ -118,12 +118,12 @@ public class ObjectPrinterTests
             .ExcludeMemberType<Guid>()
             .SetPrintingFor<int>().Using(prop => typePrinting)
             .SetPrintingFor<double>().WithCulture(culture)
-            .SetPrintingFor(person => person.Name).Using(prop => propertyPrinting)
-            .SetPrintingFor(person => person.Name).TrimmedToLength(10)
-            .ExcludeMember(person => person.Id)
-            .ExcludeMember(person => person.Friends)
-            .ExcludeMember(person => person.Relatives)
-            .ExcludeMember(person => person.Neighbours);
+            .SetPrintingFor(p => p.Name).Using(prop => propertyPrinting)
+            .SetPrintingFor(p => p.Name).TrimmedToLength(10)
+            .ExcludeMember(p => p.Id)
+            .ExcludeMember(p => p.Friends)
+            .ExcludeMember(p => p.Relatives)
+            .ExcludeMember(p => p.Neighbours);
 
         var result = printer.PrintToString(person);
 

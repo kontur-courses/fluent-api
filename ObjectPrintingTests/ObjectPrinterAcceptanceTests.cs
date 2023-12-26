@@ -20,13 +20,13 @@ public class ObjectPrinterAcceptanceTests
             .SetPrintingFor<double>().WithCulture(CultureInfo.CurrentCulture)
 
             //4. Настроить сериализацию конкретного свойства
-            .SetPrintingFor(person => person.Name).Using(prop => "Property printing")
+            .SetPrintingFor(p => p.Name).Using(prop => "Property printing")
 
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            .SetPrintingFor(person => person.Name).TrimmedToLength(10)
+            .SetPrintingFor(p => p.Name).TrimmedToLength(10)
 
             //6. Исключить из сериализации конкретного свойства
-            .ExcludeMember(person => person.Id);
+            .ExcludeMember(p => p.Id);
 
         string s1 = printer.PrintToString(person);
         Console.WriteLine(s1);
