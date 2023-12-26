@@ -6,20 +6,20 @@ namespace ObjectPrinting;
 public class MemberPrintingConfig<TOwner, TMemberType>
 {
     internal readonly PrintingConfig<TOwner> PrintingConfig;
-    internal readonly PropertyInfo PropertyInfo;
+    internal readonly MemberInfo MemberInfo;
 
-    public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo = null)
+    public MemberPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo = null)
     {
         PrintingConfig = printingConfig;
-        PropertyInfo = propertyInfo;
+        MemberInfo = memberInfo;
     }
 
     public PrintingConfig<TOwner> Using(Func<TMemberType, string> printingMethod)
     {
-        if (PropertyInfo is null)
+        if (MemberInfo is null)
             PrintingConfig.CustomTypeSerializers[typeof(TMemberType)] = printingMethod;
         else
-            PrintingConfig.CustomPropertySerializers[PropertyInfo] = printingMethod;
+            PrintingConfig.CustomMemberSerializers[MemberInfo] = printingMethod;
 
         return PrintingConfig;
     }

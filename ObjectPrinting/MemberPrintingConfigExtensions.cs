@@ -11,15 +11,15 @@ public static class MemberPrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-        this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
+        this MemberPrintingConfig<TOwner, string> memberConfig, int maxLen)
     {
         if (maxLen < 0)
             throw new ArgumentException("Length to trim must be non negative");
 
-        var propertyInfo = propConfig.PropertyInfo;
-        propConfig.PrintingConfig.TrimmedProperties[propertyInfo] = maxLen;
+        var memberInfo = memberConfig.MemberInfo;
+        memberConfig.PrintingConfig.TrimmedMembers[memberInfo] = maxLen;
 
-        return propConfig.PrintingConfig;
+        return memberConfig.PrintingConfig;
     }
 
     public static PrintingConfig<TOwner> WithCulture<TOwner, TMemberType>(
