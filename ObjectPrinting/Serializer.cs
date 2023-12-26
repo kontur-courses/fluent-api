@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting;
 
-public class Serializer
+public class Serializer<TOwner>
 {
     private readonly HashSet<Type> excludedTypes;
     private readonly HashSet<MemberInfo> excludedMembers;
@@ -16,31 +16,26 @@ public class Serializer
     private readonly Dictionary<MemberInfo, Delegate> customMemberSerializers;
     private readonly Dictionary<Type, CultureInfo> culturesForTypes;
     private readonly Dictionary<MemberInfo, int> trimmedMembers;
-    
+
     private HashSet<object> printedObjects;
 
-    public Serializer(HashSet<Type> excludedTypes,
-        HashSet<MemberInfo> excludedMembers,
-        Dictionary<Type, Delegate> customTypeSerializers,
-        Dictionary<MemberInfo, Delegate> customMemberSerializers,
-        Dictionary<Type, CultureInfo> culturesForTypes,
-        Dictionary<MemberInfo, int> trimmedMembers)
+    public Serializer(PrintingConfig<TOwner> config)
     {
-        this.excludedTypes = excludedTypes;
-        this.excludedMembers = excludedMembers;
-        this.customTypeSerializers = customTypeSerializers;
-        this.customMemberSerializers = customMemberSerializers;
-        this.culturesForTypes = culturesForTypes;
-        this.trimmedMembers = trimmedMembers;
+        excludedTypes = config.ExcludedTypes;
+        excludedMembers = config.ExcludedMembers;
+        customTypeSerializers = config.CustomTypeSerializers;
+        customMemberSerializers = config.CustomMemberSerializers;
+        culturesForTypes = config.CulturesForTypes;
+        trimmedMembers = config.TrimmedMembers;
     }
 
-    public string SerializeObject(Object obj)
+    public string SerializeObject(TOwner obj)
     {
         printedObjects = new HashSet<object>();
 
         return PrintToString(obj, 0);
     }
-    
+
     private string PrintToString(object obj, int nestingLevel)
     {
         if (obj == null)

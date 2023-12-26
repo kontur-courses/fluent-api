@@ -8,15 +8,12 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
-    private readonly HashSet<Type> excludedTypes = new();
-    private readonly HashSet<MemberInfo> excludedMembers = new();
+    internal readonly HashSet<Type> ExcludedTypes = new();
+    internal readonly HashSet<MemberInfo> ExcludedMembers = new();
 
     internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
-
     internal Dictionary<MemberInfo, Delegate> CustomMemberSerializers { get; } = new();
-
     internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
-
     internal Dictionary<MemberInfo, int> TrimmedMembers { get; } = new();
 
     public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>()
@@ -34,22 +31,21 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> ExcludeMember<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
         var expression = (MemberExpression)memberSelector.Body;
-        excludedMembers.Add(expression.Member);
+        ExcludedMembers.Add(expression.Member);
 
         return this;
     }
 
     public PrintingConfig<TOwner> ExcludeMemberType<TMemberType>()
     {
-        excludedTypes.Add(typeof(TMemberType));
+        ExcludedTypes.Add(typeof(TMemberType));
 
         return this;
     }
 
     public string PrintToString(TOwner obj)
     {
-        var serializer = new Serializer(excludedTypes, excludedMembers, CustomTypeSerializers, CustomMemberSerializers,
-            CulturesForTypes, TrimmedMembers);
+        var serializer = new Serializer<TOwner>(this);
 
         return serializer.SerializeObject(obj);
     }
