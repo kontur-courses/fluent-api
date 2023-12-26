@@ -9,8 +9,6 @@ namespace ObjectPrinting
     public class Serializer
     {
         private const BindingFlags SerializingMembersFlag = BindingFlags.Public | BindingFlags.Instance;
-        private readonly Dictionary<object, int> complexObjectLinks = new Dictionary<object, int>();
-
         private readonly HashSet<MemberInfo> excludedMembers;
         private readonly HashSet<Type> excludedTypes;
 
@@ -22,19 +20,22 @@ namespace ObjectPrinting
         private readonly int maxRecursion;
         private readonly Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos;
         private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos;
+        private readonly Func<object, string> handleMaxRecursion;
 
         public Serializer(
             HashSet<MemberInfo> excludedMembers,
             HashSet<Type> excludedTypes,
             Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos,
             Dictionary<Type, IHasSerializationFunc> typeSerializesInfos,
-            int maxRecursion)
+            int maxRecursion,
+            Func<object, string> handleMaxRecursion)
         {
             this.typeSerializesInfos = typeSerializesInfos;
             this.excludedMembers = excludedMembers;
             this.excludedTypes = excludedTypes;
             this.membersSerializesInfos = membersSerializesInfos;
             this.maxRecursion = maxRecursion;
+            this.handleMaxRecursion = handleMaxRecursion;
         }
 
         public string Serialize(object obj, int nestingLevel)
@@ -45,9 +46,14 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine; // todo
 
-            if (MaxRecursionHasBeenReached(obj))
-                return $"Maximum recursion has been reached{Environment.NewLine}";
+            if (nestingLevel == maxRecursion)
+            {
+                if (handleMaxRecursion != null)
+                    return handleMaxRecursion(obj);
 
+                return $"Maximum recursion has been reached{Environment.NewLine}";
+            }
+            
             var indentation = string.Intern(new string('\t', nestingLevel + 1));
 
             var type = obj.GetType();
@@ -63,7 +69,7 @@ namespace ObjectPrinting
             foreach (var propertyInfo in type.GetProperties(SerializingMembersFlag))
             {
                 var data = new DataMember(propertyInfo);
-                var serializedValue = HandleMember(sb, data, obj, indentation, nestingLevel);
+                var serializedValue = HandleMember(data, obj, indentation, nestingLevel);
                 if (serializedValue != null)
                     sb.Append(serializedValue);
             }
@@ -71,13 +77,13 @@ namespace ObjectPrinting
             foreach (var fieldInfo in type.GetFields(SerializingMembersFlag))
             {
                 var data = new DataMember(fieldInfo);
-                var serializedValue = HandleMember(sb, data, obj, indentation, nestingLevel);
+                var serializedValue = HandleMember(data, obj, indentation, nestingLevel);
                 if (serializedValue != null)
                     sb.Append(serializedValue);
             }
         }
 
-        private string HandleMember(StringBuilder sb, DataMember member, object obj, string indentation,
+        private string HandleMember(DataMember member, object obj, string indentation,
             int nestingLevel)
         {
             if (excludedMembers.Any(memberInfo => memberInfo.Name == member.Name) ||
@@ -111,14 +117,6 @@ namespace ObjectPrinting
             var stringEnd = needNewLine ? Environment.NewLine : string.Empty;
 
             return $"{indentation}{memberInfo.Name} = {serializedString}{stringEnd}";
-        }
-
-        private bool MaxRecursionHasBeenReached(object obj)
-        {
-            complexObjectLinks.TryAdd(obj, 0);
-            complexObjectLinks[obj]++;
-
-            return complexObjectLinks[obj] == maxRecursion;
         }
     }
 }

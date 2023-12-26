@@ -16,7 +16,9 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos =
             new Dictionary<Type, IHasSerializationFunc>();
 
-        private int maxRecursion = 2;
+        private Func<object, string> handleMaxRecursion;
+
+        private int maxRecursion = 60;
 
         public string PrintToString(TOwner obj)
         {
@@ -28,6 +30,13 @@ namespace ObjectPrinting
             if (maxRecursion < 1)
                 throw new ArgumentException();
             this.maxRecursion = maxRecursion;
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> OnMaxRecursion(Func<object,string> func)
+        {
+            handleMaxRecursion = func;
 
             return this;
         }
@@ -67,7 +76,8 @@ namespace ObjectPrinting
                 excludedTypes,
                 membersSerializesInfos,
                 typeSerializesInfos,
-                maxRecursion);
+                maxRecursion,
+                handleMaxRecursion);
 
             return serializer.Serialize(obj, nestingLevel);
         }
