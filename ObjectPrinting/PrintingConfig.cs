@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -6,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using ObjectPrinting.Extensions;
 using ObjectPrinting.InnerPrintingConfig;
+using ObjectPrinting.PropertyOrField;
 
 namespace ObjectPrinting
 {
@@ -66,10 +68,18 @@ namespace ObjectPrinting
                 return serializer(obj) + Environment.NewLine;
             if (finalTypes.Contains(type) || nestingLevel == MaxNestingLevel)
                 return obj + Environment.NewLine;
+            if (obj is ICollection collection)
+                return Environment.NewLine + SerializeCollection(collection, nestingLevel);
+            
+            return SerializeByFieldsAndProperties(obj, nestingLevel);
+        }
 
+        private string SerializeByFieldsAndProperties(object obj, int nestingLevel)
+        {
+            var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder(type.Name + Environment.NewLine);
-            foreach (var propertyOrField in type.GetFieldsAndProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !excludedMembers.Contains(x.UnderlyingMember) && !excludedTypes.Contains(x.DataType)))
+            foreach (var propertyOrField in GetNonExcludedPropertyOrFields(type))
             {
                 sb.Append(identation + propertyOrField.Name + " = " +
                           (MemberSerializers.TryGetValue(propertyOrField.UnderlyingMember, out var propertyOrFieldSerializer) 
@@ -78,6 +88,40 @@ namespace ObjectPrinting
             }
 
             return sb.ToString();
+        }
+
+        private IEnumerable<IPropertyOrField> GetNonExcludedPropertyOrFields(Type type)
+        {
+            return type
+                .GetFieldsAndProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(x => !excludedMembers.Contains(x.UnderlyingMember)
+                            && !excludedTypes.Contains(x.DataType));
+        }
+
+        private string SerializeCollection(ICollection collection, int nestingLevel)
+        {
+            var serialization = new StringBuilder();
+            var index = 0;
+
+            if (collection is IDictionary dictionary)
+                foreach (var key in dictionary.Keys)
+                    serialization.Append(PrintCollectionItem(key, dictionary[key], nestingLevel));
+            else foreach (var item in collection)
+                serialization.Append(PrintCollectionItem(index++, item , nestingLevel));
+
+            return serialization.ToString();
+        }
+
+        private string PrintCollectionItem(object key, object value, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel);
+            var isFinalOrCollection = finalTypes.Contains(value.GetType()) || value is ICollection;
+            
+            var serialization = new StringBuilder();
+            serialization.Append($"{identation}[{PrintToString(key, nestingLevel).TrimEnd()}]:{(isFinalOrCollection ? "" : Environment.NewLine)}");
+            serialization.Append($"{(isFinalOrCollection ? "  " : identation + '\t')}{PrintToString(value, nestingLevel + 1)}");
+
+            return serialization.ToString();
         }
     }
 }
