@@ -8,5 +8,5 @@
     <RootNamespace>SpectacleSample</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
-  
+
 </Project>
