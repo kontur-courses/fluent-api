@@ -1,12 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -26,8 +22,10 @@ namespace ObjectPrinting
 
         private readonly Dictionary<MemberInfo, Func<string, string>> memberTrimToLength =
             new Dictionary<MemberInfo, Func<string, string>>();
+        
+        private readonly Dictionary<Type, Func<string, string>> typeTrimToLength =
+            new Dictionary<Type, Func<string, string>>();
 
-        private Func<string, string> globalTrimToLength = x => x;
         private MemberInfo currentMember;
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -55,7 +53,6 @@ namespace ObjectPrinting
             return this;
         }
 
-
         public void SetPrintingRule<TPropType>(Func<TPropType, string> print)
         {
             if (currentMember == null)
@@ -74,10 +71,10 @@ namespace ObjectPrinting
             currentMember = null;
         }
 
-        public void SetMaxLength(int maxLen)
+        public void SetMaxLength<TPropType>(int maxLen)
         {
             if (currentMember == null)
-                globalTrimToLength = x => x.Substring(0, Math.Min(x.Length, maxLen));
+                typeTrimToLength[typeof(TPropType)] = x => x.Substring(0, Math.Min(x.Length, maxLen));
 
             else
                 memberTrimToLength[currentMember] = x => x.Substring(0, Math.Min(x.Length, maxLen));
@@ -95,7 +92,7 @@ namespace ObjectPrinting
                 typeCultures,
                 memberCultures,
                 memberTrimToLength,
-                globalTrimToLength));
+                typeTrimToLength));
             return serialization.Serialize(obj);
         }
     }

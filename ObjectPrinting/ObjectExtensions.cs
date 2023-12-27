@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ObjectPrinting
+﻿namespace ObjectPrinting
 {
     public static class ObjectExtensions
     {
