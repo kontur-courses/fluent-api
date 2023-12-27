@@ -4,6 +4,7 @@ using ObjectPrinting;
 using System.Globalization;
 using ObjectPrinter = ObjectPrinting.ObjectPrinter;
 using System;
+using System.Collections.Generic;
 
 namespace ObjectPrintingTests
 {
@@ -166,6 +167,48 @@ namespace ObjectPrintingTests
                 .And.PrintToString(person);
 
             actual.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex:)\r\n\tHeight = 160\r\n\tAge = 19\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+        }
+
+        [Test]
+        public void WhenFieldIsList_ShouldReturnCorrectCollectionSerialization()
+        {
+            var collections = new CollectionsKeeper();
+            collections.stringsList = new List<string>() { "один", "два" };
+
+            var printer = collections.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(collections);
+
+            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = List`1\r\n\t\tодин\r\n\t\tдва\r\n\tintsArray = null\r\n\tdictionary = null\r\n");
+        }
+
+        [Test]
+        public void WhenFieldIsArray_ShouldReturnCorrectCollectionSerialization()
+        {
+            var collections = new CollectionsKeeper();
+            collections.intsArray = new int[] { 1, 2, 3 };
+
+            var printer = collections.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(collections);
+
+            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = null\r\n\tintsArray = Int32[]\r\n\t\t1\r\n\t\t2\r\n\t\t3\r\n\tdictionary = null\r\n");
+        }
+
+        [Test]
+        public void WhenFieldIsDictionary_ShouldReturnCorrectCollectionSerialization()
+        {
+            var collections = new CollectionsKeeper();
+            collections.dictionary = new Dictionary<int, string>() { {1, "один"} , { 2, "два" }};
+
+            var printer = collections.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(collections);
+
+            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = null\r\n\tintsArray = null\r\n\tdictionary = Dictionary`2\r\n\t\tKeyValuePair`2\r\n\t\t\tKey = 1\r\n\t\t\tValue = один\r\n\t\tKeyValuePair`2\r\n\t\t\tKey = 2\r\n\t\t\tValue = два\r\n");
         }
     }
 }

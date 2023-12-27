@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -44,6 +46,8 @@ namespace ObjectPrinting
             if (obj == null)
                 return $"null{Environment.NewLine}";
 
+            var indentation = string.Intern(new string('\t', nestingLevel + 1));
+
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine; 
 
@@ -57,7 +61,8 @@ namespace ObjectPrinting
 
             complexObjectLinks.Add(obj);
 
-            var indentation = string.Intern(new string('\t', nestingLevel + 1));
+            if (obj is ICollection collection)
+                return SerializeCollection(collection, nestingLevel);
 
             var type = obj.GetType();
             var sb = new StringBuilder().AppendLine(type.Name);
@@ -100,6 +105,14 @@ namespace ObjectPrinting
             if (typeSerializesInfos.TryGetValue(member.Type, out var typeSerialization))
                 return GetSerializedString(obj, member, indentation, typeSerialization.SerializationFunc);
 
+            if (typeof(ICollection).IsAssignableFrom(member.Type))
+                return GetSerializedString(
+                    obj,
+                    member,
+                    indentation,
+                    obj => SerializeCollection((ICollection) obj, nestingLevel + 1),
+                    false);
+
             return GetSerializedString(
                 obj,
                 member,
@@ -108,6 +121,29 @@ namespace ObjectPrinting
                     value,
                     nestingLevel + 1),
                 false);
+        }
+
+        private string SerializeCollection(ICollection collection, int nestingLevel)
+        {
+            if (collection == null)
+                return $"null{Environment.NewLine}";
+
+            var sb = new StringBuilder();
+            sb.AppendLine(collection.GetType().Name);
+
+            var indentation = GetIndentation(nestingLevel + 1);
+            foreach (var element in collection)
+            {
+                sb.Append(indentation);
+                sb.Append(Serialize(element, nestingLevel + 1));
+            }
+
+            return sb.ToString();
+        }
+
+        private string GetIndentation(int nestingLevel)
+        {
+           return string.Intern(new string('\t', nestingLevel));
         }
 
         private string GetSerializedString(
@@ -122,10 +158,5 @@ namespace ObjectPrinting
 
             return $"{indentation}{memberInfo.Name} = {serializedString}{stringEnd}";
         }
-
-        //private bool MaxRecursionHasBeenReached(object obj)
-        //{
-        //    return complexObjectLinks.Count > 1;
-        //}
     }
 }
