@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Serialization
 {
     public static class UsingExtensions
     {

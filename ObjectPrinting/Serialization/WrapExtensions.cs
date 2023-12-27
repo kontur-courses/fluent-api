@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting
+﻿namespace ObjectPrinting.Serialization
 {
     public static class WrapExtensions
     {

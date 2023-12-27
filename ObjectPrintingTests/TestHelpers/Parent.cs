@@ -1,4 +1,4 @@
-﻿namespace ObjectPrintingTests
+﻿namespace ObjectPrintingTests.TestHelpers
 {
     public class Parent
     {

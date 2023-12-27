@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Serialization
 {
     public class Serializer
     {
@@ -54,7 +54,7 @@ namespace ObjectPrinting
             if (complexObjectLinks.Contains(obj))
             {
                 if (handleMaxRecursion != null)
-                    return handleMaxRecursion(obj);
+                    return handleMaxRecursion(obj) + Environment.NewLine;
 
                 return $"Maximum recursion has been reached{Environment.NewLine}";
             }

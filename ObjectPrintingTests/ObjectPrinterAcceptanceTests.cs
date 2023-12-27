@@ -3,6 +3,8 @@ using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Serialization;
+using ObjectPrintingTests.TestHelpers;
 
 namespace ObjectPrintingTests
 {
@@ -27,7 +29,7 @@ namespace ObjectPrintingTests
                 .OnMaxRecursion((_) => throw new ArgumentException())
                 .PrintToString(person);
 
-            actualString.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = A\r\n\tHeight = 180.5\r\n\tAge = 1019\r\n");
+            actualString.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = A{Environment.NewLine}\tHeight = 180.5{Environment.NewLine}\tAge = 1019{Environment.NewLine}");
         }
     }
 }

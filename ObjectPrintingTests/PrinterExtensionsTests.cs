@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
+﻿using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Solved.Tests;
 
 namespace ObjectPrintingTests
 {

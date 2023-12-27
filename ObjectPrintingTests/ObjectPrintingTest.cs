@@ -5,6 +5,8 @@ using System.Globalization;
 using ObjectPrinter = ObjectPrinting.ObjectPrinter;
 using System;
 using System.Collections.Generic;
+using ObjectPrintingTests.TestHelpers;
+using ObjectPrinting.Serialization;
 
 namespace ObjectPrintingTests
 {
@@ -51,7 +53,6 @@ namespace ObjectPrintingTests
         public void WhenObjectRefersToItself_ShouldReturnCorrectAnswer()
         {
             var currentObject = new SomethingObject();
-
             currentObject.ToSameObject = currentObject;
 
             var actual = currentObject
@@ -59,7 +60,7 @@ namespace ObjectPrintingTests
                 .OnMaxRecursion((_) => "РЕКУРСИЯ")
                 .PrintToString(currentObject);
 
-            actual.Should().Be($"SomethingObject{Environment.NewLine}\tToSameObject = РЕКУРСИЯ");
+            actual.Should().Be($"SomethingObject{Environment.NewLine}\tToSameObject = РЕКУРСИЯ{Environment.NewLine}\tCount = 1{Environment.NewLine}");
         }
 
         [Test]
@@ -72,6 +73,7 @@ namespace ObjectPrintingTests
                 .Exclude<double>();
 
             var actual = printer.PrintToString(person);
+
             actual.Should().Be(
                 $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Alex{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
@@ -209,6 +211,34 @@ namespace ObjectPrintingTests
                 .PrintToString(collections);
 
             actual.Should().Be($"CollectionsKeeper{Environment.NewLine}\tstringsList = null{Environment.NewLine}\tintsArray = null{Environment.NewLine}\tdictionary = Dictionary`2{Environment.NewLine}\t\tKeyValuePair`2{Environment.NewLine}\t\t\tKey = 1{Environment.NewLine}\t\t\tValue = один{Environment.NewLine}\t\tKeyValuePair`2{Environment.NewLine}\t\t\tKey = 2{Environment.NewLine}\t\t\tValue = два{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenPassCollectionToPrinter_ShouldReturnThisCollectionInString()
+        {
+            var dict = new Dictionary<int, string>() {{1, "один"} };
+
+            var printer = dict.CreatePrinter();
+
+            var actual = printer.PrintToString(dict);
+
+            actual.Should().Be($"Dictionary`2{Environment.NewLine}\tKeyValuePair`2{Environment.NewLine}\t\tKey = 1{Environment.NewLine}\t\tValue = один{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenToSameObjectInTwoFields_ShouldReturnCorrectResultWithoutRecursion()
+        {
+            var test = new Test();
+            var obj = new SomethingObject();
+
+            test.ToSameObject = obj;
+            test.ToSameObject2 = obj;
+
+            var printer = test.CreatePrinter();
+
+            var actual = printer.PrintToString(test);
+
+            actual.Should().Be($"Test{Environment.NewLine}\tToSameObject = SomethingObject{Environment.NewLine}\t\tToSameObject = null{Environment.NewLine}\t\tCount = 1{Environment.NewLine}\tToSameObject2 = SomethingObject{Environment.NewLine}\t\tToSameObject = null{Environment.NewLine}\t\tCount = 1{Environment.NewLine}");
         }
     }
 }
