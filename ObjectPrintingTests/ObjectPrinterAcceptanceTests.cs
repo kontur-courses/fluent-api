@@ -24,7 +24,6 @@ namespace ObjectPrintingTests
                 .And.Printing(p => p.Name)
                 .Trim(1)
                 .And.Exclude(p => p.PublicField)
-                .WithMaxRecursion(2)
                 .OnMaxRecursion((_) => throw new ArgumentException())
                 .PrintToString(person);
 

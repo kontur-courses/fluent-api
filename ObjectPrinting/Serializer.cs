@@ -9,6 +9,7 @@ namespace ObjectPrinting
     public class Serializer
     {
         private const BindingFlags SerializingMembersFlag = BindingFlags.Public | BindingFlags.Instance;
+        private readonly HashSet<object> complexObjectLinks = new HashSet<object>();
         private readonly HashSet<MemberInfo> excludedMembers;
         private readonly HashSet<Type> excludedTypes;
 
@@ -44,16 +45,18 @@ namespace ObjectPrinting
                 return $"null{Environment.NewLine}";
 
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine; // todo
+                return obj + Environment.NewLine; 
 
-            if (nestingLevel == maxRecursion)
+            if (complexObjectLinks.Contains(obj))
             {
                 if (handleMaxRecursion != null)
                     return handleMaxRecursion(obj);
 
                 return $"Maximum recursion has been reached{Environment.NewLine}";
             }
-            
+
+            complexObjectLinks.Add(obj);
+
             var indentation = string.Intern(new string('\t', nestingLevel + 1));
 
             var type = obj.GetType();
@@ -61,6 +64,7 @@ namespace ObjectPrinting
 
             HandleMembers(type, sb, indentation, obj, nestingLevel);
 
+            complexObjectLinks.Remove(obj);
             return sb.ToString();
         }
 
@@ -118,5 +122,10 @@ namespace ObjectPrinting
 
             return $"{indentation}{memberInfo.Name} = {serializedString}{stringEnd}";
         }
+
+        //private bool MaxRecursionHasBeenReached(object obj)
+        //{
+        //    return complexObjectLinks.Count > 1;
+        //}
     }
 }

@@ -18,20 +18,11 @@ namespace ObjectPrinting
 
         private Func<object, string> handleMaxRecursion;
 
-        private int maxRecursion = 60;
+        private readonly int maxRecursion = 1;
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
-        }
-
-        public PrintingConfig<TOwner> WithMaxRecursion(int maxRecursion)
-        {
-            if (maxRecursion < 1)
-                throw new ArgumentException();
-            this.maxRecursion = maxRecursion;
-
-            return this;
         }
 
         public PrintingConfig<TOwner> OnMaxRecursion(Func<object,string> func)

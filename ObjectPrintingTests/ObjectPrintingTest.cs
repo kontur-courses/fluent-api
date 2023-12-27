@@ -19,12 +19,46 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>();
 
             printer
-                .WithMaxRecursion(5)
                 .OnMaxRecursion(_ => throw new ArgumentException());
 
             Action act = () => { printer.PrintToString(person); };
 
             act.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void WhenAreNoCircularLinks_ShouldReturnCorrectAnswer()
+        {
+            var subPerson = new SubPerson();
+            var person = new Person() {SubPerson = subPerson};
+
+            var parent = new Parent()
+            {
+                Person = person,
+                SubPerson = subPerson
+            };
+
+            var actual = parent
+                .CreatePrinter()
+                .OnMaxRecursion((_) => "РЕКУРСИЯ")
+                .PrintToString(parent);
+
+            actual.Should().Be("Parent\r\n\tPerson = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = null\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tSubPerson = SubPerson\r\n\t\t\tPerson = null\r\n\t\t\tAge = 0\r\n\t\tPublicField = null\r\n\tSubPerson = SubPerson\r\n\t\tPerson = null\r\n\t\tAge = 0\r\n");
+        }
+
+        [Test]
+        public void WhenObjectRefersToItself_ShouldReturnCorrectAnswer()
+        {
+            var currentObject = new SomethingObject();
+
+            currentObject.ToSameObject = currentObject;
+
+            var actual = currentObject
+                .CreatePrinter()
+                .OnMaxRecursion((_) => "РЕКУРСИЯ")
+                .PrintToString(currentObject);
+
+            actual.Should().Be("SomethingObject\r\n\tToSameObject = РЕКУРСИЯ");
         }
 
         [Test]
@@ -95,7 +129,6 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>();
 
             var actual = printer
-                .WithMaxRecursion(2)
                 .PrintToString(person);
 
             actual.Should().Be(
