@@ -18,7 +18,7 @@
 
         public override int GetHashCode()
         {
-            return Name != null ? Name.GetHashCode() : 0 + Age;
+            return HashCode.Combine(Id, Name, Height, Age, Field);
         }
 
         public override bool Equals(object obj)
