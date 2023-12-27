@@ -8,7 +8,7 @@ namespace ObjectPrintingTests
     internal class PrinterExtensionsTests
     {
         [Test]
-        public void CreatePrinterWithExtensionMethod_ShouldNotBeNull()
+        public void WhenCreatePrinterWithExtensionMethod_ShouldNotBeNull()
         {
             var person = new Person();
             var printer = person.CreatePrinter();

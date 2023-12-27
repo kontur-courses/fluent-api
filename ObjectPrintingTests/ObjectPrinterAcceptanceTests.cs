@@ -21,6 +21,7 @@ namespace ObjectPrintingTests
             var actualString = printer.Exclude<SubPerson>()
                 .Printing(p => p.Age)
                 .Using(age => (age + 1000).ToString())
+                .Wrap(p => p + "1")
                 .And.Printing<double>()
                 .Using(CultureInfo.InvariantCulture)
                 .And.Printing(p => p.Name)
@@ -29,7 +30,7 @@ namespace ObjectPrintingTests
                 .OnMaxRecursion((_) => throw new ArgumentException())
                 .PrintToString(person);
 
-            actualString.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = A{Environment.NewLine}\tHeight = 180.5{Environment.NewLine}\tAge = 1019{Environment.NewLine}");
+            actualString.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = A{Environment.NewLine}\tHeight = 180.5{Environment.NewLine}\tAge = 10191{Environment.NewLine}");
         }
     }
 }

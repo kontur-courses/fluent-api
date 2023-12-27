@@ -7,11 +7,25 @@ using System;
 using System.Collections.Generic;
 using ObjectPrintingTests.TestHelpers;
 using ObjectPrinting.Serialization;
+using ObjectPrinting.Solved.Tests;
+using Person = ObjectPrintingTests.TestHelpers.Person;
 
 namespace ObjectPrintingTests
 {
     public class ObjectPrintingTest
     {
+        [Test]
+        public void WhenPassComplexObject_ShouldReturnCorrectSerializeString()
+        {
+            var person = new Person();
+
+            var printer = person.CreatePrinter();
+
+            var actual = printer.PrintToString(person);
+
+            actual.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = null{Environment.NewLine}\tHeight = 0{Environment.NewLine}\tAge = 0{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
+        }
+
         [Test]
         public void WhenReachedMaxRecursion_ShouldThrowException()
         {
@@ -50,7 +64,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void WhenObjectRefersToItself_ShouldReturnCorrectAnswer()
+        public void WhenObjectReferenceToItself_ShouldReturnCorrectAnswer()
         {
             var currentObject = new SomethingObject();
             currentObject.ToSameObject = currentObject;
@@ -64,7 +78,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ShouldExcludeMember_WhenItsTypeSpecified()
+        public void WhenItsTypeSpecified_ShouldExcludeMember()
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
@@ -79,7 +93,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ShouldUseTrimming_WhenItsSpecifiedForType()
+        public void WhenItsSpecifiedForType_ShouldUseTrimming()
         {
             var person = new Person { Name = "Petr", Age = 20, Height = 180 };
             var printer = ObjectPrinter.For<Person>();
@@ -94,7 +108,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void ShouldSerializeMember_WithGivenFunc()
+        public void WithGivenFunc_ShouldSerializeMember()
         {
             var person = new Person { Name = "Petr", Age = 20, Height = 180 };
             var printer = ObjectPrinter.For<Person>();
@@ -109,7 +123,7 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void SetCulture_ShouldAddedCultureInfo()
+        public void WhenPassCustomSetCulture_ShouldAddedCultureInfo()
         {
             var person = new Person { Name = "Petr", Age = 20, Height = 180.5 };
             var printer = ObjectPrinter.For<Person>();
@@ -214,15 +228,67 @@ namespace ObjectPrintingTests
         }
 
         [Test]
-        public void WhenPassCollectionToPrinter_ShouldReturnThisCollectionInString()
+        public void WhenFieldIsIEnumerable_ShouldReturnCorrectCollectionSerialization()
         {
-            var dict = new Dictionary<int, string>() {{1, "один"} };
+            IEnumerable<int> enumerable = new[] { 1,2 };
+
+            var printer = enumerable.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(enumerable);
+            
+            actual.Should().Be($"Int32[]{Environment.NewLine}\t1{Environment.NewLine}\t2{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenFieldIsComplexObject_ShouldReturnCorrectCollectionSerialization()
+        {
+            var person = new Person();
+            person.SubPerson = new SubPerson();
+
+            var printer = person.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(person);
+
+            actual.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = null{Environment.NewLine}\tHeight = 0{Environment.NewLine}\tAge = 0{Environment.NewLine}\tSubPerson = SubPerson{Environment.NewLine}\t\tPerson = null{Environment.NewLine}\t\tAge = 0{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenCollectionElementIsComplexObject_ShouldReturnCorrectCollectionSerialization()
+        {
+            var listWithComplexObject = new List <Person>() { new Person() };
+
+            var printer = listWithComplexObject.CreatePrinter();
+
+            var actual = printer
+                .PrintToString(listWithComplexObject);
+
+            actual.Should().Be($"List`1{Environment.NewLine}\tPerson{Environment.NewLine}\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\t\tName = null{Environment.NewLine}\t\tHeight = 0{Environment.NewLine}\t\tAge = 0{Environment.NewLine}\t\tSubPerson = null{Environment.NewLine}\t\tPublicField = null{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenPassDictionaryToPrinter_ShouldReturnThisCollectionInString()
+        {
+            var dict = new Dictionary<int, string>{{1, "один"} };
 
             var printer = dict.CreatePrinter();
 
             var actual = printer.PrintToString(dict);
 
             actual.Should().Be($"Dictionary`2{Environment.NewLine}\tKeyValuePair`2{Environment.NewLine}\t\tKey = 1{Environment.NewLine}\t\tValue = один{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenPassListToPrinter_ShouldReturnThisCollectionInString()
+        {
+            var list = new List<float>{1.7f, 6.5f};
+
+            var printer = list.CreatePrinter();
+
+            var actual = printer.PrintToString(list);
+
+            actual.Should().Be($"List`1{Environment.NewLine}\t1,7{Environment.NewLine}\t6,5{Environment.NewLine}");
         }
 
         [Test]
@@ -239,6 +305,65 @@ namespace ObjectPrintingTests
             var actual = printer.PrintToString(test);
 
             actual.Should().Be($"Test{Environment.NewLine}\tToSameObject = SomethingObject{Environment.NewLine}\t\tToSameObject = null{Environment.NewLine}\t\tCount = 1{Environment.NewLine}\tToSameObject2 = SomethingObject{Environment.NewLine}\t\tToSameObject = null{Environment.NewLine}\t\tCount = 1{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenPassEmptyCollection_ShouldPrintOnlyCollectionType()
+        {
+            var list = new List<double>();
+
+            var printer = list.CreatePrinter();
+
+            var actual = printer.PrintToString(list);
+
+            actual.Should().Be($"List`1{Environment.NewLine}");
+
+        }
+
+        [Test]
+        public void WhenPassFinalTypeWithCustomSerialization_ShouldReturnCustomSerializationFuncResultString()
+        {
+            var currentString = new string("abcd");
+
+            var printer = currentString.CreatePrinter();
+
+            var actual = printer
+                .Printing<string>()
+                .Trim(3)
+                .And.PrintToString(currentString);
+
+            actual.Should().Be($"abc{Environment.NewLine}");
+        }
+
+        [Test]
+        public void WhenPassNullToUsing_ShouldThrowNullReferenceExceprion()
+        {
+            var currentString = "abc";
+            var printer = currentString.CreatePrinter();
+
+            Action actual = () => { printer
+                .Printing<string>()
+                .Using(null)
+                .And.PrintToString(currentString); };
+
+            actual.Should().Throw<ArgumentException>();
+        }
+
+        [Test]
+        public void WhenPassNullToWrap_ShouldThrowNullReferenceExceprion()
+        {
+            var currentString = "abc";
+            var printer = currentString.CreatePrinter();
+
+            Action actual = () => {
+                printer
+                    .Printing<string>()
+                    .Using(p => currentString + 1)
+                    .Wrap(null)
+                    .And.PrintToString(currentString);
+            };
+
+            actual.Should().Throw<ArgumentException>();
         }
     }
 }

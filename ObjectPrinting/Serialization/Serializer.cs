@@ -16,7 +16,8 @@ namespace ObjectPrinting.Serialization
 
         private readonly HashSet<Type> finalTypes = new HashSet<Type>
         {
-            typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid),
+            typeof(long), typeof(decimal), typeof(char), typeof(byte), typeof(bool), typeof(short)
         };
 
         private readonly Func<object, string> handleMaxRecursion;
