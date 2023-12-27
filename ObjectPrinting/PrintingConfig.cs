@@ -40,7 +40,7 @@ namespace ObjectPrinting
             excludedProperties.Add( GetPropertyInfo(memberSelector));
             return this;
         }
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
