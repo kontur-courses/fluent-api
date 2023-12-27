@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -15,16 +16,30 @@ namespace ObjectPrinting
             this.serializationConfig = serializationConfig;
         }
 
+        private const char Tab = '\t';
+
         public string Serialize(object obj)
         {
             return PrintToString(obj, 0);
         }
 
+        private HashSet<object> objects = new HashSet<object>();
+
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (nestingLevel > 100)
-                return "";
+            if (objects.Contains(obj))
+                return $"{obj.GetType()} CircularReference!";
 
+            objects.Add(obj);
+
+            var serializedObject = SerializeObject(obj, nestingLevel);
+            
+            objects.Remove(obj);
+            return serializedObject;
+        }
+
+        private string SerializeObject(object obj, int nestingLevel)
+        {
             if (obj == null)
                 return "null";
 
@@ -57,22 +72,29 @@ namespace ObjectPrinting
         private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var indentation = new string('\t', nestingLevel + 1);
+            var indentation = new string(Tab, nestingLevel + 1);
             sb.AppendLine("{");
             foreach (var key in dictionary.Keys)
             {
-                sb.Append(indentation + "{" + PrintToString(key, nestingLevel + 1) + Environment.NewLine
-                          + indentation + ":" + PrintToString(dictionary[key], nestingLevel + 1) + "},"
-                          + Environment.NewLine);
+                sb.Append(indentation);
+                sb.Append("{");
+                sb.Append(PrintToString(key, nestingLevel + 1));
+                sb.Append(Environment.NewLine);
+                sb.Append(indentation);
+                sb.Append(":");
+                sb.Append(PrintToString(dictionary[key], nestingLevel + 1));
+                sb.Append("},");
+                sb.Append(Environment.NewLine);
             }
 
-            sb.Append(indentation + "}");
+            sb.Append(indentation);
+            sb.AppendLine("}");
             return sb.ToString();
         }
 
         private string SerializeIEnumerable(IEnumerable obj, int nestingLevel)
         {
-            var indentation = new string('\t', nestingLevel + 1);
+            var indentation = new string(Tab, nestingLevel + 1);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("[");
             foreach (var key in obj)
@@ -102,7 +124,7 @@ namespace ObjectPrinting
 
         private string SerializeMembers(object obj, int nestingLevel)
         {
-            var indentation = new string('\t', nestingLevel + 1);
+            var indentation = new string(Tab, nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.Append(type.Name);
@@ -131,9 +153,10 @@ namespace ObjectPrinting
                 serializedValue = ((dynamic)value).ToString(cultureInfo);
             else
                 serializedValue = (PrintToString(value, nestingLevel + 1));
-            
+
             if (serializationConfig.MemberTrimToLength.TryGetValue(memberInfo, out var trimRule))
                 return trimRule(serializedValue);
+
             if (serializationConfig.TypeTrimToLength.TryGetValue(GetMemberInfoType(memberInfo),
                     out var typeTrimToLength))
                 return typeTrimToLength(serializedValue);
@@ -142,22 +165,15 @@ namespace ObjectPrinting
 
         private static Type GetMemberInfoType(MemberInfo memberInfo)
         {
-            switch (memberInfo.MemberType)
+            return memberInfo.MemberType switch
             {
-                case MemberTypes.Event:
-                    return ((EventInfo)memberInfo).EventHandlerType;
-                case MemberTypes.Field:
-                    return ((FieldInfo)memberInfo).FieldType;
-                case MemberTypes.Method:
-                    return ((MethodInfo)memberInfo).ReturnType;
-                case MemberTypes.Property:
-                    return ((PropertyInfo)memberInfo).PropertyType;
-                default:
-                    throw new ArgumentException
-                    (
-                        "Input MemberInfo must be if type EventInfo, FieldInfo, MethodInfo, or PropertyInfo"
-                    );
-            }
+                MemberTypes.Event => ((EventInfo)memberInfo).EventHandlerType,
+                MemberTypes.Field => ((FieldInfo)memberInfo).FieldType,
+                MemberTypes.Method => ((MethodInfo)memberInfo).ReturnType,
+                MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType,
+                _ => throw new ArgumentException(
+                    "Input MemberInfo must be if type EventInfo, FieldInfo, MethodInfo, or PropertyInfo")
+            };
         }
 
         private static bool IsFieldOrProperty(MemberInfo memberInfo) =>
@@ -165,13 +181,12 @@ namespace ObjectPrinting
 
         private static object GetValue(object obj, MemberInfo memberInfo)
         {
-            if ((memberInfo.MemberType & MemberTypes.Field) != 0)
-                return (memberInfo as FieldInfo)?.GetValue(obj);
-
-            if ((memberInfo.MemberType & MemberTypes.Property) != 0)
-                return (memberInfo as PropertyInfo)?.GetValue(obj);
-
-            return null;
+            return memberInfo.MemberType switch
+            {
+                MemberTypes.Field => (memberInfo as FieldInfo)?.GetValue(obj),
+                MemberTypes.Property => (memberInfo as PropertyInfo)?.GetValue(obj),
+                _ => null
+            };
         }
     }
 }

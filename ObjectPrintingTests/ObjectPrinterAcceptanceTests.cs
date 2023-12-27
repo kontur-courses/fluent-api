@@ -161,25 +161,21 @@ public class Tests
         }
         
         [Test]
-        public void Try_Me()
+        public void CorrrectStringTrim()
         {
             var result = "abracadabra".PrintToString(x => x.Printing<string>().SetMaxLength(1));
             result.Should().Be("a");
         }
         
         [Test]
-        public void Try_Me2()
+        public void CircularReferenceDemo()
         {
-            int i = 10;
-            var result = i.PrintToString(x => x.Printing<string>().SetMaxLength(1));
-            result.Should().Be("1");
-        }
-        
-        [Test]
-        public void Try_Me3()
-        {
-            var result = person.PrintToString(x =>
-                x.Printing<Guid>().SetMaxLength(10).Printing<string>().SetMaxLength(2));
+            var p = new Person();
+            var r = new Person();
+            r.Relatives = new[] { p };
+            p.Relatives = new[] { r };
+            var result = p.PrintToString(x => x.Printing<string>().SetMaxLength(1));
+            Console.WriteLine(result);
         }
     }
 }
