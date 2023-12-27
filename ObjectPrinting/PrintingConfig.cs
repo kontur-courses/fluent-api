@@ -1,41 +1,53 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    internal readonly HashSet<Type> ExcludedTypes = new();
+    internal readonly HashSet<MemberInfo> ExcludedMembers = new();
+
+    internal int? TrimStringValue;
+    internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
+    internal Dictionary<MemberInfo, Delegate> CustomMemberSerializers { get; } = new();
+    internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
+    internal Dictionary<MemberInfo, int> TrimmedMembers { get; } = new();
+
+    public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>()
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        return new MemberPrintingConfig<TOwner, TMemberType>(this);
+    }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+    public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>(
+        Expression<Func<TOwner, TMemberType>> memberSelector)
+    {
+        var expression = (MemberExpression)memberSelector.Body;
+        return new MemberPrintingConfig<TOwner, TMemberType>(this, expression.Member);
+    }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+    public PrintingConfig<TOwner> Exclude<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+    {
+        var expression = (MemberExpression)memberSelector.Body;
+        ExcludedMembers.Add(expression.Member);
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Exclude<TMemberType>()
+    {
+        ExcludedTypes.Add(typeof(TMemberType));
+
+        return this;
+    }
+
+    public string PrintToString(TOwner obj)
+    {
+        var serializer = new Serializer<TOwner>(this);
+
+        return serializer.SerializeObject(obj);
     }
 }
