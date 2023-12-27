@@ -22,4 +22,8 @@
       <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="CircularReference.cs" />
+    </ItemGroup>
+
 </Project>
