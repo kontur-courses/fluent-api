@@ -12,17 +12,16 @@ namespace ObjectPrinting
             this.propertyInfo = propertyInfo;
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Using(Func<TPropType, string> printProperty)
+        public PropertyPrintingConfig<TOwner, TPropType> Using(Func<dynamic, string> printProperty)
         {
-            propertiesSerialization.TryAdd(propertyInfo, type => printProperty((TPropType)type));
+            propertiesSerialization.TryAdd(propertyInfo, printProperty);
 
             return this;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> TrimToLength(int length)
         {
-            if (length < 0)
-                throw new ArgumentException("length can not be negative");
+            ArgumentOutOfRangeException.ThrowIfNegative(length);
 
             propertiesMaxLength.Add(propertyInfo, length);
 

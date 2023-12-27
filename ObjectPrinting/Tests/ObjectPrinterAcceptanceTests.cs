@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -7,7 +8,7 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Acceptance()
+        public void AcceptanceTest()
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 1.2 };
 
@@ -20,7 +21,14 @@ namespace ObjectPrinting.Tests
                 .Using(name => $"{name}ing")
                 .TrimToLength(2)
                 .Excluding(person => person.Age)
-                .PrintRecursion(() => "Recursion");
+                .WithCyclicLinkMessage(() => "Recursion")
+                .WithCyclicLinkIgnored()
+                .WithCyclicLinkException();
+
+            var printedPerson = printer.PrintToString(person);
+
+            printedPerson.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                                      "Name = Al\r\n\tHeight = 2,4\r\n");
         }
     }
 }

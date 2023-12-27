@@ -16,9 +16,9 @@ namespace ObjectPrinting
             return this;
         }
 
-        public TypePrintingConfig<TOwner, TPropType> Using(Func<TPropType, string> printType)
+        public TypePrintingConfig<TOwner, TPropType> Using(Func<dynamic, string> printType)
         {
-            typesSerialization.TryAdd(typeof(TPropType), type => printType((TPropType)type));
+            typesSerialization.TryAdd(typeof(TPropType), printType);
 
             return this;
         }

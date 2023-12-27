@@ -52,12 +52,11 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> property)
+        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> member)
         {
-            var memberBody = (MemberExpression)property.Body;
-            var propertyInfo = memberBody.Member;
+            var memberInfo = GetMember(member);
 
-            excludedProperties.Add(propertyInfo);
+            excludedProperties.Add(memberInfo);
 
             return this;
         }
@@ -68,24 +67,30 @@ namespace ObjectPrinting
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-            Expression<Func<TOwner, TPropType>> printProperty)
+            Expression<Func<TOwner, TPropType>> printMember)
         {
-            var memberBody = (MemberExpression)printProperty.Body;
-            var propertyInfo = memberBody.Member;
+            var memberInfo = GetMember(printMember);
 
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
         }
 
-        public PrintingConfig<TOwner> PrintRecursion(Exception exception)
+        public PrintingConfig<TOwner> WithCyclicLinkException()
         {
-            recursivePropertiesSerialization = () => throw exception;
+            recursivePropertiesSerialization = () => throw new ArgumentException("recursive property");
 
             return this;
         }
 
-        public PrintingConfig<TOwner> PrintRecursion(Func<string> printProperty)
+        public PrintingConfig<TOwner> WithCyclicLinkMessage(Func<string> printProperty)
         {
             recursivePropertiesSerialization = printProperty;
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> WithCyclicLinkIgnored()
+        {
+            recursivePropertiesSerialization = () => string.Empty;
 
             return this;
         }
@@ -98,11 +103,9 @@ namespace ObjectPrinting
             var type = obj.GetType();
             if (previousObjects.Any(prev => prev == obj))
             {
-                if (recursivePropertiesSerialization != null)
-                    return recursivePropertiesSerialization();
-                return "Recursive property";
+                return recursivePropertiesSerialization != null 
+                    ? (string)recursivePropertiesSerialization() : "Recursive property";
             }
-
 
             if (obj is IEnumerable && obj is not string)
                 return SerializeEnumerable(obj, previousObjects);
@@ -110,21 +113,17 @@ namespace ObjectPrinting
             if (_finalTypes.Contains(type))
                 return SerializeFinalType(obj);
 
-            var identation = new string('\t', previousObjects.Count + 1);
+            var indentation = new string('\t', previousObjects.Count + 1);
+            var objectSerialization = new StringBuilder().AppendLine(type.Name);
             previousObjects = previousObjects.Add(obj);
-            var objectSerialization = new StringBuilder();
-            objectSerialization.AppendLine(type.Name);
             var members = Array.Empty<MemberInfo>().Concat(type.GetProperties()).Concat(type.GetFields());
             foreach (var memberInfo in members)
             {
-                var memberType = memberInfo.MemberType == MemberTypes.Property
-                    ? (memberInfo as PropertyInfo).PropertyType
-                    : (memberInfo as FieldInfo).FieldType;
                 if (excludedProperties.Contains(memberInfo)
-                    || excludedTypes.Contains(memberType))
+                    || excludedTypes.Contains(memberInfo.GetMemberType()))
                     continue;
 
-                objectSerialization.Append(identation);
+                objectSerialization.Append(indentation);
                 objectSerialization.Append(memberInfo.Name);
                 objectSerialization.Append(" = ");
                 objectSerialization.Append(SerializeMember(memberInfo, obj, previousObjects));
@@ -149,36 +148,43 @@ namespace ObjectPrinting
 
         private string SerializeMember(MemberInfo memberInfo, object obj, IImmutableList<object> previousObjects)
         {
-            var value = memberInfo.MemberType == MemberTypes.Property
-                ? (memberInfo as PropertyInfo).GetValue(obj)
-                : (memberInfo as FieldInfo).GetValue(obj);
-            var serializedProperty = propertiesSerialization.TryGetValue(memberInfo, out var serialization)
+            var value = memberInfo.GetMemberValue(obj);
+            var result = propertiesSerialization.TryGetValue(memberInfo, out var serialization)
                 ? serialization.Invoke(value)
                 : SerializeObject(value, previousObjects).TrimEnd();
 
             var propertyMaxLength = propertiesMaxLength.TryGetValue(memberInfo, out var length)
                 ? length
-                : serializedProperty.Length;
+                : result.Length;
 
-            serializedProperty = serializedProperty[..propertyMaxLength];
+            result = result[..propertyMaxLength];
 
-            return serializedProperty;
+            return result;
         }
 
         private string SerializeEnumerable(object obj, IImmutableList<object> previousObjects)
         {
             var enumerable = (IEnumerable)obj;
             var serializedEnumerable = new StringBuilder();
-            var nestingLevel = previousObjects.Count == 0 ? 0 : previousObjects.Count + 1;
-            var identation = nestingLevel == 0 ? "" : Environment.NewLine + new string('\t', nestingLevel);
+            var indentation = previousObjects.Count == 0
+                ? string.Empty
+                : Environment.NewLine + new string('\t', previousObjects.Count + 1);
 
             foreach (var item in enumerable)
             {
-                serializedEnumerable.Append(identation);
+                serializedEnumerable.Append(indentation);
                 serializedEnumerable.Append(SerializeObject(item, previousObjects));
             }
 
             return serializedEnumerable.ToString();
+        }
+
+        private static MemberInfo GetMember<TPropType>(Expression<Func<TOwner, TPropType>> expression)
+        {
+            var memberBody = (MemberExpression)expression.Body;
+            var memberInfo = memberBody.Member;
+
+            return memberInfo;
         }
     }
 }

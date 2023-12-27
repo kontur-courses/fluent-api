@@ -12,22 +12,22 @@ namespace ObjectPrinting.Tests
         [SetUp]
         public void SetUp()
         {
-            _person = new Person { Name = "Alex", Age = 19, Height = 1.2 };
+            person = new Person { Name = "Alex", Age = 19, Height = 1.2 };
         }
 
-        private Person _person;
+        private Person person;
 
         [Test]
         public void PrintToString_ShouldReturnStringWithEveryObjectProperty()
         {
             var printer = ObjectPrinter.For<Person>();
 
-            var personWithEveryProperty = printer.PrintToString(_person);
+            var personWithEveryProperty = printer.PrintToString(person);
 
             personWithEveryProperty
                 .Should()
-                .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 1,2\r\n\tAge = 19\r\n");
+                .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                    "Name = Alex\r\n\tHeight = 1,2\r\n\tAge = 19\r\n");
         }
 
         [Test]
@@ -35,10 +35,10 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>().Excluding<int>();
 
-            var personWithNoIntProperties = printer.PrintToString(_person);
+            var personWithoutIntProperties = printer.PrintToString(person);
 
-            personWithNoIntProperties.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
-                                                  "Name = Alex\r\n\tHeight = 1,2\r\n");
+            personWithoutIntProperties.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                                                   "Name = Alex\r\n\tHeight = 1,2\r\n");
         }
 
         [Test]
@@ -46,10 +46,10 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>().Excluding(person => person.Name);
 
-            var personWithNoNameProperty = printer.PrintToString(_person);
+            var personWithoutNameProperty = printer.PrintToString(person);
 
-            personWithNoNameProperty.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
-                                                 "Height = 1,2\r\n\tAge = 19\r\n");
+            personWithoutNameProperty.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                                                  "Height = 1,2\r\n\tAge = 19\r\n");
         }
 
         [Test]
@@ -58,7 +58,7 @@ namespace ObjectPrinting.Tests
             var culture = new CultureInfo("en-US");
             var printer = ObjectPrinter.For<Person>().Printing<double>().WithCulture<double>(culture);
 
-            var personWithUSCultureForDouble = printer.PrintToString(_person);
+            var personWithUSCultureForDouble = printer.PrintToString(person);
 
             personWithUSCultureForDouble
                 .Should()
@@ -67,14 +67,14 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringWithEveryListObject()
+        public void PrintToString_ShouldReturnStringWithEveryListObject_WhenListPassed()
         {
             var persons = new List<Person> { new() { Age = 1, Height = 1.2 }, new() { Age = 5 } };
             var printer = ObjectPrinter.For<List<Person>>();
 
-            var listOfPersongWithEveryItem = printer.PrintToString(persons);
+            var listOfPersonsWithEveryItem = printer.PrintToString(persons);
 
-            listOfPersongWithEveryItem
+            listOfPersonsWithEveryItem
                 .Should()
                 .Be(
                     "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = null\r\n\tHeight = 1,2\r\n\tAge = 1\r\n" +
@@ -82,7 +82,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringWithEveryArrayObject()
+        public void PrintToString_ShouldReturnStringWithEveryArrayObject_WhenArrayPassed()
         {
             var persons = new[] { new Person { Age = 1, Height = 1.2 }, new Person { Age = 5 } };
             var printer = ObjectPrinter.For<Person[]>();
@@ -97,16 +97,36 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_ShouldReturnStringWithEveryDictionaryObject_WhenDictionaryPassed()
+        {
+            var printer = ObjectPrinter.For<Dictionary<Person, string>>();
+            var dict = new Dictionary<Person, string>
+            {
+                { person, "22" },
+                { new Person(), "12" }
+            };
+
+            var fileWithListProperty = printer.PrintToString(dict);
+
+            fileWithListProperty
+                .Should()
+                .Be("KeyValuePair`2\r\n\tKey = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
+                    "Name = Alex\r\n\t\tHeight = 1,2\r\n\t\tAge = 19\r\n\tValue = 22\r\nKeyValuePair`2\r\n\t" +
+                    "Key = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
+                    "Name = null\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\tValue = 12\r\n");
+        }
+
+        [Test]
         public void PrintToString_ShouldReturnStringWithCustomSerializationForType_WhenItsSpecified()
         {
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(x => (x * 2).ToString());
 
-            var personWithEveryIntPropertyMultByTwo = printer.PrintToString(_person);
+            var personWithEveryIntPropertyMultByTwo = printer.PrintToString(person);
 
             personWithEveryIntPropertyMultByTwo
                 .Should()
-                .Be(
-                    "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 1,2\r\n\tAge = 38\r\n");
+                .Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                    "Name = Alex\r\n\tHeight = 1,2\r\n\tAge = 38\r\n");
         }
 
         [Test]
@@ -118,7 +138,7 @@ namespace ObjectPrinting.Tests
                 .Printing(person => person.Name)
                 .Using(name => $"My name is {name}");
 
-            var personWithCustomNamePropertySerializer = printer.PrintToString(_person);
+            var personWithCustomNamePropertySerializer = printer.PrintToString(person);
 
             personWithCustomNamePropertySerializer
                 .Should()
@@ -133,7 +153,7 @@ namespace ObjectPrinting.Tests
                 .Printing(person => person.Name)
                 .TrimToLength(2);
 
-            var personWithTrimmedNameProperty = printer.PrintToString(_person);
+            var personWithTrimmedNameProperty = printer.PrintToString(person);
 
             personWithTrimmedNameProperty
                 .Should()
@@ -142,7 +162,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringWithNoRecursedProperties()
+        public void PrintToString_ShouldReturnStringWithoutRecursion_WhenObjectRefersOnItself()
         {
             var student = new Student { Name = "Alex", Age = 10 };
             var anotherStudent = new Student { Teacher = student, Name = "Vovchik", Age = 15 };
@@ -160,12 +180,29 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_ShouldReturnStringWithoutRecursion_WhenLinkedListRecured()
+        {
+            var firstLinkedNode = new LinkedNode<int>();
+            var secondLinkedNode = new LinkedNode<int>();
+            var thirdLinkedNode = new LinkedNode<int>();
+            firstLinkedNode.Next = secondLinkedNode;
+            secondLinkedNode.Next = thirdLinkedNode;
+            thirdLinkedNode.Next = firstLinkedNode;
+            var printer = ObjectPrinter.For<LinkedNode<int>>();
+
+            var printedList = printer.PrintToString(firstLinkedNode);
+
+            printedList.Should().Be("LinkedNode`1\r\n\tValue = 0\r\n\tNext = LinkedNode`1\r\n\t\tValue = 0\r\n\t\t" +
+                                    "Next = LinkedNode`1\r\n\t\t\tValue = 0\r\n\t\t\tNext = Recursive property\r\n");
+        }
+
+        [Test]
         public void PrintToString_ShouldReturnStringWithCustomRecursionSerialization_WhenItsSpecified()
         {
             var student = new Student { Name = "Alex", Age = 10 };
             var anotherStudent = new Student { Teacher = student, Name = "Vovchik", Age = 15 };
             student.Teacher = anotherStudent;
-            var printer = ObjectPrinter.For<Student>().PrintRecursion(() => "Recursion");
+            var printer = ObjectPrinter.For<Student>().WithCyclicLinkMessage(() => "Recursion");
 
             var studentWithTeacherRefOnItself = printer.PrintToString(student);
 
@@ -178,14 +215,32 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_ShouldReturnStringWithIgnoredRecuresdProperty_WhenItsSpecified()
+        {
+            var student = new Student { Name = "Alex", Age = 10 };
+            var anotherStudent = new Student { Teacher = student, Name = "Vovchik", Age = 15 };
+            student.Teacher = anotherStudent;
+            var printer = ObjectPrinter.For<Student>().WithCyclicLinkIgnored();
+
+            var studentWithTeacherRefOnItself = printer.PrintToString(student);
+
+            studentWithTeacherRefOnItself
+                .Should()
+                .Be("Student\r\n\tTeacher = Student\r\n\t\tTeacher = \r\n\t\t" +
+                    "Friend = null\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Vovchik\r\n\t\t" +
+                    "Height = 0\r\n\t\tAge = 15\r\n\tFriend = null\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\t" +
+                    "Name = Alex\r\n\tHeight = 0\r\n\tAge = 10\r\n");
+        }
+
+        [Test]
         public void PrintToString_ShouldThrowException_WhenPropertyRecursed()
         {
             var student = new Student { Name = "Alex", Age = 10 };
             var anotherStudent = new Student { Teacher = student, Name = "Vovchik", Age = 15 };
             student.Teacher = anotherStudent;
-            var printer = ObjectPrinter.For<Student>().PrintRecursion(new Exception());
+            var printer = ObjectPrinter.For<Student>().WithCyclicLinkException();
 
-            Assert.Throws<Exception>(() => printer.PrintToString(student));
+            Assert.Throws<ArgumentException>(() => printer.PrintToString(student));
         }
 
         [Test]
@@ -203,16 +258,16 @@ namespace ObjectPrinting.Tests
 
             notRecursedStudents.Should()
                 .Be("Student\r\n\tTeacher = Student\r\n\t\tTeacher = null\r\n\t\t" +
-                "Friend = null\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Petr\r\n\t\t" +
-                "Height = 0\r\n\t\tAge = 12\r\n\tFriend = Student\r\n\t\tTeacher = Student\r\n\t\t\t" +
-                "Teacher = null\r\n\t\t\tFriend = null\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
-                "Name = Petr\r\n\t\t\tHeight = 0\r\n\t\t\tAge = 12\r\n\t\tFriend = null\r\n\t\t" +
-                "Id = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Miha\r\n\t\tHeight = 0\r\n\t\tAge = 15\r\n\t" +
-                "Id = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 10\r\n");
+                    "Friend = null\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Petr\r\n\t\t" +
+                    "Height = 0\r\n\t\tAge = 12\r\n\tFriend = Student\r\n\t\tTeacher = Student\r\n\t\t\t" +
+                    "Teacher = null\r\n\t\t\tFriend = null\r\n\t\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
+                    "Name = Petr\r\n\t\t\tHeight = 0\r\n\t\t\tAge = 12\r\n\t\tFriend = null\r\n\t\t" +
+                    "Id = 00000000-0000-0000-0000-000000000000\r\n\t\tName = Miha\r\n\t\tHeight = 0\r\n\t\tAge = 15\r\n\t" +
+                    "Id = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = 10\r\n");
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringObjectWithSerializedDictionary()
+        public void PrintToString_ShouldReturnStringObjectWithSerializedDictionary_WhenObjectHasDictionary()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File { Name = "file", Attributes = new Dictionary<string, string> { { "a", "b" } } };
@@ -226,7 +281,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringObjectWithSerializedList()
+        public void PrintToString_ShouldReturnStringObjectWithSerializedList_WhenObjectHasList()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File
@@ -244,7 +299,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringObjectWithSerializedArray()
+        public void PrintToString_ShouldReturnStringObjectWithSerializedArray_WhenObjectHasArray()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File
@@ -262,26 +317,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldReturnStringWithSerializedDictionary()
-        {
-            var printer = ObjectPrinter.For<Dictionary<Person, string>>();
-            var dict = new Dictionary<Person, string>
-            {
-                { _person, "22" },
-                { new Person(), "12" }
-            };
-
-            var fileWithListProperty = printer.PrintToString(dict);
-
-            fileWithListProperty
-                .Should()
-                .Be("KeyValuePair`2\r\n\tKey = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
-                    "Name = Alex\r\n\t\tHeight = 1,2\r\n\t\tAge = 19\r\n\tValue = 22\r\nKeyValuePair`2\r\n\tKey = Person\r\n\t\t" +
-                    "Id = 00000000-0000-0000-0000-000000000000\r\n\t\tName = null\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\tValue = 12\r\n");
-        }
-
-        [Test]
-        public void PrintToString_ShouldPrintListWithNullValue_WhenEmptyListPassed()
+        public void PrintToString_ShouldPrintListWithNullValue_WhenObjectHasEmptyList()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File
@@ -298,7 +334,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldPrintArrayWithNullValue_WhenEmptyArrayPassed()
+        public void PrintToString_ShouldPrintArrayWithNullValue_WhenObjectHasEmptyArray()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File
@@ -315,7 +351,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ShouldPrintDictionaryWithNullValue_WhenEmptyDictionaryPassed()
+        public void PrintToString_ShouldPrintDictionaryWithNullValue_WhenObjectHasEmptyDictionary()
         {
             var printer = ObjectPrinter.For<File>();
             var file = new File
@@ -332,13 +368,23 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void TrimToLength_ShouldThrowArgumentException_WhenPassedNegativeLength()
+        public void TrimToLength_ShouldThrowArgumentOutOfRangeException_WhenPassedNegativeLength()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(person => person.Name);
 
 
-            Assert.Throws<ArgumentException>(() => printer.TrimToLength(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => printer.TrimToLength(-1));
+        }
+
+        [Test]
+        public void PrintToString_ShouldThrowArgumentOutOfRangeException_WhenTrimToLengthBiggerThanPropertyLength()
+        {
+            var printer = ObjectPrinter.For<Person>()
+                .Printing(person => person.Name).TrimToLength(20);
+
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => printer.PrintToString(person));
         }
     }
 }
