@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -20,10 +19,11 @@ namespace ObjectPrinting
             typeof(int), typeof(double), typeof(float), typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
+        private readonly Func<object, string> handleMaxRecursion;
+
         private readonly int maxRecursion;
         private readonly Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos;
         private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos;
-        private readonly Func<object, string> handleMaxRecursion;
 
         public Serializer(
             HashSet<MemberInfo> excludedMembers,
@@ -46,10 +46,10 @@ namespace ObjectPrinting
             if (obj == null)
                 return $"null{Environment.NewLine}";
 
-            var indentation = string.Intern(new string('\t', nestingLevel + 1));
-
             if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine; 
+                return typeSerializesInfos.TryGetValue(obj.GetType(), out var typeSerialization1)
+                    ? typeSerialization1.SerializationFunc(obj) + Environment.NewLine
+                    : obj + Environment.NewLine;
 
             if (complexObjectLinks.Contains(obj))
             {
@@ -61,12 +61,23 @@ namespace ObjectPrinting
 
             complexObjectLinks.Add(obj);
 
+            if (typeSerializesInfos.TryGetValue(obj.GetType(), out var typeSerialization))
+            {
+                var result = typeSerialization.SerializationFunc(obj);
+                complexObjectLinks.Remove(obj);
+                return result + Environment.NewLine;
+            }
+
             if (obj is ICollection collection)
-                return SerializeCollection(collection, nestingLevel);
+            {
+                var result = SerializeCollection(collection, nestingLevel);
+                complexObjectLinks.Remove(obj);
+                return result;
+            }
 
             var type = obj.GetType();
             var sb = new StringBuilder().AppendLine(type.Name);
-
+            var indentation = string.Intern(new string('\t', nestingLevel + 1));
             HandleMembers(type, sb, indentation, obj, nestingLevel);
 
             complexObjectLinks.Remove(obj);
@@ -102,17 +113,6 @@ namespace ObjectPrinting
             if (membersSerializesInfos.TryGetValue(member.MemberInfo, out var memberSerialization))
                 return GetSerializedString(obj, member, indentation, memberSerialization.SerializationFunc);
 
-            if (typeSerializesInfos.TryGetValue(member.Type, out var typeSerialization))
-                return GetSerializedString(obj, member, indentation, typeSerialization.SerializationFunc);
-
-            if (typeof(ICollection).IsAssignableFrom(member.Type))
-                return GetSerializedString(
-                    obj,
-                    member,
-                    indentation,
-                    obj => SerializeCollection((ICollection) obj, nestingLevel + 1),
-                    false);
-
             return GetSerializedString(
                 obj,
                 member,
@@ -143,7 +143,7 @@ namespace ObjectPrinting
 
         private string GetIndentation(int nestingLevel)
         {
-           return string.Intern(new string('\t', nestingLevel));
+            return string.Intern(new string('\t', nestingLevel));
         }
 
         private string GetSerializedString(

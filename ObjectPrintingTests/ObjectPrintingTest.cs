@@ -44,7 +44,7 @@ namespace ObjectPrintingTests
                 .OnMaxRecursion((_) => "РЕКУРСИЯ")
                 .PrintToString(parent);
 
-            actual.Should().Be("Parent\r\n\tPerson = Person\r\n\t\tId = 00000000-0000-0000-0000-000000000000\r\n\t\tName = null\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tSubPerson = SubPerson\r\n\t\t\tPerson = null\r\n\t\t\tAge = 0\r\n\t\tPublicField = null\r\n\tSubPerson = SubPerson\r\n\t\tPerson = null\r\n\t\tAge = 0\r\n");
+            actual.Should().Be($"Parent{Environment.NewLine}\tPerson = Person{Environment.NewLine}\t\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\t\tName = null{Environment.NewLine}\t\tHeight = 0{Environment.NewLine}\t\tAge = 0{Environment.NewLine}\t\tSubPerson = SubPerson{Environment.NewLine}\t\t\tPerson = null{Environment.NewLine}\t\t\tAge = 0{Environment.NewLine}\t\tPublicField = null{Environment.NewLine}\tSubPerson = SubPerson{Environment.NewLine}\t\tPerson = null{Environment.NewLine}\t\tAge = 0{Environment.NewLine}");
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace ObjectPrintingTests
                 .OnMaxRecursion((_) => "РЕКУРСИЯ")
                 .PrintToString(currentObject);
 
-            actual.Should().Be("SomethingObject\r\n\tToSameObject = РЕКУРСИЯ");
+            actual.Should().Be($"SomethingObject{Environment.NewLine}\tToSameObject = РЕКУРСИЯ");
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace ObjectPrintingTests
 
             var actual = printer.PrintToString(person);
             actual.Should().Be(
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+                $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Alex{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace ObjectPrintingTests
                 .And.PrintToString(person);
 
             actual.Should().Be(
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = P\r\n\tHeight = 180\r\n\tAge = 20\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+                $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = P{Environment.NewLine}\tHeight = 180{Environment.NewLine}\tAge = 20{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -103,7 +103,7 @@ namespace ObjectPrintingTests
                 .And.PrintToString(person);
 
             actual.Should().Be(
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Petr\r\n\tHeight = 180\r\n\tAge = 1020\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+                $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Petr{Environment.NewLine}\tHeight = 180{Environment.NewLine}\tAge = 1020{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace ObjectPrintingTests
                 .And.PrintToString(person);
 
             actual.Should().Be(
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Petr\r\n\tHeight = 180.5\r\n\tAge = 20\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+                $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Petr{Environment.NewLine}\tHeight = 180.5{Environment.NewLine}\tAge = 20{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -133,7 +133,7 @@ namespace ObjectPrintingTests
                 .PrintToString(person);
 
             actual.Should().Be(
-                "Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Petr\r\n\tHeight = 180\r\n\tAge = 20\r\n\tSubPerson = SubPerson\r\n\t\tPerson = Maximum recursion has been reached\r\n\t\tAge = 15\r\n\tPublicField = null\r\n");
+                $"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Petr{Environment.NewLine}\tHeight = 180{Environment.NewLine}\tAge = 20{Environment.NewLine}\tSubPerson = SubPerson{Environment.NewLine}\t\tPerson = Maximum recursion has been reached{Environment.NewLine}\t\tAge = 15{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<Person>();
             var actual = printer.PrintToString(null);
 
-            actual.Should().Be("null\r\n");
+            actual.Should().Be($"null{Environment.NewLine}");
         }
 
         [Test]
@@ -151,7 +151,7 @@ namespace ObjectPrintingTests
             var printer = ObjectPrinter.For<int>();
             var actual = printer.PrintToString(1);
 
-            actual.Should().Be("1\r\n");
+            actual.Should().Be($"1{Environment.NewLine}");
         }
 
         [Test]
@@ -166,7 +166,7 @@ namespace ObjectPrintingTests
                 .Trim(6)
                 .And.PrintToString(person);
 
-            actual.Should().Be("Person\r\n\tId = 00000000-0000-0000-0000-000000000000\r\n\tName = Alex:)\r\n\tHeight = 160\r\n\tAge = 19\r\n\tSubPerson = null\r\n\tPublicField = null\r\n");
+            actual.Should().Be($"Person{Environment.NewLine}\tId = 00000000-0000-0000-0000-000000000000{Environment.NewLine}\tName = Alex:){Environment.NewLine}\tHeight = 160{Environment.NewLine}\tAge = 19{Environment.NewLine}\tSubPerson = null{Environment.NewLine}\tPublicField = null{Environment.NewLine}");
         }
 
         [Test]
@@ -180,7 +180,7 @@ namespace ObjectPrintingTests
             var actual = printer
                 .PrintToString(collections);
 
-            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = List`1\r\n\t\tодин\r\n\t\tдва\r\n\tintsArray = null\r\n\tdictionary = null\r\n");
+            actual.Should().Be($"CollectionsKeeper{Environment.NewLine}\tstringsList = List`1{Environment.NewLine}\t\tодин{Environment.NewLine}\t\tдва{Environment.NewLine}\tintsArray = null{Environment.NewLine}\tdictionary = null{Environment.NewLine}");
         }
 
         [Test]
@@ -194,7 +194,7 @@ namespace ObjectPrintingTests
             var actual = printer
                 .PrintToString(collections);
 
-            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = null\r\n\tintsArray = Int32[]\r\n\t\t1\r\n\t\t2\r\n\t\t3\r\n\tdictionary = null\r\n");
+            actual.Should().Be($"CollectionsKeeper{Environment.NewLine}\tstringsList = null{Environment.NewLine}\tintsArray = Int32[]{Environment.NewLine}\t\t1{Environment.NewLine}\t\t2{Environment.NewLine}\t\t3{Environment.NewLine}\tdictionary = null{Environment.NewLine}");
         }
 
         [Test]
@@ -208,7 +208,7 @@ namespace ObjectPrintingTests
             var actual = printer
                 .PrintToString(collections);
 
-            actual.Should().Be("CollectionsKeeper\r\n\tstringsList = null\r\n\tintsArray = null\r\n\tdictionary = Dictionary`2\r\n\t\tKeyValuePair`2\r\n\t\t\tKey = 1\r\n\t\t\tValue = один\r\n\t\tKeyValuePair`2\r\n\t\t\tKey = 2\r\n\t\t\tValue = два\r\n");
+            actual.Should().Be($"CollectionsKeeper{Environment.NewLine}\tstringsList = null{Environment.NewLine}\tintsArray = null{Environment.NewLine}\tdictionary = Dictionary`2{Environment.NewLine}\t\tKeyValuePair`2{Environment.NewLine}\t\t\tKey = 1{Environment.NewLine}\t\t\tValue = один{Environment.NewLine}\t\tKeyValuePair`2{Environment.NewLine}\t\t\tKey = 2{Environment.NewLine}\t\t\tValue = два{Environment.NewLine}");
         }
     }
 }
