@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
