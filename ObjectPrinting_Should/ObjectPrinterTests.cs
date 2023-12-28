@@ -9,7 +9,7 @@ using ObjectPrinting;
 namespace ObjectPrintingTests
 {
     [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    public class ObjectPrinterTests
     {
         private Person person;
 
@@ -165,5 +165,33 @@ namespace ObjectPrintingTests
 
             str.Should().ContainAll(new[] {nameof(person.Grades), "[ 1,5 2,4 3,3 4,2 5,1 ]"});
         }
+
+        [Test]
+        public void PrintToString_WithImmunability()
+        {
+            var printer1 = ObjectPrinter.For<Person>().Printing(x => x.Name).Using(x => "Ivasd");
+            var printer2 =  printer1.Printing(x => x.Name).Using(x => "Home");
+
+            var str1 = printer1.PrintToString(person);
+            var str2 = printer2.PrintToString(person);
+
+
+            str1.Should().NotContain("Home").And.Contain("Ivasd");
+            str2.Should().NotContain("Ivasd").And.Contain("Home");
+        }
+
+        [Test]
+
+        public void PrintTostring_WhenUsingExtensionMethod()
+        {
+            var printer = person.PrintToString();
+
+
+            printer.Should().BeOfType<string>();
+            printer.Should().ContainAll(new[] {nameof(person.Name), nameof(person.Id), nameof(person.Age), nameof(person.Height),
+            nameof(person.Grades), nameof(person.Friend),
+            $"{person.Name}", $"{person.Id}", $"{person.Age}", $"{person.Height}",  $"{person.Grades}", $"{person.Friend}"});
+        }
+
     }
 }
