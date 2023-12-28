@@ -26,7 +26,7 @@ namespace ObjectPrinting
 
         public PrintingConfig(SerializerConfig configuration)
         {
-            this.configuration = configuration;
+            this.configuration = new SerializerConfig(configuration);
         }
 
         public PrintingConfig<TOwner> Excluding<Type>()

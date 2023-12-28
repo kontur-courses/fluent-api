@@ -23,5 +23,14 @@ namespace ObjectPrinting
 
         }
 
+        public SerializerConfig(SerializerConfig configuration)
+        {
+            serializedObjects = new HashSet<object>(configuration.serializedObjects);
+            excludedTypes = new HashSet<Type>(configuration.excludedTypes);
+            excludedProperties = new HashSet<PropertyInfo>(configuration.excludedProperties);
+            typeSerialization = new Dictionary<Type, Delegate>(configuration.typeSerialization);
+            propertiesSerialization = new Dictionary<PropertyInfo, Delegate>(configuration.propertiesSerialization);
+        }
+
     }
 }
