@@ -1,5 +1,5 @@
 ﻿using System;
-namespace ObjectPrinting_Should
+namespace ObjectPrintingTests
 {
     public class Person
     {

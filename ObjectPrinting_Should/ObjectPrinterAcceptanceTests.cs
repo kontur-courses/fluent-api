@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Globalization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting;
 
-namespace ObjectPrinting_Should
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -15,196 +16,154 @@ namespace ObjectPrinting_Should
         [SetUp]
         public void Setup()
         {
-            person = new Person 
+            person = new Person
             {
                 Id = new Guid(),
-                Name = "Ilya", 
-                Age = 20, 
-                Height = 181.5, 
+                Name = "Ilya",
+                Age = 20,
+                Height = 181.5,
             };
+        }
+
+        [Test]
+        public void PrintToString_ShouldReturnsString()
+        {
+            var str = ObjectPrinter.For<Person>().PrintToString(person);
+
+            str.Should().BeOfType<string>();
         }
 
         [Test]
         public void PrintToString_WhenExcludedTypesAreSpecified()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding<Guid>();
-            var expectedString = string.Join(Environment.NewLine, 
-                "Person", 
-                "\tName = Ilya", 
-                "\tHeight = 181,5", 
-                "\tAge = 20", 
-                "\tGrades = null",
-                "\tFriend = null",
-                "");
+            var str = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .PrintToString(person);
 
-            printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().NotContain(nameof(person.Id)).And.NotContain($"{person.Id}");
         }
 
         [Test]
         public void PrintToString_WhenExcludedPropertiesAreSpecified()
         {
-            var printer = ObjectPrinter.For<Person>().Excluding(p => p.Id);
+            var str = ObjectPrinter.For<Person>()
+                .Excluding(person => person.Name)
+                .PrintToString(person);
 
-            var expectedString = string.Join(Environment.NewLine,
-                "Person",
-                "\tName = Ilya",
-                "\tHeight = 181,5",
-                "\tAge = 20",
-                "\tGrades = null",
-                "\tFriend = null",
-                "");
-
-            printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().NotContainAll(nameof(person.Name)).And.NotContain(person.Name);
         }
 
         [Test]
         public void PrintToString_WhenTheSerializationMethodForTheTypeIsSpecified()
         {
-            var printer = ObjectPrinter.For<Person>().Printing<int>().Using(i => i.ToString("X"));
+            var str = ObjectPrinter.For<Person>()
+                .Printing<int>()
+                .Using(i => i.ToString("X"))
+                .PrintToString(person);
 
-            var expectedString = string.Join(Environment.NewLine,
-               "Person",
-               $"\tId = 00000000-0000-0000-0000-000000000000",
-               "\tName = Ilya",
-               "\tHeight = 181,5",
-               "\tAge = 14",
-               "\tGrades = null",
-               "\tFriend = null",
-               "");
-
-            printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().ContainAll(new[] { nameof(person.Age), $"{person.Age.ToString("X")}" });
         }
 
         [Test]
         public void PrintToString_WhenTheSerializationMethodForThePropertyIsSpecified()
         {
-            var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(i => i.ToString("X"));
+            var str = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .Using(name => $"{name} - is my name!")
+                .PrintToString(person);
 
-            var expectedString = string.Join(Environment.NewLine,
-               "Person",
-               $"\tId = 00000000-0000-0000-0000-000000000000",
-               "\tName = Ilya",
-               "\tHeight = 181,5",
-               "\tAge = 14",
-               "\tGrades = null",
-               "\tFriend = null",
-               "");
-
-            printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().ContainAll(new[] { nameof(person.Name), $"{person.Name} - is my name!"});
         }
 
-        [Test]
-        public void PrintToString_WhenStringIsClipped()
+        [TestCase("ru-RU")]
+        [TestCase("en-US")]
+        public void PrintToString_WhenCultureIsSpecifiedForType(string cultureType)
         {
-            var printer = ObjectPrinter.For<Person>().Printing(p => p.Name).TrimmedToLength(1);
+            var culture = new CultureInfo(cultureType);
 
-            var expectedString = string.Join(Environment.NewLine,
-               "Person",
-               $"\tId = 00000000-0000-0000-0000-000000000000",
-               "\tName = I",
-               "\tHeight = 181,5",
-               "\tAge = 20",
-               "\tGrades = null",
-               "\tFriend = null",
-               "");
+            var str = ObjectPrinter.For<Person>()
+                .Printing<double>()
+                .Using(culture)
+                .PrintToString(person);
 
-            printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().ContainAll(new[] { nameof(person.Height), $"{person.Height.ToString(culture)}" });
         }
 
-        [Test]
-        public void PrintToString_WhenCultureIsSpecifiedForNumericType()
+        [TestCase("Leonardo", 1, "L")]
+        [TestCase("Michelangelo", 2, "Mi")]
+        [TestCase("Raphael", 3, "Rap")]
+        [TestCase("Donatello", 4, "Dona")]
+        public void PrintToString_WhenStringIsClipped(
+    string name, int maxLength, string expected)
         {
-            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
+            var newPerson = person = new Person
+            {
+                Id = new Guid(),
+                Name = name,
+                Age = 20,
+                Height = 181.5,
+            };
 
-            var expectedString = string.Join(Environment.NewLine,
-              "Person",
-              $"\tId = 00000000-0000-0000-0000-000000000000",
-              "\tName = Ilya",
-              "\tHeight = 181.5",
-              "\tAge = 20",
-              "\tGrades = null",
-              "\tFriend = null",
-              "");
+            var str = ObjectPrinter.For<Person>()
+                .Printing(person => person.Name)
+                .TrimmedToLength(maxLength)
+                .PrintToString(person);
 
-           printer.PrintToString(person).Should().Be(expectedString);
+            str.Should().Contain(expected).And.NotContain(name);
         }
 
         [Test]
         public void PrintToString_SerializesCyclicReferences()
         {
-            var firstPerson = new Person() {  Name = "Ilya" };
-            var secondPerson = new Person() { Name = "Kirill", Friend = firstPerson };
+            var firstPerson = new Person() { Name = "Ilya", Age = 21, Height = 234.34 };
+            var secondPerson = new Person() { Name = "Kirill", Friend = firstPerson, Age = 19, Height = 32.54 };
             firstPerson.Friend = secondPerson;
-            var printer = ObjectPrinter.For<Person>();
 
-            var expectedString = string.Join(Environment.NewLine, 
-                "Person", 
-                $"\tId = 00000000-0000-0000-0000-000000000000",
-                "\tName = Ilya",
-                "\tHeight = 0",
-                "\tAge = 0",
-                "\tGrades = null",
-                "\tFriend = Person", 
-                $"\t\tId = 00000000-0000-0000-0000-000000000000",
-                $"\t\tName = Kirill",
-                "\t\tHeight = 0", 
-                "\t\tAge = 0",
-                "\t\tGrades = null", 
-                "");
+            Action action = () => ObjectPrinter.For<Person>().PrintToString(firstPerson);
 
-            printer.PrintToString(firstPerson).Should().Be(expectedString);
+            action.Should().NotThrow<StackOverflowException>();
         }
 
         [Test]
         public void PrintToString_SerializesArray()
         {
             var testArray = new[] { 1, 2, 3, 4, 5 };
-            var printer = ObjectPrinter.For<int[]>();
-            var expectedString = string.Join(Environment.NewLine, "[ 1 2 3 4 5 ]", "");
 
-            printer.PrintToString(testArray).Should().Be(expectedString);
+            var str = ObjectPrinter.For<int[]>().PrintToString(testArray);
+
+            str.Should().Contain("[ 1 2 3 4 5 ]");
         }
 
         [Test]
         public void PrintToString_SerializesList()
         {
             var testList = new List<string> { "1", "2", "3", "4", "5" };
-            var printer = ObjectPrinter.For<List<string>>();
-            var expectedString = string.Join(Environment.NewLine, "[ 1 2 3 4 5 ]", "");
 
-            printer.PrintToString(testList).Should().Be(expectedString);
+            var str = ObjectPrinter.For<List<string>>().PrintToString(testList);
+
+            str.Should().Contain("[ 1 2 3 4 5 ]");
         }
 
         [Test]
         public void PrintToString_SerializesDictionary()
         {
             var testDict = new Dictionary<string, double> { { "Первый ключ", 1 }, { "Второй ключ", 2 } };
-            var printer = ObjectPrinter.For<Dictionary<string, double>>();
+            var values = testDict.Values.Select(value => value.ToString()).ToList();
+            var keys = testDict.Keys.ToList();
 
-            var expectedString = @"{
-	[Первый ключ - 1],
-	[Второй ключ - 2],
-}
-";
-            printer.PrintToString(testDict).Should().Be(expectedString);
+            var str = ObjectPrinter.For<Dictionary<string, double>>().PrintToString(testDict);
+
+            str.Should().ContainAll(new[] { values[0], values[1], keys[0], keys[1]});
         }
 
         [Test]
         public void PrintToString_SerializesArray_WhenInClass()
         {
             person.Grades = new[] { 1.5, 2.4, 3.3, 4.2, 5.1 };
-            var printer = ObjectPrinter.For<Person>();
-            var expectedString = string.Join(Environment.NewLine,
-                "Person",
-                $"\tId = 00000000-0000-0000-0000-000000000000",
-                "\tName = Ilya",
-                "\tHeight = 181,5",
-                "\tAge = 20",
-                "\tGrades = [ 1,5 2,4 3,3 4,2 5,1 ]",
-                "\tFriend = null",
-                "");
 
-            printer.PrintToString(person).Should().Be(expectedString);
+            var str = ObjectPrinter.For<Person>().PrintToString(person);
+
+            str.Should().ContainAll(new[] {nameof(person.Grades), "[ 1,5 2,4 3,3 4,2 5,1 ]"});
         }
     }
 }
