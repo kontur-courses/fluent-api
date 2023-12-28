@@ -43,7 +43,8 @@ namespace ObjectPrinting.Tests
                 .Exclude<Guid>();
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19\n");
+                .Be("Person" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tHeight = 180,5" +
+                    Environment.NewLine + "\tAge = 19" + Environment.NewLine + "");
         }
 
         [Test]
@@ -55,7 +56,9 @@ namespace ObjectPrinting.Tests
                 .WithType<double>().SpecificSerialization(x => $"double{x}double");
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = double180,5double\n\tAge = 19\n");
+                .Be("Person" + Environment.NewLine + "\tId = Guid" + Environment.NewLine + "\tName = Alex" +
+                    Environment.NewLine + "\tHeight = double180,5double" + Environment.NewLine + "\tAge = 19" +
+                    Environment.NewLine + "");
         }
 
         [Test]
@@ -67,7 +70,9 @@ namespace ObjectPrinting.Tests
                 .WithType<double>().NumberCulture(CultureInfo.CurrentCulture);
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19\n");
+                .Be("Person" + Environment.NewLine + "\tId = Guid" + Environment.NewLine + "\tName = Alex" +
+                    Environment.NewLine + "\tHeight = 180,5" + Environment.NewLine + "\tAge = 19" +
+                    Environment.NewLine + "");
         }
 
         [Test]
@@ -79,7 +84,9 @@ namespace ObjectPrinting.Tests
                 .WithField(p => p.Age).SpecificSerialization(p => $"{p}y.o.");
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n\tAge = 19y.o.\n");
+                .Be("Person" + Environment.NewLine + "\tId = Guid" + Environment.NewLine + "\tName = Alex" +
+                    Environment.NewLine + "\tHeight = 180,5" + Environment.NewLine + "\tAge = 19y.o." +
+                    Environment.NewLine + "");
         }
 
         [Test]
@@ -103,7 +110,8 @@ namespace ObjectPrinting.Tests
                 .WithField(p => p.Age).Exclude();
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tId = Guid\n\tName = Alex\n\tHeight = 180,5\n");
+                .Be("Person" + Environment.NewLine + "\tId = Guid" + Environment.NewLine + "\tName = Alex" +
+                    Environment.NewLine + "\tHeight = 180,5" + Environment.NewLine + "");
         }
 
         [Test]
@@ -119,7 +127,8 @@ namespace ObjectPrinting.Tests
                 .WithField(p => p.Name).Exclude();
 
             printer.PrintToString(actual).Should()
-                .Be("Person\n\tHeight = double180,5double\n\tAge = 19y.o.\n");
+                .Be("Person" + Environment.NewLine + "\tHeight = double180,5double" + Environment.NewLine +
+                    "\tAge = 19y.o." + Environment.NewLine + "");
         }
 
         [Test]
@@ -134,7 +143,8 @@ namespace ObjectPrinting.Tests
                 .Exclude<int>();
 
             printer.PrintToString(parent).Should()
-                .Be("CycleRef\n\tChild = CycleRef\n\t\tChild = cycled... No more this field\n");
+                .Be("CycleRef" + Environment.NewLine + "\tChild = CycleRef" + Environment.NewLine +
+                    "\t\tChild = cycled... No more this field" + Environment.NewLine + "");
         }
 
         [Test]
@@ -149,7 +159,8 @@ namespace ObjectPrinting.Tests
             var str = printer.PrintToString(col);
 
             printer.PrintToString(col).Should()
-                .Be("List`1<Int32>\n\t[0] = 5\n\t[1] = 2\n\t[2] = 19\n");
+                .Be("List`1<Int32>" + Environment.NewLine + "\t[0] = 5" + Environment.NewLine + "\t[1] = 2" +
+                    Environment.NewLine + "\t[2] = 19" + Environment.NewLine + "");
         }
 
         [Test]
@@ -161,7 +172,8 @@ namespace ObjectPrinting.Tests
             var str = printer.PrintToString(arr);
 
             printer.PrintToString(arr).Should()
-                .Be("Int32[]\n\t[0] = 5\n\t[1] = 2\n\t[2] = 19\n");
+                .Be("Int32[]" + Environment.NewLine + "\t[0] = 5" + Environment.NewLine + "\t[1] = 2" +
+                    Environment.NewLine + "\t[2] = 19" + Environment.NewLine + "");
         }
 
         [Test]
@@ -178,7 +190,8 @@ namespace ObjectPrinting.Tests
             var str = printer.PrintToString(dict);
 
             printer.PrintToString(dict).Should()
-                .Be("Dictionary`2<Int32>\n\t[0] = a : 1\n\t[1] = b : 7\n\t[2] = abc : 2\n");
+                .Be("Dictionary`2<Int32>" + Environment.NewLine + "\t[0] = a : 1" + Environment.NewLine +
+                    "\t[1] = b : 7" + Environment.NewLine + "\t[2] = abc : 2" + Environment.NewLine + "");
         }
     }
 }
