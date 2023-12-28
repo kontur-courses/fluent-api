@@ -87,7 +87,7 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         return excludedProps.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType);
     }
 
-    public bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, out string serialized)
+    internal bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, out string serialized)
     {
         serialized = "";
 
