@@ -19,5 +19,19 @@ namespace ObjectPrinting
             return propConfig.ParentConfig;
         }
 
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, DateTime> propConfig, CultureInfo culture)
+        {
+            return propConfig.Using(x => x.ToString(culture));
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, double> propConfig, CultureInfo culture)
+        {
+            return propConfig.Using(x => x.ToString(culture));
+        }
+
+        public static PrintingConfig<TOwner> Using<TOwner>(this PropertyPrintingConfig<TOwner, float> propConfig, CultureInfo culture)
+        {
+            return propConfig.Using(x => x.ToString(culture));
+        }
     }
 }

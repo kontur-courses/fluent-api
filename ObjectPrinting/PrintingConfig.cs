@@ -12,41 +12,49 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly Config configuration;
-        private readonly Type[] finalTypes;
-
-        public PrintingConfig() 
-        { 
-            configuration = new Config();
-            finalTypes = new[]
+        private readonly SerializerConfig configuration;
+        private readonly Type[] finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
+
+        public PrintingConfig() 
+        { 
+            configuration = new SerializerConfig();
+        }
+
+        public PrintingConfig(SerializerConfig configuration)
+        {
+            this.configuration = configuration;
         }
 
         public PrintingConfig<TOwner> Excluding<Type>()
         {
-            configuration.excludedTypes.Add(typeof(Type));
-            return this;
+            var newConfig = new PrintingConfig<TOwner>(configuration);
+            newConfig.configuration.excludedTypes.Add(typeof(Type));
+            return newConfig;
         }
 
         public PrintingConfig<TOwner> Excluding<Property>(Expression<Func<TOwner, Property>> memberSelector)
         {
             var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            configuration.excludedProperties.Add(propInfo);
-            return this;
+            var newConfig = new PrintingConfig<TOwner>(configuration);
+            newConfig.configuration.excludedProperties.Add(propInfo);
+            return newConfig;
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, configuration);
+            var newConfig = new PrintingConfig<TOwner>(configuration);
+            return new PropertyPrintingConfig<TOwner, TPropType>(newConfig, newConfig.configuration);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var propInfo = ((MemberExpression)memberSelector.Body).Member as PropertyInfo;
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, configuration, propInfo);
+            var newConfig = new PrintingConfig<TOwner>(configuration);
+            return new PropertyPrintingConfig<TOwner, TPropType>(newConfig, newConfig.configuration, propInfo);
         }
 
         public string PrintToString(TOwner obj)
@@ -63,8 +71,8 @@ namespace ObjectPrinting
 
             if (finalTypes.Contains(type))
             {
-                if(configuration.cultures.TryGetValue(type, out var culture))
-                    return Convert.ToString(obj, culture) + Environment.NewLine;
+                if(configuration.typeSerialization.TryGetValue(type, out var serializer))
+                    return serializer.DynamicInvoke(obj) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
 
@@ -83,9 +91,7 @@ namespace ObjectPrinting
                 var propertyValue = propertyInfo.GetValue(obj);
                 if (configuration.serializedObjects.Contains(propertyValue))
                     continue;
-                if (configuration.typeSerialization.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-                    sb.Append(identation + propertyInfo.Name + " = " + typeSerializer.DynamicInvoke(propertyValue) + Environment.NewLine);
-                else if (configuration.propertiesSerialization.TryGetValue(propertyInfo, out var propSerializer))
+                if (configuration.propertiesSerialization.TryGetValue(propertyInfo, out var propSerializer))
                     sb.Append(identation + propertyInfo.Name + " = " + propSerializer.DynamicInvoke(propertyValue) + Environment.NewLine);
                 else
                     sb.Append(identation + propertyInfo.Name + " = " + PrintToString(propertyValue, nestingLevel + 1));

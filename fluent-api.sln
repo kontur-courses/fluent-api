@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentMapping.Tests", "Samp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spectacle", "Samples\Spectacle\Spectacle.csproj", "{EFA9335C-411B-4597-B0B6-5438D1AE04C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinting_Should", "ObjectPrinting_Should\ObjectPrinting_Should.csproj", "{67B02C1B-83D5-4849-A271-39CDBAF0A3BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectPrintingTests", "ObjectPrinting_Should\ObjectPrintingTests.csproj", "{67B02C1B-83D5-4849-A271-39CDBAF0A3BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

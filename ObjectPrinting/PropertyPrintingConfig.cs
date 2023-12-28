@@ -14,11 +14,11 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly Config configuration;
+        private readonly SerializerConfig configuration;
         private readonly PropertyInfo propertyInfo;
 
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, Config configuration,  PropertyInfo propertyInfo = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, SerializerConfig configuration,  PropertyInfo propertyInfo = null)
         {
             this.printingConfig = printingConfig;
             this.configuration = configuration;
@@ -41,13 +41,6 @@ namespace ObjectPrinting
                 else
                     configuration.propertiesSerialization[propertyInfo] = print;
             }
-            configuration.typeSerialization[typeof(TPropType)] = print;
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            configuration.cultures.Add(typeof(TPropType), culture);
             return printingConfig;
         }
 
