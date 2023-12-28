@@ -2,13 +2,13 @@ namespace ObjectPrinting.Extensions;
 
 public static class ObjectExtensions
 {
-    public static string PrintToString<T>(this T obj)
+    public static string PrintToString1<T>(this T obj, PrintingConfig<T> printingConfig)
     {
-        return ObjectPrinter.For<T>().PrintToString(obj);
+        return new Serializer<T>(printingConfig).PrintToString(obj);
     }
-
-    public static string PrintToString<T>(this T obj, PrintingConfig<T> printingConfig)
+    
+    public static string PrintToString1<T>(this T obj)
     {
-        return printingConfig.PrintToString(obj);
+        return new Serializer<T>(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 }

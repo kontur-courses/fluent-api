@@ -1,13 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using ObjectPrinting.Extensions;
+using ObjectPrinting.Interfaces;
 
 namespace ObjectPrinting;
 
@@ -31,28 +27,28 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         return this;
     }
         
-    public ISerializer<T, TOwner> Select<T>()
+    public IPropertySpecifier<T, TOwner> Serialize<T>()
     {
-        return new Serializer<T, TOwner>(this);
+        return new PropertySpecifier<T, TOwner>(this);
     }
 
-    public ISerializer<T, TOwner> Select<T>(Expression<Func<TOwner, T>> expression)
+    public IPropertySpecifier<T, TOwner> Serialize<T>(Expression<Func<TOwner, T>> expression)
     {
-        return new Serializer<T, TOwner>(this, GetPropertyInfoFromExpression(expression));
+        return new PropertySpecifier<T, TOwner>(this, GetPropertyInfoFromExpression(expression));
     }
     
     public PrintingConfig<TOwner> SetCulture<T>(CultureInfo cultureInfo)
         where T: IFormattable
     {
-        return Select<T>()
-            .Serialize(obj => string.Format(cultureInfo, "{0}", obj));
+        return Serialize<T>()
+            .With(obj => string.Format(cultureInfo, "{0}", obj));
     }
     
     public PrintingConfig<TOwner> SetCulture<T>(Expression<Func<TOwner, T>> expression, CultureInfo cultureInfo)
         where T: IFormattable
     {
-        return Select(expression)
-            .Serialize(obj => string.Format(cultureInfo, "{0}", obj));
+        return Serialize(expression)
+            .With(obj => string.Format(cultureInfo, "{0}", obj));
     }
     
     public PrintingConfig<TOwner> SliceStrings(int maxLength)
@@ -60,8 +56,8 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         if (maxLength <= 0)
             throw new ArgumentException("Parameter maxLength must be positive");
         
-        return Select<string>()
-            .Serialize(s => maxLength >= s.Length ? s : s[..maxLength]);
+        return Serialize<string>()
+            .With(s => maxLength >= s.Length ? s : s[..maxLength]);
     }
         
     void ISerializerSetter.SetSerializer<T>(Func<T, string> serializer, PropertyInfo propertyInfo)
@@ -71,57 +67,8 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         else
             typeSerializers[typeof(T)] = obj => serializer((T) obj);
     }
-        
-    public string PrintToString(TOwner obj)
-    {
-        return PrintToString1(obj, new List<object>().ToImmutableList());
-    }
-    
-    public string PrintToString1(object obj, ImmutableList<object> previous)
-    {
-        if (obj == null)
-            return "null";
 
-        var type = obj.GetType();
-
-        if (TrySerializeValueType(type, obj, out var serializedValue))
-            return serializedValue;
-
-        if (IsCyclic(obj, previous))
-            return "cyclic link";
-
-        if (obj is IDictionary dictionary)
-            return dictionary.ObjectPrintDictionary(this, previous);
-
-        if (obj is IEnumerable enumerable)
-            return enumerable.Cast<object>().ObjectPrintEnumerable(this, previous);
-
-        var identation = new string('\t', previous.Count + 1);
-        previous = previous.Add(obj);
-        var sb = new StringBuilder();
-        sb.AppendLine(type.Name + " (");
-
-        foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-        {
-            if (IsExcluded(property))
-                continue;
-            
-            sb.Append($"{identation}{property.Name}: ");
-
-            if (TrySerializeProperty(obj, property, out var serialized)) 
-                sb.Append(serialized);
-            else
-                sb.Append(PrintToString1(property.GetValue(obj), previous));
-            
-            sb.AppendLine(";");
-        }
-        
-        sb.Append(new string('\t', previous.Count - 1) + ")");
-
-        return sb.ToString();
-    }
-
-    private bool TrySerializeValueType(Type type, object obj, out string serialized)
+    internal bool TrySerializeValueType(Type type, object obj, out string serialized)
     {
         serialized = "";
         
@@ -135,17 +82,12 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         return true;
     }
 
-    private bool IsCyclic(object current, IEnumerable<object> previous)
-    {
-        return previous.Any(e => ReferenceEquals(e, current));
-    }
-    
-    private bool IsExcluded(PropertyInfo propertyInfo)
+    internal bool IsExcluded(PropertyInfo propertyInfo)
     {
         return excludedProps.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType);
     }
 
-    private bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, out string serialized)
+    public bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, out string serialized)
     {
         serialized = "";
 
@@ -156,7 +98,7 @@ public class PrintingConfig<TOwner> : ISerializerSetter
         return true;
     }
 
-    private PropertyInfo GetPropertyInfoFromExpression<T>(Expression<Func<TOwner, T>> expression)
+    private static PropertyInfo GetPropertyInfoFromExpression<T>(Expression<Func<TOwner, T>> expression)
     {
         if (expression.Body is not MemberExpression memberExpression)
             throw new ArgumentException($"Expression {expression} is not MemberExpression");

@@ -6,22 +6,22 @@ namespace ObjectPrinting.Extensions;
 
 public static class DictionaryExtensions
 {
-    public static string ObjectPrintDictionary<T>(
+    public static string ObjectPrint<T>(
         this IDictionary dictionary, 
-        PrintingConfig<T> printingConfig,
+        Serializer<T> serializer,
         ImmutableList<object> previous)
     {
         previous = previous.Add(dictionary);
 
         return dictionary
-            .KeysToValues()
-            .EnumerateForObjectPrinting(
+            .CastToDictionaryEntries()
+            .ObjectPrintingSerialize(
                 "{", "}", 
-                pair => $"{pair.Key}: {printingConfig.PrintToString1(pair.Value, previous)};", 
-                previous);
+                pair => $"{pair.Key}: {serializer.PrintToString(pair.Value, previous)};", 
+                previous.Count);
     }
 
-    private static IEnumerable<DictionaryEntry> KeysToValues(this IDictionary dictionary)
+    private static IEnumerable<DictionaryEntry> CastToDictionaryEntries(this IDictionary dictionary)
     {
         foreach (DictionaryEntry entry in dictionary)
             yield return entry;
