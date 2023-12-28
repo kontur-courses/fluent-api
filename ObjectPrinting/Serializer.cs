@@ -9,7 +9,7 @@ using ObjectPrinting.Interfaces;
 
 namespace ObjectPrinting;
 
-public class Serializer<T> : ISerializer
+public class Serializer<T> : ISerializer<T>
 {
     private readonly PrintingConfig<T> printingConfig;
     
