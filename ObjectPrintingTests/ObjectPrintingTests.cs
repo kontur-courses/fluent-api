@@ -38,7 +38,7 @@ public class ObjectPrintingTests
             .Exclude<Guid>()
             .Exclude<string>();
 
-        person.PrintToString1(config)
+        person.PrintToString(config)
             .Should()
             .Be("Person (\n\tHeight: 180,5;\n\tAge: 19000000;\n)");
     }
@@ -51,7 +51,7 @@ public class ObjectPrintingTests
             .Exclude(p => p.Name)
             .Exclude(p => p.Height);
 
-        person.PrintToString1(config)
+        person.PrintToString(config)
             .Should()
             .Be("Person (\n\tSurname: Sinatra;\n\tAge: 19000000;\n\tMoney: 300;\n)");
     }
@@ -62,7 +62,7 @@ public class ObjectPrintingTests
         var config = ObjectPrinter.For<Room>()
             .Serialize<double>().With(num => Math.Ceiling(num).ToString());
 
-        room.PrintToString1(config)
+        room.PrintToString(config)
             .Should()
             .Be("Room (\n\tWidth: 33;\n\tLength: 49;\n\tHeight: 3;\n)");
     }
@@ -73,7 +73,7 @@ public class ObjectPrintingTests
         var config = ObjectPrinter.For<Room>()
             .Serialize(r => r.Height).With(num => (num / 2).ToString());
 
-        room.PrintToString1(config)
+        room.PrintToString(config)
             .Should()
             .Be("Room (\n\tWidth: 32,5;\n\tLength: 48,6;\n\tHeight: 1,1;\n)");
     }
@@ -90,7 +90,7 @@ public class ObjectPrintingTests
         var config = ObjectPrinter.For<CultureObject>()
             .SetCulture<DateTime>(CultureInfo.InvariantCulture);
 
-        cultureObject.PrintToString1(config)
+        cultureObject.PrintToString(config)
             .Should()
             .Be("CultureObject (\n\tDateTimeProp: 01/01/2020 00:00:00;\n\tDoubleProp: 22,22;\n)");
     }
@@ -107,7 +107,7 @@ public class ObjectPrintingTests
         var config = ObjectPrinter.For<CultureObject>()
             .SetCulture(c => c.DoubleProp, CultureInfo.InvariantCulture);
 
-        cultureObject.PrintToString1(config)
+        cultureObject.PrintToString(config)
             .Should()
             .Be("CultureObject (\n\tDateTimeProp: 01.01.2020 00:00:00;\n\tDoubleProp: 22.22;\n)");
     }
@@ -124,7 +124,7 @@ public class ObjectPrintingTests
         var config = ObjectPrinter.For<FullName>()
             .SliceStrings(10);
 
-        fullName.PrintToString1(config)
+        fullName.PrintToString(config)
             .Should()
             .Be("FullName (\n\tName: SmallName;\n\tSurname: VeryBigSur;\n)");
     }
@@ -134,7 +134,7 @@ public class ObjectPrintingTests
     {
         var arr = new[] { 1, 2 };
         
-        arr.PrintToString1()
+        arr.PrintToString()
             .Should()
             .Be("[\n\t1,\n\t2,\n]");
     }
@@ -144,7 +144,7 @@ public class ObjectPrintingTests
     {
         var arr = new[] { new []{1, 2}, new []{3, 4} };
         
-        arr.PrintToString1()
+        arr.PrintToString()
             .Should()
             .Be("[\n\t[\n\t\t1,\n\t\t2,\n\t],\n\t[\n\t\t3,\n\t\t4,\n\t],\n]");
     }
@@ -159,7 +159,7 @@ public class ObjectPrintingTests
             [3] = 9
         };
 
-        dict.PrintToString1()
+        dict.PrintToString()
             .Should()
             .Be("{\n\t1: 1;\n\t2: 4;\n\t3: 9;\n}");
     }
@@ -181,7 +181,7 @@ public class ObjectPrintingTests
             },
         };
 
-        dict.PrintToString1()
+        dict.PrintToString()
             .Should()
             .Be("{\n\t1: {\n\t\t2: 3;\n\t\t4: 5;\n\t};\n\t6: {\n\t\t7: 8;\n\t\t9: 10;\n\t};\n}");
     }
@@ -212,7 +212,7 @@ public class ObjectPrintingTests
         obj1.Another = obj2;
         obj2.Another = obj1;
 
-        obj1.PrintToString1()
+        obj1.PrintToString()
             .Should()
             .Be("CyclicObject (\n\tSomeProp: 30;\n\tAnother: CyclicObject (\n\t\tSomeProp: 50;\n\t\tAnother: cyclic link;\n\t);\n)");
     }
@@ -220,7 +220,7 @@ public class ObjectPrintingTests
     [Test]
     public void PrintToString_WorksWithStrings()
     {
-        "serialize me".PrintToString1()
+        "serialize me".PrintToString()
             .Should()
             .Be("serialize me");
     }
@@ -228,7 +228,7 @@ public class ObjectPrintingTests
     [Test]
     public void PrintToString_WorksWithValueTypes()
     {
-        new Point(1, 1).PrintToString1()
+        new Point(1, 1).PrintToString()
             .Should()
             .Be("{X=1,Y=1}");
     }
