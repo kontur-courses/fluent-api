@@ -11,10 +11,10 @@ namespace ObjectPrinting;
 public class PrintingConfig<TOwner>
 {
     private readonly List<Type> excludedTypes = new();
-    private readonly List<PropertyInfo> excludedProperties = new();
+    private readonly List<MemberInfo> excludedProperties = new();
     private readonly Dictionary<Type, Delegate> serializedByType = new();
 
-    private readonly Dictionary<PropertyInfo, Delegate> serializedByPropertyInfo =
+    private readonly Dictionary<MemberInfo, Delegate> serializedByMemberInfo =
         new();
 
     private readonly HashSet<object> openObjects = new();
@@ -24,38 +24,38 @@ public class PrintingConfig<TOwner>
         return PrintToString(obj, 0);
     }
 
-    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
+    public PropertyPrintingConfig<TOwner, TMemberType> Printing<TMemberType>()
     {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this, null);
+        return new PropertyPrintingConfig<TOwner, TMemberType>(this, null);
     }
 
-    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
-        Expression<Func<TOwner, TPropType>> memberSelector)
+    public PropertyPrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
+        Expression<Func<TOwner, TMemberType>> memberSelector)
     {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this, GetPropertyInfo(memberSelector));
+        return new PropertyPrintingConfig<TOwner, TMemberType>(this, GetMemberInfo(memberSelector));
     }
 
-    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    public PrintingConfig<TOwner> Excluding<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
-        excludedProperties.Add(GetPropertyInfo(memberSelector));
+        excludedProperties.Add(GetMemberInfo(memberSelector));
         return this;
     }
 
-    public PrintingConfig<TOwner> Excluding<TPropType>()
+    public PrintingConfig<TOwner> Excluding<TMemberType>()
     {
-        excludedTypes.Add(typeof(TPropType));
+        excludedTypes.Add(typeof(TMemberType));
         return this;
     }
 
-    private static PropertyInfo GetPropertyInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    private static MemberInfo GetMemberInfo<TOwner, TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
         if (memberSelector.Body is not MemberExpression memberExpression)
-            throw new ArgumentException($"Expression '{memberSelector}' refers to a method, not a property.");
+            throw new ArgumentException($"Expression '{memberSelector}' refers to a method, not a property or field.");
 
-        if (memberExpression.Member is not PropertyInfo propInfo)
-            throw new ArgumentException($"Expression '{memberSelector}' refers to a field, not a property.");
-
-        return propInfo;
+        if (!IsPropertyOrFieldMember(memberExpression.Member))
+            throw new ArgumentException($"Expression '{memberSelector}' refers to an unsupported member type.");
+        
+        return memberExpression.Member;
     }
 
     private static bool IsFinalType(Type type)
@@ -83,38 +83,53 @@ public class PrintingConfig<TOwner>
 
         if (IsDictionary(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
 
-        sb.Append(PrintProperties(obj, nestingLevel, type));
+        sb.Append(PrintPropertiesAndFields(obj, nestingLevel, type));
         openObjects.Remove(obj);
         return sb.ToString();
     }
 
-    private string PrintProperties(object obj, int nestingLevel, Type type)
+    private static Type GetType(MemberInfo member)
+    {
+        if (!IsPropertyOrFieldMember(member))
+            throw new ArgumentException($"Expression '{member}' refers to a method, not a property or field.");
+        return (member as FieldInfo)?.FieldType
+               ?? (member as PropertyInfo)?.PropertyType;
+    }
+
+    private static object GetValue(MemberInfo member, object obj)
+    {
+        if (!IsPropertyOrFieldMember(member))
+            throw new ArgumentException($"Expression '{member}' refers to a method, not a property or field.");
+        return (member as FieldInfo)?.GetValue(obj)
+               ?? (member as PropertyInfo)?.GetValue(obj);
+    }
+    private string PrintPropertiesAndFields(object obj, int nestingLevel, Type type)
     {
         var indentation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
-        foreach (var propertyInfo in type.GetProperties().Where(prop => !IsExcluded(prop)))
+        foreach (var memberInfo in type.GetMembers().Where(prop =>IsPropertyOrFieldMember(prop) && !IsExcluded(prop)))
         {
-            if (TrySerializeProperty(obj, propertyInfo, propertyInfo.PropertyType, out var serializedValue))
+            if (TrySerializeMember(obj, memberInfo, GetType(memberInfo), out var serializedValue))
             {
-                sb.AppendLine($"{indentation}{propertyInfo.Name} = {serializedValue}");
+                sb.AppendLine($"{indentation}{memberInfo.Name} = {serializedValue}");
                 continue;
             }
 
-            if (IsArrayOrList(propertyInfo.PropertyType))
+            if (IsArrayOrList(GetType(memberInfo)))
             {
-                sb.AppendLine(indentation + propertyInfo.Name + " = ");
-                sb.Append(SerializeEnumerable(propertyInfo.GetValue(obj), nestingLevel + 1));
+                sb.AppendLine(indentation + memberInfo.Name + " = ");
+                sb.Append(SerializeEnumerable(GetValue(memberInfo, obj), nestingLevel + 1));
             }
-            else if (IsDictionary(propertyInfo.PropertyType))
+            else if (IsDictionary(GetType(memberInfo)))
             {
-                sb.AppendLine(indentation + propertyInfo.Name + " = ");
-                sb.Append(SerializeDictionary(propertyInfo.GetValue(obj), nestingLevel + 1));
+                sb.AppendLine(indentation + memberInfo.Name + " = ");
+                sb.Append(SerializeDictionary(GetValue(memberInfo, obj), nestingLevel + 1));
             }
             else
             {
                 sb.Append(
-                    $"{indentation}{propertyInfo.Name} = " +
-                    $"{PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1)}"
+                    $"{indentation}{memberInfo.Name} = " +
+                    $"{PrintToString(GetValue(memberInfo, obj), nestingLevel + 1)}"
                 );
             }
         }
@@ -123,18 +138,21 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-
-    private bool TrySerializeProperty(object obj, PropertyInfo propertyInfo, Type propertyType,
+    private static bool IsPropertyOrFieldMember(MemberInfo member)
+    {
+        return member.MemberType is MemberTypes.Field or MemberTypes.Property;
+    }
+    private bool TrySerializeMember(object obj, MemberInfo memberInfo, Type propertyType,
         out string serializedValue)
     {
         serializedValue = null;
         Delegate valueToUse = null;
-        if (serializedByPropertyInfo.TryGetValue(propertyInfo, out var propertyValue))
+        if (serializedByMemberInfo.TryGetValue(memberInfo, out var propertyValue))
             valueToUse = propertyValue;
         if (serializedByType.TryGetValue(propertyType, out var typeValue))
             valueToUse = typeValue;
 
-        return valueToUse != null && TrySerializeValue(valueToUse, propertyInfo.GetValue(obj), out serializedValue);
+        return valueToUse != null && TrySerializeValue(valueToUse, GetValue(memberInfo, obj), out serializedValue);
     }
 
     private static bool TrySerializeValue(Delegate serializer, object value, out string serializedValue)
@@ -193,17 +211,17 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-    private bool IsExcluded(PropertyInfo propertyInfo)
+    private bool IsExcluded(MemberInfo memberInfo)
     {
-        return excludedProperties.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType);
+        return excludedProperties.Contains(memberInfo) || excludedTypes.Contains(GetType(memberInfo));
     }
 
-    public void AddSerializeProperty<TPropType>(Func<TPropType, string> print, PropertyInfo propertyInfo)
+    public void AddSerializeMember<TMemberType>(Func<TMemberType, string> print, MemberInfo memberInfo)
     {
-        serializedByPropertyInfo.Add(propertyInfo, print);
+        serializedByMemberInfo.Add(memberInfo, print);
     }
 
-    public void AddSerializeByType<TPropType>(Type type, Func<TPropType, string> print)
+    public void AddSerializeByType<TMemberType>(Type type, Func<TMemberType, string> print)
     {
         serializedByType.Add(type, print);
     }

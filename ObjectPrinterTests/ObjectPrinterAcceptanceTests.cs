@@ -10,7 +10,7 @@ public class ObjectPrinterAcceptanceTests
 {
     private readonly string newLine = Environment.NewLine;
 
-   [Test]
+    [Test]
     public void ObjectPrinter_OnSubsequentPrints_ShouldNotContainCycle()
     {
         var person = new Person { Name = "Alex", Age = 19 };
@@ -20,22 +20,24 @@ public class ObjectPrinterAcceptanceTests
         var result2 = printer.PrintToString(person);
         result2.Should().NotContain("Cycle");
     }
+
     [Test]
-    public void ObjectPrinter_WhenExcludingIntType_ShouldPrintObjectWithoutIntProperties()
+    public void ObjectPrinter_WhenExcludingIntType_ShouldPrintObjectWithoutIntPropertiesAndFields()
     {
         var person = new Person { Name = "Alex", Age = 19 };
 
         var printer = ObjectPrinter.For<Person>();
-        var result = printer.Excluding<double>().PrintToString(person);
-        result.Should().NotContain(nameof(person.Height));
+        var result = printer.Excluding<int>().PrintToString(person);
+        result.Should().NotContain(nameof(person.Age));
+        result.Should().NotContain(nameof(person.Defects));
     }
 
     [Test]
-    public void ObjectPrinter_WhenExcludingHeight_ShouldPrintObjectWithoutIntProperty()
+    public void ObjectPrinter_WhenExcludingMember_ShouldPrintObjectWithoutMember()
     {
         var person = new Person { Name = "Alex", Age = 19 };
         var printer = ObjectPrinter.For<Person>();
-        var result = printer.Excluding<int>().PrintToString(person);
+        var result = printer.Excluding(x => x.Age).PrintToString(person);
         result.Should().NotContain(nameof(person.Age));
     }
 
@@ -82,8 +84,8 @@ public class ObjectPrinterAcceptanceTests
         var person = new Person { Name = "Alex", Age = 15, Height = 2.4 };
         var culture = new CultureInfo("en-GB");
         var printer = ObjectPrinter.For<Person>();
-        var result = printer.Printing(x => x.Height).Using(culture).PrintToString(person);
-        result.Should().Contain($"{nameof(person.Height)} = {person.Height.ToString(culture)}");
+        var result = printer.Printing(x => x.Defects).Using(culture).PrintToString(person);
+        result.Should().Contain($"{nameof(person.Defects)} = {person.Defects.ToString(culture)}");
     }
 
     [Test]
@@ -137,10 +139,7 @@ public class ObjectPrinterAcceptanceTests
         var printer = ObjectPrinter.For<Collections>();
         var result = printer.PrintToString(collections);
         result.Should().Contain($"{nameof(collections.Dictionary)}");
-        foreach (var value in dictionary)
-        {
-            result.Should().Contain($"{value.Key}{newLine} : {value.Value}{newLine}");
-        }
+        foreach (var value in dictionary) result.Should().Contain($"{value.Key}{newLine} : {value.Value}{newLine}");
     }
 
     [Test]
@@ -150,17 +149,14 @@ public class ObjectPrinterAcceptanceTests
         collections.List = new List<object> { 1, 2, 3 };
         var printer = ObjectPrinter.For<Collections>();
         var result = printer.PrintToString(collections);
-        foreach (var value in collections.List)
-        {
-            result.Should().Contain($"{value}{newLine}");
-        }
+        foreach (var value in collections.List) result.Should().Contain($"{value}{newLine}");
     }
 
     [Test]
     public void ObjectPrinter_WhenThereIsArrayGenericObjects_ShouldPrintObject()
     {
         var collections = new Collections();
-        collections.Array = new[] { new int[] { 1, 2, 3 } };
+        collections.Array = new[] { new[] { 1, 2, 3 } };
         var printer = ObjectPrinter.For<Collections>();
         var result = printer.PrintToString(collections);
         result.Should().Contain($"{nameof(collections.Array)} = {newLine}");
@@ -170,7 +166,7 @@ public class ObjectPrinterAcceptanceTests
             foreach (var value in list) result.Should().Contain($"\t\t\t{value}{newLine}");
         }
     }
-    
+
     [Test]
     public void ObjectPrinter_WhenThereIsEnumerableTypeRefersItself_ShouldPrintObject()
     {
@@ -180,10 +176,7 @@ public class ObjectPrinterAcceptanceTests
         var printer = ObjectPrinter.For<Collections>();
         var result = printer.PrintToString(collections);
         result.Should().Contain($"{nameof(collections.List)} = {newLine}");
-        foreach (var list in collections.List)
-        {
-            result.Should().Contain($"\t\t\t(Cycle){list.GetType().FullName}");
-        }
+        foreach (var list in collections.List) result.Should().Contain($"\t\t\t(Cycle){list.GetType().FullName}");
     }
 
     [Test]
