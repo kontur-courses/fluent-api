@@ -1,37 +1,28 @@
 using System;
-using System.Globalization;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ObjectPrinting
 {
-    public class TypePrintingConfig<TOwner, T> : PrintingConfig<TOwner>
+    public class TypePrintingConfig<TOwner>
     {
-        private readonly Type[] numericTypes =
+        private Type withType;
+        private PrintingConfig<TOwner> context;
+
+        public readonly Dictionary<Type, Func<object, string>> TypeSerialize
+            = new Dictionary<Type, Func<object, string>>();
+
+        public PrintingConfig<TOwner> SpecificSerialization(Func<object, string> serializer)
         {
-            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
-            typeof(ulong), typeof(float), typeof(double), typeof(decimal)
-        };
+            TypeSerialize.Add(withType, serializer);
+
+            return context;
+        }
         
-        public TypePrintingConfig(PrintingConfig<TOwner> printingConfig) : base(printingConfig) { }
-
-        public TypePrintingConfig<TOwner, T> SpecificSerialization(Func<T, string> serializer)
+        public TypePrintingConfig<TOwner> SwapContext<T>(PrintingConfig<TOwner> printingConfig)
         {
-            SetSerializer(typeof(T), obj => serializer((T)obj));
-            
-            return this;
-        }
+            withType = typeof(T);
+            context = printingConfig;
 
-        public TypePrintingConfig<TOwner, T> NumberCulture(CultureInfo cultureInfo)
-        {
-            if (numericTypes.Contains(typeof(T)))
-                CultureInfos.Add(typeof(T), cultureInfo);
-
-            return this;
-        }
-
-        public TypePrintingConfig<TOwner, T> TrimString(int length)
-        {
-            MaxLength = length;
             return this;
         }
     }

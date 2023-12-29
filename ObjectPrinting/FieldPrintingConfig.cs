@@ -1,22 +1,38 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class FieldPrintingConfig<TOwner, T> : PrintingConfig<TOwner>
+    public class FieldPrintingConfig<TOwner>
     {
-        public FieldPrintingConfig(PrintingConfig<TOwner> printingConfig) : base(printingConfig) { }
-        
-        public FieldPrintingConfig<TOwner, T> SpecificSerialization(Func<T, string> serializer)
+        private MemberInfo fieldInfo;
+        private PrintingConfig<TOwner> context;
+
+        public readonly List<MemberInfo> ExcludedFields = new List<MemberInfo>();
+
+        public readonly Dictionary<MemberInfo, Func<object, string>> FieldSerialize
+            = new Dictionary<MemberInfo, Func<object, string>>();
+
+        public PrintingConfig<TOwner> SpecificSerialization(Func<object, string> serializer)
         {
-            SetSerializer(FieldInfo, obj => serializer((T)obj));
-            
-            return this;
+            FieldSerialize.Add(fieldInfo, serializer);
+
+            return context;
         }
 
-        public FieldPrintingConfig<TOwner, T> Exclude()
+        public PrintingConfig<TOwner> Exclude()
         {
-            ExcludedFields.Add(FieldInfo);
-            
+            ExcludedFields.Add(fieldInfo);
+
+            return context;
+        }
+
+        public FieldPrintingConfig<TOwner> SwapContext(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo)
+        {
+            fieldInfo = memberInfo;
+            context = printingConfig;
+
             return this;
         }
     }
