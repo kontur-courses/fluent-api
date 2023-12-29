@@ -17,7 +17,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<PropertyInfo, Delegate> serializedByPropertyInfo =
         new();
 
-    private readonly HashSet<object> printedObjects = new();
+    private readonly HashSet<object> openObjects = new();
 
     public string PrintToString(TOwner obj)
     {
@@ -75,16 +75,16 @@ public class PrintingConfig<TOwner>
             return obj + Environment.NewLine;
 
         var sb = new StringBuilder();
-        if (printedObjects.Contains(obj))
+        if (openObjects.Contains(obj))
             return sb.AppendLine("(Cycle)" + type.FullName).ToString();
-        printedObjects.Add(obj);
+        openObjects.Add(obj);
         sb.AppendLine(type.Name);
         if (IsArrayOrList(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
 
         if (IsDictionary(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
 
         sb.Append(PrintProperties(obj, nestingLevel, type));
-        printedObjects.Remove(obj);
+        openObjects.Remove(obj);
         return sb.ToString();
     }
 

@@ -118,7 +118,7 @@ public class ObjectPrinterAcceptanceTests
         var result = printer.PrintToString(kid);
         result.Should().Contain(kid.GetType().Name);
         result.Should().Contain($"\t{nameof(kid.Parent)} = {kid.GetType().Name}");
-        result.Should().Contain($"\t\t{nameof(kid.Parent)} = (Cycle)ObjectPrinting.Tests.Kid");
+        result.Should().Contain($"\t\t{nameof(kid.Parent)} = (Cycle){kid.Parent.GetType().FullName}");
     }
 
     [Test]
