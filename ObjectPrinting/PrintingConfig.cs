@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using ObjectPrinting.Extensions;
@@ -9,12 +10,12 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+        private readonly HashSet<(MemberInfo, int)> excludedMembers = new HashSet<(MemberInfo, int)>();
         private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
         private readonly HashSet<object> serializedObjects = new HashSet<object>();
 
-        private readonly Dictionary<MemberInfo, Func<object, string>> memberSerializers =
-            new Dictionary<MemberInfo, Func<object, string>>();
+        private readonly Dictionary<(MemberInfo, int), Func<object, string>> memberSerializers =
+            new Dictionary<(MemberInfo, int), Func<object, string>>();
 
         public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
@@ -26,7 +27,9 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> ExcludeProperty<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            excludedMembers.Add(((MemberExpression)memberSelector.Body).Member);
+            var body = (MemberExpression)memberSelector.Body;
+            var nestingLevel = body.Expression.ToString().Count(x => x == '.') + 1;
+            excludedMembers.Add((body.Member, nestingLevel));
             return this;
         }
 
@@ -37,7 +40,8 @@ namespace ObjectPrinting
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
             var body = (MemberExpression)memberSelector.Body;
-            return new PrintingPropertyConfig<TOwner, TPropType>(this, memberSerializers, body.Member);
+            var nestingLevel = body.Expression.ToString().Count(x => x == '.') + 1;
+            return new PrintingPropertyConfig<TOwner, TPropType>(this, memberSerializers, body.Member, nestingLevel);
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -47,7 +51,8 @@ namespace ObjectPrinting
             var objType = obj.GetType();
             if (objType.IsPrimitive || objType.IsValueType || objType == typeof(string))
             {
-                if (memberSerializers.TryGetValue(objType, out var serializer))
+                if (memberSerializers.TryGetValue((objType, nestingLevel), out var serializer) ||
+                    memberSerializers.TryGetValue((objType, -1), out serializer) )
                     return serializer(obj) + Environment.NewLine;
                 return obj + Environment.NewLine;
             }
@@ -65,21 +70,23 @@ namespace ObjectPrinting
             };
         }
 
-        private bool IsMemberExcluded(MemberInfo memberInfo)
+        private bool IsMemberExcluded(MemberInfo memberInfo, int nestingLevel)
         {
-            return excludedMembers.Contains(memberInfo) ||
+            return excludedMembers.Contains((memberInfo, nestingLevel)) ||
                    excludedTypes.Contains(memberInfo.GetMemberType());
         }
 
-        private bool TryGetCustomSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
+        private bool TryGetCustomSerializer(MemberInfo memberInfo, int nestingLevel, out Func<object, string> 
+                serializer)
         {
-            return memberSerializers.TryGetValue(memberInfo, out serializer) ||
-                   memberSerializers.TryGetValue(memberInfo.GetMemberType(), out serializer);
+            return memberSerializers.TryGetValue((memberInfo, nestingLevel), out serializer) ||
+                   memberSerializers.TryGetValue((memberInfo.GetMemberType(), nestingLevel), out serializer)||
+                       memberSerializers.TryGetValue((memberInfo, -1), out serializer);
         }
 
         private string SerializeMember(object obj, MemberInfo memberInfo, int nestingLevel)
         {
-            return TryGetCustomSerializer(memberInfo, out var serializer)
+            return TryGetCustomSerializer(memberInfo, nestingLevel, out var serializer)
                 ? serializer.Invoke(memberInfo.GetValue(obj)) + Environment.NewLine
                 : PrintToString(memberInfo.GetValue(obj), nestingLevel);
         }

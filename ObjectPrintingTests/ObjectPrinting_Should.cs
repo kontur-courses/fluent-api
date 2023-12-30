@@ -10,6 +10,7 @@ namespace ObjectPrintingTests
     public class ObjectPrinting_Should
     {
         private Person person;
+        
         [SetUp]
         public void CreateDefaultPerson() =>
             person = new Person { Name = "Alex", Age = 19, Surname = "Vasilyev", Weight = 70.3 };
@@ -102,13 +103,19 @@ namespace ObjectPrintingTests
         [Test]
         public void Print_WhenArray()
         {
-            string excepted = "Person" + Environment.NewLine + 
-                              "\tParents = Person[] {" + Environment.NewLine +
-                              "\t\tPerson" + Environment.NewLine + 
-                              "\t\t\tParents = null" + Environment.NewLine + 
-                              "\t\tPerson" + Environment.NewLine +
-                              "\t\t\tParents = null" + Environment.NewLine+
-                              "\t}" + Environment.NewLine;
+            var excepted = "Person" + Environment.NewLine + 
+                           "\tParents = Person[] {" + Environment.NewLine +
+                           "\t\tPerson" + Environment.NewLine + 
+                           "\t\t\tFriends = null" + Environment.NewLine +
+                           "\t\t\tParents = null" + Environment.NewLine +
+                           "\t\t\tSomeDictionary = null" + Environment.NewLine +
+                           "\t\t\tChild = null" + Environment.NewLine +
+                           "\t\tPerson" + Environment.NewLine +
+                           "\t\t\tFriends = null" + Environment.NewLine +
+                           "\t\t\tParents = null" + Environment.NewLine +
+                           "\t\t\tSomeDictionary = null" + Environment.NewLine +
+                           "\t\t\tChild = null" + Environment.NewLine +
+                           "\t}" + Environment.NewLine;
             person.Parents = [new Person(), new Person()];
             var result = ObjectPrinter.For<Person>()
                 .ExcludeProperty(t => t.SomeDictionary)
@@ -118,6 +125,7 @@ namespace ObjectPrintingTests
                 .ExcludeProperty<bool>()
                 .ExcludeProperty<string>()
                 .ExcludeProperty<int>()
+                .ExcludeProperty(x => x.Child)
                 .PrintToString(person);
 
             result.Should().Be(excepted);
@@ -130,8 +138,14 @@ namespace ObjectPrintingTests
                                     "\tFriends = List`1 {" + Environment.NewLine +
                                     "\t\tPerson" + Environment.NewLine +
                                     "\t\t\tFriends = null" + Environment.NewLine +
+                                    "\t\t\tParents = null" + Environment.NewLine +
+                                    "\t\t\tSomeDictionary = null" + Environment.NewLine +
+                                    "\t\t\tChild = null" + Environment.NewLine +
                                     "\t\tPerson" + Environment.NewLine +
                                     "\t\t\tFriends = null" + Environment.NewLine +
+                                    "\t\t\tParents = null" + Environment.NewLine +
+                                    "\t\t\tSomeDictionary = null" + Environment.NewLine +
+                                    "\t\t\tChild = null" + Environment.NewLine +
                                     "\t}" + Environment.NewLine;
                 person.Friends = [new Person(), new Person()];
 
@@ -143,8 +157,9 @@ namespace ObjectPrintingTests
                 .ExcludeProperty<bool>()
                 .ExcludeProperty<string>()
                 .ExcludeProperty<int>()
+                .ExcludeProperty(x => x.Child)
                 .PrintToString(person);
-
+            
             result.Should().Be(excepted);
         }
 
@@ -170,8 +185,33 @@ namespace ObjectPrintingTests
                 .ExcludeProperty<bool>()
                 .ExcludeProperty<string>()
                 .ExcludeProperty<int>()
+                .ExcludeProperty(x => x.Child)
                 .PrintToString(person);
+            
             result.Should().Be(expected);
+        }
+        
+        [Test]
+        public void SerializationForChildDoesNotAffectParent()
+        {
+            person.Child = new Person();
+            var result = ObjectPrinter.For<Person>()
+                .ChangeSerializationFor(e => e.Child.Age)
+                .To(s => "ВОЗРАСТ")
+                .PrintToString(person);
+            Console.WriteLine(result);
+            result.Should().Contain("ВОЗРАСТ", LessThan.Twice());
+        }
+        
+        [Test]
+        public void ExcludingForChildDoesNotAffectParent()
+        {
+            person.Child = new Person();
+            var result = ObjectPrinter.For<Person>()
+                .ExcludeProperty(x => x.Child.Age)
+                .PrintToString(person);
+            Console.WriteLine(result);
+            result.Should().Contain("Age", Exactly.Once());
         }
     }
 }

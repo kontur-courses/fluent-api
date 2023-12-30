@@ -39,7 +39,7 @@ namespace ObjectPrinting
         }
 
         public static string SerializeObject(object obj, int nestingLevel,
-            Func<object, MemberInfo, int, string> serializeMember, Func<MemberInfo, bool> isMemberExcluded)
+            Func<object, MemberInfo, int, string> serializeMember, Func<MemberInfo, int, bool> isMemberExcluded)
         {
             var indent = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -47,7 +47,7 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var memberInfo in type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                          .Where(t => t.MemberType == MemberTypes.Field || t.MemberType == MemberTypes.Property)
-                         .Where(x => !isMemberExcluded(x)))
+                         .Where(x => !isMemberExcluded(x, nestingLevel + 1)))
             {
                 sb.Append(
                     indent + memberInfo.Name + " = " +

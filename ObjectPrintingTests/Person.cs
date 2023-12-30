@@ -11,5 +11,6 @@
         public List<Person> Friends { get; set; }
         public Person[] Parents { get; set; }
         public Dictionary<int, string> SomeDictionary { get; set; }
+        public Person Child;
     }
 }
