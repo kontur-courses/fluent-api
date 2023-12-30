@@ -3,27 +3,23 @@ using System.Collections.Generic;
 
 namespace ObjectPrinting
 {
-    public class TypePrintingConfig<TOwner>
+    public class TypePrintingConfig<TOwner, T>
     {
-        private Type withType;
-        private PrintingConfig<TOwner> context;
+        private readonly PrintingConfig<TOwner> context;
 
-        public readonly Dictionary<Type, Func<object, string>> TypeSerialize
-            = new Dictionary<Type, Func<object, string>>();
+        private readonly Dictionary<Type, Func<object, string>> typesSerialize;
+
+        public TypePrintingConfig(Dictionary<Type, Func<object, string>> typesSerialize,
+            PrintingConfig<TOwner> printingConfig)
+        {
+            this.typesSerialize = typesSerialize;
+            context = printingConfig;
+        }
 
         public PrintingConfig<TOwner> SpecificSerialization(Func<object, string> serializer)
         {
-            TypeSerialize.Add(withType, serializer);
-
+            typesSerialize.Add(typeof(T), serializer);
             return context;
-        }
-        
-        public TypePrintingConfig<TOwner> SwapContext<T>(PrintingConfig<TOwner> printingConfig)
-        {
-            withType = typeof(T);
-            context = printingConfig;
-
-            return this;
         }
     }
 }

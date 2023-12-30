@@ -17,7 +17,7 @@ public class Acceptance
             .WithType<double>().SpecificSerialization(_ => "")
             .NumberCulture<double>(CultureInfo.CurrentCulture)
             .WithField(p => p.Age).SpecificSerialization(p => "")
-            .TrimString(6)
+            .TrimString(p => p.Name, 6)
             .WithField(p => p.Age).Exclude();
 
         //1. Исключить из сериализации свойства определенного типа

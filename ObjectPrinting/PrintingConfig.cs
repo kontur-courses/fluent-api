@@ -11,16 +11,21 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private int maxLength = -1;
-
         private readonly HashSet<object> objects = new HashSet<object>();
 
         private readonly List<Type> excludedTypes = new List<Type>();
 
+        private readonly List<MemberInfo> excludedFields = new List<MemberInfo>();
+
         private readonly Dictionary<Type, CultureInfo> cultureInfos = new Dictionary<Type, CultureInfo>();
 
-        private readonly TypePrintingConfig<TOwner> typePrintingConfig = new TypePrintingConfig<TOwner>();
-        private readonly FieldPrintingConfig<TOwner> fieldPrintingConfig = new FieldPrintingConfig<TOwner>();
+        private readonly Dictionary<Type, Func<object, string>> typesSerialize
+            = new Dictionary<Type, Func<object, string>>();
+
+        private readonly Dictionary<MemberInfo, Func<object, string>> fieldsSerialize
+            = new Dictionary<MemberInfo, Func<object, string>>();
+
+        private readonly Dictionary<MemberInfo, int> fieldsLength = new Dictionary<MemberInfo, int>();
 
         private readonly Type[] finalTypes =
         {
@@ -30,9 +35,7 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             objects.Clear();
-            return maxLength == -1
-                ? PrintToString(obj, 0)
-                : PrintToString(obj, 0)[..maxLength];
+            return PrintToString(obj, 0);
         }
 
         private string PrintToString(object obj, int nestingLevel, bool newLine = true)
@@ -60,99 +63,97 @@ namespace ObjectPrinting
                     ? sb.Append(SpecificTypesSerializer.PrintDictionary(dictionary, nestingLevel, PrintToString))
                         .ToString()
                     : sb.Append(SpecificTypesSerializer.PrintArray(enumerable, nestingLevel, PrintToString)).ToString();
-            
-            sb.Append(MembersAppend(obj, nestingLevel, type.GetFields()));
-            sb.Append(MembersAppend(obj, nestingLevel, type.GetProperties()));
-            return sb.ToString();
+
+            return sb.Append(MembersAppend(obj, nestingLevel)).ToString();
         }
 
-        private StringBuilder MembersAppend(object obj, int nestingLevel, IEnumerable enumerable)
+        private StringBuilder MembersAppend(object obj, int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
-            foreach (var info in enumerable)
+            foreach (var info in obj.GetType().GetMembers())
             {
-                string prefix;
+                var prefix = identation + info.Name + " = ";
                 Type type;
                 object val;
                 switch (info)
                 {
                     case PropertyInfo propInfo:
-                        prefix = identation + propInfo.Name + " = ";
                         type = propInfo.PropertyType;
                         val = propInfo.GetValue(obj);
                         break;
                     case FieldInfo fieldInfo:
-                        prefix = identation + fieldInfo.Name + " = ";
                         type = fieldInfo.FieldType;
                         val = fieldInfo.GetValue(obj);
                         break;
                     default:
-                        return new StringBuilder();
+                        continue;
                 }
 
-                if (excludedTypes.Contains(type) || fieldPrintingConfig.ExcludedFields.Contains(info))
+                if (excludedTypes.Contains(type) || excludedFields.Contains(info))
                     continue;
 
-                if (info is MemberInfo memberInfo
-                    && fieldPrintingConfig.FieldSerialize.TryGetValue(memberInfo, out var fieldSerializer))
+                var len = fieldsLength.TryGetValue(info, out var value) ? value : -1;
+
+                string tmpStr;
+                if (fieldsSerialize.TryGetValue(info, out var fieldSerializer))
                 {
-                    sb.Append(prefix +
-                              PrintToString(fieldSerializer(val),
-                                  nestingLevel + 1));
+                    tmpStr = prefix + PrintToString(fieldSerializer(val), nestingLevel + 1);
+                    sb.Append(len != -1 ? tmpStr[..len] : tmpStr);
                     continue;
                 }
 
-                if (typePrintingConfig.TypeSerialize.TryGetValue(type, out var typeSerializer))
+                if (typesSerialize.TryGetValue(type, out var typeSerializer))
                 {
-                    sb.Append(prefix +
-                              PrintToString(typeSerializer(val),
-                                  nestingLevel + 1));
+                    tmpStr = prefix + PrintToString(typeSerializer(val), nestingLevel + 1);
+                    sb.Append(len != -1 ? tmpStr[..len] : tmpStr);
                     continue;
                 }
 
                 if (cultureInfos.TryGetValue(type, out var cultureInfo))
                 {
-                    sb.Append(prefix +
-                              PrintToString(Convert.ChangeType(
-                                      val,
-                                      Type.GetTypeCode(val?.GetType()),
-                                      cultureInfo
-                                  )?.ToString(),
-                                  nestingLevel + 1));
+                    tmpStr = prefix +
+                             PrintToString(Convert.ChangeType(
+                                 val,
+                                 Type.GetTypeCode(val?.GetType()),
+                                 cultureInfo
+                             )?.ToString(), nestingLevel + 1);
+                    sb.Append(len != -1 ? tmpStr[..len] : tmpStr);
                     continue;
                 }
 
-                sb.Append(prefix +
-                          PrintToString(val,
-                              nestingLevel + 1));
+                tmpStr = prefix + PrintToString(val, nestingLevel + 1);
+                sb.Append(len != -1 ? tmpStr[..len] : tmpStr);
             }
 
             return sb;
         }
 
-        public TypePrintingConfig<TOwner> WithType<T>()
+        public TypePrintingConfig<TOwner, T> WithType<T>()
         {
-            return typePrintingConfig.SwapContext<T>(this);
-        }
-
-        public PrintingConfig<TOwner> TrimString(int length)
-        {
-            maxLength = length;
-            return this;
+            return new TypePrintingConfig<TOwner, T>(typesSerialize, this);
         }
 
         public PrintingConfig<TOwner> NumberCulture<T>(CultureInfo cultureInfo)
+            where T : struct, IComparable, IComparable<T>, IConvertible, IEquatable<T>, IFormattable
         {
             cultureInfos.Add(typeof(T), cultureInfo);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> TrimString<T>(Expression<Func<TOwner, T>> fieldInfo, int length)
+            where T : IEquatable<string?>
+        {
+            var expression = (MemberExpression)fieldInfo.Body;
+            fieldsLength.Add(expression.Member, length);
             return this;
         }
 
         public FieldPrintingConfig<TOwner> WithField<T>(Expression<Func<TOwner, T>> fieldInfo)
         {
             var expression = (MemberExpression)fieldInfo.Body;
-            return fieldPrintingConfig.SwapContext(this, expression.Member);
+            return new FieldPrintingConfig<TOwner>(excludedFields, fieldsSerialize, this, expression.Member);
         }
 
         public PrintingConfig<TOwner> Exclude<T>()

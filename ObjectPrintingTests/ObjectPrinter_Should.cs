@@ -58,9 +58,11 @@ public class ObjectPrinter_Should
         var actual = new Person { Name = "Alex", Height = 180.5, Age = 19 };
 
         var printer = ObjectPrinter.For<Person>()
-            .TrimString(6);
+            .TrimString(p  => p.Name, 10);
 
-        printer.PrintToString(actual).Should().HaveLength(6);
+        var str = printer.PrintToString(actual);
+
+        printer.PrintToString(actual).Should().Contain("Name = Al").And.NotContain("Alex");
     }
 
     [Test]
@@ -114,6 +116,8 @@ public class ObjectPrinter_Should
         var printer = ObjectPrinter.For<CycleRef>()
             .Exclude<int>();
 
+        var str = printer.PrintToString(parent);
+        
         printer.PrintToString(parent).Should().Be(
             $"CycleRef{Environment.NewLine}" +
             $"\tChild = CycleRef{Environment.NewLine}" +

@@ -6,34 +6,33 @@ namespace ObjectPrinting
 {
     public class FieldPrintingConfig<TOwner>
     {
-        private MemberInfo fieldInfo;
-        private PrintingConfig<TOwner> context;
+        private readonly MemberInfo fieldInfo;
+        private readonly PrintingConfig<TOwner> context;
 
-        public readonly List<MemberInfo> ExcludedFields = new List<MemberInfo>();
+        private readonly List<MemberInfo> excludedFields;
 
-        public readonly Dictionary<MemberInfo, Func<object, string>> FieldSerialize
-            = new Dictionary<MemberInfo, Func<object, string>>();
+        private readonly Dictionary<MemberInfo, Func<object, string>> fieldsSerialize;
+
+        public FieldPrintingConfig(
+            List<MemberInfo> excludedFields, Dictionary<MemberInfo, Func<object, string>> fieldsSerialize,
+            PrintingConfig<TOwner> printingConfig, MemberInfo fieldInfo)
+        {
+            this.excludedFields = excludedFields;
+            this.fieldsSerialize = fieldsSerialize;
+            context = printingConfig;
+            this.fieldInfo = fieldInfo;
+        }
 
         public PrintingConfig<TOwner> SpecificSerialization(Func<object, string> serializer)
         {
-            FieldSerialize.Add(fieldInfo, serializer);
-
+            fieldsSerialize.Add(fieldInfo, serializer);
             return context;
         }
-
+        
         public PrintingConfig<TOwner> Exclude()
         {
-            ExcludedFields.Add(fieldInfo);
-
+            excludedFields.Add(fieldInfo);
             return context;
-        }
-
-        public FieldPrintingConfig<TOwner> SwapContext(PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo)
-        {
-            fieldInfo = memberInfo;
-            context = printingConfig;
-
-            return this;
         }
     }
 }
