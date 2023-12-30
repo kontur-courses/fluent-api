@@ -1,3 +1,4 @@
+using System.Collections;
 using ObjectPrinting.Tests;
 
 namespace ObjectPrinting
@@ -9,5 +10,7 @@ namespace ObjectPrinting
         public List<object> List { set; get; }
         
         public List<Person> Persons { set; get; }
+        
+        public IEnumerable<int> Enumerable;
     }
 }

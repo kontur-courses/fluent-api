@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using FluentAssertions;
 using ObjectPrinting;
 using ObjectPrinting.Tests;
@@ -94,7 +95,8 @@ public class ObjectPrinterAcceptanceTests
         const int maxLen = 1;
         var person = new Person { Name = "Alex", Age = 15, Height = 2.4, Id = Guid.Empty };
         var printer = ObjectPrinter.For<Person>();
-        var result = printer.Printing<string>().TrimmedToLength(maxLen).PrintToString(person);
+         printer.Printing<string>().TrimmedToLength(maxLen);
+        var result = person.PrintToString();
         result.Should().Contain($"{nameof(person.Name)} = {person.Name[..maxLen]}");
     }
 
@@ -119,7 +121,7 @@ public class ObjectPrinterAcceptanceTests
         var printer = ObjectPrinter.For<Kid>();
         var result = printer.PrintToString(kid);
         result.Should().Contain(kid.GetType().Name);
-        result.Should().Contain($"\t{nameof(kid.Parent)} = {kid.GetType().Name}");
+         result.Should().Contain($"\t{nameof(kid.Parent)} = {kid.GetType().Name}");
         result.Should().Contain($"\t\t{nameof(kid.Parent)} = (Cycle){kid.Parent.GetType().FullName}");
     }
 
@@ -140,6 +142,15 @@ public class ObjectPrinterAcceptanceTests
         var result = printer.PrintToString(collections);
         result.Should().Contain($"{nameof(collections.Dictionary)}");
         foreach (var value in dictionary) result.Should().Contain($"{value.Key}{newLine} : {value.Value}{newLine}");
+    }
+    [Test]
+    public void ObjectPrinter_WhenPrintingIEnumerableProperty_ShouldPrintObject()
+    {
+        var collections = new Collections();
+        collections.Enumerable = new Stack<int>(new[] { 1, 2, 3, 4 });
+        var printer = ObjectPrinter.For<Collections>();
+        var result = printer.PrintToString(collections);
+        foreach (var value in collections.Enumerable) result.Should().Contain($"{value}{newLine}");
     }
 
     [Test]
@@ -194,5 +205,13 @@ public class ObjectPrinterAcceptanceTests
             result.Should().Contain($"\t\t\t{nameof(person.Name)} = {person.Name}{newLine}");
             result.Should().Contain($"\t\t\t{nameof(person.Age)} = {person.Age}{newLine}");
         }
+    }
+    [Test]
+    public void ObjectPrinter_WhenPrintingIdenticalPersons_ShouldPrintObjectWithoutCycle()
+    {
+        var person1 = new Kid() { Name = "Abobus" };
+        person1.Parent = new Kid() { Name = "Abobus" };
+        var result = person1.PrintToString();
+        result.Should().NotContain("(Cycle)");
     }
 }

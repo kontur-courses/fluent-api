@@ -75,13 +75,13 @@ public class PrintingConfig<TOwner>
             return obj + Environment.NewLine;
 
         var sb = new StringBuilder();
-        if (openObjects.Contains(obj))
+        if (openObjects.Any(x => ReferenceEquals(x, obj)))
             return sb.AppendLine("(Cycle)" + type.FullName).ToString();
         openObjects.Add(obj);
         sb.AppendLine(type.Name);
-        if (IsArrayOrList(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
-
         if (IsDictionary(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
+        
+        if (IsArrayOrList(type)) return sb.Append(SerializeEnumerable(obj, nestingLevel)).ToString();
 
         sb.Append(PrintPropertiesAndFields(obj, nestingLevel, type));
         openObjects.Remove(obj);
@@ -115,15 +115,15 @@ public class PrintingConfig<TOwner>
                 continue;
             }
 
-            if (IsArrayOrList(GetType(memberInfo)))
-            {
-                sb.AppendLine(indentation + memberInfo.Name + " = ");
-                sb.Append(SerializeEnumerable(GetValue(memberInfo, obj), nestingLevel + 1));
-            }
-            else if (IsDictionary(GetType(memberInfo)))
+            if (IsDictionary(GetType(memberInfo)))
             {
                 sb.AppendLine(indentation + memberInfo.Name + " = ");
                 sb.Append(SerializeDictionary(GetValue(memberInfo, obj), nestingLevel + 1));
+            }
+            else if (IsArrayOrList(GetType(memberInfo)))
+            {
+                sb.AppendLine(indentation + memberInfo.Name + " = ");
+                sb.Append(SerializeEnumerable(GetValue(memberInfo, obj), nestingLevel + 1));
             }
             else
             {
@@ -171,7 +171,7 @@ public class PrintingConfig<TOwner>
 
     private static bool IsArrayOrList(Type type)
     {
-        return typeof(IList).IsAssignableFrom(type);
+        return typeof(IEnumerable).IsAssignableFrom(type) && !IsFinalType(type);
     }
 
     private static bool IsDictionary(Type type)

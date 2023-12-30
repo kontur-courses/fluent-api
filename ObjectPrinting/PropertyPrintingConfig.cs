@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PropertyPrintingConfig<TOwner, TMemberType> : IPropertyPrintingConfig<TOwner, TMemberType>
+    public class PropertyPrintingConfig<TOwner, TMemberType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
         private readonly MemberInfo memberInfo;
@@ -33,7 +33,5 @@ namespace ObjectPrinting
         {
             return Using(x =>((IConvertible)x).ToString(culture));
         }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TMemberType>.ParentConfig => printingConfig;
     }
 }
