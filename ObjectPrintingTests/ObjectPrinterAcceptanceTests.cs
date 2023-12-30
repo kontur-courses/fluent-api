@@ -1,8 +1,9 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using NUnit.Framework;
+using ObjectPrinting;
+using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -10,31 +11,38 @@ namespace ObjectPrinting.Solved.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person
+            {
+                Name = "Alex", Age = 19, Surname = "Vasilyev", Weight = 70.3, Height = 170.9,
+                Friends = new List<Person>{new() {Surname = "sd"}, null}
+            };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
+                .ExcludeProperty<int>()
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString("X"))
+                .ChangeSerializationFor<Guid>()
+                .To(x => "hello")
                 //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .ChangeSerializationFor<double>()
+                .To(CultureInfo.CurrentCulture)
                 //4. Настроить сериализацию конкретного свойства
+                .ChangeSerializationFor(x => x.Name)
+                .To(x => "Another")
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
+                .ChangeSerializationFor(x => x.Surname)
+                .ToTrimmedLength(3)
                 //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
-
-            string s1 = printer.PrintToString(person);
+                .ExcludeProperty(x => x.Height);
             
+            var serializedObject = printer.PrintToString(person);
+            Console.WriteLine(serializedObject);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            string s2 = person.PrintToString();
-            
+            serializedObject = person.PrintToString();
+            Console.WriteLine(serializedObject);
             //8. ...с конфигурированием
-            string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
+            serializedObject = person.PrintToString(s => s.ExcludeProperty(x => x.Name));
+            Console.WriteLine(serializedObject);
         }
     }
 }
