@@ -102,8 +102,13 @@ namespace ObjectPrintingTests
         [Test]
         public void Print_WhenArray()
         {
-            const string excepted = "Person\r\n\tParents = Person[] {\r\n\t\tPerson" +
-                                    "\r\n\t\t\tParents = null\r\n\t\tPerson\r\n\t\t\tParents = null\r\n\t}\r\n";
+            string excepted = "Person" + Environment.NewLine + 
+                              "\tParents = Person[] {" + Environment.NewLine +
+                              "\t\tPerson" + Environment.NewLine + 
+                              "\t\t\tParents = null" + Environment.NewLine + 
+                              "\t\tPerson" + Environment.NewLine +
+                              "\t\t\tParents = null" + Environment.NewLine+
+                              "\t}" + Environment.NewLine;
             person.Parents = [new Person(), new Person()];
             var result = ObjectPrinter.For<Person>()
                 .ExcludeProperty(t => t.SomeDictionary)
@@ -121,9 +126,14 @@ namespace ObjectPrintingTests
         [Test]
         public void Print_WhenList()
         {
-            const string excepted = "Person\r\n\tFriends = List`1 {\r\n\t\tPerson\r\n\t\t\tFriends = null" +
-                                    "\r\n\t\tPerson\r\n\t\t\tFriends = null\r\n\t}\r\n";
-            person.Friends = [new Person(), new Person()];
+            string excepted = "Person" + Environment.NewLine +
+                                    "\tFriends = List`1 {" + Environment.NewLine +
+                                    "\t\tPerson" + Environment.NewLine +
+                                    "\t\t\tFriends = null" + Environment.NewLine +
+                                    "\t\tPerson" + Environment.NewLine +
+                                    "\t\t\tFriends = null" + Environment.NewLine +
+                                    "\t}" + Environment.NewLine;
+                person.Friends = [new Person(), new Person()];
 
             var result = ObjectPrinter.For<Person>()
                 .ExcludeProperty(t => t.SomeDictionary)
@@ -141,13 +151,17 @@ namespace ObjectPrintingTests
         [Test]
         public void Print_WhenDictionaries()
         {
-            const string expected = "Person\r\n\tSomeDictionary = Dictionary`2 " +
-                                    "{\r\n\t\t1 = aboba\r\n\t\t2 = biba\r\n\t}\r\n";
+            string expected = "Person" + Environment.NewLine +
+                                    "\tSomeDictionary = Dictionary`2 {" + Environment.NewLine +
+                                    "\t\t1 = aboba" + Environment.NewLine +
+                                    "\t\t2 = biba" + Environment.NewLine +
+                                    "\t}" + Environment.NewLine;
             person.SomeDictionary = new Dictionary<int, string>
             {
                 { 1, "aboba" },
                 { 2, "biba" }
             };
+            
             var result = ObjectPrinter.For<Person>()
                 .ExcludeProperty(t => t.Parents)
                 .ExcludeProperty(t => t.Friends)
