@@ -28,13 +28,16 @@ namespace ObjectPrinting
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
+
             sb.AppendLine(type.Name);
+
             foreach (var propertyInfo in type.GetProperties())
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+
             return sb.ToString();
         }
     }
