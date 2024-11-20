@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>8</LangVersion>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <AssemblyName>SpectacleSample</AssemblyName>
-    <RootNamespace>SpectacleSample</RootNamespace>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>
