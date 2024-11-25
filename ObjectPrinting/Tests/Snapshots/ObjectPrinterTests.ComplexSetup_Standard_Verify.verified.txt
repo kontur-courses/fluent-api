@@ -1,0 +1,5 @@
+﻿Person
+	---Name--- = Alex
+	Surname = Ka
+	Weight = 80.1
+	Age = ***19***
