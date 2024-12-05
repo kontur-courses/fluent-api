@@ -1,41 +1,124 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<string> excludedProperties = new();
+        private readonly Dictionary<Type, Delegate> typeSerializers = new();
+        private readonly Dictionary<string, Delegate> propertySerializers = new();
+        private readonly Dictionary<Type, CultureInfo> typeCultures = new();
+        private readonly Dictionary<string, int> propertyTrim = new();
+
+        public PrintingConfig<TOwner> Exclude<TPropType>()
         {
-            return PrintToString(obj, 0);
+            excludedTypes.Add(typeof(TPropType));
+            return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propertySelector)
         {
-            //TODO apply configurations
-            if (obj == null)
+            var propertyName = GetPropertyName(propertySelector);
+            excludedProperties.Add(propertyName);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> UseCulture<TPropType>(CultureInfo culture) where TPropType : struct
+        {
+            typeCultures[typeof(TPropType)] = culture;
+            return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
+        {
+            var propertyName = GetPropertyName(propertySelector);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>() =>
+            new(this);
+
+        public string PrintToString(TOwner obj) =>
+            PrintToString(obj, 1);
+
+        private string PrintToString(object? obj, int nestingLevel)
+        {
+            if (obj is null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+
+            if (typeSerializers.TryGetValue(type, out var serializer))
+                return (serializer.DynamicInvoke(obj) ?? "").ToString()!;
+
+            if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid))
+                return obj.ToString()!;
+
+            var indentation = new string('\t', nestingLevel);
+            var sb = new StringBuilder();
+            sb.AppendLine($"{type.Name}");
             foreach (var propertyInfo in type.GetProperties())
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var propertyName = propertyInfo.Name;
+
+                if (excludedProperties.Contains(propertyName))
+                    continue;
+                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+
+                var propertyValue = propertyInfo.GetValue(obj);
+                var propertyType = propertyInfo.PropertyType;
+
+                if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
+                {
+                    sb.AppendLine($"{indentation}{propertySerializer.DynamicInvoke(propertyName)} = {propertyValue}");
+                    continue;
+                }
+
+                if (typeCultures.TryGetValue(propertyType, out var culture))
+                {
+                    if (propertyValue is IFormattable formattable)
+                    {
+                        sb.AppendLine($"{indentation}{propertyName} = {formattable.ToString(null, culture)}");
+                        continue;
+                    }
+                }
+
+                if (propertyTrim.TryGetValue(propertyName, out var toTrimLength) && propertyValue is string stringValue)
+                {
+                    sb.AppendLine($"{indentation}{propertyName} = {stringValue.Substring(0, Math.Min(stringValue.Length - toTrimLength, stringValue.Length))}");
+                    continue;
+                }
+
+                sb.AppendLine($"{indentation}{propertyName} = {PrintToString(propertyValue, nestingLevel + 1)}");
             }
             return sb.ToString();
         }
+
+        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
+        {
+            if (propertySelector.Body is MemberExpression memberExpression)
+                return memberExpression.Member.Name;
+
+            if (propertySelector.Body is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression operand)
+                return operand.Member.Name;
+
+            throw new ArgumentException("Invalid property selector expression");
+        }
+
+        internal void AddPropertySerializer<TPropType>(string propertyName, Func<TPropType, string> serializer) =>
+            propertySerializers[propertyName] = serializer;
+
+        internal void AddTypeSerializer<TPropType>(Func<TPropType, string> serializer) =>
+            typeSerializers[typeof(TPropType)] = serializer;
+
+        internal void AddStringPropertyTrim(string propertyName, int maxLength) =>
+            propertyTrim[propertyName] = maxLength;
     }
 }

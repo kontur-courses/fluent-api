@@ -1,0 +1,6 @@
+﻿Person
+	Name = Alex
+	Surname = Kash
+	Height = 184,1
+	Weight = 80,1
+	Age = 19
