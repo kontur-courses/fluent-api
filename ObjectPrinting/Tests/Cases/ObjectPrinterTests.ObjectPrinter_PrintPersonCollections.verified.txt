@@ -1,0 +1,23 @@
+﻿[
+	Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Ivan
+		SecondName = null
+		Height = 0
+		Weight = 0
+		Age = 0
+	Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Ivan1
+		SecondName = null
+		Height = 0
+		Weight = 0
+		Age = 0
+	Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Ivan2
+		SecondName = null
+		Height = 0
+		Weight = 0
+		Age = 0
+]
