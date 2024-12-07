@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests.TestHelpers
 {
     public class Person
     {
@@ -8,5 +8,9 @@ namespace ObjectPrinting.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        public SubPerson SubPerson { get; set; }
+
+        public string PublicField;
+        private string privateField;
     }
 }

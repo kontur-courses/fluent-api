@@ -1,41 +1,98 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+using ObjectPrinting.Serialization;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<MemberInfo> excludedMembers = new HashSet<MemberInfo>();
+        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
+
+        private readonly Dictionary<MemberInfo, IHasSerializationFunc> membersSerializesInfos =
+            new Dictionary<MemberInfo, IHasSerializationFunc>();
+
+        private readonly Dictionary<Type, IHasSerializationFunc> typeSerializesInfos =
+            new Dictionary<Type, IHasSerializationFunc>();
+
+        private Func<object, string> handleMaxRecursion;
+
+        private readonly int maxRecursion = 1;
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
         }
 
+        public PrintingConfig<TOwner> OnMaxRecursion(Func<object,string> func)
+        {
+            handleMaxRecursion = func;
+
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> exclude)
+        {
+            if (exclude == null)
+                throw new ArgumentNullException();
+
+            var memberInfo = GetMemberInfo(exclude);
+            excludedMembers.Add(memberInfo);
+
+            return this;
+        }
+
+        private static MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> expression)
+        {
+            var memberExpression = expression.Body is UnaryExpression unaryExpression
+                ? (MemberExpression)unaryExpression.Operand
+                : (MemberExpression)expression.Body;
+
+            return memberExpression.Member;
+        }
+
+
+        public PrintingConfig<TOwner> Exclude<TPropType>()
+        {
+            excludedTypes.Add(typeof(TPropType));
+
+            return this;
+        }
+
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            var serializer = new Serializer(
+                excludedMembers,
+                excludedTypes,
+                membersSerializesInfos,
+                typeSerializesInfos,
+                maxRecursion,
+                handleMaxRecursion);
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            return serializer.Serialize(obj, nestingLevel);
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
+        public IUsing<TOwner, T> Printing<T>()
+        {
+            var config = new SerializationConfig<TOwner, T>(this);
+            typeSerializesInfos[typeof(T)] = config;
+
+            return config;
+        }
+
+        public IUsing<TOwner, T> Printing<T>(Expression<Func<TOwner, T>> property)
+        {
+            if (property == null)
+                throw new ArgumentNullException();
+
+            var memberInfo = GetMemberInfo(property);
+
+            var config = new SerializationConfig<TOwner, T>(this);
+            membersSerializesInfos[memberInfo] = config;
+
+            return config;
         }
     }
 }
