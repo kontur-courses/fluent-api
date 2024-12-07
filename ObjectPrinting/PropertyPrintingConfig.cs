@@ -1,13 +1,20 @@
 using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting;
 
-public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig)
+public class PropertyPrintingConfig<TOwner, TPropType>(
+    PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo = null)
     : IPropertyPrintingConfig<TOwner, TPropType>
 {
-    public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> printingMethod)
     {
+        if (propertyInfo is null)
+            printingConfig.CustomTypeSerializers[typeof(TPropType)] = printingMethod;
+        else
+            printingConfig.CustomPropertySerializers[propertyInfo] = printingMethod;
+
         return printingConfig;
     }
 
@@ -15,7 +22,6 @@ public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> pr
     {
         return printingConfig;
     }
-
     PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 }
 
