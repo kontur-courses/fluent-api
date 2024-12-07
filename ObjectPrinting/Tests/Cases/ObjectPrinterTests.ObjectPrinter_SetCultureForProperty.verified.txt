@@ -1,0 +1,7 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Ivan
+	SecondName = Ivanov
+	Height = 0.12345
+	Weight = 0,1234
+	Age = 10

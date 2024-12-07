@@ -1,0 +1,6 @@
+﻿Person
+	Name = Ivan
+	SecondName = Ivanov
+	Height = 0,12345
+	Weight = 0,1234
+	Age = 10

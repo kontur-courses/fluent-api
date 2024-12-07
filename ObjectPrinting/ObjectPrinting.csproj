@@ -5,8 +5,28 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Verify.NUnit" Version="28.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Tests\Cases\ObjectPrinterTests.ObjectPrinter_SerializeProperty.verified.txt">
+      <ParentFile>$([System.String]::Copy('%(FileName)').Split('.')[0].Split('(')[0])</ParentFile>
+      <SubType>Component</SubType>
+      <DependentUpon>%(ParentFile).cs</DependentUpon>
+    </None>
+    <None Update="Tests\Cases\ObjectPrinterTests.ObjectPrinter_SerializeType.verified.txt">
+      <ParentFile>$([System.String]::Copy('%(FileName)').Split('.')[0].Split('(')[0])</ParentFile>
+      <SubType>Component</SubType>
+      <DependentUpon>%(ParentFile).cs</DependentUpon>
+    </None>
+    <None Update="Tests\Cases\ObjectPrinterTests.ObjectPrinter_ExcludeProperty.verified.txt">
+      <ParentFile>$([System.String]::Copy('%(FileName)').Split('.')[0].Split('(')[0])</ParentFile>
+      <SubType>Component</SubType>
+      <DependentUpon>%(ParentFile).cs</DependentUpon>
+    </None>
   </ItemGroup>
 </Project>
