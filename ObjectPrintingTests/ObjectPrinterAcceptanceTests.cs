@@ -29,7 +29,14 @@ public class Tests
         var s2 = person.PrintToString();
         Console.WriteLine(s2);
         //8. ...с конфигурированием
-        var s3 = person.PrintToString(c => c.Exclude<int>());
+        var s3 = person.PrintToString(
+            c => c
+                .Exclude<int>()
+                .Exclude(p => p.Friends)
+                .Exclude(p => p.Friend)
+                .Exclude(p => p.Relatives)
+                .Exclude(p => p.Neighbours)
+            );
         Console.WriteLine(s3);
     }
 }
