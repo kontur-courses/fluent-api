@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework.Internal;
 
 namespace ObjectPrinting
 {
@@ -24,7 +23,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        internal void AddConverter<TParam>(Type type, Func<TParam, string?> converter)
+        internal void AddTypeConverter<TParam>(Type type, Func<TParam, string?> converter)
         {
             _typeConverters.Add(type, converter);
         }
