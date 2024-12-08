@@ -8,96 +8,109 @@ namespace ObjectPrintingTests;
 [TestOf(typeof(ObjectPrinter))]
 public class ObjectPrinterTest
 {
+    private Person person;
+
+    [SetUp]
+    public void SetUp()
+    {
+        person = new Person { Name = "Alex", Age = 19, Height = 189.25 };
+    }
+    
     [Test]
     public void PrintingConfig_Exclude_ShouldExcludeGivenType()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
-
         var printer = ObjectPrinter.For<Person>()
             .Exclude<Guid>();
-        var s1 = printer.PrintToString(person);
+        
+        var result = printer.PrintToString(person);
 
-        s1.Should().NotContain($"{nameof(person.Id)} = {person.Id}");
+        result.Should().NotContain($"{nameof(person.Id)} = {person.Id}");
     }
 
     [Test]
     public void PrintingConfig_Exclude_ShouldExcludeGivenProperty()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
-
         var printer = ObjectPrinter.For<Person>()
             .Exclude(p => p.Name);
 
-        var s1 = printer.PrintToString(person);
+        var result = printer.PrintToString(person);
 
-        s1.Should().NotContain($"{nameof(person.Name)} = {person.Name}");
+        result.Should().NotContain($"{nameof(person.Name)} = {person.Name}");
     }
 
     [Test]
     public void PrintingConfig_SetPrintingForType_ShouldUseCustomMethod()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
-        const string intValue = "int";
+        const string printingType = "int";
 
         var printer = ObjectPrinter.For<Person>()
             .SetPrintingFor<int>()
-            .Using(_ => intValue);
+            .Using(_ => printingType);
 
-        var s1 = printer.PrintToString(person);
+        var result = printer.PrintToString(person);
 
-        s1.Should().Contain($"{nameof(person.Age)} = {intValue}");
+        result.Should().Contain($"{nameof(person.Age)} = {printingType}");
     }
 
     [Test]
     public void PrintingConfig_SetPrintingForProperty_ShouldUseCustomMethod()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
-        const string idValue = "Id";
+        const string printingProperty = "Id";
 
         var printer = ObjectPrinter.For<Person>()
             .SetPrintingFor(p => p.Id)
-            .Using(_ => idValue);
+            .Using(_ => printingProperty);
 
-        var s1 = printer.PrintToString(person);
+        var result = printer.PrintToString(person);
 
-        s1.Should().Contain($"{nameof(person.Id)} = {idValue}");
+        result.Should().Contain($"{nameof(person.Id)} = {printingProperty}");
     }
     
     [Test]
     public void PrintingConfig_SetPrintingCulture_ShouldUseGivenCulture()
     {
-        var person = new Person { Name = "Alex", Age = 19, Height = 189.25 };
         var culture = CultureInfo.CreateSpecificCulture("fr-FR");
 
         var printer = ObjectPrinter.For<Person>()
-            .SetPrintingFor<double>().WithCulture(culture);
+            .SetPrintingFor<double>()
+            .WithCulture(culture);
 
-        var s1 = printer.PrintToString(person);
+        var result = printer.PrintToString(person);
 
-        s1.Should().Contain($"{nameof(person.Age)} = {person.Age.ToString(culture)}");
+        result.Should().Contain($"{nameof(person.Age)} = {person.Age.ToString(culture)}");
     }
 
     [Test]
     public void PrintingConfig_SetPrintingTrim_ShouldReturnTrimmedValue()
     {
-        var person = new Person { Name = "Alexxx", Age = 19, Height = 189.25 };
-
+        const int trimLength = 4;
+        
         var printer = ObjectPrinter.For<Person>()
-            .SetPrintingFor(p => p.Name).TrimmedToLength(4);
+            .SetPrintingFor(p => p.Name)
+            .TrimmedToLength(trimLength);
 
-        var s1 = printer.PrintToString(person);
+        var result = printer.PrintToString(person);
 
-        s1.Should().Contain($"{nameof(person.Name)} = Alex");
+        result.Should().Contain($"{nameof(person.Name)} = {person.Name[..trimLength]}");
     }
 
     [Test]
     public void PrintingConfig_PrintCycledObject_ShouldDetectCycleReference()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
         person.Friend = person;
 
-        var s1 = person.PrintToString();
+        var result = person.PrintToString();
 
-        s1.Should().Contain($"{nameof(person.Friend)} = Cycle reference detected");
+        result.Should().Contain($"{nameof(person.Friend)} = Cycle reference detected");
+    }
+    
+    [Test]
+    public void PrintingConfig_PrintNestedObject_ShouldPrintNestedObject()
+    {
+        person.Friend = new Person { Name = "John", Age = 15, Height = 178.4 };
+
+        var result = person.PrintToString();
+
+        result.Should().Contain($"\t\t{nameof(person.Friend.Name)} = {person.Friend.Name}");
     }
 }
