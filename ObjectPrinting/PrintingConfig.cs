@@ -17,7 +17,7 @@ namespace ObjectPrinting
         internal CultureInfo DoubleCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal CultureInfo FloatCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal CultureInfo DateTimeCultureInfo { get; set; } = CultureInfo.CurrentCulture;
-        internal int MaxStringLength { get; set; }
+        internal int MaxStringLength { get; set; } = int.MaxValue;
         internal int MaxRecursionDepth { get; set; } = 16;
 
         public string PrintToString(TOwner obj)
