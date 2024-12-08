@@ -3,27 +3,27 @@ using System.Reflection;
 
 namespace ObjectPrinting;
 
-public class PropertyPrintingConfig<TOwner, TPropType>(
+public class MemberPrintingConfig<TOwner, TMemberType>(
     PrintingConfig<TOwner> printingConfig, PropertyInfo? propertyInfo = null)
-    : IPropertyPrintingConfig<TOwner, TPropType>
+    : IMemberPrintingConfig<TOwner, TMemberType>
 {
     internal readonly PrintingConfig<TOwner> PrintingConfig = printingConfig; 
     internal readonly PropertyInfo? PropertyInfo = propertyInfo;
     
-    public PrintingConfig<TOwner> Using(Func<TPropType, string> printingMethod)
+    public PrintingConfig<TOwner> Using(Func<TMemberType, string> printingMethod)
     {
         if (PropertyInfo is null)
-            PrintingConfig.CustomTypeSerializers[typeof(TPropType)] = printingMethod;
+            PrintingConfig.CustomTypeSerializers[typeof(TMemberType)] = printingMethod;
         else
             PrintingConfig.CustomPropertySerializers[PropertyInfo] = printingMethod;
 
         return PrintingConfig;
     }
 
-    PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => PrintingConfig;
+    PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TMemberType>.ParentConfig => PrintingConfig;
 }
 
-public interface IPropertyPrintingConfig<TOwner, TPropType>
+public interface IMemberPrintingConfig<TOwner, TMemberType>
 {
     PrintingConfig<TOwner> ParentConfig { get; }
 }

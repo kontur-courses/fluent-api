@@ -3,14 +3,14 @@ using System.Globalization;
 
 namespace ObjectPrinting;
 
-public static class PropertyPrintingConfigExtensions
+public static class MemberPrintingConfigExtensions
 {
     public static string PrintToString<T>(this T? obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
     {
         return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 
-    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
         var propertyInfo = propConfig.PropertyInfo;
         propConfig.PrintingConfig.TrimmedProperties[propertyInfo] = maxLen;
@@ -19,11 +19,11 @@ public static class PropertyPrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(
-        this PropertyPrintingConfig<TOwner, TPropType> propertyConfig, CultureInfo culture)
+        this MemberPrintingConfig<TOwner, TPropType> memberConfig, CultureInfo culture)
         where TPropType : IFormattable
     {
-        propertyConfig.PrintingConfig.CulturesForTypes[typeof(TPropType)] = culture;
+        memberConfig.PrintingConfig.CulturesForTypes[typeof(TPropType)] = culture;
 
-        return propertyConfig.PrintingConfig;
+        return memberConfig.PrintingConfig;
     }
 }
