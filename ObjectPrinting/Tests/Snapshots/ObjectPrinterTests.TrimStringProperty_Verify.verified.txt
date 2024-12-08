@@ -5,3 +5,54 @@
 	Height = 184,1
 	Weight = 80,1
 	Age = 19
+	Parent = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = 
+		Surname = Kash
+		Height = 0
+		Weight = 0
+		Age = 40
+		Parent = Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Height = 0
+			Weight = 0
+			Age = 0
+			Parent = Достигнут максимум глубины рекурсии - 3.
+			Friends = []
+			SomeDictionary = []
+
+		Friends = []
+		SomeDictionary = []
+
+	Friends = [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Al
+			Surname = Molk
+			Height = 0
+			Weight = 0
+			Age = 19
+			Parent = null
+			Friends = []
+			SomeDictionary = []
+		,
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Rob
+			Surname = Molk
+			Height = 0
+			Weight = 0
+			Age = 19
+			Parent = null
+			Friends = []
+			SomeDictionary = []
+		]
+
+	SomeDictionary = [
+		<Key = 1 - Value = One>
+		<Key = 2 - Value = Two>
+		<Key = 3 - Value = Three>
+		]
+

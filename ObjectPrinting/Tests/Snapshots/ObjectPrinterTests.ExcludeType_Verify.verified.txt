@@ -3,3 +3,46 @@
 	Name = Alex
 	Surname = Kash
 	Age = 19
+	Parent = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Bob
+		Surname = Kash
+		Age = 40
+		Parent = Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Age = 0
+			Parent = Достигнут максимум глубины рекурсии - 3.
+			Friends = []
+			SomeDictionary = []
+
+		Friends = []
+		SomeDictionary = []
+
+	Friends = [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Alice
+			Surname = Molk
+			Age = 19
+			Parent = null
+			Friends = []
+			SomeDictionary = []
+		,
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Robert
+			Surname = Molk
+			Age = 19
+			Parent = null
+			Friends = []
+			SomeDictionary = []
+		]
+
+	SomeDictionary = [
+		<Key = 1 - Value = One>
+		<Key = 2 - Value = Two>
+		<Key = 3 - Value = Three>
+		]
+

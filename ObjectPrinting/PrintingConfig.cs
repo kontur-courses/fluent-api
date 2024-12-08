@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Delegate> propertySerializers = new();
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<string, int> propertyTrim = new();
+        private const int MaxNestingDepth = 3;
 
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
@@ -51,7 +53,7 @@ namespace ObjectPrinting
         private string PrintToString(object? obj, int nestingLevel)
         {
             if (obj is null)
-                return "null" + Environment.NewLine;
+                return "null";
 
             var type = obj.GetType();
 
@@ -60,6 +62,12 @@ namespace ObjectPrinting
 
             if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid))
                 return obj.ToString()!;
+
+            if (obj is IEnumerable enumerable && type != typeof(string))
+                return SerializeCollection(enumerable, nestingLevel);
+
+            if (nestingLevel > MaxNestingDepth)
+                return $"Достигнут максимум глубины рекурсии - {MaxNestingDepth}.";
 
             var indentation = new string('\t', nestingLevel);
             var sb = new StringBuilder();
@@ -100,6 +108,42 @@ namespace ObjectPrinting
             }
             return sb.ToString();
         }
+
+        private string SerializeCollection(IEnumerable collection, int nestingLevel)
+        {
+            var indentation = new string('\t', nestingLevel);
+            var sb = new StringBuilder();
+
+            var items = collection.Cast<object>().ToList();
+
+            if (items.Count == 0)
+                return sb.Append("[]").ToString();
+
+            sb.AppendLine("[");
+
+            if (collection is IDictionary dictionary)
+            {
+                foreach (var key in dictionary.Keys)
+                {
+                    var value = dictionary[key];
+                    sb.Append($"{indentation}<Key = {PrintToString(key, nestingLevel)} - Value = {PrintToString(value, nestingLevel + 1)}>" + Environment.NewLine);
+                }
+            }
+            else
+            {
+                for (var i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    sb.Append($"{indentation}{PrintToString(item, nestingLevel + 1)}");
+                    if (i < items.Count - 1)
+                        sb.AppendLine($"{indentation},");
+                }
+            }
+
+            sb.AppendLine($"{indentation}]");
+            return sb.ToString();
+        }
+
 
         private MemberInfo GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {

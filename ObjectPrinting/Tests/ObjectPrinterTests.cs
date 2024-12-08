@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -11,7 +12,46 @@ namespace ObjectPrinting.Tests;
 public class ObjectPrinterTests
 {
 	private static readonly VerifySettings Settings = new();
-	private readonly Person person = new() { Name = "Alex", Surname = "Kash", Age = 19, Height = 184.1, Weight = 80.1 };
+
+	private readonly Person person = new()
+	{
+		Name = "Alex",
+		Surname = "Kash",
+		Age = 19,
+		Height = 184.1,
+		Weight = 80.1,
+		Parent = new Person
+		{
+			Name = "Bob",
+			Surname = "Kash",
+			Age = 40,
+			Parent = new Person
+			{
+				Parent = new Person()
+			}
+		},
+		Friends =
+		[
+			new Person
+			{
+				Name = "Alice",
+				Surname = "Molk",
+				Age = 19,
+			},
+			new Person
+			{
+				Name = "Robert",
+				Surname = "Molk",
+				Age = 19,
+			},
+		],
+		SomeDictionary = new Dictionary<int, string>
+		{
+			{ 1, "One" },
+			{ 2, "Two" },
+			{ 3, "Three" }
+		}
+	};
 
 	[OneTimeSetUp]
 	public void OneTimeSetUp()
