@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework.Internal;
 
@@ -10,7 +12,9 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private List<Type> _excludedTypes = new();
+        private List<MemberInfo> _excludedProperties = new();
         private Dictionary<Type, Delegate> _typeConverters = new();
+        private Dictionary<MemberInfo, Delegate> _propertyConverters = new();
         internal CultureInfo DoubleCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal CultureInfo FloatCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal int MaxStringLength { get; set; }
@@ -25,15 +29,50 @@ namespace ObjectPrinting
             _typeConverters.Add(type, converter);
         }
 
+        internal void AddPropertyConverter<TParam>(Func<TParam, string> converter, MemberInfo propertyInfo)
+        {
+            _propertyConverters.Add(propertyInfo, converter);
+        }
+
         public PrintingConfig<TOwner> ExceptType<T>()
         {
             _excludedTypes.Add(typeof(T));
             return this;
         }
 
+        public PrintingConfig<TOwner> ExceptProperty(Expression<Func<TOwner, object>> propertyExpression)
+        {
+            if (propertyExpression == null)
+                throw new ArgumentNullException($"{nameof(propertyExpression)} cannot be null");
+
+            _excludedProperties.Add(GetMemberInfo(propertyExpression));
+            return this;
+        }
+
         public ITypeSerializer<TParam, TOwner> ForType<TParam>()
         {
             return new TypeSerializerImpl<TParam, TOwner>(this);
+        }
+
+        public IPropertySerializer<TOwner, TProperty> ForProperty<TProperty>(
+            Expression<Func<TOwner, TProperty>> propertyExpression)
+        {
+            if (propertyExpression == null)
+                throw new ArgumentNullException($"{nameof(propertyExpression)} cannot be null");
+
+            return new PropertySerializerImpl<TOwner, TProperty>(this, GetMemberInfo(propertyExpression));
+        }
+
+        private static MemberInfo GetMemberInfo<TProperty>(Expression<Func<TOwner, TProperty>> propertyExpression)
+        {
+            if (propertyExpression.Body is MemberExpression memberExpression)
+                return memberExpression.Member;
+            
+            if (propertyExpression.Body is UnaryExpression unaryExpression
+                     && unaryExpression.Operand is MemberExpression unaryMemberExpression)
+                return unaryMemberExpression.Member;
+            
+            throw new ArgumentException("Expression does not refer to a property or field.");
         }
 
         private string PrintToString(object obj, int nestingLevel)
