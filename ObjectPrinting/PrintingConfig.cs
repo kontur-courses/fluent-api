@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
@@ -10,7 +11,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<string> excludedProperties = new();
+        private readonly HashSet<MemberInfo> excludedProperties = new();
         private readonly Dictionary<Type, Delegate> typeSerializers = new();
         private readonly Dictionary<string, Delegate> propertySerializers = new();
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
@@ -22,14 +23,14 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> Exclude(Expression<Func<TOwner, object>> propertySelector)
+        public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var propertyName = GetPropertyName(propertySelector);
             excludedProperties.Add(propertyName);
             return this;
         }
 
-        public PrintingConfig<TOwner> UseCulture<TPropType>(CultureInfo culture) where TPropType : struct
+        public PrintingConfig<TOwner> UseCulture<TPropType>(CultureInfo culture) where TPropType : IFormattable
         {
             typeCultures[typeof(TPropType)] = culture;
             return this;
@@ -37,8 +38,8 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
-            var propertyName = GetPropertyName(propertySelector);
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+            var memberInfo = GetPropertyName(propertySelector);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>() =>
@@ -55,7 +56,7 @@ namespace ObjectPrinting
             var type = obj.GetType();
 
             if (typeSerializers.TryGetValue(type, out var serializer))
-                return (serializer.DynamicInvoke(obj) ?? "").ToString()!;
+                return serializer.DynamicInvoke(obj).ToString()!;
 
             if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid))
                 return obj.ToString()!;
@@ -65,15 +66,14 @@ namespace ObjectPrinting
             sb.AppendLine($"{type.Name}");
             foreach (var propertyInfo in type.GetProperties())
             {
-                var propertyName = propertyInfo.Name;
-
-                if (excludedProperties.Contains(propertyName))
+                if (excludedProperties.Contains(propertyInfo))
                     continue;
                 if(excludedTypes.Contains(propertyInfo.PropertyType))
                     continue;
 
                 var propertyValue = propertyInfo.GetValue(obj);
                 var propertyType = propertyInfo.PropertyType;
+                var propertyName = propertyInfo.Name;
 
                 if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
                 {
@@ -101,13 +101,13 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
+        private MemberInfo GetPropertyName<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
             if (propertySelector.Body is MemberExpression memberExpression)
-                return memberExpression.Member.Name;
+                return memberExpression.Member;
 
             if (propertySelector.Body is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression operand)
-                return operand.Member.Name;
+                return operand.Member;
 
             throw new ArgumentException("Invalid property selector expression");
         }

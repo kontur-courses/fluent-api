@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting;
 
 public class PropertyPrintingConfig<TOwner, TPropType>
 {
 	private readonly PrintingConfig<TOwner> parentConfig;
-	private readonly string? propertyName;
+	private readonly MemberInfo? propertyMemberInfo;
 
 	internal PrintingConfig<TOwner> ParentConfig => parentConfig;
-	internal string? PropertyName => propertyName;
+	internal MemberInfo? PropertyMemberInfo => propertyMemberInfo;
 
-	public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, string? propertyName)
+	public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig, MemberInfo? propertyMemberInfo)
 	{
 		this.parentConfig = parentConfig;
-		this.propertyName = propertyName;
+		this.propertyMemberInfo = propertyMemberInfo;
 	}
 
 	public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig) =>
@@ -22,10 +23,10 @@ public class PropertyPrintingConfig<TOwner, TPropType>
 
 	public PrintingConfig<TOwner> Using(Func<TPropType, string> serialize)
 	{
-		if (string.IsNullOrEmpty(propertyName))
+		if (string.IsNullOrEmpty(propertyMemberInfo?.Name))
 			parentConfig.AddTypeSerializer(serialize);
 		else
-			parentConfig.AddPropertySerializer(propertyName, serialize);
+			parentConfig.AddPropertySerializer(propertyMemberInfo.Name, serialize);
 
 		return parentConfig;
 	}
