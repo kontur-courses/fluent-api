@@ -10,19 +10,23 @@ public static class MemberPrintingConfigExtensions
         return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 
-    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this MemberPrintingConfig<TOwner, string> propConfig, int maxLen)
+    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        this MemberPrintingConfig<TOwner, string> memberConfig, int maxLen)
     {
-        var propertyInfo = propConfig.PropertyInfo;
-        propConfig.PrintingConfig.TrimmedProperties[propertyInfo] = maxLen;
+        if (maxLen < 0)
+            throw new ArgumentException("Length to trim must be non negative");
+        
+        var memberInfo = memberConfig.MemberInfo;
+        memberConfig.PrintingConfig.TrimmedMembers[memberInfo] = maxLen;
 
-        return propConfig.PrintingConfig;
+        return memberConfig.PrintingConfig;
     }
 
-    public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(
-        this MemberPrintingConfig<TOwner, TPropType> memberConfig, CultureInfo culture)
-        where TPropType : IFormattable
+    public static PrintingConfig<TOwner> WithCulture<TOwner, TMemberType>(
+        this MemberPrintingConfig<TOwner, TMemberType> memberConfig, CultureInfo culture)
+        where TMemberType : IFormattable
     {
-        memberConfig.PrintingConfig.CulturesForTypes[typeof(TPropType)] = culture;
+        memberConfig.PrintingConfig.CulturesForTypes[typeof(TMemberType)] = culture;
 
         return memberConfig.PrintingConfig;
     }
