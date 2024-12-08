@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentAssertions;
 using ObjectPrinting;
 
@@ -60,5 +61,43 @@ public class ObjectPrinterTest
         var s1 = printer.PrintToString(person);
 
         s1.Should().Contain($"{nameof(person.Id)} = {idValue}");
+    }
+    
+    [Test]
+    public void PrintingConfig_SetPrintingCulture_ShouldUseGivenCulture()
+    {
+        var person = new Person { Name = "Alex", Age = 19, Height = 189.25 };
+        var culture = CultureInfo.CreateSpecificCulture("fr-FR");
+
+        var printer = ObjectPrinter.For<Person>()
+            .SetPrintingFor<double>().WithCulture(culture);
+
+        var s1 = printer.PrintToString(person);
+
+        s1.Should().Contain($"{nameof(person.Age)} = {person.Age.ToString(culture)}");
+    }
+
+    [Test]
+    public void PrintingConfig_SetPrintingTrim_ShouldReturnTrimmedValue()
+    {
+        var person = new Person { Name = "Alexxx", Age = 19, Height = 189.25 };
+
+        var printer = ObjectPrinter.For<Person>()
+            .SetPrintingFor(p => p.Name).TrimmedToLength(4);
+
+        var s1 = printer.PrintToString(person);
+
+        s1.Should().Contain($"{nameof(person.Name)} = Alex");
+    }
+
+    [Test]
+    public void PrintingConfig_PrintCycledObject_ShouldDetectCycleReference()
+    {
+        var person = new Person { Name = "Alex", Age = 19 };
+        person.Friend = person;
+
+        var s1 = person.PrintToString();
+
+        s1.Should().Contain($"{nameof(person.Friend)} = Cycle reference detected");
     }
 }
