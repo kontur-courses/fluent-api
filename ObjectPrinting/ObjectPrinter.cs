@@ -1,3 +1,7 @@
+using ObjectPrinting.Configs;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("ObjectPrinting.Tests")]
 namespace ObjectPrinting
 {
     public class ObjectPrinter
