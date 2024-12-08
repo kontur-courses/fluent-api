@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -114,19 +115,44 @@ namespace ObjectPrinting
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine($"{type.Name}:");
+
+            if (obj is IEnumerable enumerable)
+            {
+                var bracketIndentation = new string('\t', nestingLevel);
+                sb.AppendLine($"{bracketIndentation}[");
+                foreach (var element in enumerable)
+                {
+                    sb.Append($"{bracketIndentation}-\t");
+                    var valueString = String.Empty;
+                    if (_typeConverters.TryGetValue(element.GetType(), out var typeConverter))
+                        valueString =
+                            $"{typeConverter.DynamicInvoke(element) as string ?? "null"}{Environment.NewLine}";
+                    else
+                        valueString = PrintToString(element, nestingLevel + 1);
+                    sb.Append($"{valueString}");
+                }
+                sb.AppendLine($"{bracketIndentation}]");
+                return sb.ToString();
+            }
+            
             foreach (var propertyInfo in type.GetProperties())
             {
                 if (!_excludedProperties.Contains(propertyInfo) && !_excludedTypes.Contains(propertyInfo.PropertyType))
                 {
-                    var propertyValue = propertyInfo.GetValue(obj);
-                    if (propertyValue == null || !TryConvert(propertyInfo, propertyValue, out var valueString))
-                        valueString = PrintToString(propertyValue, nestingLevel + 1);
-                    
+                    var valueString = GetValueString(propertyInfo, obj, nestingLevel);
                     sb.Append($"{indentation}{propertyInfo.Name} = {valueString}");
                 }
             }
             return sb.ToString();
+        }
+
+        private string GetValueString(PropertyInfo propertyInfo, object obj, int nestingLevel)
+        {
+            var propertyValue = propertyInfo.GetValue(obj);
+            if (propertyValue == null || !TryConvert(propertyInfo, propertyValue, out var valueString))
+                valueString = PrintToString(propertyValue, nestingLevel + 1);
+            return valueString;
         }
 
         private bool TryConvert(PropertyInfo propertyInfo, object? propertyValue, out string value)
