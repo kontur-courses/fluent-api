@@ -11,9 +11,9 @@ internal class TypeSerializerImpl<TParam, TOwner> : ITypeSerializer<TParam, TOwn
         Config = config;
     }
         
-    public PrintingConfig<TOwner> Use(Func<TParam, string?> serializer)
+    public PrintingConfig<TOwner> Use(Func<TParam, string> converter)
     {
-        Config.AddConverter(typeof(TParam), serializer);
+        Config.AddConverter(typeof(TParam), converter);
         return Config;
     }
 }

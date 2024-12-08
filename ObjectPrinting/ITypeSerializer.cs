@@ -4,5 +4,5 @@ namespace ObjectPrinting;
 
 public interface ITypeSerializer<TParam, TOwner>
 {
-    public PrintingConfig<TOwner> Use(Func<TParam, string?> serializer);
+    public PrintingConfig<TOwner> Use(Func<TParam, string> converter);
 }
