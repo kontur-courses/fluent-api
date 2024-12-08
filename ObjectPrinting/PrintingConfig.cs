@@ -13,6 +13,7 @@ namespace ObjectPrinting
         private Dictionary<Type, Delegate> _typeConverters = new();
         internal CultureInfo DoubleCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal CultureInfo FloatCultureInfo { get; set; } = CultureInfo.CurrentCulture;
+        internal int MaxStringLength { get; set; }
 
         public string PrintToString(TOwner obj)
         {
