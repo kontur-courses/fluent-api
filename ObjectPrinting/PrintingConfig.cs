@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -9,13 +9,15 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private HashSet<object?> printedObjects;
     private readonly HashSet<Type> excludedTypes = [];
-    private readonly HashSet<PropertyInfo> excludedProperties = [];
+    private readonly HashSet<PropertyInfo?> excludedProperties = [];
 
+    internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
     internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
-
     internal Dictionary<PropertyInfo, Delegate> CustomPropertySerializers { get; } = new();
-
+    internal Dictionary<PropertyInfo, int> TrimmedProperties { get; } = new();
+    
     public PropertyPrintingConfig<TOwner, TPropType> SetPrintingFor<TPropType>()
     {
         return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -46,45 +48,66 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public string PrintToString(TOwner obj)
+    public string PrintToString(TOwner? obj)
     {
+        printedObjects = [];
         return PrintToString(obj, 0);
     }
 
-    private string PrintToString(object obj, int nestingLevel)
+    private string PrintToString(object? obj, int nestingLevel)
     {
-        //TODO apply configurations
+        if (printedObjects.Contains(obj))
+        {
+            return "Cycle reference detected";
+        }
+        printedObjects.Add(obj);
+        
         if (obj == null)
             return "null" + Environment.NewLine;
 
-        var finalTypes = new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-        if (finalTypes.Contains(obj.GetType()))
-            return obj + Environment.NewLine;
-
         var indentation = new string('\t', nestingLevel + 1);
+        
+        if (CulturesForTypes.TryGetValue(obj.GetType(), out var culture))
+            return indentation + ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
+
+        if (IsFinal(obj.GetType()))
+        {
+            return obj + Environment.NewLine;
+        }
+
         var sb = new StringBuilder();
         var type = obj.GetType();
         sb.AppendLine(type.Name);
+        
         foreach (var propertyInfo in type.GetProperties())
         {
             if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedProperties.Contains(propertyInfo))
                 continue;
 
+            string printingResult;
+
             if (CustomTypeSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          typeSerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+            {
+                printingResult = (string)typeSerializer.DynamicInvoke(propertyInfo.GetValue(obj));
+            }
             else if (CustomPropertySerializers.TryGetValue(propertyInfo, out var propertySerializer))
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          propertySerializer.DynamicInvoke(propertyInfo.GetValue(obj)) + Environment.NewLine);
+            {
+                printingResult = (string)propertySerializer.DynamicInvoke(propertyInfo.GetValue(obj));
+            }
             else
-                sb.Append(indentation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                printingResult = PrintToString(propertyInfo.GetValue(obj),
+                    nestingLevel + 1);
+
+            if (TrimmedProperties.TryGetValue(propertyInfo, out var length))
+                printingResult = printingResult.Length > length
+                    ? printingResult[..length] + Environment.NewLine
+                    : printingResult;
+
+            sb.Append(indentation + propertyInfo.Name + " = " + printingResult);
         }
         return sb.ToString();
     }
+    
+    private static bool IsFinal(Type type) 
+        => type.IsValueType || type == typeof(string);
 }

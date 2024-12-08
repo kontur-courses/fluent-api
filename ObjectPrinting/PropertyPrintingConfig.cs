@@ -1,28 +1,26 @@
 using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting;
 
 public class PropertyPrintingConfig<TOwner, TPropType>(
-    PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo = null)
+    PrintingConfig<TOwner> printingConfig, PropertyInfo? propertyInfo = null)
     : IPropertyPrintingConfig<TOwner, TPropType>
 {
+    internal readonly PrintingConfig<TOwner> PrintingConfig = printingConfig; 
+    internal readonly PropertyInfo? PropertyInfo = propertyInfo;
+    
     public PrintingConfig<TOwner> Using(Func<TPropType, string> printingMethod)
     {
-        if (propertyInfo is null)
-            printingConfig.CustomTypeSerializers[typeof(TPropType)] = printingMethod;
+        if (PropertyInfo is null)
+            PrintingConfig.CustomTypeSerializers[typeof(TPropType)] = printingMethod;
         else
-            printingConfig.CustomPropertySerializers[propertyInfo] = printingMethod;
+            PrintingConfig.CustomPropertySerializers[PropertyInfo] = printingMethod;
 
-        return printingConfig;
+        return PrintingConfig;
     }
 
-    public PrintingConfig<TOwner> Using(CultureInfo culture)
-    {
-        return printingConfig;
-    }
-    PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+    PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => PrintingConfig;
 }
 
 public interface IPropertyPrintingConfig<TOwner, TPropType>
