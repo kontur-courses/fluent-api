@@ -11,6 +11,17 @@ public static class TypeSerializerExtensions
     }
     
     public static PrintingConfig<TOwner> UseCulture<TOwner>(
+        this ITypeSerializer<DateTime, TOwner> typeSerializer,
+        CultureInfo cultureInfo)
+    {
+        if (cultureInfo == null)
+            throw new ArgumentNullException($"{nameof(cultureInfo)} cannot be null");
+        var config = GetConfig(typeSerializer);
+        config.DateTimeCultureInfo = cultureInfo;
+        return config;
+    }
+    
+    public static PrintingConfig<TOwner> UseCulture<TOwner>(
         this ITypeSerializer<double, TOwner> typeSerializer,
         CultureInfo cultureInfo)
     {

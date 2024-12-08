@@ -16,6 +16,7 @@ namespace ObjectPrinting
         private readonly Dictionary<MemberInfo, Delegate> _propertyConverters = new();
         internal CultureInfo DoubleCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal CultureInfo FloatCultureInfo { get; set; } = CultureInfo.CurrentCulture;
+        internal CultureInfo DateTimeCultureInfo { get; set; } = CultureInfo.CurrentCulture;
         internal int MaxStringLength { get; set; }
         internal int MaxRecursionDepth { get; set; } = 16;
 
@@ -97,6 +98,16 @@ namespace ObjectPrinting
                     return string.Concat(
                         stringValue.AsSpan(0, Math.Min(MaxStringLength, stringValue.Length)),
                         Environment.NewLine);
+                
+                if (obj is double doubleValue)
+                    return doubleValue.ToString(DoubleCultureInfo) + Environment.NewLine;
+                
+                if (obj is float floatValue)
+                    return floatValue.ToString(FloatCultureInfo) + Environment.NewLine;
+                
+                if (obj is DateTime dateTimeValue)
+                    return dateTimeValue.ToString(DateTimeCultureInfo) + Environment.NewLine;
+                
                 return obj + Environment.NewLine;
             }
 
