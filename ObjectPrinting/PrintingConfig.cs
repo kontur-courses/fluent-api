@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace ObjectPrinting;
@@ -13,6 +14,7 @@ public class PrintingConfig<TOwner>
     ];
     private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
+    private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
     
     public string PrintToString(TOwner obj)
     {
@@ -54,6 +56,10 @@ public class PrintingConfig<TOwner>
         typeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
         return this;
     }
-    
-    
+
+    public PrintingConfig<TOwner> SpecifyTheCulture<TType>(IFormatProvider culture)
+    {
+        typeCultures[typeof(TType)] = culture;
+        return this;
+    }
 }
