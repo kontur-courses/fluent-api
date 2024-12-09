@@ -13,17 +13,11 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private readonly HashSet<object> visitedObjects = [];
     private readonly HashSet<Type> excludeTypes = [];
     private readonly HashSet<PropertyInfo> excludeProperties = [];
-
-    private readonly IDictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>>
-        propertyPrintingConfigs = new Dictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>>();
-
-    private readonly IDictionary<Type, ITypePrintingConfig<TOwner>>
-        typePrintingConfigs = new Dictionary<Type, ITypePrintingConfig<TOwner>>();
-
-    private readonly HashSet<object> visitedObjects = [];
-    
+    private readonly Dictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> propertyPrintingConfigs = new();
+    private readonly Dictionary<Type, ITypePrintingConfig<TOwner>> typePrintingConfigs = new();
     private CultureInfo commonCulture = CultureInfo.CurrentCulture;
 
     public PrintingConfig<TOwner> UsingCommonCulture(CultureInfo culture)
@@ -31,7 +25,7 @@ public class PrintingConfig<TOwner>
         commonCulture = culture;
         return this;
     }
-    
+
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
         excludeTypes.Add(typeof(TPropType));
@@ -41,11 +35,12 @@ public class PrintingConfig<TOwner>
     public TypePrintingConfig<TOwner, TType> Printing<TType>()
     {
         var type = typeof(TType);
-        if (typePrintingConfigs.TryGetValue(type, out var printing) 
+        if (typePrintingConfigs.TryGetValue(type, out var printing)
             && printing is TypePrintingConfig<TOwner, TType> config)
         {
             return config;
         }
+
         var typeConfig = new TypePrintingConfig<TOwner, TType>(this);
         typePrintingConfigs[type] = typeConfig;
         return typeConfig;
@@ -62,11 +57,12 @@ public class PrintingConfig<TOwner>
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
         var propertyInfo = GetPropertyInfoFromExpression(memberSelector);
-        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var printing) 
+        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var printing)
             && printing is PropertyPrintingConfig<TOwner, TPropType> config)
         {
             return config;
         }
+
         var printingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
         propertyPrintingConfigs[propertyInfo] = printingConfig;
         return printingConfig;
@@ -123,12 +119,12 @@ public class PrintingConfig<TOwner>
         {
             return finalString;
         }
-        
+
         if (objectType.IsClass)
         {
             visitedObjects.Add(obj);
         }
-        
+
         if (obj is IEnumerable enumerable)
         {
             return SerializeItems(enumerable, nestingLevel);
@@ -203,9 +199,10 @@ public class PrintingConfig<TOwner>
             {
                 continue;
             }
+
             var propertyValue = propertyInfo.GetValue(obj);
             if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
-                && config.Serializer is not null 
+                && config.Serializer is not null
                 && propertyValue is not null)
             {
                 propertiesStringBuilder.AppendLine(
@@ -227,8 +224,8 @@ public class PrintingConfig<TOwner>
         {
             return PrintingConfigConstants.NullLine;
         }
+
         var indentation = GetIndentation(nestingLevel);
-        
         var nextNestingLevel = nestingLevel + 1;
         string returnString;
         if (enumerable is IDictionary dictionary)
@@ -239,9 +236,10 @@ public class PrintingConfig<TOwner>
         {
             returnString = SerializeEnumerable(enumerable, nextNestingLevel);
         }
-        return string.Format("{0}{1}[{0}{2}{1}]", PrintingConfigConstants.NewLine, indentation, returnString);    
+
+        return string.Format("{0}{1}[{0}{2}{1}]", PrintingConfigConstants.NewLine, indentation, returnString);
     }
-    
+
     private string SerializeEnumerable(IEnumerable items, int nestingLevel)
     {
         var enumerableSerializeBuilder = new StringBuilder();
@@ -252,9 +250,10 @@ public class PrintingConfig<TOwner>
             enumerableSerializeBuilder.AppendLine(
                 $"{indentation}{PrintToString(item, nextNestingLevel)}");
         }
+
         return enumerableSerializeBuilder.ToString();
     }
-    
+
     private string SerializeDictionary(IDictionary items, int nestingLevel)
     {
         var dictionarySerializeBuilder = new StringBuilder();
@@ -265,6 +264,7 @@ public class PrintingConfig<TOwner>
             dictionarySerializeBuilder.AppendLine(
                 $"{indentation}{itemKey} = {PrintToString(items[itemKey], nextNestingLevel)}");
         }
+
         return dictionarySerializeBuilder.ToString();
     }
 

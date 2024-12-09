@@ -14,10 +14,4 @@ public static class TypePrintingConfigExtensions
         typeConfig.Using(culture);
         return typeConfig.ParentConfig;
     }
-    
-    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-        this TypePrintingConfig<TOwner, string> propConfig, int maxLen)
-    {
-        return propConfig.Using(s => s[..maxLen]);
-    }
 }

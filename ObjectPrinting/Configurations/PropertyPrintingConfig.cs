@@ -3,15 +3,11 @@ using ObjectPrinting.Configurations.Interfaces;
 
 namespace ObjectPrinting.Configurations;
 
-public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
+public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig)
+    : IPropertyPrintingConfig<TOwner>
 {
-    public PrintingConfig<TOwner> ParentConfig { get; }
+    public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
     public Func<object, string>? Serializer { get; private set; }
-
-    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
-    {
-        ParentConfig = printingConfig;
-    }
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {

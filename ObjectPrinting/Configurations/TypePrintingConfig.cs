@@ -4,16 +4,12 @@ using ObjectPrinting.Configurations.Interfaces;
 
 namespace ObjectPrinting.Configurations;
 
-public class TypePrintingConfig<TOwner, TType> : ITypePrintingConfig<TOwner>
+public class TypePrintingConfig<TOwner, TType>(PrintingConfig<TOwner> printingConfig) 
+    : ITypePrintingConfig<TOwner>
 {
     public CultureInfo? CultureInfo { get; private set; }
-    public PrintingConfig<TOwner> ParentConfig { get; }
+    public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
     public Func<object, string>? Serializer { get; private set; }
-
-    public TypePrintingConfig(PrintingConfig<TOwner> printingConfig)
-    {
-        ParentConfig = printingConfig;
-    }
 
     public PrintingConfig<TOwner> Using(Func<TType, string> print)
     {
@@ -22,7 +18,7 @@ public class TypePrintingConfig<TOwner, TType> : ITypePrintingConfig<TOwner>
         {
             if (printObject is not TType typeObject)
             {
-                throw new ArgumentException($"The property {printObject} is not of type {typeof(TType)}");
+                throw new ArgumentException($"The type {printObject} is not of type {typeof(TType)}");
             }
 
             return print(typeObject);
