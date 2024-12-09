@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting;
@@ -18,7 +20,8 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
     private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
     private readonly HashSet<string> excludedProperties = [];
-    private int? length;
+    private readonly HashSet<object> processedObjects = [];
+    private int? maxStringLength;
     
     public string PrintToString(TOwner obj)
     {
@@ -32,21 +35,19 @@ public class PrintingConfig<TOwner>
             return "null" + Environment.NewLine;
         }
 
-        if (finalTypes.Contains(obj.GetType()))
-            return obj + Environment.NewLine;
-
-        var identation = new string('\t', nestingLevel + 1);
-        var sb = new StringBuilder();
-        var type = obj.GetType();
-        sb.AppendLine(type.Name);
-        foreach (var propertyInfo in type.GetProperties())
+        if (processedObjects.Contains(obj))
         {
-            sb.Append(identation + propertyInfo.Name + " = " +
-                      PrintToString(propertyInfo.GetValue(obj),
-                          nestingLevel + 1));
+            return "Circular Reference" + Environment.NewLine;
         }
 
-        return sb.ToString();
+        var serializedFinalType = SerializeFinalType(obj);
+
+        if (serializedFinalType != null)
+        {
+            return serializedFinalType;
+        }
+
+        return SerializeCollection(obj, nestingLevel) ?? SerializeComplexType(obj, nestingLevel);
     }
 
     public PrintingConfig<TOwner> ExcludeType<TType>()
@@ -78,7 +79,7 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Trim(int trimLength)
     {
-        length = trimLength;
+        maxStringLength = trimLength;
         return this;
     }
 
@@ -88,6 +89,87 @@ public class PrintingConfig<TOwner>
         excludedProperties.Add(propertyName);
         return this;
     }
+
+    private string? SerializeFinalType(object obj)
+    {
+        if (!finalTypes.Contains(obj.GetType()))
+        {
+            return null;
+        }
+
+        return obj switch
+        {
+            IFormattable format when typeCultures.TryGetValue(obj.GetType(), out var formatProvider) =>
+                format.ToString(null, formatProvider) + Environment.NewLine,
+            IFormattable format => 
+                format.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine,
+            string str when maxStringLength.HasValue && maxStringLength.Value < str.Length => 
+                str[..maxStringLength.Value] + Environment.NewLine,
+            string str => str + Environment.NewLine,
+            _ => obj + Environment.NewLine
+        };
+    }
+
+    private string? SerializeCollection(object obj, int nestingLevel)
+    {
+        if (obj is not IEnumerable collection)
+        {
+            return null;
+        }
+
+        var collectionOnString = new StringBuilder();
+        var indentation = new string('\t', nestingLevel + 1);
+        var type = obj.GetType();
+
+        collectionOnString.AppendLine($"{type.Name}:");
+        
+        foreach (var item in collection)
+        {
+            collectionOnString.Append(indentation + PrintToString(item, nestingLevel + 1));
+        }
+
+        return collectionOnString.ToString();
+    }
+
+    private string SerializeComplexType(object obj, int nestingLevel)
+    {
+        processedObjects.Add(obj);
+        var serializedString = new StringBuilder();
+        var indentation = new string('\t', nestingLevel + 1);
+        var type = obj.GetType();
+        
+        serializedString.AppendLine(type.Name);
+        
+        foreach (var property in type.GetProperties())
+        {
+            if (excludedTypes.Contains(property.PropertyType) || excludedProperties.Contains(property.Name))
+            {
+                continue;
+            }
+
+            var serializedProperty = SerializeProperty(property, obj, nestingLevel + 1);
+            serializedString.Append(indentation + property.Name + " = " + serializedProperty);
+        }
+
+        return serializedString.ToString();
+    }
+
+    private string SerializeProperty(PropertyInfo property, object obj, int nestingLevel)
+    {
+        var propertyValue = property.GetValue(obj);
+
+        if (typeSerializationMethods.TryGetValue(property.PropertyType, out var serializationType))
+        {
+            return serializationType(propertyValue!) + Environment.NewLine;
+        }
+
+        if (propertySerializationMethods.TryGetValue(property.Name, out var serializationProperty))
+        {
+            return serializationProperty(propertyValue!) + Environment.NewLine;
+        }
+
+        return PrintToString(propertyValue, nestingLevel);
+    }
     
     private static string GetPropertyName<T>(Expression<Func<TOwner, T>> property)
     {
@@ -96,6 +178,6 @@ public class PrintingConfig<TOwner>
             return member.Member.Name;
         }
         
-        throw new ArgumentException();
+        throw new ArgumentException("Expression is not property.");
     }
 }
