@@ -12,18 +12,18 @@ namespace ObjectPrinting.Tests;
 public class ObjectPrinterTests
 {
     private static readonly VerifySettings Settings = new();
+    private Person person;
     
-    [OneTimeSetUp]
-    public void OneTimeSetUp()
+    [SetUp]
+    public void Setup()
     {
         Settings.UseDirectory("snapshots");
+        person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
     }
     
     [Test]
     public Task PrintToString_ExcludeType()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
-
         var serializedString = PrintingConfig<Person>.Serialize(person, config => config.ExcludeType<int>());
 
         return Verifier.Verify(serializedString, Settings);
@@ -32,8 +32,6 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_AlternativeTypeSerialization()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
-
         var serializedString = PrintingConfig<Person>.Serialize(
             person, 
             config => config.AddSerializationMethod<DateTime>(_ => "date"));
@@ -44,8 +42,8 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_SetCulture()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200.2, Birthday = new DateTime(2000, 10, 10) };
-
+        person.Height = 200.2;
+        
         var serializedString = PrintingConfig<Person>.Serialize(
             person, 
             config => config.SpecifyTheCulture<double>(new CultureInfo("en-US")));
@@ -56,8 +54,6 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_AlternativePropertySerialization()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
-
         var serializedString = PrintingConfig<Person>.Serialize(
             person, 
             config => config.AddSerializationMethod(_ => "NoName", p => p.Name));
@@ -68,8 +64,6 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_Trim()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
-
         var serializedString = PrintingConfig<Person>.Serialize(
             person, 
             config => config.Trim(2));
@@ -80,8 +74,6 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_ExcludeProperty()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
-
         var serializedString = PrintingConfig<Person>.Serialize(
             person, 
             config => config.ExcludeProperty(p => p.Id));
@@ -92,7 +84,6 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_CircularReference()
     {
-        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
         person.Father = person;
 
         var serializedString = PrintingConfig<Person>.Serialize(person);
@@ -103,9 +94,9 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_SerializeArray()
     {
-        var persons = new Person[]
+        var persons = new[]
         {
-            new() { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) },
+            person,
             new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
         };
 
@@ -119,7 +110,7 @@ public class ObjectPrinterTests
     {
         var persons = new List<Person>
         {
-            new() { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) },
+            person,
             new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
         };
 
@@ -133,7 +124,7 @@ public class ObjectPrinterTests
     {
         var persons = new Dictionary<Person, string>
         {
-            { new() { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) }, "first" },
+            { person, "first" },
             { new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }, "second" }
         };
 
