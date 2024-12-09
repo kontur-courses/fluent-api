@@ -117,6 +117,27 @@ public class ObjectPrinterAcceptanceTests
     }
 
     [Test]
+    public void PrintToString_ExcludeProperty()
+    {
+        var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
+        const string expected = """
+                                Person
+                                	Name = Bob
+                                	Height = 200
+                                	Age = 20
+                                	Birthday = 10/10/2000 00:00:00
+                                	Father = null
+
+                                """;
+        
+        var serializedString = PrintingConfig<Person>.Serialize(
+            person, 
+            config => config.ExcludeProperty(p => p.Id));
+        
+        serializedString.Should().Be(expected);
+    }
+    
+    [Test]
     public void PrintToString_CircularReference()
     {
         var person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
