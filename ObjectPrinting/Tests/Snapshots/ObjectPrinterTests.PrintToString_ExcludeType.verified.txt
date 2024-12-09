@@ -1,0 +1,6 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Bob
+	Height = 200
+	Birthday = 10/10/2000 00:00:00
+	Father = null

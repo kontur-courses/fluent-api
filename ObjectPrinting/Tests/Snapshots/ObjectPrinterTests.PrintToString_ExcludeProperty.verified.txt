@@ -1,0 +1,6 @@
+﻿Person
+	Name = Bob
+	Height = 200
+	Age = 20
+	Birthday = 10/10/2000 00:00:00
+	Father = null
