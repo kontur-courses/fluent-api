@@ -10,35 +10,31 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
-        public readonly HashSet<Type> excludedTypes = new();
-        public readonly HashSet<MemberInfo> excludedProperties = new();
-        public readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
-        public readonly Dictionary<string, Func<object, string>> propertySerializers = new();
-        public readonly Dictionary<Type, CultureInfo> typeCultures = new();
-        public readonly Dictionary<string, int> propertyTrim = new();
-
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetConfig.TypeSerializers);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        public PropertyConfigMember<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            if (memberSelector.Body is not MemberExpression memberExpression) throw new ArgumentException();
+
+            return new PropertyConfigMember<TOwner, TPropType>(this, GetConfig.PropertySerializers,
+                memberExpression.Member);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body is not MemberExpression memberExpression) throw new ArgumentException();
 
-            excludedProperties.Add(memberExpression.Member);
+            GetConfig.ExcludedProperties.Add(memberExpression.Member);
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            excludedTypes.Add(typeof(TPropType));
+            GetConfig.ExcludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -50,16 +46,8 @@ namespace ObjectPrinting.Solved
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            if (obj == null) return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -67,26 +55,74 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType) &&
-                    excludedProperties.Contains(propertyInfo)) continue;
+                if (GetConfig.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
+                    GetConfig.ExcludedProperties.Contains(propertyInfo)) continue;
 
 
-                if (finalTypes.Contains(obj.GetType()))
+                if (GetFinalTypes().Contains(propertyInfo.GetValue(obj).GetType()))
                 {
-                    if (TryFormmater(obj, out string newLine)) sb.AppendLine(newLine);
+                    if (TryFormater(propertyInfo, obj, out var newLine))
+                    {
+                        sb.AppendLine(identation + propertyInfo.Name + " = " + newLine);
+                    }
+                    else
+                    {
+                        sb.AppendLine(identation + propertyInfo.Name + " = " + propertyInfo.GetValue(obj));
+                    }
+
+                    continue;
                 }
 
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                sb.Append(identation + propertyInfo.Name + " = " + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
             }
 
             return sb.ToString();
         }
 
-        private bool TryFormmater(object o, out string s)
+        private static Type[] GetFinalTypes()
         {
-            throw new NotImplementedException();
+            var finalTypes = new[]
+            {
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan)
+            };
+            return finalTypes;
         }
+
+        private bool TryFormater(PropertyInfo o, object obj, out string s)
+        {
+            var value = o.GetValue(obj);
+            s = null;
+            if (GetConfig.TypeCultures.TryGetValue(o.PropertyType, out var cultureInfo))
+            {
+                s = ((IFormattable)value).ToString(null, cultureInfo);
+                return true;
+            }
+
+            if (GetConfig.TypeSerializers.TryGetValue(value.GetType(), out var formatter))
+            {
+                s = formatter(value);
+                return true;
+            }
+
+            if (GetConfig.PropertySerializers.TryGetValue(o, out formatter))
+            {
+                s = formatter(value);
+
+                return true;
+            }
+
+            if (GetConfig.PropertyTrim.TryGetValue(o, out var len))
+            {
+                s = s?[..len] ?? ((string)value)[..len];
+
+                return true;
+            }
+
+            s = null;
+            return false;
+        }
+
+        internal DataConfig GetConfig { get; } = new DataConfig();
     }
 }
