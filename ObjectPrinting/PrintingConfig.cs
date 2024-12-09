@@ -17,6 +17,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
     private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
     private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
+    private readonly HashSet<string> excludedProperties = [];
     private int? length;
     
     public string PrintToString(TOwner obj)
@@ -78,6 +79,13 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> Trim(int trimLength)
     {
         length = trimLength;
+        return this;
+    }
+
+    public PrintingConfig<TOwner> ExcludeProperty<TType>(Expression<Func<TOwner, TType>> property)
+    {
+        var propertyName = GetPropertyName(property);
+        excludedProperties.Add(propertyName);
         return this;
     }
     
