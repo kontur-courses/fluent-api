@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Solved
 {
@@ -9,10 +10,21 @@ namespace ObjectPrinting.Solved
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
             return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
         }
 
+
+        private static PrintingConfig<TOwner> Using<TOwner, TProType>(
+            this IPropertyPrintingConfig<TOwner, TProType> propertyPrintingConfig,
+            CultureInfo cultureInfo)
+            where TProType : struct, IFormattable
+        {
+            propertyPrintingConfig.ParentConfig.typeCultures.Add(typeof(TProType), cultureInfo);
+
+            return propertyPrintingConfig.ParentConfig;
+        }
     }
 }
