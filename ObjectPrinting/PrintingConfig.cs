@@ -17,6 +17,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
     private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
     private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
+    private int? length;
     
     public string PrintToString(TOwner obj)
     {
@@ -71,6 +72,12 @@ public class PrintingConfig<TOwner>
     {
         var propertyName = GetPropertyName(property);
         propertySerializationMethods[propertyName] = obj => serializationMethod((TType)obj);
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Trim(int trimLength)
+    {
+        length = trimLength;
         return this;
     }
     
