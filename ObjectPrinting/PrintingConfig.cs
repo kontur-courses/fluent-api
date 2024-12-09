@@ -12,6 +12,7 @@ public class PrintingConfig<TOwner>
         typeof(DateTime), typeof(TimeSpan)
     ];
     private readonly HashSet<Type> excludedTypes = [];
+    private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
     
     public string PrintToString(TOwner obj)
     {
@@ -47,4 +48,12 @@ public class PrintingConfig<TOwner>
         excludedTypes.Add(typeof(TType));
         return this;
     }
+
+    public PrintingConfig<TOwner> AddSerializationMethodForType<TType>(Func<TType, string> serializationMethod)
+    {
+        typeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
+        return this;
+    }
+    
+    
 }
