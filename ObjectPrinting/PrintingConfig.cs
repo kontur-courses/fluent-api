@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting;
@@ -15,6 +16,7 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
     private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
+    private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
     
     public string PrintToString(TOwner obj)
     {
@@ -51,7 +53,7 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> AddSerializationMethodForType<TType>(Func<TType, string> serializationMethod)
+    public PrintingConfig<TOwner> AddSerializationMethod<TType>(Func<TType, string> serializationMethod)
     {
         typeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
         return this;
@@ -61,5 +63,24 @@ public class PrintingConfig<TOwner>
     {
         typeCultures[typeof(TType)] = culture;
         return this;
+    }
+
+    public PrintingConfig<TOwner> AddSerializationMethod<TType>(
+        Func<TType, string> serializationMethod,
+        Expression<Func<TOwner, TType>> property)
+    {
+        var propertyName = GetPropertyName(property);
+        propertySerializationMethods[propertyName] = obj => serializationMethod((TType)obj);
+        return this;
+    }
+    
+    private static string GetPropertyName<T>(Expression<Func<TOwner, T>> property)
+    {
+        if (property.Body is MemberExpression member)
+        {
+            return member.Member.Name;
+        }
+        
+        throw new ArgumentException();
     }
 }
