@@ -23,6 +23,17 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<object> processedObjects = [];
     private int? maxStringLength;
     
+    public static string Serialize<T>(T obj)
+    {
+        return new PrintingConfig<T>().PrintToString(obj);
+    }
+    
+    public static string Serialize<T>(T obj,
+        Func<PrintingConfig<T>, PrintingConfig<T>> config)
+    {
+        return config(ObjectPrinter.For<T>()).PrintToString(obj);
+    }
+    
     public string PrintToString(TOwner obj)
     {
         return PrintToString(obj, 0);
