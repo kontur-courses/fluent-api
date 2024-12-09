@@ -13,7 +13,7 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<Type> finalTypes =
     [
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan)
+        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
     ];
     private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
@@ -33,8 +33,8 @@ public class PrintingConfig<TOwner>
     {
         return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
-    
-    public string PrintToString(TOwner obj)
+
+    private string PrintToString(TOwner obj)
     {
         return PrintToString(obj, 0);
     }
