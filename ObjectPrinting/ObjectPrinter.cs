@@ -1,9 +1,8 @@
 using ObjectPrinting.Configs;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class ObjectPrinter
 {
-    public class ObjectPrinter
-    {
-        public static PrintingConfig<T> For<T>() => new();
-    }
+    public static PrintingConfig<T> For<T>() => new();
 }
