@@ -5,7 +5,6 @@ using ObjectPrinting.Tests.TestObjects;
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
-    [TestOf(typeof(ObjectPrinter))]
     public class ObjectPrinterAcceptanceTests
     {
         private static readonly VerifySettings settings = new();
@@ -22,7 +21,7 @@ namespace ObjectPrinting.Tests
             var person = new PrintingTestObject {TestString = "Alex", TestInt = 19};
             person.TestObject = person;
 
-            var printer = ObjectPrinter.For<PrintingTestObject>()
+            var printer = ObjectPrinter<PrintingTestObject>.Configure()
                 .Excluding<Guid>()
                 .Printing<int>().Using(i => i.ToString("X"))
                 .Printing<double>().Using(CultureInfo.InvariantCulture)
@@ -57,7 +56,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public Task PrintNull_Should_NullString()
         {
-            var printedString = ObjectPrinter.For<PrintingTestObject>().PrintToString(null);
+            var printedString = new ObjectPrinter<PrintingTestObject>().GetConfiguration().PrintToString(null);
 
             return Verify(printedString, settings);
         }
@@ -67,7 +66,7 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Excluding(o => o.TestInt)
                 .PrintToString(testObject);
 
@@ -79,7 +78,7 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Excluding<string>()
                 .PrintToString(testObject);
 
@@ -91,8 +90,8 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
-                .Printing<int>(x => x.TestInt)
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
+                .Printing(x => x.TestInt)
                 .Using(x => $"{x} years")
                 .PrintToString(testObject);
 
@@ -104,7 +103,7 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Printing<int>()
                 .Using(x => $"{x} is int")
                 .PrintToString(testObject);
@@ -120,7 +119,7 @@ namespace ObjectPrinting.Tests
             var culture = CultureInfo.GetCultureInfo("en-US");
             var testObject = new PrintingTestObject {TestDouble = testDouble, TestFloat = testFloat};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .UsingCommonCulture(culture)
                 .PrintToString(testObject);
 
@@ -135,7 +134,7 @@ namespace ObjectPrinting.Tests
             var culture = CultureInfo.GetCultureInfo("en-Us");
             var testObject = new PrintingTestObject {TestDouble = testDouble, TestFloat = testFloat};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Printing<double>()
                 .Using(culture)
                 .PrintToString(testObject);
@@ -148,7 +147,7 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Printing(o => o.TestString)
                 .TrimmedToLength(1)
                 .PrintToString(testObject);
@@ -163,7 +162,7 @@ namespace ObjectPrinting.Tests
         {
             var testObject = new PrintingTestObject {TestString = testString, TestInt = 19};
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .Printing(o => o.TestString)
                 .TrimmedToLength(maxLength)
                 .PrintToString(testObject);
@@ -177,7 +176,7 @@ namespace ObjectPrinting.Tests
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
             testObject.TestObject = testObject;
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .PrintToString(testObject);
 
             return Verify(printedString, settings);
@@ -190,7 +189,7 @@ namespace ObjectPrinting.Tests
             var secondTestObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
             firstTestObject.TestObject = secondTestObject;
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .PrintToString(firstTestObject);
 
             return Verify(printedString, settings);
@@ -206,7 +205,7 @@ namespace ObjectPrinting.Tests
                 TestArray = ["Item1", "Item2", "Item3"]
             };
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .PrintToString(testObject);
 
             return Verify(printedString, settings);
@@ -223,7 +222,7 @@ namespace ObjectPrinting.Tests
                 TestList = testList
             };
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .PrintToString(testObject);
 
             return Verify(printedString, settings);
@@ -245,7 +244,7 @@ namespace ObjectPrinting.Tests
                 TestDictionary = testDictionary
             };
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>()
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure()
                 .PrintToString(testObject);
 
             return Verify(printedString, settings);
@@ -267,7 +266,7 @@ namespace ObjectPrinting.Tests
                 CharValue = 'A',
             };
 
-            var printedString = ObjectPrinter.For<PrimitiveTypesTestObject>().PrintToString(testObject);
+            var printedString = ObjectPrinter<PrimitiveTypesTestObject>.Configure().PrintToString(testObject);
 
             return Verify(printedString, settings);
         }
@@ -280,7 +279,7 @@ namespace ObjectPrinting.Tests
             testObject.TestObject = otherObject;
             otherObject.TestObject = testObject;
 
-            var printedString = ObjectPrinter.For<PrintingTestObject>().PrintToString(testObject);
+            var printedString = ObjectPrinter<PrintingTestObject>.Configure().PrintToString(testObject);
 
             return Verify(printedString, settings);
         }
