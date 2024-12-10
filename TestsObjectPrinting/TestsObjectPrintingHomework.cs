@@ -28,7 +28,7 @@ public class TestsObjectPrinting
     {
         const string excepted = "Person";
         var result = ObjectPrinter.For<Person>()
-            .Excluding<string>().Excluding<int>().Excluding<double>().Excluding<Guid>().Excluding<DateTime>()
+            .Excluding<string>().Excluding<int>().Excluding<double>().Excluding<Guid>().Excluding<DateTime>().Excluding<Person[]>()
             .PrintToString(person);
 
         result.Should().Be(excepted);
@@ -61,7 +61,7 @@ public class TestsObjectPrinting
         const string excepted = "Person";
         var result = ObjectPrinter.For<Person>()
             .Excluding(p => p.Age).Excluding(p => p.CountEyes).Excluding(p => p.Height)
-            .Excluding(p => p.Id).Excluding(p => p.Name).Excluding(p => p.Surname).Excluding(p => p.DateBirth)
+            .Excluding(p => p.Id).Excluding(p => p.Name).Excluding(p => p.Surname).Excluding(p => p.DateBirth).Excluding<Person[]>()
             .PrintToString(person);
 
         result.Should().Be(excepted);
@@ -120,7 +120,6 @@ public class TestsObjectPrinting
             .Using(p => p.ToUpper())
             .PrintToString(person);
 
-        Console.WriteLine(result);
         result.Should().NotContain(unexcepted).And.Contain(excepted);
     }
 
@@ -133,7 +132,6 @@ public class TestsObjectPrinting
             .Printing<string>(p => p.Surname).TrimmedToLength(3)
             .PrintToString(person);
 
-        Console.WriteLine(result);
         result.Should().NotContain(unexcepted).And.Contain(excepted);
     }
 
@@ -146,5 +144,17 @@ public class TestsObjectPrinting
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Trimming is only supported for string properties");
+    }
+
+    [Test]
+    public void Work_WhenReferenceCycles()
+    {
+        const string excepted = "Circular Reference";
+        person.Parents = [person];
+        person.Friends = [person];
+        var result = ObjectPrinter.For<Person>().PrintToString(person);
+
+        Console.WriteLine(result);
+        result.Should().Contain(excepted);
     }
 }

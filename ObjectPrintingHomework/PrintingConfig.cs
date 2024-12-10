@@ -11,6 +11,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<string, Func<object, string>> propertySerializers = [];
     private readonly Dictionary<Type, CultureInfo> typeCultures = [];
     private readonly Dictionary<string, int> stringPropertyLengths = [];
+    private readonly HashSet<object> processedObjects = new HashSet<object>();
 
     public string PrintToString(TOwner obj)
     {
@@ -46,6 +47,10 @@ public class PrintingConfig<TOwner>
             return "null" + Environment.NewLine;
         var type = obj.GetType();
 
+        if (processedObjects.Contains(obj))
+            return "Circular Reference" + Environment.NewLine;
+        processedObjects.Add(obj);
+
         if (excludedTypes.Contains(type))
             return string.Empty;
 
@@ -57,9 +62,9 @@ public class PrintingConfig<TOwner>
 
         var finalTypes = new[]
         {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
         if (finalTypes.Contains(obj.GetType()))
             return obj + Environment.NewLine;
 

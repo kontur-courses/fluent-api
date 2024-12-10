@@ -11,4 +11,6 @@ public class Person
     public int CountEyes { get; set; }
     public string Surname { get; set; }
     public DateTime DateBirth {get; set; }
+    public Person[] Parents { get; set; }
+    public Person[] Friends { get; set; }
 }
