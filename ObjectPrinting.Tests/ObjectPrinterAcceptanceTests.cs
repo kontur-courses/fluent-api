@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using FluentAssertions;
 using ObjectPrinting.Extensions;
 using ObjectPrinting.Tests.TestObjects;
 
@@ -9,46 +8,62 @@ namespace ObjectPrinting.Tests
     [TestOf(typeof(ObjectPrinter))]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
-        public void Demo()
+        private static readonly VerifySettings settings = new();
+
+        [SetUp]
+        public void SetUp()
         {
-            var person = new Person {Name = "Alex", Age = 19};
-
-            var printer = ObjectPrinter.For<Person>()
-                //1. Исключить из сериализации свойства определенного типа
-                .Excluding<Guid>()
-                //2. Указать альтернативный способ сериализации для определенного типа
-                .Printing<int>().Using(i => i.ToString("X"))
-                //3. Для числовых типов указать культуру
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .Printing(p => p.Name).TrimmedToLength(10)
-                //6. Исключить из сериализации конкретного свойства
-                .Excluding(p => p.Age);
-
-            var s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            var s2 = person.PrintToString();
-
-            //8. ...с конфигурированием
-            var s3 = person.PrintToString(s => s.Excluding(p => p.Age));
-            Console.WriteLine(s1);
-            Console.WriteLine(s2);
-            Console.WriteLine(s3);
+            settings.UseDirectory("TestResults");
         }
 
         [Test]
-        public void PrintNull_Should_NullString()
+        public Task TestObjectPrinter_ExcludingTypes_CustomSerialization_Culture_Trimming()
+        {
+            var person = new PrintingTestObject {TestString = "Alex", TestInt = 19};
+            person.TestObject = person;
+
+            var printer = ObjectPrinter.For<PrintingTestObject>()
+                .Excluding<Guid>()
+                .Printing<int>().Using(i => i.ToString("X"))
+                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing(p => p.TestString).TrimmedToLength(10)
+                .Excluding(p => p.TestInt);
+
+            var printedString = printer.PrintToString(person);
+
+            return Verify(printedString, settings);
+        }
+
+        [Test]
+        public Task TestDefaultSerialization_ExtensionMethod()
+        {
+            var person = new PrintingTestObject {TestString = "Alex", TestInt = 19};
+
+            var printedString = person.PrintToString();
+
+            return Verify(printedString, settings);
+        }
+
+        [Test]
+        public Task TestConfiguredSerialization_ExtensionMethod()
+        {
+            var person = new PrintingTestObject {TestString = "Alex", TestInt = 19};
+
+            var printedString = person.PrintToString(s => s.Excluding(p => p.TestString));
+
+            return Verify(printedString, settings);
+        }
+
+        [Test]
+        public Task PrintNull_Should_NullString()
         {
             var printedString = ObjectPrinter.For<PrintingTestObject>().PrintToString(null);
 
-            printedString.Should().BeEquivalentTo("null");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void ExcludingProperty_Should_IgnoresSpecifiedProperty()
+        public Task ExcludingProperty_Should_IgnoresSpecifiedProperty()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
@@ -56,11 +71,11 @@ namespace ObjectPrinting.Tests
                 .Excluding(o => o.TestInt)
                 .PrintToString(testObject);
 
-            printedString.Should().NotContain(nameof(testObject.TestInt));
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void ExcludingType_Should_IgnoresSpecifiedType()
+        public Task ExcludingType_Should_IgnoresSpecifiedType()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
@@ -68,11 +83,11 @@ namespace ObjectPrinting.Tests
                 .Excluding<string>()
                 .PrintToString(testObject);
 
-            printedString.Should().NotContain(nameof(testObject.TestString));
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void UsingCustomSerialization_Should_AppliesCustomFunction()
+        public Task UsingCustomSerialization_Should_AppliesCustomFunction()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
@@ -81,11 +96,11 @@ namespace ObjectPrinting.Tests
                 .Using(x => $"{x} years")
                 .PrintToString(testObject);
 
-            printedString.Should().Contain($"{testObject.TestInt} years");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void UsingCustomSerializationForType_Should_AppliesCustomFunctionToAllTypeProperties()
+        public Task UsingCustomSerializationForType_Should_AppliesCustomFunctionToAllTypeProperties()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
@@ -94,11 +109,11 @@ namespace ObjectPrinting.Tests
                 .Using(x => $"{x} is int")
                 .PrintToString(testObject);
 
-            printedString.Should().Contain($"{testObject.TestInt} is int");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void UsingCommonCulture_Should_UsesSpecifiedCulture()
+        public Task UsingCommonCulture_Should_UsesSpecifiedCulture()
         {
             const double testDouble = 1.5;
             const float testFloat = 2.5f;
@@ -109,11 +124,11 @@ namespace ObjectPrinting.Tests
                 .UsingCommonCulture(culture)
                 .PrintToString(testObject);
 
-            printedString.Should().ContainAll(testDouble.ToString(culture), testFloat.ToString(culture));
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void UsingCultureForType_Should_UsesSpecifiedCultureForSpecifiedType()
+        public Task UsingCultureForType_Should_UsesSpecifiedCultureForSpecifiedType()
         {
             const double testDouble = 1.5;
             const float testFloat = 2.5f;
@@ -125,11 +140,11 @@ namespace ObjectPrinting.Tests
                 .Using(culture)
                 .PrintToString(testObject);
 
-            printedString.Should().ContainAll(testDouble.ToString(culture), testFloat.ToString());
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void TrimmingStringLength_Should_TrimsToStringLength()
+        public Task TrimmingStringLength_Should_TrimsToStringLength()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
 
@@ -138,13 +153,13 @@ namespace ObjectPrinting.Tests
                 .TrimmedToLength(1)
                 .PrintToString(testObject);
 
-            printedString.Should().NotContain("lex");
+            return Verify(printedString, settings);
         }
 
         [Test]
         [TestCase("Alex", 4, TestName = "LenEqualsStringLength")]
         [TestCase("Alex", 5, TestName = "LenMoreStringLength")]
-        public void TrimmingStringLength_Should_NotTrims(string testString, int maxLength)
+        public Task TrimmingStringLength_Should_NotTrims(string testString, int maxLength)
         {
             var testObject = new PrintingTestObject {TestString = testString, TestInt = 19};
 
@@ -153,11 +168,11 @@ namespace ObjectPrinting.Tests
                 .TrimmedToLength(maxLength)
                 .PrintToString(testObject);
 
-            printedString.Should().Contain(testObject.TestString);
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void PrintCircularReference_Should_PrintsMessage()
+        public Task PrintCircularReference_Should_PrintsMessage()
         {
             var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
             testObject.TestObject = testObject;
@@ -165,11 +180,11 @@ namespace ObjectPrinting.Tests
             var printedString = ObjectPrinter.For<PrintingTestObject>()
                 .PrintToString(testObject);
 
-            printedString.Should().Contain("circular reference");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void PrintNonCircularReference_Should_PrintsNormally()
+        public Task PrintNonCircularReference_Should_PrintsNormally()
         {
             var firstTestObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
             var secondTestObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
@@ -178,11 +193,11 @@ namespace ObjectPrinting.Tests
             var printedString = ObjectPrinter.For<PrintingTestObject>()
                 .PrintToString(firstTestObject);
 
-            printedString.Should().NotContain("circular reference");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void PrintArray_Should_AllItems()
+        public Task PrintArray_Should_AllItems()
         {
             var testObject = new PrintingTestObject
             {
@@ -194,11 +209,11 @@ namespace ObjectPrinting.Tests
             var printedString = ObjectPrinter.For<PrintingTestObject>()
                 .PrintToString(testObject);
 
-            printedString.Should().ContainAll("Item1", "Item2", "Item3");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void PrintList_Should_AllItems()
+        public Task PrintList_Should_AllItems()
         {
             var testList = new List<object> {"ListItem1", "ListItem2", "ListItem3"};
             var testObject = new PrintingTestObject
@@ -207,15 +222,15 @@ namespace ObjectPrinting.Tests
                 TestInt = 19,
                 TestList = testList
             };
-            
+
             var printedString = ObjectPrinter.For<PrintingTestObject>()
                 .PrintToString(testObject);
 
-            printedString.Should().ContainAll("ListItem1", "ListItem2", "ListItem3");
+            return Verify(printedString, settings);
         }
 
         [Test]
-        public void PrintDictionary_Should_AllItemsWithKeys()
+        public Task PrintDictionary_Should_AllItemsWithKeys()
         {
             var testDictionary = new Dictionary<string, object>
             {
@@ -233,7 +248,41 @@ namespace ObjectPrinting.Tests
             var printedString = ObjectPrinter.For<PrintingTestObject>()
                 .PrintToString(testObject);
 
-            printedString.Should().ContainAll("Key1 = 1", "Key2 = 2", "Key3 = 3");
+            return Verify(printedString, settings);
+        }
+
+        [Test]
+        public Task TestPrimitiveTypes()
+        {
+            var testObject = new PrimitiveTypesTestObject
+            {
+                BoolValue = true,
+                ByteValue = 255,
+                ShortValue = 32767,
+                IntValue = 2147483647,
+                LongValue = 9223372036854775807,
+                DecimalValue = 123.45m,
+                DoubleValue = 123.45,
+                FloatValue = 123.45f,
+                CharValue = 'A',
+            };
+
+            var printedString = ObjectPrinter.For<PrimitiveTypesTestObject>().PrintToString(testObject);
+
+            return Verify(printedString, settings);
+        }
+
+        [Test]
+        public Task PrintCircularReference_Should_HandleMultipleReferences()
+        {
+            var testObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
+            var otherObject = new PrintingTestObject {TestString = "Alex", TestInt = 19};
+            testObject.TestObject = otherObject;
+            otherObject.TestObject = testObject;
+
+            var printedString = ObjectPrinter.For<PrintingTestObject>().PrintToString(testObject);
+
+            return Verify(printedString, settings);
         }
     }
 }

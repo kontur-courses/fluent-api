@@ -1,0 +1,10 @@
+﻿PrintingTestObject
+	TestId = 00000000-0000-0000-0000-000000000000
+	TestString = null
+	TestDouble = 1.5
+	TestFloat = 2,5
+	TestInt = 0
+	TestObject = null
+	TestDictionary = null
+	TestList = null
+	TestArray = null
