@@ -23,8 +23,20 @@ public static class PropertyPrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
-        int maxLen)
+        int maxLength)
     {
-        return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+        if (maxLength < 1)
+            throw new ArgumentException($"{nameof(maxLength)} should be greater than 1");
+
+        var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+
+        parentConfig.MemberSerializationMethod.AddMethod(propConfig.PropertyMemberInfo, (Func<string, string>)Function);
+
+        return parentConfig;
+
+        string Function(string str) =>
+            string.IsNullOrEmpty(str) || str.Length <= maxLength
+                ? str
+                : str[..maxLength];
     }
 }

@@ -14,6 +14,21 @@ public class PrintingConfigShould
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
     private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
+    [TestCase(2)]
+    [TestCase(3)]
+    [TestCase(4)]
+    public void PropertyPrintingConfig_CutTextLength(int maxLength)
+    {
+        var fullText = personPrintingConfig
+            .Printing(p => p.Name).TrimmedToLength(maxLength)
+            .PrintToString(alex);
+        var expectedNameString = alex.Name[..maxLength];
+        
+        fullText
+            .Should()
+            .Contain(expectedNameString);
+    }
+
     [Test]
     public void PropertyPrintingConfig_SetSerializationMethodForProperty()
     {
@@ -22,12 +37,12 @@ public class PrintingConfigShould
             .Using(h => $"{h} meters")
             .PrintToString(alex);
         var expectedHeightString = $"{alex.Height} meters";
-        
+
         fullText
             .Should()
             .Contain(expectedHeightString);
     }
-    
+
     [TestCase("X")]
     [TestCase("C")]
     [TestCase("F")]
