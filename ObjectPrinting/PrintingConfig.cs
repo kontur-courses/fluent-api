@@ -52,14 +52,17 @@ public class PrintingConfig<TOwner>
             return "Circular Reference" + Environment.NewLine;
         }
 
-        var serializedFinalType = SerializeFinalType(obj);
-
-        if (serializedFinalType != null)
+        if (TrySerializeFinalType(obj, out var serializedFinalType))
         {
-            return serializedFinalType;
+            return serializedFinalType!;
         }
 
-        return SerializeCollection(obj, nestingLevel) ?? SerializeComplexType(obj, nestingLevel);
+        if (TrySerializeCollection(obj, nestingLevel, out var serializedCollection))
+        {
+            return serializedCollection!;
+        }
+        
+        return SerializeComplexType(obj, nestingLevel);
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -95,29 +98,35 @@ public class PrintingConfig<TOwner>
         propertyLengths[propertyName] = trimLength;
     }
 
-    private string? SerializeFinalType(object obj)
+    private bool TrySerializeFinalType(object obj, out string? serializedFinalType)
     {
         if (!finalTypes.Contains(obj.GetType()))
         {
-            return null;
+            serializedFinalType = null;
+            return false;
         }
         
-        return obj switch
+        serializedFinalType = obj switch
         {
             IFormattable format when typeCultures.TryGetValue(obj.GetType(), out var formatProvider) =>
-                format.ToString(null, formatProvider) + Environment.NewLine,
+                format.ToString(null, formatProvider),
             IFormattable format => 
-                format.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine,
-            string str => str + Environment.NewLine,
-            _ => obj + Environment.NewLine
+                format.ToString(null, CultureInfo.InvariantCulture),
+            string str => str,
+            _ => (string)obj
         };
+
+        serializedFinalType += Environment.NewLine;
+        
+        return true;
     }
 
-    private string? SerializeCollection(object obj, int nestingLevel)
+    private bool TrySerializeCollection(object obj, int nestingLevel, out string? serializedCollection)
     {
         if (obj is not IEnumerable collection)
         {
-            return null;
+            serializedCollection = null;
+            return false;
         }
 
         var collectionOnString = new StringBuilder();
@@ -131,7 +140,8 @@ public class PrintingConfig<TOwner>
             collectionOnString.Append(indentation + PrintToString(item, nestingLevel + 1));
         }
 
-        return collectionOnString.ToString();
+        serializedCollection = collectionOnString.ToString();
+        return true;
     }
 
     private string SerializeComplexType(object obj, int nestingLevel)
