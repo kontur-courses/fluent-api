@@ -4,7 +4,7 @@ using ObjectPrinting.Configurations.Interfaces;
 
 namespace ObjectPrinting.Configurations;
 
-public class TypePrintingConfig<TOwner, TType>(PrintingConfig<TOwner> printingConfig) 
+public class TypePrintingConfig<TOwner, TType>(PrintingConfig<TOwner> printingConfig)
     : ITypePrintingConfig<TOwner>
 {
     public CultureInfo? CultureInfo { get; private set; }
@@ -13,7 +13,6 @@ public class TypePrintingConfig<TOwner, TType>(PrintingConfig<TOwner> printingCo
 
     public PrintingConfig<TOwner> Using(Func<TType, string> print)
     {
-        ArgumentNullException.ThrowIfNull(print);
         Serializer = printObject =>
         {
             if (printObject is not TType typeObject)
@@ -28,7 +27,6 @@ public class TypePrintingConfig<TOwner, TType>(PrintingConfig<TOwner> printingCo
 
     internal PrintingConfig<TOwner> Using(CultureInfo culture)
     {
-        ArgumentNullException.ThrowIfNull(culture);
         CultureInfo = culture;
         return ParentConfig;
     }

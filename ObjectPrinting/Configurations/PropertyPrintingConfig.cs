@@ -11,7 +11,6 @@ public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> pr
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        ArgumentNullException.ThrowIfNull(print);
         Serializer = printObject =>
         {
             if (printObject is not TPropType propertyObject)

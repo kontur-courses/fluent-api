@@ -8,6 +8,7 @@ using System.Text;
 using ObjectPrinting.Configurations;
 using ObjectPrinting.Configurations.Interfaces;
 using ObjectPrinting.Constants;
+using ObjectPrinting.Helpers;
 
 namespace ObjectPrinting;
 
@@ -32,13 +33,20 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
+    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var propertyInfo = ReflectionHelper.GetPropertyInfoFromExpression(memberSelector);
+        excludeProperties.Add(propertyInfo);
+        return this;
+    }
+
     public TypePrintingConfig<TOwner, TType> Printing<TType>()
     {
         var type = typeof(TType);
-        if (typePrintingConfigs.TryGetValue(type, out var printing)
-            && printing is TypePrintingConfig<TOwner, TType> config)
+        if (typePrintingConfigs.TryGetValue(type, out var config)
+            && config is TypePrintingConfig<TOwner, TType> printingConfig)
         {
-            return config;
+            return printingConfig;
         }
 
         var typeConfig = new TypePrintingConfig<TOwner, TType>(this);
@@ -46,50 +54,22 @@ public class PrintingConfig<TOwner>
         return typeConfig;
     }
 
-    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-    {
-        var propertyInfo = GetPropertyInfoFromExpression(memberSelector);
-        excludeProperties.Add(propertyInfo);
-        return this;
-    }
-
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        var propertyInfo = GetPropertyInfoFromExpression(memberSelector);
-        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var printing)
-            && printing is PropertyPrintingConfig<TOwner, TPropType> config)
+        var propertyInfo = ReflectionHelper.GetPropertyInfoFromExpression(memberSelector);
+        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
+            && config is PropertyPrintingConfig<TOwner, TPropType> printingConfig)
         {
-            return config;
+            return printingConfig;
         }
 
-        var printingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-        propertyPrintingConfigs[propertyInfo] = printingConfig;
-        return printingConfig;
+        var propertyPrintingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
+        propertyPrintingConfigs[propertyInfo] = propertyPrintingConfig;
+        return propertyPrintingConfig;
     }
 
     public string PrintToString(TOwner obj) => PrintToString(obj, 0);
-
-    private PropertyInfo GetPropertyInfoFromExpression<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-    {
-        if (memberSelector.Body is not MemberExpression expression)
-        {
-            throw new ArgumentException("Expression must be a member expression", nameof(memberSelector));
-        }
-
-        if (expression.Expression == expression)
-        {
-            throw new ArgumentException("Cannot exclude the entire object. Use a property expression.",
-                nameof(memberSelector));
-        }
-
-        if (expression.Member is not PropertyInfo propertyInfo)
-        {
-            throw new ArgumentException("Expression must be a property expression", nameof(memberSelector));
-        }
-
-        return propertyInfo;
-    }
 
     private string PrintToString(object? obj, int nestingLevel)
     {
@@ -109,13 +89,13 @@ public class PrintingConfig<TOwner>
             return string.Empty;
         }
 
-        if (TryTypeSerializerPrintString(obj, out var serializerString))
+        if (TryTypeSerializerPrintString(obj, objectType, out var serializedString))
         {
-            return serializerString;
+            return serializedString;
         }
 
         var culture = GetCultureInfo(objectType);
-        if (TryFinalPrintString(obj, culture, out var finalString))
+        if (TryCorePrintString(obj, objectType, culture, out var finalString))
         {
             return finalString;
         }
@@ -131,18 +111,12 @@ public class PrintingConfig<TOwner>
         }
 
         var nextNestingLevel = nestingLevel + 1;
-        return GetObjectPropertiesString(obj, nextNestingLevel);
+        return GetObjectPropertiesString(obj, objectType, nextNestingLevel);
     }
 
-    private bool TryTypeSerializerPrintString(object? obj, out string result)
+    private bool TryTypeSerializerPrintString(object obj, Type objectType, out string result)
     {
         result = string.Empty;
-        if (obj is null)
-        {
-            return false;
-        }
-
-        var objectType = obj.GetType();
         if (!typePrintingConfigs.TryGetValue(objectType, out var config) || config.Serializer is null)
         {
             return false;
@@ -159,16 +133,10 @@ public class PrintingConfig<TOwner>
             : commonCulture;
     }
 
-    private bool TryFinalPrintString(object? obj, CultureInfo culture, out string result)
+    private bool TryCorePrintString(object obj, Type objectType, CultureInfo culture, out string result)
     {
         result = string.Empty;
-        if (obj is null)
-        {
-            return false;
-        }
-
-        var objectType = obj.GetType();
-        if (!PrintingConfigConstants.FinalTypes.Contains(objectType))
+        if (!PrintingConfigHelper.IsCoreType(objectType))
         {
             return false;
         }
@@ -185,9 +153,8 @@ public class PrintingConfig<TOwner>
         return true;
     }
 
-    private string GetObjectPropertiesString(object obj, int nestingLevel)
+    private string GetObjectPropertiesString(object obj, Type objectType, int nestingLevel)
     {
-        var objectType = obj.GetType();
         var indentation = GetIndentation(nestingLevel);
         var propertiesStringBuilder = new StringBuilder();
         propertiesStringBuilder.AppendLine(objectType.Name);
@@ -200,31 +167,25 @@ public class PrintingConfig<TOwner>
                 continue;
             }
 
+            propertiesStringBuilder.Append($"{indentation}{propertyInfo.Name} = ");
             var propertyValue = propertyInfo.GetValue(obj);
             if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
                 && config.Serializer is not null
                 && propertyValue is not null)
             {
-                propertiesStringBuilder.AppendLine(
-                    $"{indentation}{propertyInfo.Name} = {config.Serializer(propertyValue)}");
+                propertiesStringBuilder.AppendLine($"{config.Serializer(propertyValue)}");
             }
             else
             {
-                propertiesStringBuilder.AppendLine(
-                    $"{indentation}{propertyInfo.Name} = {PrintToString(propertyValue, nestingLevel)}");
+                propertiesStringBuilder.AppendLine($"{PrintToString(propertyValue, nestingLevel)}");
             }
         }
 
         return propertiesStringBuilder.ToString();
     }
 
-    private string SerializeItems(IEnumerable? enumerable, int nestingLevel)
+    private string SerializeItems(IEnumerable enumerable, int nestingLevel)
     {
-        if (enumerable is null)
-        {
-            return PrintingConfigConstants.NullLine;
-        }
-
         var indentation = GetIndentation(nestingLevel);
         var nextNestingLevel = nestingLevel + 1;
         string returnString;
@@ -259,10 +220,10 @@ public class PrintingConfig<TOwner>
         var dictionarySerializeBuilder = new StringBuilder();
         var indentation = GetIndentation(nestingLevel);
         var nextNestingLevel = nestingLevel + 1;
-        foreach (var itemKey in items.Keys)
+        foreach (DictionaryEntry entry in items)
         {
             dictionarySerializeBuilder.AppendLine(
-                $"{indentation}{itemKey} = {PrintToString(items[itemKey], nextNestingLevel)}");
+                $"{indentation}{entry.Key} = {PrintToString(entry.Value, nextNestingLevel)}");
         }
 
         return dictionarySerializeBuilder.ToString();
@@ -270,6 +231,6 @@ public class PrintingConfig<TOwner>
 
     private string GetIndentation(int nestingLevel)
     {
-        return new string('\t', nestingLevel);
+        return new string(PrintingConfigConstants.Tab, nestingLevel);
     }
 }

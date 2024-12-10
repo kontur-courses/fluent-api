@@ -1,5 +1,4 @@
-﻿using System;
-using ObjectPrinting.Configurations;
+﻿using ObjectPrinting.Configurations;
 
 namespace ObjectPrinting.Extensions;
 
@@ -17,6 +16,7 @@ public static class PropertyPrintingConfigExtensions
         {
             return startValue;
         }
+
         return startValue[..maxLen];
     }
 }
