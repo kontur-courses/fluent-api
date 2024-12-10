@@ -1,0 +1,9 @@
+﻿Person
+	Id = 2a5cacd7-a7a6-4c78-9b7c-c3377846cadd
+	Name = Jo
+	Height = 189,52
+	Age = 10
+	DateOfBirth = 09.09.1985 0:00:00
+	Addresses = null
+	Children = null
+	Father = null
