@@ -1,12 +1,25 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
+using ObjectPrinting.Extensions;
 using ObjectPrinting.PropertyPrintingConfig;
 
 namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private readonly HashSet<Type> excludedProperties = [];
+
+    public PrintingConfig(PrintingConfig<TOwner>? parent = null)
+    {
+        if (parent == null)
+            return;
+
+        excludedProperties.AddRange(excludedProperties);
+    }
+
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
         return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -25,7 +38,9 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
-        return this;
+        var configCopy = new PrintingConfig<TOwner>(this);
+        configCopy.excludedProperties.Add(typeof(TPropType));
+        return configCopy;
     }
 
     public string PrintToString(TOwner obj)
@@ -33,25 +48,22 @@ public class PrintingConfig<TOwner>
         return PrintToString(obj, 0);
     }
 
-    private string PrintToString(object obj, int nestingLevel)
+    private string PrintToString(object? obj, int nestingLevel)
     {
         //TODO apply configurations
         if (obj == null)
             return "null" + Environment.NewLine;
 
-        var finalTypes = new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-        if (finalTypes.Contains(obj.GetType()))
+        if (obj.GetType().IsFinal())
             return obj + Environment.NewLine;
 
         var identation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         var type = obj.GetType();
         sb.AppendLine(type.Name);
-        foreach (var propertyInfo in type.GetProperties())
+        foreach (var propertyInfo in type
+                     .GetProperties()
+                     .Where(prop => !excludedProperties.Contains(prop.PropertyType)))
         {
             sb.Append(identation + propertyInfo.Name + " = " +
                       PrintToString(propertyInfo.GetValue(obj),
