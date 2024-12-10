@@ -8,8 +8,8 @@ public class PropertyPrintingConfig<TOwner, TPropType>(
     MemberInfo? memberInfo = null)
     : IPropertyPrintingConfig<TOwner, TPropType>
 {
-    public MemberInfo PropertyMemberInfo => 
-        memberInfo != null ? memberInfo : typeof(TPropType);
+    public MemberInfo PropertyMemberInfo =>
+        memberInfo != null ? memberInfo : throw new InvalidOperationException("MemberInfo is null.");
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {

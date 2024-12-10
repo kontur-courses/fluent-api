@@ -11,6 +11,7 @@ namespace ObjectPrinting;
 public class PrintingConfig<TOwner>
 {
     private readonly HashSet<Type> excludedProperties = [];
+    private readonly HashSet<MemberInfo> excludedMembers = [];
     internal readonly Dictionary<Type, Delegate> TypeSerializationMethod = new();
     internal readonly Dictionary<MemberInfo, Delegate> MemberSerializationMethod = new();
 
@@ -20,6 +21,7 @@ public class PrintingConfig<TOwner>
             return;
 
         excludedProperties.AddRange(parent.excludedProperties);
+        excludedMembers.AddRange(parent.excludedMembers);
         TypeSerializationMethod.AddRange(parent.TypeSerializationMethod);
         MemberSerializationMethod.AddRange(parent.MemberSerializationMethod);
     }
@@ -43,7 +45,12 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        return this;
+        var configClone = new PrintingConfig<TOwner>(this);
+        var memberInfo = GetMemberInfo(memberSelector);
+        if (memberInfo is null)
+            throw new ArgumentException("Invalid member selector.");
+        configClone.excludedMembers.Add(memberInfo);
+        return configClone;
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>()

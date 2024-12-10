@@ -23,7 +23,7 @@ public class PrintingConfigShould
             .Printing(p => p.Name).TrimmedToLength(maxLength)
             .PrintToString(alex);
         var expectedNameString = alex.Name[..maxLength];
-        
+
         fullText
             .Should()
             .Contain(expectedNameString);
@@ -78,6 +78,29 @@ public class PrintingConfigShould
             dateTimeWithoutCulture
                 .Should()
                 .NotContain(expectedAgeString);
+        }
+    }
+
+    [Test]
+    public void PrintToString_NotPrintingCurrentExcludedPropertyAndField()
+    {
+        using (new AssertionScope())
+        {
+            IsContainingProperty(personPrintingConfig.Excluding(p => p.Id), alex, nameof(Person.Id))
+                .Should()
+                .BeTrue();
+            IsContainingProperty(personPrintingConfig.Excluding(p => p.Name), alex, nameof(Person.Name))
+                .Should()
+                .BeTrue();
+            IsContainingProperty(personPrintingConfig.Excluding(p => p.Height), alex, nameof(Person.Height))
+                .Should()
+                .BeTrue();
+            IsContainingProperty(personPrintingConfig.Excluding(p => p.Age), alex, nameof(Person.Age))
+                .Should()
+                .BeTrue();
+            IsContainingProperty(personPrintingConfig.Excluding(p => p.BestField), alex, nameof(Person.BestField))
+                .Should()
+                .BeTrue();
         }
     }
 
