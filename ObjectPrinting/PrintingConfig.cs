@@ -65,7 +65,8 @@ public class PrintingConfig<TOwner>
         sb.AppendLine(type.Name);
         foreach (var memberInfo in type
                      .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
-                     .Where(member => member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
+                     .Where(member =>
+                         member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
         {
             sb.Append(numberOfTabs + memberInfo.Name + " = " +
                       PrintToString(GetValue(obj, memberInfo),
@@ -74,13 +75,13 @@ public class PrintingConfig<TOwner>
 
         return sb.ToString();
     }
-    
+
     private object? GetValue(object obj, MemberInfo memberInfo)
     {
         var val = memberInfo.GetValue(obj);
         var memberType = memberInfo.GetMemberType();
-        return TypeSerializationMethod.TryGetValue(memberType!, out var myFunc) 
-                ? myFunc.DynamicInvoke(val) 
-                : val;
+        return TypeSerializationMethod.TryGetValue(memberType!, out var typeFunc)
+            ? typeFunc.DynamicInvoke(val)
+            : val;
     }
 }

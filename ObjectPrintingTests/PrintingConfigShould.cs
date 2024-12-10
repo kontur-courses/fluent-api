@@ -1,30 +1,55 @@
+using System.Globalization;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using NUnit.Framework.Internal;
 using ObjectPrinting;
+using ObjectPrinting.Extensions;
 
 namespace ObjectPrintingTests;
 
 [TestFixture]
-//[Parallelizable(ParallelScope.All)]
+[Parallelizable(ParallelScope.All)]
 public class PrintingConfigShould
 {
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
-    private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 18);
+    private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
     [TestCase("X")]
     [TestCase("C")]
     [TestCase("F")]
     public void PropertyPrintingConfig_ChangeSerializationMethod(string format)
     {
-        var expectedString = alex.Age.ToString(format);
-
-        personPrintingConfig
+        var fullText = personPrintingConfig
             .Printing<int>()
             .Using(i => i.ToString(format))
-            .PrintToString(alex)
+            .PrintToString(alex);
+        var expectedAgeString = alex.Age.ToString(format);
+
+        fullText
             .Should()
-            .Contain(expectedString);
+            .Contain(expectedAgeString);
+    }
+
+    [Test]
+    public void PropertyPrintingConfig_ChangeCultureInfo()
+    {
+        var dateTimeCulture = personPrintingConfig
+            .Printing<DateTime>()
+            .Using(CultureInfo.InvariantCulture)
+            .PrintToString(alex);
+        var dateTimeWithoutCulture = personPrintingConfig
+            .PrintToString(alex);
+        var expectedAgeString = alex.BirthDate.ToString(CultureInfo.InvariantCulture);
+
+        using (new AssertionScope())
+        {
+            dateTimeCulture
+                .Should()
+                .Contain(expectedAgeString);
+            dateTimeWithoutCulture
+                .Should()
+                .NotContain(expectedAgeString);
+        }
     }
 
     [Test]
