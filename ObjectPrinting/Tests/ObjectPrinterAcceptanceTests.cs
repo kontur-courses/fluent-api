@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using FluentAssertions;
 using System.Globalization;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ public class ObjectPrinterAcceptanceTests
                        	Age = 19
 
                        """;
-        person.Serialize().Should().Be(expected);
+        ObjectPrinter.Serialize(person).Should().Be(expected);
     }
 
     [Test]
@@ -34,7 +35,7 @@ public class ObjectPrinterAcceptanceTests
                        	Height = 0
 
                        """;
-        person.Serialize(
+        ObjectPrinter.Serialize(person,
                 c => c.Exclude<int>())
             .Should().Be(expected);
     }
@@ -50,9 +51,34 @@ public class ObjectPrinterAcceptanceTests
                        	Height = 0
 
                        """;
-        person.Serialize(
+        ObjectPrinter.Serialize(person,
                 c => c.Exclude(x => x.Age))
             .Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_SameStateDiffRef()
+    {
+        var first = new Person { Name = "Alex", Age = 19 };
+        var second = new Person { Name = "Alex", Age = 19 };
+
+        Person[] persons = [first, second];
+
+        var expected = """
+                       Person[]:
+                       	Person
+                       		Id = 00000000-0000-0000-0000-000000000000
+                       		Name = Alex
+                       		Height = 0
+                       		Age = 19
+                       	Person
+                       		Id = 00000000-0000-0000-0000-000000000000
+                       		Name = Alex
+                       		Height = 0
+                       		Age = 19
+
+                       """;
+        ObjectPrinter.Serialize(persons).Should().Be(expected);
     }
 
     [Test]
@@ -67,7 +93,7 @@ public class ObjectPrinterAcceptanceTests
                        	Age = !
 
                        """;
-        person.Serialize(
+        ObjectPrinter.Serialize(person,
                 c => c.SetCustomSerialization<int>(_ => "!"))
             .Should().Be(expected);
     }
@@ -85,13 +111,27 @@ public class ObjectPrinterAcceptanceTests
                         	Age = 19
 
                         """;
-        person.Serialize(
-                c => c.SetCulture(new CultureInfo(culture)))
+        ObjectPrinter.Serialize(person,
+                c => c.SetCulture<double>(new CultureInfo(culture)))
+            .Should().Be(expected);
+    }
+    
+    [TestCase("ru-RU")]
+    [TestCase("en-US")]
+    public void PrintToString_SetCulture_AffectSpecificIFormattable(string culture)
+    {
+        var person = new DateTime(1999,12,30);
+        var expected = $"""
+                        30.12.1999 0:00:00
+                        
+                        """;
+        ObjectPrinter.Serialize(person,
+                c => c.SetCulture<double>(new CultureInfo(culture)))
             .Should().Be(expected);
     }
 
     [Test]
-    public void PrintToString_AlternativePropetrySerialization()
+    public void PrintToString_AlternativePropertySerialization()
     {
         var person = new Person { Name = "Alex", Age = 19 };
         var expected = """
@@ -102,7 +142,7 @@ public class ObjectPrinterAcceptanceTests
                        	Age = 19
 
                        """;
-        person.Serialize(
+        ObjectPrinter.Serialize(person,
                 c => c.SetCustomSerialization(x => x.Name, _ => "Name"))
             .Should().Be(expected);
     }
@@ -119,8 +159,25 @@ public class ObjectPrinterAcceptanceTests
                        	Age = 19
 
                        """;
-        person.Serialize(
+        ObjectPrinter.Serialize(person,
                 c => c.TrimStringsToLength(1))
+            .Should().Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_TrimStrings_WhenStringIsSmallerThanLength()
+    {
+        var person = new Person { Name = "Alex", Age = 19 };
+        var expected = """
+                       Person
+                       	Id = 00000000-0000-0000-0000-000000000000
+                       	Name = Alex
+                       	Height = 0
+                       	Age = 19
+
+                       """;
+        ObjectPrinter.Serialize(person,
+                c => c.TrimStringsToLength(10))
             .Should().Be(expected);
     }
 
@@ -140,7 +197,7 @@ public class ObjectPrinterAcceptanceTests
                        	Kids = null
 
                        """;
-        person.Serialize().Should().Be(expected);
+        ObjectPrinter.Serialize(person).Should().Be(expected);
     }
 
     [Test]
@@ -173,7 +230,7 @@ public class ObjectPrinterAcceptanceTests
 
                        """;
 
-        personList.Serialize().Should().Be(expected);
+        ObjectPrinter.Serialize(personList).Should().Be(expected);
     }
 
     [Test]
@@ -206,7 +263,7 @@ public class ObjectPrinterAcceptanceTests
 
                        """;
 
-        personArray.Serialize().Should().Be(expected);
+        ObjectPrinter.Serialize(personArray).Should().Be(expected);
     }
 
     [Test]
@@ -245,6 +302,6 @@ public class ObjectPrinterAcceptanceTests
 
                        """;
 
-        personDictionary.Serialize().Should().Be(expected);
+        ObjectPrinter.Serialize(personDictionary).Should().Be(expected);
     }
 }
