@@ -11,9 +11,9 @@ public class PrintingConfigShould
 {
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
     private readonly Person alex = new Person(Guid.NewGuid(), "Alex", 188, 18);
-    
+
     [Test]
-    public void PrintToString_NotPrintingExcludedProperty()
+    public void PrintToString_NotPrintingExcludedPropertyAndField()
     {
         using (new AssertionScope())
         {
@@ -27,6 +27,9 @@ public class PrintingConfigShould
                 .Should()
                 .BeFalse();
             IsContainingProperty(personPrintingConfig.Excluding<int>(), alex, nameof(Person.Age))
+                .Should()
+                .BeFalse();
+            IsContainingProperty(personPrintingConfig.Excluding<decimal>(), alex, nameof(Person.BestField))
                 .Should()
                 .BeFalse();
         }

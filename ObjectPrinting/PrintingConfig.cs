@@ -61,12 +61,13 @@ public class PrintingConfig<TOwner>
         var sb = new StringBuilder();
         var type = obj.GetType();
         sb.AppendLine(type.Name);
-        foreach (var propertyInfo in type
-                     .GetProperties()
-                     .Where(prop => !excludedProperties.Contains(prop.PropertyType)))
+        foreach (var memberInfo in type
+                     .GetMembers()
+                     .Where(member =>
+                         member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
         {
-            sb.Append(identation + propertyInfo.Name + " = " +
-                      PrintToString(propertyInfo.GetValue(obj),
+            sb.Append(identation + memberInfo.Name + " = " +
+                      PrintToString(memberInfo.GetValue(obj),
                           nestingLevel + 1));
         }
 
