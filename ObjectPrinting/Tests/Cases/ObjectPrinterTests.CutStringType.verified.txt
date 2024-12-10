@@ -1,0 +1,9 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Iva...
+	SecondName = Iva...
+	Height = 0,12345
+	Weight = 0,1234
+	Age = 10
+	Birthday = 16.02.2004 0:00:00
+	Nickname = Van...
