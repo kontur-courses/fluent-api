@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace ObjectPrinting;
 
-public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner>
+public class PropertyPrintingConfig<TOwner, TPropType>
 {
     private readonly PrintingConfig<TOwner> printingConfig;
     public readonly string? PropertyName;
