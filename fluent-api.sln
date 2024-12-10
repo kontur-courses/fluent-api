@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "Samp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectacle", "Samples\Spectacle\Spectacle.csproj", "{EFA9335C-411B-4597-B0B6-5438D1AE04C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestsObjectPrinting", "TestsObjectPrinting\TestsObjectPrinting.csproj", "{1FA74E0A-A32D-4014-9EB1-8C748CB11E96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrintingHomework", "ObjectPrintingHomework\ObjectPrintingHomework.csproj", "{0215A567-D0CC-43B3-916A-68A8DBF6B529}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +39,14 @@ Global
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FA74E0A-A32D-4014-9EB1-8C748CB11E96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FA74E0A-A32D-4014-9EB1-8C748CB11E96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FA74E0A-A32D-4014-9EB1-8C748CB11E96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FA74E0A-A32D-4014-9EB1-8C748CB11E96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0215A567-D0CC-43B3-916A-68A8DBF6B529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0215A567-D0CC-43B3-916A-68A8DBF6B529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0215A567-D0CC-43B3-916A-68A8DBF6B529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0215A567-D0CC-43B3-916A-68A8DBF6B529}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
