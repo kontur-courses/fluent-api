@@ -59,10 +59,10 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_AlternativePropertySerialization()
     {
-        var actual = person.PrintToString(
-            config => config
-                .Printing(p => p.Name)
-                .Using(_ => "NoName"));
+        var actual = ObjectPrinter.For<Person>()
+            .Printing(p => p.Name)
+            .Using(_ => "NoName")
+            .PrintToString(person);
         
         return Verifier.Verify(actual, Settings);
     }
