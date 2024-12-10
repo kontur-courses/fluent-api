@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace ObjectPrinting.Extensions;
 
 public static class ObjectExtensions

@@ -6,11 +6,26 @@ using ObjectPrinting;
 namespace ObjectPrintingTests;
 
 [TestFixture]
-[Parallelizable(ParallelScope.All)]
+//[Parallelizable(ParallelScope.All)]
 public class PrintingConfigShould
 {
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
-    private readonly Person alex = new Person(Guid.NewGuid(), "Alex", 188, 18);
+    private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 18);
+
+    [TestCase("X")]
+    [TestCase("C")]
+    [TestCase("F")]
+    public void PropertyPrintingConfig_ChangeSerializationMethod(string format)
+    {
+        var expectedString = alex.Age.ToString(format);
+
+        personPrintingConfig
+            .Printing<int>()
+            .Using(i => i.ToString(format))
+            .PrintToString(alex)
+            .Should()
+            .Contain(expectedString);
+    }
 
     [Test]
     public void PrintToString_NotPrintingExcludedPropertyAndField()

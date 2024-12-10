@@ -1,17 +1,14 @@
 ﻿namespace ObjectPrinting.PropertyPrintingConfig;
 
-public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig)
+    : IPropertyPrintingConfig<TOwner, TPropType>
 {
-    private readonly PrintingConfig<TOwner> printingConfig;
-
-    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
-    {
-        this.printingConfig = printingConfig;
-    }
-
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        return printingConfig;
+        if (printingConfig.TypeSerializationMethod.TryAdd(typeof(TPropType), print))
+            return printingConfig;
+
+        throw new InvalidOperationException($"Type {typeof(TPropType).Name} is already registered");
     }
 
     public PrintingConfig<TOwner> Using(CultureInfo culture)
@@ -20,9 +17,4 @@ public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig
     }
 
     PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-}
-
-public interface IPropertyPrintingConfig<TOwner, TPropType>
-{
-    PrintingConfig<TOwner> ParentConfig { get; }
 }

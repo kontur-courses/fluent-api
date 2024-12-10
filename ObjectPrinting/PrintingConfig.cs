@@ -11,18 +11,21 @@ namespace ObjectPrinting;
 public class PrintingConfig<TOwner>
 {
     private readonly HashSet<Type> excludedProperties = [];
+    internal readonly Dictionary<Type, Delegate> TypeSerializationMethod = new();
 
     public PrintingConfig(PrintingConfig<TOwner>? parent = null)
     {
         if (parent == null)
             return;
 
-        excludedProperties.AddRange(excludedProperties);
+        excludedProperties.AddRange(parent.excludedProperties);
+        TypeSerializationMethod.AddRange(parent.TypeSerializationMethod);
     }
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this);
+        var configCopy = new PrintingConfig<TOwner>(this);
+        return new PropertyPrintingConfig<TOwner, TPropType>(configCopy);
     }
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
@@ -50,27 +53,34 @@ public class PrintingConfig<TOwner>
 
     private string PrintToString(object? obj, int nestingLevel)
     {
-        //TODO apply configurations
         if (obj == null)
             return "null" + Environment.NewLine;
 
         if (obj.GetType().IsFinal())
             return obj + Environment.NewLine;
 
-        var identation = new string('\t', nestingLevel + 1);
+        var numberOfTabs = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         var type = obj.GetType();
         sb.AppendLine(type.Name);
         foreach (var memberInfo in type
-                     .GetMembers()
-                     .Where(member =>
-                         member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
+                     .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
+                     .Where(member => member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
         {
-            sb.Append(identation + memberInfo.Name + " = " +
-                      PrintToString(memberInfo.GetValue(obj),
+            sb.Append(numberOfTabs + memberInfo.Name + " = " +
+                      PrintToString(GetValue(obj, memberInfo),
                           nestingLevel + 1));
         }
 
         return sb.ToString();
+    }
+    
+    private object? GetValue(object obj, MemberInfo memberInfo)
+    {
+        var val = memberInfo.GetValue(obj);
+        var memberType = memberInfo.GetMemberType();
+        return TypeSerializationMethod.TryGetValue(memberType!, out var myFunc) 
+                ? myFunc.DynamicInvoke(val) 
+                : val;
     }
 }
