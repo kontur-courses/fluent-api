@@ -24,7 +24,7 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter<PrintingTestObject>.Configure()
                 .Excluding<Guid>()
                 .Printing<int>().Using(i => i.ToString("X"))
-                .Printing<double>().Using(CultureInfo.InvariantCulture)
+                .Printing<PrintingTestObject, double>(CultureInfo.InvariantCulture)
                 .Printing(p => p.TestString).TrimmedToLength(10)
                 .Excluding(p => p.TestInt);
 
@@ -135,8 +135,7 @@ namespace ObjectPrinting.Tests
             var testObject = new PrintingTestObject {TestDouble = testDouble, TestFloat = testFloat};
 
             var printedString = ObjectPrinter<PrintingTestObject>.Configure()
-                .Printing<double>()
-                .Using(culture)
+                .Printing<PrintingTestObject, double>(culture)
                 .PrintToString(testObject);
 
             return Verify(printedString, settings);

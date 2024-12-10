@@ -15,6 +15,7 @@ public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
     private readonly HashSet<PropertyInfo> excludeProperties = [];
     private readonly Dictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> propertyPrintingConfigs = new();
     private readonly Dictionary<Type, ITypePrintingConfig<TOwner>> typePrintingConfigs = new();
+    private readonly Dictionary<Type, CultureInfo> typeCultureConfigs = new();
     internal CultureInfo CommonCulture { get; private set; } = CultureInfo.CurrentCulture;
 
     internal IReadOnlySet<Type> ExcludeTypes => excludeTypes;
@@ -24,6 +25,7 @@ public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
         propertyPrintingConfigs;
 
     internal IReadOnlyDictionary<Type, ITypePrintingConfig<TOwner>> TypePrintingConfigs => typePrintingConfigs;
+    internal IReadOnlyDictionary<Type, CultureInfo> TypeCultureConfigs => typeCultureConfigs;
 
 
     public PrintingConfig<TOwner> UsingCommonCulture(CultureInfo culture)
@@ -74,5 +76,12 @@ public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
         return propertyPrintingConfig;
     }
 
+    internal PrintingConfig<TOwner> SetTypeCulture<TType>(CultureInfo culture)
+        where TType : IFormattable
+    {
+        typeCultureConfigs[typeof(TType)] = culture;
+        return this;
+    }
+    
     public string PrintToString(TOwner obj) => objectPrinter.PrintToString(obj);
 }

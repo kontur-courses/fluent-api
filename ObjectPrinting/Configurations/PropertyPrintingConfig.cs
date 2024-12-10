@@ -7,7 +7,7 @@ public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> pr
     : IPropertyPrintingConfig<TOwner>
 {
     public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
-    public Func<object, string>? Serializer { get; private set; }
+    public Func<object, string> Serializer { get; private set; }
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {

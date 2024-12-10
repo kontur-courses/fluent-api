@@ -76,16 +76,15 @@ public class ObjectPrinter<TType>
 
     private CultureInfo GetCultureInfo(Type objectType)
     {
-        return printingConfig.TypePrintingConfigs.TryGetValue(objectType, out var config) &&
-               config.CultureInfo is not null
-            ? config.CultureInfo
+        return printingConfig.TypeCultureConfigs.TryGetValue(objectType, out var cultureConfig)
+            ? cultureConfig
             : printingConfig.CommonCulture;
     }
 
     private bool TryTypeSerializerPrintString(object obj, Type objectType, out string result)
     {
         result = string.Empty;
-        if (!printingConfig.TypePrintingConfigs.TryGetValue(objectType, out var config) || config.Serializer is null)
+        if (!printingConfig.TypePrintingConfigs.TryGetValue(objectType, out var config))
         {
             return false;
         }
@@ -131,7 +130,6 @@ public class ObjectPrinter<TType>
             propertiesStringBuilder.Append($"{indentation}{propertyInfo.Name} = ");
             var propertyValue = propertyInfo.GetValue(obj);
             if (printingConfig.PropertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
-                && config.Serializer is not null
                 && propertyValue is not null)
             {
                 propertiesStringBuilder.AppendLine($"{config.Serializer(propertyValue)}");
