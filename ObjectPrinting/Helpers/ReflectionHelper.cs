@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ObjectPrinting.Helpers;
 
-public static class ReflectionHelper
+internal static class ReflectionHelper
 {
     public static PropertyInfo GetPropertyInfoFromExpression<TOwner, TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)

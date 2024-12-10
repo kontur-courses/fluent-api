@@ -5,12 +5,12 @@ namespace ObjectPrinting.Extensions;
 public static class ObjectExtensions
 {
     public static string PrintToString<TOwner>(this TOwner obj)
-        => ObjectPrinter.For<TOwner>().PrintToString(obj);
+        => ObjectPrinter<TOwner>.Configure().PrintToString(obj);
 
     public static string PrintToString<TOwner>(this TOwner obj,
         Func<PrintingConfig<TOwner>, PrintingConfig<TOwner>> config)
     {
-        return config(ObjectPrinter.For<TOwner>())
+        return config(ObjectPrinter<TOwner>.Configure())
             .PrintToString(obj);
     }
 }
