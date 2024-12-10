@@ -1,0 +1,15 @@
+﻿Person[]:
+	Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Bob
+		Height = 200
+		Age = 20
+		Birthday = 10/10/2000 00:00:00
+		Father = null
+	Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Bread
+		Height = 222
+		Age = 22
+		Birthday = 11/11/2001 00:00:00
+		Father = null
