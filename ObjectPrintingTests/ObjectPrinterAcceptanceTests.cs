@@ -1,8 +1,8 @@
-﻿using System;
-using System.Globalization;
-using NUnit.Framework;
+﻿using System.Globalization;
+using ObjectPrinting;
+using ObjectPrinting.Tools;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrintingTests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
