@@ -14,6 +14,16 @@ public class PrintingConfigShould
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
     private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
+    [Test]
+    public void NotThrowingException_WhenPrintToStringHasRecursion()
+    {
+        var alexWithParent = alex.GetPersonWithRecursiveParent();
+        
+        var action = () => personPrintingConfig.PrintToString(alexWithParent);
+        
+        action.Should().NotThrow();
+    }
+
     [TestCase(2)]
     [TestCase(3)]
     [TestCase(4)]

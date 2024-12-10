@@ -10,6 +10,7 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    private readonly HashSet<object> seenObjects = [];
     private readonly HashSet<Type> excludedProperties = [];
     private readonly HashSet<MemberInfo> excludedMembers = [];
     internal readonly Dictionary<Type, Delegate> TypeSerializationMethod = new();
@@ -69,13 +70,17 @@ public class PrintingConfig<TOwner>
     {
         if (obj == null)
             return "null" + Environment.NewLine;
+        
+        if (seenObjects.Contains(obj))
+            return "recursive reference" + Environment.NewLine;
 
-        if (obj.GetType().IsFinal())
+        var type = obj.GetType();
+        
+        if (type.IsFinal())
             return obj + Environment.NewLine;
 
         var numberOfTabs = new string('\t', nestingLevel + 1);
-        var sb = new StringBuilder();
-        var type = obj.GetType();
+        var sb = new StringBuilder();        
         sb.AppendLine(type.Name);
         foreach (var memberInfo in type
                      .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
@@ -85,6 +90,7 @@ public class PrintingConfig<TOwner>
             sb.Append(numberOfTabs + memberInfo.Name + " = " +
                       PrintToString(GetValue(obj, memberInfo),
                           nestingLevel + 1));
+            seenObjects.Add(obj);
         }
 
         return sb.ToString();
