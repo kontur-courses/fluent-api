@@ -15,9 +15,4 @@ public static class PropertyPrintingConfigExtensions
         
         return propConfig.ParentConfig;
     }
-    
-    public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
-    {
-        return config(ObjectPrinter.For<T>()).PrintToString(obj);
-    }
 }
