@@ -14,6 +14,20 @@ public class PrintingConfigShould
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
     private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
+    [Test]
+    public void PropertyPrintingConfig_SetSerializationMethodForProperty()
+    {
+        var fullText = personPrintingConfig
+            .Printing(p => p.Height)
+            .Using(h => $"{h} meters")
+            .PrintToString(alex);
+        var expectedHeightString = $"{alex.Height} meters";
+        
+        fullText
+            .Should()
+            .Contain(expectedHeightString);
+    }
+    
     [TestCase("X")]
     [TestCase("C")]
     [TestCase("F")]

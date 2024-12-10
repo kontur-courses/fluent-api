@@ -4,12 +4,17 @@ using ObjectPrinting.Extensions;
 namespace ObjectPrinting.PropertyPrintingConfig;
 
 public class PropertyPrintingConfig<TOwner, TPropType>(
-    PrintingConfig<TOwner> printingConfig)
+    PrintingConfig<TOwner> printingConfig,
+    MemberInfo? memberInfo = null)
     : IPropertyPrintingConfig<TOwner, TPropType>
 {
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        printingConfig.TypeSerializationMethod.AddMethod(typeof(TPropType), print);
+        if (memberInfo is null)
+            printingConfig.TypeSerializationMethod.AddMethod(typeof(TPropType), print);
+        else
+            printingConfig.MemberSerializationMethod.AddMethod(memberInfo, print);
+
         return printingConfig;
     }
 
