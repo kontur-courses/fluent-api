@@ -1,29 +1,44 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using ObjectPrinting.Configs.Children;
+using ObjectPrinting.Tools;
 
 namespace ObjectPrinting.Configs;
 
 public class PrintingConfig<TOwner>
 {
-    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-    {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this);
-    }
+    private const int MAX_RECURSION = 4;
+    
+    private int? maxStringLen = null;
+    
+    private readonly HashSet<Type> excludedTypes = [];
+    private readonly HashSet<string> excludedProperties = [];
 
-    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-    {
-        return new PropertyPrintingConfig<TOwner, TPropType>(this);
-    }
+    private IFormatProvider numberCulture = CultureInfo.InvariantCulture;
+    
+    private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
+    private readonly Dictionary<string, Func<object, string>> propertySerializers = new();
 
-    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+
+    public TypeConfig<TOwner, TPropType> Printing<TPropType>() 
+        => new(this);
+
+    public PropertyConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) 
+        => new(this, memberSelector);
+    
+    public PrintingConfig<TOwner> Excluding<TPropType>()
     {
+        excludedTypes.Add(typeof(TPropType));
         return this;
     }
-
-    internal PrintingConfig<TOwner> Excluding<TPropType>()
+    
+    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
+        excludedProperties.Add(memberSelector.TryGetPropertyName());
         return this;
     }
 

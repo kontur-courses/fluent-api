@@ -1,0 +1,18 @@
+﻿using System;
+using System.Linq.Expressions;
+using ObjectPrinting.Tools;
+
+namespace ObjectPrinting.Configs.Children;
+
+public class PropertyConfig<TOwner, TPropType>(
+    PrintingConfig<TOwner> printingConfig, 
+    Expression<Func<TOwner, TPropType>> propertySelector) :IChildrenConfig<TOwner, TPropType>
+{
+    public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
+    
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+    {
+        var propName = propertySelector.TryGetPropertyName();
+        return ParentConfig;
+    }
+}
