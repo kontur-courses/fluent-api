@@ -5,3 +5,5 @@
 	Height = 0.12345
 	Weight = 0.1234
 	Age = 10
+	Birthday = 16.02.2004 0:00:00
+	Nickname = Vanya12

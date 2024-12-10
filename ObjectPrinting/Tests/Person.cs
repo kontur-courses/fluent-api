@@ -10,6 +10,9 @@ public class Person
     public double Height { get; set; }
     public double Weight { get; set; }
     public int Age { get; set; }
+    public string Nickname;
+
+    public DateTime Birthday { get; set; }
 }
 
 public class PersonWithChild : Person

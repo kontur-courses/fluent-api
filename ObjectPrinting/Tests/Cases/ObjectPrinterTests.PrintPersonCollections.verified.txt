@@ -6,6 +6,8 @@
 		Height = 0
 		Weight = 0
 		Age = 0
+		Birthday = 01.01.0001 0:00:00
+		Nickname = null
 	Person
 		Id = 00000000-0000-0000-0000-000000000000
 		Name = Ivan1
@@ -13,6 +15,8 @@
 		Height = 0
 		Weight = 0
 		Age = 0
+		Birthday = 01.01.0001 0:00:00
+		Nickname = null
 	Person
 		Id = 00000000-0000-0000-0000-000000000000
 		Name = Ivan2
@@ -20,4 +24,6 @@
 		Height = 0
 		Weight = 0
 		Age = 0
+		Birthday = 01.01.0001 0:00:00
+		Nickname = null
 ]

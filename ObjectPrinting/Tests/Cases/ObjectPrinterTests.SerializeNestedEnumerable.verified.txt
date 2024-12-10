@@ -1,0 +1,7 @@
+﻿ObjectWithNestedList
+	Ints = [
+		1
+		2
+		3
+	]
+	Name = Object

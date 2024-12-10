@@ -11,18 +11,18 @@ public static class PropertyPrintingConfigExtensions
         where TPropType : INumber<TPropType>
     {
         if (config.propertySelector is null)
-            config.PrintingConfig.config.TypeCultures[typeof(TPropType)] = culture;
+            config.PrintingConfig.Config.TypeCultures[typeof(TPropType)] = culture;
         else
-            config.PrintingConfig.config.SetCultureForPropertyFromExpression(config.propertySelector, culture);
+            config.PrintingConfig.Config.SetCultureForPropertyFromExpression(config.propertySelector, culture);
         return config.PrintingConfig;
     }
 
     public static PrintingConfig<TOwner> Cut<TOwner>(this PropertyPrintingConfig<TOwner, string> config, int maxLen)
     {
         if (config.propertySelector is null)
-            config.PrintingConfig.config.SetStringMaxLen(maxLen);
+            config.PrintingConfig.Config.SetStringMaxLen(maxLen);
         else
-            config.PrintingConfig.config
+            config.PrintingConfig.Config
                 .SetMaxLenForPropertyFromExpression(config.propertySelector, maxLen);
         return config.PrintingConfig;
     }

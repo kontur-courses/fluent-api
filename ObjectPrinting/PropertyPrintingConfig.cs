@@ -16,12 +16,12 @@ public record class PropertyPrintingConfig<TOwner, TPropType>
         this.propertySelector = propertySelector;
     }
 
-    public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+    public PrintingConfig<TOwner> Using(Func<object, string> print)
     {
         if (propertySelector is null)
-            PrintingConfig.config.TypeSerializers[typeof(TPropType)] = print;
+            PrintingConfig.Config.TypeSerializers[typeof(TPropType)] = print;
         else
-            PrintingConfig.config.SetSerializerForPropertyFromExpression(propertySelector, print);
+            PrintingConfig.Config.SetSerializerForPropertyFromExpression(propertySelector, print);
         return PrintingConfig;
     }
 }
