@@ -21,20 +21,21 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
     private readonly HashSet<string> excludedProperties = [];
     private readonly HashSet<object> processedObjects = [];
-    private int? maxStringLength;
+    private readonly Dictionary<string, int> propertyLengths = new();
     
-    public static string Serialize<T>(T obj)
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
-        return new PrintingConfig<T>().PrintToString(obj);
-    }
-    
-    public static string Serialize<T>(T obj,
-        Func<PrintingConfig<T>, PrintingConfig<T>> config)
-    {
-        return config(ObjectPrinter.For<T>()).PrintToString(obj);
+        return new PropertyPrintingConfig<TOwner, TPropType>(this);
     }
 
-    private string PrintToString(TOwner obj)
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var propertyName = GetPropertyName(memberSelector);
+        
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+    }
+
+    public string PrintToString(TOwner obj)
     {
         return PrintToString(obj, 0);
     }
@@ -61,44 +62,37 @@ public class PrintingConfig<TOwner>
         return SerializeCollection(obj, nestingLevel) ?? SerializeComplexType(obj, nestingLevel);
     }
 
-    public PrintingConfig<TOwner> ExcludeType<TType>()
+    public PrintingConfig<TOwner> Excluding<TPropType>()
     {
-        excludedTypes.Add(typeof(TType));
+        excludedTypes.Add(typeof(TPropType));
         return this;
     }
 
-    public PrintingConfig<TOwner> AddSerializationMethod<TType>(Func<TType, string> serializationMethod)
+    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        typeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
-        return this;
-    }
-
-    public PrintingConfig<TOwner> SpecifyTheCulture<TType>(IFormatProvider culture)
-    {
-        typeCultures[typeof(TType)] = culture;
-        return this;
-    }
-
-    public PrintingConfig<TOwner> AddSerializationMethod<TType>(
-        Func<TType, string> serializationMethod,
-        Expression<Func<TOwner, TType>> property)
-    {
-        var propertyName = GetPropertyName(property);
-        propertySerializationMethods[propertyName] = obj => serializationMethod((TType)obj);
-        return this;
-    }
-
-    public PrintingConfig<TOwner> Trim(int trimLength)
-    {
-        maxStringLength = trimLength;
-        return this;
-    }
-
-    public PrintingConfig<TOwner> ExcludeProperty<TType>(Expression<Func<TOwner, TType>> property)
-    {
-        var propertyName = GetPropertyName(property);
+        var propertyName = GetPropertyName(memberSelector);
         excludedProperties.Add(propertyName);
         return this;
+    }
+
+    public void SpecifyTheCulture<TType>(CultureInfo culture)
+    {
+        typeCultures[typeof(TType)] = culture;
+    }
+
+    public void AddSerializationMethod<TType>(Func<TType, string> serializationMethod)
+    {
+        typeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
+    }
+
+    public void AddSerializationMethod<TType>(Func<TType, string> serializationMethod, string propertyName)
+    {
+        propertySerializationMethods[propertyName] = obj => serializationMethod((TType)obj);
+    }
+
+    public void AddLengthProperty(string propertyName, int trimLength)
+    {
+        propertyLengths[propertyName] = trimLength;
     }
 
     private string? SerializeFinalType(object obj)
@@ -107,15 +101,13 @@ public class PrintingConfig<TOwner>
         {
             return null;
         }
-
+        
         return obj switch
         {
             IFormattable format when typeCultures.TryGetValue(obj.GetType(), out var formatProvider) =>
                 format.ToString(null, formatProvider) + Environment.NewLine,
             IFormattable format => 
                 format.ToString(null, CultureInfo.InvariantCulture) + Environment.NewLine,
-            string str when maxStringLength.HasValue && maxStringLength.Value < str.Length => 
-                str[..maxStringLength.Value] + Environment.NewLine,
             string str => str + Environment.NewLine,
             _ => obj + Environment.NewLine
         };
@@ -177,6 +169,11 @@ public class PrintingConfig<TOwner>
         if (propertySerializationMethods.TryGetValue(property.Name, out var serializationProperty))
         {
             return serializationProperty(propertyValue!) + Environment.NewLine;
+        }
+
+        if (propertyLengths.TryGetValue(property.Name, out var length))
+        {
+            return ((string)propertyValue!)[..length] + Environment.NewLine;
         }
 
         return PrintToString(propertyValue, nestingLevel);

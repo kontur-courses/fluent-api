@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using ObjectPrinting.Extensions;
 using VerifyNUnit;
 using VerifyTests;
 
@@ -24,61 +25,67 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintToString_ExcludeType()
     {
-        var serializedString = PrintingConfig<Person>.Serialize(person, config => config.ExcludeType<int>());
+        var actual = ObjectPrinter.For<Person>()
+            .Excluding<int>()
+            .PrintToString(person);
 
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
     
     [Test]
     public Task PrintToString_AlternativeTypeSerialization()
     {
-        var serializedString = PrintingConfig<Person>.Serialize(
-            person, 
-            config => config.AddSerializationMethod<DateTime>(_ => "date"));
+        var actual = ObjectPrinter.For<Person>()
+            .Printing<DateTime>()
+            .Using(_ => "date")
+            .PrintToString(person);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
     public Task PrintToString_SetCulture()
     {
         person.Height = 200.2;
+
+        var actual = ObjectPrinter.For<Person>()
+            .Printing<double>()
+            .Using(CultureInfo.InvariantCulture)
+            .PrintToString(person);
         
-        var serializedString = PrintingConfig<Person>.Serialize(
-            person, 
-            config => config.SpecifyTheCulture<double>(new CultureInfo("en-US")));
-        
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
     
     [Test]
     public Task PrintToString_AlternativePropertySerialization()
     {
-        var serializedString = PrintingConfig<Person>.Serialize(
-            person, 
-            config => config.AddSerializationMethod(_ => "NoName", p => p.Name));
+        var actual = person.PrintToString(
+            config => config
+                .Printing(p => p.Name)
+                .Using(_ => "NoName"));
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
     public Task PrintToString_Trim()
     {
-        var serializedString = PrintingConfig<Person>.Serialize(
-            person, 
-            config => config.Trim(2));
+        var actual = ObjectPrinter.For<Person>()
+            .Printing(p => p.Name)
+            .TrimmedToLength(2)
+            .PrintToString(person);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
     public Task PrintToString_ExcludeProperty()
     {
-        var serializedString = PrintingConfig<Person>.Serialize(
-            person, 
-            config => config.ExcludeProperty(p => p.Id));
+        var actual = ObjectPrinter.For<Person>()
+            .Excluding(p => p.Id)
+            .PrintToString(person);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
     
     [Test]
@@ -86,9 +93,9 @@ public class ObjectPrinterTests
     {
         person.Father = person;
 
-        var serializedString = PrintingConfig<Person>.Serialize(person);
+        var actual = ObjectPrinter.For<Person>().PrintToString(person);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
@@ -100,9 +107,9 @@ public class ObjectPrinterTests
             new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
         };
 
-        var serializedString = PrintingConfig<Person>.Serialize(persons);
+        var actual = ObjectPrinter.For<Person[]>().PrintToString(persons);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
@@ -114,9 +121,9 @@ public class ObjectPrinterTests
             new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
         };
 
-        var serializedString = PrintingConfig<Person>.Serialize(persons);
+        var actual = ObjectPrinter.For<List<Person>>().PrintToString(persons);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 
     [Test]
@@ -128,8 +135,8 @@ public class ObjectPrinterTests
             { new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }, "second" }
         };
 
-        var serializedString = PrintingConfig<Person>.Serialize(persons);
+        var actual = ObjectPrinter.For<Dictionary<Person, string>>().PrintToString(persons);
         
-        return Verifier.Verify(serializedString, Settings);
+        return Verifier.Verify(actual, Settings);
     }
 }
