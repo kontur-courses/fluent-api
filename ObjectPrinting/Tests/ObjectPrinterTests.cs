@@ -19,7 +19,14 @@ public class ObjectPrinterTests
     public void Setup()
     {
         Settings.UseDirectory("snapshots");
-        person = new Person { Name = "Bob", Age = 20, Height = 200, Birthday = new DateTime(2000, 10, 10) };
+        person = new Person
+        {
+            Name = "Bob", 
+            Age = 20, 
+            Height = 200, 
+            Weight = 100,
+            Birthday = new DateTime(2000, 10, 10)
+        };
     }
     
     [Test]
@@ -44,13 +51,30 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public Task PrintToString_SetCulture()
+    public Task PrintToString_SetCultureForType()
     {
         person.Height = 200.2;
+        person.Weight = 100.11;
+        var russianCulture = new CultureInfo("ru-RU");
 
         var actual = ObjectPrinter.For<Person>()
             .Printing<double>()
-            .Using(CultureInfo.InvariantCulture)
+            .Using(russianCulture)
+            .PrintToString(person);
+        
+        return Verifier.Verify(actual, Settings);
+    }
+
+    [Test]
+    public Task PrintToString_SetCultureForProperty()
+    {
+        person.Height = 200.2;
+        person.Weight = 100.11;
+        var russianCulture = new CultureInfo("ru-RU");
+
+        var actual = ObjectPrinter.For<Person>()
+            .Printing(p => p.Height)
+            .Using(russianCulture)
             .PrintToString(person);
         
         return Verifier.Verify(actual, Settings);
@@ -104,7 +128,7 @@ public class ObjectPrinterTests
         var persons = new[]
         {
             person,
-            new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
+            new() { Name = "Bread", Age = 22, Height = 222, Weight = 111, Birthday = new DateTime(2001, 11, 11) }
         };
 
         var actual = ObjectPrinter.For<Person[]>().PrintToString(persons);
@@ -118,7 +142,7 @@ public class ObjectPrinterTests
         var persons = new List<Person>
         {
             person,
-            new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }
+            new() { Name = "Bread", Age = 22, Height = 222, Weight = 111, Birthday = new DateTime(2001, 11, 11) }
         };
 
         var actual = ObjectPrinter.For<List<Person>>().PrintToString(persons);
@@ -132,7 +156,7 @@ public class ObjectPrinterTests
         var persons = new Dictionary<Person, string>
         {
             { person, "first" },
-            { new() { Name = "Bread", Age = 22, Height = 222, Birthday = new DateTime(2001, 11, 11) }, "second" }
+            { new() { Name = "Bread", Age = 22, Weight = 111, Height = 222, Birthday = new DateTime(2001, 11, 11) }, "second" }
         };
 
         var actual = ObjectPrinter.For<Dictionary<Person, string>>().PrintToString(persons);

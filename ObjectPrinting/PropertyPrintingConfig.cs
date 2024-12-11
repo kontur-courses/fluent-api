@@ -30,7 +30,14 @@ public class PropertyPrintingConfig<TOwner, TPropType>
 
     public PrintingConfig<TOwner> Using(CultureInfo culture)
     {
-        printingConfig.SpecifyTheCulture<TPropType>(culture);
+        if (string.IsNullOrEmpty(PropertyName))
+        {
+            printingConfig.SpecifyTheCulture<TPropType>(culture);
+        }
+        else
+        {
+            printingConfig.SpecifyTheCulture(culture, PropertyName);
+        }
 
         return ParentConfig;
     }

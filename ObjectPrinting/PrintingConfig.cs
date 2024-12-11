@@ -18,6 +18,7 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
     private readonly Dictionary<Type, IFormatProvider> typeCultures = [];
+    private readonly Dictionary<string, IFormatProvider> propertyCultures = [];
     private readonly Dictionary<string, Func<object, string>> propertySerializationMethods = [];
     private readonly HashSet<string> excludedProperties = [];
     private readonly HashSet<object> processedObjects = [];
@@ -81,6 +82,11 @@ public class PrintingConfig<TOwner>
     public void SpecifyTheCulture<TType>(CultureInfo culture)
     {
         typeCultures[typeof(TType)] = culture;
+    }
+    
+    public void SpecifyTheCulture(CultureInfo culture, string propertyName)
+    {
+        propertyCultures[propertyName] = culture;
     }
 
     public void AddSerializationMethod<TType>(Func<TType, string> serializationMethod)
@@ -184,6 +190,11 @@ public class PrintingConfig<TOwner>
         if (propertyLengths.TryGetValue(property.Name, out var length))
         {
             return ((string)propertyValue!)[..length] + Environment.NewLine;
+        }
+
+        if (propertyCultures.TryGetValue(property.Name, out var formatProvider) && propertyValue is IFormattable format)
+        {
+            return format.ToString(null, formatProvider) + Environment.NewLine;
         }
 
         return PrintToString(propertyValue, nestingLevel);
