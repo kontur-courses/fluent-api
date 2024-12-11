@@ -1,5 +1,3 @@
-using System;
-
 namespace ObjectPrinting;
 
 public static class ObjectExtensions

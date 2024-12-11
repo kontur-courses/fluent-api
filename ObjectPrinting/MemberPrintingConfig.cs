@@ -4,8 +4,8 @@ using System.Reflection;
 namespace ObjectPrinting;
 
 public class MemberPrintingConfig<TOwner, TMemberType>(
-    PrintingConfig<TOwner> printingConfig, MemberInfo memberInfo = null)
-    : IMemberPrintingConfig<TOwner, TMemberType>
+    PrintingConfig<TOwner> printingConfig, MemberInfo? memberInfo = null)
+    : IMemberPrintingConfig<TOwner>
 {
     internal readonly PrintingConfig<TOwner> PrintingConfig = printingConfig; 
     internal readonly MemberInfo? MemberInfo = memberInfo;
@@ -20,10 +20,10 @@ public class MemberPrintingConfig<TOwner, TMemberType>(
         return PrintingConfig;
     }
 
-    PrintingConfig<TOwner> IMemberPrintingConfig<TOwner, TMemberType>.ParentConfig => PrintingConfig;
+    PrintingConfig<TOwner> IMemberPrintingConfig<TOwner>.ParentConfig => PrintingConfig;
 }
 
-public interface IMemberPrintingConfig<TOwner, TMemberType>
+public interface IMemberPrintingConfig<TOwner>
 {
     PrintingConfig<TOwner> ParentConfig { get; }
 }
