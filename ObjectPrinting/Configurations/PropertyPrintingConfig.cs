@@ -1,26 +1,14 @@
 ﻿using System;
-using ObjectPrinting.Configurations.Interfaces;
+using System.Reflection;
 
 namespace ObjectPrinting.Configurations;
 
-public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig)
-    : IPropertyPrintingConfig<TOwner>
+public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig, PropertyInfo propertyInfo)
 {
     public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
-    public Func<object, string> Serializer { get; private set; }
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        ArgumentNullException.ThrowIfNull(print);
-        Serializer = printObject =>
-        {
-            if (printObject is not TPropType propertyObject)
-            {
-                throw new ArgumentException($"The property {printObject} is not of type {typeof(TPropType)}");
-            }
-
-            return print(propertyObject);
-        };
-        return ParentConfig;
+        return ParentConfig.AddPropSerialize(propertyInfo, print);
     }
 }

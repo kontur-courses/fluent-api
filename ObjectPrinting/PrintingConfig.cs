@@ -4,33 +4,23 @@ using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using ObjectPrinting.Configurations;
-using ObjectPrinting.Configurations.Interfaces;
 using ObjectPrinting.Helpers;
+using ObjectPrinting.Models;
 
 namespace ObjectPrinting;
 
-public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
+public class PrintingConfig<TOwner>()
 {
     private readonly HashSet<Type> excludeTypes = [];
     private readonly HashSet<PropertyInfo> excludeProperties = [];
-    private readonly Dictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> propertyPrintingConfigs = new();
-    private readonly Dictionary<Type, ITypePrintingConfig<TOwner>> typePrintingConfigs = new();
+    private readonly Dictionary<PropertyInfo, Delegate> propertyPrintingConfigs = new();
+    private readonly Dictionary<Type, Delegate> typePrintingConfigs = new();
     private readonly Dictionary<Type, CultureInfo> typeCultureConfigs = new();
-    internal CultureInfo CommonCulture { get; private set; } = CultureInfo.CurrentCulture;
-
-    internal IReadOnlySet<Type> ExcludeTypes => excludeTypes;
-    internal IReadOnlySet<PropertyInfo> ExcludeProperties => excludeProperties;
-
-    internal IReadOnlyDictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> PropertyPrintingConfigs =>
-        propertyPrintingConfigs;
-
-    internal IReadOnlyDictionary<Type, ITypePrintingConfig<TOwner>> TypePrintingConfigs => typePrintingConfigs;
-    internal IReadOnlyDictionary<Type, CultureInfo> TypeCultureConfigs => typeCultureConfigs;
-
+    private CultureInfo commonCulture = CultureInfo.CurrentCulture;
 
     public PrintingConfig<TOwner> UsingCommonCulture(CultureInfo culture)
     {
-        CommonCulture = culture;
+        commonCulture = culture;
         return this;
     }
 
@@ -49,31 +39,14 @@ public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
 
     public TypePrintingConfig<TOwner, TType> Printing<TType>()
     {
-        var type = typeof(TType);
-        if (typePrintingConfigs.TryGetValue(type, out var config)
-            && config is TypePrintingConfig<TOwner, TType> printingConfig)
-        {
-            return printingConfig;
-        }
-
-        var typeConfig = new TypePrintingConfig<TOwner, TType>(this);
-        typePrintingConfigs[type] = typeConfig;
-        return typeConfig;
+        return new TypePrintingConfig<TOwner, TType>(this);
     }
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
         var propertyInfo = ReflectionHelper.GetPropertyInfoFromExpression(memberSelector);
-        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
-            && config is PropertyPrintingConfig<TOwner, TPropType> printingConfig)
-        {
-            return printingConfig;
-        }
-
-        var propertyPrintingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
-        propertyPrintingConfigs[propertyInfo] = propertyPrintingConfig;
-        return propertyPrintingConfig;
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyInfo);
     }
 
     internal PrintingConfig<TOwner> SetTypeCulture<TType>(CultureInfo culture)
@@ -82,6 +55,26 @@ public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
         typeCultureConfigs[typeof(TType)] = culture;
         return this;
     }
-    
-    public string PrintToString(TOwner obj) => objectPrinter.PrintToString(obj);
+
+    internal PrintingConfig<TOwner> AddTypeSerialize<TType>(Func<TType, string> print)
+    {
+        var type = typeof(TType);
+        typePrintingConfigs[type] = print;
+        return this;
+    }
+
+    internal PrintingConfig<TOwner> AddPropSerialize<TPropType>(PropertyInfo propertyInfo,
+        Func<TPropType, string> print)
+    {
+        propertyPrintingConfigs[propertyInfo] = print;
+        return this;
+    }
+
+    public string PrintToString(TOwner obj)
+    {
+        var serializeSettings = new SerializeSettings(commonCulture, excludeTypes, excludeProperties,
+            propertyPrintingConfigs, typePrintingConfigs, typeCultureConfigs);
+        var serializer = new Serializer(serializeSettings);
+        return serializer.PrintToString(obj);
+    }
 }

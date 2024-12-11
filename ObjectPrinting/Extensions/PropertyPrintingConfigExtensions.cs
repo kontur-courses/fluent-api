@@ -7,7 +7,7 @@ public static class PropertyPrintingConfigExtensions
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
         this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
-        return propConfig.Using(s => TrimmedToLength(s, maxLen));
+        return propConfig.Using(startValue => TrimmedToLength(startValue, maxLen));
     }
 
     private static string TrimmedToLength(string startValue, int maxLen)
