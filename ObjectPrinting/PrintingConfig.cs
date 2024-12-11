@@ -1,25 +1,38 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
-    private HashSet<object?> printedObjects;
-    private readonly HashSet<Type> excludedTypes = [];
-    private readonly HashSet<MemberInfo?> excludedMembers = [];
+    internal readonly HashSet<Type> ExcludedTypes = [];
+    internal readonly HashSet<MemberInfo?> ExcludedMembers = [];
 
-    internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
     internal Dictionary<MemberInfo, int> TrimmedMembers { get; } = new();
+    internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
     internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
     internal Dictionary<MemberInfo, Delegate> CustomMemberSerializers { get; } = new();
     
+    internal int? TrimStringLength;
+    private int maxNestingLevel = 5;
+    
+    public int MaxNestingLevel
+    {
+        get => maxNestingLevel; 
+        private set
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value), value, "The maxNestingDepth value must be positive.");
+            }
+            maxNestingLevel = value;
+        }
+    }
+
     public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>() => new(this);
     
     public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>(
@@ -32,151 +45,27 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> Exclude<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
     {
         var expression = (MemberExpression)memberSelector.Body;
-        excludedMembers.Add(expression.Member);
+        ExcludedMembers.Add(expression.Member);
         
         return this;
     }
 
     public PrintingConfig<TOwner> Exclude<TMemberType>()
     {
-        excludedTypes.Add(typeof(TMemberType));
+        ExcludedTypes.Add(typeof(TMemberType));
+        return this;
+    }
+
+    public PrintingConfig<TOwner> SetSerializationDepth(int depth)
+    {
+        MaxNestingLevel = depth;
         return this;
     }
 
     public string PrintToString(TOwner? obj)
     {
-        printedObjects = [];
-        return PrintToString(obj, 0);
+        var serializer = new Serializer<TOwner>(this);
+
+        return serializer.SerializeObject(obj);
     }
-
-    private string PrintToString(object? obj, int nestingLevel)
-    {
-        if (obj == null)
-            return "null" + Environment.NewLine;
-
-        if (!obj.GetType().IsValueType && !printedObjects.Add(obj))
-        {
-            return "Cycle reference detected" + Environment.NewLine;
-        }
-        
-        var indentation = GetIndentation(nestingLevel);
-        
-        if (CulturesForTypes.TryGetValue(obj.GetType(), out var culture))
-            return ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
-
-        if (IsTypeFinal(obj.GetType()))
-        {
-            return obj + Environment.NewLine;
-        }
-
-        var sb = new StringBuilder();
-        var type = obj.GetType();
-        sb.AppendLine(type.Name);
-
-        if (obj is IEnumerable enumerable)
-        {
-            sb.Append(GetPrintedCollection(enumerable, nestingLevel));
-        }
-        else
-            foreach (var memberInfo in type.GetMembers().Where(IsPropertyOrField))
-            {
-                if (excludedTypes.Contains(GetMemberType(memberInfo)) || excludedMembers.Contains(memberInfo))
-                    continue;
-
-                var printingResult = GetPrintingResult(obj, memberInfo, nestingLevel);
-
-                sb.Append(indentation + memberInfo.Name + " = " + printingResult);
-            }
-        
-        return sb.ToString();
-    }
-    
-    private string GetPrintedCollection(IEnumerable obj, int nestingLevel)
-    {
-        if (obj is IDictionary dict)
-            return GetPrintedDictionary(dict, nestingLevel);
-        else
-            return GetPrintedSequence(obj, nestingLevel);
-    }
-
-    private string GetPrintedSequence(IEnumerable obj, int nestingLevel)
-    {
-        var sb = new StringBuilder();
-        var indentation = GetIndentation(nestingLevel);
-        var index = 0;
-        foreach (var element in obj)
-            sb.Append($"{indentation}{index++}: {PrintToString(element, nestingLevel + 1)}");
-
-        return sb.ToString();
-    }
-
-    private string GetPrintedDictionary(IDictionary dict, int nestingLevel)
-    {
-        var sb = new StringBuilder();
-        var indentation = GetIndentation(nestingLevel);
-        foreach (DictionaryEntry pair in dict)
-            sb.Append($"{indentation}{pair.Key}: {PrintToString(pair.Value, nestingLevel + 1)}");
-
-        return sb.ToString();
-    }
-
-    private string GetPrintingResult(object obj, MemberInfo memberInfo, int nestingLevel)
-    {
-        string printingResult;
-
-        if (CustomTypeSerializers.TryGetValue(GetMemberType(memberInfo), out var typeSerializer))
-        {
-            printingResult = typeSerializer.DynamicInvoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine;
-        }
-        else if (CustomMemberSerializers.TryGetValue(memberInfo, out var propertySerializer))
-        {
-            printingResult = propertySerializer.DynamicInvoke(GetMemberValue(memberInfo, obj)) + Environment.NewLine;
-        }
-        else
-        {
-            printingResult = PrintToString(GetMemberValue(memberInfo, obj),
-                nestingLevel + 1);
-        }
-
-        return TrimResultIfNeeded(memberInfo, printingResult);
-    }
-
-    private string TrimResultIfNeeded(MemberInfo memberInfo, string printingResult)
-    {
-        if (TrimmedMembers.TryGetValue(memberInfo, out var length))
-            printingResult = printingResult[..length] + Environment.NewLine;
-
-        return printingResult;
-    }
-    
-    private static object? GetMemberValue(MemberInfo member, Object obj)
-    {
-        if (!IsPropertyOrField(member))
-            throw new ArgumentException("Provided member must be Field or Property");
-
-        return member.MemberType == MemberTypes.Field
-            ? ((FieldInfo)member).GetValue(obj)
-            : ((PropertyInfo)member).GetValue(obj);
-    }
-
-    private static Type GetMemberType(MemberInfo member)
-    {
-        if (!IsPropertyOrField(member))
-            throw new ArgumentException("Provided member must be Field or Property");
-
-        return member.MemberType == MemberTypes.Field
-            ? ((FieldInfo)member).FieldType
-            : ((PropertyInfo)member).PropertyType;
-    }
-
-    private static bool IsPropertyOrField(MemberInfo member)
-    {
-        return member.MemberType is MemberTypes.Field or MemberTypes.Property;
-    }
-    
-    private static string GetIndentation(int nestingLevel) 
-        => new('\t', nestingLevel + 1);
-    
-    private static bool IsTypeFinal(Type type) 
-        => type.IsValueType || type == typeof(string);
 }
