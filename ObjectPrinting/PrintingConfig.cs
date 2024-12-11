@@ -11,56 +11,64 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
-    public int MaxNestingLevel { get; set; } = 5;
-    private readonly HashSet<Type> excludeTypes = new(ReferenceEqualityComparer.Instance);
-    private readonly HashSet<string> excludeProperties = [];
-    private readonly Dictionary<Type, CultureInfo> cultureToFormattable = [];
-    private readonly Dictionary<Type, Delegate> typeSerializers = [];
-    private readonly Dictionary<string, Delegate> propertySerializers = [];
-    private readonly Dictionary<string, int> propertyTrim = [];
+    private int MaxNestingLevel { get; set; } = 5;
+    private readonly HashSet<Type> typesToExclude = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<string> propertiesToExclude = [];
+    private readonly Dictionary<Type, CultureInfo> cultureToType = [];
+    private readonly Dictionary<Type, Delegate> serializersToType = [];
+    private readonly Dictionary<string, Delegate> serializersToProperty = [];
+
+    public PrintingConfig<TOwner> SetMaxNestingLevel(int maxNestingLevel)
+    {
+        if (maxNestingLevel < 0)
+        {
+            throw new ArgumentException("Max nesting level must be greater than or equal to 0.");
+        }
+
+        MaxNestingLevel = maxNestingLevel;
+        return this;
+    }
 
     public PrintingConfig<TOwner> Exclude<TPropType>()
     {
-        excludeTypes.Add(typeof(TPropType));
+        typesToExclude.Add(typeof(TPropType));
         return this;
     }
 
     public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
     {
-        excludeProperties.Add(GetPropertyMemberInfo(propertySelector).Name);
+        propertiesToExclude.Add(GetPropertyMemberInfo(propertySelector).Name);
         return this;
     }
 
-    public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>()
-    {
-        return new(this);
-    }
-
-    public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>(
+    public IPropertyPrintingConfig<TPropType, TOwner> PrintPropertySettings<TPropType>(
         Expression<Func<TOwner, TPropType>> propertySelector)
     {
-        return new(this, GetPropertyMemberInfo(propertySelector));
+        return new PropertyPrintingConfig<TPropType, TOwner>(this, GetPropertyMemberInfo(propertySelector).Name);
+    }
+
+    public ITypePrintingConfig<TOwner, TPropType> PrintSettings<TPropType>()
+    {
+        return new TypePrintingConfig<TOwner, TPropType>(this);
     }
 
     public PrintingConfig<TOwner> UseCulture<TPropType>(CultureInfo culture) where TPropType : IFormattable
     {
-        cultureToFormattable[typeof(TPropType)] = culture;
+        cultureToType[typeof(TPropType)] = culture;
         return this;
     }
 
-    public void AddTypeSerializer<TPropType>(Func<TPropType, string> serializeFunc)
+    internal void AddTypeSerializer<TPropType>(Func<TPropType, string> serializeFunc)
     {
-        typeSerializers[typeof(TPropType)] = serializeFunc;
+        serializersToType[typeof(TPropType)] = serializeFunc;
     }
 
-    public void AddPropertySerializer<TPropType>(string propertyName, Func<TPropType, string> serializeFunc)
+    internal void AddPropertySerializer<TPropType>(string propertyName, Func<TPropType, string> serializeFunc)
     {
-        propertySerializers[propertyName] = serializeFunc;
-    }
-
-    public void AddStringPropertyTrim(string propertyName, int length)
-    {
-        propertyTrim[propertyName] = length;
+        if (!serializersToProperty.TryAdd(propertyName, serializeFunc))
+        {
+            serializersToProperty[propertyName] = serializeFunc;
+        }
     }
 
     public string PrintToString(TOwner obj)
@@ -77,14 +85,14 @@ public class PrintingConfig<TOwner>
 
         var type = obj.GetType();
 
-        if (typeSerializers.TryGetValue(type, out var serializer))
+        if (serializersToType.TryGetValue(type, out var serializer))
         {
             return serializer.DynamicInvoke(obj)?.ToString()!;
         }
 
         if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid))
         {
-            return obj.ToString()!;
+            return type == typeof(string) ? $"\"{obj}\"" : obj.ToString()!;
         }
 
         if (obj is IEnumerable enumerable && type != typeof(string))
@@ -103,7 +111,7 @@ public class PrintingConfig<TOwner>
 
         foreach (var propertyInfo in type.GetProperties())
         {
-            if (excludeProperties.Contains(propertyInfo.Name) || excludeTypes.Contains(propertyInfo.PropertyType))
+            if (propertiesToExclude.Contains(propertyInfo.Name) || typesToExclude.Contains(propertyInfo.PropertyType))
             {
                 continue;
             }
@@ -112,33 +120,34 @@ public class PrintingConfig<TOwner>
             var propertyType = propertyInfo.PropertyType;
             var propertyName = propertyInfo.Name;
 
-            if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
-            {
-                stringBuilderResult.AppendLine(
-                    $"{indentation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}");
-                continue;
-            }
-
-            if (cultureToFormattable.TryGetValue(propertyType, out var culture))
-            {
-                var propertyValueFormattable = propertyValue as IFormattable;
-                stringBuilderResult.AppendLine(
-                    $"{indentation}{propertyName} = {propertyValueFormattable!.ToString(null, culture)}");
-                continue;
-            }
-
-            if (propertyTrim.TryGetValue(propertyName, out var trimLength) && propertyValue is string stringValue)
-            {
-                stringBuilderResult.AppendLine(
-                    $"{indentation}{propertyName} = {stringValue[..Math.Min(stringValue.Length, stringValue.Length - trimLength)]}");
-                continue;
-            }
-
-            stringBuilderResult.AppendLine(
-                $"{indentation}{propertyName} = {PrintToString(propertyValue, nestingLevel + 1)}");
+            stringBuilderResult.AppendLine(GetSerializeString(nestingLevel, propertyName, indentation, propertyValue,
+                propertyType));
         }
 
         return stringBuilderResult.ToString();
+    }
+
+    private string GetSerializeString(
+        int nestingLevel,
+        string propertyName,
+        string indentation,
+        object? propertyValue,
+        Type propertyType
+    )
+    {
+        if (serializersToProperty.TryGetValue(propertyName, out var propertySerializer))
+        {
+            return $"{indentation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}";
+        }
+
+        if (cultureToType.TryGetValue(propertyType, out var culture))
+        {
+            var propertyValueFormattable = propertyValue as IFormattable;
+
+            return $"{indentation}{propertyName} = {propertyValueFormattable!.ToString(null, culture)}";
+        }
+
+        return $"{indentation}{propertyName} = {PrintToString(propertyValue, nestingLevel + 1)}";
     }
 
     private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
@@ -159,8 +168,8 @@ public class PrintingConfig<TOwner>
             foreach (var key in dictionary.Keys)
             {
                 var value = dictionary[key];
-                var keyConvert = ConvertValueIfNotIFormattable(key, nestingLevel);
-                var valueConvert = ConvertValueIfNotIFormattable(value, nestingLevel + 1);
+                var keyConvert = PrintToString(key, nestingLevel);
+                var valueConvert = PrintToString(value, nestingLevel + 1);
 
                 serializeResult.Append($"{indentation}{keyConvert}: {valueConvert}" + Environment.NewLine);
             }
@@ -182,11 +191,6 @@ public class PrintingConfig<TOwner>
         serializeResult.AppendLine($"{indentation}}}");
 
         return serializeResult.ToString();
-    }
-
-    private string ConvertValueIfNotIFormattable(object? value, int nestingLevel)
-    {
-        return value is IFormattable ? PrintToString(value, nestingLevel) : $"\"{PrintToString(value, nestingLevel)}\"";
     }
 
     private static MemberInfo GetPropertyMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)

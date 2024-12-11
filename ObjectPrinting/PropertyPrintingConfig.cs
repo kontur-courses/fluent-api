@@ -1,49 +1,17 @@
 using System;
-using System.Reflection;
 
 namespace ObjectPrinting;
 
-public class PropertyPrintingConfig<TOwner, TPropType>
+public class PropertyPrintingConfig<TPropType, TOwner>(PrintingConfig<TOwner> config, string propertyNameName)
+    : IPropertyPrintingConfig<TPropType, TOwner>
 {
-    public PrintingConfig<TOwner> OriginalConfig { get; }
-    public MemberInfo? PropertyName { get; }
+    private PrintingConfig<TOwner> Config { get; } = config;
+    private string PropertyName { get; } = propertyNameName;
 
-    public PropertyPrintingConfig(PrintingConfig<TOwner> config)
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> func)
     {
-        ArgumentNullException.ThrowIfNull(config);
+        Config.AddPropertySerializer(PropertyName, func);
 
-        OriginalConfig = config;
-    }
-
-    public PropertyPrintingConfig(PrintingConfig<TOwner> config, MemberInfo propertyName)
-    {
-        ArgumentNullException.ThrowIfNull(config);
-
-        OriginalConfig = config;
-        PropertyName = propertyName;
-    }
-
-    public PrintingConfig<TOwner> Using(Func<TPropType, string> serializeFunc)
-    {
-        if (string.IsNullOrEmpty(PropertyName?.Name))
-        {
-            OriginalConfig.AddTypeSerializer(serializeFunc);
-        }
-        else
-        {
-            OriginalConfig.AddPropertySerializer(PropertyName.Name, serializeFunc);
-        }
-
-        return OriginalConfig;
-    }
-
-    public PrintingConfig<TOwner> TrimmedToLength(int length)
-    {
-        if (PropertyName is not null)
-        {
-            OriginalConfig.AddStringPropertyTrim(PropertyName.Name, length);
-        }
-
-        return OriginalConfig;
+        return Config;
     }
 }

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using NUnit.Framework;
+﻿using System.Globalization;
 
-namespace ObjectPrinting.Tests;
+namespace ObjectPrinting.Test;
 
 [TestFixture]
 public class ObjectPrinterAcceptanceTests
@@ -39,7 +36,7 @@ public class ObjectPrinterAcceptanceTests
                 { "Hand", 2 },
                 { "Foot", 2 },
                 { "Head", 1 },
-                { "tail", 0 }
+                { "Tail", 0 }
             }
         };
 
@@ -51,9 +48,9 @@ public class ObjectPrinterAcceptanceTests
             //3. Для числовых типов указать культуру
             .UseCulture<double>(CultureInfo.InvariantCulture)
             //4. Настроить сериализацию конкретного свойства
-            .PrintSettings(x => x.Name).Using(p => $"-{p}-")
+            .PrintPropertySettings(x => x.Surname).Using(p => $"-{p}-")
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-            .PrintSettings(p => p.Name).TrimmedToLength(2)
+            .PrintPropertySettings(p => p.Name).TrimmedTo(2)
             //6. Исключить из сериализации конкретного свойства
             .Exclude(p => p.Age);
             
