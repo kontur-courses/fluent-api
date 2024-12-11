@@ -1,0 +1,15 @@
+﻿PrintingTestObject
+	TestId = 00000000-0000-0000-0000-000000000000
+	TestString = Alex
+	TestDouble = 0
+	TestFloat = 0
+	TestInt = 19
+	TestObject = null
+	TestDictionary = 
+	[
+		Key1 = 1
+		Key2 = 2
+		Key3 = 3
+	]
+	TestList = null
+	TestArray = null
