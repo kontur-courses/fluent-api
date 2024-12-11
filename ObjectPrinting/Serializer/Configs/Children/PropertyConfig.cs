@@ -9,10 +9,11 @@ public class PropertyConfig<TOwner, TPropType>(
     Expression<Func<TOwner, TPropType>> propertySelector) : IChildConfig<TOwner, TPropType>
 {
     public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
-    
+    public string PropertyName { get; } = propertySelector.TryGetPropertyName();
+
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        var propName = propertySelector.TryGetPropertyName();
+        ParentConfig.PropertySerializers[PropertyName] = print;
         return ParentConfig;
     }
 }

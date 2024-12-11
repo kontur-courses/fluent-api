@@ -1,4 +1,3 @@
-using ObjectPrinting.Configs;
 using ObjectPrinting.Serializer.Configs;
 
 namespace ObjectPrinting;

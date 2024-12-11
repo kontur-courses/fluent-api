@@ -11,14 +11,15 @@ public class PrintingConfig<TOwner>
 {
     private const int MAX_RECURSION = 4;
     
-    private int? maxStringLen = null;
-    
     internal HashSet<Type> ExcludedTypes = [];
     internal HashSet<string> ExcludedProperties = [];
+    
+    internal uint? TrimStringValue;
+    internal Dictionary<string, uint> TrimmedMembers = new();
 
     internal Dictionary<Type, Delegate> TypeSerializers = new();
     internal Dictionary<Type, CultureInfo> CulturesForTypes = new();
-    internal Dictionary<string, Func<object, string>> PropertySerializers = new();
+    internal Dictionary<string, Delegate> PropertySerializers = new();
 
     public TypeConfig<TOwner, TPropType> Printing<TPropType>() 
         => new(this);

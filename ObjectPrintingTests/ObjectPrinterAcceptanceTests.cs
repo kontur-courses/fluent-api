@@ -1,6 +1,9 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Linq.Expressions;
+using NUnit.Framework;
 using ObjectPrinting;
+using ObjectPrinting.Serializer.Configs.Tools;
 using ObjectPrinting.Tools;
 
 namespace ObjectPrintingTests;
@@ -35,7 +38,8 @@ public class ObjectPrinterAcceptanceTests
             //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
             .Printing(p => p.Name).TrimmedToLength(10)
             //6. Исключить из сериализации конкретного свойства
-            .Excluding(p => p.Age);
+            .Excluding(p => p.Age)
+            .Excluding(p => p.Parent.Age);
 
         string s1 = printer.PrintToString(person);
             
