@@ -17,7 +17,7 @@ public class Serializer<TOwner>(PrintingConfig<TOwner> config)
     {
         if (nestingLevel > config.MaxNestingLevel)
         {
-            return $"Достигнут максимум глубины сериализации - {config.MaxNestingLevel}" + Environment.NewLine;
+            return $"The MaxNestingLevel of serialization was reached - {config.MaxNestingLevel}" + Environment.NewLine;
         }
         
         if (obj == null)
