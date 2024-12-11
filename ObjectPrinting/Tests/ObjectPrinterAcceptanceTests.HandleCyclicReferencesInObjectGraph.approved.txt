@@ -1,0 +1,9 @@
+﻿Company
+	Name = TechCorp
+	MainDepartment = Department
+		Name = Headquarters
+		ParentCompany = (cyclic reference detected)
+		SubDepartment = Department
+			Name = (cyclic reference detected)
+			ParentCompany = (cyclic reference detected)
+			SubDepartment = (cyclic reference detected)

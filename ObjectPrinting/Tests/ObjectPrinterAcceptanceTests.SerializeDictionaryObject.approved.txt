@@ -1,0 +1,21 @@
+﻿Building
+	Name = Central Plaza
+	Floors = Dictionary`2:
+		Key = 1
+		Value = List`1:
+			- Room
+				Name = Lobby
+				Area = 100
+		Key = 2
+		Value = List`1:
+			- Room
+				Name = Office 201
+				Area = 50
+			- Room
+				Name = Office 202
+				Area = 45
+		Key = 3
+		Value = List`1:
+			- Room
+				Name = Conference Room
+				Area = 120

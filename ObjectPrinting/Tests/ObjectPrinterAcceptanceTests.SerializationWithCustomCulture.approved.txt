@@ -1,0 +1,6 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1.81
+	Age = 19
+	Status = Student
