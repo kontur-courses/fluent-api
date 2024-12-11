@@ -85,7 +85,7 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null || nestingLevel > MaxRecursionDepth)
+            if (obj == null)
                 return "null" + Environment.NewLine;
 
             var finalTypes = new[]
@@ -111,6 +111,9 @@ namespace ObjectPrinting
                 
                 return obj + Environment.NewLine;
             }
+            
+            if (nestingLevel > MaxRecursionDepth)
+                return "null" + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
