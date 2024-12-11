@@ -2,7 +2,7 @@
 
 namespace ObjectPrinting.Serializer.Configs.Children;
 
-public interface IChildrenConfig<TOwner, out TPropType>
+public interface IChildConfig<TOwner, out TPropType>
 {
     PrintingConfig<TOwner> ParentConfig { get; }
 

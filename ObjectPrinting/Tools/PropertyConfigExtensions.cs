@@ -12,7 +12,7 @@ public static class PropertyConfigExtensions
     }
 
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-        this IChildrenConfig<TOwner, string> propConfig, int maxLen)
+        this IChildConfig<TOwner, string> propConfig, int maxLen)
     {
         return propConfig.ParentConfig;
     }

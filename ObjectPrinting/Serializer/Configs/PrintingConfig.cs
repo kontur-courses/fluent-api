@@ -13,12 +13,12 @@ public class PrintingConfig<TOwner>
     
     private int? maxStringLen = null;
     
-    private readonly HashSet<Type> excludedTypes = [];
-    private readonly HashSet<string> excludedProperties = [];
+    internal HashSet<Type> ExcludedTypes = [];
+    internal HashSet<string> ExcludedProperties = [];
 
-    private readonly Dictionary<Type, CultureInfo> culturesForTypes = new();
-    private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
-    private readonly Dictionary<string, Func<object, string>> propertySerializers = new();
+    internal Dictionary<Type, CultureInfo> CulturesForTypes = new();
+    internal Dictionary<Type, Func<object, string>> TypeSerializers = new();
+    internal Dictionary<string, Func<object, string>> PropertySerializers = new();
 
     public TypeConfig<TOwner, TPropType> Printing<TPropType>() 
         => new(this);
@@ -28,13 +28,13 @@ public class PrintingConfig<TOwner>
     
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
-        excludedTypes.Add(typeof(TPropType));
+        ExcludedTypes.Add(typeof(TPropType));
         return this;
     }
     
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        excludedProperties.Add(memberSelector.TryGetPropertyName());
+        ExcludedProperties.Add(memberSelector.TryGetPropertyName());
         return this;
     }
 
