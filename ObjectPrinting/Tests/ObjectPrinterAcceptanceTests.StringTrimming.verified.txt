@@ -1,0 +1,7 @@
+﻿Person:
+	Id = Guid:
+	Name = Al
+	Surname = Sm
+	Height = 177,4
+	Age = 19
+	OtherPerson = null
