@@ -1,0 +1,27 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1,81
+	Age = 19
+	DateOfBirth = 01.01.0001 00:00:00
+	Addresses = null
+	Children = List`1:
+		- Person
+			Id = Guid
+			Name = Natasha
+			Height = 2
+			Age = 8
+			DateOfBirth = 09.09.2002 00:00:00
+			Addresses = null
+			Children = null
+			Father = null
+		- Person
+			Id = Guid
+			Name = Pasha
+			Height = 1
+			Age = 9
+			DateOfBirth = 09.09.2004 00:00:00
+			Addresses = null
+			Children = null
+			Father = null
+	Father = null

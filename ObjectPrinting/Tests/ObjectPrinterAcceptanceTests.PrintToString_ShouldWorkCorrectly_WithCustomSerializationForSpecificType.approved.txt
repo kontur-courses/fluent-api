@@ -1,0 +1,9 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1,81
+	Age = 19
+	DateOfBirth = четверг, 9 сентября 2004 г.
+	Addresses = null
+	Children = null
+	Father = null

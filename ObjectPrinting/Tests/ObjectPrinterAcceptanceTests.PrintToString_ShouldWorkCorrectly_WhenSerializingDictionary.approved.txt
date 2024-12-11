@@ -1,0 +1,15 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1,81
+	Age = 19
+	DateOfBirth = 01.01.0001 00:00:00
+	Addresses = Dictionary`2:
+		Key = 1
+		Value = London
+		Key = 2
+		Value = New York
+		Key = 3
+		Value = Moscow
+	Children = null
+	Father = null

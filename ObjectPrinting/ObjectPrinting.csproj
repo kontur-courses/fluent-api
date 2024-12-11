@@ -5,8 +5,45 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ApprovalTests" Version="7.0.0-beta.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.Demo.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WithCustomSerializationForSpecificType.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenSerializingWithCustomCulture.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenTrimmingStringProperties.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenExcludingSpecificProperty.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenChainingSerializationRules.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenUsingExtensionMethod.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WithConfiguration.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldDetectCyclicReferences.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenSerializingDictionary.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
+    <None Update="Tests\ObjectPrinterAcceptanceTests.PrintToString_ShouldWorkCorrectly_WhenSerializingEnumerable.approved.txt">
+      <DependentUpon>ObjectPrinterAcceptanceTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 </Project>

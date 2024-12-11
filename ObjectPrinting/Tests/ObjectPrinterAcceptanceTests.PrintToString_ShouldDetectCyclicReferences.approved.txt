@@ -1,0 +1,17 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1,81
+	Age = 19
+	DateOfBirth = 01.01.0001 00:00:00
+	Addresses = null
+	Children = null
+	Father = Person
+		Id = Guid
+		Name = Pavel Doe
+		Height = 0
+		Age = 68
+		DateOfBirth = 09.09.1954 00:00:00
+		Addresses = null
+		Children = null
+		Father = Cyclic reference!

@@ -1,0 +1,8 @@
+﻿Person
+	Id = Guid
+	Name = Alex
+	Height = 1,81
+	DateOfBirth = 01.01.0001 00:00:00
+	Addresses = null
+	Children = null
+	Father = null
