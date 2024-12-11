@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace ObjectPrinting
         private readonly Type[] finalTypes =
         {
             typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         };
 
         public string PrintToString(TOwner obj)
@@ -32,11 +33,18 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            var specialSerialization = CheckSerializationConditions(obj);
+            var identation = new string('\t', nestingLevel + 1);
+
+            var specialSerialization = CheckSerializationConditions(obj, identation);
             if (specialSerialization != null)
                 return specialSerialization;
+
+            if (obj is IDictionary dictionary)
+                return PrintDictionary(dictionary, nestingLevel);
+            if (obj is IEnumerable collection)
+                return PrintCollection(collection, nestingLevel);
+
             proccesedObjects.Add(obj);
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
@@ -53,13 +61,9 @@ namespace ObjectPrinting
                 }
 
                 if (alternativeSerializeProperties.TryGetValue(propertyInfo, out var propertyFunc))
-                {
-                    var o = propertyInfo.GetValue(obj);
-                    var res = propertyFunc(o);
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              res + Environment.NewLine);
-                }
 
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              propertyFunc(propertyInfo.GetValue(obj)) + Environment.NewLine);
                 else
                     sb.Append(identation + propertyInfo.Name + " = " +
                               PrintToString(propertyInfo.GetValue(obj),
@@ -69,7 +73,8 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string CheckSerializationConditions(object obj)
+
+        private string CheckSerializationConditions(object obj, string identation)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -87,6 +92,50 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
 
             return null;
+        }
+
+        private string PrintCollection(IEnumerable collection, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+
+            sb.Append(identation + collection.GetType().Name + "{" + Environment.NewLine);
+            int index = 0;
+            foreach (var item in collection)
+            {
+                sb.Append(identation + "\t[" + index + "] = ");
+                sb.Append(GetStringWithNestingLevel(item, nestingLevel + 2).Trim());
+                sb.Append(Environment.NewLine);
+                index++;
+            }
+
+            sb.Append(identation + "}");
+            return sb.ToString();
+        }
+
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel)
+        {
+            var sb = new StringBuilder();
+            var identation = new string('\t', nestingLevel + 1);
+            sb.Append(identation + dictionary.GetType().Name + "{" + Environment.NewLine);
+            foreach (DictionaryEntry element in dictionary)
+            {
+                var key = GetStringWithNestingLevel(element.Key, nestingLevel + 1);
+                var value = GetStringWithNestingLevel(element.Value, nestingLevel + 2).Trim();
+                sb.Append(key + " : " + value + Environment.NewLine);
+            }
+
+            sb.Append(identation + "}");
+            return sb.ToString();
+        }
+
+        private string GetStringWithNestingLevel(object obj, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            if (finalTypes.Contains(obj.GetType()))
+                return identation + obj;
+            var result = PrintToString(obj, nestingLevel);
+            return Environment.NewLine + identation + result;
         }
 
         public PrintingConfig<TOwner> Exclude<T>()

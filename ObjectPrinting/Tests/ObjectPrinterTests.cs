@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -78,6 +80,92 @@ namespace ObjectPrinting.Tests
                 .Exclude<Person>();
             string result = printer.PrintToString(person);
             result.Should().BeEmpty();
+        }
+
+        [Test]
+        public void ObjetctPrinter_ShouldCorrectPrint_WithDictionary()
+        {
+            var dict = new Dictionary<string, string>
+            {
+                {"Robin", "Archeologist"},
+                {"Usopp", "Cannoneer"},
+                {"Luffy", "Captain"}
+            };
+            var expected = "\tDictionary`2{" + Environment.NewLine +
+                           "\t\tRobin : Archeologist" + Environment.NewLine +
+                           "\t\tUsopp : Cannoneer" + Environment.NewLine +
+                           "\t\tLuffy : Captain" + Environment.NewLine +
+                           "\t}";
+            dict.PrintToString().Should().Contain(expected);
+        }
+
+        [Test]
+        public void ObjetctPrinter_ShouldCorrectPrint_WithDictionaryContainsPerson()
+        {
+            var dict = new Dictionary<string, Person>
+            {
+                {"Archeologist", person},
+            };
+            var expected = "\tDictionary`2{" + Environment.NewLine +
+                           "\t\tArcheologist : Person" + Environment.NewLine +
+                           "\t\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
+                           "\t\t\tName = Monkey" + Environment.NewLine +
+                           "\t\t\tSecondName = D.Luffy" + Environment.NewLine +
+                           "\t\t\tNameOfPet = Usopp" + Environment.NewLine +
+                           "\t\t\tHeight = 1234567,89" + Environment.NewLine +
+                           "\t\t\tAge = 17" + Environment.NewLine +
+                           "\t\t\tCountsOfTeamMembers = null" + Environment.NewLine +
+                           "\t\t\tAlliedTeams = null" + Environment.NewLine +
+                           "\t\t\tTeam = null" + Environment.NewLine +
+                           "\t}";
+            dict.PrintToString().Should().Contain(expected);
+        }
+
+        [Test]
+        public void ObjetctPrinter_ShouldCorrectPrint_WithArray()
+        {
+            int[] numbers = {1, 2, 3, 4, 5};
+            var expected = "\tInt32[]{" + Environment.NewLine +
+                           "\t\t[0] = 1" + Environment.NewLine +
+                           "\t\t[1] = 2" + Environment.NewLine +
+                           "\t\t[2] = 3" + Environment.NewLine +
+                           "\t\t[3] = 4" + Environment.NewLine +
+                           "\t\t[4] = 5" + Environment.NewLine +
+                           "\t}";
+            numbers.PrintToString().Should().Contain(expected);
+        }
+
+        [Test]
+        public void ObjetctPrinter_ShouldCorrectPrint_WithList()
+        {
+            List<string> members = new List<string> {"Robin", "Usopp", "Luffy", "Zoro", "Nami"};
+            var expected = "\tList`1{" + Environment.NewLine +
+                           "\t\t[0] = Robin" + Environment.NewLine +
+                           "\t\t[1] = Usopp" + Environment.NewLine +
+                           "\t\t[2] = Luffy" + Environment.NewLine +
+                           "\t\t[3] = Zoro" + Environment.NewLine +
+                           "\t\t[4] = Nami" + Environment.NewLine +
+                           "\t}";
+            members.PrintToString().Should().Contain(expected);
+        }
+
+        [Test]
+        public void ObjetctPrinter_ShouldCorrectPrint_WithLContainsPerson()
+        {
+            List<Person> members = new List<Person> {person};
+            var expected = "\tList`1{" + Environment.NewLine +
+                           "\t\t[0] = Person" + Environment.NewLine +
+                           "\t\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
+                           "\t\t\tName = Monkey" + Environment.NewLine +
+                           "\t\t\tSecondName = D.Luffy" + Environment.NewLine +
+                           "\t\t\tNameOfPet = Usopp" + Environment.NewLine +
+                           "\t\t\tHeight = 1234567,89" + Environment.NewLine +
+                           "\t\t\tAge = 17" + Environment.NewLine +
+                           "\t\t\tCountsOfTeamMembers = null" + Environment.NewLine +
+                           "\t\t\tAlliedTeams = null" + Environment.NewLine +
+                           "\t\t\tTeam = null" + Environment.NewLine +
+                           "\t}";
+            members.PrintToString().Should().Contain(expected);
         }
     }
 }
