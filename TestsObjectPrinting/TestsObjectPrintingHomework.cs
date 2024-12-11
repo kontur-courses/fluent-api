@@ -31,7 +31,7 @@ public class TestsObjectPrinting
             .Excluding<string>().Excluding<int>().Excluding<double>().Excluding<Guid>().Excluding<DateTime>().Excluding<Person[]>()
             .PrintToString(person);
 
-        result.Should().Be(excepted);
+        result.Trim().Should().Be(excepted);
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class TestsObjectPrinting
             .Excluding(p => p.Id).Excluding(p => p.Name).Excluding(p => p.Surname).Excluding(p => p.DateBirth).Excluding<Person[]>()
             .PrintToString(person);
 
-        result.Should().Be(excepted);
+        result.Trim().Should().Be(excepted);
     }
 
     [Test]
@@ -129,7 +129,19 @@ public class TestsObjectPrinting
         const string unexcepted = "Zinovieva";
         const string excepted = "Zin";
         var result = ObjectPrinter.For<Person>()
-            .Printing<string>(p => p.Surname).TrimmedToLength(3)
+            .Printing<string>(p => p.Surname).TrimmedToLength(0, 3)
+            .PrintToString(person);
+
+        result.Should().NotContain(unexcepted).And.Contain(excepted);
+    }
+
+    [Test]
+    public void TestTrimmingSurnameInMiddle()
+    {
+        const string unexcepted = "Zinovieva";
+        const string excepted = "inov";
+        var result = ObjectPrinter.For<Person>()
+            .Printing<string>(p => p.Surname).TrimmedToLength(1, 4)
             .PrintToString(person);
 
         result.Should().NotContain(unexcepted).And.Contain(excepted);
@@ -140,11 +152,12 @@ public class TestsObjectPrinting
     {
         Action action = () => ObjectPrinter.For<Person>()
             .Printing<int>(p => p.Age)
-            .TrimmedToLength(3);
+            .TrimmedToLength(0, 3);
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Trimming is only supported for string properties");
     }
+
 
     [Test]
     public void Work_WhenReferenceCycles()

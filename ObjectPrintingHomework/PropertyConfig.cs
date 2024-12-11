@@ -29,7 +29,7 @@ public class PropertyPrintingConfig<TOwner, TPropType>
         return parentConfig;
     }
 
-    public PrintingConfig<TOwner> TrimmedToLength(int maxLength)
+    public PrintingConfig<TOwner> TrimmedToLength(int startIndex, int maxLength)
     {
         if (typeof(TPropType) != typeof(string))
             throw new InvalidOperationException("Trimming is only supported for string properties");
@@ -37,7 +37,7 @@ public class PropertyPrintingConfig<TOwner, TPropType>
         if (propertyName == null)
             throw new InvalidOperationException("Property name must be specified for trimming");
 
-        parentConfig.SetStringPropertyLength(propertyName, maxLength);
+        parentConfig.SetStringPropertyLength(propertyName, startIndex, maxLength);
         return parentConfig;
     }
 }

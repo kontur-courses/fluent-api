@@ -10,8 +10,8 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, Func<object, string>> typeSerializers = [];
     private readonly Dictionary<string, Func<object, string>> propertySerializers = [];
     private readonly Dictionary<Type, CultureInfo> typeCultures = [];
-    private readonly Dictionary<string, int> stringPropertyLengths = [];
-    private readonly HashSet<object> processedObjects = new HashSet<object>();
+    private readonly Dictionary<string, Tuple<int, int>> stringPropertyLengths = [];
+    private readonly HashSet<object> processedObjects = [];
 
     public string PrintToString(TOwner obj)
     {
@@ -25,8 +25,9 @@ public class PrintingConfig<TOwner>
     }
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        if (memberSelector.Body is MemberExpression memberExpression)
-            excludedProperties.Add(memberExpression.Member.Name);
+        if (memberSelector.Body is not MemberExpression memberExpression)
+            throw new ArgumentException("Needed MemberExpression");
+        excludedProperties.Add(memberExpression.Member.Name);
         return this;
     }
 
@@ -44,52 +45,53 @@ public class PrintingConfig<TOwner>
     private string PrintToString(object obj, int nestingLevel)
     {
         if (obj == null)
-            return "null" + Environment.NewLine;
+            return string.Empty;
+
         var type = obj.GetType();
 
         if (processedObjects.Contains(obj))
-            return "Circular Reference" + Environment.NewLine;
-        processedObjects.Add(obj);
+            return "Circular Reference";
 
         if (excludedTypes.Contains(type))
             return string.Empty;
+        processedObjects.Add(obj);
 
-        if (typeSerializers.ContainsKey(type))
-            return typeSerializers[type](obj) + Environment.NewLine;
+        if (typeSerializers.TryGetValue(type, out var serializer))
+            return serializer(obj);
 
         if (typeCultures.TryGetValue(type, out var culture) && obj is IFormattable formattable)
-            return formattable.ToString(null, culture) + Environment.NewLine;
+            return formattable.ToString(null, culture);
 
-        var finalTypes = new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-        if (finalTypes.Contains(obj.GetType()))
-            return obj + Environment.NewLine;
+        if (type.IsSerializable && type.Namespace.StartsWith("System"))
+            return obj.ToString();
 
-        var identation = new string('\t', nestingLevel + 1);
+        var indentation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         sb.AppendLine(type.Name);
+
         foreach (var propertyInfo in type.GetProperties())
         {
             var propertyType = propertyInfo.PropertyType;
             var propertyName = propertyInfo.Name;
             var propertyValue = propertyInfo.GetValue(obj);
 
-            if (propertySerializers.ContainsKey(propertyName))
-                return propertySerializers[propertyName](propertyValue) + Environment.NewLine;
+            if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
+            {
+                sb.AppendLine(propertySerializer(propertyValue));
+                continue;
+            }
 
-            if (propertyValue is string stringValue && stringPropertyLengths.TryGetValue(propertyInfo.Name, out var maxLength))
-                propertyValue = stringValue[..Math.Min(maxLength, stringValue.Length)];
+            if (propertyValue is string stringValue && stringPropertyLengths.TryGetValue(propertyName, out var length))
+                propertyValue = stringValue.Substring(Math.Min(length.Item1, stringValue.Length))[..Math.Min(length.Item2, stringValue.Length)];
 
             if (excludedTypes.Contains(propertyType) || excludedProperties.Contains(propertyName))
                 continue;
-            sb.Append(identation + propertyName + " = " +
-                      PrintToString(propertyValue,
-                          nestingLevel + 1));
+
+            sb.Append(indentation + propertyName + " = ");
+            sb.AppendLine(PrintToString(propertyValue, nestingLevel + 1));
         }
-        return sb.ToString().Trim();
+
+        return sb.ToString();
     }
 
     public void AddTypeSerializer<TPropType>(Func<TPropType, string> serializer)
@@ -107,8 +109,8 @@ public class PrintingConfig<TOwner>
         typeCultures[typeof(TPropType)] = culture;
     }
 
-    public void SetStringPropertyLength(string propertyName, int maxLength)
+    public void SetStringPropertyLength(string propertyName, int startIndex, int maxLength)
     {
-        stringPropertyLengths[propertyName] = maxLength;
+        stringPropertyLengths[propertyName] = new Tuple<int, int>(startIndex, maxLength);
     }
 }
