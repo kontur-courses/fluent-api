@@ -16,8 +16,8 @@ public class PrintingConfig<TOwner>
     internal HashSet<Type> ExcludedTypes = [];
     internal HashSet<string> ExcludedProperties = [];
 
+    internal Dictionary<Type, Delegate> TypeSerializers = new();
     internal Dictionary<Type, CultureInfo> CulturesForTypes = new();
-    internal Dictionary<Type, Func<object, string>> TypeSerializers = new();
     internal Dictionary<string, Func<object, string>> PropertySerializers = new();
 
     public TypeConfig<TOwner, TPropType> Printing<TPropType>() 

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using ObjectPrinting.Serializer.Configs;
 using ObjectPrinting.Serializer.Configs.Children;
 
@@ -17,4 +18,10 @@ public static class PropertyConfigExtensions
         return propConfig.ParentConfig;
     }
 
+    public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(
+        this IChildConfig<TOwner, TPropType> propConfig, CultureInfo culture) where TPropType : IFormattable
+    {
+        propConfig.ParentConfig.CulturesForTypes[typeof(TPropType)] = culture;
+        return propConfig.ParentConfig;
+    }
 }
