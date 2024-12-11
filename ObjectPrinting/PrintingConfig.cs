@@ -17,6 +17,7 @@ namespace ObjectPrinting
         private readonly Dictionary<string, Delegate> propertySerializers = new(); // конкретный делегат
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<string, int> propertyTrim = new();
+        private int MaxNestingLevel = 5;
 
         private readonly HashSet<Type> finalTypes =
         [
@@ -61,6 +62,9 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
+            if (nestingLevel > MaxNestingLevel)
+                return "Достигнут максимум глубины сериализации";
+
             if (obj == null)
                 return "null";
 
@@ -95,9 +99,15 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyType))
                     continue;
 
+                if (typeSerializers.TryGetValue(propertyType, out var typeSerializer))
+                {
+                    sb.AppendLine($"{identation}{propertyName} = {typeSerializer.DynamicInvoke(propertyValue)}");
+                    continue;
+                }
+
                 if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
                 {
-                    sb.AppendLine($"{identation}{propertySerializer.DynamicInvoke(propertyName)} = {propertyValue}");
+                    sb.AppendLine($"{identation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}");
                     continue;
                 }
 
@@ -112,7 +122,7 @@ namespace ObjectPrinting
 
                 if (propertyTrim.TryGetValue(propertyName, out var toTrimLength) && propertyValue is string stringValue)
                 {
-                    sb.AppendLine($"{identation}{propertyName} = {stringValue.Substring(0, Math.Min(stringValue.Length - toTrimLength, stringValue.Length))}");
+                    sb.AppendLine($"{identation}{propertyName} = {stringValue.Substring(0, Math.Min(toTrimLength, stringValue.Length))}");
                     continue;
                 }
 
@@ -123,7 +133,7 @@ namespace ObjectPrinting
 
         private string SerializeCollection(ICollection collection, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel);
+            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
             sb.AppendLine("[");
@@ -132,8 +142,11 @@ namespace ObjectPrinting
             {
                 foreach (var key in dictionary.Keys)
                 {
-                    sb.Append("{" + PrintToString(key, nestingLevel + 1) + " = ");
-                    sb.Append(PrintToString(dictionary[key], nestingLevel + 1) + "}; ");
+                    sb.Append($"{identation}{{{PrintToString(key, nestingLevel)}: " +
+                              $"{PrintToString(dictionary[key], nestingLevel + 1)}}}");
+
+                    //sb.Append($"{identation}{{{PrintToString(key, nestingLevel)} = ");
+                    //sb.Append(PrintToString(dictionary[key], nestingLevel + 1) + "}; ");
                 }
             }
             else
