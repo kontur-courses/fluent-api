@@ -176,8 +176,8 @@ public class ObjectPrinterAcceptanceTests
     {
         person.Children =
         [
-            new Person { Name = "Natasha", Age = 8, Height = 2, DateOfBirth = new DateTime(2002, 9 , 9) },
-            new Person { Name = "Pasha", Age = 9, Height = 1, DateOfBirth = new DateTime(2004, 9 , 9) },
+            new Person { Name = "Natasha", Age = 8, DateOfBirth = new DateTime(2002, 9 , 9) },
+            new Person { Name = "Pasha", Age = 8, DateOfBirth = new DateTime(2002, 9 , 9) },
         ];
 
         var s = person.PrintToString();

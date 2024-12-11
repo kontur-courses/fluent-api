@@ -9,7 +9,7 @@
 		- Person
 			Id = Guid
 			Name = Natasha
-			Height = 2
+			Height = 0
 			Age = 8
 			DateOfBirth = 09.09.2002 00:00:00
 			Addresses = null
@@ -18,9 +18,9 @@
 		- Person
 			Id = Guid
 			Name = Pasha
-			Height = 1
-			Age = 9
-			DateOfBirth = 09.09.2004 00:00:00
+			Height = 0
+			Age = 8
+			DateOfBirth = 09.09.2002 00:00:00
 			Addresses = null
 			Children = null
 			Father = null

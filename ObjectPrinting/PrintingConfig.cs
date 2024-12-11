@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -16,6 +15,13 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
     private readonly Dictionary<Type, CultureInfo> typeCultures = new();
     private readonly Dictionary<string, Func<object, string>> propertySerializers = new();
+    private readonly HashSet<object> visitedObjects = [];
+    
+    private static readonly HashSet<Type> FinalTypes =
+    [
+        typeof(int), typeof(double), typeof(float), typeof(string),
+        typeof(DateTime), typeof(TimeSpan)
+    ];
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => new(this);
 
@@ -46,26 +52,16 @@ public class PrintingConfig<TOwner>
         propertySerializers[propertyName] = serializer;
 
     public void AddCultureForType<TPropType>(CultureInfo culture) => typeCultures[typeof(TPropType)] = culture;
-
-
-
-    private string PrintToString(object? obj, int nestingLevel, HashSet<object>? visitedObjects = null)
+    
+    private string PrintToString(object? obj, int nestingLevel)
     {
         if (obj == null)
             return "null" + Environment.NewLine;
-
-        visitedObjects ??= [];
-
-        if (!visitedObjects.Add(obj))
-            return "Cyclic reference!" + Environment.NewLine;
-
-        var finalTypes = new[]
-        {
-            typeof(int), typeof(double), typeof(float), typeof(string),
-            typeof(DateTime), typeof(TimeSpan)
-        };
-
+        
         var type = obj.GetType();
+        
+        if (!visitedObjects.Add(obj) && !FinalTypes.Contains(type))
+            return "Cyclic reference!" + Environment.NewLine;
 
         if (typeSerializers.TryGetValue(type, out var serializer))
             return serializer(obj) + Environment.NewLine;
@@ -73,18 +69,18 @@ public class PrintingConfig<TOwner>
         if (typeCultures.TryGetValue(type, out var culture) && obj is IFormattable formattable)
             return formattable.ToString(null, culture) + Environment.NewLine;
 
-        if (finalTypes.Contains(type))
+        if (FinalTypes.Contains(type))
             return obj + Environment.NewLine;
 
         return obj switch
         {
-            IDictionary dictionary => SerializeDictionary(dictionary, nestingLevel, visitedObjects),
-            IEnumerable enumerable => SerializeEnumerable(enumerable, nestingLevel, visitedObjects),
-            _ => SerializeObject(obj, nestingLevel, visitedObjects)
+            IDictionary dictionary => SerializeDictionary(dictionary, nestingLevel),
+            IEnumerable enumerable => SerializeEnumerable(enumerable, nestingLevel),
+            _ => SerializeObject(obj, nestingLevel)
         };
     }
 
-    private string SerializeDictionary(IDictionary dictionary, int nestingLevel, HashSet<object> visitedObjects)
+    private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
     {
         var dictionaryType = dictionary.GetType().Name;
         var indentation = new string('\t', nestingLevel + 1);
@@ -95,16 +91,16 @@ public class PrintingConfig<TOwner>
         foreach (DictionaryEntry entry in dictionary)
         {
             sb.Append(indentation + "Key = " +
-                      PrintToString(entry.Key, nestingLevel + 1, visitedObjects));
+                      PrintToString(entry.Key, nestingLevel + 1));
             sb.Append(indentation + "Value = " +
-                      PrintToString(entry.Value, nestingLevel + 1, visitedObjects));
+                      PrintToString(entry.Value, nestingLevel + 1));
         }
 
         visitedObjects.Remove(dictionary);
         return sb.ToString();
     }
 
-    private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel, HashSet<object> visitedObjects)
+    private string SerializeEnumerable(IEnumerable enumerable, int nestingLevel)
     {
         var collectionType = enumerable.GetType().Name;
         var indentation = new string('\t', nestingLevel + 1);
@@ -115,14 +111,14 @@ public class PrintingConfig<TOwner>
         foreach (var element in enumerable)
         {
             sb.Append(indentation + "- " +
-                      PrintToString(element, nestingLevel + 1, visitedObjects));
+                      PrintToString(element, nestingLevel + 1));
         }
 
         visitedObjects.Remove(enumerable);
         return sb.ToString();
     }
 
-    private string SerializeObject(object obj, int nestingLevel, HashSet<object> visitedObjects)
+    private string SerializeObject(object obj, int nestingLevel)
     {
         var type = obj.GetType();
         var indentation = new string('\t', nestingLevel + 1);
@@ -146,7 +142,7 @@ public class PrintingConfig<TOwner>
             else
             {
                 sb.Append(indentation + propertyName + " = " +
-                          PrintToString(propertyValue, nestingLevel + 1, visitedObjects));
+                          PrintToString(propertyValue, nestingLevel + 1));
             }
         }
 
