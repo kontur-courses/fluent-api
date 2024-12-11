@@ -28,7 +28,9 @@ public class TestsObjectPrinting
     {
         const string excepted = "Person";
         var result = ObjectPrinter.For<Person>()
-            .Excluding<string>().Excluding<int>().Excluding<double>().Excluding<Guid>().Excluding<DateTime>().Excluding<Person[]>()
+            .Excluding<string>().Excluding<int>().Excluding<double>()
+            .Excluding<Guid>().Excluding<DateTime>().Excluding<Person[]>()
+            .Excluding<Dictionary<string, int>>().Excluding<List<Person>>()
             .PrintToString(person);
 
         result.Trim().Should().Be(excepted);
@@ -61,7 +63,9 @@ public class TestsObjectPrinting
         const string excepted = "Person";
         var result = ObjectPrinter.For<Person>()
             .Excluding(p => p.Age).Excluding(p => p.CountEyes).Excluding(p => p.Height)
-            .Excluding(p => p.Id).Excluding(p => p.Name).Excluding(p => p.Surname).Excluding(p => p.DateBirth).Excluding<Person[]>()
+            .Excluding(p => p.Id).Excluding(p => p.Name).Excluding(p => p.Surname)
+            .Excluding(p => p.DateBirth).Excluding(p => p.Friends).Excluding(p => p.LimbToNumbersFingers)
+            .Excluding(p => p.Parents).Excluding(p => p.Childs)
             .PrintToString(person);
 
         result.Trim().Should().Be(excepted);
@@ -160,7 +164,7 @@ public class TestsObjectPrinting
 
 
     [Test]
-    public void Work_WhenReferenceCycles()
+    public void TestWhenReferenceCycles()
     {
         const string excepted = "Circular Reference";
         person.Parents = [person];
@@ -169,5 +173,48 @@ public class TestsObjectPrinting
 
         Console.WriteLine(result);
         result.Should().Contain(excepted);
+    }
+
+    [Test]
+    public void TestSerializingDictionary()
+    {
+        const string excepted = "{Left_arm = 5}; {Left_leg = 6}; {Right_leg = 10};";
+        Dictionary<string, int> dict = new Dictionary<string, int>{
+            {"Left_arm", 5}, {"Left_leg", 6}, {"Right_leg", 10}
+        };
+        person.LimbToNumbersFingers = dict;
+        var result = ObjectPrinter.For<Person>().PrintToString(person);
+
+        result.Should().Contain(excepted);
+    }
+
+    [Test]
+    public void TestSerializingList()
+    {
+        const string exceptedOleg = "Name = Oleg\n\t\t\tAge = 1";
+        const string exceptedMaria = "Name = Maria\n\t\t\tAge = 2";
+        List<Person> list = new List<Person>{new Person { Name = "Oleg", Age = 1} , new Person { Name = "Maria", Age = 2}};
+        person.Childs = list;
+        var result = ObjectPrinter.For<Person>().Excluding(p => p.CountEyes).Excluding(p => p.Height)
+            .Excluding(p => p.Id).Excluding(p => p.Surname)
+            .Excluding(p => p.DateBirth).Excluding(p => p.Friends).Excluding(p => p.LimbToNumbersFingers)
+            .Excluding(p => p.Parents).PrintToString(person);
+
+        result.Should().Contain(exceptedOleg).And.Contain(exceptedMaria);
+    }
+
+    [Test]
+    public void TestSerializingArray()
+    {
+        const string exceptedAlbert = "Name = Albert\n\t\t\tAge = 54";
+        const string exceptedLiana = "Name = Liana\n\t\t\tAge = 55";
+        Person[] list = [new Person { Name = "Albert", Age = 54} , new Person { Name = "Liana", Age = 55}];
+        person.Parents = list;
+        var result = ObjectPrinter.For<Person>().Excluding(p => p.CountEyes).Excluding(p => p.Height)
+            .Excluding(p => p.Id).Excluding(p => p.Surname)
+            .Excluding(p => p.DateBirth).Excluding(p => p.Friends).Excluding(p => p.LimbToNumbersFingers)
+            .Excluding(p => p.Childs).PrintToString(person);
+
+        result.Should().Contain(exceptedAlbert).And.Contain(exceptedLiana);
     }
 }

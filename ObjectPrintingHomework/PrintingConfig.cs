@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Text;
@@ -56,6 +58,9 @@ public class PrintingConfig<TOwner>
             return string.Empty;
         processedObjects.Add(obj);
 
+        if (obj is ICollection)
+            return ProcessCollections(obj, nestingLevel);
+            
         if (typeSerializers.TryGetValue(type, out var serializer))
             return serializer(obj);
 
@@ -112,5 +117,35 @@ public class PrintingConfig<TOwner>
     public void SetStringPropertyLength(string propertyName, int startIndex, int maxLength)
     {
         stringPropertyLengths[propertyName] = new Tuple<int, int>(startIndex, maxLength);
+    }
+
+    private string ProcessCollections(object obj, int nestingLevel){
+        if (obj is IDictionary dictionary)
+            return ExecuteDictionary(dictionary, nestingLevel);
+        else{
+            var collection = (IEnumerable)obj;
+            return ExecuteIEnumerable(collection, nestingLevel);
+        }
+    }
+
+    private string ExecuteDictionary(IDictionary dictionary, int nestingLevel)
+    {
+        var sb = new StringBuilder();
+        foreach(var key in dictionary.Keys){
+            sb.Append("{" + PrintToString(key, nestingLevel + 1) + " = ");
+            sb.Append(PrintToString(dictionary[key], nestingLevel + 1) + "}; ");
+        }
+        return sb.ToString();
+    }
+
+    private string ExecuteIEnumerable(IEnumerable collection, int nestingLevel)
+    {   
+        var sb = new StringBuilder();
+        sb.Append('\n');
+        foreach(var value in collection){
+            sb.Append('\t', nestingLevel + 1);
+            sb.Append(PrintToString(value, nestingLevel + 1));
+        }
+        return sb.ToString();
     }
 }

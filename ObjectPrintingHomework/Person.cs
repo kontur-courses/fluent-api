@@ -13,4 +13,6 @@ public class Person
     public DateTime DateBirth {get; set; }
     public Person[] Parents { get; set; }
     public Person[] Friends { get; set; }
+    public Dictionary<string, int> LimbToNumbersFingers {get; set;}
+    public List<Person> Childs {get; set;}
 }
