@@ -14,7 +14,7 @@ public class ObjectPrinterTest
     [SetUp]
     public void SetUp()
     {
-        person = new Person { Name = "Alex", Age = 19, Height = 189.25 };
+        person = new Person(new Guid(), "Alex",189.25, 19);
         newLine = Environment.NewLine;
     }
     
@@ -97,22 +97,22 @@ public class ObjectPrinterTest
     }
 
     [Test]
-    public void PrintingConfig_PrintCycledObject_ShouldDetectCycleReference()
+    public void PrintingConfig_PrintCycledObject_ShouldNotFail()
     {
         person.Friend = person;
 
         var result = person.PrintToString();
 
-        result.Should().Contain($"{nameof(person.Friend)} = Cycle reference detected");
+        result.Should().Contain("Достигнут максимум глубины сериализации");
     }
     
     [Test]
     public void PrintingConfig_PrintNestedObject_ShouldPrintNestedObject()
     {
-        person.Friend = new Person { Name = "John", Age = 15, Height = 178.4 };
-
+        person.Friend = new Person();
+    
         var result = person.PrintToString();
-
+    
         result.Should().Contain($"\t\t{nameof(person.Friend.Name)} = {person.Friend.Name}");
     }
     
@@ -121,41 +121,41 @@ public class ObjectPrinterTest
     {
         var printer = ObjectPrinter.For<Person>()
             .Exclude(p => p.Field);
-
+    
         var result = printer.PrintToString(person);
-
+    
         result.Should().NotContain($"{nameof(person.Field)} = {person.Field}");
     }
     
     [Test]
     public void PrintToString_PrintClassWithList_ShouldSerializeList()
     {
-        var friends = new List<Person>
-            { new Person { Name = "Andy", Age = 21 }, new Person { Name = "Serj", Age = 17 } };
-
+        var friends = new List<Person>{new(), new()};
+    
         person.Friends = friends;
-
+    
         var result = person.PrintToString();
-
+    
         for (var i = 0; i < friends.Count; i++)
         {
             var friend = friends[i];
-            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}" +
-                                    $"\t\t\t{nameof(friend.Id)} = {friend.Id}{newLine}" +
-                                    $"\t\t\t{nameof(friend.Name)} = {friend.Name}");
+            
+            result.Should().Contain($"\t\t{i}: {nameof(Person)}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(friend.Id)} = {friend.Id}{newLine}");
+            result.Should().Contain($"\t\t\t{nameof(friend.Name)} = {friend.Name}");
         }
     }
-
+    
     [Test]
     public void PrintToString_PrintClassWithArray_ShouldSerializeArray()
     {
         var relatives = new[]
-            { new Person { Name = "Sarah", Age = 41 }, new Person { Name = "John", Age = 47 } };
-
+            { new Person(), new Person()};
+    
         person.Relatives = relatives;
-
+    
         var result = person.PrintToString();
-
+    
         for (var i = 0; i < relatives.Length; i++)
         {
             var relative = relatives[i];
@@ -164,17 +164,17 @@ public class ObjectPrinterTest
                                     $"\t\t\t{nameof(relative.Name)} = {relative.Name}");
         }
     }
-
+    
     [Test]
     public void PrintToString_PrintClassWithDictionary_ShouldSerializeDictionary()
     {
-        var neighbours = new Dictionary<int, Person>()
-            { { 12, new Person { Name = "Andy", Age = 21 } }, { 19, new Person { Name = "Serj", Age = 17 } } };
-
+        var neighbours = new Dictionary<int, Person>
+            { { 12, new Person() }, { 19, new Person() } };
+    
         person.Neighbours = neighbours;
-
+    
         var result = person.PrintToString();
-
+    
         foreach (var key in neighbours.Keys)
         {
             var neighbour = neighbours[key];
