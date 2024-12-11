@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -61,7 +62,7 @@ public class PrintingConfig<TOwner>
         return configCopy;
     }
 
-   public string PrintToString(TOwner owner) =>
+    public string PrintToString(TOwner owner) =>
         PrintToString(owner, 0);
 
     private string PrintToString(object? obj, int nestingLevel)
@@ -80,17 +81,44 @@ public class PrintingConfig<TOwner>
         var numberOfTabs = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         sb.AppendLine(type.Name);
-        foreach (var memberInfo in type
-                     .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
-                     .Where(member =>
-                         member is PropertyInfo or FieldInfo && !IsMemberExcluded(member)))
+        if (obj is IEnumerable enumerable)
+            sb.Append(GetCollectionString(enumerable, numberOfTabs, nestingLevel));
+        else
+            sb.Append(GetSingleElementString(obj, numberOfTabs, nestingLevel));
+
+        return sb.ToString();
+    }
+
+    private string GetCollectionString(IEnumerable enumerable, string numberOfTabs, int nestingLevel)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("[");
+        foreach (var el in enumerable)
+        {
+            var value = PrintToString(el, nestingLevel + 1);
+            sb.Append($"{numberOfTabs}{value}");
+        }
+
+        seenObjects.Add(enumerable);
+        sb.AppendLine("]");
+        return sb.ToString();
+    }
+
+    private string GetSingleElementString(object obj, string numberOfTabs, int nestingLevel)
+    {
+        var propertiesAndFields = obj
+            .GetType()
+            .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
+            .Where(member => member is PropertyInfo or FieldInfo && !IsMemberExcluded(member));
+        var sb = new StringBuilder();
+        foreach (var memberInfo in propertiesAndFields)
         {
             sb.Append(numberOfTabs + memberInfo.Name + " = " +
                       PrintToString(GetValue(obj, memberInfo),
                           nestingLevel + 1));
-            seenObjects.Add(obj);
         }
 
+        seenObjects.Add(obj);
         return sb.ToString();
     }
 

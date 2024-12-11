@@ -1,7 +1,6 @@
 using System.Globalization;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using NUnit.Framework.Internal;
 using ObjectPrinting;
 using ObjectPrinting.Extensions;
 
@@ -14,13 +13,20 @@ public class PrintingConfigShould
     private readonly PrintingConfig<Person> personPrintingConfig = ObjectPrinter.For<Person>();
     private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
+    private readonly Person[] personArray =
+    [
+        new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue),
+        new(Guid.NewGuid(), "Alex1", 111, 11, DateTime.Now),
+        new(Guid.NewGuid(), "Alex2", 183, 111, DateTime.MaxValue)
+    ];
+
     [Test]
     public void NotThrowingStackOverflowException_WhenPrintToStringHasRecursion()
     {
         var alexWithParent = alex.GetPersonWithRecursiveParent();
-        
+
         var action = () => personPrintingConfig.PrintToString(alexWithParent);
-        
+
         action.Should().NotThrow<StackOverflowException>();
     }
 
@@ -89,6 +95,49 @@ public class PrintingConfigShould
                 .Should()
                 .NotContain(expectedAgeString);
         }
+    }
+
+    [Test]
+    public void PrintToString_ArrayOfPerson()
+    {
+        var printedObject = ObjectPrinter
+            .For<Person[]>()
+            .PrintToString(personArray);
+
+        foreach (var person in personArray)
+            printedObject
+                .Should()
+                .Contain(person.Name);
+    }
+
+    [Test]
+    public void PrintToString_ListOfPerson()
+    {
+        var personList = personArray.ToList();
+
+        var printedObject = ObjectPrinter
+            .For<List<Person>>()
+            .PrintToString(personList);
+
+        foreach (var person in personArray)
+            printedObject
+                .Should()
+                .Contain(person.Name);
+    }
+
+    [Test]
+    public void PrintToString_DictionaryOfPerson()
+    {
+        var personDictionary = personArray.ToDictionary(person => person.Id, person => person);
+
+        var printedObject = ObjectPrinter
+            .For<Dictionary<Guid, Person>>()
+            .PrintToString(personDictionary);
+
+        foreach (var person in personArray)
+            printedObject
+                .Should()
+                .Contain(person.Name);
     }
 
     [Test]
