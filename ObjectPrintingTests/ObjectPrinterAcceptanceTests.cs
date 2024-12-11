@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq.Expressions;
 using ObjectPrinting;
 using ObjectPrinting.Tools;
 
@@ -10,7 +11,18 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void Demo()
     {
-        var person = new Person { Name = "Alex", Age = 19 };
+        var parent = new Person { Name = "Parent", Age = 20 };
+        var person = new Person { Name = "Alex", Age = 19, Parent = parent };
+        
+        Expression<Func<Person, string>> test = p => p.Parent.Name;
+        var b = test.TryGetPropertyName();
+        Console.WriteLine(b);
+        
+        var type = typeof(Person);
+        foreach (var propertyInfo in type.GetProperties())
+        {
+            Console.WriteLine($"{type.FullName}.{propertyInfo.Name}");
+        }
 
         var printer = ObjectPrinter.For<Person>()
             //1. Исключить из сериализации свойства определенного типа

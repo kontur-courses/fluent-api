@@ -8,9 +8,12 @@ public static class ExpressionExtensions
     public static string TryGetPropertyName<T1, T2>(this Expression<Func<T1, T2>> propertySelector) 
         => propertySelector.Body switch 
         { 
-            MemberExpression memberExpression => memberExpression.Member.Name, 
-            UnaryExpression { Operand: MemberExpression operand } => operand.Member.Name,
+            MemberExpression memberExpression => memberExpression.GetFullName(), 
+            UnaryExpression { Operand: MemberExpression operand } => operand.GetFullName(),
             
             _ => throw new ArgumentOutOfRangeException(nameof(propertySelector)) 
         };
+
+    public static string GetFullName(this MemberExpression memberExpression)
+        => $"{memberExpression.Member.ReflectedType!.FullName}.{memberExpression.Member.Name}";
 }

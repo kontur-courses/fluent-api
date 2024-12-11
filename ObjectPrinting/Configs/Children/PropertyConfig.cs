@@ -6,7 +6,7 @@ namespace ObjectPrinting.Configs.Children;
 
 public class PropertyConfig<TOwner, TPropType>(
     PrintingConfig<TOwner> printingConfig, 
-    Expression<Func<TOwner, TPropType>> propertySelector) :IChildrenConfig<TOwner, TPropType>
+    Expression<Func<TOwner, TPropType>> propertySelector) : IChildrenConfig<TOwner, TPropType>
 {
     public PrintingConfig<TOwner> ParentConfig { get; } = printingConfig;
     

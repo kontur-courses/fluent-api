@@ -1,6 +1,10 @@
-﻿namespace ObjectPrinting.Configs.Children;
+﻿using System;
 
-public interface IChildrenConfig<TOwner, TPropType>
+namespace ObjectPrinting.Configs.Children;
+
+public interface IChildrenConfig<TOwner, out TPropType>
 {
     PrintingConfig<TOwner> ParentConfig { get; }
+
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> print);
 }

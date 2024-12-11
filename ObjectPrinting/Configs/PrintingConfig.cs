@@ -18,11 +18,9 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<Type> excludedTypes = [];
     private readonly HashSet<string> excludedProperties = [];
 
-    private IFormatProvider numberCulture = CultureInfo.InvariantCulture;
-    
+    private readonly Dictionary<Type, CultureInfo> culturesForTypes = new();
     private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
     private readonly Dictionary<string, Func<object, string>> propertySerializers = new();
-
 
     public TypeConfig<TOwner, TPropType> Printing<TPropType>() 
         => new(this);
