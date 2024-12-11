@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using ObjectPrinting.Tools;
 
-namespace ObjectPrinting.Configs.Children;
+namespace ObjectPrinting.Serializer.Configs.Children;
 
 public class PropertyConfig<TOwner, TPropType>(
     PrintingConfig<TOwner> printingConfig, 

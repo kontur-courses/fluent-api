@@ -4,10 +4,10 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using ObjectPrinting.Configs.Children;
+using ObjectPrinting.Serializer.Configs.Children;
 using ObjectPrinting.Tools;
 
-namespace ObjectPrinting.Configs;
+namespace ObjectPrinting.Serializer.Configs;
 
 public class PrintingConfig<TOwner>
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Configs.Children;
+namespace ObjectPrinting.Serializer.Configs.Children;
 
 public class TypeConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig) : IChildrenConfig<TOwner, TPropType>
 {

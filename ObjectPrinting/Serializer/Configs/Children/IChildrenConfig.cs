@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting.Configs.Children;
+namespace ObjectPrinting.Serializer.Configs.Children;
 
 public interface IChildrenConfig<TOwner, out TPropType>
 {

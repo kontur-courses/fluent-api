@@ -1,6 +1,6 @@
 using System;
-using ObjectPrinting.Configs;
-using ObjectPrinting.Configs.Children;
+using ObjectPrinting.Serializer.Configs;
+using ObjectPrinting.Serializer.Configs.Children;
 
 namespace ObjectPrinting.Tools;
 
