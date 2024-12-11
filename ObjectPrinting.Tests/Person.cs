@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ObjectPrinting.Solved.Tests
+﻿namespace ObjectPrinting.Tests
 {
     public class Person
     {
@@ -8,5 +6,6 @@ namespace ObjectPrinting.Solved.Tests
         public string Name { get; set; }
         public double Height { get; set; }
         public int Age { get; set; }
+        public string Email;
     }
 }
