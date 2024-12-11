@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentAssertions" Version="8.0.0-alpha.1" />
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+      <PackageReference Include="Microsoft.TestPlatform" Version="17.12.0" />
+      <PackageReference Include="NUnit" Version="4.2.2" />
+      <PackageReference Include="NUnit.Analyzers" Version="4.4.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="NUnit3TestAdapter" Version="5.0.0-beta.5" />
+      <PackageReference Include="Verify" Version="28.4.0" />
+      <PackageReference Include="Verify.NUnit" Version="28.4.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenArray.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldFormatDateTime_WhenSetCultureForDate_culture=en-US.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldFormatDateTime_WhenSetCultureForDate_culture=ru-RU.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCircularReference.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomPropertySerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomTypeSerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenDictionary.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenLengthIsGreaterThanTrimmed.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenList.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenNestedArray.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenSetCultureForNumber_culture=en-US_expectedSeparator=..verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenSetCultureForNumber_culture=ru-RU_expectedSeparator=,.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenTrimString.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomCollectionSerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenDeepNesting.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+      <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenExcessiveNesting.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+      </None>
+    </ItemGroup>
+
+</Project>
