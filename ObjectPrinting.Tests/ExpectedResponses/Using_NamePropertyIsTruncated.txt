@@ -1,0 +1,6 @@
+Person
+	Id = Guid
+	Name = Хьюберт Блейн Вольфе...
+	Height = 185,5
+	Age = 19
+	Email = alex@gmail.com

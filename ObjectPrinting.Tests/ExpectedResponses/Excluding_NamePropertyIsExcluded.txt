@@ -1,0 +1,5 @@
+Person
+	Id = Guid
+	Height = 185,5
+	Age = 19
+	Email = alex@gmail.com

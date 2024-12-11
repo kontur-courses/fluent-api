@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Mail;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Solved;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public record PrintingConfig<TOwner>(SerializationSettings Settings)
     {
@@ -29,19 +28,29 @@ namespace ObjectPrinting.Solved
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var memberInfo = GetMemberInfo(memberSelector);
+            
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
+        }
+
+        private MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
             if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
                 throw new ArgumentException();
-            var memberExpression = (MemberExpression)memberSelector.Body;
-            if (memberExpression.Member.MemberType != MemberTypes.Field &&
-                memberExpression.Member.MemberType != MemberTypes.Property)
+            var memberExpr = (MemberExpression)memberSelector.Body;
+            if (memberExpr.Member.MemberType != MemberTypes.Field && memberExpr.Member.MemberType != MemberTypes.Property)
                 throw new ArgumentException();
-            return new PropertyPrintingConfig<TOwner, TPropType>
-                (this, memberExpression.Member);
+            
+            return memberExpr.Member;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return this;
+            return new PrintingConfig<TOwner>(
+                Settings with
+                {
+                    ExcludedPropertiesAndFields = Settings.ExcludedPropertiesAndFields.Add(GetMemberInfo(memberSelector))
+                });
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
@@ -84,7 +93,9 @@ namespace ObjectPrinting.Solved
             foreach (var member in GetPropertiesAndFields(obj.GetType()))
             {
                 var memberValue = GetValue(obj, member);
-                
+                if (memberValue is not null && (Settings.ExcludedPropertyTypes.Contains(memberValue.GetType()) ||
+                                                Settings.ExcludedPropertiesAndFields.Contains(member)))
+                    continue;
                 if (Settings.MethodsForSerializingPropertiesAndFields.TryGetValue(member, out var serializer))
                     result.Append(identation + member.Name + " = " + serializer(memberValue));
                 else

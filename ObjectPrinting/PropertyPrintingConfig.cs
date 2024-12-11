@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq.Expressions;
-using System.Net.Mail;
 using System.Reflection;
+using ObjectPrinting.Solved;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
