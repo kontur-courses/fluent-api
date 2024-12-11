@@ -1,0 +1,4 @@
+﻿Person
+	Name = Benja
+	Height = 1.81
+	Status = 2

@@ -1,0 +1,6 @@
+﻿Person
+	Id = Guid
+	Name = Al
+	Height = 1,81
+	Age = 19
+	Status = Student
