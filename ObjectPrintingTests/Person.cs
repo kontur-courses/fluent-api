@@ -1,22 +1,27 @@
-using FluentAssertions.Equivalency;
-
 namespace ObjectPrintingTests;
 
-public class Person
+public class Person(Guid id, string name, double height, int age, 
+                    Person? friend = null, List<Person>? friends = null, 
+                    Person[]? relatives = null, Dictionary<int, Person>? neighbours = null)
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-    public double Height { get; set; }
-    public int Age { get; set; }
+    public Person() 
+        : this(new Guid(), "Anton", 200.52, 19)
+    {
+    }
 
-    public Person Friend { get; set; }
+    public Guid Id { get; } = id;
+    public string Name { get; } = name;
+    public double Height { get; } = height;
+    public int Age { get; } = age;
 
-    public List<Person> Friends { get; set; }
+    public Person? Friend { get; set; } = friend;
 
-    public Person[] Relatives { get; set; }
-    public Dictionary<int, Person> Neighbours { get; set; }
+    public List<Person>? Friends { get; set; } = friends;
 
-    public int Field = 10;
+    public Person[]? Relatives { get; set; } = relatives;
+    public Dictionary<int, Person>? Neighbours { get; set; } = neighbours;
+
+    public readonly int Field = 10;
     public override int GetHashCode()
     {
         return HashCode.Combine(Id, Name, Height, Age, Field);
