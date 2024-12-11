@@ -1,0 +1,15 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 0
+	Age = 19
+	Surname = White
+	Birthdate = 21.01.2021 0:00:00
+	test = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Mordor
+		Height = 0
+		Age = 0
+		Surname = null
+		Birthdate = 01.01.0001 0:00:00
+		test = null

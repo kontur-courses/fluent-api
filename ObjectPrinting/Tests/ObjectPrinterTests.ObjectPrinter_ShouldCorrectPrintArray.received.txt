@@ -1,0 +1,9 @@
+﻿Person[]
+	Length = 2
+	LongLength = Int64
+	Rank = 1
+	SyncRoot = Cycle Reference
+
+	IsReadOnly = Boolean
+	IsFixedSize = Boolean
+	IsSynchronized = Cycle Reference

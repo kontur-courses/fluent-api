@@ -1,0 +1,8 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = My name is Alex
+	Height = 0
+	Age = 19
+	Surname = White
+	Birthdate = 1.21
+	test = null

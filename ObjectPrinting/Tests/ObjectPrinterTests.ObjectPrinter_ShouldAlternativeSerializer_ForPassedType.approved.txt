@@ -1,0 +1,8 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = String field: Alex
+	Height = 0
+	Age = Int field: 19
+	Surname = String field: White
+	Birthdate = 21.01.2021 0:00:00
+	test = null
