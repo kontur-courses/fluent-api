@@ -1,0 +1,4 @@
+﻿Person
+	Id = Guid
+	Name = Андрей Захаров
+	Height = 19.2

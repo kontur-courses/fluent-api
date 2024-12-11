@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = Андрей 
+	Height = 19.2
+	Age = 20

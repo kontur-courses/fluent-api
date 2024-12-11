@@ -1,0 +1,4 @@
+﻿Person
+	Id = Guid
+	Height = 19.2
+	Age = 20

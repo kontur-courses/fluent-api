@@ -1,0 +1,5 @@
+﻿TestTypePropetries
+	Int = 1
+	Double = 1.1
+	DateTime = 1/11/2002 12:00:00 AM
+	Float = 1.3445

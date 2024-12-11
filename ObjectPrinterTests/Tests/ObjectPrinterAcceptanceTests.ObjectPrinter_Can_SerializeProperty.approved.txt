@@ -1,0 +1,5 @@
+﻿Person
+	Id = Guid
+	Name = этого челика зовут Андрей Захаров
+	Height = 19.2
+	Age = 20

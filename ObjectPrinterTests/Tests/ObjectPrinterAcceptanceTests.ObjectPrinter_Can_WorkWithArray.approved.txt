@@ -1,0 +1,9 @@
+﻿Shop
+	NameShop = ваще прикольный магаз Пятёрочка
+	Items [
+		Apple
+		Chips
+		Orange
+		Egg
+		Tomat
+	]
