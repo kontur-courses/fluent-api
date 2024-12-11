@@ -7,6 +7,7 @@
 			Weight = 100
 			Age = 20
 			Birthday = 10/10/2000 00:00:00
+			IsStudent = True
 			Father = null
 		Value = first
 	KeyValuePair`2
@@ -17,5 +18,6 @@
 			Weight = 111
 			Age = 22
 			Birthday = 11/11/2001 00:00:00
+			IsStudent = False
 			Father = null
 		Value = second

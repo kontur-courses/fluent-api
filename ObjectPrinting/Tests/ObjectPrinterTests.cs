@@ -25,7 +25,8 @@ public class ObjectPrinterTests
             Age = 20, 
             Height = 200, 
             Weight = 100,
-            Birthday = new DateTime(2000, 10, 10)
+            Birthday = new DateTime(2000, 10, 10),
+            IsStudent = true
         };
     }
     
@@ -128,7 +129,15 @@ public class ObjectPrinterTests
         var persons = new[]
         {
             person,
-            new() { Name = "Bread", Age = 22, Height = 222, Weight = 111, Birthday = new DateTime(2001, 11, 11) }
+            new()
+            {
+                Name = "Bread", 
+                Age = 22, 
+                Height = 222, 
+                Weight = 111, 
+                Birthday = new DateTime(2001, 11, 11),
+                IsStudent = false
+            }
         };
 
         var actual = ObjectPrinter.For<Person[]>().PrintToString(persons);
@@ -142,7 +151,15 @@ public class ObjectPrinterTests
         var persons = new List<Person>
         {
             person,
-            new() { Name = "Bread", Age = 22, Height = 222, Weight = 111, Birthday = new DateTime(2001, 11, 11) }
+            new()
+            {
+                Name = "Bread", 
+                Age = 22, 
+                Height = 222, 
+                Weight = 111, 
+                Birthday = new DateTime(2001, 11, 11),
+                IsStudent = false
+            }
         };
 
         var actual = ObjectPrinter.For<List<Person>>().PrintToString(persons);
@@ -156,7 +173,18 @@ public class ObjectPrinterTests
         var persons = new Dictionary<Person, string>
         {
             { person, "first" },
-            { new() { Name = "Bread", Age = 22, Weight = 111, Height = 222, Birthday = new DateTime(2001, 11, 11) }, "second" }
+            { 
+                new()
+                {
+                    Name = "Bread", 
+                    Age = 22, 
+                    Height = 222, 
+                    Weight = 111, 
+                    Birthday = new DateTime(2001, 11, 11),
+                    IsStudent = false
+                }, 
+                "second" 
+            }
         };
 
         var actual = ObjectPrinter.For<Dictionary<Person, string>>().PrintToString(persons);

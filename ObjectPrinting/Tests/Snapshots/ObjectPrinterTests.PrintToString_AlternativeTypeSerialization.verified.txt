@@ -5,4 +5,5 @@
 	Weight = 100
 	Age = 20
 	Birthday = date
+	IsStudent = True
 	Father = null

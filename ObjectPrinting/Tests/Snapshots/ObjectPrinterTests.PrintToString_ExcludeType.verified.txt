@@ -4,4 +4,5 @@
 	Height = 200
 	Weight = 100
 	Birthday = 10/10/2000 00:00:00
+	IsStudent = True
 	Father = null

@@ -16,5 +16,7 @@ public class Person
         
     public DateTime Birthday { get; set; }
     
+    public bool IsStudent { get; set; }
+    
     public Person? Father { get; set; }
 }
