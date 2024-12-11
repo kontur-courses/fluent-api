@@ -54,7 +54,7 @@ public class Tests
 
         var printer = ObjectPrinter.For<Person>()
             .For(p => p.Height)
-            .Using(h => $"{h / 100}m {h % 100}cm");
+                .Using(h => $"{h / 100}m {h % 100}cm");
 
         Approvals.Verify(printer.PrintToString(person));
     }
@@ -67,7 +67,7 @@ public class Tests
 
         var printer = ObjectPrinter.For<Person>()
             .For(p => p.Name)
-            .TrimmedToLength(14);
+            .TrimToLength(14);
 
         Approvals.Verify(printer.PrintToString(person));
     }
@@ -121,9 +121,10 @@ public class Tests
                 .Using(i => i.ToString("X"))
             .For<double>()
                 .Using(CultureInfo.InvariantCulture)
-            .For(p => p.Name.ToString("X"))
             .For(p => p.Name)
-                .TrimmedToLength(10)
+                .TrimToLength(10)
             .Exclude(p => p.Age);
+
+        Approvals.Verify(printer.PrintToString(person));
     }
 }

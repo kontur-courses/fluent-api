@@ -12,13 +12,13 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>();
-                .Exclude<Guid>()
-                .Exclude(p => p.Age)
-                .ConfigType<string>(p => p.UpperCase)
-                .SetCulture<double>(c => c.InvariantCulture)
-                .ConfigSerialization(c => c.Culture)
-                    .Trim();
-                .Serialize();
+                //.Exclude<Guid>()
+                //.Exclude(p => p.Age)
+                //.ConfigType<string>(p => p.UpperCase)
+                //.SetCulture<double>(c => c.InvariantCulture)
+                //.ConfigSerialization(c => c.Culture)
+                //    .Trim();
+                //.Serialize();
                 //1. Исключить из сериализации свойства определенного типа
                 //2. Указать альтернативный способ сериализации для определенного типа
                 //3. Для числовых типов указать культуру
