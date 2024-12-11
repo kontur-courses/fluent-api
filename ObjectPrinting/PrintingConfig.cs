@@ -1,41 +1,87 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
+using ObjectPrinting.Configurations;
+using ObjectPrinting.Configurations.Interfaces;
+using ObjectPrinting.Helpers;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner>(ObjectPrinter<TOwner> objectPrinter)
 {
-    public class PrintingConfig<TOwner>
+    private readonly HashSet<Type> excludeTypes = [];
+    private readonly HashSet<PropertyInfo> excludeProperties = [];
+    private readonly Dictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> propertyPrintingConfigs = new();
+    private readonly Dictionary<Type, ITypePrintingConfig<TOwner>> typePrintingConfigs = new();
+    private readonly Dictionary<Type, CultureInfo> typeCultureConfigs = new();
+    internal CultureInfo CommonCulture { get; private set; } = CultureInfo.CurrentCulture;
+
+    internal IReadOnlySet<Type> ExcludeTypes => excludeTypes;
+    internal IReadOnlySet<PropertyInfo> ExcludeProperties => excludeProperties;
+
+    internal IReadOnlyDictionary<PropertyInfo, IPropertyPrintingConfig<TOwner>> PropertyPrintingConfigs =>
+        propertyPrintingConfigs;
+
+    internal IReadOnlyDictionary<Type, ITypePrintingConfig<TOwner>> TypePrintingConfigs => typePrintingConfigs;
+    internal IReadOnlyDictionary<Type, CultureInfo> TypeCultureConfigs => typeCultureConfigs;
+
+
+    public PrintingConfig<TOwner> UsingCommonCulture(CultureInfo culture)
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+        CommonCulture = culture;
+        return this;
     }
+
+    public PrintingConfig<TOwner> Excluding<TPropType>()
+    {
+        excludeTypes.Add(typeof(TPropType));
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var propertyInfo = ReflectionHelper.GetPropertyInfoFromExpression(memberSelector);
+        excludeProperties.Add(propertyInfo);
+        return this;
+    }
+
+    public TypePrintingConfig<TOwner, TType> Printing<TType>()
+    {
+        var type = typeof(TType);
+        if (typePrintingConfigs.TryGetValue(type, out var config)
+            && config is TypePrintingConfig<TOwner, TType> printingConfig)
+        {
+            return printingConfig;
+        }
+
+        var typeConfig = new TypePrintingConfig<TOwner, TType>(this);
+        typePrintingConfigs[type] = typeConfig;
+        return typeConfig;
+    }
+
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+        Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var propertyInfo = ReflectionHelper.GetPropertyInfoFromExpression(memberSelector);
+        if (propertyPrintingConfigs.TryGetValue(propertyInfo, out var config)
+            && config is PropertyPrintingConfig<TOwner, TPropType> printingConfig)
+        {
+            return printingConfig;
+        }
+
+        var propertyPrintingConfig = new PropertyPrintingConfig<TOwner, TPropType>(this);
+        propertyPrintingConfigs[propertyInfo] = propertyPrintingConfig;
+        return propertyPrintingConfig;
+    }
+
+    internal PrintingConfig<TOwner> SetTypeCulture<TType>(CultureInfo culture)
+        where TType : IFormattable
+    {
+        typeCultureConfigs[typeof(TType)] = culture;
+        return this;
+    }
+    
+    public string PrintToString(TOwner obj) => objectPrinter.PrintToString(obj);
 }

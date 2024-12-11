@@ -1,0 +1,8 @@
+﻿PrintingTestObject
+	TestString = Alex
+	TestDouble = 0
+	TestFloat = 0
+	TestObject = circular reference
+	TestDictionary = null
+	TestList = null
+	TestArray = null

@@ -1,0 +1,10 @@
+﻿PrimitiveTypesTestObject
+	BoolValue = True
+	ByteValue = 255
+	ShortValue = 32767
+	IntValue = 2147483647
+	DoubleValue = 123,45
+	FloatValue = 123,44999694824219
+	LongValue = 9223372036854775807
+	DecimalValue = 123,45
+	CharValue = A

@@ -1,0 +1,20 @@
+﻿PrintingTestObject
+	TestId = 00000000-0000-0000-0000-000000000000
+	TestString = Alex
+	TestDouble = 0
+	TestFloat = 0
+	TestInt = 19
+	TestObject = PrintingTestObject
+		TestId = 00000000-0000-0000-0000-000000000000
+		TestString = Alex
+		TestDouble = 0
+		TestFloat = 0
+		TestInt = 19
+		TestObject = circular reference
+		TestDictionary = null
+		TestList = null
+		TestArray = null
+
+	TestDictionary = null
+	TestList = null
+	TestArray = null
