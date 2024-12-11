@@ -40,7 +40,7 @@ public class PrintingConfig<TOwner>
         var memberInfo = GetMemberInfo(memberSelector);
         return new PropertyPrintingConfig<TOwner, TPropType>(configCopy, memberInfo);
     }
-    
+
     private static MemberInfo? GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
         (memberSelector.Body as MemberExpression)?.Member;
 
@@ -61,31 +61,29 @@ public class PrintingConfig<TOwner>
         return configCopy;
     }
 
-    public string PrintToString(TOwner obj)
-    {
-        return PrintToString(obj, 0);
-    }
+   public string PrintToString(TOwner owner) =>
+        PrintToString(owner, 0);
 
     private string PrintToString(object? obj, int nestingLevel)
     {
         if (obj == null)
             return "null" + Environment.NewLine;
-        
+
         if (seenObjects.Contains(obj))
             return "recursive reference" + Environment.NewLine;
 
         var type = obj.GetType();
-        
+
         if (type.IsFinal())
             return obj + Environment.NewLine;
 
         var numberOfTabs = new string('\t', nestingLevel + 1);
-        var sb = new StringBuilder();        
+        var sb = new StringBuilder();
         sb.AppendLine(type.Name);
         foreach (var memberInfo in type
                      .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
                      .Where(member =>
-                         member is PropertyInfo or FieldInfo && !excludedProperties.Contains(member.GetMemberType()!)))
+                         member is PropertyInfo or FieldInfo && !IsMemberExcluded(member)))
         {
             sb.Append(numberOfTabs + memberInfo.Name + " = " +
                       PrintToString(GetValue(obj, memberInfo),
@@ -96,6 +94,10 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
+    private bool IsMemberExcluded(MemberInfo member) =>
+        excludedProperties.Contains(member.GetMemberType()!) ||
+        excludedMembers.Contains(member);
+
     private object? GetValue(object obj, MemberInfo memberInfo)
     {
         var val = memberInfo.GetValue(obj);
@@ -103,7 +105,7 @@ public class PrintingConfig<TOwner>
         return MemberSerializationMethod.TryGetValue(memberInfo, out var memberFunc)
             ? memberFunc.DynamicInvoke(val)
             : TypeSerializationMethod.TryGetValue(memberType!, out var typeFunc)
-            ? typeFunc.DynamicInvoke(val)
-            : val;
+                ? typeFunc.DynamicInvoke(val)
+                : val;
     }
 }

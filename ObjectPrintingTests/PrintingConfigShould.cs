@@ -15,13 +15,13 @@ public class PrintingConfigShould
     private readonly Person alex = new(Guid.NewGuid(), "Alex", 188, 111, DateTime.MinValue);
 
     [Test]
-    public void NotThrowingException_WhenPrintToStringHasRecursion()
+    public void NotThrowingStackOverflowException_WhenPrintToStringHasRecursion()
     {
         var alexWithParent = alex.GetPersonWithRecursiveParent();
         
         var action = () => personPrintingConfig.PrintToString(alexWithParent);
         
-        action.Should().NotThrow();
+        action.Should().NotThrow<StackOverflowException>();
     }
 
     [TestCase(2)]
@@ -92,30 +92,30 @@ public class PrintingConfigShould
     }
 
     [Test]
-    public void PrintToString_NotPrintingCurrentExcludedPropertyAndField()
+    public void PrintToString_NotPrintingExcludedPropertyOrFieldBySpecial()
     {
         using (new AssertionScope())
         {
             IsContainingProperty(personPrintingConfig.Excluding(p => p.Id), alex, nameof(Person.Id))
                 .Should()
-                .BeTrue();
+                .BeFalse();
             IsContainingProperty(personPrintingConfig.Excluding(p => p.Name), alex, nameof(Person.Name))
                 .Should()
-                .BeTrue();
+                .BeFalse();
             IsContainingProperty(personPrintingConfig.Excluding(p => p.Height), alex, nameof(Person.Height))
                 .Should()
-                .BeTrue();
+                .BeFalse();
             IsContainingProperty(personPrintingConfig.Excluding(p => p.Age), alex, nameof(Person.Age))
                 .Should()
-                .BeTrue();
+                .BeFalse();
             IsContainingProperty(personPrintingConfig.Excluding(p => p.BestField), alex, nameof(Person.BestField))
                 .Should()
-                .BeTrue();
+                .BeFalse();
         }
     }
 
     [Test]
-    public void PrintToString_NotPrintingExcludedPropertyAndField()
+    public void PrintToString_NotPrintingExcludedPropertyOrFieldByType()
     {
         using (new AssertionScope())
         {
