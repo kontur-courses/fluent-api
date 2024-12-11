@@ -61,8 +61,13 @@ namespace ObjectPrinting.Solved
                 var value = propertyInfo.GetValue(obj);
                 if (GetConfig.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
                     GetConfig.ExcludedProperties.Contains(propertyInfo) ||
-                    value == null || !visitedElement.Add(value)) continue;
+                    value == null) continue;
 
+                if (!visitedElement.Add(value))
+                {
+                    sb.AppendLine(identation + "here Cycle");
+                    break;
+                }
 
                 if (GetFinalTypes().Contains(value.GetType()))
                 {
@@ -98,20 +103,14 @@ namespace ObjectPrinting.Solved
         {
             var datArray = propertyInfo.GetValue(obj) as IEnumerable;
 
-            var properties = datArray.GetType().GetElementType().GetProperties();
-
 
             sb.AppendLine(identation + propertyInfo.Name + " [");
             var identationInArray = identation + '\t';
             foreach (var element in datArray) // у нас element может быть сложныс классом
             {
-                foreach (var property in properties)
-                {
-                    if (TryAddAsPrimitiveType(propertyInfo, sb, element, identationInArray)) break;
+                if (TryAddAsPrimitiveType(propertyInfo, sb, element, identationInArray)) continue;
 
-
-                    sb.Append(identationInArray + PrintToString(element, nestingLevel + 2));
-                }
+                sb.Append(identationInArray + PrintToString(element, nestingLevel + 2));
             }
 
 
