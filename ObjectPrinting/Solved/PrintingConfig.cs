@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<object> visitedHouse = [];
+        private readonly HashSet<object> visitedElement = [];
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -60,19 +61,19 @@ namespace ObjectPrinting.Solved
                 var value = propertyInfo.GetValue(obj);
                 if (GetConfig.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
                     GetConfig.ExcludedProperties.Contains(propertyInfo) ||
-                    value == null || !visitedHouse.Add(value)) continue;
+                    value == null || !visitedElement.Add(value)) continue;
 
 
                 if (GetFinalTypes().Contains(value.GetType()))
                 {
-                    if (TryFormater(propertyInfo, obj, out var newLine))
+                    if (TryFormater(propertyInfo, value, out var newLine))
                     {
                         sb.AppendLine(identation + propertyInfo.Name + " = " + newLine);
                     }
 
                     else
                     {
-                        sb.AppendLine(identation + propertyInfo.Name + " = " + propertyInfo.GetValue(obj));
+                        sb.AppendLine(identation + propertyInfo.Name + " = " + value);
                     }
 
                     continue;
@@ -95,25 +96,46 @@ namespace ObjectPrinting.Solved
         private void WriteArrayElements(object obj, int nestingLevel, PropertyInfo propertyInfo, StringBuilder sb,
             string identation)
         {
-            var property = propertyInfo.PropertyType.GetProperty("Length");
-            var datArray = propertyInfo.GetValue(obj);
-            var lenght = (int)property.GetValue(datArray);
+            var datArray = propertyInfo.GetValue(obj) as IEnumerable;
+
+            var properties = datArray.GetType().GetElementType().GetProperties();
 
 
             sb.AppendLine(identation + propertyInfo.Name + " [");
             var identationInArray = identation + '\t';
-            for (int i = 0; i < lenght; i++)
+            foreach (var element in datArray) // у нас element может быть сложныс классом
             {
-                var data = propertyInfo.PropertyType.GetMethod("GetValue", [typeof(int)])!
-                    .Invoke(datArray, [i]);
+                foreach (var property in properties)
+                {
+                    if (TryAddAsPrimitiveType(propertyInfo, sb, element, identationInArray)) break;
 
-                if (data == null) continue;
 
-                sb.Append(identationInArray + PrintToString(data, nestingLevel + 2));
+                    sb.Append(identationInArray + PrintToString(element, nestingLevel + 2));
+                }
             }
 
 
             sb.AppendLine(identation + "]");
+        }
+
+        private bool TryAddAsPrimitiveType(PropertyInfo propertyInfo, StringBuilder sb, object element,
+            string identationInArray)
+        {
+            if (GetFinalTypes().Contains(element.GetType()))
+            {
+                if (TryFormater(propertyInfo, element, out var newLine))
+                {
+                    sb.AppendLine(identationInArray + newLine);
+                }
+                else
+                {
+                    sb.AppendLine(identationInArray + element);
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private static Type[] GetFinalTypes()
@@ -126,19 +148,17 @@ namespace ObjectPrinting.Solved
             return finalTypes;
         }
 
-        private bool TryFormater(PropertyInfo o, object obj, out string s)
+        private bool TryFormater(PropertyInfo o, object value, out string s)
         {
             s = null;
             var changed = false;
-            var value = o.GetValue(obj);
-            s = null;
-            if (GetConfig.TypeCultures.TryGetValue(o.PropertyType, out var cultureInfo))
+            if (GetConfig.TypeCultures.TryGetValue(value.GetType(), out var cultureInfo))
             {
                 s = ((IFormattable)value).ToString(null, cultureInfo);
                 changed = true;
             }
 
-            if (GetConfig.TypeSerializers.TryGetValue(o.PropertyType, out var formatter))
+            if (GetConfig.TypeSerializers.TryGetValue(value.GetType(), out var formatter))
             {
                 s = formatter(s ?? value);
                 changed = true;

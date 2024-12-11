@@ -90,5 +90,46 @@ namespace ObjectPrinting.Solved.Tests
             
             Approvals.Verify(printer.PrintToString(house));
         }
+        
+        
+        [UseReporter(typeof(DiffReporter))]
+        [Test]
+        public void ObjectPrinter_Can_WorkWithCombination()
+        {
+            var person = new Person { Name = "Alex", Age = 19, Height = 12.1};
+
+        
+            var printer = ObjectPrinter.For<Person>()
+                .Excluding<Guid>()
+                .Printing<double>().Using(new CultureInfo("ru-RU"))
+                .Printing(p => p.Name).Using(x => $"новое имя челика {x}")
+                .Printing(p => p.Name).TrimmedToLength(2)
+                .Excluding(p => p.Age);
+        
+            var s1 = printer.PrintToString(person);
+            Approvals.Verify(s1);
+        }
+
+        [UseReporter(typeof(DiffReporter))]
+        [Test]
+        public void ObjectPrinter_Can_WorkWithArray()
+        {
+            var shop = Shop.GetShop();
+
+            var s = shop.PrintToString(x => x.Printing(s => s.NameShop).Using(x => $"ваще прикольный магаз {x}"));
+            
+            Approvals.Verify(s);
+        }
+        
+        [UseReporter(typeof(DiffReporter))]
+        [Test]
+        public void ObjectPrinter_Can_WithPrimitiveTypes()
+        {
+            var shop = TestTypePropetries.GetTestType();
+
+            var s = shop.PrintToString();
+            
+            Approvals.Verify(s);
+        }
     }
 }
