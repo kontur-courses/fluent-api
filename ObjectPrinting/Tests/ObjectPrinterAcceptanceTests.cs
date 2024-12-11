@@ -53,7 +53,6 @@ public class ObjectPrinterAcceptanceTests
         var s = printer.PrintToString(person);
         
         Approvals.Verify(s);
-        Console.WriteLine(s);
     }
     
     [Test]
