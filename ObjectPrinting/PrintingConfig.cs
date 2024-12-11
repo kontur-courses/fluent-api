@@ -28,6 +28,8 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> WithMaxRecursionDepth(int maxRecursionDepth)
         {
+            if (maxRecursionDepth < 0)
+                throw new ArgumentOutOfRangeException($"{nameof(maxRecursionDepth)} must not be less than 0");
             MaxRecursionDepth = maxRecursionDepth;
             return this;
         }
