@@ -12,8 +12,7 @@ public class PrintingConfig<TOwner>
 {
     private readonly HashSet<Type> finalTypes =
     [
-        typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
     ];
     private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializationMethods = [];
@@ -106,7 +105,9 @@ public class PrintingConfig<TOwner>
 
     private bool TrySerializeFinalType(object obj, out string? serializedFinalType)
     {
-        if (!finalTypes.Contains(obj.GetType()))
+        var type = obj.GetType();
+        
+        if (!finalTypes.Contains(type) && !type.IsPrimitive)
         {
             serializedFinalType = null;
             return false;
@@ -114,12 +115,12 @@ public class PrintingConfig<TOwner>
         
         serializedFinalType = obj switch
         {
-            IFormattable format when typeCultures.TryGetValue(obj.GetType(), out var formatProvider) =>
+            IFormattable format when typeCultures.TryGetValue(type, out var formatProvider) =>
                 format.ToString(null, formatProvider),
             IFormattable format => 
                 format.ToString(null, CultureInfo.InvariantCulture),
             string str => str,
-            _ => (string)obj
+            _ => Convert.ToString(obj)
         };
 
         serializedFinalType += Environment.NewLine;
@@ -189,7 +190,9 @@ public class PrintingConfig<TOwner>
 
         if (propertyLengths.TryGetValue(property.Name, out var length))
         {
-            return ((string)propertyValue!)[..length] + Environment.NewLine;
+            var stringPropertyValue = Convert.ToString(propertyValue)!;
+            
+            return stringPropertyValue[..length] + Environment.NewLine;
         }
 
         if (propertyCultures.TryGetValue(property.Name, out var formatProvider) && propertyValue is IFormattable format)
