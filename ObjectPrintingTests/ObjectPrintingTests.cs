@@ -1,76 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
+using ObjectPrinting;
+using ObjectPrinting.Tests;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrintingTests;
+
+public class ObjectPrintingTests
 {
     public class ObjectPrinterTests
     {
-        private Person person;
-
-        [SetUp]
-        public void Setup()
-        {
-            person = new Person
-                {Name = "Monkey", SecondName = "D.Luffy", NameOfPet = "Usopp", Height = 1234567.89, Age = 17};
-        }
+        private static readonly Person Person = new()
+            {Name = "Monkey", SecondName = "D.Luffy", NameOfPet = "Usopp", Height = 168.8, Age = 17};
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithOutExcludingType()
+        public void ObjetctPrinter_ShouldCorrectPrint_WithExcludingType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<string>();
-            string result = printer.PrintToString(person);
-            result.Should().NotContain(person.Name)
-                .And.NotContain(person.SecondName)
-                .And.NotContain(person.NameOfPet);
+
+            printer.PrintToString(Person).Should().NotContain(Person.Name)
+                .And.NotContain(Person.SecondName)
+                .And.NotContain(Person.NameOfPet);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithOutExcludingField()
+        public void ObjetctPrinter_ShouldCorrectPrint_WithExcludingField()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude(p => p.SecondName);
-            string result = printer.PrintToString(person);
-            result.Should().NotContain(person.SecondName);
+
+            printer.PrintToString(Person).Should().NotContain(Person.SecondName);
         }
 
         [Test]
         public void ObjetctPrinter_ShouldCorrectPrint_WithSelectedCulture()
         {
-            var printer = ObjectPrinter.For<Person>()
-                .SelectCulture<double>(new CultureInfo("fr-FR"));
-            string result = printer.PrintToString(person);
-            result.Should().Contain("1\u00a0234\u00a0567,890");
+            var printerEn = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(new CultureInfo("en-US"));
+            var printerRu = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(new CultureInfo("ru-Ru"));
+
+            printerEn.PrintToString(Person).Should().Contain("168.8");
+            printerRu.PrintToString(Person).Should().Contain("168,8");
         }
 
         [Test]
         public void ObjetctPrinter_ShouldCorrectPrint_WithSpecialSerializeType()
         {
             var printer = ObjectPrinter.For<Person>()
-                .SerializeTypeWithSpecial<double>((x) => $"~~ {x} ~~");
-            string result = printer.PrintToString(person);
-            result.Should().Contain("~~ 1234567,89 ~~");
+                .Printing<double>().Using((x) => $"~~ {x} ~~");
+
+            printer.PrintToString(Person).Should().Contain("~~ 168,8 ~~");
         }
 
         [Test]
         public void ObjetctPrinter_ShouldCorrectPrint_WithSpecialSerializeField()
         {
             var printer = ObjectPrinter.For<Person>()
-                .SelectField(p => p.Age).Using(x => 22.ToString());
-            string result = printer.PrintToString(person);
-            result.Should().Contain("22");
+                .Printing(p => p.Age).Using(x => 22.ToString());
+
+            printer.PrintToString(Person).Should().Contain("22");
         }
 
         [Test]
         public void ObjetctPrinter_ShouldCorrectPrint_WithTrimmedStringField()
         {
             var printer = ObjectPrinter.For<Person>()
-                .SelectField(p => p.SecondName).TrimmedToLength(1);
-            string result = printer.PrintToString(person);
-            result.Should().Contain("D").And.NotContain("D.Luffy");
+                .Printing(p => p.SecondName).TrimmedToLength(1);
+
+            printer.PrintToString(Person).Should().Contain("D").And.NotContain("D.Luffy");
         }
 
         [Test]
@@ -78,8 +77,8 @@ namespace ObjectPrinting.Tests
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<Person>();
-            string result = printer.PrintToString(person);
-            result.Should().BeEmpty();
+
+            printer.PrintToString(Person).Should().BeEmpty();
         }
 
         [Test]
@@ -104,7 +103,7 @@ namespace ObjectPrinting.Tests
         {
             var dict = new Dictionary<string, Person>
             {
-                {"Archeologist", person},
+                {"Archeologist", Person},
             };
             var expected = "\tDictionary`2{" + Environment.NewLine +
                            "\t\tArcheologist : Person" + Environment.NewLine +
@@ -112,7 +111,7 @@ namespace ObjectPrinting.Tests
                            "\t\t\tName = Monkey" + Environment.NewLine +
                            "\t\t\tSecondName = D.Luffy" + Environment.NewLine +
                            "\t\t\tNameOfPet = Usopp" + Environment.NewLine +
-                           "\t\t\tHeight = 1234567,89" + Environment.NewLine +
+                           "\t\t\tHeight = 168,8" + Environment.NewLine +
                            "\t\t\tAge = 17" + Environment.NewLine +
                            "\t\t\tCountsOfTeamMembers = null" + Environment.NewLine +
                            "\t\t\tAlliedTeams = null" + Environment.NewLine +
@@ -152,14 +151,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void ObjetctPrinter_ShouldCorrectPrint_WithLContainsPerson()
         {
-            List<Person> members = new List<Person> {person};
+            List<Person> members = new List<Person> {Person};
             var expected = "\tList`1{" + Environment.NewLine +
                            "\t\t[0] = Person" + Environment.NewLine +
                            "\t\t\tId = 00000000-0000-0000-0000-000000000000" + Environment.NewLine +
                            "\t\t\tName = Monkey" + Environment.NewLine +
                            "\t\t\tSecondName = D.Luffy" + Environment.NewLine +
                            "\t\t\tNameOfPet = Usopp" + Environment.NewLine +
-                           "\t\t\tHeight = 1234567,89" + Environment.NewLine +
+                           "\t\t\tHeight = 168,8" + Environment.NewLine +
                            "\t\t\tAge = 17" + Environment.NewLine +
                            "\t\t\tCountsOfTeamMembers = null" + Environment.NewLine +
                            "\t\t\tAlliedTeams = null" + Environment.NewLine +

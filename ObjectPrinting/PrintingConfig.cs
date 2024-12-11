@@ -33,16 +33,11 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
 
-            var specialSerialization = CheckSerializationConditions(obj, identation);
+            var specialSerialization = TryGetSerializationString(obj, nestingLevel);
             if (specialSerialization != null)
                 return specialSerialization;
-
-            if (obj is IDictionary dictionary)
-                return PrintDictionary(dictionary, nestingLevel);
-            if (obj is IEnumerable collection)
-                return PrintCollection(collection, nestingLevel);
 
             proccesedObjects.Add(obj);
             var sb = new StringBuilder();
@@ -50,36 +45,35 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                string property = indentation + propertyInfo.Name + " = ";
                 if (excludedTypes.Contains(propertyInfo.PropertyType) || excludedFields.Contains(propertyInfo))
                     continue;
                 if (lengthOfProperties.TryGetValue(propertyInfo, out var length))
                 {
                     var substring = propertyInfo.GetValue(obj).ToString().Substring(0, length);
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              substring + Environment.NewLine);
+                    sb.Append(property + substring + Environment.NewLine);
                     continue;
                 }
 
+                string serializedObj;
                 if (alternativeSerializeProperties.TryGetValue(propertyInfo, out var propertyFunc))
-
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              propertyFunc(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    serializedObj = property + propertyFunc(propertyInfo.GetValue(obj)) + Environment.NewLine;
                 else
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1));
+                    serializedObj = property + PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+
+                sb.Append(serializedObj);
             }
 
             return sb.ToString();
         }
 
 
-        private string CheckSerializationConditions(object obj, string identation)
+        private string TryGetSerializationString(object? obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
             if (excludedTypes.Contains(obj.GetType()))
-                return "";
+                return string.Empty;
             if (proccesedObjects.Contains(obj))
                 return "Cyclic reference" + Environment.NewLine;
             if (alternativeSerializeTypes.TryGetValue(obj.GetType(), out var serializeFunc))
@@ -87,9 +81,12 @@ namespace ObjectPrinting
 
             if (obj is IFormattable formObj && alternativeCulture.TryGetValue(obj.GetType(), out var newCulture))
                 return formObj.ToString("N", newCulture) + Environment.NewLine;
-
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+            if (obj is IDictionary dictionary)
+                return PrintDictionary(dictionary, nestingLevel);
+            if (obj is IEnumerable collection)
+                return PrintCollection(collection, nestingLevel);
 
             return null;
         }
@@ -97,27 +94,27 @@ namespace ObjectPrinting
         private string PrintCollection(IEnumerable collection, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
 
-            sb.Append(identation + collection.GetType().Name + "{" + Environment.NewLine);
+            sb.Append(indentation + collection.GetType().Name + "{" + Environment.NewLine);
             int index = 0;
             foreach (var item in collection)
             {
-                sb.Append(identation + "\t[" + index + "] = ");
+                sb.Append(indentation + "\t[" + index + "] = ");
                 sb.Append(GetStringWithNestingLevel(item, nestingLevel + 2).Trim());
                 sb.Append(Environment.NewLine);
                 index++;
             }
 
-            sb.Append(identation + "}");
+            sb.Append(indentation + "}");
             return sb.ToString();
         }
 
         private string PrintDictionary(IDictionary dictionary, int nestingLevel)
         {
             var sb = new StringBuilder();
-            var identation = new string('\t', nestingLevel + 1);
-            sb.Append(identation + dictionary.GetType().Name + "{" + Environment.NewLine);
+            var indentation = new string('\t', nestingLevel + 1);
+            sb.Append(indentation + dictionary.GetType().Name + "{" + Environment.NewLine);
             foreach (DictionaryEntry element in dictionary)
             {
                 var key = GetStringWithNestingLevel(element.Key, nestingLevel + 1);
@@ -125,17 +122,17 @@ namespace ObjectPrinting
                 sb.Append(key + " : " + value + Environment.NewLine);
             }
 
-            sb.Append(identation + "}");
+            sb.Append(indentation + "}");
             return sb.ToString();
         }
 
         private string GetStringWithNestingLevel(object obj, int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             if (finalTypes.Contains(obj.GetType()))
-                return identation + obj;
+                return indentation + obj;
             var result = PrintToString(obj, nestingLevel);
-            return Environment.NewLine + identation + result;
+            return Environment.NewLine + indentation + result;
         }
 
         public PrintingConfig<TOwner> Exclude<T>()
@@ -151,19 +148,12 @@ namespace ObjectPrinting
             return this;
         }
 
-        public PrintingConfig<TOwner> SerializeTypeWithSpecial<T>(Func<object, string> serializeFunc)
+        public PropertyPrintingConfig<TOwner, TPrintType> Printing<TPrintType>()
         {
-            alternativeSerializeTypes[typeof(T)] = o => serializeFunc((T) o);
-            return this;
+            return new PropertyPrintingConfig<TOwner, TPrintType>(this, null);
         }
 
-        public PrintingConfig<TOwner> SelectCulture<T>(CultureInfo cultureInfo)
-        {
-            alternativeCulture[typeof(T)] = cultureInfo;
-            return this;
-        }
-
-        public PropertyPrintingConfig<TOwner, TPropType> SelectField<TPropType>(
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> func)
         {
             var propertyInfo = GetPropertyInfo(func);
@@ -179,14 +169,24 @@ namespace ObjectPrinting
             return propertyInfo;
         }
 
-        public void AddSerializedProperty<T>(PropertyInfo propertyInfo, Func<T, string> serializeFunc)
+        internal void AddSerializedProperty<T>(PropertyInfo propertyInfo, Func<T, string> serializeFunc)
         {
             alternativeSerializeProperties[propertyInfo] = o => serializeFunc((T) o);
         }
 
-        public void AddLengthOfProperty(PropertyInfo propertyInfo, int length)
+        internal void AddLengthOfProperty(PropertyInfo propertyInfo, int length)
         {
             lengthOfProperties[propertyInfo] = length;
+        }
+
+        internal void AddAlternativeCulture(Type type, CultureInfo cultureInfo)
+        {
+            alternativeCulture[type] = cultureInfo;
+        }
+
+        internal void AddSerializedType<T>(Func<T, string> serializeFunc)
+        {
+            alternativeSerializeTypes[typeof(T)] = o => serializeFunc((T) o);
         }
     }
 }
