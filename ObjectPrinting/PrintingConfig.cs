@@ -96,23 +96,7 @@ namespace ObjectPrinting
                 typeof(DateTime), typeof(TimeSpan)
             };
             if (finalTypes.Contains(obj.GetType()))
-            {
-                if (obj is string stringValue)
-                    return string.Concat(
-                        stringValue.AsSpan(0, Math.Min(MaxStringLength, stringValue.Length)),
-                        Environment.NewLine);
-                
-                if (obj is double doubleValue)
-                    return doubleValue.ToString(DoubleCultureInfo) + Environment.NewLine;
-                
-                if (obj is float floatValue)
-                    return floatValue.ToString(FloatCultureInfo) + Environment.NewLine;
-                
-                if (obj is DateTime dateTimeValue)
-                    return dateTimeValue.ToString(DateTimeCultureInfo) + Environment.NewLine;
-                
-                return obj + Environment.NewLine;
-            }
+                return SerializeFinalType(obj);
             
             if (nestingLevel > MaxRecursionDepth)
                 return "null" + Environment.NewLine;
@@ -123,23 +107,7 @@ namespace ObjectPrinting
             sb.AppendLine($"{type.Name}:");
 
             if (obj is IEnumerable enumerable)
-            {
-                var bracketIndentation = new string('\t', nestingLevel);
-                sb.AppendLine($"{bracketIndentation}[");
-                foreach (var element in enumerable)
-                {
-                    sb.Append($"{bracketIndentation}-\t");
-                    var valueString = String.Empty;
-                    if (_typeConverters.TryGetValue(element.GetType(), out var typeConverter))
-                        valueString =
-                            $"{typeConverter.DynamicInvoke(element) as string ?? "null"}{Environment.NewLine}";
-                    else
-                        valueString = PrintToString(element, nestingLevel + 1);
-                    sb.Append($"{valueString}");
-                }
-                sb.AppendLine($"{bracketIndentation}]");
-                return sb.ToString();
-            }
+                return SerializeEnumerable(sb, enumerable, nestingLevel);
             
             foreach (var propertyInfo in type.GetProperties())
             {
@@ -150,6 +118,44 @@ namespace ObjectPrinting
                 }
             }
             return sb.ToString();
+        }
+
+        private string SerializeEnumerable(StringBuilder sb, IEnumerable enumerable, int nestingLevel)
+        {
+            var bracketIndentation = new string('\t', nestingLevel);
+            sb.AppendLine($"{bracketIndentation}[");
+            foreach (var element in enumerable)
+            {
+                sb.Append($"{bracketIndentation}-\t");
+                var valueString = String.Empty;
+                if (_typeConverters.TryGetValue(element.GetType(), out var typeConverter))
+                    valueString =
+                        $"{typeConverter.DynamicInvoke(element) as string ?? "null"}{Environment.NewLine}";
+                else
+                    valueString = PrintToString(element, nestingLevel + 1);
+                sb.Append($"{valueString}");
+            }
+            sb.AppendLine($"{bracketIndentation}]");
+            return sb.ToString();
+        }
+
+        private string SerializeFinalType(object obj)
+        {
+            if (obj is string stringValue)
+                return string.Concat(
+                    stringValue.AsSpan(0, Math.Min(MaxStringLength, stringValue.Length)),
+                    Environment.NewLine);
+                
+            if (obj is double doubleValue)
+                return doubleValue.ToString(DoubleCultureInfo) + Environment.NewLine;
+                
+            if (obj is float floatValue)
+                return floatValue.ToString(FloatCultureInfo) + Environment.NewLine;
+                
+            if (obj is DateTime dateTimeValue)
+                return dateTimeValue.ToString(DateTimeCultureInfo) + Environment.NewLine;
+                
+            return obj + Environment.NewLine;
         }
 
         private string GetValueString(PropertyInfo propertyInfo, object obj, int nestingLevel)
