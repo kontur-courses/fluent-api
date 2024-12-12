@@ -111,13 +111,47 @@ namespace ObjectPrinting.Tests
             Approvals.Verify(printer.PrintToString(person));
         }
 
+        [Test]
+        public void ObjectPrinter_ShouldCorrectPrintArray()
+        {
+            var list = new[] { new Person { Name = "Mary" }, new Person { Name = "Alice" } };
+
+            var printer = ObjectPrinter.For<Person[]>();
+
+            Approvals.Verify(printer.PrintToString(list));
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldCorrectPrintList()
+        {
+            var list = new List<Person> { new Person { Name = "Mary" }, new Person { Name = "Alice" } };
+
+            var printer = ObjectPrinter.For<List<Person>>();
+
+            Approvals.Verify(printer.PrintToString(list));
+        }
+
+        [Test]
+        public void ObjectPrinter_ShouldCorrectPrintDictionary()
+        {
+            var list = new Dictionary<string, Person> 
+            {
+                { "person1", new Person { Name = "Mary" } },
+                { "person2",  new Person { Name = "Alice" } } 
+            };
+
+            var printer = ObjectPrinter.For<Dictionary<string, Person>>();
+
+            Approvals.Verify(printer.PrintToString(list));
+        }
+
         [Test] //7
         public void ObjectPrinter_ShouldCorrectHandleCycleReference()
         {
             var first = new A();
             var second = new B();
-            first.cycle = second;
-            second.cycle = first;
+            first.Cycle = second;
+            second.Cycle = first;
 
             var printer = ObjectPrinter.For<A>();
             Func<string> act = () => printer.PrintToString(first);
@@ -129,12 +163,12 @@ namespace ObjectPrinting.Tests
 
     public class A
     {
-        public string a => "Hello";
-        public B cycle;
+        public string AField => "Hello";
+        public B Cycle;
     }
     public class B
     {
-        public int b => 10;
-        public A cycle;
+        public int BField => 10;
+        public A Cycle;
     }
 }

@@ -1,5 +1,5 @@
 ﻿A
-	a = Hello
-	cycle = B
-		b = 10
-		cycle = Cycle Reference
+	AField = Hello
+	Cycle = B
+		BField = 10
+		Cycle = Cycle Reference

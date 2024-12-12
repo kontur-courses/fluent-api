@@ -1,28 +1,41 @@
-using FluentAssertions.Equivalency;
-using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
+    public class ArrayPrintingConfig<T> : PrintingConfig<T[]>
+    {
+        public override string PrintToString(T[] obj)
+        {
+            var sb = new StringBuilder();
+            var type = obj.GetType();
+            sb.AppendLine(type.Name);
+            for (var i = 0; i < obj.Length; i++)
+            {
+                sb.Append($"[{i}]" + base.PrintToString(obj[i], 1));
+            }
+            return sb.ToString();
+        }
+    }
     public class PrintingConfig<TOwner>
     {
-        protected HashSet<Type> excludedTypes = new();
-        protected HashSet<string> excludedProperties = new();
-        protected Dictionary<string, Func<object, string>> propertySerializers = new();
-        protected Dictionary<Type, Func<object, string>> propertyTypeSerializers = new();
+        protected HashSet<Type> excludedTypes = [];
+        protected HashSet<string> excludedProperties = [];
+        protected Dictionary<string, Func<object, string>> propertySerializers = [];
+        protected Dictionary<Type, Func<object, string>> propertyTypeSerializers = [];
+        private HashSet<Type> finalTypes = new HashSet<Type>()
+            {
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            };
 
-        private HashSet<object> visited = new();
+        private HashSet<object> visited = [];
 
-        public PrintingConfig()
-        {
-            excludedTypes = new HashSet<Type>();
-        }
+        public PrintingConfig() {}
 
         protected PrintingConfig(PrintingConfig<TOwner> clone)
         {
@@ -85,39 +98,53 @@ namespace ObjectPrinting
             return memberExpress.Member.Name;
         }
 
-
-        public string PrintToString(TOwner obj)
+        public virtual string PrintToString(TOwner obj)
         {
             visited = new();
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        protected string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
 
             if (visited.Contains(obj)) 
                 return "Cycle Reference" + Environment.NewLine;
-          
+
+            
             var flags = BindingFlags.Public | BindingFlags.Instance;
             var sb = new StringBuilder();
             var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(type.Name.Split('`')[0]);
             visited.Add(obj);
+
+            if (obj is ICollection) return PrintToStringCollection(obj as ICollection, nestingLevel, sb);
+
             foreach (var propertyInfo in type.GetProperties(flags))
             {
-                var propName = propertyInfo.Name;
                 var propType = propertyInfo.PropertyType;
+                var propName = propertyInfo.Name;
                 var value = propertyInfo.GetValue(obj) ?? "null";
                 sb.Append(PropertyToString(propName, propType, value, nestingLevel));
             }
             foreach (var propertyInfo in type.GetFields(flags))
             {
-                var propName = propertyInfo.Name;
                 var propType = propertyInfo.FieldType;
+                var propName = propertyInfo.Name;
                 var value = propertyInfo.GetValue(obj) ?? "null";
                 sb.Append(PropertyToString(propName, propType, value, nestingLevel));
+            }
+            return sb.ToString().Trim();
+        }
+
+        private string PrintToStringCollection(ICollection obj, int nestingLevel, StringBuilder sb)
+        {
+            var id = 0;
+            foreach (var item in obj)
+            {
+                sb.Append($"\t[{id}] = " + PrintToString(item, nestingLevel + 1) + Environment.NewLine);
+                id++;
             }
             return sb.ToString().Trim();
         }
@@ -129,26 +156,25 @@ namespace ObjectPrinting
             int nestingLevel)
         {
             var identation = new string('\t', nestingLevel + 1);
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid)
-            };
 
             if (!excludedTypes.Contains(propType) && !excludedProperties.Contains(propName))
             {
                 Func<object, string> serializer;
+                var stringStart = identation + propName + " = ";
+                var stringEnd = Environment.NewLine;
+                string propValueString;
                 if (propertySerializers.TryGetValue(propName, out serializer) ||
                     propertyTypeSerializers.TryGetValue(propType, out serializer))
                 {
-                    return identation + propName + " = " + serializer(value) + Environment.NewLine;
+                    propValueString = serializer(value);
                 }
-                if (finalTypes.Contains(propType) || value == "null")
+                else
                 {
-                    return identation + propName + " = " + value.ToString() + Environment.NewLine;
+                    propValueString = (finalTypes.Contains(propType) || value == "null") 
+                        ? value.ToString()
+                        : PrintToString(value, nestingLevel + 1);
                 }
-
-                return identation + propName + " = " + PrintToString(value, nestingLevel + 1) + Environment.NewLine;
+                return stringStart + propValueString + stringEnd;
             }
             return "";
         }
