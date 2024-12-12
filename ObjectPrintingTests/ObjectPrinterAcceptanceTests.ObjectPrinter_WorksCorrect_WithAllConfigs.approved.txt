@@ -1,0 +1,7 @@
+﻿Person
+	Name = Jo
+	Height = 123.4
+	Children = null
+	Weigths = null
+	Dict = null
+

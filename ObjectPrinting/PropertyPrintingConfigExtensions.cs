@@ -9,9 +9,11 @@ public static class PropertyPrintingConfigExtensions
         return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 
-    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
+    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        this IPropertyPrintingConfig<TOwner, string> propConfig,
         int maxLen)
     {
-        return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+        propConfig.ParentConfig.MaxLengths.TryAdd(propConfig.PropertyName, maxLen);
+        return propConfig.ParentConfig;
     }
 }

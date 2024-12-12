@@ -1,0 +1,24 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = John
+	Height = 123.4
+	Age = 25
+	Children = [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Child
+			Height = 0
+			Age = 0
+			Children = [
+				Cycle dependency: ObjectPrintingTests.Person
+			]
+			Weigths = null
+			Dict = null
+	]
+	Weigths = null
+	Dict = {
+		Name: 1
+		Abc: 54
+		Key: 3
+	}
+
