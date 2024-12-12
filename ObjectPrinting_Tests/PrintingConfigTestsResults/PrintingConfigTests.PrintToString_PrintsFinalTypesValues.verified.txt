@@ -1,0 +1,10 @@
+﻿ClassWithFinalTypeProperties
+	Boolean = False
+	Int32 = 123456
+	Int64 = 123456
+	Single = 123.456
+	Double = 123.456
+	Guid = 61c3ee87-2434-4464-ba40-0226fd5fcef9
+	DateTime = 12/11/2024 22:35:37
+	TimeSpan = 739230.22:35:37.2380454
+	String = abc

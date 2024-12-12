@@ -1,0 +1,10 @@
+﻿Dictionary
+	{0} = KeyValuePair
+		Key = abc
+		Value = 0
+	{1} = KeyValuePair
+		Key = def
+		Value = 1
+	{2} = KeyValuePair
+		Key = ghi
+		Value = 2
