@@ -13,5 +13,10 @@ namespace ObjectPrinting.Tests
         
         public Person? OtherPerson { get; set; }
         public List<Person> Persons { get; set; }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Name, Surname, Height, Age);
+        }
     }
 }
