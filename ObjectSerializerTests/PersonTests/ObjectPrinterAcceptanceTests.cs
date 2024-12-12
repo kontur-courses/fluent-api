@@ -4,7 +4,7 @@ using ApprovalTests.Reporters;
 using ObjectSerializer;
 using ObjectSerializerTests.ClassesToSerialize;
 
-namespace ObjectSerializerTests;
+namespace ObjectSerializerTests.PersonTests;
 
 [TestFixture]
 public class Tests
@@ -13,7 +13,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanExclude_FieldsAndPropertiesOfType()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .Exclude<Guid>();
@@ -25,7 +26,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanConfigPrint_FieldsAndPropertiesOfType()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .For<Guid>().Using(p => $"Guid:{p.ToString()}");
@@ -37,7 +39,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanApplyCulture_ForTypesHavingCulture()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160.28, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .For<double>()
@@ -50,11 +53,12 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanConfigPrint_ForFieldOrProperty()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .For(p => p.Height)
-                .Using(h => $"{h / 100}m {h % 100}cm");
+                .Using(h => $"{h / 100} m");
 
         Approvals.Verify(printer.PrintToString(person));
     }
@@ -63,7 +67,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanTrim_StringFieldOrProperty()
     {
-        var person = new Person(Guid.NewGuid(), "Ахмед Мухаммед Абдулрахман аль-Халиди", 180, 23);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Ахмед Мухаммед Абдулрахман аль-Халиди", 180, 23);
 
         var printer = ObjectPrinter.For<Person>()
             .For(p => p.Name)
@@ -76,7 +81,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanExclude_FieldOrProperty()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .Exclude(p => p.Height);
@@ -88,9 +94,11 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanProcess_CyclicalLinks()
     {
-        var waifu = new MarriedPerson("Мисато Кацураги", 162, 29);
+        var guid1 = new Guid("08406af6-61a9-434f-aefe-f99a10cdadfd");
+        var guid2 = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
 
-        var skuf = new MarriedPerson("Вася", 160, 28);
+        var waifu = new MarriedPerson(guid1, "Мисато Кацураги", 162, 29);
+        var skuf = new MarriedPerson(guid2, "Вася", 160, 18);
 
         waifu.SetPartner(skuf);
         skuf.SetPartner(waifu);
@@ -113,7 +121,8 @@ public class Tests
     [Test]
     public void ObjectPrinter_CanApply_AllConfigurationMethods()
     {
-        var person = new Person("Вася", 160, 18);
+        var guid = new Guid("07406af6-61a9-434f-aefe-f99a10cdadfd");
+        var person = new Person(guid, "Вася", 160, 18);
 
         var printer = ObjectPrinter.For<Person>()
             .Exclude<Guid>()

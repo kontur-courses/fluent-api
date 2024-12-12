@@ -1,0 +1,11 @@
+﻿MarriedPerson
+	Partner = 
+		MarriedPerson
+			Id = "08406af6-61a9-434f-aefe-f99a10cdadfd"
+			Name = "Мисато Кацураги"
+			Height = 162
+			Age = 29
+	Id = "07406af6-61a9-434f-aefe-f99a10cdadfd"
+	Name = "Вася"
+	Height = 160
+	Age = 18

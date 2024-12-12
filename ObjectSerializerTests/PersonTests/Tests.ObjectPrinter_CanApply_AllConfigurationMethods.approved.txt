@@ -1,0 +1,3 @@
+﻿Person
+	Name = "Вася"
+	Height = 160

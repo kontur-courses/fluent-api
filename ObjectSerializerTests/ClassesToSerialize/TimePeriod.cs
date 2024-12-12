@@ -2,7 +2,7 @@
 
 public class TimePeriod
 {
-    private TimePeriod(Guid id, DateTime startTime, DateTime endTime,
+    public TimePeriod(Guid id, DateTime startTime, DateTime endTime,
         int totalPlaces, int bookedPlaces = 0)
     {
         if (endTime <= startTime)

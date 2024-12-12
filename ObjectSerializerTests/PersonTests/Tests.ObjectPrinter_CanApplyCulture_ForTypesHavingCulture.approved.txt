@@ -1,0 +1,5 @@
+﻿Person
+	Id = "07406af6-61a9-434f-aefe-f99a10cdadfd"
+	Name = "Вася"
+	Height = 160,28
+	Age = 18

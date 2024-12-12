@@ -14,10 +14,9 @@ public class FieldPrintConfig<TOwner, TField> : IFieldPrintConfig<TOwner, TField
         this.memberInfo = memberInfo;
     }
 
-    public IPrintingConfig<TOwner> TrimToLength(int length)
+    public IPrintingConfig<TOwner> TrimToLength(uint length)
     {
-        AddFuncInStorage(obj => obj.ToString()
-            .Substring(0, length));
+        printingConfig.FieldLengths.Add(memberInfo, length);
 
         return printingConfig;
     }
