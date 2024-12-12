@@ -1,0 +1,13 @@
+﻿Flat
+	Floor = 5
+	ApartmentNumber = 101
+	Rooms = List`1:
+		- Room
+			Name = Living Room
+			Area = 20,5
+		- Room
+			Name = Bedroom
+			Area = 15,3
+		- Room
+			Name = Kitchen
+			Area = 10
