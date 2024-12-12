@@ -1,0 +1,4 @@
+﻿Person1
+	Parent = Person2
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = null

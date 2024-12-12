@@ -1,41 +1,66 @@
+using ObjectPrinting;
+using System.Globalization;
+using System.Linq.Expressions;
 using System;
-using System.Linq;
-using System.Text;
+using System.Reflection;
 
-namespace ObjectPrinting
+
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    private readonly PrintingConfigStorage _config = new();
+
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        return new PropertyPrintingConfig<TOwner, TPropType>(this);
+    }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var propertyName = ReflectionHelper.GetProperty(memberSelector);
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, propertyName);
+    }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+    public PrintingConfig<TOwner> Excluding<TPropType>()
+    {
+        _config.ExcludedTypes.Add(typeof(TPropType));
+        return this;
+    }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+    public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+    {
+        var property = ReflectionHelper.GetProperty(memberSelector);
+        _config.ExcludedProperties.Add(property);
+        return this;
+    }
+
+    public void SpecifyTheCulture<TType>(CultureInfo culture)
+    {
+        _config.TypeCultures[typeof(TType)] = culture;
+    }
+
+    public void SpecifyTheCulture(CultureInfo culture, PropertyInfo property)
+    {
+        _config.PropertyCultures[property] = culture;
+    }
+
+    public void AddSerializationMethod<TType>(Func<TType, string> serializationMethod)
+    {
+        _config.TypeSerializationMethods[typeof(TType)] = obj => serializationMethod((TType)obj);
+    }
+
+    public void AddSerializationMethod<TType>(Func<TType, string> serializationMethod, PropertyInfo property)
+    {
+        _config.PropertySerializationMethods[property] = obj => serializationMethod((TType)obj);
+    }
+
+    public void AddLengthProperty(PropertyInfo property, int trimLength)
+    {
+        _config.PropertyLengths[property] = trimLength;
+    }
+
+    public string PrintToString(TOwner obj)
+    {
+        var serializer = new ObjectSerializer<TOwner>(_config);
+        return serializer.Serialize(obj);
     }
 }
