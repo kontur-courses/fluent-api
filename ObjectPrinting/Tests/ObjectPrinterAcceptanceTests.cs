@@ -13,20 +13,19 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19, Height = 180, Id = new Guid() };
 
-            var printer = ObjectPrinter.For<Person>()
+            var printer = ObjectPrinter.For<Person>();
                 //1. Исключить из сериализации свойства определенного типа
-                .Exclude<int>()
+                printer.Exclude<int>();
                 //2. Указать альтернативный способ сериализации для определенного типа
-                .Serialize<string>().With(str => str.ToUpper())
+                printer.Serialize<string>().With(str => str.ToUpper());
                 //3. Для числовых типов указать культуру
-                .SetCultureFor<double>(CultureInfo.InvariantCulture)
+                printer.SetCultureFor<double>(CultureInfo.InvariantCulture);
                 //4. Настроить сериализацию конкретного свойства
-                .Serialize<string>(p => p.Name).With(name => name.ToUpper())
+                printer.Serialize<string>(p => p.Name).With(name => name.ToUpper());
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                .TrimString(p => p.Name, 10)
+                printer.TrimString(p => p.Name, 10);
                 //6. Исключить из сериализации конкретного свойства
-                .Exclude(p => p.Age)
-                ;
+                printer.Exclude(p => p.Age);
 
             var s1 = printer.PrintToString(person);
             Console.WriteLine(s1);

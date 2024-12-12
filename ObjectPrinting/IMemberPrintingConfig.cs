@@ -3,10 +3,9 @@ using System.Linq.Expressions;
 
 namespace ObjectPrinting;
 
-public interface IMemberPrintingConfig<TOwner, TFieldType>
+public interface IMemberPrintingConfig<TOwner, out TFieldType>
 {
     IPrintingConfig<TOwner> Config { get; }
 
     IPrintingConfig<TOwner> With(Func<TFieldType, string> serializer);
-    IPrintingConfig<TOwner> With(Expression<Func<TOwner, TFieldType>> expression, Func<TFieldType, string> serializer);
 }
