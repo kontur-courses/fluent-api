@@ -1,6 +1,5 @@
 using System.Globalization;
 using FluentAssertions;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting.Tests;
 
@@ -13,11 +12,6 @@ public class PrintingConfigTests
         Email = "alex@gmail.com",
         Height = 185.5
     };
-    
-    [SetUp]
-    public void Setup()
-    {
-    }
 
     [Test]
     public void Excluding_MustExcludeFieldsAndTypePropertiesFromSerialization()

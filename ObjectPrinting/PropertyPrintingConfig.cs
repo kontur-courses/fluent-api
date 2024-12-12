@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Reflection;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -31,29 +30,29 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> Using(CultureInfo? culture)
         {
             return AddAlternativeSerializationMethod(obj =>
-                obj is IFormattable formattable && culture != null
-                    ? formattable.ToString(null, culture)
+                obj is IFormattable formatted && culture != null
+                    ? formatted.ToString(null, culture)
                     : obj.ToString());
         }
 
-        private PrintingConfig<TOwner> AddAlternativeSerializationMethod(Func<object, string> serializator)
+        private PrintingConfig<TOwner> AddAlternativeSerializationMethod(Func<object, string?> serializer)
         {
             if (member is not null)
             {
                 return new PrintingConfig<TOwner>(printingConfig.Settings with
                 {
-                    MethodsForSerializingPropertiesAndFields = printingConfig.Settings.MethodsForSerializingPropertiesAndFields.Add(
+                    AlternativeSerializationOfFieldsAndProperties = printingConfig.Settings.AlternativeSerializationOfFieldsAndProperties.Add(
                         member,
-                        serializator)
+                        serializer)
                 });
             }
-            if (type != null)
+            if (type is not null)
             {
                 return new PrintingConfig<TOwner>(printingConfig.Settings with
                 {
-                    AlternativeSerialization = printingConfig.Settings.AlternativeSerialization.Add(
+                    AlternativeTypeSerialization = printingConfig.Settings.AlternativeTypeSerialization.Add(
                         typeof(TPropType),
-                        serializator)
+                        serializer)
                 });
             }
             
@@ -61,10 +60,5 @@ namespace ObjectPrinting
         }
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
-    }
-
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
-    {
-        PrintingConfig<TOwner> ParentConfig { get; }
     }
 }

@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ObjectPrinting.Solved;
 
 namespace ObjectPrinting
 {
@@ -57,7 +56,7 @@ namespace ObjectPrinting
         {
             return new PrintingConfig<TOwner>(Settings with
             {
-                ExcludedPropertyTypes = Settings.ExcludedPropertyTypes.Add(typeof(TPropType))
+                ExcludedTypes = Settings.ExcludedTypes.Add(typeof(TPropType))
             });
         }
 
@@ -72,8 +71,8 @@ namespace ObjectPrinting
                 return "null" + Environment.NewLine;
             
             var type = obj.GetType();
-            if (Settings.AlternativeSerialization.TryGetValue(type, out var serializer) &&
-                !Settings.ExcludedPropertyTypes.Contains(type))
+            if (Settings.AlternativeTypeSerialization.TryGetValue(type, out var serializer) &&
+                !Settings.ExcludedTypes.Contains(type))
             {
                 return serializer(obj) + Environment.NewLine;
             }
@@ -86,20 +85,20 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private StringBuilder SerializeInstance(object obj, int nestingLevel, string identation)
+        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation)
         {
             var result = new StringBuilder();
             
             foreach (var member in GetPropertiesAndFields(obj.GetType()))
             {
                 var memberValue = GetValue(obj, member);
-                if (memberValue is not null && (Settings.ExcludedPropertyTypes.Contains(memberValue.GetType()) ||
+                if (memberValue is not null && (Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
                                                 Settings.ExcludedPropertiesAndFields.Contains(member)))
                     continue;
-                if (Settings.MethodsForSerializingPropertiesAndFields.TryGetValue(member, out var serializer))
-                    result.Append(identation + member.Name + " = " + serializer(memberValue));
+                if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
+                    result.Append(tabulation + member.Name + " = " + serializer(memberValue));
                 else
-                    result.Append(identation + member.Name + " = " + PrintToString(memberValue,nestingLevel + 1));
+                    result.Append(tabulation + member.Name + " = " + PrintToString(memberValue,nestingLevel + 1));
             }
 
             return result;
@@ -113,12 +112,13 @@ namespace ObjectPrinting
                 yield return field;
         }
 
-        private object GetValue(object obj, MemberInfo member)
+        private object? GetValue(object obj, MemberInfo member)
         {
             if (member is PropertyInfo propertyInfo)
                 return propertyInfo.GetValue(obj);
             if (member is FieldInfo fieldInfo)
                 return fieldInfo.GetValue(obj);
+            
             throw new ArgumentException();
         }
     }
