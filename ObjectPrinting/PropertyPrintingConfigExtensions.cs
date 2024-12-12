@@ -6,6 +6,13 @@ public static class PropertyPrintingConfigExtensions
         this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig,
         int maxLength)
     {
-        return propertyPrintingConfig.ParentConfig;
+        var propertyPrintingConfigInterface = (IPropertyPrintingConfig<TOwner>)propertyPrintingConfig;
+        var printOverride = propertyPrintingConfigInterface.PrintOverride;
+
+        Func<string, string> newPrintOverride = printOverride == null
+            ? str => str[..maxLength]
+            : str => printOverride(str)[..maxLength];
+
+        return propertyPrintingConfig.Using(newPrintOverride);
     }
 }
