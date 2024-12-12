@@ -9,37 +9,16 @@ public static class TypeSerializerExtensions
     {
         return ((TypeSerializerImpl<TParam, TOwner>)typeSerializer).Config;
     }
-    
-    public static PrintingConfig<TOwner> UseCulture<TOwner>(
-        this ITypeSerializer<DateTime, TOwner> typeSerializer,
-        CultureInfo cultureInfo)
-    {
-        if (cultureInfo == null)
-            throw new ArgumentNullException($"{nameof(cultureInfo)} cannot be null");
-        var config = GetConfig(typeSerializer);
-        config.DateTimeCultureInfo = cultureInfo;
-        return config;
-    }
-    
-    public static PrintingConfig<TOwner> UseCulture<TOwner>(
-        this ITypeSerializer<double, TOwner> typeSerializer,
-        CultureInfo cultureInfo)
-    {
-        if (cultureInfo == null)
-            throw new ArgumentNullException($"{nameof(cultureInfo)} cannot be null");
-        var config = GetConfig(typeSerializer);
-        config.DoubleCultureInfo = cultureInfo;
-        return config;
-    }
 
-    public static PrintingConfig<TOwner> UseCulture<TOwner>(
-        this ITypeSerializer<float, TOwner> typeSerializer,
+    public static PrintingConfig<TOwner> UseCulture<TOwner, TParam>(
+        this ITypeSerializer<TParam, TOwner> typeSerializer,
         CultureInfo cultureInfo)
+    where TParam : IFormattable
     {
         if (cultureInfo == null)
             throw new ArgumentNullException($"{nameof(cultureInfo)} cannot be null");
         var config = GetConfig(typeSerializer);
-        config.FloatCultureInfo = cultureInfo;
+        config.AddCultureSpec(typeof(TParam), cultureInfo);
         return config;
     }
 

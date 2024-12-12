@@ -15,15 +15,18 @@ namespace ObjectPrinting
         private readonly List<MemberInfo> _excludedProperties = new();
         private readonly Dictionary<Type, Delegate> _typeConverters = new();
         private readonly Dictionary<MemberInfo, Delegate> _propertyConverters = new();
-        internal CultureInfo DoubleCultureInfo { get; set; } = CultureInfo.CurrentCulture;
-        internal CultureInfo FloatCultureInfo { get; set; } = CultureInfo.CurrentCulture;
-        internal CultureInfo DateTimeCultureInfo { get; set; } = CultureInfo.CurrentCulture;
+        private readonly Dictionary<Type, CultureInfo> _cultureSpecs = new();
         internal int MaxStringLength { get; set; } = int.MaxValue;
-        internal int MaxRecursionDepth { get; set; } = 16;
+        private int MaxRecursionDepth { get; set; } = 16;
 
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        internal void AddCultureSpec(Type type, CultureInfo cultureInfo)
+        {
+            _cultureSpecs.Add(type, cultureInfo);
         }
 
         public PrintingConfig<TOwner> WithMaxRecursionDepth(int maxRecursionDepth)
@@ -88,18 +91,22 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return $"null{Environment.NewLine}";
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return SerializeFinalType(obj);
+            if (obj is IFormattable formattable
+                && _cultureSpecs.TryGetValue(formattable.GetType(), out var cultureSpec))
+                return $"{formattable.ToString(null, cultureSpec)}{Environment.NewLine}";
+            
+            if (obj is string str)
+                return string.Concat(
+                    str.AsSpan(0, Math.Min(MaxStringLength, str.Length)),
+                    Environment.NewLine);
+            
+            if (obj.GetType().IsValueType)
+                return $"{obj}{Environment.NewLine}";
             
             if (nestingLevel > MaxRecursionDepth)
-                return "null" + Environment.NewLine;
+                return $"null{Environment.NewLine}";
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -137,25 +144,6 @@ namespace ObjectPrinting
             }
             sb.AppendLine($"{bracketIndentation}]");
             return sb.ToString();
-        }
-
-        private string SerializeFinalType(object obj)
-        {
-            if (obj is string stringValue)
-                return string.Concat(
-                    stringValue.AsSpan(0, Math.Min(MaxStringLength, stringValue.Length)),
-                    Environment.NewLine);
-                
-            if (obj is double doubleValue)
-                return doubleValue.ToString(DoubleCultureInfo) + Environment.NewLine;
-                
-            if (obj is float floatValue)
-                return floatValue.ToString(FloatCultureInfo) + Environment.NewLine;
-                
-            if (obj is DateTime dateTimeValue)
-                return dateTimeValue.ToString(DateTimeCultureInfo) + Environment.NewLine;
-                
-            return obj + Environment.NewLine;
         }
 
         private string GetValueString(PropertyInfo propertyInfo, object obj, int nestingLevel)
