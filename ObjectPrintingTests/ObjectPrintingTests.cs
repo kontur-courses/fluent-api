@@ -14,75 +14,88 @@ public class ObjectPrintingTests
             {Name = "Monkey", SecondName = "D.Luffy", NameOfPet = "Usopp", Height = 168.8, Age = 17};
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithExcludingType()
+        public void ObjectPrinter_ShouldCorrectPrint_WithExcludingType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<string>();
 
-            printer.PrintToString(Person).Should().NotContain(Person.Name)
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().NotContain(Person.Name)
                 .And.NotContain(Person.SecondName)
                 .And.NotContain(Person.NameOfPet);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithExcludingField()
+        public void ObjectPrinter_ShouldCorrectPrint_WithExcludingField()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude(p => p.SecondName);
 
-            printer.PrintToString(Person).Should().NotContain(Person.SecondName);
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().NotContain(Person.SecondName);
         }
 
-        [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithSelectedCulture()
+
+        [TestCase("en-US", "168.8")]
+        [TestCase("ru-RU", "168,8")]
+        public void ObjectPrinter_ShouldCorrectPrint_WithSelectedCulture(string culture, string expectedValue)
         {
-            var printerEn = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(new CultureInfo("en-US"));
-            var printerRu = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(new CultureInfo("ru-Ru"));
+            var printer = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(new CultureInfo(culture));
 
-            printerEn.PrintToString(Person).Should().Contain("168.8");
-            printerRu.PrintToString(Person).Should().Contain("168,8");
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().Contain(expectedValue);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithSpecialSerializeType()
+        public void ObjectPrinter_ShouldCorrectPrint_WithSpecialSerializeType()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing<double>().Using((x) => $"~~ {x} ~~");
 
-            printer.PrintToString(Person).Should().Contain("~~ 168,8 ~~");
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().Contain("~~ 168,8 ~~");
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithSpecialSerializeField()
+        public void ObjectPrinter_ShouldCorrectPrint_WithSpecialSerializeField()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.Age).Using(x => 22.ToString());
 
-            printer.PrintToString(Person).Should().Contain("22");
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().Contain("22");
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithTrimmedStringField()
+        public void ObjectPrinter_ShouldCorrectPrint_WithTrimmedStringField()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Printing(p => p.SecondName).TrimmedToLength(1);
 
-            printer.PrintToString(Person).Should().Contain("D").And.NotContain("D.Luffy");
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().Contain("D").And.NotContain("D.Luffy");
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithExcludingPerson()
+        public void ObjectPrinter_ShouldCorrectPrint_WithExcludingPerson()
         {
             var printer = ObjectPrinter.For<Person>()
                 .Exclude<Person>();
 
-            printer.PrintToString(Person).Should().BeEmpty();
+            var actual = printer.PrintToString(Person);
+
+            actual.Should().BeEmpty();
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithDictionary()
+        public void ObjectPrinter_ShouldCorrectPrint_WithDictionary()
         {
             var dict = new Dictionary<string, string>
             {
@@ -95,11 +108,14 @@ public class ObjectPrintingTests
                            "\t\tUsopp : Cannoneer" + Environment.NewLine +
                            "\t\tLuffy : Captain" + Environment.NewLine +
                            "\t}";
-            dict.PrintToString().Should().Contain(expected);
+
+            var actual = dict.PrintToString();
+
+            actual.Should().Contain(expected);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithDictionaryContainsPerson()
+        public void ObjectPrinter_ShouldCorrectPrint_WithDictionaryContainsPerson()
         {
             var dict = new Dictionary<string, Person>
             {
@@ -117,11 +133,14 @@ public class ObjectPrintingTests
                            "\t\t\tAlliedTeams = null" + Environment.NewLine +
                            "\t\t\tTeam = null" + Environment.NewLine +
                            "\t}";
-            dict.PrintToString().Should().Contain(expected);
+
+            var actual = dict.PrintToString();
+
+            actual.Should().Contain(expected);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithArray()
+        public void ObjectPrinter_ShouldCorrectPrint_WithArray()
         {
             int[] numbers = {1, 2, 3, 4, 5};
             var expected = "\tInt32[]{" + Environment.NewLine +
@@ -131,11 +150,14 @@ public class ObjectPrintingTests
                            "\t\t[3] = 4" + Environment.NewLine +
                            "\t\t[4] = 5" + Environment.NewLine +
                            "\t}";
-            numbers.PrintToString().Should().Contain(expected);
+
+            var actual = numbers.PrintToString();
+
+            actual.Should().Contain(expected);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithList()
+        public void ObjectPrinter_ShouldCorrectPrint_WithList()
         {
             List<string> members = new List<string> {"Robin", "Usopp", "Luffy", "Zoro", "Nami"};
             var expected = "\tList`1{" + Environment.NewLine +
@@ -145,11 +167,14 @@ public class ObjectPrintingTests
                            "\t\t[3] = Zoro" + Environment.NewLine +
                            "\t\t[4] = Nami" + Environment.NewLine +
                            "\t}";
-            members.PrintToString().Should().Contain(expected);
+
+            var actual = members.PrintToString();
+
+            actual.Should().Contain(expected);
         }
 
         [Test]
-        public void ObjetctPrinter_ShouldCorrectPrint_WithLContainsPerson()
+        public void ObjectPrinter_ShouldCorrectPrint_WithLContainsPerson()
         {
             List<Person> members = new List<Person> {Person};
             var expected = "\tList`1{" + Environment.NewLine +
@@ -164,7 +189,10 @@ public class ObjectPrintingTests
                            "\t\t\tAlliedTeams = null" + Environment.NewLine +
                            "\t\t\tTeam = null" + Environment.NewLine +
                            "\t}";
-            members.PrintToString().Should().Contain(expected);
+
+            var actual = members.PrintToString();
+
+            actual.Should().Contain(expected);
         }
     }
 }
