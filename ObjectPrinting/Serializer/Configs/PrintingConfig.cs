@@ -9,7 +9,7 @@ namespace ObjectPrinting.Serializer.Configs;
 
 public class PrintingConfig<TOwner>
 {
-    internal uint MaxNestingLevel { get; set; }
+    public uint MaxNestingLevel { get; private set; } = 10;
 
     internal readonly HashSet<Type> ExcludedTypes = [];
     internal readonly HashSet<string> ExcludedProperties = [];
@@ -26,6 +26,12 @@ public class PrintingConfig<TOwner>
 
     public PropertyConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) 
         => new(this, memberSelector);
+
+    public PrintingConfig<TOwner> WithMaxNestingLevel(uint level)
+    {
+        MaxNestingLevel = level;
+        return this;
+    }
     
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {

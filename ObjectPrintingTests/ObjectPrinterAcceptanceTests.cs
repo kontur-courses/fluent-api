@@ -14,20 +14,12 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void Demo()
     {
-        var parent = new Person { Name = "Parent", Age = 20 };
+        var parent2 = new Person { Name = "Parent2", Age = 21 };
+        var parent = new Person { Name = "Parent", Age = 20, Parent = parent2};
         var person = new Person { Name = "Alex", Age = 19, Parent = parent };
-        
-        Expression<Func<Person, string>> test = p => p.Parent.Name;
-        var b = test.TryGetPropertyName();
-        Console.WriteLine(b);
-        
-        var type = typeof(Person);
-        foreach (var propertyInfo in type.GetProperties())
-        {
-            Console.WriteLine($"{type.FullName}.{propertyInfo.Name}");
-        }
 
         var printer = ObjectPrinter.For<Person>()
+            .WithMaxNestingLevel(2)
             //1. Исключить из сериализации свойства определенного типа
             .Excluding<Guid>()
             .Printing<string>().TrimmedToLength(10)
@@ -50,7 +42,5 @@ public class ObjectPrinterAcceptanceTests
         //8. ...с конфигурированием
         string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
         Console.WriteLine(s1);
-        Console.WriteLine(s2);
-        Console.WriteLine(s3);
     }
 }

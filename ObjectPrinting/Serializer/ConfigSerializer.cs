@@ -18,10 +18,10 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             return serializedObject;
         
         if (nestingLevel + 1 > config.MaxNestingLevel)
-            return $"Max nesting level - {config.MaxNestingLevel}" + Environment.NewLine;
+            return "..." + Environment.NewLine;
         
         var type = obj.GetType();
-        var sb = new StringBuilder(type.Name);
+        var sb = new StringBuilder(type.Name + Environment.NewLine);
         var indentation = new string('\t', (int)(nestingLevel + 1));
         
         foreach (var memberInfo in type.GetMembers().Where(info => info.IsPropertyOrField()))
@@ -44,7 +44,7 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             return ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
         
         if (obj is string str && config.TrimStringValue is { } trimmed)
-            return str[..(int)trimmed] + Environment.NewLine;
+            return TrimIfNeeded(str, (int)trimmed) + Environment.NewLine;
         
         return IsFinalType(obj.GetType()) ? obj + Environment.NewLine : null;
     }
@@ -55,20 +55,19 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
         if (value is null) return "null" + Environment.NewLine;
         
         if (config.TypeSerializers.TryGetValue(memberInfo.TryGetType(), out var typeSerializer))
-            return typeSerializer(value) + Environment.NewLine;
+            return TrimIfNeeded(memberInfo, typeSerializer(value)) + Environment.NewLine;
         
         if (config.PropertySerializers.TryGetValue(memberInfo.TryGetFullName(), out var propertySerializer))
-            return propertySerializer(value) + Environment.NewLine;
+            return TrimIfNeeded(memberInfo, propertySerializer(value)) + Environment.NewLine;
         return null;
     }
     
-    private string TrimIfNeeded(MemberInfo memberInfo, string printingResult)
-    {
-        if (config.TrimmedMembers.TryGetValue(memberInfo.TryGetFullName(), out var length))
-            printingResult = printingResult.Length >= length
-                ? printingResult[..(int)length] + Environment.NewLine : printingResult;
-        return printingResult;
-    }
+    private string TrimIfNeeded(MemberInfo memberInfo, string printingResult) 
+        => config.TrimmedMembers.TryGetValue(memberInfo.TryGetFullName(), out var length) 
+            ? TrimIfNeeded(printingResult, (int)length) : printingResult;
+    
+    private static string TrimIfNeeded(string str, int length) 
+        => str.Length >= length ? str[..length] : str;
     
     private static bool IsFinalType(Type type)
         => type.IsPrimitive || type == typeof(string) || type == typeof(Guid);

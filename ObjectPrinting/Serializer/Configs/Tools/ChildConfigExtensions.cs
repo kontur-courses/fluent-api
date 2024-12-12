@@ -25,7 +25,7 @@ public static class ChildConfigExtensions
     }
 
     public static PrintingConfig<TOwner> WithCulture<TOwner, TPropType>(
-        this IChildConfig<TOwner, TPropType> childConfig, CultureInfo culture) where TPropType : IFormattable
+        this TypeConfig<TOwner, TPropType> childConfig, CultureInfo culture) where TPropType : IFormattable
     {
         childConfig.ParentConfig.CulturesForTypes[typeof(TPropType)] = culture;
         return childConfig.ParentConfig;
