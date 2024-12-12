@@ -32,7 +32,7 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             
             var printingResult = 
                 TryCustomSerialization(obj, memberInfo) ?? 
-                PrintToString(GetMemberValue(memberInfo, obj), nestingLevel + 1);
+                PrintToString(TryGetMemberValue(memberInfo, obj), nestingLevel + 1);
             sb.Append(indentation + memberInfo.Name + " = " + TrimIfNeeded(memberInfo, printingResult));
         }
         return sb.ToString();
@@ -51,7 +51,7 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
 
     private string? TryCustomSerialization(object obj, MemberInfo memberInfo)
     {
-        var value = GetMemberValue(memberInfo, obj);
+        var value = TryGetMemberValue(memberInfo, obj);
         if (value is null) return "null" + Environment.NewLine;
         
         if (config.TypeSerializers.TryGetValue(memberInfo.TryGetType(), out var typeSerializer))
@@ -73,7 +73,7 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
     private static bool IsFinalType(Type type)
         => type.IsPrimitive || type == typeof(string) || type == typeof(Guid);
     
-    private static object? GetMemberValue(MemberInfo member, object obj)
+    private static object? TryGetMemberValue(MemberInfo member, object obj)
     {
         if (!member.IsPropertyOrField())
             throw new ArgumentException("Provided member must be Field or Property");
