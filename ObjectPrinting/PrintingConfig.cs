@@ -17,6 +17,7 @@ namespace ObjectPrinting
             typeof(bool), typeof(byte), typeof(int), typeof(double), typeof(float), typeof(char), typeof(string),
             typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         ];
+
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedProps = new();
         private readonly HashSet<object> alreadyProcessed = new(ReferenceEqualityComparer.Instance);
@@ -51,72 +52,54 @@ namespace ObjectPrinting
                 return string.Empty;
             if (alreadyProcessed.Contains(obj))
                 return "[Recursion]";
-            if (TryProcessSimpleType(obj, out var result))
-                return result;
-            if (TryProcessCollection(obj, nestingLevel, out result))
-                return result;
-            if (TryProcessDictionary(obj, nestingLevel, out result))
-                return result;
-            return ProcessNestedObject(obj, nestingLevel);
+            return obj switch
+            {
+                not null when simpleTypes.Contains(obj.GetType()) => ProcessSimpleType(obj),
+                IDictionary dict => ProcessDictionary(dict, nestingLevel),
+                IEnumerable list => ProcessCollection(list, nestingLevel),
+                _ => ProcessNestedObject(obj, nestingLevel)
+            };
         }
 
-        private bool TryProcessSimpleType(object obj, out string result)
+        private string ProcessSimpleType(object obj)
         {
             var type = obj.GetType();
-            if (simpleTypes.Contains(type))
+            var result = (obj switch
             {
-                result = (obj switch
-                {
-                    IFormattable f when currentProp != null && cultureForProp.TryGetValue(currentProp, out var culture) => f.ToString(null, culture),
-                    IFormattable f when cultureForType.ContainsKey(type) => f.ToString(null, cultureForType[type]),
-                    _ => obj.ToString()
-                })!;
+                IFormattable f when currentProp != null && cultureForProp.TryGetValue(currentProp, out var culture) =>
+                    f.ToString(null, culture),
+                IFormattable f when cultureForType.ContainsKey(type) => f.ToString(null, cultureForType[type]),
+                _ => obj.ToString()
+            })!;
 
-                if (currentProp != null && trimLengthForProp.TryGetValue(currentProp, out var length))
-                    result = result.Length > length ? result[..length] : result;
+            if (currentProp != null && trimLengthForProp.TryGetValue(currentProp, out var length))
+                result = result.Length > length ? result[..length] : result;
 
-                return true;
-            }
-
-            result = string.Empty;
-            return false;
+            return result;
         }
 
-        private bool TryProcessCollection(object obj, int nestingLevel, out string result)
+        private string ProcessCollection(IEnumerable collection, int nestingLevel)
         {
-            if (obj is IEnumerable<object> collection)
-            {
-                var sb = new StringBuilder();
-                foreach (var item in collection)
-                    sb.Append(PrintToString(item, nestingLevel));
-                result = sb.ToString();
-                return true;
-            }
-
-            result = string.Empty;
-            return false;
+            var sb = new StringBuilder();
+            foreach (var item in collection)
+                sb.Append(PrintToString(item, nestingLevel));
+            return sb.ToString();
         }
 
-        private bool TryProcessDictionary(object obj, int nestingLevel, out string result)
+        private string ProcessDictionary(IDictionary dictionary, int nestingLevel)
         {
-            if (obj is IDictionary dictionary)
+            var sb = new StringBuilder();
+            sb.Append('\t', nestingLevel);
+            sb.AppendLine(dictionary.GetType().Name);
+            foreach (DictionaryEntry entry in dictionary)
             {
-                var sb = new StringBuilder();
-                sb.Append('\t', nestingLevel);
-                sb.AppendLine(obj.GetType().Name);
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    var key = entry.Key;
-                    var value = entry.Value;
-                    sb.Append('\t', nestingLevel + 1);
-                    sb.AppendLine($"{key.PrintToString()} = {value.PrintToString()}");
-                }
-                result = sb.ToString();
-                return true;
+                var key = entry.Key;
+                var value = entry.Value;
+                sb.Append('\t', nestingLevel + 1);
+                sb.AppendLine($"{key.PrintToString()} = {value.PrintToString()}");
             }
 
-            result = string.Empty;
-            return false;
+            return sb.ToString();
         }
 
         private string ProcessNestedObject(object obj, int nestingLevel)
@@ -135,6 +118,7 @@ namespace ObjectPrinting
                 sb.Append('\t', nestingLevel + 1);
                 sb.AppendLine($"{property.Name} = {serializedValue}");
             }
+
             currentProp = null;
 
             return sb.ToString();
