@@ -141,7 +141,7 @@ namespace ObjectPrinting
         private string SerializeEnumerable(StringBuilder sb, IEnumerable enumerable, int nestingLevel, int recursionDepth)
         {
             var bracketIndentation = new string('\t', nestingLevel);
-            sb.AppendLine($"{bracketIndentation}[");
+            sb.AppendLine($"[");
             if (!enumerable.GetEnumerator().MoveNext())
             {
                 return "[]";
@@ -158,14 +158,14 @@ namespace ObjectPrinting
                     valueString = PrintToString(element, nestingLevel + 1, recursionDepth + 1);
                 sb.AppendLine($"{valueString},");
             }
-            sb.AppendLine($"{bracketIndentation}]");
+            sb.Append($"{bracketIndentation}]");
             return sb.ToString();
         }
 
         private string SerializeDictionary(StringBuilder sb, IDictionary dictionary, int nestingLevel, int recursionDepth)
         {
             var bracketIndentation = new string('\t', nestingLevel);
-            sb.AppendLine($"{bracketIndentation}[");
+            sb.AppendLine($"[");
             foreach (DictionaryEntry element in dictionary)
             {
                 var key = element.Key;
