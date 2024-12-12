@@ -13,7 +13,7 @@ public class PrintingConfig<TOwner>
 {
     private readonly HashSet<Type> typesToExclude = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<string> propertiesToExclude = [];
-    private readonly List<object> processedObjects = [];
+    private readonly HashSet<object> processedObjects = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Type, CultureInfo> cultureSerializers = [];
     private readonly Dictionary<Type, List<Delegate>> typeSerializers = [];
     private readonly Dictionary<string, List<Delegate>> propertySerializers = [];
