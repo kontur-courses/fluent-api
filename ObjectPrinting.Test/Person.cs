@@ -1,6 +1,6 @@
 ﻿namespace ObjectPrinting.Test;
 
-public class Person
+public record Person
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }

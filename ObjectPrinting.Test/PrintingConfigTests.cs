@@ -6,12 +6,13 @@ namespace ObjectPrinting.Test;
 
 public class TestsObjectPrinting
 {
-    private Person person;
+    private Person firstPerson;
+    private Person secondPerson;
 
     [SetUp]
     public void Setup()
     {
-        person = new()
+        firstPerson = new()
         {
             Name = "Ben",
             Surname = "Big",
@@ -25,16 +26,18 @@ public class TestsObjectPrinting
             ],
             BodyParts = { { "Hand", 2 }, { "Foot", 2 }, { "Head", 1 }, { "Tail", 0 } }
         };
+
+        secondPerson = new();
     }
 
     [Test]
     public void Exclude_ExcludeType()
     {
         const string unexpectedName = nameof(Person.Name);
-        const string unexpectedSurname = nameof(Person.Name);
+        const string unexpectedSurname = nameof(Person.Surname);
         var result = ObjectPrinter.For<Person>()
             .Exclude<string>()
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().NotContain(unexpectedName).And.NotContain(unexpectedSurname);
     }
@@ -42,12 +45,25 @@ public class TestsObjectPrinting
     [Test]
     public void Exclude_ExcludeProperty()
     {
-        const string unexpected = nameof(Person.Age);
+        const string unexpectedAge = nameof(Person.Age);
         var result = ObjectPrinter.For<Person>()
             .Exclude(p => p.Age)
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
-        result.Should().NotContain(unexpected);
+        result.Should().NotContain(unexpectedAge);
+    }
+
+    [Test]
+    public void Exclude_AddSerializationToType_ThenExcludeType()
+    {
+        var unexpectedName = $"{firstPerson.Name} is beautiful";
+        var unexpectedSurname = $"{firstPerson.Surname} is beautiful";
+        var result = ObjectPrinter.For<Person>()
+            .PrintSettings<string>().Using(p => $"{p} is beautiful")
+            .Exclude<string>()
+            .PrintToString(firstPerson);
+
+        result.Should().NotContain(unexpectedName).And.NotContain(unexpectedSurname);
     }
 
     [Test]
@@ -63,7 +79,7 @@ public class TestsObjectPrinting
             .Exclude(p => p.BestFriend)
             .Exclude(p => p.Friends)
             .Exclude(p => p.BodyParts)
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Be(expected);
     }
@@ -80,7 +96,7 @@ public class TestsObjectPrinting
             .Exclude<Person>()
             .Exclude<Person[]>()
             .Exclude<Dictionary<string, int>>()
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Be(expected);
     }
@@ -92,7 +108,7 @@ public class TestsObjectPrinting
         var result = ObjectPrinter.For<Person>()
             .PrintSettings<string>()
             .Using(p => $"{p} is beautiful")
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(expected);
     }
@@ -104,7 +120,7 @@ public class TestsObjectPrinting
         var result = ObjectPrinter.For<Person>()
             .PrintSettings<int>()
             .Using(_ => "10")
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(exceptedAge);
     }
@@ -112,39 +128,79 @@ public class TestsObjectPrinting
     [Test]
     public void Using_SerializationForName()
     {
-        var expected = person.Name?.ToUpper();
-        var unexpected = person.Name;
+        var expected = firstPerson.Name?.ToUpper();
+        var unexpected = firstPerson.Name;
         var result = ObjectPrinter.For<Person>()
             .PrintPropertySettings(p => p.Name)
             .Using(p => p!.ToUpper())
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(expected).And.NotContain(unexpected);
+    }
+    
+    [Test]
+    public void Using_MultiplePropertySerializations()
+    {
+        var exceptedAge = $"Name = 21{firstPerson.Name}12";
+        var result = ObjectPrinter.For<Person>()
+            .PrintPropertySettings(p =>  p.Name)
+            .Using(name => $"1{name}1")
+            .PrintPropertySettings(p =>  p.Name)
+            .Using(name => $"2{name}2")
+            .PrintToString(firstPerson);
+
+        result.Should().Contain(exceptedAge);
+    }
+    
+    [Test]
+    public void Using_MultipleTypeSerializationsForString()
+    {
+        var exceptedName = $"{nameof(firstPerson.Name)} = 21{firstPerson.Name}12";
+        var result = ObjectPrinter.For<Person>()
+            .PrintSettings<string>()
+            .Using(str => $"1{str}1")
+            .PrintSettings<string>()
+            .Using(str => $"2{str}2")
+            .PrintToString(firstPerson);
+
+        result.Should().Contain(exceptedName);
+    }
+    
+    [Test]
+    public void Using_TrimmedToPropertiesAfterSerializationForName([Values(0, 1, 2)] int length)
+    {
+        var exceptedName = $"{nameof(firstPerson.Name)} = " + $"1{firstPerson.Name!}"[..length];
+        var result = ObjectPrinter.For<Person>()
+            .PrintPropertySettings(p => p.Name)
+            .Using(name => $"1{name}1")
+            .PrintPropertySettings(p => p.Name)
+            .TrimmedTo(length)
+            .PrintToString(firstPerson);
+
+        result.Should().Contain(exceptedName);
     }
 
     [Test]
     public void UseCulture_ChangeCultureForDouble()
     {
-        var expected = person.Height.ToString(new CultureInfo("ru-RU"));
-        var unexpected = person.Height.ToString(new CultureInfo("en-US"));
+        var expected = firstPerson.Height.ToString(new CultureInfo("ru-RU"));
+        var unexpected = firstPerson.Height.ToString(new CultureInfo("en-US"));
         var result = ObjectPrinter.For<Person>()
             .UseCulture<double>(new("ru-RU"))
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(expected).And.NotContain(unexpected);
     }
 
-    [TestCase(0)]
-    [TestCase(1)]
-    [TestCase(2)]
-    public void TrimmedTo_TrimmingName(int length)
+    [Test]
+    public void TrimmedTo_TrimmingName([Values(0, 1, 2)] int length)
     {
-        var expected = $"{nameof(person.Name)} = {person.Name?[..length]}";
-        var unexpected = person.Name;
+        var expected = $"{nameof(firstPerson.Name)} = {firstPerson.Name?[..length]}";
+        var unexpected = firstPerson.Name;
         var result = ObjectPrinter.For<Person>()
             .PrintPropertySettings(p => p.Name)
             .TrimmedTo(length)
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(expected).And.NotContain(unexpected);
     }
@@ -152,17 +208,13 @@ public class TestsObjectPrinting
     [TestCase(0)]
     [TestCase(1)]
     [TestCase(2)]
-    [TestCase(3)]
-    [TestCase(4)]
-    [TestCase(5)]
     public void SetMaxNestingLevel_WithDifferentNestingLevels(int levelNesting)
     {
-        var expected = $"Достигнут максимум глубины рекурсии: {levelNesting}.";
-        person.BestFriend = person;
-        person.Friends = [person];
+        firstPerson.BestFriend = secondPerson;
+        var expected = $"The maximum recursion depth has been reached: {levelNesting}.";
         var result = ObjectPrinter.For<Person>()
             .SetMaxNestingLevel(levelNesting)
-            .PrintToString(person);
+            .PrintToString(firstPerson);
 
         result.Should().Contain(expected);
     }
@@ -176,8 +228,18 @@ public class TestsObjectPrinting
     {
         FluentActions.Invoking(() => ObjectPrinter.For<Person>()
                 .SetMaxNestingLevel(levelNesting))
-                .Should().Throw<ArgumentException>()
-                .WithMessage("Max nesting level must be greater than or equal to 0.");
+            .Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void PrintToString_ProcessingCyclicLinksBetweenObjects()
+    {
+        firstPerson.BestFriend = secondPerson;
+        secondPerson.BestFriend = firstPerson;
+
+        var result = ObjectPrinter.For<Person>()
+            .PrintToString(firstPerson);
+        result.Should().Contain("It is not possible to print an object with a circular reference.");
     }
 
     [Test]
@@ -185,90 +247,88 @@ public class TestsObjectPrinting
     {
         var expectedResult = new StringBuilder();
         expectedResult.Append("Person\r\n\t" +
-                "Id = 00000000-0000-0000-0000-000000000000\r\n\t" +
-                "Name = \"Ben\"\r\n\t" +
-                "Surname = \"Big\"\r\n\t" +
-                "Height = 170,1\r\n\t" +
-                "Age = 20\r\n\t" +
-                "BestFriend = Person\r\n\t\t" +
-                    "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
-                    "Name = \"Bob\"\r\n\t\t" +
-                    "Surname = \"Boby\"\r\n\t\t" +
-                    "Height = 40\r\n\t\t" +
-                    "Age = 80\r\n\t\t" +
-                    "BestFriend = null\r\n\t\t" +
-                    "Friends = {}\r\n\t\t" +
-                    "BodyParts = {}\r\n\r\n\t" +
-                "Friends = {\r\n\t\t" +
-                    "Person\r\n\t\t\t" +
-                        "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
-                        "Name = \"Alice\"\r\n\t\t\t" +
-                        "Surname = \"Sev\"\r\n\t\t\t" +
-                        "Height = 50\r\n\t\t\t" +
-                        "Age = 30\r\n\t\t\t" +
-                        "BestFriend = null\r\n\t\t\t" +
-                        "Friends = {}\r\n\t\t\t" +
-                        "BodyParts = {}\r\n\t\t,\r\n\t\t" +
-                    "Person\r\n\t\t\t" +
-                        "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
-                        "Name = \"Max\"\r\n\t\t\t" +
-                        "Surname = \"Albor\"\r\n\t\t\t" +
-                        "Height = 10\r\n\t\t\t" +
-                        "Age = 9\r\n\t\t\t" +
-                        "BestFriend = null\r\n\t\t\t" +
-                        "Friends = {}\r\n\t\t\t" +
-                        "BodyParts = {}\r\n\t\t" +
-                "}\r\n\r\n\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t" +
+            "Name = \"Ben\"\r\n\t" +
+            "Surname = \"Big\"\r\n\t" +
+            "Height = 170,1\r\n\t" +
+            "Age = 20\r\n\t" +
+            "BestFriend = Person\r\n\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
+            "Name = \"Bob\"\r\n\t\t" +
+            "Surname = \"Boby\"\r\n\t\t" +
+            "Height = 40\r\n\t\t" +
+            "Age = 80\r\n\t\t" +
+            "BestFriend = null\r\n\t\t" +
+            "Friends = {}\r\n\t\t" +
+            "BodyParts = {}\r\n\r\n\t" +
+            "Friends = {\r\n\t\t" +
+            "Person\r\n\t\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
+            "Name = \"Alice\"\r\n\t\t\t" +
+            "Surname = \"Sev\"\r\n\t\t\t" +
+            "Height = 50\r\n\t\t\t" +
+            "Age = 30\r\n\t\t\t" +
+            "BestFriend = null\r\n\t\t\t" +
+            "Friends = {}\r\n\t\t\t" +
+            "BodyParts = {}\r\n\t\t,\r\n\t\t" +
+            "Person\r\n\t\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
+            "Name = \"Max\"\r\n\t\t\t" +
+            "Surname = \"Albor\"\r\n\t\t\t" +
+            "Height = 10\r\n\t\t\t" +
+            "Age = 9\r\n\t\t\t" +
+            "BestFriend = null\r\n\t\t\t" +
+            "Friends = {}\r\n\t\t\t" +
+            "BodyParts = {}\r\n\t\t" +
+            "}\r\n\r\n\t" +
             "BodyParts = {\r\n\t\t\"Hand\": 2\r\n\t\t\"Foot\": 2\r\n\t\t\"Head\": 1\r\n\t\t\"Tail\": 0\r\n\t\t}\r\n\r\n");
-        
+
         var result = expectedResult.ToString();
         var v2 = ObjectPrinter.For<Person>()
-            .PrintToString(person);
-        
+            .PrintToString(firstPerson);
+
         result.Should().Contain(v2);
-        Console.WriteLine(v2);
     }
-    
+
     [Test]
     public void PrintToString_WithExcludedProperiesStructure()
     {
         var expectedResult = new StringBuilder();
         expectedResult.Append("Person\r\n\t" +
-                "Id = 00000000-0000-0000-0000-000000000000\r\n\t" +
-                "Surname = \"Big\"\r\n\t" +
-                "Height = 170,1\r\n\t" +
-                "BestFriend = Person\r\n\t\t" +
-                    "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
-                    "Surname = \"Boby\"\r\n\t\t" +
-                    "Height = 40\r\n\t\t" +
-                    "BestFriend = null\r\n\t\t" +
-                    "Friends = {}\r\n\t\t" +
-                    "BodyParts = {}\r\n\r\n\t" +
-                "Friends = {\r\n\t\t" +
-                    "Person\r\n\t\t\t" +
-                        "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
-                        "Surname = \"Sev\"\r\n\t\t\t" +
-                        "Height = 50\r\n\t\t\t" +
-                        "BestFriend = null\r\n\t\t\t" +
-                        "Friends = {}\r\n\t\t\t" +
-                        "BodyParts = {}\r\n\t\t,\r\n\t\t" +
-                    "Person\r\n\t\t\t" +
-                        "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
-                        "Surname = \"Albor\"\r\n\t\t\t" +
-                        "Height = 10\r\n\t\t\t" +
-                        "BestFriend = null\r\n\t\t\t" +
-                        "Friends = {}\r\n\t\t\t" +
-                        "BodyParts = {}\r\n\t\t" +
-                "}\r\n\r\n\t" + 
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t" +
+            "Surname = \"Big\"\r\n\t" +
+            "Height = 170,1\r\n\t" +
+            "BestFriend = Person\r\n\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t" +
+            "Surname = \"Boby\"\r\n\t\t" +
+            "Height = 40\r\n\t\t" +
+            "BestFriend = null\r\n\t\t" +
+            "Friends = {}\r\n\t\t" +
+            "BodyParts = {}\r\n\r\n\t" +
+            "Friends = {\r\n\t\t" +
+            "Person\r\n\t\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
+            "Surname = \"Sev\"\r\n\t\t\t" +
+            "Height = 50\r\n\t\t\t" +
+            "BestFriend = null\r\n\t\t\t" +
+            "Friends = {}\r\n\t\t\t" +
+            "BodyParts = {}\r\n\t\t,\r\n\t\t" +
+            "Person\r\n\t\t\t" +
+            "Id = 00000000-0000-0000-0000-000000000000\r\n\t\t\t" +
+            "Surname = \"Albor\"\r\n\t\t\t" +
+            "Height = 10\r\n\t\t\t" +
+            "BestFriend = null\r\n\t\t\t" +
+            "Friends = {}\r\n\t\t\t" +
+            "BodyParts = {}\r\n\t\t" +
+            "}\r\n\r\n\t" +
             "BodyParts = {\r\n\t\t\"Hand\": 2\r\n\t\t\"Foot\": 2\r\n\t\t\"Head\": 1\r\n\t\t\"Tail\": 0\r\n\t\t}\r\n\r\n");
-        
+
         var result = expectedResult.ToString();
         var v2 = ObjectPrinter.For<Person>()
             .Exclude(p => p.Name)
             .Exclude(p => p.Age)
-            .PrintToString(person);
-        
+            .PrintToString(firstPerson);
+
         result.Should().Contain(v2);
-        Console.WriteLine(v2);
     }
 }

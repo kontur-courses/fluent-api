@@ -11,12 +11,13 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
-    private int MaxNestingLevel { get; set; } = 5;
     private readonly HashSet<Type> typesToExclude = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<string> propertiesToExclude = [];
-    private readonly Dictionary<Type, CultureInfo> cultureToType = [];
-    private readonly Dictionary<Type, Delegate> serializersToType = [];
-    private readonly Dictionary<string, Delegate> serializersToProperty = [];
+    private readonly List<object> processedObjects = [];
+    private readonly Dictionary<Type, CultureInfo> cultureSerializers = [];
+    private readonly Dictionary<Type, List<Delegate>> typeSerializers = [];
+    private readonly Dictionary<string, List<Delegate>> propertySerializers = [];
+    private int MaxNestingLevel { get; set; } = 5;
 
     public PrintingConfig<TOwner> SetMaxNestingLevel(int maxNestingLevel)
     {
@@ -54,21 +55,28 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> UseCulture<TPropType>(CultureInfo culture) where TPropType : IFormattable
     {
-        cultureToType[typeof(TPropType)] = culture;
+        cultureSerializers[typeof(TPropType)] = culture;
         return this;
     }
 
     internal void AddTypeSerializer<TPropType>(Func<TPropType, string> serializeFunc)
     {
-        serializersToType[typeof(TPropType)] = serializeFunc;
+        if (typeSerializers.TryGetValue(typeof(TPropType), out var serializers))
+        {
+            serializers.Add(serializeFunc);
+            return;
+        }
+        typeSerializers[typeof(TPropType)] = [serializeFunc];
     }
 
     internal void AddPropertySerializer<TPropType>(string propertyName, Func<TPropType, string> serializeFunc)
     {
-        if (!serializersToProperty.TryAdd(propertyName, serializeFunc))
+        if (propertySerializers.TryGetValue(propertyName, out var serializers))
         {
-            serializersToProperty[propertyName] = serializeFunc;
+            serializers.Add(serializeFunc);
+            return;
         }
+        propertySerializers[propertyName] = [serializeFunc];
     }
 
     public string PrintToString(TOwner obj)
@@ -83,11 +91,18 @@ public class PrintingConfig<TOwner>
             return "null";
         }
 
+        if (processedObjects.Contains(obj))
+        {
+            return "It is not possible to print an object with a circular reference.";
+        }
+
         var type = obj.GetType();
 
-        if (serializersToType.TryGetValue(type, out var serializer))
+        if (typeSerializers.TryGetValue(type, out var serializers))
         {
-            return serializer.DynamicInvoke(obj)?.ToString()!;
+            var result = serializers.Aggregate(obj, (current, serializer) => serializer.DynamicInvoke(current)!);
+
+            return result.ToString()!;
         }
 
         if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid))
@@ -102,9 +117,10 @@ public class PrintingConfig<TOwner>
 
         if (nestingLevel > MaxNestingLevel)
         {
-            return $"Достигнут максимум глубины рекурсии: {MaxNestingLevel}.";
+            return $"The maximum recursion depth has been reached: {MaxNestingLevel}.";
         }
 
+        processedObjects.Add(obj);
         var indentation = new string('\t', nestingLevel);
         var stringBuilderResult = new StringBuilder();
         stringBuilderResult.AppendLine($"{type.Name}");
@@ -135,12 +151,15 @@ public class PrintingConfig<TOwner>
         Type propertyType
     )
     {
-        if (serializersToProperty.TryGetValue(propertyName, out var propertySerializer))
+        if (propertySerializers.TryGetValue(propertyName, out var serializers))
         {
-            return $"{indentation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}";
+            var result =
+                serializers.Aggregate(propertyValue, (current, serializer) => serializer.DynamicInvoke(current));
+
+            return $"{indentation}{propertyName} = {result!}";
         }
 
-        if (cultureToType.TryGetValue(propertyType, out var culture))
+        if (cultureSerializers.TryGetValue(propertyType, out var culture))
         {
             var propertyValueFormattable = propertyValue as IFormattable;
 
