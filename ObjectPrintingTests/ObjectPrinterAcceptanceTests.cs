@@ -30,6 +30,7 @@ public class ObjectPrinterAcceptanceTests
         var printer = ObjectPrinter.For<Person>()
             //1. Исключить из сериализации свойства определенного типа
             .Excluding<Guid>()
+            .Printing<string>().TrimmedToLength(10)
             //2. Указать альтернативный способ сериализации для определенного типа
             .Printing<int>().Using(i => i.ToString("X"))
             //3. Для числовых типов указать культуру

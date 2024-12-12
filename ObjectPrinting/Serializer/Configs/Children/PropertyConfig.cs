@@ -13,7 +13,7 @@ public class PropertyConfig<TOwner, TPropType>(
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        ParentConfig.PropertySerializers[PropertyName] = print;
+        ParentConfig.PropertySerializers[PropertyName] = obj => print((TPropType)obj);
         return ParentConfig;
     }
 }

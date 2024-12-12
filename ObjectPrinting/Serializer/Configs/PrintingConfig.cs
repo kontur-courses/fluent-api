@@ -9,17 +9,17 @@ namespace ObjectPrinting.Serializer.Configs;
 
 public class PrintingConfig<TOwner>
 {
-    private const int MAX_RECURSION = 4;
-    
-    internal HashSet<Type> ExcludedTypes = [];
-    internal HashSet<string> ExcludedProperties = [];
+    internal uint MaxNestingLevel { get; set; }
+
+    internal readonly HashSet<Type> ExcludedTypes = [];
+    internal readonly HashSet<string> ExcludedProperties = [];
     
     internal uint? TrimStringValue;
-    internal Dictionary<string, uint> TrimmedMembers = new();
+    internal readonly Dictionary<string, uint> TrimmedMembers = new();
 
-    internal Dictionary<Type, Delegate> TypeSerializers = new();
-    internal Dictionary<Type, CultureInfo> CulturesForTypes = new();
-    internal Dictionary<string, Delegate> PropertySerializers = new();
+    internal readonly Dictionary<Type, CultureInfo> CulturesForTypes = new();
+    internal readonly Dictionary<Type, Func<object, string>> TypeSerializers = new();
+    internal readonly Dictionary<string, Func<object, string>> PropertySerializers = new();
 
     public TypeConfig<TOwner, TPropType> Printing<TPropType>() 
         => new(this);
@@ -41,7 +41,7 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj)
     {
-        var serializer = new ConfigSerializer();
+        var serializer = new ConfigSerializer<TOwner>(this);
         return serializer.PrintToString(obj, 0);
     }
 }

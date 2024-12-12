@@ -4,13 +4,8 @@ using ObjectPrinting.Serializer.Configs.Children;
 
 namespace ObjectPrinting.Serializer.Configs.Tools;
 
-public static class PropertyConfigExtensions
+public static class ChildConfigExtensions
 {
-    public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
-    {
-        return config(ObjectPrinter.For<T>()).PrintToString(obj);
-    }
-
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
         this IChildConfig<TOwner, string> childConfig, uint maxLen)
     {

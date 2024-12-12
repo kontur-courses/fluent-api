@@ -9,7 +9,7 @@ public class TypeConfig<TOwner, TPropType>(PrintingConfig<TOwner> printingConfig
     
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        ParentConfig.TypeSerializers[typeof(TPropType)] = print;
+        ParentConfig.TypeSerializers[typeof(TPropType)] = obj => print((TPropType)obj);
         return ParentConfig;
     }
 }
