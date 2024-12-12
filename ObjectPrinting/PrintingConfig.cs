@@ -172,7 +172,7 @@ namespace ObjectPrinting
         }
 
         public IMemberPrintingConfig<TOwner, TFieldType> Serialize<TFieldType>(
-            Expression<Func<TOwner, object>> expression)
+            Expression<Func<TOwner, TFieldType>> expression)
         {
             return new MemberPrintingConfig<TOwner, TFieldType>(this, GetPropDetails(expression));
         }
