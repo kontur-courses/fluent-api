@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace ObjectPrinting;
@@ -26,7 +25,7 @@ public class PropertyPrintingConfig<TOwner, TPropType>
 		if (string.IsNullOrEmpty(propertyMemberInfo?.Name))
 			parentConfig.AddTypeSerializer(serialize);
 		else
-			parentConfig.AddPropertySerializer(propertyMemberInfo.Name, serialize);
+			parentConfig.AddPropertySerializer(propertyMemberInfo, serialize);
 
 		return parentConfig;
 	}

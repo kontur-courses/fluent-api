@@ -11,7 +11,7 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person
+            var person = new PersonWithParent
             {
                 Name = "Alex",
                 Surname = "Kash",
@@ -21,28 +21,6 @@ namespace ObjectPrinting.Tests
                     Name = "Bob",
                     Surname = "Kash",
                     Age = 40,
-                    Parent = new Person()
-                },
-                Friends =
-                [
-                    new Person
-                    {
-                        Name = "Alice",
-                        Surname = "Molk",
-                        Age = 19,
-                    },
-                    new Person
-                    {
-                        Name = "Robert",
-                        Surname = "Molk",
-                        Age = 19,
-                    },
-                ],
-                SomeDictionary = new Dictionary<int, string>
-                {
-                    { 1, "One" },
-                    { 2, "Two" },
-                    { 3, "Three" }
                 }
             };
 

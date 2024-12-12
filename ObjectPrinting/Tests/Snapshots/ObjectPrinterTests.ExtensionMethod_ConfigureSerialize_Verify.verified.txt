@@ -1,48 +1,5 @@
 ﻿Person
-	---Name--- = Alex
+	Name = ---Alex---
 	Surname = Ka
 	Weight = 80.1
 	Age = ***19***
-	Parent = Person
-		---Name--- = Bob
-		Surname = Ka
-		Weight = 0
-		Age = ***40***
-		Parent = Person
-			---Name--- = 
-			Surname = null
-			Weight = 0
-			Age = ***0***
-			Parent = Достигнут максимум глубины рекурсии - 3.
-			Friends = []
-			SomeDictionary = []
-
-		Friends = []
-		SomeDictionary = []
-
-	Friends = [
-		Person
-			---Name--- = Alice
-			Surname = Mo
-			Weight = 0
-			Age = ***19***
-			Parent = null
-			Friends = []
-			SomeDictionary = []
-		,
-		Person
-			---Name--- = Robert
-			Surname = Mo
-			Weight = 0
-			Age = ***19***
-			Parent = null
-			Friends = []
-			SomeDictionary = []
-		]
-
-	SomeDictionary = [
-		<Key = ***1*** - Value = One>
-		<Key = ***2*** - Value = Two>
-		<Key = ***3*** - Value = Three>
-		]
-

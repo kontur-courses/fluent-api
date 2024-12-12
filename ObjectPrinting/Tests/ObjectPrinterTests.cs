@@ -1,66 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using VerifyNUnit;
-using VerifyTests;
 
 namespace ObjectPrinting.Tests;
 
-[TestFixture]
-public class ObjectPrinterTests
+public class ObjectPrinterTests : BaseVerifyTests
 {
-	private static readonly VerifySettings Settings = new();
-
 	private readonly Person person = new()
 	{
 		Name = "Alex",
 		Surname = "Kash",
 		Age = 19,
 		Height = 184.1,
-		Weight = 80.1,
-		Parent = new Person
-		{
-			Name = "Bob",
-			Surname = "Kash",
-			Age = 40,
-			Parent = new Person
-			{
-				Parent = new Person()
-			}
-		},
-		Friends =
-		[
-			new Person
-			{
-				Name = "Alice",
-				Surname = "Molk",
-				Age = 19,
-			},
-			new Person
-			{
-				Name = "Robert",
-				Surname = "Molk",
-				Age = 19,
-			},
-		],
-		SomeDictionary = new Dictionary<int, string>
-		{
-			{ 1, "One" },
-			{ 2, "Two" },
-			{ 3, "Three" }
-		}
+		Weight = 80.1
 	};
-
-	[OneTimeSetUp]
-	public void OneTimeSetUp()
-	{
-		Settings.UseDirectory("snapshots");
-	}
-
-	private static Task Verify(string target) =>
-		Verifier.Verify(target, Settings);
 
 	[Test]
 	public Task ExcludeType_Verify() =>
