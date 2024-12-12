@@ -44,8 +44,9 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
         }
 
-        public PropertyPrintingConfig<TOwner, TPropType> PrintSettings<TPropType>() =>
+        public TypePrintingConfig<TOwner, TPropType> PrintSettings<TPropType>() =>
             new(this);
+
         public PrintingConfig<TOwner> SetDepth(int depth)
         {
             maxNestingDepth = depth;

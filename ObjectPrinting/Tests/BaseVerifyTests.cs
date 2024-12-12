@@ -5,7 +5,6 @@ using VerifyTests;
 
 namespace ObjectPrinting.Tests;
 
-[TestFixture]
 public class BaseVerifyTests
 {
 	private static readonly VerifySettings Settings = new();

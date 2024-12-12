@@ -5,6 +5,7 @@ using NUnit.Framework;
 
 namespace ObjectPrinting.Tests;
 
+[TestFixture]
 public class ObjectPrinterCollectionTests : BaseVerifyTests
 {
 	[Test]

@@ -17,15 +17,9 @@ public class PropertyPrintingConfig<TOwner, TPropType>
 		this.propertyMemberInfo = propertyMemberInfo;
 	}
 
-	public PropertyPrintingConfig(PrintingConfig<TOwner> parentConfig) =>
-		this.parentConfig = parentConfig;
-
 	public PrintingConfig<TOwner> Using(Func<TPropType, string> serialize)
 	{
-		if (string.IsNullOrEmpty(propertyMemberInfo?.Name))
-			parentConfig.AddTypeSerializer(serialize);
-		else
-			parentConfig.AddPropertySerializer(propertyMemberInfo, serialize);
+		parentConfig.AddPropertySerializer(propertyMemberInfo, serialize);
 
 		return parentConfig;
 	}
