@@ -143,7 +143,7 @@ namespace ObjectPrinting
             {
                 sb.AppendLine("[");
 
-                var items = collection.Cast<object>().ToArray();
+                var items = (collection as IEnumerable<object>).ToArray();
                 for (var i = 0; i < items.Length; i++)
                 {
                     sb.Append($"{indentation}{PrintToString(items[i], nestingLevel + 1)}");
