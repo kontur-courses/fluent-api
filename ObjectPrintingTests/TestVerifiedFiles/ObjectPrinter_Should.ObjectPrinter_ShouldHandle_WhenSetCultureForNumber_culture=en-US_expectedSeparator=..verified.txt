@@ -1,0 +1,5 @@
+﻿SimplePerson
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Dima
+	Height = 180.5
+	Age = 20

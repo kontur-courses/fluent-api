@@ -1,0 +1,7 @@
+﻿NestedObject
+	Name = Root
+	Child = NestedObject
+		Name = Child
+		Child = NestedObject
+			Name = GrandChild
+			Child = null

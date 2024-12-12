@@ -73,6 +73,90 @@
       <None Update="TestResults\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenExcessiveNesting.verified.txt">
         <ParentFile>ObjectPrinter_Should</ParentFile>
       </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldFormatDateTime_WhenSetCultureForDate_culture=en-US.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldFormatDateTime_WhenSetCultureForDate_culture=ru-RU.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenArray.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCircularReference.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomCollectionSerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomPropertySerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenCustomTypeSerialization.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenDeepNesting.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenDictionary.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenExcessiveNesting.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenExcludeProperty.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenExcludeType.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenFaultyItemInCollection.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenLargeCollectionWithTrim.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenLengthIsGreaterThanTrimmed.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenList.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenNestedArray.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenSerialize.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenSetCultureForNumber_culture=en-US_expectedSeparator=..verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenSetCultureForNumber_culture=ru-RU_expectedSeparator=,.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
+      <None Update="TestVerifiedFiles\ObjectPrinter_Should.ObjectPrinter_ShouldHandle_WhenTrimString.verified.txt">
+        <ParentFile>ObjectPrinter_Should</ParentFile>
+        <DependentUpon>ObjectPrinter_Should.cs</DependentUpon>
+      </None>
     </ItemGroup>
 
 </Project>
