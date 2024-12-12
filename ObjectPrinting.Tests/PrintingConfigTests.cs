@@ -110,8 +110,12 @@ public class PrintingConfigTests
     [Test]
     public void PrintToString_CyclicLinks_NoStackOverflowException()
     {
+        var parent = new Person();
+        var child = new Person();
+        parent.Child = child;
+        child.Parent = parent;
         var printer = ObjectPrinter.For<Person>();
-        Action act = () => printer.PrintToString(defaultPerson);
+        Action act = () => printer.PrintToString(parent);
 
         act.Should().NotThrow<StackOverflowException>();
     }

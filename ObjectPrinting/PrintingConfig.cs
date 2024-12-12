@@ -94,7 +94,7 @@ namespace ObjectPrinting
                 var memberValue = GetValue(obj, member);
                 if (!(memberValue is not null && Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
                                                 Settings.ExcludedPropertiesAndFields.Contains(member) || 
-                                                searized.Contains(searized)))
+                                                searized.Contains(memberValue)))
                 {
                     if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
                         result.Append(tabulation + member.Name + " = " + serializer(memberValue));
