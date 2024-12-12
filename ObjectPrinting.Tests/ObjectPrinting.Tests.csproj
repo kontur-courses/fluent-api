@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="ExpectedResponses\Excluding_FullObjectSerialization.txt">
+      <None Update="ExpectedResponses\PrintToString_FullObjectSerialization.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="ExpectedResponses\Excluding_MustExcludeFieldsAndTypePropertiesFromSerialization.txt">
@@ -48,6 +48,15 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="ExpectedResponses\Using_ChangedTypeSerializationCulture.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="ExpectedResponses\PrintToString_Collection_SerializedCollection.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="ExpectedResponses\PrintToString_Array_SerializedArray.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="ExpectedResponses\PrintToString_Dictionary_SerializedDictionary.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

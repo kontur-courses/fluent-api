@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq.Expressions;
@@ -80,8 +81,11 @@ namespace ObjectPrinting
                 return obj + Environment.NewLine;
             
             var sb = new StringBuilder();
+            var tabulation = new string('\t', nestingLevel + 1);
             sb.AppendLine(type.Name);
-            sb.Append(SerializeInstance(obj, nestingLevel, new string('\t', nestingLevel + 1), searized));
+            sb.Append(obj is IEnumerable
+                ? SerializeСollection(obj, nestingLevel, tabulation, searized)
+                : SerializeInstance(obj, nestingLevel, tabulation, searized));
             return sb.ToString();
         }
 
@@ -105,6 +109,20 @@ namespace ObjectPrinting
                                       PrintToString(memberValue, nestingLevel + 1, searized));
                     }
                 }
+            }
+
+            return result;
+        }
+
+        private StringBuilder SerializeСollection(object obj,
+            int nestingLevel, string tabulation, HashSet<object> searized)
+        {
+            var result = new StringBuilder();
+            
+            foreach (var elem in (IEnumerable)obj)
+            {
+                if (elem is not null) searized.Add(elem);
+                result.Append(tabulation + PrintToString(elem, nestingLevel + 1, searized));
             }
 
             return result;
