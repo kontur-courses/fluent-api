@@ -31,8 +31,7 @@ public class Person(Guid id, string name, double height, int age,
     {
         if (obj?.GetType() != GetType()) return false;
         var person = (Person)obj;
-        return person.Name == Name && person.Age == Age;
 
+        return person.Name == Name && person.Age == Age;
     }
-    
 }
