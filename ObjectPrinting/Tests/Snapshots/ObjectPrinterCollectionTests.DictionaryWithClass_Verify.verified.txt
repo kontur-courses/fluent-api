@@ -1,0 +1,34 @@
+﻿{
+	"1": [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Height = 0
+			Weight = 0
+			Age = 0
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Height = 0
+			Weight = 0
+			Age = 0
+	]
+	"2": [
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Height = 0
+			Weight = 0
+			Age = 0
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = null
+			Surname = null
+			Height = 0
+			Weight = 0
+			Age = 0
+	]
+}

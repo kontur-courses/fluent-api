@@ -1,0 +1,15 @@
+﻿PersonWithParent
+	Parent = PersonWithParent
+		Parent = Достигнут максимум глубины рекурсии - 2.
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Bob
+		Surname = Kash
+		Height = 0
+		Weight = 0
+		Age = 40
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Surname = Kash
+	Height = 0
+	Weight = 0
+	Age = 19
