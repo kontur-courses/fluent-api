@@ -14,19 +14,24 @@ public static class PropertyPrintingConfigExtensions
         this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
     {
         if (maxLen < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxLen), "Max length must be non-negative");
+        }
 
         IPropertyPrintingConfig<TOwner, string> propertyConfig = propConfig;
         var printingConfig = propertyConfig.ParentConfig;
         
         var memberSelector = propConfig.MemberSelector;
 
-        var propertyName = ((MemberExpression)memberSelector.Body).Member.Name;
+        var propertyName = ((MemberExpression)memberSelector!.Body).Member.Name;
 
         printingConfig.AddPropertySerializer(propertyName, value =>
         {
             var stringValue = value as string ?? string.Empty;
-            return stringValue.Length > maxLen ? stringValue[..maxLen] : stringValue;
+            
+            return stringValue.Length > maxLen 
+                ? stringValue[..maxLen] 
+                : stringValue;
         });
 
         return printingConfig;
