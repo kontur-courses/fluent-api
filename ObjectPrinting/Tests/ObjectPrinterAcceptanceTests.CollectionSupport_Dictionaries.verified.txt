@@ -1,9 +1,10 @@
-﻿Dictionary`2:
-[
--	KeyValuePair`2:
-		Key = a
-		Value = 1.1
--	KeyValuePair`2:
-		Key = b
-		Value = 2.2
+﻿[
+{
+	key: a
+	value: 1.1
+},
+{
+	key: b
+	value: 2.2
+},
 ]

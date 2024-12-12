@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using VerifyNUnit;
@@ -19,7 +20,7 @@ public class ObjectPrinterAcceptanceTests
         _person = new Person
         {
             Id = new Guid(), Name = "Alex", Surname = "Smith",
-            Age = 19, Height = 177.4
+            Age = 19, Height = 177.4, Persons = new List<Person>()
         };
         _config = ObjectPrinter.For<Person>();
     }
@@ -40,8 +41,8 @@ public class ObjectPrinterAcceptanceTests
     public Task TypeSerializationSpecification()
     {
         var str = _config
-            .ForType<Guid>()
-            .Use(o => o.ToString())
+            .ForType<string>()
+            .Use(o => o.ToUpper())
             .PrintToString(_person);
         
         return Verifier.Verify(str);
@@ -79,6 +80,18 @@ public class ObjectPrinterAcceptanceTests
     {
         var str = _config
             .ForType<string>()
+            .UseMaxLength(2)
+            .PrintToString(_person);
+        
+        return Verifier.Verify(str);
+    }
+
+    [Test]
+    [Description("Возможность обрезания конкретных строковых полей")]
+    public Task StringPropertyTrimming()
+    {
+        var str = _config
+            .ForProperty(x => x.Surname)
             .UseMaxLength(2)
             .PrintToString(_person);
         

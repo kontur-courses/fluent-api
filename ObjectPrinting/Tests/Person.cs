@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
@@ -11,5 +12,6 @@ namespace ObjectPrinting.Tests
         public int Age { get; set; }
         
         public Person? OtherPerson { get; set; }
+        public List<Person> Persons { get; set; }
     }
 }

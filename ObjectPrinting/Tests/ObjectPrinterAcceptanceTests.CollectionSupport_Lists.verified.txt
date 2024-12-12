@@ -1,5 +1,4 @@
-﻿List`1:
-[
--	Alex
--	John
+﻿[
+	Alex,
+	John,
 ]
