@@ -1,0 +1,29 @@
+﻿ImprovedLibrary
+	Books = 
+		Collection
+			Book
+				Title = "1984"
+				Author = "George Orwell"
+			Book
+				Title = "To Kill a Mockingbird"
+				Author = "Harper Lee"
+			Book
+				Title = "The Great Gatsby"
+				Author = "F. Scott Fitzgerald"
+			Book
+				Title = "Pride and Prejudice"
+				Author = "Jane Austen"
+	BooksByAuthor = 
+		Dictionary
+	WordOccurenceByAuthor = 
+		Dictionary
+			"George Orwell" : 
+				Dictionary
+					"beme" : 10000
+					"Z" : 3000
+					"Slon" : 2512
+			"Harper Lee" : 
+				Dictionary
+					"pukmuk" : 2000
+					"52" : 1000000
+	Name = "Тут зачем-то считали слова"

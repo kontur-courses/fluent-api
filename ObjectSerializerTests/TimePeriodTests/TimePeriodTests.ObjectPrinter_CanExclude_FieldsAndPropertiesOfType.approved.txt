@@ -1,0 +1,5 @@
+﻿TimePeriod
+	StartTime = "12.12.2024 0:00:00"
+	EndTime = "14.12.2024 0:00:00"
+	TotalPlaces = 20
+	BookedPlaces = 10

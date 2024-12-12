@@ -1,0 +1,7 @@
+﻿Dictionary
+	Book
+		Title = "1984"
+		Author = "George Orwell" : "George Orwell"
+	Book
+		Title = "To Kill a Mockingbird"
+		Author = "Harper Lee" : "Harper Lee"

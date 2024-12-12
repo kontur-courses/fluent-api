@@ -1,0 +1,8 @@
+﻿BaseLibrary
+	BooksByAuthor = 
+		Dictionary
+			"George Orwell" : "1984"
+			"Harper Lee" : "To Kill a Mockingbird"
+			"F. Scott Fitzgerald" : "The Great Gatsby"
+			"Jane Austen" : "Pride and Prejudice"
+	Name = "Имени кого-то там"

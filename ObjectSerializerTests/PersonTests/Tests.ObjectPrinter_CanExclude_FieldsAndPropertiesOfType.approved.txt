@@ -1,0 +1,4 @@
+﻿Person
+	Name = "Вася"
+	Height = 160
+	Age = 18
