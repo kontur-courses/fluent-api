@@ -32,6 +32,21 @@ namespace Tests
         }
 
         [Test]
+        public Task PrintToString_NotSkipProperty_WhenNestingClass()
+        {
+            var person2 = new Person2();
+            var person1 = new Person1
+            {
+                Parent = person2
+            };
+            var actual = ObjectPrinter.For<Person1>()
+                .Excluding(x => x.Id)
+                .PrintToString(person1);
+
+            return Verify(actual, Settings);
+        }
+
+        [Test]
         public Task PrintToString_ExcludeType()
         {
             var actual = ObjectPrinter.For<Person>()

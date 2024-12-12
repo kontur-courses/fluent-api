@@ -1,28 +1,29 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 
 namespace ObjectPrinting;
 
 public class PropertyPrintingConfig<TOwner, TPropType>
 {
     private readonly PrintingConfig<TOwner> printingConfig;
-    protected internal readonly string? PropertyName;
+    protected internal readonly PropertyInfo? Property;
 
-    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string? propertyName = null)
+    public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, PropertyInfo? property = null)
     {
         this.printingConfig = printingConfig;
-        PropertyName = propertyName;
+        Property = property;
     }
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        if (string.IsNullOrEmpty(PropertyName))
+        if (Property is null)
         {
             printingConfig.AddSerializationMethod(print);
         }
         else
         {
-            printingConfig.AddSerializationMethod(print, PropertyName);
+            printingConfig.AddSerializationMethod(print, Property);
         }
         
         return ParentConfig;
@@ -30,13 +31,13 @@ public class PropertyPrintingConfig<TOwner, TPropType>
 
     public PrintingConfig<TOwner> Using(CultureInfo culture)
     {
-        if (string.IsNullOrEmpty(PropertyName))
+        if (Property is null)
         {
             printingConfig.SpecifyTheCulture<TPropType>(culture);
         }
         else
         {
-            printingConfig.SpecifyTheCulture(culture, PropertyName);
+            printingConfig.SpecifyTheCulture(culture, Property);
         }
 
         return ParentConfig;

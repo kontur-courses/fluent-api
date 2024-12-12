@@ -134,10 +134,10 @@ public class ObjectSerializer<TOwner>
         foreach (var property in type.GetProperties())
         {
             if (_config.ExcludedTypes.Contains(property.PropertyType) ||
-                _config.ExcludedProperties.Contains(property.Name))
+                _config.ExcludedProperties.Contains(property))
                 continue;
 
-            var value = SerializeProperty(property, obj, nestingLevel);
+            var value = SerializeProperty(property, obj, nestingLevel+1);
             builder.Append(indentation + property.Name + " = " + value);
         }
 
@@ -151,16 +151,16 @@ public class ObjectSerializer<TOwner>
         if (_config.TypeSerializationMethods.TryGetValue(property.PropertyType, out var typeSerializer))
             return typeSerializer(value!) + Environment.NewLine;
 
-        if (_config.PropertySerializationMethods.TryGetValue(property.Name, out var propertySerializer))
+        if (_config.PropertySerializationMethods.TryGetValue(property, out var propertySerializer))
             return propertySerializer(value!) + Environment.NewLine;
 
-        if (_config.PropertyLengths.TryGetValue(property.Name, out var length))
+        if (_config.PropertyLengths.TryGetValue(property, out var length))
         {
             var stringValue = value?.ToString() ?? "";
             return stringValue.Substring(0, Math.Min(length, stringValue.Length)) + Environment.NewLine;
         }
 
-        if (_config.PropertyCultures.TryGetValue(property.Name, out var culture) && value is IFormattable formattable)
+        if (_config.PropertyCultures.TryGetValue(property, out var culture) && value is IFormattable formattable)
             return formattable.ToString(null, culture) + Environment.NewLine;
 
         return SerializeObject(value, nestingLevel);

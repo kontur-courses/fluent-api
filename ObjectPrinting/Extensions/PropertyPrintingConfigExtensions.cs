@@ -8,10 +8,10 @@ public static class PropertyPrintingConfigExtensions
         this PropertyPrintingConfig<TOwner, string> propConfig, 
         int maxLen)
     {
-        if (string.IsNullOrEmpty(propConfig.PropertyName))
+        if (propConfig.Property is null)
             throw new ArgumentException("The name of the property is not specified.");
         
-        propConfig.ParentConfig.AddLengthProperty(propConfig.PropertyName, maxLen);
+        propConfig.ParentConfig.AddLengthProperty(propConfig.Property, maxLen);
         
         return propConfig.ParentConfig;
     }
