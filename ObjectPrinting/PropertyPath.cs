@@ -45,9 +45,7 @@ internal class PropertyPath
 
     public bool Contains(object? obj)
     {
-        return obj != null
-            && _values.TryGetValue(obj, out var key)
-            && ReferenceEquals(obj, key);
+        return obj != null && _values.Contains(obj);
     }
 
     public static bool TryGetPropertyPath<TOwner, TPropType>(
