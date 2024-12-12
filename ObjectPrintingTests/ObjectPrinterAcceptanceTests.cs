@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using NUnit.Framework;
+﻿using System.Globalization;
 using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.Tests

@@ -15,6 +15,6 @@ namespace ObjectPrintingTests.Models
 
     public class SkilledPerson : Person
     {
-        public Dictionary<string, int> Skills { get; set; }
+        public string Skill;
     }
 }

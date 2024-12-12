@@ -24,7 +24,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> cultureForType = new();
         private readonly Dictionary<MemberInfo, CultureInfo> cultureForProp = new();
         private readonly Dictionary<MemberInfo, int> trimLengthForProp = new();
-        private PropertyInfo? currentProp;
+        private MemberInfo? currentProp;
 
         protected internal readonly Dictionary<MemberInfo, Func<object, string>>
             AlternativeSerializationForProp = new();
@@ -36,7 +36,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        protected internal static MemberInfo GetPropDetails<T>(Expression<Func<TOwner, T>> expression)
+        private static MemberInfo GetPropDetails<T>(Expression<Func<TOwner, T>> expression)
         {
             return expression.Body switch
             {
@@ -91,10 +91,9 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             sb.Append('\t', nestingLevel);
             sb.AppendLine(dictionary.GetType().Name);
-            foreach (DictionaryEntry entry in dictionary)
+            foreach (var key in dictionary.Keys)
             {
-                var key = entry.Key;
-                var value = entry.Value;
+                var value = dictionary[key];
                 sb.Append('\t', nestingLevel + 1);
                 sb.AppendLine($"{key.PrintToString()} = {value.PrintToString()}");
             }
@@ -119,19 +118,43 @@ namespace ObjectPrinting
                 sb.AppendLine($"{property.Name} = {serializedValue}");
             }
 
+            foreach (var field in type.GetFields())
+            {
+                currentProp = field;
+                if (excludedTypes.Contains(field.FieldType) || excludedProps.Contains(field))
+                    continue;
+                var serializedValue = Serialize(field, obj, nestingLevel + 1);
+                sb.Append('\t', nestingLevel + 1);
+                sb.AppendLine($"{field.Name} = {serializedValue}");
+            }
+
             currentProp = null;
 
             return sb.ToString();
         }
 
-        private string Serialize(PropertyInfo property, object parent, int nestingLevel)
+        private string Serialize(MemberInfo property, object parent, int nestingLevel)
         {
-            var value = property.GetValue(parent);
+            object value;
+            Type type;
+            switch (property)
+            {
+                case PropertyInfo prop:
+                    value = prop.GetValue(parent);
+                    type = prop.PropertyType;
+                    break;
+                case FieldInfo field:
+                    value = field.GetValue(parent);
+                    type = field.FieldType;
+                    break;
+                default:
+                    return string.Empty;
+            }
             if (value == null)
                 return "null";
             if (AlternativeSerializationForProp.TryGetValue(property, out var propertySerializer))
                 return propertySerializer(value);
-            if (AlternativeSerializationForType.TryGetValue(property.PropertyType, out var typeSerializer))
+            if (AlternativeSerializationForType.TryGetValue(type, out var typeSerializer))
                 return typeSerializer(value);
             return PrintToString(value, nestingLevel);
         }
