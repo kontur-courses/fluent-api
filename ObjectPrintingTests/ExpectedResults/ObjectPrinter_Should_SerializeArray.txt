@@ -1,0 +1,10 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 180
+	Age = 19
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = John
+	Height = 190
+	Age = 20
