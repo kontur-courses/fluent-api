@@ -1,1 +1,10 @@
-﻿
+﻿Room
+	Size = 15
+	NeighborRooms [
+		Room
+			Size = 10
+			NeighborRooms [
+				Room
+					here Cycle
+			]
+	]
