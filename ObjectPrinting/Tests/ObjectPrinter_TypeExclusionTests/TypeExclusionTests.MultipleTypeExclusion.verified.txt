@@ -1,0 +1,7 @@
+﻿Person:
+{
+	Name = Alex
+	Surname = Smith
+	Height = 177,4
+	Age = 19
+}

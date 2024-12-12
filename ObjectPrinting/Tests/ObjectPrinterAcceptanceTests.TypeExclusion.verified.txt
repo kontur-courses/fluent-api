@@ -1,0 +1,8 @@
+﻿Person:
+{
+	Id = 00000000-0000-0000-0000-000000000000
+	Height = 177,4
+	Age = 19
+	OtherPerson = null
+	Persons = []
+}

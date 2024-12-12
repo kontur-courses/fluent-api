@@ -1,0 +1,32 @@
+﻿PersonDatabase:
+{
+	People = [
+		Person:
+		{
+			Name = Alex
+			Surname = Smith
+			Height = 177,4
+			Age = 19
+			OtherPerson = null
+			Persons = []
+		},
+		Person:
+		{
+			Name = John
+			Surname = Doe
+			Height = 0
+			Age = 0
+			OtherPerson = null
+			Persons = null
+		},
+	]
+	Owner = Person:
+	{
+		Name = Alex
+		Surname = Smith
+		Height = 177,4
+		Age = 19
+		OtherPerson = null
+		Persons = []
+	}
+}

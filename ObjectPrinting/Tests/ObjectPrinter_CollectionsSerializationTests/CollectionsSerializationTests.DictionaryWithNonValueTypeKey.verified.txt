@@ -1,0 +1,46 @@
+﻿[
+{
+	key: Person:
+		{
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Alex
+			Surname = Smith
+			Height = 177,4
+			Age = 19
+			OtherPerson = null
+			Persons = []
+		}
+	value: Person:
+		{
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = John
+			Surname = Doe
+			Height = 0
+			Age = 0
+			OtherPerson = null
+			Persons = null
+		}
+},
+{
+	key: Person:
+		{
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = John
+			Surname = Doe
+			Height = 0
+			Age = 0
+			OtherPerson = null
+			Persons = null
+		}
+	value: Person:
+		{
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Steve
+			Surname = Doe
+			Height = 0
+			Age = 0
+			OtherPerson = null
+			Persons = null
+		}
+},
+]

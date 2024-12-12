@@ -1,0 +1,8 @@
+﻿PersonDatabase:
+{
+	People = [
+		Alex,
+		John,
+	]
+	Owner = Alex
+}
