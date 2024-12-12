@@ -131,5 +131,17 @@ namespace ObjectPrinting.Solved.Tests
             
             Approvals.Verify(s);
         }
+
+
+        [UseReporter(typeof(DiffReporter))]
+        [Test]
+        public void ObjectPrinter_Can_WorkWithDict()
+        {
+            var cookies = CookiesWithData.GetFakeCookiesWithData();
+
+            var s = cookies.PrintToString();
+
+            Approvals.Verify(s);
+        }
     }
 }

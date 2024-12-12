@@ -84,9 +84,15 @@ namespace ObjectPrinting.Solved
                     continue;
                 }
 
-                if (propertyInfo.PropertyType.IsArray)
+                if (value is IDictionary dictionary)
                 {
-                    WriteArrayElements(obj, nestingLevel, propertyInfo, sb, identation);
+                    WriteDict(dictionary, nestingLevel, propertyInfo, sb, identation);
+                    continue;
+                }
+
+                if (value is IEnumerable vEnum)
+                {
+                    WriteArrayElements(vEnum, nestingLevel, propertyInfo, sb, identation);
                     continue;
                 }
 
@@ -98,15 +104,42 @@ namespace ObjectPrinting.Solved
             return sb.ToString();
         }
 
-        private void WriteArrayElements(object obj, int nestingLevel, PropertyInfo propertyInfo, StringBuilder sb,
+        private void WriteDict(IDictionary dictionary, int nestingLevel, PropertyInfo propertyInfo,
+            StringBuilder sb, string identation)
+        {
+            sb.AppendLine(identation + propertyInfo.Name + " {");
+            var identationInArray = identation + '\t';
+
+            foreach (DictionaryEntry o in dictionary)
+            {
+                if (GetFinalTypes().Contains(o.Value.GetType()))
+                {
+                    if (TryFormater(propertyInfo, o.Value, out var newLine))
+                    {
+                        sb.AppendLine($"{identationInArray} {o.Key} = {newLine}");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{identationInArray} {o.Key} = {o.Value}");
+                    }
+                }
+
+                else
+                {
+                    sb.Append(identationInArray + PrintToString(o.Value, nestingLevel + 2));
+                }
+            }
+
+            sb.AppendLine(identation + "} ");
+        }
+
+        private void WriteArrayElements(IEnumerable enumerable, int nestingLevel, PropertyInfo propertyInfo,
+            StringBuilder sb,
             string identation)
         {
-            var datArray = propertyInfo.GetValue(obj) as IEnumerable;
-
-
             sb.AppendLine(identation + propertyInfo.Name + " [");
             var identationInArray = identation + '\t';
-            foreach (var element in datArray) // у нас element может быть сложныс классом
+            foreach (var element in enumerable) // у нас element может быть сложныс классом
             {
                 if (TryAddAsPrimitiveType(propertyInfo, sb, element, identationInArray)) continue;
 
