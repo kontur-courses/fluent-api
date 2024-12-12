@@ -1,0 +1,11 @@
+﻿CookiesWithData
+	cookie {
+		 token = token:key
+	} 
+	data {
+		Person
+			Id = Guid
+			Name = Андрей Захаров
+			Height = 19.2
+			Age = 20
+	} 
