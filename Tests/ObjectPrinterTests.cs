@@ -156,7 +156,8 @@ namespace Tests
             var russianCulture = new CultureInfo("ru-RU");
             var actual = ObjectPrinter.For<Person>()
                 .Excluding<bool>()
-                .Excluding(p => p.Id)
+                .Printing(x => x.Id)
+                .Using(_ => "12345")
                 .Printing<DateTime>()
                 .Using(_ => "date")
                 .Printing<double>()

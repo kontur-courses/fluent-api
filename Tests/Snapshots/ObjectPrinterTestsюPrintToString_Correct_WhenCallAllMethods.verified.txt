@@ -1,9 +1,0 @@
-﻿Person
-	Id = 12345
-	Name = NoName
-	Height = 200
-	Weight = 100
-	Age = 20
-	Birthday = 10/10/2000 00:00:00
-	IsStudent = True
-	Father = null

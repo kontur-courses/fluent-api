@@ -1,7 +1,0 @@
-﻿Person
-	Name = Bo
-	Height = 200,2
-	Weight = 100,11
-	Age = 20
-	Birthday = date
-	Father = null
