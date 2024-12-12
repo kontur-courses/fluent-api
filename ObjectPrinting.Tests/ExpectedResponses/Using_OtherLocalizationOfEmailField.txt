@@ -3,4 +3,6 @@ Person
 	Name = Alex
 	Height = 185,5
 	Age = 19
+	Parent = null
+	Child = null
 	Email = ALEX@GMAIL.COM

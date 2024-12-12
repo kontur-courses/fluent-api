@@ -26,7 +26,7 @@ public class PrintingConfigTests
     }
     
     [Test]
-    public void Excluding_FullObjectSerialization()
+    public void PrintToString_FullObjectSerialization()
     {
         var expected = File.ReadAllText("ExpectedResponses/Excluding_FullObjectSerialization.txt");
         var printer = ObjectPrinter.For<Person>();
@@ -105,5 +105,14 @@ public class PrintingConfigTests
         var actual = printer.PrintToString(defaultPerson);
         
         actual.Should().Be(expected);
+    }
+    
+    [Test]
+    public void PrintToString_CyclicLinks_NoStackOverflowException()
+    {
+        var printer = ObjectPrinter.For<Person>();
+        Action act = () => printer.PrintToString(defaultPerson);
+
+        act.Should().NotThrow<StackOverflowException>();
     }
 }

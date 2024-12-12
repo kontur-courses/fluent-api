@@ -62,10 +62,10 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
+        private string PrintToString(object? obj, int nestingLevel, HashSet<object> searized)
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
@@ -81,24 +81,30 @@ namespace ObjectPrinting
             
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            sb.Append(SerializeInstance(obj, nestingLevel, new string('\t', nestingLevel + 1)));
+            sb.Append(SerializeInstance(obj, nestingLevel, new string('\t', nestingLevel + 1), searized));
             return sb.ToString();
         }
 
-        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation)
+        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation, HashSet<object> searized)
         {
             var result = new StringBuilder();
             
             foreach (var member in GetPropertiesAndFields(obj.GetType()))
             {
                 var memberValue = GetValue(obj, member);
-                if (memberValue is not null && (Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
-                                                Settings.ExcludedPropertiesAndFields.Contains(member)))
-                    continue;
-                if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
-                    result.Append(tabulation + member.Name + " = " + serializer(memberValue));
-                else
-                    result.Append(tabulation + member.Name + " = " + PrintToString(memberValue,nestingLevel + 1));
+                if (!(memberValue is not null && Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
+                                                Settings.ExcludedPropertiesAndFields.Contains(member) || 
+                                                searized.Contains(searized)))
+                {
+                    if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
+                        result.Append(tabulation + member.Name + " = " + serializer(memberValue));
+                    else
+                    {
+                        if (memberValue is not null) searized.Add(memberValue);
+                        result.Append(tabulation + member.Name + " = " + 
+                                      PrintToString(memberValue, nestingLevel + 1, searized));
+                    }
+                }
             }
 
             return result;

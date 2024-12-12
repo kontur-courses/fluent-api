@@ -7,5 +7,7 @@
         public double Height { get; set; }
         public int Age { get; set; }
         public string Email;
+        public Person Parent { get; set; }
+        public Person Child { get; set; }
     }
 }
