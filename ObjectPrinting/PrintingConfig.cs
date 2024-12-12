@@ -24,7 +24,6 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> cultureForType = new();
         private readonly Dictionary<MemberInfo, CultureInfo> cultureForProp = new();
         private readonly Dictionary<MemberInfo, int> trimLengthForProp = new();
-        private MemberInfo? currentProp;
 
         protected internal readonly Dictionary<MemberInfo, Func<object, string>>
             AlternativeSerializationForProp = new();
@@ -46,7 +45,7 @@ namespace ObjectPrinting
             };
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
+        private string PrintToString(object? obj, int nestingLevel, MemberInfo? memberInfo = null)
         {
             if (obj == null)
                 return string.Empty;
@@ -54,25 +53,25 @@ namespace ObjectPrinting
                 return "[Recursion]";
             return obj switch
             {
-                not null when simpleTypes.Contains(obj.GetType()) => ProcessSimpleType(obj),
+                not null when simpleTypes.Contains(obj.GetType()) => ProcessSimpleType(obj, memberInfo),
                 IDictionary dict => ProcessDictionary(dict, nestingLevel),
                 IEnumerable list => ProcessCollection(list, nestingLevel),
                 _ => ProcessNestedObject(obj, nestingLevel)
             };
         }
 
-        private string ProcessSimpleType(object obj)
+        private string ProcessSimpleType(object obj, MemberInfo? memeberInfo = null)
         {
             var type = obj.GetType();
             var result = (obj switch
             {
-                IFormattable f when currentProp != null && cultureForProp.TryGetValue(currentProp, out var culture) =>
+                IFormattable f when memeberInfo != null && cultureForProp.TryGetValue(memeberInfo, out var culture) =>
                     f.ToString(null, culture),
                 IFormattable f when cultureForType.ContainsKey(type) => f.ToString(null, cultureForType[type]),
                 _ => obj.ToString()
             })!;
 
-            if (currentProp != null && trimLengthForProp.TryGetValue(currentProp, out var length))
+            if (memeberInfo != null && trimLengthForProp.TryGetValue(memeberInfo, out var length))
                 result = result.Length > length ? result[..length] : result;
 
             return result;
@@ -110,7 +109,6 @@ namespace ObjectPrinting
 
             foreach (var property in type.GetProperties())
             {
-                currentProp = property;
                 if (excludedTypes.Contains(property.PropertyType) || excludedProps.Contains(property))
                     continue;
                 var serializedValue = Serialize(property, obj, nestingLevel + 1);
@@ -120,7 +118,6 @@ namespace ObjectPrinting
 
             foreach (var field in type.GetFields())
             {
-                currentProp = field;
                 if (excludedTypes.Contains(field.FieldType) || excludedProps.Contains(field))
                     continue;
                 var serializedValue = Serialize(field, obj, nestingLevel + 1);
@@ -128,16 +125,14 @@ namespace ObjectPrinting
                 sb.AppendLine($"{field.Name} = {serializedValue}");
             }
 
-            currentProp = null;
-
             return sb.ToString();
         }
 
-        private string Serialize(MemberInfo property, object parent, int nestingLevel)
+        private string Serialize(MemberInfo memberInfo, object parent, int nestingLevel)
         {
             object value;
             Type type;
-            switch (property)
+            switch (memberInfo)
             {
                 case PropertyInfo prop:
                     value = prop.GetValue(parent);
@@ -152,11 +147,11 @@ namespace ObjectPrinting
             }
             if (value == null)
                 return "null";
-            if (AlternativeSerializationForProp.TryGetValue(property, out var propertySerializer))
+            if (AlternativeSerializationForProp.TryGetValue(memberInfo, out var propertySerializer))
                 return propertySerializer(value);
             if (AlternativeSerializationForType.TryGetValue(type, out var typeSerializer))
                 return typeSerializer(value);
-            return PrintToString(value, nestingLevel);
+            return PrintToString(value, nestingLevel, memberInfo);
         }
 
         public IPrintingConfig<TOwner> Exclude<TFieldType>()
