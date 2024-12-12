@@ -1,8 +1,8 @@
-﻿namespace ObjectSerializerTests.ClassesToSerialize;
+﻿namespace ObjectSerializerTests.ClassesToSerialize.Libraries;
 
-public class Library
+public class BaseLibrary
 {
-    public Library(string name)
+    public BaseLibrary(string name)
     {
         Name = name;
         Books = new List<Book>();

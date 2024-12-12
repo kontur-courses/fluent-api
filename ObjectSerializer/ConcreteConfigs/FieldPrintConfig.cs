@@ -14,9 +14,23 @@ public class FieldPrintConfig<TOwner, TField> : IFieldPrintConfig<TOwner, TField
         this.memberInfo = memberInfo;
     }
 
-    public IPrintingConfig<TOwner> TrimToLength(uint length)
+    public IPrintingConfig<TOwner> TrimToLength(int length)
     {
-        printingConfig.FieldLengths.Add(memberInfo, length);
+        if (length <= 0)
+            throw new ArgumentException("Длина обрезаемой строки не может быть <= 0!");
+
+        printingConfig.FieldLengths.Add(memberInfo, (0, length));
+
+        return printingConfig;
+    }
+
+    public IPrintingConfig<TOwner> Trim(int start, int length)
+    {
+        if (start < 0 || length <= 0)
+            throw new ArgumentException($"Неправильно задан диапозон обрезания строки:" +
+                                        $" start = {start} должен >= 0, length = {length} > 0!");
+
+        printingConfig.FieldLengths.Add(memberInfo, (start, length));
 
         return printingConfig;
     }

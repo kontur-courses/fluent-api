@@ -1,4 +1,4 @@
-﻿BaseLibrary
+﻿ImprovedLibrary
 	Books = 
 		Collection
 			Book
@@ -15,8 +15,15 @@
 				Author = "Jane Austen"
 	BooksByAuthor = 
 		Dictionary
-			"George Orwell" : "1984"
-			"Harper Lee" : "To Kill a Mockingbird"
-			"F. Scott Fitzgerald" : "The Great Gatsby"
-			"Jane Austen" : "Pride and Prejudice"
-	Name = "Отличная библиотека Имени кого-то там"
+	WordOccurenceByAuthor = 
+		Dictionary
+			"George Orwell" : 
+				Dictionary
+					"beme" : 10000
+					"Z" : 3000
+					"Slon" : 2512
+			"Harper Lee" : 
+				Dictionary
+					"pukmuk" : 2000
+					"52" : 1000000
+	Name = "Тут зачем-то считали слова"

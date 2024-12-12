@@ -42,7 +42,7 @@ namespace ObjectSerializerTests.TimePeriodTests
         public void ObjectPrinter_CanConfigPrint_FieldsAndPropertiesOfType()
         {
             var printer = ObjectPrinter.For<TimePeriod>()
-                .For<Guid>().Using(p => $"Guid:{p.ToString()}");
+                .Print<Guid>().Using(p => $"Guid:{p.ToString()}");
 
             Approvals.Verify(printer.PrintToString(serializePeriod));
         }
@@ -52,7 +52,7 @@ namespace ObjectSerializerTests.TimePeriodTests
         public void ObjectPrinter_CanApplyCulture_ForTypesHavingCulture()
         {
             var printer = ObjectPrinter.For<TimePeriod>()
-                .For<double>()
+                .Print<double>()
                 .Using(new CultureInfo("ru-RU"));
 
             Approvals.Verify(printer.PrintToString(serializePeriod));
@@ -63,9 +63,9 @@ namespace ObjectSerializerTests.TimePeriodTests
         public void ObjectPrinter_CanConfigPrint_ForFieldOrProperty()
         {
             var printer = ObjectPrinter.For<TimePeriod>()
-                .For(p => p.TotalPlaces)
+                .Print(p => p.TotalPlaces)
                     .Using(h => $"Всего мест {h}")
-                .For(p => p.BookedPlaces)
+                .Print(p => p.BookedPlaces)
                     .Using(h => $"Забронировано {h}");
 
             Approvals.Verify(printer.PrintToString(serializePeriod));
@@ -87,7 +87,7 @@ namespace ObjectSerializerTests.TimePeriodTests
         {
             var printer = ObjectPrinter.For<TimePeriod>()
                 .Exclude<Guid>()
-                .For<DateTime>()
+                .Print<DateTime>()
                     .Using(i => i.ToString("d"))
                 .Exclude(p => p.TotalPlaces);
 

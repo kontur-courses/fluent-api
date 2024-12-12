@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,38 +11,37 @@ namespace ObjectSerializer.ConcreteConfigs;
 
 public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
 {
-    private HashSet<MemberInfo> excludedMemberInfos = new();
+    private readonly HashSet<MemberInfo> excludedMemberInfos = new();
 
-    private HashSet<Type> excludedTypes = new();
+    private readonly HashSet<Type> excludedTypes = new();
 
     //Func печати для определенного поля объекта
-    public Dictionary<MemberInfo, Func<object, string>> MemberInfosPrintFunc = new();
+    public readonly Dictionary<MemberInfo, Func<object, string>> MemberInfosPrintFunc = new();
 
-    public Dictionary<MemberInfo, uint> FieldLengths = new();
+    public readonly Dictionary<MemberInfo, (int Start, int Length)> FieldLengths = new();
 
-    public Dictionary<Type, CultureInfo> TypeCultureInfos = new();
+    public readonly Dictionary<Type, CultureInfo> TypeCultureInfos = new();
 
     //Func печати для определенного типа
-    public Dictionary<Type, Func<object, string>> TypePrintFunc = new();
+    public readonly Dictionary<Type, Func<object, string>> TypePrintFunc = new();
 
     //Объекты которые мы уже обработали
-    private HashSet<object> processedObjects = new();
+    private readonly HashSet<object> processedObjects = new();
 
-    //Конечные, не 'вложенные' типы
-    private HashSet<Type> finalTypes = new()
+    //Не примитивные, не 'вложенные' типы,
+    private readonly HashSet<Type> nonPrimitiveFinalTypes = new()
     {
-        typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(string)
     };
 
-    #region For methods
+    #region Print methods
 
-    public ITypePrintConfig<TOwner, TType> For<TType>()
+    public ITypePrintConfig<TOwner, TType> Print<TType>()
     {
         return new TypePrintConfig<TOwner, TType>(this);
     }
 
-    public IFieldPrintConfig<TOwner, TField> For<TField>(Expression<Func<TOwner, TField>> selectMember)
+    public IFieldPrintConfig<TOwner, TField> Print<TField>(Expression<Func<TOwner, TField>> selectMember)
     {
         var memberInfo = GetMemberInfo(selectMember);
 
@@ -88,19 +88,19 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
 
         var objType = obj.GetType(); 
 
-        if (finalTypes.Contains(objType))
+        if (IsFinalType(objType))
             return GetStringOfFinalType(obj);
 
         //cycles
         if(processedObjects.Contains(obj))
-            return String.Empty;
+            return "!Циклическая ссылка!";
 
         processedObjects.Add(obj);
 
         return obj switch
         {
             IDictionary dictionary => PrintDictionary(dictionary, nestingLevel),
-            ICollection collection => PrintCollection(collection, nestingLevel),
+            IEnumerable collection => PrintCollection(collection, nestingLevel),
             _ => PrintClassMembers(obj, nestingLevel)
         };
     }
@@ -109,7 +109,7 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
     {
         var stringBuilder = new StringBuilder();
         var indentation = CreateIndentation(nestingLevel);
-        stringBuilder.AppendLine(string.Concat(indentation, "Dictionary"));
+        stringBuilder.Append(string.Concat(indentation, "Dictionary"));
         nestingLevel++;
         indentation = CreateIndentation(nestingLevel);
 
@@ -118,30 +118,43 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
             var key = entry.Key;
             var value = entry.Value;
 
-            var keyPrint = PrintToString(key, nestingLevel + 1);
+            stringBuilder.AppendLine();
+            var keyPrint = PrintToString(key, nestingLevel);
 
-            stringBuilder.Append(indentation + keyPrint + " : ");
+            if (IsFinalType(value.GetType()))
+            {
+                stringBuilder.Append(indentation + keyPrint + " : ");
 
-            var valuePrint = PrintToString(value, nestingLevel - 1);
+                var valuePrint = PrintToString(value, 0);
 
-            stringBuilder.AppendLine(valuePrint.TrimStart('\t'));
+                stringBuilder.Append(valuePrint);
+            }
+            else
+            {
+                stringBuilder.AppendLine(indentation + keyPrint + " : ");
+                var valuePrint = PrintToString(value, nestingLevel + 1);
+
+                stringBuilder.Append(valuePrint);
+            }
         }
 
         return stringBuilder.ToString();
     }
 
-    private string PrintCollection(ICollection collection, int nestingLevel)
+    private string PrintCollection(IEnumerable collection, int nestingLevel)
     {
         var stringBuilder = new StringBuilder();
         var indentation = CreateIndentation(nestingLevel);
-        stringBuilder.AppendLine(string.Concat(indentation, "Collection"));
+        stringBuilder.Append(string.Concat(indentation, "Collection"));
+
         nestingLevel++;
         indentation = CreateIndentation(nestingLevel);
 
         foreach (var item in collection)
         {
-            var itemPrint = PrintToString(item, nestingLevel);
-            stringBuilder.Append(itemPrint);
+            stringBuilder.AppendLine();
+            var itemPrint = PrintToString(item, nestingLevel).TrimStart();
+            stringBuilder.Append(String.Concat(indentation, itemPrint));
         }
 
         return stringBuilder.ToString();
@@ -152,7 +165,7 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
         var stringBuilder = new StringBuilder();
         var objType = obj.GetType();
         var indentation = CreateIndentation(nestingLevel);
-        stringBuilder.AppendLine(string.Concat(indentation, objType.Name));
+        stringBuilder.Append(string.Concat(indentation, objType.Name));
         nestingLevel++;
         indentation = CreateIndentation(nestingLevel);
 
@@ -162,11 +175,14 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
             {
                 var memberValue = GetMemberValue(obj, memberInfo);
                 var memberString = GetMemberValueString(memberValue, memberInfo, nestingLevel + 1);
-
-                if(memberString == String.Empty)
-                    continue;
-                if(finalTypes.Contains(memberValue.GetType()))
-                    stringBuilder.AppendLine(string.Concat(indentation,
+                stringBuilder.AppendLine();
+                if (memberString == "!Циклическая ссылка!")
+                {
+                    stringBuilder.Append(string.Concat(indentation,
+                        memberInfo.Name, " = ", memberString));
+                }
+                else if (IsFinalType(memberValue.GetType()))
+                    stringBuilder.Append(string.Concat(indentation,
                     memberInfo.Name, " = ", memberString));
                 else
                 {
@@ -188,14 +204,14 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
             stringValue = printFieldFunc(memberValue);
         else if (TypePrintFunc.TryGetValue(memberType, out var printTypeFunc))
             stringValue = printTypeFunc(memberValue);
-        else if (FieldLengths.TryGetValue(memberInfo, out var fieldLength))
-            stringValue = TrimToLength(memberValue?.ToString()!, fieldLength);
+        else if (FieldLengths.TryGetValue(memberInfo, out var range))
+            stringValue = Trim(memberValue?.ToString()!, range.Start, range.Length);
         else if(TypeCultureInfos.TryGetValue(memberType, out var culture))
             stringValue = string.Format(culture, memberValue.ToString());
 
         if (stringValue == null)
             stringValue = PrintToString(memberValue, nestingLevel);
-        else if (!numericTypes.Contains(memberValue.GetType()))
+        else if (nonPrimitiveFinalTypes.Contains(memberValue.GetType()))
             stringValue = $"\"{stringValue}\"";
 
         return stringValue;
@@ -206,29 +222,28 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
         return new string('\t', nestingLevel);
     }
 
-    private HashSet<Type> numericTypes = new HashSet<Type>()
-    {
-        typeof(int), typeof(double), typeof(float)
-    };
-
     private string GetStringOfFinalType(object obj)
     {
-        return obj switch
-        {
-            int i => i.ToString(),
-            double d => d.ToString(),
-            float f => f.ToString(),
-            string s => $"\"{s}\"",
-            DateTime dt => $"\"{dt}\"",
-            TimeSpan ts => $"\"{ts}\"",
-            Guid g => $"\"{g}\"",
-            _ => throw new ArgumentException($"Переданный {obj.GetType()} не принадлежит к конечным типам")
-        };
+        var type = obj.GetType();
+
+        if(type.IsPrimitive)
+            return obj.ToString();
+        if (type.IsEnum)
+            return obj.ToString();
+        if (nonPrimitiveFinalTypes.Contains(type))
+            return $"\"{obj}\"";
+
+        throw new ArgumentException($"Переданный {obj.GetType()} не принадлежит к конечным типам");
     }
 
     #endregion
 
     #region HelpersMethods
+
+    private bool IsFinalType(Type type)
+    {
+        return type.IsPrimitive || type.IsEnum || nonPrimitiveFinalTypes.Contains(type);
+    }
 
     private MemberInfo GetMemberInfo<TSomeField>(Expression<Func<TOwner, TSomeField>> selectMember)
     {
@@ -244,7 +259,7 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
         {
             return propertyInfo.PropertyType;
         }
-        else if (member is FieldInfo fieldInfo)
+        if (member is FieldInfo fieldInfo)
         {
             return fieldInfo.FieldType;
         }
@@ -272,13 +287,11 @@ public class PrintingConfig<TOwner> : IPrintingConfig<TOwner>
             .Where(m => m is FieldInfo || m is PropertyInfo);
     }
 
-    private string TrimToLength(string str, uint len)
+    private string Trim(string str, int start, int len)
     {
         if (str == null) throw new ArgumentNullException(nameof(str));
-        if (len == 0) return string.Empty;
-        if (str.Length <= len) return str;
 
-        return str.Substring(0, (int)len);
+        return str.Substring(start, len);
     }
 
     #endregion

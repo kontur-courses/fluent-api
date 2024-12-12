@@ -1,6 +1,7 @@
 ﻿MarriedPerson
 	Partner = 
 		MarriedPerson
+			Partner = !Циклическая ссылка!
 			Id = "08406af6-61a9-434f-aefe-f99a10cdadfd"
 			Name = "Мисато Кацураги"
 			Height = 162

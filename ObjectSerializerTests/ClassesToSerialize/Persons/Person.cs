@@ -1,4 +1,4 @@
-﻿namespace ObjectSerializerTests.ClassesToSerialize;
+﻿namespace ObjectSerializerTests.ClassesToSerialize.Persons;
 
 public class Person
 {
@@ -7,7 +7,7 @@ public class Person
     public double Height { get; set; }
     public int Age { get; set; }
 
-    public Person(string name, double height, int age) 
+    public Person(string name, double height, int age)
         : this(Guid.NewGuid(), name, height, age)
     {
     }

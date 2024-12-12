@@ -1,4 +1,4 @@
-﻿namespace ObjectSerializerTests.ClassesToSerialize;
+﻿namespace ObjectSerializerTests.ClassesToSerialize.Persons;
 
 public class MarriedPerson : Person
 {
