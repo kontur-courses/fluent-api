@@ -2,6 +2,16 @@
 
 public static class PersonFactory
 {
+    private static Person AFriend()
+        => new() 
+        { 
+            Id = Guid.Empty, 
+            Name = "Bob friend", 
+            Age = 20, 
+            Height = 200, 
+            Birthday = new DateTime(2004, 2, 26), 
+            IsStudent = true,
+        };
     
     public static Person APersonWithoutId()
         => new() 
@@ -11,7 +21,8 @@ public static class PersonFactory
             Age = 20, 
             Height = 200, 
             Birthday = new DateTime(2004, 2, 26), 
-            IsStudent = true 
+            IsStudent = true,
+            Friends = [AFriend(), AFriend()]
         };
 
     public static Person APersonWithDoubleHeight()

@@ -4,5 +4,6 @@
 	Height = 200.22
 	Age = 20
 	Parent = null
+	Friends = []
 	IsStudent = True
 	Birthday = 26.02.2004 0:00:00

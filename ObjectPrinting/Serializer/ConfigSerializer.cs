@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -20,6 +21,11 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
         if (nestingLevel + 1 > config.MaxNestingLevel)
             return "..." + Environment.NewLine;
         
+        if (obj is IEnumerable enumerable)
+            return enumerable is IDictionary dict 
+                ? GetPrintedDictionary(dict, nestingLevel) 
+                : GetPrintedSequence(enumerable, nestingLevel);
+        
         var type = obj.GetType();
         var sb = new StringBuilder(type.Name + Environment.NewLine);
         var indentation = new string('\t', (int)(nestingLevel + 1));
@@ -36,6 +42,43 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             sb.Append(indentation + memberInfo.Name + " = " + TrimIfNeeded(memberInfo, printingResult));
         }
         return sb.ToString();
+    }
+    
+    private string GetPrintedSequence(IEnumerable obj, uint nestingLevel)
+    {
+        var index = 0;
+        var sb = new StringBuilder("[");
+        var indentation = new string('\t', (int)(nestingLevel + 1));
+
+        foreach (var element in obj)
+        {
+            var serializedElement = PrintToString(element, nestingLevel + 1);
+            if (sb.Length == 1) sb.Append(Environment.NewLine);
+            sb.Append($"{indentation}{index++}: {serializedElement}");
+        }
+        
+        var arrayClosing = sb.Length == 1 
+            ? string.Empty 
+            : new string('\t', (int)nestingLevel);
+        return sb + arrayClosing + "]" + Environment.NewLine;
+    }
+
+    private string GetPrintedDictionary(IDictionary dict, uint nestingLevel)
+    {
+        var sb = new StringBuilder("{");
+        var indentation = new string('\t', (int)(nestingLevel + 1));
+
+        foreach (DictionaryEntry pair in dict)
+        {
+            var serializedElement = PrintToString(pair.Value, nestingLevel + 1);
+            if (sb.Length == 1) sb.Append(Environment.NewLine);
+            sb.Append($"{indentation}{pair.Key}: {serializedElement}");
+        }
+
+        var dictClosing = sb.Length == 1
+            ? string.Empty
+            : new string('\t', (int)nestingLevel);
+        return sb + dictClosing + "}" + Environment.NewLine;
     }
 
     private string? TryNonNestingSerialization(object obj)

@@ -19,13 +19,72 @@
 					Name = Bob
 					Age = 20
 					Parent = ...
+					Friends = ...
 					IsStudent = True
 					Birthday = 26.02.2004 0:00:00
+				Friends = [
+					0: ...
+					1: ...
+				]
 				IsStudent = True
 				Birthday = 26.02.2004 0:00:00
+			Friends = [
+				0: Person
+					Id = 00000000-0000-0000-0000-000000000000
+					Name = Bob friend
+					Age = 20
+					Parent = null
+					Friends = ...
+					IsStudent = True
+					Birthday = 26.02.2004 0:00:00
+				1: Person
+					Id = 00000000-0000-0000-0000-000000000000
+					Name = Bob friend
+					Age = 20
+					Parent = null
+					Friends = ...
+					IsStudent = True
+					Birthday = 26.02.2004 0:00:00
+			]
 			IsStudent = True
 			Birthday = 26.02.2004 0:00:00
+		Friends = [
+			0: Person
+				Id = 00000000-0000-0000-0000-000000000000
+				Name = Bob friend
+				Age = 20
+				Parent = null
+				Friends = []
+				IsStudent = True
+				Birthday = 26.02.2004 0:00:00
+			1: Person
+				Id = 00000000-0000-0000-0000-000000000000
+				Name = Bob friend
+				Age = 20
+				Parent = null
+				Friends = []
+				IsStudent = True
+				Birthday = 26.02.2004 0:00:00
+		]
 		IsStudent = True
 		Birthday = 26.02.2004 0:00:00
+	Friends = [
+		0: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Bob friend
+			Age = 20
+			Parent = null
+			Friends = []
+			IsStudent = True
+			Birthday = 26.02.2004 0:00:00
+		1: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Bob friend
+			Age = 20
+			Parent = null
+			Friends = []
+			IsStudent = True
+			Birthday = 26.02.2004 0:00:00
+	]
 	IsStudent = True
 	Birthday = 26.02.2004 0:00:00

@@ -4,5 +4,25 @@
 	Height = 200
 	Age = 20
 	Parent = null
+	Friends = [
+		0: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Bob friend
+			Height = 200
+			Age = 20
+			Parent = null
+			Friends = []
+			IsStudent = True
+			Birthday = 26 февраля 2004 г.
+		1: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Bob friend
+			Height = 200
+			Age = 20
+			Parent = null
+			Friends = []
+			IsStudent = True
+			Birthday = 26 февраля 2004 г.
+	]
 	IsStudent = True
 	Birthday = 26 февраля 2004 г.

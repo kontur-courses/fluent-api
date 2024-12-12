@@ -81,4 +81,26 @@ public class ObjectPrinterTest
             .PrintToString(PersonFactory.APersonWithoutId());
         Approvals.Verify(actual);
     }
+
+    [Test]
+    public void ObjectPrinter_PrintToString_ShouldSerializeEnumerable()
+    {
+        var actual = ObjectPrinter
+            .For<Person[]>()
+            .PrintToString([PersonFactory.APersonWithoutId(), PersonFactory.APersonWithoutId()]);
+        Approvals.Verify(actual);
+    }
+
+    [Test]
+    public void ObjectPrinter_PrintToString_ShouldSerializeDictionary()
+    {
+        var actual = ObjectPrinter
+            .For<Dictionary<string, Person>>()
+            .PrintToString(new Dictionary<string, Person>
+            {
+                { "Person1", PersonFactory.APersonWithoutId() },
+                { "Person2", PersonFactory.APersonWithoutId() },
+            });
+        Approvals.Verify(actual);
+    }
 }
