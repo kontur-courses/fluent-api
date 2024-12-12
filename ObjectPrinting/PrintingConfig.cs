@@ -16,6 +16,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Delegate> _typeConverters = new();
         private readonly Dictionary<MemberInfo, Delegate> _propertyConverters = new();
         private readonly Dictionary<Type, CultureInfo> _cultureSpecs = new();
+        private readonly Dictionary<MemberInfo, int> _stringPropertyLengths = new();
         internal int MaxStringLength { get; set; } = int.MaxValue;
         private int MaxRecursionDepth { get; set; } = 16;
 
@@ -27,6 +28,11 @@ namespace ObjectPrinting
         internal void AddCultureSpec(Type type, CultureInfo cultureInfo)
         {
             _cultureSpecs.Add(type, cultureInfo);
+        }
+
+        internal void AddStringPropertyLength(MemberInfo propertyInfo, int length)
+        {
+            _stringPropertyLengths.Add(propertyInfo, length);
         }
 
         public PrintingConfig<TOwner> WithMaxRecursionDepth(int maxRecursionDepth)
@@ -159,6 +165,8 @@ namespace ObjectPrinting
             value = String.Empty;
             if (_propertyConverters.TryGetValue(propertyInfo, out var converter))
                 value = $"{converter.DynamicInvoke(propertyValue) as string ?? "null"}{Environment.NewLine}";
+            else if (propertyValue is string str && _stringPropertyLengths.TryGetValue(propertyInfo, out var length))
+                value = $"{str.Substring(0, Math.Min(length, str.Length))}{Environment.NewLine}{length}";
             else if (_typeConverters.TryGetValue(propertyInfo.PropertyType, out var typeConverter))
                 value = $"{typeConverter.DynamicInvoke(propertyValue) as string ?? "null"}{Environment.NewLine}";
             return value != String.Empty;
