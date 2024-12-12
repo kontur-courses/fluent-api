@@ -26,6 +26,9 @@ public static class TypeSerializerExtensions
         this ITypeSerializer<string, TOwner> typeSerializer,
         int maxLength)
     {
+        if (maxLength < 0)
+            throw new ArgumentOutOfRangeException($"{nameof(maxLength)} cannot be negative");
+        
         var config = GetConfig(typeSerializer);
         config.MaxStringLength = maxLength;
         return config;
