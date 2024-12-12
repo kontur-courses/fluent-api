@@ -44,7 +44,7 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             return ((IFormattable)obj).ToString(null, culture) + Environment.NewLine;
         
         if (obj is string str && config.TrimStringValue is { } trimmed)
-            return TrimIfNeeded(str, (int)trimmed) + Environment.NewLine;
+            return TrimIfNeeded(str + Environment.NewLine, (int)trimmed);
         
         return IsFinalType(obj.GetType()) ? obj + Environment.NewLine : null;
     }
@@ -55,10 +55,11 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
         if (value is null) return "null" + Environment.NewLine;
         
         if (config.TypeSerializers.TryGetValue(memberInfo.TryGetType(), out var typeSerializer))
-            return TrimIfNeeded(memberInfo, typeSerializer(value)) + Environment.NewLine;
+            return TrimIfNeeded(memberInfo, typeSerializer(value) + Environment.NewLine);
         
         if (config.PropertySerializers.TryGetValue(memberInfo.TryGetFullName(), out var propertySerializer))
-            return TrimIfNeeded(memberInfo, propertySerializer(value)) + Environment.NewLine;
+            return TrimIfNeeded(memberInfo, propertySerializer(value) + Environment.NewLine);
+
         return null;
     }
     
@@ -67,10 +68,10 @@ public class ConfigSerializer<TOwner>(PrintingConfig<TOwner> config)
             ? TrimIfNeeded(printingResult, (int)length) : printingResult;
     
     private static string TrimIfNeeded(string str, int length) 
-        => str.Length >= length ? str[..length] : str;
+        => str.Length >= length ? str[..length] + Environment.NewLine : str;
     
     private static bool IsFinalType(Type type)
-        => type.IsPrimitive || type == typeof(string) || type == typeof(Guid);
+        => type.IsPrimitive || type == typeof(string) || type == typeof(Guid) || type == typeof(DateTime);
     
     private static object? TryGetMemberValue(MemberInfo member, object obj)
     {

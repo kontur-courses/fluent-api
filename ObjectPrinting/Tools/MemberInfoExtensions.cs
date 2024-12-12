@@ -6,7 +6,7 @@ namespace ObjectPrinting.Tools;
 public static class MemberInfoExtensions
 {
     public static string TryGetFullName(this MemberInfo memberInfo)
-        => $"{TryGetType(memberInfo).FullName}.{memberInfo.Name}";
+        => $"{memberInfo.DeclaringType!.FullName}.{memberInfo.Name}";
 
     public static Type TryGetType(this MemberInfo memberInfo)
     {

@@ -1,0 +1,8 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Bo
+	Height = 200
+	Age = 20
+	Parent = null
+	IsStudent = True
+	Birthday = 26.02.2004 0:00:00
