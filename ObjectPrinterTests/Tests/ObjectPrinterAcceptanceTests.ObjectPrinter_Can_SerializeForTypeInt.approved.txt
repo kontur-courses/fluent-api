@@ -1,5 +1,6 @@
 ﻿Person
-	Id = Guid
+	Id = 00000000-0000-0000-0000-000000000000
 	Name = Андрей Захаров
 	Height = какой-то double 19.2
 	Age = 20
+	PlaceBirth = Uknown

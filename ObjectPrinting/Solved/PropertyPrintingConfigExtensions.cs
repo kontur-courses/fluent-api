@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using ObjectPrinting.PrintingConfig;
 
 namespace ObjectPrinting.Solved
 {
@@ -11,26 +12,33 @@ namespace ObjectPrinting.Solved
         }
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
-            this IPropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+            this PropertyConfigMember<TOwner, string> propConfig, int maxLen)
         {
-            if (propConfig is not PropertyConfigMember<TOwner, string> member)
-            {
-                throw new TypeAccessException("ты пытаешься все строки обрезать?? такое здесь не приветствуется пошл отсюда");
-            }
-           
-            propConfig.ParentConfig.GetConfig.PropertyTrim.Add(member.MemberInfo, maxLen);
+            propConfig.ParentConfig.DataConfig.PropertyTrim.Add(propConfig.MemberInfo, maxLen);
 
             return propConfig.ParentConfig;
         }
 
         public static PrintingConfig<TOwner> Using<TOwner, TProType>(
             this IPropertyPrintingConfig<TOwner, TProType> propertyPrintingConfig,
-            CultureInfo cultureInfo)
+            CultureInfo cultureInfo) where TProType : struct, IFormattable
 
         {
-            propertyPrintingConfig.ParentConfig.GetConfig.TypeCultures.Add(typeof(TProType), cultureInfo);
+            propertyPrintingConfig.ParentConfig.DataConfig.TypeCultures.Add(typeof(TProType), cultureInfo);
 
             return propertyPrintingConfig.ParentConfig;
         }
+
+        public static PrintingConfig<TOwner> Using<TOwner, TProType>(
+            this IPropertyPrintingConfig<TOwner, TProType> propertyPrintingConfig,
+            Func<string, string> print) where TProType : struct, IFormattable
+
+        {
+            Func<object, string> func = obj => print((string)obj);
+
+            propertyPrintingConfig.ParentConfig.DataConfig.TypeSerializers.Add(typeof(TProType), func);
+            return propertyPrintingConfig.ParentConfig;
+        }
+        
     }
 }

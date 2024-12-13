@@ -6,12 +6,11 @@ public class TestTypePropetries
     public double Double { get; set; }
     public DateTime DateTime { get; set; }
     public float Float { get; set; }
-    
-    
+
 
     public static TestTypePropetries GetTestType()
     {
-        return new TestTypePropetries()
+        return new TestTypePropetries
         {
             Int = 1,
             DateTime = new DateTime(2002, 1, 11),

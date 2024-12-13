@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using ObjectPrinting.Solved;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.PrintingConfig
 {
     public class PropertyPrintingConfig<TOwner, TPropType>(
         PrintingConfig<TOwner> printingConfig,
@@ -14,11 +15,12 @@ namespace ObjectPrinting.Solved
         {
             Func<object, string> func = obj => print((TPropType)obj);
 
-            printingConfig.GetConfig.TypeSerializers.Add(typeof(TPropType), func);
+            printingConfig.DataConfig.TypeSerializers.Add(typeof(TPropType), func);
             return printingConfig;
         }
         
-        
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig; // не ту ты понял, если мы напишем так, то этот метод будет доступен только через интерфейс. он как бы публичынй, но по сути, его не будут видеть, если специально не за кастить то интерфейса.
+
+        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig =>
+            printingConfig; // не ту ты понял, если мы напишем так, то этот метод будет доступен только через интерфейс. он как бы публичынй, но по сути, его не будут видеть, если специально не за кастить то интерфейса.
     }
 }

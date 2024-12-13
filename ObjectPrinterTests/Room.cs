@@ -8,9 +8,9 @@ public class Room
 
     public static Room GetStudioHouse()
     {
-        var house = new Room()
+        var house = new Room
         {
-            NeighborRooms = new[] { new Room() { Size = 10 } },
+            NeighborRooms = new[] { new Room { Size = 10 } },
             Size = 15
         };
 

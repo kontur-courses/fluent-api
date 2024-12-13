@@ -1,14 +1,14 @@
-namespace ObjectPrinting.Solved.Tests;
+namespace ObjectPrinterTests.Tests;
 
 public class Shop(string[] items, string nameShop)
 {
     public string NameShop { get; set; } = nameShop;
     public string[] Items { get; set; } = items;
-
+    public bool IsOpen { get; set; } 
 
     public static Shop GetShop()
     {
-        var items = new string[]
+        var items = new[]
         {
             "Apple",
             "Chips",
@@ -17,6 +17,6 @@ public class Shop(string[] items, string nameShop)
             "Tomat"
         };
 
-        return new Shop(items, "Пятёрочка");
+        return new Shop(items, "Пятёрочка") {IsOpen = true};
     }
 }

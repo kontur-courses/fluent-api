@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using ObjectPrinting.Solved;
 
-namespace ObjectPrinting.Solved;
+namespace ObjectPrinting.PrintingConfig;
 
 public class PropertyConfigMember<TOwner, TPropType>(
     PrintingConfig<TOwner> parentConfig,

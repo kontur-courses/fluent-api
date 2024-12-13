@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.PrintingConfig;
 
 namespace ObjectPrinting.Solved
 {
@@ -15,7 +16,7 @@ namespace ObjectPrinting.Solved
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetConfig.TypeSerializers);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, DataConfig.TypeSerializers);
         }
 
         public PropertyConfigMember<TOwner, TPropType> Printing<TPropType>(
@@ -23,7 +24,7 @@ namespace ObjectPrinting.Solved
         {
             if (memberSelector.Body is not MemberExpression memberExpression) throw new ArgumentException();
 
-            return new PropertyConfigMember<TOwner, TPropType>(this, GetConfig.PropertySerializers,
+            return new PropertyConfigMember<TOwner, TPropType>(this, DataConfig.PropertySerializers,
                 memberExpression.Member);
         }
 
@@ -31,13 +32,13 @@ namespace ObjectPrinting.Solved
         {
             if (memberSelector.Body is not MemberExpression memberExpression) throw new ArgumentException();
 
-            GetConfig.ExcludedProperties.Add(memberExpression.Member);
+            DataConfig.ExcludedProperties.Add(memberExpression.Member);
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            GetConfig.ExcludedTypes.Add(typeof(TPropType));
+            DataConfig.ExcludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -48,7 +49,6 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            //TODO apply configurations
             if (obj == null) return "null" + Environment.NewLine;
 
 
@@ -59,8 +59,9 @@ namespace ObjectPrinting.Solved
             foreach (var propertyInfo in type.GetProperties())
             {
                 var value = propertyInfo.GetValue(obj);
-                if (GetConfig.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
-                    GetConfig.ExcludedProperties.Contains(propertyInfo) ||
+                if (value == null) sb.AppendLine(identation + propertyInfo.Name + " = " + "null");
+                if (DataConfig.ExcludedTypes.Contains(propertyInfo.PropertyType) ||
+                    DataConfig.ExcludedProperties.Contains(propertyInfo) ||
                     value == null) continue;
 
                 if (!visitedElement.Add(value))
@@ -69,7 +70,7 @@ namespace ObjectPrinting.Solved
                     break;
                 }
 
-                if (GetFinalTypes().Contains(value.GetType()))
+                if (IsSerializable(value)) 
                 {
                     if (TryFormater(propertyInfo, value, out var newLine))
                     {
@@ -98,10 +99,18 @@ namespace ObjectPrinting.Solved
 
 
                 sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
+                          PrintToString(propertyInfo.GetValue(obj).GetType(), nestingLevel + 1));
             }
 
             return sb.ToString();
+        }
+
+        private static bool IsSerializable(object value)
+        {
+            return value.GetType().IsPrimitive
+                   || value is string 
+                   || value is DateTime 
+                   || value is Guid;
         }
 
         private void WriteDict(IDictionary dictionary, int nestingLevel, PropertyInfo propertyInfo,
@@ -110,9 +119,9 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(identation + propertyInfo.Name + " {");
             var identationInArray = identation + '\t';
 
-            foreach (DictionaryEntry o in dictionary)
+            foreach (DictionaryEntry o in dictionary) // прикльно что можно так закастить элементы словаря 
             {
-                if (GetFinalTypes().Contains(o.Value.GetType()))
+                if (IsSerializable(o.Value))
                 {
                     if (TryFormater(propertyInfo, o.Value, out var newLine))
                     {
@@ -139,7 +148,7 @@ namespace ObjectPrinting.Solved
         {
             sb.AppendLine(identation + propertyInfo.Name + " [");
             var identationInArray = identation + '\t';
-            foreach (var element in enumerable) // у нас element может быть сложныс классом
+            foreach (var element in enumerable)
             {
                 if (TryAddAsPrimitiveType(propertyInfo, sb, element, identationInArray)) continue;
 
@@ -184,26 +193,33 @@ namespace ObjectPrinting.Solved
         {
             s = null;
             var changed = false;
-            if (GetConfig.TypeCultures.TryGetValue(value.GetType(), out var cultureInfo))
+            if (value is IFormattable formattable)
             {
-                s = ((IFormattable)value).ToString(null, cultureInfo);
+                if (DataConfig.TypeCultures.TryGetValue(value.GetType(), out var cultureInfo))
+                {
+                    s = formattable.ToString("", cultureInfo);
+                    changed = true;
+                }
+                else
+                {
+                    s = formattable.ToString(null, CultureInfo.InvariantCulture);
+                }
+            }
+
+            if (DataConfig.TypeSerializers.TryGetValue(value.GetType(), out var formatter))
+            {
+                s = formatter(s);
                 changed = true;
             }
 
-            if (GetConfig.TypeSerializers.TryGetValue(value.GetType(), out var formatter))
-            {
-                s = formatter(s ?? value);
-                changed = true;
-            }
-
-            if (GetConfig.PropertyTrim.TryGetValue(o, out var len))
+            if (DataConfig.PropertyTrim.TryGetValue(o, out var len))
             {
                 s = s?[..len] ?? ((string)value)[..len];
 
                 changed = true;
             }
 
-            if (GetConfig.PropertySerializers.TryGetValue(o, out formatter))
+            if (DataConfig.PropertySerializers.TryGetValue(o, out formatter))
             {
                 s = formatter(s ?? value);
 
@@ -214,6 +230,6 @@ namespace ObjectPrinting.Solved
             return changed;
         }
 
-        internal DataConfig GetConfig { get; } = new DataConfig();
+        internal DataConfig DataConfig { get; } = new DataConfig();
     }
 }
