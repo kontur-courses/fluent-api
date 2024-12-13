@@ -1,0 +1,3 @@
+﻿Person
+	Name = новое имя челика Al
+	Height = 12,1
