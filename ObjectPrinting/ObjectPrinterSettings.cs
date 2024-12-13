@@ -206,6 +206,14 @@ public class ObjectPrinterSettings<TOwner>
         return member.Member;
     }
 
-    private static string AppendNewLine(string? text) =>
-        text != null && text.EndsWith(Environment.NewLine) ? text : text + Environment.NewLine;
+    private static string AppendNewLine(string? text)
+    {
+        if (text != null && text.EndsWith(Environment.NewLine))
+            return text;
+
+        var result = new StringBuilder(text);
+        result.Append(Environment.NewLine);
+
+        return result.ToString();
+    }
 }
