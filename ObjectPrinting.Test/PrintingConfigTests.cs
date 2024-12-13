@@ -8,6 +8,7 @@ public class TestsObjectPrinting
 {
     private Person firstPerson;
     private Person secondPerson;
+    private Family family;
 
     [SetUp]
     public void Setup()
@@ -28,6 +29,8 @@ public class TestsObjectPrinting
         };
 
         secondPerson = new();
+
+        family = new() { Mom = firstPerson, Dad = secondPerson, Children = [firstPerson, secondPerson] };
     }
 
     [Test]
@@ -116,7 +119,7 @@ public class TestsObjectPrinting
     [Test]
     public void Using_SerializationForInt()
     {
-        const string exceptedAge = "Age = 10";
+        const string exceptedAge = $"{nameof(firstPerson.Age)} = 10";
         var result = ObjectPrinter.For<Person>()
             .PrintSettings<int>()
             .Using(_ => "10")
@@ -137,21 +140,21 @@ public class TestsObjectPrinting
 
         result.Should().Contain(expected).And.NotContain(unexpected);
     }
-    
+
     [Test]
     public void Using_MultiplePropertySerializations()
     {
-        var exceptedAge = $"Name = 21{firstPerson.Name}12";
+        var exceptedAge = $"{nameof(firstPerson.Name)} = 21{firstPerson.Name}12";
         var result = ObjectPrinter.For<Person>()
-            .PrintPropertySettings(p =>  p.Name)
+            .PrintPropertySettings(p => p.Name)
             .Using(name => $"1{name}1")
-            .PrintPropertySettings(p =>  p.Name)
+            .PrintPropertySettings(p => p.Name)
             .Using(name => $"2{name}2")
             .PrintToString(firstPerson);
 
         result.Should().Contain(exceptedAge);
     }
-    
+
     [Test]
     public void Using_MultipleTypeSerializationsForString()
     {
@@ -165,7 +168,7 @@ public class TestsObjectPrinting
 
         result.Should().Contain(exceptedName);
     }
-    
+
     [Test]
     public void Using_TrimmedToPropertiesAfterSerializationForName([Values(0, 1, 2)] int length)
     {
@@ -240,6 +243,43 @@ public class TestsObjectPrinting
         var result = ObjectPrinter.For<Person>()
             .PrintToString(firstPerson);
         result.Should().Contain("It is not possible to print an object with a circular reference.");
+    }
+
+    [Test]
+    public void PrintToString_WhenLinkIsSame_ButThereAreNoCircularReferences_Array()
+    {
+        var result = ObjectPrinter.For<Person[]>()
+            .PrintToString([firstPerson, firstPerson]);
+
+        result.Should().NotContain("It is not possible to print an object with a circular reference.");
+    }
+
+    [Test]
+    public void PrintToString_WhenLinkIsSame_ButThereAreNoCircularReferences_List()
+    {
+        var result = ObjectPrinter.For<List<Person>>()
+            .PrintToString([firstPerson, firstPerson]);
+
+        result.Should().NotContain("It is not possible to print an object with a circular reference.");
+    }
+
+    [Test]
+    public void PrintToString_WhenLinkIsSame_ButThereAreNoCircularReferences_Dictionary()
+    {
+        var result = ObjectPrinter.For<Dictionary<Person, Person>>()
+            .PrintToString(new() { { firstPerson, firstPerson } });
+
+        result.Should().NotContain("It is not possible to print an object with a circular reference.");
+    }
+
+    [Test]
+    public void PrintToString_WhenLinkIsSame_ButThereAreNoCircularReferences_InsideObject()
+    {
+        family = family with { Mom = firstPerson, Dad = firstPerson };
+        var result = ObjectPrinter.For<Family>()
+            .PrintToString(family);
+
+        result.Should().NotContain("It is not possible to print an object with a circular reference.");
     }
 
     [Test]

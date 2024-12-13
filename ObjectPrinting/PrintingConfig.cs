@@ -109,18 +109,19 @@ public class PrintingConfig<TOwner>
         {
             return type == typeof(string) ? $"\"{obj}\"" : obj.ToString()!;
         }
-
-        if (obj is IEnumerable enumerable && type != typeof(string))
-        {
-            return SerializeEnumerable(enumerable, nestingLevel);
-        }
-
+        
         if (nestingLevel > MaxNestingLevel)
         {
             return $"The maximum recursion depth has been reached: {MaxNestingLevel}.";
         }
-
+        
         processedObjects.Add(obj);
+        if (obj is IEnumerable enumerable && type != typeof(string))
+        {
+            processedObjects.Clear();
+            return SerializeEnumerable(enumerable, nestingLevel);
+        }
+        
         var indentation = new string('\t', nestingLevel);
         var stringBuilderResult = new StringBuilder();
         stringBuilderResult.AppendLine($"{type.Name}");
