@@ -205,5 +205,18 @@ namespace ObjectPrinting.Tests
             result.Should().ContainAll(fields);
             result.Should().ContainAll(person.Friend.PrintToString().Split('\n'));
         }
+
+        [Test]
+        public void PrintToString_NotThrowStackOverflow_WithCyclicReferences()
+        {
+            var person1 = new Person();
+            var person2 = new Person { Friend = person1 };
+
+            person1.Friend = person2;
+
+            var printAction = new Action(() => person1.PrintToString());
+
+            printAction.Should().NotThrow<StackOverflowException>();
+        }
     }
 }

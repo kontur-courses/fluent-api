@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -9,21 +10,26 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly SerrializeConfig serrializeConfig;
+        private HashSet<object> serializedObjects;
 
         public PrintingConfig()
         {
             serrializeConfig = new SerrializeConfig();
+            serializedObjects = new HashSet<object>();
         }
 
         public PrintingConfig(SerrializeConfig serrializeConfig)
         {
             this.serrializeConfig = serrializeConfig;
+            serializedObjects = new HashSet<object>();
         }
 
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            serializedObjects.Add(obj);
 
             var objType = obj.GetType();
 
@@ -45,7 +51,9 @@ namespace ObjectPrinting
                 var propValue = propertyInfo.GetValue(obj);
 
                 if (serrializeConfig.ExcludedTypes.Contains(propType) ||
-                    serrializeConfig.ExcludedProperties.Contains(propertyInfo))
+                    serrializeConfig.ExcludedProperties.Contains(propertyInfo) ||
+                    serializedObjects.Contains(propValue)
+                    )
                     continue;
 
                 var contains = serrializeConfig.PropertySerrializers.TryGetValue(propertyInfo, out serrialize);
@@ -92,7 +100,14 @@ namespace ObjectPrinting
             return sb + "}" + Environment.NewLine;
         }
 
-        public string PrintToString(TOwner obj) => PrintToString(obj, 0);
+        public string PrintToString(TOwner obj)
+        {
+            var result = PrintToString(obj, 0);
+
+            serializedObjects.Clear();
+
+            return result;
+        }
 
         public PrintingConfig<TOwner> Exclude<T>()
         {
