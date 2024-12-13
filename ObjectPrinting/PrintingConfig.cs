@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -78,14 +77,16 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             var identation = new string('\t', nestingLevel);
-            sb.Append(identation + "{" + Environment.NewLine);
-            foreach (DictionaryEntry keyValuePair in dictionary)
+
+            sb.AppendLine(identation + "{");
+
+            foreach (var key in dictionary.Keys)
             {
                 identation = new string('\t', nestingLevel + 1);
-                sb.Append(identation + "[" + PrintToString(keyValuePair.Key, nestingLevel + 1).Trim() + " - ");
-                sb.Append(PrintToString(keyValuePair.Value, 0).Trim());
-                sb.Append("],");
-                sb.Append(Environment.NewLine);
+
+                sb.Append(identation + "[" + PrintToString(key, nestingLevel + 1).Trim() + " - ")
+                    .Append(PrintToString(dictionary[key], 0).Trim())
+                    .AppendLine("],");
             }
 
             return sb + "}" + Environment.NewLine;

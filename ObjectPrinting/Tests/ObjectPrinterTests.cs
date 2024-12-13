@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ObjectPrinting.Tests
 {
@@ -19,6 +17,7 @@ namespace ObjectPrinting.Tests
         {
             var friend = new Person()
             {
+                Id = Guid.NewGuid(),
                 Name = "Ilya",
                 Age = 50,
                 Height = 111.2
@@ -26,7 +25,7 @@ namespace ObjectPrinting.Tests
 
             person = new Person
             {
-                Id = new Guid(),
+                Id = Guid.NewGuid(),
                 Name = "Ivan",
                 Age = 33,
                 Height = 200.1,
@@ -51,6 +50,7 @@ namespace ObjectPrinting.Tests
 
             result.Should().NotContain(nameof(person.Id));
             result.Should().NotContain($"{person.Id}");
+            result.Should().NotContain($"{person.Friend.Id}");
         }
 
         [Test]
@@ -60,8 +60,9 @@ namespace ObjectPrinting.Tests
                 .Exclude(person => person.Name)
                 .PrintToString(person);
 
-            result.Should().NotContainAll(nameof(person.Name));
+            result.Should().NotContain(nameof(person.Name));
             result.Should().NotContain(person.Name);
+            result.Should().NotContain($"{person.Friend.Name}");
         }
 
         [Test]
@@ -71,7 +72,14 @@ namespace ObjectPrinting.Tests
                 .Print<int>().Using(i => i.ToString("X"))
                 .PrintToString(person);
 
-            result.Should().ContainAll(new[] { nameof(person.Age), $"{person.Age.ToString("X")}" });
+            var values = new[]
+            { 
+                nameof(person.Age), 
+                $"{person.Age.ToString("X")}",
+                $"{person.Friend.Age.ToString("X")}"
+            };
+
+            result.Should().ContainAll(values);
         }
 
         [Test]
@@ -82,7 +90,14 @@ namespace ObjectPrinting.Tests
                 .Using(name => $"{name} - is my name")
                 .PrintToString(person);
 
-            result.Should().ContainAll(new[] { nameof(person.Name), $"{person.Name} - is my name" });
+            var values = new[]
+            {
+                nameof(person.Name),
+                $"{person.Name} - is my name",
+                $"{person.Friend.Name} - is my name"
+            };
+
+            result.Should().ContainAll(values);
         }
 
         [TestCase("ru-RU")]
@@ -96,7 +111,14 @@ namespace ObjectPrinting.Tests
                 .Using(culture)
                 .PrintToString(person);
 
-            result.Should().ContainAll(new[] { nameof(person.Height), $"{person.Height.ToString(culture)}" });
+            var values = new[]
+            {
+                nameof(person.Height),
+                $"{person.Height.ToString(culture)}",
+                $"{person.Friend.Height.ToString(culture)}"
+            };
+
+            result.Should().ContainAll(values);
         }
 
         [TestCase("Leonardo", 1, "L")]
@@ -105,7 +127,7 @@ namespace ObjectPrinting.Tests
         [TestCase("Donatello", 4, "Dona")]
         public void PrintToString_WithTrimLengthForString(string name, int maxLength, string expected)
         {
-            person = new Person
+            var person = new Person
             {
                 Id = new Guid(),
                 Name = name,
@@ -167,7 +189,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintTostring_WhenUsingExtensionMethod()
+        public void PrintToString_WhenUsingExtensionMethod()
         {
             var result = person.PrintToString();
 
