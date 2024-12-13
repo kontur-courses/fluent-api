@@ -1,0 +1,8 @@
+﻿Person
+	Id = 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+	Name = Dima
+	Height = 176
+	Age = 39
+	BirthDate = 7/27/1985 12:00:00 AM
+	Husband = 
+	Wife = 
