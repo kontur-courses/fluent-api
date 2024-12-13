@@ -1,0 +1,19 @@
+﻿Dictionary`2
+	person1 = Person
+	Name = Mary
+	Surname = null
+	Age = 0
+	Height = 0
+	BirthDate = 01.01.0001 0:00:00
+	Address = null
+	Parent = null
+
+	person2 = Person
+	Name = Alice
+	Surname = null
+	Age = 0
+	Height = 0
+	BirthDate = 01.01.0001 0:00:00
+	Address = null
+	Parent = null
+

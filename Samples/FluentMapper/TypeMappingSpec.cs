@@ -10,10 +10,10 @@ namespace FluentMapping
         : ITypeMappingSpecProperties<TTgt, TSrc>,
         ITypeMappingSpecTransforms<TTgt, TSrc>
     {
-        private readonly IEnumerable<Action<TTgt, TSrc>> _mappingActions;
-        private readonly IEnumerable<PropertyInfo> _srcProperties;
-        private readonly IEnumerable<PropertyInfo> _tgtProperties;
-        private readonly IAssembler<TTgt, TSrc> _assembler;
+        private readonly IEnumerable<Action<TTgt, TSrc>> mappingActions;
+        private readonly IEnumerable<PropertyInfo> srcProperties;
+        private readonly IEnumerable<PropertyInfo> tgtProperties;
+        private readonly IAssembler<TTgt, TSrc> assembler;
 
         public TypeMappingSpec()
             : this(
@@ -31,10 +31,10 @@ namespace FluentMapping
             IAssembler<TTgt, TSrc> assembler
             )
         {
-            _mappingActions = mappingActions;
-            _tgtProperties = targetProperties;
-            _srcProperties = sourceProperties;
-            _assembler = assembler;
+            this.mappingActions = mappingActions;
+            tgtProperties = targetProperties;
+            srcProperties = sourceProperties;
+            this.assembler = assembler;
         }
 
         public NullSourceBehavior<TTgt, TSrc> WithNullSource()
@@ -42,19 +42,19 @@ namespace FluentMapping
             return new NullSourceBehavior<TTgt, TSrc>(this);
         }
 
-        IEnumerable<PropertyInfo> ITypeMappingSpecProperties<TTgt, TSrc>.SourceProperties => _srcProperties;
-        IEnumerable<PropertyInfo> ITypeMappingSpecProperties<TTgt, TSrc>.TargetProperties => _tgtProperties;
-        IEnumerable<Action<TTgt, TSrc>> ITypeMappingSpecProperties<TTgt, TSrc>.MappingActions => _mappingActions;
-        IAssembler<TTgt, TSrc> ITypeMappingSpecProperties<TTgt, TSrc>.Assembler => _assembler;
+        IEnumerable<PropertyInfo> ITypeMappingSpecProperties<TTgt, TSrc>.SourceProperties => srcProperties;
+        IEnumerable<PropertyInfo> ITypeMappingSpecProperties<TTgt, TSrc>.TargetProperties => tgtProperties;
+        IEnumerable<Action<TTgt, TSrc>> ITypeMappingSpecProperties<TTgt, TSrc>.MappingActions => mappingActions;
+        IAssembler<TTgt, TSrc> ITypeMappingSpecProperties<TTgt, TSrc>.Assembler => assembler;
 
         TypeMappingSpec<TTgt, TSrc> ITypeMappingSpecTransforms<TTgt, TSrc>
             .WithSourceProperties(IEnumerable<PropertyInfo> sourceProperties)
         {
             return new TypeMappingSpec<TTgt, TSrc>(
-                _tgtProperties,
+                tgtProperties,
                 sourceProperties,
-                _mappingActions,
-                _assembler
+                mappingActions,
+                assembler
                 );
         }
 
@@ -63,9 +63,9 @@ namespace FluentMapping
         {
             return new TypeMappingSpec<TTgt, TSrc>(
                 targetProperties,
-                _srcProperties,
-                _mappingActions,
-                _assembler
+                srcProperties,
+                mappingActions,
+                assembler
                 );
         }
 
@@ -73,10 +73,10 @@ namespace FluentMapping
             .WithMappingActions(IEnumerable<Action<TTgt, TSrc>> mappingActions)
         {
             return new TypeMappingSpec<TTgt, TSrc>(
-                _tgtProperties,
-                _srcProperties,
+                tgtProperties,
+                srcProperties,
                 mappingActions,
-                _assembler
+                assembler
                 );
         }
 
@@ -84,21 +84,21 @@ namespace FluentMapping
             .WithAssembler(IAssembler<TTgt, TSrc> assembler)
         {
             return new TypeMappingSpec<TTgt, TSrc>(
-                _tgtProperties,
-                _srcProperties,
-                _mappingActions,
+                tgtProperties,
+                srcProperties,
+                mappingActions,
                 assembler
                 );
         }
 
         public IMapper<TTgt, TSrc> Create()
         {
-            var unmappedTargets = _tgtProperties
-                .Where(tgtProp => !_srcProperties
+            var unmappedTargets = tgtProperties
+                .Where(tgtProp => !srcProperties
                     .Any(srcProp => srcProp.Name == tgtProp.Name)
                     );
-            var unmappedSources = _srcProperties
-                .Where(srcProp => !_tgtProperties
+            var unmappedSources = srcProperties
+                .Where(srcProp => !tgtProperties
                     .Any(tgtProp => tgtProp.Name == srcProp.Name)
                     );
 
@@ -120,9 +120,9 @@ namespace FluentMapping
 
             var actions = new List<Expression>();
 
-            foreach (var targetProperty in _tgtProperties)
+            foreach (var targetProperty in tgtProperties)
             {
-                var sourceProperty = _srcProperties
+                var sourceProperty = srcProperties
                     .FirstOrDefault(x => x.Name == targetProperty.Name);
 
                 if (sourceProperty == null)
@@ -135,7 +135,7 @@ namespace FluentMapping
                 actions.Add(setterCallExpression);
             }
 
-            actions.AddRange(_mappingActions
+            actions.AddRange(mappingActions
                 .Select(ToExpression)
                 .Select(x => Expression.Invoke(x, tgtParam, srcParam))
                 );
@@ -150,7 +150,7 @@ namespace FluentMapping
                 .Compile()
                 ;
 
-            return new Mapper(compiledAction, _assembler);
+            return new Mapper(compiledAction, assembler);
         }
 
         public SetterSpec<TTgt, TSrc, TProp> ThatSets<TProp>(
@@ -167,13 +167,13 @@ namespace FluentMapping
         {
             var propInfo = GetPropertyInfo(propertyExpression, nameof(IgnoringTargetProperty), "tgt");
 
-            var targetProperties = this._tgtProperties.Where(x => !x.Equals(propInfo));
+            var targetProperties = this.tgtProperties.Where(x => !x.Equals(propInfo));
 
             return new TypeMappingSpec<TTgt, TSrc>(
                 targetProperties.ToArray(),
-                _srcProperties,
-                _mappingActions,
-                _assembler
+                srcProperties,
+                mappingActions,
+                assembler
                 );
         }
 
@@ -181,13 +181,13 @@ namespace FluentMapping
         {
             var propInfo = GetPropertyInfo(propertyExpression, nameof(IgnoringSourceProperty), "src");
 
-            var sourceProperties = this._srcProperties.Where(x => !x.Equals(propInfo));
+            var sourceProperties = this.srcProperties.Where(x => !x.Equals(propInfo));
 
             return new TypeMappingSpec<TTgt, TSrc>(
-                _tgtProperties,
+                tgtProperties,
                 sourceProperties.ToArray(),
-                _mappingActions,
-                _assembler
+                mappingActions,
+                assembler
                 );
         }
 
@@ -215,18 +215,18 @@ namespace FluentMapping
 
         private sealed class Mapper : IMapper<TTgt, TSrc>
         {
-            private readonly Action<TTgt, TSrc> _mappingAction;
-            private readonly IAssembler<TTgt, TSrc> _assembler;
+            private readonly Action<TTgt, TSrc> mappingAction;
+            private readonly IAssembler<TTgt, TSrc> assembler;
 
             public Mapper(Action<TTgt, TSrc> mappingAction, IAssembler<TTgt, TSrc> assembler)
             {
-                _mappingAction = mappingAction;
-                _assembler = assembler;
+                this.mappingAction = mappingAction;
+                this.assembler = assembler;
             }
 
             public TTgt Map(TSrc source)
             {
-                return _assembler.Assemble(source, _mappingAction);
+                return assembler.Assemble(source, mappingAction);
             }
         }
     }

@@ -1,0 +1,8 @@
+﻿Person
+	Name = null
+	Surname = null
+	Age = 0
+	Height = 0
+	BirthDate = 01.01.0001 0:00:00
+	Address = null
+	Parent = (Recursion chain)
