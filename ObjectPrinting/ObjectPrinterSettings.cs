@@ -23,6 +23,7 @@ public class ObjectPrinterSettings<TOwner>
     private readonly Dictionary<MemberInfo, Func<object, string>> propertySerializers = [];
     private int? maxStringLength;
     private const int MaxCollectionItems = 100;
+    private const char IndentChar = '\t';
 
     public ObjectPrinterSettings<TOwner> Exclude<T>()
     {
@@ -85,7 +86,7 @@ public class ObjectPrinterSettings<TOwner>
         if (obj is IEnumerable enumerable)
         {
             var text = new StringBuilder();
-            var pad = new string('\t', nestingLevel + 1);
+            var pad = new string(IndentChar, nestingLevel + 1);
             var count = 0;
 
             text.AppendLine($"{obj.GetType().Name}:");
@@ -93,11 +94,11 @@ public class ObjectPrinterSettings<TOwner>
             {
                 if (count++ >= MaxCollectionItems)
                 {
-                    text.Append(pad + "... (truncated)");
+                    text.Append($"{pad}... (truncated)");
                     break;
                 }
 
-                text.Append(pad + PrintToString(item, nestingLevel + 1));
+                text.Append($"{pad}{PrintToString(item, nestingLevel + 1)}");
             }
 
             collectionResult = text.ToString();
@@ -141,7 +142,7 @@ public class ObjectPrinterSettings<TOwner>
         processedObjects.Add(obj);
         try
         {
-            var pad = new string('\t', nestingLevel + 1);
+            var pad = new string(IndentChar, nestingLevel + 1);
             var text = new StringBuilder();
             var type = obj.GetType();
             text.AppendLine(type.Name);
@@ -153,7 +154,7 @@ public class ObjectPrinterSettings<TOwner>
 
                 var value = property.GetValue(obj);
                 var serializedValue = SerializeProperty(property, value, nestingLevel + 1);
-                text.Append(pad + $"{property.Name} = {serializedValue}");
+                text.Append($"{pad}{property.Name} = {serializedValue}");
             }
 
             return text.ToString();
