@@ -28,11 +28,11 @@ namespace FluentMapping.Tests
             var mapper = FluentMapper.ThatMaps<Target>()
                 .From<Source>()
                 .ThatSets(tgt => tgt.Str).From(src => src.Name)
-                .ThatSets(tgt => tgt.Num).From(src => src.ID)
+                .ThatSets(tgt => tgt.Num).From(src => src.Id)
                 .Create();
 
             var source = new Source {
-                ID = 7,
+                Id = 7,
                 Name = "Bob"
             };
 
@@ -49,12 +49,12 @@ namespace FluentMapping.Tests
                 .From<Source>()
                 .ThatSets(tgt => tgt.Str).From(src => src.Name)
                 .IgnoringTargetProperty(tgt => tgt.Num)
-                .IgnoringSourceProperty(src => src.ID)
+                .IgnoringSourceProperty(src => src.Id)
                 .Create();
 
             var source = new Source
             {
-                ID = 7,
+                Id = 7,
                 Name = "Bob"
             };
 
@@ -98,7 +98,7 @@ namespace FluentMapping.Tests
         public sealed class Source
         {
             public string Name { get; set; }
-            public int ID { get; set; }
+            public int Id { get; set; }
         }
     }
 }

@@ -1,0 +1,8 @@
+﻿Person
+	Name = String field: Alex
+	Surname = String field: White
+	Age = Int field: 19
+	Height = 0
+	BirthDate = 21.01.2021 0:00:00
+	Address = null
+	Parent = null

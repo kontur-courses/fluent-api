@@ -1,0 +1,5 @@
+﻿Person
+	Name = John
+	Age = 30
+	BirthDate = 01.01.1991 0:00:00
+	Address = null

@@ -15,16 +15,16 @@ namespace FluentMapping
 
     public sealed class SetterSpec<TTgt, TSrc, TProp> : ISetterSpecProperties<TTgt, TSrc>
     {
-        private TypeMappingSpec<TTgt, TSrc> _spec;
-        private PropertyInfo _targetProperty;
+        private TypeMappingSpec<TTgt, TSrc> spec;
+        private PropertyInfo targetProperty;
 
         public SetterSpec(
             TypeMappingSpec<TTgt, TSrc> spec,
             PropertyInfo targetProperty
             )
         {
-            _spec = spec;
-            _targetProperty = targetProperty;
+            this.spec = spec;
+            this.targetProperty = targetProperty;
         }
 
         public TypeMappingSpec<TTgt, TSrc> From<TSrcProp>(Expression<Func<TSrc, TSrcProp>> propertyExpression)
@@ -32,15 +32,15 @@ namespace FluentMapping
             var srcParam = Expression.Parameter(typeof(TSrc));
             var tgtParam = Expression.Parameter(typeof(TTgt));
             var srcExpr = Expression.Property(srcParam, ((MemberExpression)propertyExpression.Body).Member as PropertyInfo);
-            var tgtSetterInfo = _targetProperty.GetSetMethod();
+            var tgtSetterInfo = targetProperty.GetSetMethod();
             var tgtSetterExpr = Expression.Call(tgtParam, tgtSetterInfo, srcExpr);
 
             var setterAction = Expression.Lambda<Action<TTgt, TSrc>>(tgtSetterExpr, tgtParam, srcParam)
                 .Compile();
 
-            var specProperties = _spec.Properties();
+            var specProperties = spec.Properties();
 
-            return _spec
+            return spec
                 .Transforms().WithMappingActions(
                     specProperties.MappingActions
                         .Concat(new[] { setterAction })
@@ -53,14 +53,14 @@ namespace FluentMapping
                 )
                 .Transforms().WithTargetProperties(
                     specProperties.TargetProperties
-                        .Where(x => x != _targetProperty)
+                        .Where(x => x != targetProperty)
                         .ToArray()
                 )
                 ;
         }
 
-        TypeMappingSpec<TTgt, TSrc> ISetterSpecProperties<TTgt, TSrc>.Spec => _spec;
+        TypeMappingSpec<TTgt, TSrc> ISetterSpecProperties<TTgt, TSrc>.Spec => spec;
 
-        PropertyInfo ISetterSpecProperties<TTgt, TSrc>.TargetProperty => _targetProperty;
+        PropertyInfo ISetterSpecProperties<TTgt, TSrc>.TargetProperty => targetProperty;
     }
 }

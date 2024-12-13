@@ -1,0 +1,8 @@
+﻿Person
+	Name = Alex
+	Surname = null
+	Age = 19
+	Height = 0
+	BirthDate = 21.01.2021 0:00:00
+	Address = null
+	Parent = null

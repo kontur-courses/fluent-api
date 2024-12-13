@@ -10,24 +10,24 @@ namespace FluentMapping
     public sealed class NullSourceBehavior<TTgt, TSrc>
         : INullSourceBehaviorState<TTgt, TSrc>
     {
-        TypeMappingSpec<TTgt, TSrc> INullSourceBehaviorState<TTgt, TSrc>.Spec => _spec;
+        TypeMappingSpec<TTgt, TSrc> INullSourceBehaviorState<TTgt, TSrc>.Spec => spec;
 
-        private TypeMappingSpec<TTgt, TSrc> _spec;
+        private TypeMappingSpec<TTgt, TSrc> spec;
 
         public NullSourceBehavior(TypeMappingSpec<TTgt, TSrc> spec)
         {
-            _spec = spec;
+            this.spec = spec;
         }
 
         public TypeMappingSpec<TTgt, TSrc> ReturnNull()
         {
-            return _spec.Transforms()
+            return spec.Transforms()
                 .WithAssembler(new ReturnNullAssembler<TTgt, TSrc>());
         }
 
         public TypeMappingSpec<TTgt, TSrc> CreateEmpty()
         {
-            return _spec.Transforms()
+            return spec.Transforms()
                 .WithAssembler(new CreateEmptyAssembler<TTgt, TSrc>());
         }
     }
