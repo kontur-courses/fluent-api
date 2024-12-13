@@ -20,7 +20,8 @@ namespace ObjectPrinting.Tests
                 Id = Guid.NewGuid(),
                 Name = "Ilya",
                 Age = 50,
-                Height = 111.2
+                Height = 111.2,
+                Haircut = "Fade"
             };
 
             person = new Person
@@ -30,6 +31,7 @@ namespace ObjectPrinting.Tests
                 Age = 33,
                 Height = 200.1,
                 Friend = friend,
+                Haircut = "Undercut"
             };
         }
 
@@ -66,6 +68,18 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_WithExcludedFields()
+        {
+            var result = ObjectPrinter.For<Person>()
+                .Exclude(person => person.Haircut)
+                .PrintToString(person);
+
+            result.Should().NotContain(nameof(person.Haircut));
+            result.Should().NotContain(person.Haircut);
+            result.Should().NotContain($"{person.Friend.Haircut}");
+        }
+
+        [Test]
         public void PrintToString_WithCustomTypeSerrializer()
         {
             var result = ObjectPrinter.For<Person>()
@@ -95,6 +109,24 @@ namespace ObjectPrinting.Tests
                 nameof(person.Name),
                 $"{person.Name} - is my name",
                 $"{person.Friend.Name} - is my name"
+            };
+
+            result.Should().ContainAll(values);
+        }
+
+        [Test]
+        public void PrintToString_WithCustomFieldSerrializer()
+        {
+            var result = ObjectPrinter.For<Person>()
+                .Print(p => p.Haircut)
+                .Using(name => $"{name} - is my favourite haircut")
+                .PrintToString(person);
+
+            var values = new[]
+            {
+                nameof(person.Haircut),
+                $"{person.Haircut} - is my favourite haircut",
+                $"{person.Friend.Haircut} - is my favourite haircut"
             };
 
             result.Should().ContainAll(values);

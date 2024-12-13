@@ -6,33 +6,20 @@ namespace ObjectPrinting
     public class PropertyPrintingConfig<TOwner, TProp>
     {
         private readonly SerrializeConfig serrializeConfig;
-        private readonly PropertyInfo propertyInfo;
+        private readonly MemberInfo memberInfo;
 
-        public PropertyPrintingConfig(SerrializeConfig serrializeConfig, PropertyInfo propertyInfo = null)
+        public PropertyPrintingConfig(SerrializeConfig serrializeConfig, MemberInfo memberInfo = null)
         {
             this.serrializeConfig = new SerrializeConfig(serrializeConfig);
-            this.propertyInfo = propertyInfo;
+            this.memberInfo = memberInfo;
         }
 
         public PrintingConfig<TOwner> Using(Func<TProp, string> serrializer)
         {
-            if (propertyInfo == null)
-            {
-                var type = typeof(TProp);
-
-                if (serrializeConfig.TypeSerrializers.ContainsKey(type))
-                    serrializeConfig.TypeSerrializers[type] = serrializer;
-                else
-                    serrializeConfig.TypeSerrializers.Add(type, serrializer);
-            }
+            if (memberInfo == null)
+                serrializeConfig.AddTypeSerializer(typeof(TProp), serrializer);
             else
-            {
-                if (serrializeConfig.PropertySerrializers.ContainsKey(propertyInfo))
-                    serrializeConfig.PropertySerrializers[propertyInfo] = serrializer;
-                else
-                    serrializeConfig.PropertySerrializers.Add(propertyInfo, serrializer);
-            }
-
+                serrializeConfig.AddMemberSerializer(memberInfo, serrializer);
 
             return new PrintingConfig<TOwner>(serrializeConfig);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -33,7 +34,7 @@ namespace ObjectPrinting
 
             var objType = obj.GetType();
 
-            if (serrializeConfig.TypeSerrializers.TryGetValue(objType, out var serrialize))
+            if (serrializeConfig.TryGetSerializer(objType, out var serrialize))
                 return serrialize.DynamicInvoke(obj) + Environment.NewLine;
 
             if (obj is ICollection collection)
@@ -50,13 +51,33 @@ namespace ObjectPrinting
                 var propType = propertyInfo.PropertyType;
                 var propValue = propertyInfo.GetValue(obj);
 
-                if (serrializeConfig.ExcludedTypes.Contains(propType) ||
-                    serrializeConfig.ExcludedProperties.Contains(propertyInfo) ||
+                if (serrializeConfig.IsExcludedType(propType) ||
+                    serrializeConfig.IsExcludedMember(propertyInfo) ||
                     serializedObjects.Contains(propValue)
                     )
                     continue;
 
-                var contains = serrializeConfig.PropertySerrializers.TryGetValue(propertyInfo, out serrialize);
+                var contains = serrializeConfig.TryGetSerializer(propertyInfo, out serrialize);
+
+                var objStr = contains ?
+                    serrialize.DynamicInvoke(propValue) + Environment.NewLine :
+                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
+
+                sb.Append(identation + propertyInfo.Name + " = " + objStr);
+            }
+
+            foreach (var propertyInfo in objType.GetFields())
+            {
+                var propType = propertyInfo.DeclaringType;
+                var propValue = propertyInfo.GetValue(obj);
+
+                if (serrializeConfig.IsExcludedType(propType) ||
+                    serrializeConfig.IsExcludedMember(propertyInfo) ||
+                    serializedObjects.Contains(propValue)
+                    )
+                    continue;
+
+                var contains = serrializeConfig.TryGetSerializer(propertyInfo, out serrialize);
 
                 var objStr = contains ?
                     serrialize.DynamicInvoke(propValue) + Environment.NewLine :
@@ -113,7 +134,7 @@ namespace ObjectPrinting
         {
             var config = new PrintingConfig<TOwner>(serrializeConfig);
 
-            config.serrializeConfig.ExcludedTypes.Add(typeof(T));
+            config.serrializeConfig.ExcludeType(typeof(T));
 
             return config;
         }
@@ -123,9 +144,8 @@ namespace ObjectPrinting
             var config = new PrintingConfig<TOwner>(serrializeConfig);
 
             var memberExp = memberSelector.Body as MemberExpression;
-            var propInfo = memberExp.Member as PropertyInfo;
 
-            config.serrializeConfig.ExcludedProperties.Add(propInfo);
+            config.serrializeConfig.ExcludeMember(memberExp.Member);
 
             return config;
         }
@@ -138,9 +158,8 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TProp> Print<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
         {
             var memberExp = memberSelector.Body as MemberExpression;
-            var propInfo = memberExp.Member as PropertyInfo;
 
-            return new PropertyPrintingConfig<TOwner, TProp>(serrializeConfig, propInfo);
+            return new PropertyPrintingConfig<TOwner, TProp>(serrializeConfig, memberExp.Member);
         }
     }
 }
