@@ -32,61 +32,82 @@ namespace ObjectPrinting
 
             serializedObjects.Add(obj);
 
-            var objType = obj.GetType();
-
-            if (serrializeConfig.TryGetSerializer(objType, out var serrialize))
+            if (serrializeConfig.TryGetSerializer(obj.GetType(), out var serrialize))
                 return serrialize.DynamicInvoke(obj) + Environment.NewLine;
 
             if (obj is ICollection collection)
                 return SerializeCollection(collection, nestingLevel);
 
-            var identation = new string('\t', nestingLevel + 1);
+            return PrintToStringObject(obj, nestingLevel);
+        }
 
+        private string PrintToStringObject(object obj, int nestingLevel)
+        {
             var sb = new StringBuilder();
 
-            sb.AppendLine(objType.Name);
+            sb.AppendLine(obj.GetType().Name);
 
-            foreach (var propertyInfo in objType.GetProperties())
-            {
-                var propType = propertyInfo.PropertyType;
-                var propValue = propertyInfo.GetValue(obj);
-
-                if (serrializeConfig.IsExcludedType(propType) ||
-                    serrializeConfig.IsExcludedMember(propertyInfo) ||
-                    serializedObjects.Contains(propValue)
-                    )
-                    continue;
-
-                var contains = serrializeConfig.TryGetSerializer(propertyInfo, out serrialize);
-
-                var objStr = contains ?
-                    serrialize.DynamicInvoke(propValue) + Environment.NewLine :
-                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-
-                sb.Append(identation + propertyInfo.Name + " = " + objStr);
-            }
-
-            foreach (var propertyInfo in objType.GetFields())
-            {
-                var propType = propertyInfo.DeclaringType;
-                var propValue = propertyInfo.GetValue(obj);
-
-                if (serrializeConfig.IsExcludedType(propType) ||
-                    serrializeConfig.IsExcludedMember(propertyInfo) ||
-                    serializedObjects.Contains(propValue)
-                    )
-                    continue;
-
-                var contains = serrializeConfig.TryGetSerializer(propertyInfo, out serrialize);
-
-                var objStr = contains ?
-                    serrialize.DynamicInvoke(propValue) + Environment.NewLine :
-                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1);
-
-                sb.Append(identation + propertyInfo.Name + " = " + objStr);
-            }
+            PrintToStringProperties(sb, obj, nestingLevel);
+            PrintToStringFields(sb, obj, nestingLevel);
 
             return sb.ToString();
+        }
+
+        private void PrintToStringProperties(StringBuilder sb, object obj, int nestingLevel)
+        {
+            foreach (var property in obj.GetType().GetProperties())
+            {
+                var (objStr, ok) = PrintToStringMember(
+                    property,
+                    property.PropertyType,
+                    property.GetValue(obj),
+                    nestingLevel
+                    );
+
+                if (!ok)
+                    continue;
+
+                sb.Append(objStr);
+            }
+        }
+
+        private void PrintToStringFields(StringBuilder sb, object obj, int nestingLevel)
+        {
+            foreach (var field in obj.GetType().GetFields())
+            {
+                var (objStr, ok) = PrintToStringMember(
+                    field,
+                    field.DeclaringType,
+                    field.GetValue(obj),
+                    nestingLevel
+                    );
+
+                if (!ok)
+                    continue;
+
+                sb.Append(objStr);
+            }
+        }
+
+        private (string?, bool) PrintToStringMember(MemberInfo member, Type? type, object? value, int nestingLevel)
+        {
+            if (type is null || 
+                value is null || 
+                serrializeConfig.IsExcludedType(type) ||
+                serrializeConfig.IsExcludedMember(member) ||
+                serializedObjects.Contains(value)
+                )
+                return (null, false);
+
+            var contains = serrializeConfig.TryGetSerializer(member, out var serrialize);
+
+            var objStr = contains ?
+                serrialize.DynamicInvoke(value) + Environment.NewLine :
+                PrintToString(value, nestingLevel + 1);
+
+            var identation = new string('\t', nestingLevel + 1);
+
+            return (identation + member.Name + " = " + objStr, true);
         }
 
         private string SerializeCollection(ICollection collection, int nestingLevel)
