@@ -91,18 +91,6 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public void PrintToString_ThrowsException_IfObjectHasCyclicReference()
-    {
-        var obj = new LinkedClass();
-        obj.Other = obj;
-
-        var print = () => obj.PrintToString();
-
-        print.Should().Throw<InvalidOperationException>()
-            .WithMessage("Unable to print object with cyclic reference.");
-    }
-
-    [Test]
     public Task PrintToString_ChangesFinalTypeValues_IfUsingCultureInfo()
     {
         var cultureInfo1 = new CultureInfo("ru-RU");
@@ -203,6 +191,30 @@ public class PrintingConfigTests
         var actual = obj.PrintToString();
 
         return Verify(actual, _verifySettings);
+    }
+
+    [Test]
+    public Task PrintToString_IgnoresConfigByType_IfHasConfigByPropertyPath()
+    {
+        var actual = ObjectPrinter
+            .For<ClassWithMultipleProperties>()
+            .Excluding<string>()
+            .Printing<string?>(o => o.String1).Using(str => $"\"{str}\"")
+            .PrintToString(_classWithMultipleProperties);
+
+        return Verify(actual, _verifySettings);
+    }
+
+    [Test]
+    public void PrintToString_ThrowsException_IfObjectHasCyclicReference()
+    {
+        var obj = new LinkedClass();
+        obj.Other = obj;
+
+        var print = () => obj.PrintToString();
+
+        print.Should().Throw<InvalidOperationException>()
+            .WithMessage("Unable to print object with cyclic reference.");
     }
 
     [Test]
