@@ -3,7 +3,7 @@
 	Name = John Doe
 	Height = 189,52
 	Age = 10
-	DateOfBirth = 09.09.1985
-	Addresses = null
 	Children = null
 	Father = null
+	DateOfBirth = 09/09/1985 00:00:00
+	Addresses = null

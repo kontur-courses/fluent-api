@@ -237,5 +237,4 @@ _Pvt_Extensions
 
 .idea/
 
-./ObjectPrinting/Tests/Snapshots/*.received.txt
-
+ObjectPrinting/Tests/Snapshots/*.received.txt

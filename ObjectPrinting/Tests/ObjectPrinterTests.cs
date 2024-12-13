@@ -56,7 +56,7 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public Task PrintConfig_ShouldExcludeGivenProperty()
+    public Task PrintConfig_ShouldExcludeGivenMember()
     {
         var config = ObjectPrinter.For<Person>()
             .Excluding(p => p.Addresses);
@@ -107,10 +107,10 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public Task PrintConfig_ShouldUseCustomSerializerForGivenProperty()
+    public Task PrintConfig_ShouldUseCustomSerializerForGivenMember()
     {
         var config = ObjectPrinter.For<Person>()
-            .Printing(p => p.DateOfBirth).Using(x => x.ToString("dd/MM/yyyy"));
+            .Printing(p => p.DateOfBirth).Using(x => x.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
         
         var serializedStr = config.PrintToString(person);
         
@@ -121,7 +121,7 @@ public class ObjectPrinterTests
     public Task PrintConfig_ShouldUseGivenCultureForGivenType()
     {
         var config = ObjectPrinter.For<Person>()
-            .Printing<double>().SetCulture(new CultureInfo("en-US"));
+            .Printing<double>().SetCulture(new CultureInfo("ru-RU"));
         
         var serializedStr = config.PrintToString(person);
         
@@ -129,10 +129,10 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public Task PrintConfig_ShouldUseGivenCultureForGivenProperty()
+    public Task PrintConfig_ShouldUseGivenCultureForGivenMember()
     {
         var config = ObjectPrinter.For<Person>()
-            .Printing(p => p.Height).SetCulture(new CultureInfo("en-US"));
+            .Printing(p => p.Height).SetCulture(new CultureInfo("ru-RU"));
         
         var serializedStr = config.PrintToString(person);
         
@@ -151,7 +151,7 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public Task PrintConfig_ShouldTrimStringProperty()
+    public Task PrintConfig_ShouldTrimStringMember()
     {
         var config = ObjectPrinter.For<Person>()
             .Printing(p => p.Name).TrimmedToLength(2);
@@ -212,8 +212,8 @@ public class ObjectPrinterTests
         var config = ObjectPrinter.For<Person>()
             .Excluding<Guid>()
             .Printing<int>().Using(x => $"{x} :^(")
-            .Printing<double>().SetCulture(new CultureInfo("en-US"))
-            .Printing(p => p.DateOfBirth).Using(x => x.ToString("dd/MM/yyyy"))
+            .Printing<double>().SetCulture(new CultureInfo("ru-RU"))
+            .Printing(p => p.DateOfBirth).Using(x => x.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture))
             .Printing(p => p.Name).TrimmedToLength(5)
             .Excluding(p => p.Addresses);
         
