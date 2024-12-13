@@ -12,7 +12,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly HashSet<Type> FinalTypes = [
+        private readonly HashSet<Type> FinalTypes = [
             typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         ];
         private readonly HashSet<Type> excludedTypes = [];
@@ -24,6 +24,20 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> SetDepth(int depth)
         {
             maxNestingDepth = depth;
+            return this;
+        }
+
+        // После долгих размышлений, как расширить FinalTypes, я только придумала дать возможность пользователю
+        // расширить нужные ему типы, которые посложнее примитивов
+        public PrintingConfig<TOwner> AddFinalTypes(IEnumerable<Type> types)
+        {
+            FinalTypes.UnionWith(types);
+            return this;
+        }
+
+        public PrintingConfig<TOwner> AddFinalType<TFinalType>()
+        {
+            FinalTypes.Add(typeof(TFinalType));
             return this;
         }
 
