@@ -2,7 +2,11 @@
 	Id = 00000000-0000-0000-0000-000000000000,
 	Name = John,
 	Height = 123.4,
-	Age = Hello, 25,
+	Age = 25,
 	Children = null,
 	Weigths = null,
-	Dict = null
+	Dict = {
+		Name: 1,
+		Age: 51,
+		Children: 4
+	}

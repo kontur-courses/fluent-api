@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -19,7 +20,7 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<object> visited = [];
 
     private readonly HashSet<Type> finalTypes =
-        [typeof(int), typeof(double), typeof(float), typeof(DateTime), typeof(TimeSpan)];
+        [typeof(int), typeof(double), typeof(float), typeof(DateTime), typeof(TimeSpan), typeof(string)];
 
     public ITypePrintingConfig<TOwner, TType> Printing<TType>() =>
         new TypePrintingConfig<TOwner, TType>(this);
@@ -56,59 +57,49 @@ public class PrintingConfig<TOwner>
 
     private string PrintToString(object? obj, int nestingLevel)
     {
-        if (obj == null) return "null" + Environment.NewLine;
+        if (obj == null) return "null";
         var identation = new string('\t', nestingLevel);
 
-        if (!visited.Add(obj))
-            return identation + $"Cycle dependency: {obj}" + Environment.NewLine + Environment.NewLine;
-        if (finalTypes.Contains(obj.GetType())) return obj + Environment.NewLine;
+        var type = obj.GetType();
+        if (!type.IsValueType && !type.IsPrimitive && type != typeof(string) && !visited.Add(obj))
+            return identation + $"Cycle dependency: {obj}";
+        if (finalTypes.Contains(obj.GetType())) return obj.ToString() ?? string.Empty;
 
         var sb = new StringBuilder();
-        var type = obj.GetType();
         sb.Append(identation + type.Name);
         if (obj is not string && type.IsAssignableTo(typeof(IEnumerable)))
             return PrintEnumerable((IEnumerable)obj, nestingLevel);
 
         sb.AppendLine(PrintFieldsToString(obj, nestingLevel));
-        sb.AppendLine(PrintPropertiesToString(obj, nestingLevel));
+        sb.Append(PrintPropertiesToString(obj, nestingLevel));
 
         return sb.ToString();
     }
 
     private string PrintPropertiesToString(object obj, int nestingLevel)
     {
-        var sb = new StringBuilder();
         var type = obj.GetType();
         var identation = new string('\t', nestingLevel + 1);
-        foreach (var propertyInfo in type.GetProperties())
-        {
-            var property = propertyInfo.GetValue(obj);
-            var propertyType = propertyInfo.PropertyType;
-            var propertyName = propertyInfo.Name;
-            var serializedProperty = Serialize(property, propertyType, propertyName, nestingLevel + 1);
-            if (serializedProperty != string.Empty)
-                sb.AppendLine(identation + serializedProperty);
-        }
+        var items = (from propertyInfo in type.GetProperties()
+            select Serialize(propertyInfo.GetValue(obj), propertyInfo.PropertyType, propertyInfo.Name, nestingLevel + 1)
+            into serializedProperty
+            where serializedProperty != string.Empty
+            select identation + serializedProperty).ToList();
 
-        return sb.ToString();
+        return string.Join(",\n", items);
     }
 
     private string PrintFieldsToString(object obj, int nestingLevel)
     {
-        var sb = new StringBuilder();
         var type = obj.GetType();
         var identation = new string('\t', nestingLevel + 1);
-        foreach (var fieldInfo in type.GetFields())
-        {
-            var field = fieldInfo.GetValue(obj);
-            var fieldType = fieldInfo.FieldType;
-            var fieldName = fieldInfo.Name;
-            var serializedField = Serialize(field, fieldType, fieldName, nestingLevel + 1);
-            if (serializedField != string.Empty)
-                sb.Append(identation + serializedField);
-        }
+        var items = (from fieldInfo in type.GetFields()
+            select Serialize(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name, nestingLevel + 1)
+            into serializedProperty
+            where serializedProperty != string.Empty
+            select identation + serializedProperty).ToList();
 
-        return sb.ToString();
+        return string.Join(",\n", items);
     }
 
     private string Serialize<T>(T valueToSerialize, Type type, string name, int level)
@@ -125,6 +116,8 @@ public class PrintingConfig<TOwner>
             value = typePrinter(valueToSerialize);
         if (type.IsAssignableTo(typeof(IEnumerable)))
             value = PrintEnumerable((IEnumerable)valueToSerialize, level);
+        if (type.IsAssignableTo(typeof(KeyValuePair<,>)))
+            value = PrintKeyValuePair(valueToSerialize);
         if (type.IsAssignableTo(typeof(IDictionary)))
             value = PrintDictionary((IDictionary)valueToSerialize, level);
         if (valueToSerialize is string stringValue && MaxLengths.TryGetValue(name, out var maxLength))
@@ -136,35 +129,44 @@ public class PrintingConfig<TOwner>
 
     private string PrintEnumerable(IEnumerable? enumerable, int nestingLevel)
     {
+        var bracketIdentation = new string('\t', nestingLevel);
+        var itemIdentation = new string('\t', nestingLevel + 1);
         if (enumerable is null) return "null";
         if (enumerable is string) return enumerable.ToString() ?? string.Empty;
-        if (finalTypes.Contains(GetElementType(enumerable)))
+        if (enumerable is IDictionary dictionary) return PrintDictionary(dictionary, nestingLevel);
+        var elementType = GetElementType(enumerable);
+        if (elementType.IsAssignableTo(typeof(IEnumerable)))
+            return
+                $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item => itemIdentation + PrintEnumerable((IEnumerable)item, nestingLevel + 1)))}\n{bracketIdentation}]";
+        if (finalTypes.Contains(elementType))
             return $"[{string.Join(", ", enumerable.Cast<object>().Select(item => item.ToString() ?? string.Empty))}]";
-        var sb = new StringBuilder();
-        sb.AppendLine("[");
-        foreach (var item in enumerable.Cast<object>())
-        {
-            var serialized = PrintToString(item, nestingLevel + 1);
-            sb.Append(serialized.Remove(serialized.Length - 1));
-        }
-
-        sb.Append(new string('\t', nestingLevel) + "]");
-        return sb.ToString();
+        var result =
+            $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item => PrintToString(item, nestingLevel + 1)))}\n{bracketIdentation}]";
+        return result;
     }
 
     private string PrintDictionary(IDictionary? dictionary, int nestingLevel)
     {
         if (dictionary is null) return "null";
         if (dictionary.Count == 0) return "{}";
-        var sb = new StringBuilder();
-        var identation = new string('\t', nestingLevel + 1);
-        sb.AppendLine("{");
-        foreach (var key in dictionary.Keys)
-            sb.AppendLine(identation + key + ": " + dictionary[key]);
-        sb.Append(new string('\t', nestingLevel) + "}");
-        return sb.ToString();
+        var bracketIdentation = new string('\t', nestingLevel);
+        var itemIdentation = new string('\t', nestingLevel + 1);
+        var serializedItems = (from object key in dictionary.Keys
+                select $"{PrintToString(key, nestingLevel + 1)}: {PrintToString(dictionary[key], nestingLevel + 1)}")
+            .ToList();
+        var result =
+            $"{{\n{itemIdentation}{string.Join($",\n{itemIdentation}", serializedItems)}\n{bracketIdentation}}}";
+        return result;
     }
-    
+
+    private string PrintKeyValuePair(object keyValuePair)
+    {
+        if (keyValuePair is KeyValuePair<object, object> keyValue)
+            return $"{PrintToString(keyValue.Key, 0)} = {PrintToString(keyValue.Value, 0)}";
+
+        return string.Empty;
+    }
+
     private Type GetElementType(IEnumerable? enumerable)
     {
         if (enumerable is null) return typeof(object);

@@ -1,9 +1,8 @@
 ﻿Person
-	Id = 00000000-0000-0000-0000-000000000000
-	Name = John
-	Height = 123.4
-	Age = 25
-	Children = null
-	Weigths = null
+	Id = 00000000-0000-0000-0000-000000000000,
+	Name = John,
+	Height = 123.4,
+	Age = 25,
+	Children = null,
+	Weigths = null,
 	Dict = null
-

@@ -1,0 +1,14 @@
+﻿[
+	{
+		John: Doe,
+		Hello: World
+	},
+	{
+		Hello: Worlds,
+		John: Does
+	},
+	{
+		Lorem: Ipsum,
+		Ipsum: Lorem
+	}
+]

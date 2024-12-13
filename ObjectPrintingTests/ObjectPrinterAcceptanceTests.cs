@@ -45,7 +45,7 @@ public class ObjectPrinterAcceptanceTests
         var result = person.PrintToString();
         Approvals.Verify(result);
     }
-    
+
     [Test]
     public void ObjectPrinter_HasInlineConfiguration()
     {
@@ -108,7 +108,7 @@ public class ObjectPrinterAcceptanceTests
     }
 
     [Test]
-    public void ObjectPrinter_NotTrhows_WithCycleDependencies()
+    public void ObjectPrinter_NotThrows_WithCycleDependencies()
     {
         var child = new Person
         {
@@ -132,7 +132,7 @@ public class ObjectPrinterAcceptanceTests
         var action = () => ObjectPrinter.For<Person>().PrintToString(parent);
         action.Should().NotThrow();
     }
-    
+
     [Test]
     public void ObjectPrinter_WorksCorrect_WithCycleDependencies()
     {
@@ -176,15 +176,70 @@ public class ObjectPrinterAcceptanceTests
     }
 
     [Test]
-    public void ObjectPrinter_Serializes_Dictionaries()
+    public void ObjectPrinter_SerializesDictionary_WhenValueObjects()
     {
-        person.Dict = new Dictionary<string, int>()
+        person.Dict = new Dictionary<string, int>
         {
             ["Name"] = 1,
             ["Age"] = 51,
             ["Children"] = 4,
         };
         var result = ObjectPrinter.For<Person>().PrintToString(person);
+        Approvals.Verify(result);
+    }
+
+    [Test]
+    public void ObjectPrinter_SerializesDictionary_WhenObjects()
+    {
+        var dict = new Dictionary<int, Person>()
+        {
+            [1] = new() { Name = "John", Age = 25 },
+            [2] = new() { Name = "John", Age = 25 },
+            [3] = new() { Name = "John", Age = 25 },
+        };
+
+        var result = dict.PrintToString();
+        Approvals.Verify(result);
+    }
+
+    [Test]
+    public void ObjectPrinter_SerializesArrayOfArrays()
+    {
+        var array = new List<int[]>
+        {
+            new[] { 1, 2, 3 },
+            new[] { 4, 5, 6 },
+            new[] { 1, 2 },
+            new[] { 1, 2, 1, 2, 3, 1, 3 },
+        };
+        
+        var result = array.PrintToString();
+        Approvals.Verify(result);
+    }
+
+    [Test]
+    public void ObjectPrinter_SerializesArrayOfDictionaries()
+    {
+        var array = new List<Dictionary<string, string>>()
+        {
+            new()
+            {
+                ["John"] = "Doe",
+                ["Hello"] = "World"
+            },
+            new()
+            {
+                ["Hello"] = "Worlds",
+                ["John"] = "Does",
+            },
+            new()
+            {
+                ["Lorem"] = "Ipsum",
+                ["Ipsum"] = "Lorem"
+            },
+        };
+        
+        var result = array.PrintToString();
         Approvals.Verify(result);
     }
 }
