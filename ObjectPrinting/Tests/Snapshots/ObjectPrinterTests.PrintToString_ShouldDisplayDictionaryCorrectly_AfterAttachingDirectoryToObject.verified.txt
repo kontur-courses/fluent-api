@@ -1,0 +1,12 @@
+﻿Person
+	Id = 2a5cacd7-a7a6-4c78-9b7c-c3377846cadd
+	Name = John Doe
+	Height = 189.52
+	Age = 10
+	Children = null
+	Father = null
+	DateOfBirth = 09/09/1985 00:00:00
+	Addresses = Dictionary`2
+		1 = London
+		2 = New York
+		3 = Moscow

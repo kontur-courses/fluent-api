@@ -1,0 +1,7 @@
+﻿Person
+	Name = John 
+	Height = 189,52
+	Age = 10 :^(
+	Children = null
+	Father = null
+	DateOfBirth = 09/09/1985
