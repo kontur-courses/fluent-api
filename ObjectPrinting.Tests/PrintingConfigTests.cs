@@ -124,31 +124,24 @@ public class PrintingConfigTests
     public void PrintToString_List_SerializedList()
     {
         var expected = File.ReadAllText("ExpectedResponses/PrintToString_Collection_SerializedCollection.txt");
-        var printer = ObjectPrinter.For<List<int>>();
         var list = new List<int> { 1, 2, 3 };
         
-        var actual = printer.PrintToString(list);
-        
-        actual.Should().Be(expected);
+        CheckSerializationOfTheCollection(expected, list);
     }
     
     [Test]
     public void PrintToString_Array_SerializedArray()
     {
         var expected = File.ReadAllText("ExpectedResponses/PrintToString_Array_SerializedArray.txt");
-        var printer = ObjectPrinter.For<int[]>();
         var array = new[] { 1, 2, 3 };
         
-        var actual = printer.PrintToString(array);
-        
-        actual.Should().Be(expected);
+        CheckSerializationOfTheCollection(expected, array);
     }
     
     [Test]
     public void PrintToString_Dictionary_SerializedDictionary()
     {
         var expected = File.ReadAllText("ExpectedResponses/PrintToString_Dictionary_SerializedDictionary.txt");
-        var printer = ObjectPrinter.For<Dictionary<string, int>>();
         var dict = new Dictionary<string, int>
         {
             { "1", 1 },
@@ -156,8 +149,14 @@ public class PrintingConfigTests
             { "3", 3 }
         };
         
-        var actual = printer.PrintToString(dict);
-        Console.WriteLine(actual);
+        CheckSerializationOfTheCollection(expected, dict);
+    }
+
+    private void CheckSerializationOfTheCollection<TCollection>(string expected, TCollection collection)
+    {
+        var printer = ObjectPrinter.For<TCollection>();
+        
+        var actual = printer.PrintToString(collection);
         
         actual.Should().Be(expected);
     }
