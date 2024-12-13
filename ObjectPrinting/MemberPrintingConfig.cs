@@ -12,10 +12,11 @@ public class MemberPrintingConfig<TOwner, TMemberType>(
     
     public PrintingConfig<TOwner> Using(Func<TMemberType, string> printingMethod)
     {
+        var resultDelegate = new Func<object, string>(obj => printingMethod((TMemberType)obj));
         if (MemberInfo is null)
-            PrintingConfig.CustomTypeSerializers[typeof(TMemberType)] = printingMethod;
+            PrintingConfig.CustomTypeSerializers[typeof(TMemberType)] = resultDelegate;
         else
-            PrintingConfig.CustomMemberSerializers[MemberInfo] = printingMethod;
+            PrintingConfig.CustomMemberSerializers[MemberInfo] = resultDelegate;
 
         return PrintingConfig;
     }
