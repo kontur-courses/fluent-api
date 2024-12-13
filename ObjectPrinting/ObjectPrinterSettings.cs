@@ -40,14 +40,34 @@ public class ObjectPrinterSettings<TOwner>
 
     public ObjectPrinterSettings<TOwner> SetCustomSerialization<T>(Func<T, string> serializer)
     {
-        typeSerializers[typeof(T)] = obj => serializer((T)obj);
+        typeSerializers[typeof(T)] = obj =>
+        {
+            try
+            {
+                return serializer((T)obj);
+            }
+            catch (Exception ex)
+            {
+                return $"[Error serializing type '{typeof(T).Name}']: {ex.Message}";
+            }
+        };
         return this;
     }
 
     public ObjectPrinterSettings<TOwner> SetCustomSerialization<T>(Expression<Func<TOwner, T>> propertyExpression, Func<T, string> serializer)
     {
         var propertyName = GetPropertyInfo(propertyExpression);
-        propertySerializers[propertyName] = obj => serializer((T)obj);
+        propertySerializers[propertyName] = obj =>
+        {
+            try
+            {
+                return serializer((T)obj);
+            }
+            catch (Exception ex)
+            {
+                return $"[Error serializing property '{propertyName.Name}']: {ex.Message}";
+            }
+        };
         return this;
     }
 
@@ -89,7 +109,7 @@ public class ObjectPrinterSettings<TOwner>
             var pad = new string(IndentChar, nestingLevel + 1);
             var count = 0;
 
-            text.AppendLine($"{obj.GetType().Name}:");
+            text.AppendLine($"({obj.GetType().Name}):");
             foreach (var item in enumerable)
             {
                 if (count++ >= MaxCollectionItems)
@@ -98,7 +118,9 @@ public class ObjectPrinterSettings<TOwner>
                     break;
                 }
 
-                text.Append($"{pad}{PrintToString(item, nestingLevel + 1)}");
+                var elementType = item?.GetType().Name ?? "unknown";
+                
+                text.Append($"{pad}({elementType}):{PrintToString(item, nestingLevel + 1)}");
             }
 
             collectionResult = text.ToString();
@@ -125,7 +147,6 @@ public class ObjectPrinterSettings<TOwner>
             result = AppendNewLine(result);
             return true;
         }
-
         result = null;
         return false;
     }
@@ -167,20 +188,15 @@ public class ObjectPrinterSettings<TOwner>
 
     private string? SerializeProperty(PropertyInfo property, object? value, int nestingLevel)
     {
-        try
-        {
-            if (propertySerializers.TryGetValue(property, out var propertySerializer))
-                return AppendNewLine(propertySerializer(value!));
 
-            if (typeSerializers.TryGetValue(property.PropertyType, out var typeSerializer))
-                return AppendNewLine(typeSerializer(value!));
+        if (propertySerializers.TryGetValue(property, out var propertySerializer))
+            return AppendNewLine(propertySerializer(value!));
 
-            return PrintToString(value, nestingLevel);
-        }
-        catch (Exception ex)
-        {
-            return AppendNewLine($"[Error serializing {property.Name}: {ex.Message}]");
-        }
+        if (typeSerializers.TryGetValue(property.PropertyType, out var typeSerializer))
+            return AppendNewLine(typeSerializer(value!));
+
+        return PrintToString(value, nestingLevel);
+       
     }
 
     private static MemberInfo GetPropertyInfo<T>(Expression<Func<TOwner, T>> propertyExpression)
