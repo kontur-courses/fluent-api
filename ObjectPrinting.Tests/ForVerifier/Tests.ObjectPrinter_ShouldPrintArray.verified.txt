@@ -1,0 +1,35 @@
+﻿Person
+	Id = 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+	Name = Dima
+	Height = 176
+	Age = 39
+	BirthDate = 27.07.1985 0:00:00
+	Husband = 
+	Wife = 
+	HomeworksCompleted = 
+	Friends = 
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Nikita
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
+			Husband = 
+			Wife = 
+			HomeworksCompleted = 
+			Friends = 
+			EmergensyList = 
+
+		Person
+			Id = Loop found
+			Name = Pasha
+			Height = Loop found
+			Age = Loop found
+			BirthDate = Loop found
+			Husband = 
+			Wife = 
+			HomeworksCompleted = 
+			Friends = 
+			EmergensyList = 
+
+	EmergensyList = 

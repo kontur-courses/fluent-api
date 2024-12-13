@@ -91,5 +91,56 @@ namespace ObjectPrinting.Tests
 
             return Verifier.Verify(result, DefaultSettings);
         }
+
+        [Test]
+        public Task ObjectPrinter_ShouldPrintList()
+        {
+            var homeworks = new List<string>()
+            {
+                "Testing",
+                "Tag cloud",
+                "Markdown",
+                "Object Printer"
+            };
+            person.HomeworksCompleted = homeworks;
+
+            var result = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            return Verifier.Verify(result, DefaultSettings);
+        }
+
+        [Test]
+        public Task ObjectPrinter_ShouldPrintArray()
+        {
+            var friends = new[]
+            {
+                new Person() { Name = "Nikita" },
+                new Person() { Name = "Pasha" }
+            };
+            person.Friends = friends;
+
+            var result = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            return Verifier.Verify(result, DefaultSettings);
+        }
+
+        [Test]
+        public Task ObjectPrinter_ShouldPrintDictionary()
+        {
+            var emergencyCallList = new Dictionary<string, string>()
+            {
+                {"wife","5-5-5-3-5-3-5"},
+                {"father", "8-800-2000-600"},
+                {"mother", "+7 922 22 222 22"}
+            };
+            person.EmergensyList = emergencyCallList;
+
+            var result = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            return Verifier.Verify(result, DefaultSettings);
+        }
     }
 }

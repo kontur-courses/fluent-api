@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace ObjectPrinting.Tests
 {
@@ -11,5 +12,8 @@ namespace ObjectPrinting.Tests
         public DateTime BirthDate { get; set; }
         public Person Husband { get; set; }
         public Person Wife { get; set; }
+        public List<string> HomeworksCompleted { get; set; }
+        public Person[] Friends { get; set; }
+        public Dictionary<string, string> EmergensyList { get; set; }
     }
 }

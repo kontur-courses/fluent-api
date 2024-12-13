@@ -19,7 +19,7 @@ namespace ObjectPrinting
             if(propName == null)
                 this.printingConfig.AddTypePrinter(print);
             else 
-                printingConfig.AddPropertryPrinter(propName, x => print((TPropType)x));
+                printingConfig.AddPropertyPrinter(propName, x => print((TPropType)x));
           return printingConfig;
         }
 

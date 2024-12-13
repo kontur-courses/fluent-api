@@ -6,3 +6,6 @@
 	BirthDate = 7/27/1985 12:00:00 AM
 	Husband = 
 	Wife = 
+	HomeworksCompleted = 
+	Friends = 
+	EmergensyList = 

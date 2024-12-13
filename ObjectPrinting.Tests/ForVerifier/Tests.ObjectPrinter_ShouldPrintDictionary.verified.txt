@@ -1,0 +1,23 @@
+﻿Person
+	Id = 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+	Name = Dima
+	Height = 176
+	Age = 39
+	BirthDate = 27.07.1985 0:00:00
+	Husband = 
+	Wife = 
+	HomeworksCompleted = 
+	Friends = 
+	EmergensyList = 
+		KeyValuePair`2
+			Key = wife
+			Value = 5-5-5-3-5-3-5
+
+		KeyValuePair`2
+			Key = father
+			Value = 8-800-2000-600
+
+		KeyValuePair`2
+			Key = mother
+			Value = +7 922 22 222 22
+

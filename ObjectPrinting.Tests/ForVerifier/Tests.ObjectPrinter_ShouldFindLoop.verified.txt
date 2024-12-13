@@ -13,4 +13,10 @@
 		BirthDate = 19.02.1989 0:00:00
 		Husband = Loop found
 		Wife = 
+		HomeworksCompleted = 
+		Friends = 
+		EmergensyList = 
 
+	HomeworksCompleted = 
+	Friends = 
+	EmergensyList = 
