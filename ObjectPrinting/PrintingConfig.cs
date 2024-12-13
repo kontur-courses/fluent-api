@@ -13,8 +13,8 @@ public class PrintingConfig<TOwner>
 
     internal Dictionary<MemberInfo, int> TrimmedMembers { get; } = new();
     internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
-    internal Dictionary<Type, Delegate> CustomTypeSerializers { get; } = new();
-    internal Dictionary<MemberInfo, Delegate> CustomMemberSerializers { get; } = new();
+    internal Dictionary<Type, Func<object, string>> CustomTypeSerializers { get; } = new();
+    internal Dictionary<MemberInfo, Func<object, string>> CustomMemberSerializers { get; } = new();
     
     internal int? TrimStringLength;
     private int maxNestingLevel = 5;
