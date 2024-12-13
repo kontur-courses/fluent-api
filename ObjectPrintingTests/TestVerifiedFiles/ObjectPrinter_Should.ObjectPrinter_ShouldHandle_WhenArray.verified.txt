@@ -1,10 +1,10 @@
-﻿SimplePerson[]:
-	SimplePerson
+﻿(SimplePerson[]):
+	(SimplePerson):SimplePerson
 		Id = 00000000-0000-0000-0000-000000000000
 		Name = Dima
 		Height = 0
 		Age = 20
-	SimplePerson
+	(SimplePerson):SimplePerson
 		Id = 00000000-0000-0000-0000-000000000000
 		Name = Andrey
 		Height = 190
