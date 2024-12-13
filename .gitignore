@@ -236,3 +236,6 @@ _Pvt_Extensions
 .fake/
 
 .idea/
+
+./ObjectPrinting/Tests/Snapshots/*.received.txt
+
