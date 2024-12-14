@@ -1,5 +1,6 @@
 using System;
-using System.Globalization;
+using System.Linq;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting;
 
@@ -9,7 +10,9 @@ public class TypePrintingConfig<TOwner, TPropertyType>(PrintingConfig<TOwner> he
     
     public PrintingConfig<TOwner> Using(Func<TPropertyType, string> printing)
     {
-        HeadConfig.TypeSerializers[typeof(TPropertyType)] = p => printing((TPropertyType)p);
+        ((MembersSerializerByType)HeadConfig.MembersSerializers
+            .First(x => x is MembersSerializerByType))
+            .SerializerRules[typeof(TPropertyType)] = p => printing((TPropertyType)p);
         
         return HeadConfig;
     }

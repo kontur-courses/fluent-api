@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Linq;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting;
 
@@ -11,7 +13,9 @@ public static class TypePrintingExtensions
     {
         var headConfig = config.HeadConfig;
         
-        headConfig.Cultures[typeof(T)] = cultureInfo;
+        ((MembersSerializerByType)headConfig.MembersSerializers
+            .First(x => x is MembersSerializerByType))
+            .SerializerRules[typeof(T)] = x => string.Format(cultureInfo, "{0}", x);
         
         return headConfig;
     }

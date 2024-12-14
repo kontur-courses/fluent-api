@@ -1,32 +1,31 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using ObjectPrinting.Helpers;
+using ObjectPrinting.Serializers;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public Dictionary<Type, Func<object, string>> TypeSerializers { get; } = [];
-        public Dictionary<Type, CultureInfo> Cultures { get; } = [];
-        public Dictionary<PropertyInfo, Func<object, string>> PropertySerializers { get; } = [];
-        public Dictionary<PropertyInfo, int> PropertiesMaxLength { get; } = [];
-        
-        private readonly Type[] primitiveTypes =
+        internal readonly IMembersSerializer[] MembersSerializers =
         [
-            typeof(int), 
-            typeof(double), 
-            typeof(float), 
+            new MembersSerializerByMember(),
+            new MembersSerializerByType()
+        ];
+        
+        private readonly HashSet<Type> primitiveTypes =
+        [
             typeof(string),
             typeof(DateTime), 
             typeof(TimeSpan)
         ];
         private readonly HashSet<Type> excludingTypes = [];
-        private readonly HashSet<PropertyInfo> excludingProperties = [];
+        private readonly HashSet<MemberInfo> excludingProperties = [];
 
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
@@ -37,7 +36,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            excludingProperties.Add(GetProperty(memberSelector));
+            excludingProperties.Add(GetMember(memberSelector));
             
             return this;
         }
@@ -45,7 +44,7 @@ namespace ObjectPrinting
         public TypePrintingConfig<TOwner, TPropertyType> For<TPropertyType>() => new(this);
 
         public PropertyPrintingConfig<TOwner, TProperty> For<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector) => 
-            new(this, GetProperty(memberSelector));
+            new(this, GetMember(memberSelector));
         
         public string PrintToString(TOwner obj) => 
             PrintToString(obj, 0, []);
@@ -57,7 +56,7 @@ namespace ObjectPrinting
             
             var type = obj.GetType();
             
-            if (primitiveTypes.Contains(type))
+            if (type.IsPrimitive || primitiveTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             if (parsedObjects.TryGetValue(obj, out var level))
@@ -111,53 +110,50 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var nextNestingLevel = nestingLevel + 1;
             var identation = new string('\t', nextNestingLevel);
-            
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            
+            var neededMembers = type
+                .GetMembers(BindingFlags.Instance | BindingFlags.Public)
+                .Where(m => m.MemberType is MemberTypes.Property or MemberTypes.Field).ToList();
+            foreach (var memberInfo in neededMembers)
             {
-                if (excludingProperties.Contains(propertyInfo) || excludingTypes.Contains(propertyInfo.PropertyType))
+                MemberHelper.TryGetMemberType(obj, memberInfo, out var memberType);
+                if (excludingProperties.Contains(memberInfo) || excludingTypes.Contains(memberType))
                     continue;
+                
                 sb.Append(identation + 
-                          propertyInfo.Name + 
+                          memberInfo.Name + 
                           " = " + 
-                          PrintProperty(obj, propertyInfo, nextNestingLevel, parsedObjects));
+                          PrintMember(obj, memberInfo, nextNestingLevel, parsedObjects));
             }
             
             return sb.ToString();
         }
 
-        private PropertyInfo GetProperty<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
+        private MemberInfo GetMember<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
             if (memberSelector.Body is not MemberExpression memberExpression)
-                throw new ArgumentException($"Expression refers to a method, not a property.");
+                throw new ArgumentException("Expression refers to a method, not a property.");
             
-            return (memberExpression.Member as PropertyInfo)!;
+            return memberExpression.Member;
         }
 
-        private string PrintProperty(
+        private string PrintMember(
             object obj,
-            PropertyInfo propertyInfo,
+            MemberInfo memberInfo,
             int nextNestingLevel,
             Dictionary<object, int> parsedObjects)
         {
             string? result = null;
-            var propertyValue = propertyInfo.GetValue(obj)!;
+
+            foreach (var serializer in MembersSerializers)
+                if (serializer.TrySerialize(obj, memberInfo, out result))
+                    break;
             
-            if (PropertySerializers.TryGetValue(propertyInfo, out var propertySerializer))
-                result = propertySerializer(propertyValue);
-            else if (TypeSerializers.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-                result = typeSerializer(propertyValue);
-            else if (PropertiesMaxLength.TryGetValue(propertyInfo, out var maxLength))
-            {
-                var propertyString = (propertyValue as string)!;
-                result = propertyString[..Math.Min(propertyString.Length, maxLength)];
-            }
-            else if (Cultures.TryGetValue(propertyInfo.PropertyType, out var culture))
-                result = string.Format(culture, "{0}", propertyValue);
-            
-            return result == null ? 
-                PrintToString(propertyValue, nextNestingLevel, parsedObjects) : 
-                result + Environment.NewLine;
+            MemberHelper.TryGetMemberValue(obj, memberInfo, out var propertyValue);
+            return result == null 
+                ? PrintToString(propertyValue, nextNestingLevel, parsedObjects) 
+                : result + Environment.NewLine;
         }
     }
 }
