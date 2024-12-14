@@ -1,0 +1,6 @@
+﻿PersonWithWeight
+	Id = Guid
+	Name = John
+	Height = 175.5
+	Weight = 70.5
+	Age = 25

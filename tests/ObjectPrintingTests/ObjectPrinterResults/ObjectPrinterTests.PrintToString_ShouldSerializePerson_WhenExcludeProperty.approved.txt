@@ -1,0 +1,4 @@
+﻿Person
+	Name = John
+	Height = 175
+	Age = 25

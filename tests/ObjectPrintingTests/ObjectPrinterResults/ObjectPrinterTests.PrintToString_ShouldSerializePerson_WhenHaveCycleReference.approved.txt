@@ -1,0 +1,6 @@
+﻿PersonWithParent
+	Id = Guid
+	Name = John
+	Height = 175
+	Age = 25
+	Parent = cycled PersonWithParent in level 0
