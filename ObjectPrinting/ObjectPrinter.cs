@@ -70,7 +70,6 @@ public class ObjectPrinter
 
         if (obj == null)
         {
-            propertyTreeStack.TryPop(out _);
             stringValue = "null";
             return true;
         }
@@ -83,7 +82,6 @@ public class ObjectPrinter
 
         if (hasConfig && propertyPrintingConfig!.IsExcluded)
         {
-            propertyTreeStack.TryPop(out _);
             stringValue = default;
             return false;
         }
