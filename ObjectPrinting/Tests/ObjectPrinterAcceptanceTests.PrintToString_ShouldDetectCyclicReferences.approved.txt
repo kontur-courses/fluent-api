@@ -1,0 +1,17 @@
+﻿Person
+	Id = 2a5cacd7-a7a6-4c78-9b7c-c3377846cadd
+	Name = Alex
+	Height = 1,81
+	Age = 19
+	DateOfBirth = 01.01.0001 00:00:00
+	Addresses = null
+	Children = null
+	Father = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Pavel Doe
+		Height = 0
+		Age = 68
+		DateOfBirth = 09.09.1954 00:00:00
+		Addresses = null
+		Children = null
+		Father = Cyclic reference!

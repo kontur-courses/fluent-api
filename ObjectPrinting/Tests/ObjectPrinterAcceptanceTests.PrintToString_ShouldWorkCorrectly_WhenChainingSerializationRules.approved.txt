@@ -1,0 +1,7 @@
+﻿Person
+	Name = Maxwe
+	Height = 1.81
+	DateOfBirth = понедельник, 1 января 0001 г.
+	Addresses = null
+	Children = null
+	Father = null
