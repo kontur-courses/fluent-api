@@ -1,0 +1,5 @@
+﻿ClassWithNotFinalTypeProperties
+	Other = null
+	Strings = String[]
+		{0} = abc
+		{1} = def

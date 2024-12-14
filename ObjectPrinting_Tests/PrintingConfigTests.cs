@@ -91,6 +91,16 @@ public class PrintingConfigTests
     }
 
     [Test]
+    public Task PrintToString_PrintsNestedObjectsOfDifferentType()
+    {
+        var obj = new ClassWithNotFinalTypeProperties { Other = _classWithMultipleProperties };
+
+        var actual = obj.PrintToString();
+
+        return Verify(actual, _verifySettings);
+    }
+
+    [Test]
     public Task PrintToString_ChangesFinalTypeValues_IfUsingCultureInfo()
     {
         var cultureInfo1 = new CultureInfo("ru-RU");
@@ -184,9 +194,19 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public Task PrintToString_PrintsIDictionaryElements()
+    public Task PrintToString_PrintsDictionaryElements()
     {
         var obj = new Dictionary<string, int> { { "abc", 0 }, { "def", 1 }, { "ghi", 2 } };
+
+        var actual = obj.PrintToString();
+
+        return Verify(actual, _verifySettings);
+    }
+
+    [Test]
+    public Task PrintToString_PrintsNestedEnumerable()
+    {
+        var obj = new ClassWithNotFinalTypeProperties { Strings = ["abc", "def"] };
 
         var actual = obj.PrintToString();
 
