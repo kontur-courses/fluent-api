@@ -8,7 +8,7 @@ namespace ObjectPrintingTests;
 public class ObjectPrinterTests
 {
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithAllProperties()
+    public void PrintToString_ShouldSerializePerson_WhenUseProperties()
     {
         var person = new Person { Name = "John", Age = 25, Height = 175};
         
@@ -19,7 +19,18 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithExcludedDouble()
+    public void PrintToString_ShouldSerializePerson_WhenUseFields()
+    {
+        var person = new PersonWithFields { Name = "John", Age = 25, Height = 175};
+        
+        var actualResult = ObjectPrinter.For<PersonWithFields>().PrintToString(person);
+        var expectedResult = "PersonWithFields\r\n\tId = Guid\r\n\tName = John\r\n\tHeight = 175\r\n\tAge = 25\r\n";
+        
+        actualResult.Should().BeEquivalentTo(expectedResult);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldSerializePerson_WhenExcludeType()
     {
         var personWithWeight = new PersonWithWeight { Name = "John", Age = 25, Height = 175, Weight = 70 };
         
@@ -30,7 +41,7 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithExcludedId()
+    public void PrintToString_ShouldSerializePerson_WhenExcludeProperty()
     {
         var person = new Person { Name = "John", Age = 25, Height = 175 };
         
@@ -41,7 +52,18 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithSerializationForType()
+    public void PrintToString_ShouldSerializePerson_WhenExcludeFields()
+    {
+        var person = new PersonWithFields { Name = "John", Age = 25, Height = 175 };
+        
+        var actualResult = ObjectPrinter.For<PersonWithFields>().Excluding(p => p.Id).PrintToString(person);
+        var expectedResult = "PersonWithFields\r\n\tName = John\r\n\tHeight = 175\r\n\tAge = 25\r\n";
+        
+        actualResult.Should().BeEquivalentTo(expectedResult);
+    }
+    
+    [Test]
+    public void PrintToString_ShouldSerializePerson_WhenUseCustomSerializationForType()
     {
         var personWithWeight = new PersonWithWeight { Name = "John", Age = 25, Height = 175, Weight = 70 };
         
@@ -60,7 +82,7 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithCultureInfo()
+    public void PrintToString_ShouldSerializePerson_WhenUseCustomCultureInfo()
     {
         var personWithWeight = new PersonWithWeight { Name = "John", Age = 25, Height = 175.5, Weight = 70.5 };
         
@@ -79,7 +101,7 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithSerializationForProperty()
+    public void PrintToString_ShouldSerializePerson_WhenUseCustomSerializationForMember()
     {
         var person = new Person { Name = "John", Age = 25, Height = 175.6 };
         
@@ -93,7 +115,7 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithStringTrim()
+    public void PrintToString_ShouldSerializePerson_WhenTrimString()
     {
         var person = new Person { Name = "John Jo", Age = 25, Height = 175 };
 
@@ -107,7 +129,7 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedPerson_WithCycleReference()
+    public void PrintToString_ShouldSerializePerson_WhenHaveCycleReference()
     {
         var personWithParent = new PersonWithParent { Name = "John", Age = 25, Height = 175 };
         personWithParent.Parent = personWithParent;
@@ -126,7 +148,7 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintToString_ShouldReturnSerializedList()
+    public void PrintToString_ShouldSerializeList()
     {
         var numbers = new[] { 1, 2, 3, 4 };
         
@@ -139,7 +161,7 @@ public class ObjectPrinterTests
     }
     
     [Test]
-    public void PrintToString_ShouldReturnSerializedDictionary()
+    public void PrintToString_ShouldSerializeDictionary()
     {
         var dictionary = new Dictionary<int, string>
         {
