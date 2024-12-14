@@ -1,5 +1,5 @@
 ﻿Person
-	Id = Guid
+	Id = 2a5cacd7-a7a6-4c78-9b7c-c3377846cadd
 	Name = Alex
 	Height = 1,81
 	Age = 19
@@ -7,7 +7,7 @@
 	Addresses = null
 	Children = List`1:
 		- Person
-			Id = Guid
+			Id = 00000000-0000-0000-0000-000000000000
 			Name = Natasha
 			Height = 0
 			Age = 8
@@ -16,7 +16,7 @@
 			Children = null
 			Father = null
 		- Person
-			Id = Guid
+			Id = 00000000-0000-0000-0000-000000000000
 			Name = Pasha
 			Height = 0
 			Age = 8

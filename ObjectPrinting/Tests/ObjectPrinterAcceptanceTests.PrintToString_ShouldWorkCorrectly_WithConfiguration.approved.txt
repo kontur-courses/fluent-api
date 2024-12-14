@@ -1,5 +1,5 @@
 ﻿Person
-	Id = Guid
+	Id = 2a5cacd7-a7a6-4c78-9b7c-c3377846cadd
 	Name = Alex
 	Height = 1,81
 	DateOfBirth = 01.01.0001 00:00:00

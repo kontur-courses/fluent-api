@@ -20,7 +20,7 @@ public class PrintingConfig<TOwner>
     private static readonly HashSet<Type> FinalTypes =
     [
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan)
+        typeof(DateTime), typeof(TimeSpan), typeof(Guid)
     ];
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => new(this);
@@ -45,14 +45,24 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj) => PrintToString(obj, 0);
 
-    public void AddSerializerForType<TPropType>(Func<TPropType, string> serializer) =>
+    public PrintingConfig<TOwner> AddSerializerForType<TPropType>(Func<TPropType, string> serializer)
+    {
         typeSerializers[typeof(TPropType)] = obj => serializer((TPropType)obj);
+        return this;
+    }
 
-    public void AddSerializerForProperty(string propertyName, Func<object, string> serializer) =>
+    public PrintingConfig<TOwner> AddSerializerForProperty(string propertyName, Func<object, string> serializer)
+    {
         propertySerializers[propertyName] = serializer;
+        return this;
+    }
 
-    public void AddCultureForType<TPropType>(CultureInfo culture) => typeCultures[typeof(TPropType)] = culture;
-    
+    public PrintingConfig<TOwner> AddCultureForType<TPropType>(CultureInfo culture)
+    {
+        typeCultures[typeof(TPropType)] = culture;
+        return this;
+    }
+
     private string PrintToString(object? obj, int nestingLevel)
     {
         if (obj == null)

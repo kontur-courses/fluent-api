@@ -13,7 +13,8 @@ public class ObjectPrinterAcceptanceTests
     private Person person;
     
     [SetUp]
-    public void Setup() => person = new Person { Name = "Alex", Age = 19, Height = 1.81 };
+    public void Setup() => person = new Person { Id = new Guid("2a5cacd7-a7a6-4c78-9b7c-c3377846cadd"), 
+        Name = "Alex", Age = 19, Height = 1.81 };
     
     [Test]
     [UseReporter(typeof(DiffReporter))]

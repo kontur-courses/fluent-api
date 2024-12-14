@@ -18,12 +18,10 @@ public static class PropertyPrintingConfigExtensions
          var printingConfig = propertyConfig.ParentConfig; 
          var propertyName = ((MemberExpression)propConfig.MemberSelector.Body).Member.Name;
          
-         printingConfig.AddSerializerForProperty(propertyName, value =>
+         return printingConfig.AddSerializerForProperty(propertyName, value =>
          {
              var val = value as string ?? string.Empty;
              return val.Length > maxLen ? val[..maxLen] : val;
          });
-         
-         return printingConfig;
      }
 }

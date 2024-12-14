@@ -9,19 +9,14 @@ public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> pr
 {
     public Expression<Func<TOwner, TPropType>> MemberSelector => memberSelector;
     
-    public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
-    {
-        printingConfig.AddSerializerForType(print);
-        return printingConfig;
-    }
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> print) => printingConfig.AddSerializerForType(print);
 
     public PrintingConfig<TOwner> Using(CultureInfo culture)
     {
         if (!typeof(TPropType).IsValueType || !typeof(IFormattable).IsAssignableFrom(typeof(TPropType)))
             throw new InvalidOperationException($"Can't apply culture for type: {typeof(TPropType)}");
         
-        printingConfig.AddCultureForType<TPropType>(culture);
-        return printingConfig;
+        return printingConfig.AddCultureForType<TPropType>(culture);
     }
 
     PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
