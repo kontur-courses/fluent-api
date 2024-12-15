@@ -1,0 +1,4 @@
+﻿ClassWithMultipleProperties
+	Number1 = 123456
+	Number2 = 456789
+	String1 = "abcdef"

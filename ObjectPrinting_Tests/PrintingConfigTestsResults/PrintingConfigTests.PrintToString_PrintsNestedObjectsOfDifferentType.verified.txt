@@ -1,0 +1,7 @@
+﻿ClassWithNotFinalTypeProperties
+	Other = ClassWithMultipleProperties
+		Number1 = 123456
+		Number2 = 456789
+		String1 = abcdef
+		String2 = ghijkl
+	Strings = null

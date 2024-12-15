@@ -1,0 +1,7 @@
+﻿LinkedClass
+	Number = 1
+	Other = LinkedClass
+		Number = 2
+		Other = LinkedClass
+			Number = 3
+			Other = null

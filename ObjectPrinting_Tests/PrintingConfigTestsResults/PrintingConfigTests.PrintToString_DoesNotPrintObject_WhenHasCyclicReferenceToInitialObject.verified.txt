@@ -1,0 +1,5 @@
+﻿LinkedClass
+	Number = 0
+	Other = LinkedClass
+		Number = 0
+		Other = [root]

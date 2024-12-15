@@ -1,0 +1,4 @@
+﻿String[]
+	{0} = abc
+	{1} = def
+	{2} = ghi
