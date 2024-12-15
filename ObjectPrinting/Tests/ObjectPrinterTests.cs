@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -161,7 +162,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person
             {
-                Id = new Guid(),
+                Id = Guid.NewGuid(),
                 Name = name,
                 Age = 20,
                 Height = 181.5,
@@ -241,14 +242,54 @@ namespace ObjectPrinting.Tests
         [Test]
         public void PrintToString_NotThrowStackOverflow_WithCyclicReferences()
         {
+            person.Friend.Friend = person;
+
+            var printer = ObjectPrinter.For<Person>();
+
+            var print = new Func<string>(() => printer.PrintToString(person));
+
+            print.Should().NotThrow<StackOverflowException>();
+
+            var result = print();
+
+            result.Should().BeOfType<string>();
+
+            var fields = new[] {
+                $"Name = {person.Name}",
+                $"Id = {person.Id}",
+                $"Age = {person.Age}",
+                $"Height = {person.Height}",
+            };
+            var friendFields = person.Friend.PrintToString().Split('\n').Select(x => x.Trim());
+
+            result.Should().ContainAll(fields);
+            result.Should().ContainAll(friendFields);
+
+            Console.WriteLine(result);
+        }
+
+        [Test]
+        public void PrintToString_WithNullValues()
+        {
             var person1 = new Person();
             var person2 = new Person { Friend = person1 };
 
-            person1.Friend = person2;
+            var result = person1.PrintToString();
 
-            var printAction = new Action(() => person1.PrintToString());
+            result.Should().BeOfType<string>();
 
-            printAction.Should().NotThrow<StackOverflowException>();
+            var fields = new[] {
+                $"Name = {person1.Name}",
+                $"Id = {person1.Id}",
+                $"Age = {person1.Age}",
+                $"Height = {person1.Height}",
+            };
+            var friendFields = person2.Friend.PrintToString().Split('\n').Select(x => x.Trim());
+
+            result.Should().ContainAll(fields);
+            result.Should().ContainAll(friendFields);
+
+            Console.WriteLine(result);
         }
     }
 }

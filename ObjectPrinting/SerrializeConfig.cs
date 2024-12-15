@@ -125,6 +125,6 @@ namespace ObjectPrinting
 
         public void AddTypeSerializer(Type type, Delegate serializer) => TypeSerrializers[type] = serializer;
 
-                public bool TryGetSerializer(Type type, out Delegate serializer) => TypeSerrializers.TryGetValue(type, out serializer);
+        public bool TryGetSerializer(Type type, out Delegate serializer) => TypeSerrializers.TryGetValue(type, out serializer);
     }
 }

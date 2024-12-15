@@ -1,7 +1,9 @@
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -11,7 +13,7 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly SerrializeConfig serrializeConfig;
-        private HashSet<object> serializedObjects;
+        private readonly HashSet<object> serializedObjects;
 
         public PrintingConfig()
         {
@@ -27,11 +29,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            serializedObjects.Add(obj);
-
             if (serrializeConfig.TryGetSerializer(obj.GetType(), out var serrialize))
                 return serrialize.DynamicInvoke(obj) + Environment.NewLine;
 
@@ -47,8 +44,8 @@ namespace ObjectPrinting
 
             sb.AppendLine(obj.GetType().Name);
 
-            PrintToStringProperties(sb, obj, nestingLevel);
             PrintToStringFields(sb, obj, nestingLevel);
+            PrintToStringProperties(sb, obj, nestingLevel);
 
             return sb.ToString();
         }
@@ -77,7 +74,7 @@ namespace ObjectPrinting
             {
                 var (objStr, ok) = PrintToStringMember(
                     field,
-                    field.DeclaringType,
+                    field.FieldType,
                     field.GetValue(obj),
                     nestingLevel
                     );
@@ -91,13 +88,18 @@ namespace ObjectPrinting
 
         private (string?, bool) PrintToStringMember(MemberInfo member, Type? type, object? value, int nestingLevel)
         {
-            if (type is null || 
-                value is null || 
+            if (value == null)
+                return (ToPrintingFormat(member.Name, "null" + Environment.NewLine, nestingLevel), true);
+
+            if (type is null ||
                 serrializeConfig.IsExcludedType(type) ||
                 serrializeConfig.IsExcludedMember(member) ||
                 serializedObjects.Contains(value)
                 )
                 return (null, false);
+
+            if (!value.GetType().IsValueType)
+                serializedObjects.Add(value);
 
             var contains = serrializeConfig.TryGetSerializer(member, out var serrialize);
 
@@ -105,9 +107,14 @@ namespace ObjectPrinting
                 serrialize.DynamicInvoke(value) + Environment.NewLine :
                 PrintToString(value, nestingLevel + 1);
 
+            return (ToPrintingFormat(member.Name, objStr, nestingLevel), true);
+        }
+
+        private string ToPrintingFormat(string memberName, string objStr, int nestingLevel)
+        {
             var identation = new string('\t', nestingLevel + 1);
 
-            return (identation + member.Name + " = " + objStr, true);
+            return identation + memberName + " = " + objStr;
         }
 
         private string SerializeCollection(ICollection collection, int nestingLevel)
@@ -144,6 +151,8 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
+            serializedObjects.Add(obj);
+
             var result = PrintToString(obj, 0);
 
             serializedObjects.Clear();
