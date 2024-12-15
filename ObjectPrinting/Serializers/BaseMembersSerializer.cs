@@ -10,10 +10,10 @@ public abstract class BaseMembersSerializer : IMembersSerializer
     {
         result = null!;
         return MemberHelper.TryGetTypeAndValueOfMember(obj, memberInfo, out var memberData) && 
-               TrySerializeProtected(memberData!.Value.memberValue, memberData.Value.memberType, memberInfo, out result);
+               TrySerializeCore(memberData!.Value.memberValue, memberData.Value.memberType, memberInfo, out result);
     }
 
-    protected abstract bool TrySerializeProtected(
+    protected abstract bool TrySerializeCore(
         object memberValue,
         Type memberType,
         MemberInfo memberInfo,

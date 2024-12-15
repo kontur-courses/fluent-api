@@ -8,7 +8,7 @@ public class MembersSerializerByType : BaseMembersSerializer
 {
     public Dictionary<Type, Func<object, string>> SerializerRules { get; } = new();
     
-    protected override bool TrySerializeProtected(
+    protected override bool TrySerializeCore(
         object memberValue,
         Type memberType,
         MemberInfo memberInfo,
