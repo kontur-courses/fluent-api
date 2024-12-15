@@ -6,13 +6,13 @@ namespace ObjectPrinting;
 
 public class TypePrintingConfig<TOwner, TPropertyType>(PrintingConfig<TOwner> headConfig)
 {
-    public PrintingConfig<TOwner> HeadConfig { get; } = headConfig;
+    internal PrintingConfig<TOwner> HeadConfig { get; } = headConfig;
+    internal readonly MembersSerializerByType Serializer = 
+        headConfig.MembersSerializers.OfType<MembersSerializerByType>().First();
     
     public PrintingConfig<TOwner> Using(Func<TPropertyType, string> printing)
     {
-        ((MembersSerializerByType)HeadConfig.MembersSerializers
-            .First(x => x is MembersSerializerByType))
-            .SerializerRules[typeof(TPropertyType)] = p => printing((TPropertyType)p);
+        Serializer.SerializerRules[typeof(TPropertyType)] = p => printing((TPropertyType)p);
         
         return HeadConfig;
     }

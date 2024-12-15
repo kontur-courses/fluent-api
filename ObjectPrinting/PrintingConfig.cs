@@ -43,7 +43,7 @@ namespace ObjectPrinting
 
         public TypePrintingConfig<TOwner, TPropertyType> For<TPropertyType>() => new(this);
 
-        public PropertyPrintingConfig<TOwner, TProperty> For<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector) => 
+        public MemberPrintingConfig<TOwner, TProperty> For<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector) => 
             new(this, GetMember(memberSelector));
         
         public string PrintToString(TOwner obj) => 
@@ -130,10 +130,10 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private MemberInfo GetMember<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
+        private static MemberInfo GetMember<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
             if (memberSelector.Body is not MemberExpression memberExpression)
-                throw new ArgumentException("Expression refers to a method, not a property.");
+                throw new ArgumentException("Expression refers to a method, not a member.");
             
             return memberExpression.Member;
         }
