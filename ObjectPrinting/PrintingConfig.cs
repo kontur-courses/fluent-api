@@ -36,10 +36,10 @@ namespace ObjectPrinting
         private MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
-                throw new ArgumentException();
+                throw new ArgumentException("memberSelector должен возвращать поле или свойство объекта");
             var memberExpr = (MemberExpression)memberSelector.Body;
             if (memberExpr.Member.MemberType != MemberTypes.Field && memberExpr.Member.MemberType != MemberTypes.Property)
-                throw new ArgumentException();
+                throw new ArgumentException("memberSelector должен возвращать поле или свойство объекта");
             
             return memberExpr.Member;
         }
