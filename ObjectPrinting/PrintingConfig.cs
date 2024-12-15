@@ -20,6 +20,7 @@ namespace ObjectPrinting
         
         private readonly HashSet<Type> primitiveTypes =
         [
+            typeof(Guid),
             typeof(string),
             typeof(DateTime), 
             typeof(TimeSpan)
