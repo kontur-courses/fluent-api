@@ -4,11 +4,11 @@ using System.Reflection;
 
 namespace ObjectPrinting.Serializers;
 
-public class MembersSerializerByMember : BaseMembersSerializer
+public class MembersSerializerByMember : IMembersSerializer
 {
     public Dictionary<MemberInfo, Func<object, string>> SerializerRules { get; } = new();
     
-    protected override bool TrySerializeCore(
+    public bool TrySerialize(
         object memberValue,
         Type memberType,
         MemberInfo memberInfo,

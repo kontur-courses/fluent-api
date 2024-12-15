@@ -26,7 +26,7 @@ namespace ObjectPrinting
             typeof(TimeSpan)
         ];
         private readonly HashSet<Type> excludingTypes = [];
-        private readonly HashSet<MemberInfo> excludingProperties = [];
+        private readonly HashSet<MemberInfo> excludingMembers = [];
 
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
@@ -37,7 +37,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
         {
-            excludingProperties.Add(GetMember(memberSelector));
+            excludingMembers.Add(GetMember(memberSelector));
             
             return this;
         }
@@ -59,7 +59,7 @@ namespace ObjectPrinting
             
             if (type.IsPrimitive || primitiveTypes.Contains(type))
                 return obj + Environment.NewLine;
-
+            
             if (parsedObjects.TryGetValue(obj, out var level))
                 return $"cycled {type.Name} in level {level}" + Environment.NewLine;
             parsedObjects.Add(obj, nestingLevel);
@@ -113,19 +113,19 @@ namespace ObjectPrinting
             var identation = new string('\t', nextNestingLevel);
             sb.AppendLine(type.Name);
             
-            var neededMembers = type
-                .GetMembers(BindingFlags.Instance | BindingFlags.Public)
-                .Where(m => m.MemberType is MemberTypes.Property or MemberTypes.Field).ToList();
-            foreach (var memberInfo in neededMembers)
+            foreach (var memberInfo in type.GetMembers(BindingFlags.Instance | BindingFlags.Public))
             {
-                MemberHelper.TryGetMemberType(obj, memberInfo, out var memberType);
-                if (excludingProperties.Contains(memberInfo) || excludingTypes.Contains(memberType))
+                if (!MemberHelper.TryGetTypeAndValueOfMember(obj, memberInfo, out var memberData))
+                    continue;
+                
+                var (memberValue, memberType) = memberData!.Value;
+                if (excludingMembers.Contains(memberInfo) || excludingTypes.Contains(memberType))
                     continue;
                 
                 sb.Append(identation + 
                           memberInfo.Name + 
                           " = " + 
-                          PrintMember(obj, memberInfo, nextNestingLevel, parsedObjects));
+                          PrintMember(memberValue, memberType, memberInfo, nextNestingLevel, parsedObjects));
             }
             
             return sb.ToString();
@@ -140,7 +140,8 @@ namespace ObjectPrinting
         }
 
         private string PrintMember(
-            object obj,
+            object memberValue,
+            Type memberType,
             MemberInfo memberInfo,
             int nextNestingLevel,
             Dictionary<object, int> parsedObjects)
@@ -148,12 +149,11 @@ namespace ObjectPrinting
             string? result = null;
 
             foreach (var serializer in MembersSerializers)
-                if (serializer.TrySerialize(obj, memberInfo, out result))
+                if (serializer.TrySerialize(memberValue, memberType, memberInfo, out result))
                     break;
             
-            MemberHelper.TryGetMemberValue(obj, memberInfo, out var propertyValue);
             return result == null 
-                ? PrintToString(propertyValue, nextNestingLevel, parsedObjects) 
+                ? PrintToString(memberValue, nextNestingLevel, parsedObjects) 
                 : result + Environment.NewLine;
         }
     }
