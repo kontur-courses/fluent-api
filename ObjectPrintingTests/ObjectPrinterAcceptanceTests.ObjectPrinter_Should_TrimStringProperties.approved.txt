@@ -1,0 +1,8 @@
+﻿Person
+	Id = 1d59901d-692d-49ae-a9bc-349981d3a636,
+	Name = J,
+	Height = 123.4,
+	Age = 25,
+	Children = null,
+	Weigths = null,
+	AddidionalInfo = null

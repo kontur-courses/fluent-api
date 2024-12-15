@@ -1,0 +1,26 @@
+﻿{
+	1: 	Person
+		Id = 00000000-0000-0000-0000-000000000000,
+		Name = John,
+		Height = 0,
+		Age = 25,
+		Children = null,
+		Weigths = null,
+		AddidionalInfo = null,
+	2: 	Person
+		Id = 00000000-0000-0000-0000-000000000000,
+		Name = John,
+		Height = 0,
+		Age = 25,
+		Children = null,
+		Weigths = null,
+		AddidionalInfo = null,
+	3: 	Person
+		Id = 00000000-0000-0000-0000-000000000000,
+		Name = John,
+		Height = 0,
+		Age = 25,
+		Children = null,
+		Weigths = null,
+		AddidionalInfo = null
+}
