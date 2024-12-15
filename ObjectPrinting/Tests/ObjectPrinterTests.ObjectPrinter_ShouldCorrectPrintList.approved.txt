@@ -1,0 +1,17 @@
+﻿List
+	[0] = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Mary
+		Height = 0
+		Age = 0
+		Surname = null
+		Birthdate = 01.01.0001 0:00:00
+		test = null
+	[1] = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = Alice
+		Height = 0
+		Age = 0
+		Surname = null
+		Birthdate = 01.01.0001 0:00:00
+		test = null

@@ -1,0 +1,8 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 1.99
+	Age = 19
+	Surname = White
+	Birthdate = 01.01.0001 0:00:00
+	test = null
