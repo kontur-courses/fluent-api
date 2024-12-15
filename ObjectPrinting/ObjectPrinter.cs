@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Reflection;
 using System.Text;
 
@@ -23,127 +21,175 @@ public class ObjectPrinter
 
     internal static string PrintToString<TOwner>(TOwner? obj, IPrintingConfig<TOwner> printingConfig)
     {
-        var sb = new StringBuilder();
-        var stack = new Stack<IEnumerator<PropertyValue>>();
-        var path = default(PropertyPath);
+        var path = new PropertyPath(new PropertyValue(null, obj));
 
-        if (TryGetStringValue(printingConfig, new PropertyValue(null, obj), stack, ref path, out var stringValue))
+        if (!IsExcluded(path, printingConfig, 0))
         {
-            sb.AppendLine(stringValue);
+            var sb = new StringBuilder();
+            AppendPrintedObject(sb, path, printingConfig, 0);
+            return sb.ToString();
         }
 
-        while (stack.TryPeek(out var enumerator))
-        {
-            if (!enumerator.MoveNext())
-            {
-                stack.Pop();
-                path = path!.Previous;
-                continue;
-            }
-
-            var propertyValue = enumerator.Current;
-            var indentation = stack.Count;
-
-            if (path != null && path.Contains(propertyValue.Value))
-            {
-                throw new InvalidOperationException("Unable to print object with cyclic reference.");
-            }
-
-            if (TryGetStringValue(printingConfig, propertyValue, stack, ref path, out stringValue))
-            {
-                sb.Append('\t', indentation);
-                sb.AppendLine($"{propertyValue.Name} = {stringValue}");
-            }
-        }
-
-        return sb.ToString();
+        return string.Empty;
     }
 
-    private static bool TryGetStringValue<TOwner>(
+    private static void AppendPrintedObject<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
         IPrintingConfig<TOwner> printingConfig,
-        PropertyValue propertyValue,
-        Stack<IEnumerator<PropertyValue>> propertyTreeStack,
-        ref PropertyPath? path,
-        [MaybeNullWhen(false)] out string stringValue)
+        int nestingLevel)
     {
-        var obj = propertyValue.Value;
+        var obj = path.PropertyValue.Value;
 
         if (obj == null)
         {
-            stringValue = "null";
-            return true;
+            sb.AppendLine("null");
         }
-
-        var type = obj.GetType();
-        var nextPath = new PropertyPath(propertyValue, path);
-
-        var hasConfig = printingConfig.PropertyConfigsByPath.TryGetValue(nextPath, out var propertyPrintingConfig)
-            || printingConfig.PropertyConfigsByType.TryGetValue(type, out propertyPrintingConfig);
-
-        if (hasConfig && propertyPrintingConfig!.IsExcluded)
+        else if (IsCyclicReference(path))
         {
-            stringValue = default;
-            return false;
+            AppendCyclicReference(sb, path);
         }
-
-        if (hasConfig && propertyPrintingConfig!.PrintOverride != null)
+        else if (IsAlternativelyPrintedObject(path, printingConfig))
         {
-            stringValue = propertyPrintingConfig.PrintOverride(obj);
+            AppendAlternativelyPrintedObject(sb, path, printingConfig);
         }
-        else if (IsFinalType(type))
+        else if (IsFinalTypeObject(obj))
         {
-            var cultureInfo = hasConfig && propertyPrintingConfig!.CultureInfo != null
-                ? propertyPrintingConfig.CultureInfo
-                : printingConfig.CultureInfo;
-            stringValue = PrintFinalTypeToString(obj, cultureInfo);
+            AppendFinalTypeObject(sb, path, printingConfig);
         }
-        else if (obj is IEnumerable enumerable)
+        else if (obj is IEnumerable)
         {
-            var values = enumerable
-                .Cast<object>()
-                .Select((item, i) => new PropertyValue($"{{{i}}}", null, item));
-            propertyTreeStack.Push(values.GetEnumerator());
-            path = nextPath;
-            stringValue = GetNameWithoutGenericPart(type);
+            AppendEnumerableObjectWithItems(sb, path, printingConfig, nestingLevel);
         }
         else
         {
-            if (!printingConfig.IsToLimitNestingLevel
-                || propertyTreeStack.Count < printingConfig.MaxNestingLevel)
-            {
-                propertyTreeStack.Push(GetPropertyValues(obj).GetEnumerator());
-                path = nextPath;
-            }
-
-            stringValue = GetNameWithoutGenericPart(type);
+            AppendObjectWithProperties(sb, path, printingConfig, nestingLevel);
         }
-
-        return true;
     }
 
-    private static bool IsFinalType(Type type)
+    private static bool IsCyclicReference(PropertyPath path)
     {
+        var obj = path.PropertyValue.Value!;
+        return path.Previous != null
+            && path.Previous.Contains(obj);
+    }
+
+    private static void AppendCyclicReference(StringBuilder sb, PropertyPath path)
+    {
+        var obj = path.PropertyValue.Value!;
+        var pathToExistingValue = path.Previous!.FindPathTo(obj);
+        sb.AppendLine($"[root{pathToExistingValue}]");
+    }
+
+    private static bool IsAlternativelyPrintedObject<TOwner>(PropertyPath path, IPrintingConfig<TOwner> printingConfig)
+    {
+        return printingConfig.TryGetConfig(path, out var propertyPrintingConfig)
+            && propertyPrintingConfig.PrintOverride != null;
+    }
+
+    private static void AppendAlternativelyPrintedObject<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
+        IPrintingConfig<TOwner> printingConfig)
+    {
+        if (printingConfig.TryGetConfig(path, out var propertyPrintingConfig))
+        {
+            var obj = path.PropertyValue.Value!;
+            var stringValue = propertyPrintingConfig.PrintOverride!(obj);
+            sb.AppendLine(stringValue);
+        }
+    }
+
+    private static bool IsFinalTypeObject(object obj)
+    {
+        var type = obj.GetType();
         return type.IsPrimitive
             || _finalTypes.Contains(type);
     }
 
-    private static string PrintFinalTypeToString(object obj, CultureInfo cultureInfo)
+    private static void AppendFinalTypeObject<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
+        IPrintingConfig<TOwner> printingConfig)
     {
-        return obj is IFormattable formattableObj
+        var cultureInfo = printingConfig.TryGetConfig(path, out var propertyPrintingConfig)
+            && propertyPrintingConfig.CultureInfo != null
+            ? propertyPrintingConfig.CultureInfo
+            : printingConfig.CultureInfo;
+
+        var obj = path.PropertyValue.Value!;
+        var stringValue = obj is IFormattable formattableObj
             ? formattableObj.ToString(null, cultureInfo)
-            : obj.ToString()!;
+            : obj.ToString();
+
+        sb.AppendLine(stringValue);
     }
 
-    private static IEnumerable<PropertyValue> GetPropertyValues(object obj)
+    private static void AppendEnumerableObjectWithItems<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
+        IPrintingConfig<TOwner> printingConfig,
+        int nestingLevel)
     {
-        return obj
-            .GetType()
+        var enumerable = (IEnumerable)path.PropertyValue.Value!;
+        var type = enumerable.GetType();
+        var typeName = GetTypeNameWithoutGenericPart(type);
+        var values = enumerable
+            .Cast<object>()
+            .Select((item, i) => new PropertyValue($"{{{i}}}", type, item));
+
+        sb.AppendLine(typeName);
+        AppendPropertyValues(sb, path, printingConfig, values, nestingLevel);
+    }
+
+    private static void AppendObjectWithProperties<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
+        IPrintingConfig<TOwner> printingConfig,
+        int nestingLevel)
+    {
+        var obj = path.PropertyValue.Value!;
+        var type = obj.GetType();
+        var typeName = GetTypeNameWithoutGenericPart(type);
+        var values = type
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetIndexParameters().Length == 0)
             .Select(property => new PropertyValue(property, property.GetValue(obj)));
+
+        sb.AppendLine(typeName);
+        AppendPropertyValues(sb, path, printingConfig, values, nestingLevel);
     }
 
-    private static string GetNameWithoutGenericPart(Type type)
+    private static void AppendPropertyValues<TOwner>(
+        StringBuilder sb,
+        PropertyPath path,
+        IPrintingConfig<TOwner> printingConfig,
+        IEnumerable<PropertyValue> propertyValues,
+        int nestingLevel)
+    {
+        foreach (var propertyValue in propertyValues)
+        {
+            var nextPath = new PropertyPath(propertyValue, path);
+
+            if (!IsExcluded(nextPath, printingConfig, nestingLevel + 1))
+            {
+                sb.Append('\t', nestingLevel + 1);
+                sb.Append(propertyValue.Name);
+                sb.Append(" = ");
+                AppendPrintedObject(sb, nextPath, printingConfig, nestingLevel + 1);
+            }
+        }
+    }
+
+    private static bool IsExcluded<TOwner>(PropertyPath path, IPrintingConfig<TOwner> printingConfig, int nestingLevel)
+    {
+        return printingConfig.IsToLimitNestingLevel
+            && nestingLevel > printingConfig.MaxNestingLevel
+            || printingConfig.TryGetConfig(path, out var propertyPrintingConfig)
+                && propertyPrintingConfig!.IsExcluded;
+    }
+
+    private static string GetTypeNameWithoutGenericPart(Type type)
     {
         var end = type.Name.IndexOf('`');
         return end == -1

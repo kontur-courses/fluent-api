@@ -26,9 +26,24 @@ internal class PropertyPath
         _hashCode = HashCode.Combine(propertyValue.DeclaringType, propertyValue.Name, previous);
     }
 
-    public PropertyValue? PropertyValue { get; }
+    public PropertyValue PropertyValue { get; }
 
     public PropertyPath? Previous { get; }
+
+    public bool Contains([DisallowNull] object obj)
+    {
+        return _values.Contains(obj);
+    }
+
+    public PropertyPath? FindPathTo(object obj)
+    {
+        if (ReferenceEquals(obj, PropertyValue.Value))
+        {
+            return this;
+        }
+
+        return Previous?.FindPathTo(obj);
+    }
 
     public override bool Equals(object? obj)
     {
@@ -43,9 +58,16 @@ internal class PropertyPath
         return _hashCode;
     }
 
-    public bool Contains(object? obj)
+    public override string ToString()
     {
-        return obj != null && _values.Contains(obj);
+        var stack = new Stack<string?>();
+
+        for (var node = this; node != null; node = node.Previous)
+        {
+            stack.Push(node.PropertyValue.Name);
+        }
+
+        return string.Join('.', stack);
     }
 
     public static bool TryGetPropertyPath<TOwner, TPropType>(
@@ -54,8 +76,7 @@ internal class PropertyPath
     {
         var propertyNames = propertySelector.Body.ToString().Split('.');
         var type = typeof(TOwner);
-        path = default;
-
+        
         if (propertyNames.Length >= 1 && propertyNames[0] == propertySelector.Parameters.Single().Name)
         {
             path = new PropertyPath(new PropertyValue(null, null), null);
