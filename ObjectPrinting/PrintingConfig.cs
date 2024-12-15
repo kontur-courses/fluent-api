@@ -1,41 +1,71 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
+using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    internal readonly HashSet<Type> ExcludedTypes = [];
+    internal readonly HashSet<MemberInfo?> ExcludedMembers = [];
+
+    internal Dictionary<MemberInfo, int> TrimmedMembers { get; } = new();
+    internal Dictionary<Type, CultureInfo> CulturesForTypes { get; } = new();
+    internal Dictionary<Type, Func<object, string>> CustomTypeSerializers { get; } = new();
+    internal Dictionary<MemberInfo, Func<object, string>> CustomMemberSerializers { get; } = new();
+    
+    internal int? TrimStringLength;
+    private int maxNestingLevel = 5;
+    
+    public int MaxNestingLevel
     {
-        public string PrintToString(TOwner obj)
+        get => maxNestingLevel; 
+        private set
         {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
+            if (value <= 0)
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                throw new ArgumentOutOfRangeException(
+                    nameof(value), value, "The maxNestingDepth value must be positive.");
             }
-            return sb.ToString();
+            maxNestingLevel = value;
         }
+    }
+
+    public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>() => new(this);
+    
+    public MemberPrintingConfig<TOwner, TMemberType> SetPrintingFor<TMemberType>(
+        Expression<Func<TOwner, TMemberType>> memberSelector)
+    {
+        var expression = (MemberExpression)memberSelector.Body;
+        return new MemberPrintingConfig<TOwner, TMemberType>(this, expression.Member);
+    }
+
+    public PrintingConfig<TOwner> Exclude<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+    {
+        var expression = (MemberExpression)memberSelector.Body;
+        ExcludedMembers.Add(expression.Member);
+        
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Exclude<TMemberType>()
+    {
+        ExcludedTypes.Add(typeof(TMemberType));
+        return this;
+    }
+
+    public PrintingConfig<TOwner> SetSerializationDepth(int depth)
+    {
+        MaxNestingLevel = depth;
+        return this;
+    }
+
+    public string PrintToString(TOwner? obj)
+    {
+        var serializer = new Serializer<TOwner>(this);
+
+        return serializer.SerializeObject(obj);
     }
 }

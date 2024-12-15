@@ -1,0 +1,30 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Anton
+	Height = 200,52
+	Age = 19
+	Friend = null
+	Friends = null
+	Relatives = Person[]
+		0: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Anton
+			Height = 200,52
+			Age = 19
+			Friend = null
+			Friends = null
+			Relatives = null
+			Neighbours = null
+			Field = 10
+		1: Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = Anton
+			Height = 200,52
+			Age = 19
+			Friend = null
+			Friends = null
+			Relatives = null
+			Neighbours = null
+			Field = 10
+	Neighbours = null
+	Field = 10
