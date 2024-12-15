@@ -6,7 +6,7 @@
 		Age = 25,
 		Children = null,
 		Weigths = null,
-		Dict = null,
+		AddidionalInfo = null,
 	2: 	Person
 		Id = 00000000-0000-0000-0000-000000000000,
 		Name = John,
@@ -14,7 +14,7 @@
 		Age = 25,
 		Children = null,
 		Weigths = null,
-		Dict = null,
+		AddidionalInfo = null,
 	3: 	Person
 		Id = 00000000-0000-0000-0000-000000000000,
 		Name = John,
@@ -22,5 +22,5 @@
 		Age = 25,
 		Children = null,
 		Weigths = null,
-		Dict = null
+		AddidionalInfo = null
 }

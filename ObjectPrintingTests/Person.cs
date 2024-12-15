@@ -8,5 +8,5 @@ public class Person
     public int Age { get; set; }
     public Person[] Children { get; set; }
     public List<int> Weigths { get; set; }
-    public Dictionary<string, int> Dict { get; set; }
+    public Dictionary<string, int> AddidionalInfo { get; set; }
 }

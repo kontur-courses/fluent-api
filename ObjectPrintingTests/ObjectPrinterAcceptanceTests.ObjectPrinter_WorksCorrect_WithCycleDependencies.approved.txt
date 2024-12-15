@@ -13,10 +13,10 @@
 				Cycle dependency: ObjectPrintingTests.Person
 			],
 			Weigths = null,
-			Dict = null
+			AddidionalInfo = null
 	],
 	Weigths = null,
-	Dict = {
+	AddidionalInfo = {
 		Name: 1,
 		Abc: 54,
 		Key: 3

@@ -21,7 +21,7 @@ public class ObjectPrinterAcceptanceTests
             Name = "John",
             Age = 25,
             Height = 123.4,
-            Id = new Guid()
+            Id = new Guid("1d59901d-692d-49ae-a9bc-349981d3a636"),
         };
     }
 
@@ -121,7 +121,7 @@ public class ObjectPrinterAcceptanceTests
             Height = 123.4,
             Id = new Guid(),
             Children = [child],
-            Dict = new Dictionary<string, int>()
+            AddidionalInfo = new Dictionary<string, int>()
             {
                 ["Name"] = 1,
                 ["Abc"] = 54,
@@ -147,7 +147,7 @@ public class ObjectPrinterAcceptanceTests
             Height = 123.4,
             Id = new Guid(),
             Children = [child],
-            Dict = new Dictionary<string, int>()
+            AddidionalInfo = new Dictionary<string, int>()
             {
                 ["Name"] = 1,
                 ["Abc"] = 54,
@@ -156,6 +156,18 @@ public class ObjectPrinterAcceptanceTests
         };
         child.Children = [parent];
         var result = ObjectPrinter.For<Person>().PrintToString(parent);
+        Approvals.Verify(result);
+    }
+    
+    [Test]
+    public void ObjectPrinter_WorksCorrect_WithSameObjectInDifferentFieald()
+    {
+        var test = new Dictionary<string, Person>
+        {
+            ["John"] = person,
+            ["John2"] = person,
+        };
+        var result = test.PrintToString();
         Approvals.Verify(result);
     }
 
@@ -178,7 +190,7 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void ObjectPrinter_SerializesDictionary_WhenValueObjects()
     {
-        person.Dict = new Dictionary<string, int>
+        person.AddidionalInfo = new Dictionary<string, int>
         {
             ["Name"] = 1,
             ["Age"] = 51,

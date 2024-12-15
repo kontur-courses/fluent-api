@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting;
@@ -17,10 +17,12 @@ public class PrintingConfig<TOwner>
     internal readonly Dictionary<string, int> MaxLengths = new();
     private readonly HashSet<Type> excludedTypes = [];
     private readonly HashSet<string> excludedProperties = [];
-    private readonly HashSet<object> visited = [];
 
     private readonly HashSet<Type> finalTypes =
-        [typeof(int), typeof(double), typeof(float), typeof(DateTime), typeof(TimeSpan), typeof(string)];
+    [
+        typeof(int), typeof(double), typeof(float), typeof(DateTime), typeof(TimeSpan), typeof(string), typeof(bool),
+        typeof(long)
+    ];
 
     public ITypePrintingConfig<TOwner, TType> Printing<TType>() =>
         new TypePrintingConfig<TOwner, TType>(this);
@@ -55,54 +57,52 @@ public class PrintingConfig<TOwner>
         return member.Member.Name;
     }
 
-    private string PrintToString(object? obj, int nestingLevel)
+    private string PrintToString(object? obj, int nestingLevel, Stack<string>? pathStack = null)
     {
         if (obj == null) return "null";
         var identation = new string('\t', nestingLevel);
 
         var type = obj.GetType();
-        if (!type.IsValueType && !type.IsPrimitive && type != typeof(string) && !visited.Add(obj))
+        pathStack ??= new Stack<string>();
+        if (IsCycleDependency(obj, type, pathStack))
             return identation + $"Cycle dependency: {obj}";
+        pathStack.Push(type.FullName + obj.GetHashCode());
         if (finalTypes.Contains(obj.GetType())) return obj.ToString() ?? string.Empty;
 
         var sb = new StringBuilder();
         sb.Append(identation + type.Name);
         if (obj is not string && type.IsAssignableTo(typeof(IEnumerable)))
-            return PrintEnumerable((IEnumerable)obj, nestingLevel);
+            return PrintEnumerable((IEnumerable)obj, nestingLevel, pathStack);
 
-        sb.AppendLine(PrintFieldsToString(obj, nestingLevel));
-        sb.Append(PrintPropertiesToString(obj, nestingLevel));
-
+        sb.AppendLine(PrintMembersToString(obj.GetType().GetFields(),
+            field => ((FieldInfo)field).GetValue(obj), nestingLevel, pathStack));
+        sb.Append(PrintMembersToString(obj.GetType().GetProperties(),
+            prop => ((PropertyInfo)prop).GetValue(obj), nestingLevel, pathStack));
+        pathStack.Pop();
         return sb.ToString();
     }
 
-    private string PrintPropertiesToString(object obj, int nestingLevel)
+    private bool IsCycleDependency(object? obj, Type type, Stack<string> pathStack)
+        => type != typeof(string) &&
+           !finalTypes.Contains(type) &&
+           pathStack.Contains(type.FullName + obj?.GetHashCode());
+
+    private string PrintMembersToString(IEnumerable<MemberInfo> members, Func<MemberInfo, object?> getValue,
+        int nestingLevel, Stack<string> pathStack)
     {
-        var type = obj.GetType();
         var identation = new string('\t', nestingLevel + 1);
-        var items = (from propertyInfo in type.GetProperties()
-            select Serialize(propertyInfo.GetValue(obj), propertyInfo.PropertyType, propertyInfo.Name, nestingLevel + 1)
-            into serializedProperty
-            where serializedProperty != string.Empty
-            select identation + serializedProperty).ToList();
+        var items = (from memberInfo in members
+            let value = getValue(memberInfo)
+            let type = memberInfo is PropertyInfo prop ? prop.PropertyType : ((FieldInfo)memberInfo).FieldType
+            select Serialize(value, type, memberInfo.Name, nestingLevel + 1, pathStack)
+            into serializedMember
+            where !string.IsNullOrEmpty(serializedMember)
+            select identation + serializedMember).ToList();
 
         return string.Join(",\n", items);
     }
 
-    private string PrintFieldsToString(object obj, int nestingLevel)
-    {
-        var type = obj.GetType();
-        var identation = new string('\t', nestingLevel + 1);
-        var items = (from fieldInfo in type.GetFields()
-            select Serialize(fieldInfo.GetValue(obj), fieldInfo.FieldType, fieldInfo.Name, nestingLevel + 1)
-            into serializedProperty
-            where serializedProperty != string.Empty
-            select identation + serializedProperty).ToList();
-
-        return string.Join(",\n", items);
-    }
-
-    private string Serialize<T>(T valueToSerialize, Type type, string name, int level)
+    private string Serialize<T>(T valueToSerialize, Type type, string name, int level, Stack<string> pathStack)
     {
         if (excludedTypes.Contains(type) || excludedProperties.Contains(name)) return string.Empty;
         if (valueToSerialize is null) return name + " = " + "null";
@@ -115,56 +115,59 @@ public class PrintingConfig<TOwner>
         if (TypePrinters.TryGetValue(type, out var typePrinter))
             value = typePrinter(valueToSerialize);
         if (type.IsAssignableTo(typeof(IEnumerable)))
-            value = PrintEnumerable((IEnumerable)valueToSerialize, level);
+            value = PrintEnumerable((IEnumerable)valueToSerialize, level, pathStack);
         if (type.IsAssignableTo(typeof(KeyValuePair<,>)))
-            value = PrintKeyValuePair(valueToSerialize);
+            value = PrintKeyValuePair(valueToSerialize, pathStack);
         if (type.IsAssignableTo(typeof(IDictionary)))
-            value = PrintDictionary((IDictionary)valueToSerialize, level);
+            value = PrintDictionary((IDictionary)valueToSerialize, level, pathStack);
         if (valueToSerialize is string stringValue && MaxLengths.TryGetValue(name, out var maxLength))
             value = stringValue[..Math.Min(value.Length, maxLength)];
-        if (value == "") value = PrintToString(valueToSerialize, level + 1);
-        if (value.Length > 0) return name + " = " + value;
+        if (value == "")
+            value = PrintToString(valueToSerialize, level + 1);
+        if (value.Length > 0)
+            return name + " = " + value;
         return string.Empty;
     }
 
-    private string PrintEnumerable(IEnumerable? enumerable, int nestingLevel)
+    private string PrintEnumerable(IEnumerable? enumerable, int nestingLevel, Stack<string> pathStack)
     {
         var bracketIdentation = new string('\t', nestingLevel);
         var itemIdentation = new string('\t', nestingLevel + 1);
         if (enumerable is null) return "null";
         if (enumerable is string) return enumerable.ToString() ?? string.Empty;
-        if (enumerable is IDictionary dictionary) return PrintDictionary(dictionary, nestingLevel);
+        if (enumerable is IDictionary dictionary) return PrintDictionary(dictionary, nestingLevel, pathStack);
         var elementType = GetElementType(enumerable);
         if (elementType.IsAssignableTo(typeof(IEnumerable)))
             return
-                $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item => itemIdentation + PrintEnumerable((IEnumerable)item, nestingLevel + 1)))}\n{bracketIdentation}]";
+                $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item
+                    => itemIdentation + PrintEnumerable((IEnumerable)item, nestingLevel + 1, pathStack)))}\n{bracketIdentation}]";
         if (finalTypes.Contains(elementType))
             return $"[{string.Join(", ", enumerable.Cast<object>().Select(item => item.ToString() ?? string.Empty))}]";
         var result =
-            $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item => PrintToString(item, nestingLevel + 1)))}\n{bracketIdentation}]";
+            $"[\n{string.Join(",\n", enumerable.Cast<object>().Select(item
+                => PrintToString(item, nestingLevel + 1, pathStack)))}\n{bracketIdentation}]";
         return result;
     }
 
-    private string PrintDictionary(IDictionary? dictionary, int nestingLevel)
+    private string PrintDictionary(IDictionary? dictionary, int nestingLevel, Stack<string> pathStack)
     {
         if (dictionary is null) return "null";
         if (dictionary.Count == 0) return "{}";
         var bracketIdentation = new string('\t', nestingLevel);
         var itemIdentation = new string('\t', nestingLevel + 1);
-        var serializedItems = (from object key in dictionary.Keys
-                select $"{PrintToString(key, nestingLevel + 1)}: {PrintToString(dictionary[key], nestingLevel + 1)}")
-            .ToList();
+        var serializedItems = dictionary.Keys.Cast<object>()
+            .Select(key =>
+                $"{PrintToString(key, nestingLevel + 1)}: {PrintToString(dictionary[key], nestingLevel + 1, pathStack)}");
         var result =
             $"{{\n{itemIdentation}{string.Join($",\n{itemIdentation}", serializedItems)}\n{bracketIdentation}}}";
         return result;
     }
 
-    private string PrintKeyValuePair(object keyValuePair)
+    private string PrintKeyValuePair(object keyValuePair, Stack<string> pathStack)
     {
-        if (keyValuePair is KeyValuePair<object, object> keyValue)
-            return $"{PrintToString(keyValue.Key, 0)} = {PrintToString(keyValue.Value, 0)}";
-
-        return string.Empty;
+        return keyValuePair is KeyValuePair<object, object> keyValue
+            ? $"{PrintToString(keyValue.Key, 0, pathStack)} = {PrintToString(keyValue.Value, 0, pathStack)}"
+            : string.Empty;
     }
 
     private Type GetElementType(IEnumerable? enumerable)

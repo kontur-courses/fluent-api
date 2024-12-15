@@ -3,4 +3,4 @@
 	Height = 123.4,
 	Children = null,
 	Weigths = null,
-	Dict = null
+	AddidionalInfo = null

@@ -1,5 +1,5 @@
 ﻿Person
-	Id = 00000000-0000-0000-0000-000000000000,
+	Id = 1d59901d-692d-49ae-a9bc-349981d3a636,
 	Name = John,
 	Height = 123.4,
 	Age = 25,
@@ -11,7 +11,7 @@
 			Age = 0,
 			Children = null,
 			Weigths = null,
-			Dict = null,
+			AddidionalInfo = null,
 		Person
 			Id = 00000000-0000-0000-0000-000000000000,
 			Name = Child2,
@@ -19,7 +19,7 @@
 			Age = 0,
 			Children = null,
 			Weigths = null,
-			Dict = null
+			AddidionalInfo = null
 	],
 	Weigths = null,
-	Dict = null
+	AddidionalInfo = null
