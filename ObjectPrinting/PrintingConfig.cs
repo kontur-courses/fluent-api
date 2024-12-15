@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,27 +8,13 @@ using System.Text;
 
 namespace ObjectPrinting
 {
-    public class ArrayPrintingConfig<T> : PrintingConfig<T[]>
-    {
-        public override string PrintToString(T[] obj)
-        {
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            for (var i = 0; i < obj.Length; i++)
-            {
-                sb.Append($"[{i}]" + base.PrintToString(obj[i], 1));
-            }
-            return sb.ToString();
-        }
-    }
     public class PrintingConfig<TOwner>
     {
-        protected HashSet<Type> excludedTypes = [];
-        protected HashSet<string> excludedProperties = [];
-        protected Dictionary<string, Func<object, string>> propertySerializers = [];
-        protected Dictionary<Type, Func<object, string>> propertyTypeSerializers = [];
-        private HashSet<Type> finalTypes = new HashSet<Type>()
+        protected readonly HashSet<Type> ExcludedTypes = [];
+        protected readonly HashSet<string> ExcludedProperties = [];
+        protected readonly Dictionary<string, Func<object, string>> PropertySerializers = [];
+        protected readonly Dictionary<Type, Func<object, string>> PropertyTypeSerializers = [];
+        private readonly HashSet<Type> finalTypes = new HashSet<Type>()
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan), typeof(Guid)
@@ -35,40 +22,35 @@ namespace ObjectPrinting
 
         private HashSet<object> visited = [];
 
-        public PrintingConfig() {}
+        public PrintingConfig() { }
 
         protected PrintingConfig(PrintingConfig<TOwner> clone)
         {
-            propertySerializers = clone.propertySerializers;
-            propertyTypeSerializers = clone.propertyTypeSerializers;
-            excludedProperties = clone.excludedProperties;
-            excludedTypes = clone.excludedTypes;
+            PropertySerializers = clone.PropertySerializers;
+            PropertyTypeSerializers = clone.PropertyTypeSerializers;
+            ExcludedProperties = clone.ExcludedProperties;
+            ExcludedTypes = clone.ExcludedTypes;
         }
 
         public PrintingConfig<TOwner> Exclude<TForExcluding>()
         {
-            excludedTypes.Add(typeof(TForExcluding));
+            ExcludedTypes.Add(typeof(TForExcluding));
             return this;
         }
 
         internal PrintingConfig<TOwner> RefineSerializer<TProperty>(Func<string, string> serializer)
         {
-            if (propertyTypeSerializers.TryGetValue(typeof(TProperty), out var startSerializer))
-            {
-                propertyTypeSerializers[typeof(TProperty)] = (object x) => serializer(startSerializer((TProperty)x));
-            }
-            else
-            {
-                propertyTypeSerializers[typeof(TProperty)] = (object x) => serializer(((TProperty)x).ToString());
-            }
-            
+          PropertyTypeSerializers[typeof(TProperty)] =
+                PropertyTypeSerializers.TryGetValue(typeof(TProperty), out var startSerializer) 
+                ? (object x) => serializer(startSerializer((TProperty)x))
+                : (object x) => serializer(((TProperty)x).ToString());
             return this;
         }
 
         public PrintingConfig<TOwner> Exclude<TProperty>(Expression<Func<TOwner, TProperty>> getProperty)
         {
             var propName = GetPropertyName(getProperty);
-            excludedProperties.Add(propName);
+            ExcludedProperties.Add(propName);
             return this;
         }
 
@@ -77,18 +59,18 @@ namespace ObjectPrinting
             Func<TProperty, string> serializer)
         {
             var propName = GetPropertyName(getProperty);
-            propertySerializers.Add(propName, (object x) => serializer((TProperty)x));
+            PropertySerializers.Add(propName, (object x) => serializer((TProperty)x));
             return new PropertyPrintingConfig<TOwner, TProperty>(this);
         }
 
-        public PropertyPrintingConfig<TOwner, TProperty> Printing<TProperty>(Func<TOwner, TProperty> get)
+        public PropertyPrintingConfig<TOwner, TProperty> ConfigurePropertyConfig<TProperty>()
         {
             return new PropertyPrintingConfig<TOwner, TProperty>(this);
         }
 
         public PrintingConfig<TOwner> WithSerializer<TProperty>(Func<TProperty, string> serializer)
-        { 
-            propertyTypeSerializers[typeof(TProperty)] = (object x) => serializer((TProperty)x);
+        {
+            PropertyTypeSerializers[typeof(TProperty)] = (object x) => serializer((TProperty)x);
             return this;
         }
 
@@ -98,7 +80,7 @@ namespace ObjectPrinting
             return memberExpress.Member.Name;
         }
 
-        public virtual string PrintToString(TOwner obj)
+        public string PrintToString(TOwner obj)
         {
             visited = new();
             return PrintToString(obj, 0);
@@ -107,13 +89,11 @@ namespace ObjectPrinting
         protected string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
-            if (visited.Contains(obj)) 
+            if (visited.Contains(obj))
                 return "Cycle Reference" + Environment.NewLine;
 
-            
-            var flags = BindingFlags.Public | BindingFlags.Instance;
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name.Split('`')[0]);
@@ -121,20 +101,11 @@ namespace ObjectPrinting
 
             if (obj is ICollection) return PrintToStringCollection(obj as ICollection, nestingLevel, sb);
 
-            foreach (var propertyInfo in type.GetProperties(flags))
+            foreach (var memberInfo in type.GetPublicFieldsAndProperties())
             {
-                var propType = propertyInfo.PropertyType;
-                var propName = propertyInfo.Name;
-                var value = propertyInfo.GetValue(obj) ?? "null";
-                sb.Append(PropertyToString(propName, propType, value, nestingLevel));
+                sb.Append(PropertyToString(memberInfo, obj, nestingLevel));
             }
-            foreach (var propertyInfo in type.GetFields(flags))
-            {
-                var propType = propertyInfo.FieldType;
-                var propName = propertyInfo.Name;
-                var value = propertyInfo.GetValue(obj) ?? "null";
-                sb.Append(PropertyToString(propName, propType, value, nestingLevel));
-            }
+
             return sb.ToString().Trim();
         }
 
@@ -150,33 +121,39 @@ namespace ObjectPrinting
         }
 
         private string PropertyToString(
-            string? propName,
-            Type? propType,
-            object value,
+            MemberInfo info,
+            object obj,
             int nestingLevel)
         {
-            var identation = new string('\t', nestingLevel + 1);
+            var propType = info.GetMemberType();
+            var memberValue = info.GetValue(obj) ?? "null";
 
-            if (!excludedTypes.Contains(propType) && !excludedProperties.Contains(propName))
+            if (!ExcludedTypes.Contains(propType) && !ExcludedProperties.Contains(info.Name))
             {
                 Func<object, string> serializer;
-                var stringStart = identation + propName + " = ";
-                var stringEnd = Environment.NewLine;
                 string propValueString;
-                if (propertySerializers.TryGetValue(propName, out serializer) ||
-                    propertyTypeSerializers.TryGetValue(propType, out serializer))
+                if (PropertySerializers.TryGetValue(info.Name, out serializer) ||
+                    PropertyTypeSerializers.TryGetValue(propType, out serializer))
                 {
-                    propValueString = serializer(value);
+                    propValueString = serializer(memberValue);
                 }
                 else
                 {
-                    propValueString = (finalTypes.Contains(propType) || value == "null") 
-                        ? value.ToString()
-                        : PrintToString(value, nestingLevel + 1);
+                    propValueString = (finalTypes.Contains(propType) || memberValue == "null")
+                        ? memberValue.ToString()
+                        : PrintToString(memberValue, nestingLevel + 1);
                 }
-                return stringStart + propValueString + stringEnd;
+                return GetBeautyPropertyString(info.Name, propValueString, nestingLevel);
             }
             return "";
+        }
+
+        private string GetBeautyPropertyString(string name, string propValueString, int nestingLevel)
+        {
+            var identation = new string('\t', nestingLevel + 1);
+            var stringStart = identation + name + " = ";
+            var stringEnd = Environment.NewLine;
+            return stringStart + propValueString + stringEnd;
         }
     }
 }

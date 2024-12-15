@@ -19,15 +19,15 @@ namespace ObjectPrinting.Tests
                 .WithSerializer<int>(x => x.ToString());
 
             var printerTask3 = ObjectPrinter.For<Person>()
-                    .Printing(p => p.Height)
+                    .ConfigurePropertyConfig<double>()
                     .WithCulture(new CultureInfo("de")).ToParentObjectConfig();
 
             var printerTask4 = ObjectPrinter.For<Person>()
-                    .Printing(obj => obj.Name)
+                    .ConfigurePropertyConfig<string>()
                     .WithSerializer<object>(property => $"Name: {property}");
 
             var printerTask5 = ObjectPrinter.For<Person>()
-                    .Printing(obj => obj.Name).Truncate(10);
+                    .ConfigurePropertyConfig<string>().Truncate(10);
 
             var printerTask6 = ObjectPrinter.For<Person>()
                 .Exclude(obj => obj.Age);
