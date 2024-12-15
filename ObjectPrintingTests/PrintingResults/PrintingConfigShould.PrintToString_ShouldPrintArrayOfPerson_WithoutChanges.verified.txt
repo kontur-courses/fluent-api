@@ -1,0 +1,28 @@
+﻿Person[]
+[
+	Person
+		Id = 0f8fad5b-d9cb-469f-a165-70867728950e
+		Name = Alex
+		Height = 188
+		Age = 111
+		BirthDate = 01.01.0001 0:00:00
+		Parent = null
+		BestField = Decimal
+			Scale = Byte
+	Person
+		Id = 7c9e6679-7425-40de-944b-e07fc1f90ae7
+		Name = Alex1
+		Height = 111
+		Age = 11
+		BirthDate = 01.01.0001 0:00:00
+		Parent = null
+		BestField = recursive reference
+	Person
+		Id = 7c9e6679-7425-40de-944b-e07fc1f90ae1
+		Name = Alex2
+		Height = 183
+		Age = 111
+		BirthDate = 31.12.9999 23:59:59
+		Parent = null
+		BestField = recursive reference
+]

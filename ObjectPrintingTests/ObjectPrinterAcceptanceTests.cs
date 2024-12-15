@@ -9,7 +9,7 @@ public class ObjectPrinterAcceptanceTests
 {
     public void Demo()
     {
-        var person = new Person(new Guid("a1a2a3a4a5a6a7a8"), "Alex", 182, 19, DateTime.Today);
+        var person = new Person(new Guid("a1a2a3a4a5a6a7a8"), "Alex", 182, 19, DateTime.Today, BestField: 11);
 
         var printer = ObjectPrinter.For<Person>()
             //1. Исключить из сериализации свойства определенного типа

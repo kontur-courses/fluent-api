@@ -1,0 +1,9 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 188
+	Age = 6F
+	BirthDate = 01.01.0001 0:00:00
+	Parent = null
+	BestField = Decimal
+		Scale = Byte

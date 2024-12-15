@@ -15,6 +15,7 @@
         <PackageReference Include="NUnit" Version="4.2.2"/>
         <PackageReference Include="NUnit.Analyzers" Version="4.3.0"/>
         <PackageReference Include="NUnit3TestAdapter" Version="4.6.0"/>
+        <PackageReference Include="Verify.NUnit" Version="28.5.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,6 +24,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="PrintingResults\" />
     </ItemGroup>
 
 </Project>
