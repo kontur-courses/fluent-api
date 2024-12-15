@@ -49,12 +49,12 @@ public class PrintingConfig<TOwner>
         return new PropertyPrintingConfig<TOwner, TProperty>(this, GetProperty(memberSelector));
     } 
 
-    public string PrintToString(TOwner obj)
+    public string PrintToString(TOwner? obj)
     {
-        return Serialize(obj, 0, new Dictionary<object, int>());
+        return Serialize(obj, 0, new Dictionary<object?, int>());
     }
 
-    private string Serialize(object obj, int nestingLevel, Dictionary<object, int> parsedObjects)
+    private string Serialize(object? obj, int nestingLevel, Dictionary<object?, int> parsedObjects)
     {
         if (obj is null)
         {
@@ -73,18 +73,15 @@ public class PrintingConfig<TOwner>
 
         parsedObjects[obj] = nestingLevel;
 
-        switch (obj)
+        return obj switch
         {
-            case IDictionary dictionary:
-                return SerializeDictionary(dictionary, nestingLevel, parsedObjects);
-            case IEnumerable collection:
-                return SerializeCollection(collection, nestingLevel, parsedObjects);
-            default:
-                return SerializeProperties(obj, nestingLevel, parsedObjects);
-        }
+            IDictionary dictionary => SerializeDictionary(dictionary, nestingLevel, parsedObjects),
+            IEnumerable collection => SerializeCollection(collection, nestingLevel, parsedObjects),
+            _ => SerializeProperties(obj, nestingLevel, parsedObjects)
+        };
     }
 
-    private string SerializeDictionary(IDictionary dictionary, int nestingLevel, Dictionary<object, int> parsedObjects)
+    private string SerializeDictionary(IDictionary dictionary, int nestingLevel, Dictionary<object?, int> parsedObjects)
     {
         var indentation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder("Dictionary {\n");
@@ -100,7 +97,7 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-    private string SerializeCollection(IEnumerable collection, int nestingLevel, Dictionary<object, int> parsedObjects)
+    private string SerializeCollection(IEnumerable collection, int nestingLevel, Dictionary<object?, int> parsedObjects)
     {
         var indentation = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder("Collection [\n");
@@ -115,7 +112,7 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-    private string SerializeProperties(object obj, int nestingLevel, Dictionary<object, int> parsedObjects)
+    private string SerializeProperties(object? obj, int nestingLevel, Dictionary<object?, int> parsedObjects)
     {
         var type = obj.GetType();
         var sb = new StringBuilder($"{type.Name} {{\n");
@@ -135,7 +132,7 @@ public class PrintingConfig<TOwner>
         return sb.ToString();
     }
 
-    private string SerializeProperty(PropertyInfo propertyInfo, object obj, int nestingLevel, Dictionary<object, int> parsedObjects)
+    private string SerializeProperty(PropertyInfo propertyInfo, object? obj, int nestingLevel, Dictionary<object?, int> parsedObjects)
     {
         var propertyValue = propertyInfo.GetValue(obj);
 
@@ -155,11 +152,11 @@ public class PrintingConfig<TOwner>
         }
 
         return Cultures.TryGetValue(propertyInfo.PropertyType, out var culture)
-            ? Convert.ToString(propertyValue, culture)
+            ? Convert.ToString(propertyValue, culture) ?? "null"
             : Serialize(propertyValue, nestingLevel, parsedObjects);
     }
 
-    private PropertyInfo GetProperty<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
+    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TOwner, TProperty>> memberSelector)
     {
         if (memberSelector.Body is not MemberExpression memberExpression)
         {

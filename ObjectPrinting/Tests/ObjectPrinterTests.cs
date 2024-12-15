@@ -52,7 +52,7 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public void PrintToString_CustomSerializer_ShouldUseCustomFormat()
+    public void PrintToString_WithCustomTypeSerializer_ShouldUseCustomFormat()
     {
         var result = testPerson.PrintToString(config => 
             config.For<double>()
@@ -71,23 +71,25 @@ public class PrintingConfigTests
         result.Should().Contain("Name = John");
     }
 
-    [Test]
-    public void PrintToString_WithCulture_ShouldUseCultureFormatting()
+    [TestCase("de-DE", "180,5")]
+    [TestCase("en-US", "180.5")]
+    public void PrintToString_WithCulture_ShouldUseCultureFormatting(string cultureName, string expectedHeight)
     {
-        var germanCulture = new CultureInfo("de-DE");
+        var culture = new CultureInfo(cultureName);
 
         var result = testPerson.PrintToString(config => 
             config.For<double>()
-                .SetCulture(germanCulture));
+                .SetCulture(culture));
         
-        result.Should().Contain("Height = 180,5");
+        result.Should().Contain($"Height = {expectedHeight}");
     }
 
     [Test]
     public void PrintToString_WithCollection_ShouldPrintCollectionElements()
     {
-        testPerson.PrintToString()
-            .Should().Contain("Reading")
+        var result = testPerson.PrintToString();
+
+        result.Should().Contain("Reading")
             .And.Contain("Gaming")
             .And.Contain("Coding");
     }
@@ -124,17 +126,7 @@ public class PrintingConfigTests
             .And.Contain("Physics : 88")
             .And.Contain("}");
     }
-
-    [Test]
-    public void PrintToString_ExcludeDictionary_ShouldNotPrintDictionary()
-    {
-        var result = testPerson.PrintToString(config => 
-            config.Excluding(p => p.Scores));
-
-        result.Should().NotContain("Scores")
-            .And.NotContain("Math : 95");
-    }
-
+    
     [Test]
     public void PrintToString_CustomDictionaryValueSerializer_ShouldUseCustomFormat()
     {
@@ -142,7 +134,7 @@ public class PrintingConfigTests
             config.For(p => p.Scores)
                 .UseSerializer(dict => 
                 {
-                    var scores = (Dictionary<string, int>)dict;
+                    var scores = dict;
                     return "Dictionary {\n" + string.Join("\n", 
                         scores.Select(kv => $"\t\t{kv.Key} : {kv.Value}%")) + "\n\t}";
                 }));

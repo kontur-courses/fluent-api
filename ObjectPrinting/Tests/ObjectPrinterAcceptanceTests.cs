@@ -12,7 +12,7 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter.For<Person>()
+            PrintingConfig<Person?> printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
                 .Excluding<Guid>()
                 //2. Указать альтернативный способ сериализации для определенного типа
