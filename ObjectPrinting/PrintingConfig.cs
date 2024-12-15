@@ -75,7 +75,7 @@ public class PrintingConfig<TOwner>
 
         var type = obj.GetType();
 
-        if (type.IsFinal())
+        if (type.IsValueType || type == typeof(string))
             return obj + Environment.NewLine;
 
         var numberOfTabs = new string('\t', nestingLevel + 1);
@@ -123,7 +123,7 @@ public class PrintingConfig<TOwner>
     }
 
     private bool IsMemberExcluded(MemberInfo member) =>
-        excludedProperties.Contains(member.GetMemberType()!) ||
+        excludedProperties.Contains(member.GetMemberType()) ||
         excludedMembers.Contains(member);
 
     private object? GetValue(object obj, MemberInfo memberInfo)
@@ -132,7 +132,7 @@ public class PrintingConfig<TOwner>
         var memberType = memberInfo.GetMemberType();
         return MemberSerializationMethod.TryGetValue(memberInfo, out var memberFunc)
             ? memberFunc.DynamicInvoke(val)
-            : TypeSerializationMethod.TryGetValue(memberType!, out var typeFunc)
+            : TypeSerializationMethod.TryGetValue(memberType, out var typeFunc)
                 ? typeFunc.DynamicInvoke(val)
                 : val;
     }

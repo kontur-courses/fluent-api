@@ -5,5 +5,4 @@
 	Age = 6F
 	BirthDate = 01.01.0001 0:00:00
 	Parent = null
-	BestField = Decimal
-		Scale = Byte
+	BestField = 11

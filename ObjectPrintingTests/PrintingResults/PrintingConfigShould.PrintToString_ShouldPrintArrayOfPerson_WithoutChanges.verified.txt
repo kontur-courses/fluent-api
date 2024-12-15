@@ -7,8 +7,7 @@
 		Age = 111
 		BirthDate = 01.01.0001 0:00:00
 		Parent = null
-		BestField = Decimal
-			Scale = Byte
+		BestField = 11
 	Person
 		Id = 7c9e6679-7425-40de-944b-e07fc1f90ae7
 		Name = Alex1
@@ -16,7 +15,7 @@
 		Age = 11
 		BirthDate = 01.01.0001 0:00:00
 		Parent = null
-		BestField = recursive reference
+		BestField = 11
 	Person
 		Id = 7c9e6679-7425-40de-944b-e07fc1f90ae1
 		Name = Alex2
@@ -24,5 +23,5 @@
 		Age = 111
 		BirthDate = 31.12.9999 23:59:59
 		Parent = null
-		BestField = recursive reference
+		BestField = 11
 ]

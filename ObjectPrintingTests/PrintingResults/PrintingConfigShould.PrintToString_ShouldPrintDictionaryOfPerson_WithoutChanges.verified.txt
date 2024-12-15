@@ -1,34 +1,6 @@
 ﻿Dictionary`2
 [
-	KeyValuePair`2
-		Key = 0f8fad5b-d9cb-469f-a165-70867728950e
-		Value = Person
-			Id = 0f8fad5b-d9cb-469f-a165-70867728950e
-			Name = Alex
-			Height = 188
-			Age = 111
-			BirthDate = 01.01.0001 0:00:00
-			Parent = null
-			BestField = Decimal
-				Scale = Byte
-	KeyValuePair`2
-		Key = 7c9e6679-7425-40de-944b-e07fc1f90ae7
-		Value = Person
-			Id = 7c9e6679-7425-40de-944b-e07fc1f90ae7
-			Name = Alex1
-			Height = 111
-			Age = 11
-			BirthDate = 01.01.0001 0:00:00
-			Parent = null
-			BestField = recursive reference
-	KeyValuePair`2
-		Key = 7c9e6679-7425-40de-944b-e07fc1f90ae1
-		Value = Person
-			Id = 7c9e6679-7425-40de-944b-e07fc1f90ae1
-			Name = Alex2
-			Height = 183
-			Age = 111
-			BirthDate = 31.12.9999 23:59:59
-			Parent = null
-			BestField = recursive reference
+	[0f8fad5b-d9cb-469f-a165-70867728950e, Person { Id = 0f8fad5b-d9cb-469f-a165-70867728950e, Name = Alex, Height = 188, Age = 111, BirthDate = 01.01.0001 0:00:00, Parent = , BestField = 11 }]
+	[7c9e6679-7425-40de-944b-e07fc1f90ae7, Person { Id = 7c9e6679-7425-40de-944b-e07fc1f90ae7, Name = Alex1, Height = 111, Age = 11, BirthDate = 01.01.0001 0:00:00, Parent = , BestField = 11 }]
+	[7c9e6679-7425-40de-944b-e07fc1f90ae1, Person { Id = 7c9e6679-7425-40de-944b-e07fc1f90ae1, Name = Alex2, Height = 183, Age = 111, BirthDate = 31.12.9999 23:59:59, Parent = , BestField = 11 }]
 ]

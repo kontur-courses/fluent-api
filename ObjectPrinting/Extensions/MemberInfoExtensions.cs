@@ -12,18 +12,12 @@ public static class MemberInfoExtensions
             _ => null
         };
 
-    public static Type? GetMemberType(this MemberInfo memberInfo) =>
+    public static Type GetMemberType(this MemberInfo memberInfo) =>
+        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         memberInfo.MemberType switch
         {
-            MemberTypes.Constructor => memberInfo.DeclaringType,
-            MemberTypes.Event => ((EventInfo)memberInfo).EventHandlerType,
             MemberTypes.Field => ((FieldInfo)memberInfo).FieldType,
-            MemberTypes.Method => ((MethodInfo)memberInfo).ReturnType,
             MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType,
-            MemberTypes.TypeInfo => ((TypeInfo)memberInfo).BaseType,
-            MemberTypes.Custom => memberInfo.DeclaringType,
-            MemberTypes.NestedType => memberInfo.DeclaringType,
-            MemberTypes.All => memberInfo.DeclaringType,
             _ => throw new ArgumentOutOfRangeException(nameof(memberInfo), memberInfo,
                 "Unsupported member type.")
         };
