@@ -15,7 +15,7 @@ namespace ObjectPrinting
         private ulong CurrentLineNumberInSerialization { get; set; } = 1;
         private readonly Dictionary<object, ulong> serialized = new();
         
-        private static readonly ImmutableArray<Type> FinalTypes =
+        private readonly ImmutableArray<Type> finalTypes =
         [
             typeof(int),
             typeof(double),
@@ -30,6 +30,8 @@ namespace ObjectPrinting
             typeof(char),
             typeof(Guid)
         ];
+
+        private bool IsFinalType(Type type) => finalTypes.Contains(type);
         
         public PrintingConfig() : this(new SerializationSettings())
         {
@@ -94,7 +96,7 @@ namespace ObjectPrinting
                 CurrentLineNumberInSerialization++;
                 return serializer(obj) + Environment.NewLine;
             }
-            if (FinalTypes.Contains(type))
+            if (IsFinalType(type))
             {
                 CurrentLineNumberInSerialization++;
                 return obj + Environment.NewLine;
