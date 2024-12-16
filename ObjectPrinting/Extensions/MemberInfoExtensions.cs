@@ -9,7 +9,7 @@ public static class MemberInfoExtensions
         {
             FieldInfo fieldInfo => fieldInfo.GetValue(obj),
             PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
-            _ => obj
+            _ => null
         };
 
     public static Type GetMemberType(this MemberInfo memberInfo) =>

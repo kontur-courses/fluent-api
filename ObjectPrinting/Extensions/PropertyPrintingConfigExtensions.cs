@@ -15,11 +15,9 @@ public static class PropertyPrintingConfigExtensions
     {
         var parentConfig = ((IPropertyPrintingConfig<TOwner, TPropType>)propConfig).ParentConfig;
 
-        parentConfig.TypeSerializationMethod.Add(typeof(TPropType), (Func<TPropType, string>)FormatFunc);
+        parentConfig.TypeSerializationMethod.Add(typeof(TPropType), obj => ((TPropType)obj).ToString(format, culture));
 
         return parentConfig;
-
-        string FormatFunc(TPropType obj) => obj.ToString(format, culture);
     }
 
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig,
@@ -30,13 +28,14 @@ public static class PropertyPrintingConfigExtensions
 
         var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
 
-        parentConfig.MemberSerializationMethod.Add(propConfig.PropertyMemberInfo, (Func<string, string>)Function);
+        parentConfig.MemberSerializationMethod.Add(propConfig.PropertyMemberInfo, str =>
+        {
+            var stringValue = (string)str;
+            return stringValue.Length <= maxLength
+                ? stringValue
+                : stringValue[..maxLength];
+        });
 
         return parentConfig;
-
-        string Function(string str) =>
-            string.IsNullOrEmpty(str) || str.Length <= maxLength
-                ? str
-                : str[..maxLength];
     }
 }

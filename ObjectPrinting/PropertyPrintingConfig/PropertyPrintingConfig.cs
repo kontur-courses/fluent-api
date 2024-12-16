@@ -14,9 +14,9 @@ public class PropertyPrintingConfig<TOwner, TPropType>(
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
         if (memberInfo is null)
-            printingConfig.TypeSerializationMethod.Add(typeof(TPropType), print);
+            printingConfig.TypeSerializationMethod.Add(typeof(TPropType), p => print((TPropType)p));
         else
-            printingConfig.MemberSerializationMethod.Add(memberInfo, print);
+            printingConfig.MemberSerializationMethod.Add(memberInfo, p => print((TPropType)p));
 
         return printingConfig;
     }

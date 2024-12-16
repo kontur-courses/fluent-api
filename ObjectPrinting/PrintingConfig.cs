@@ -14,8 +14,8 @@ public class PrintingConfig<TOwner>
     private readonly HashSet<object> seenObjects = [];
     private readonly HashSet<Type> excludedProperties = [];
     private readonly HashSet<MemberInfo> excludedMembers = [];
-    internal readonly Dictionary<Type, Delegate> TypeSerializationMethod = new();
-    internal readonly Dictionary<MemberInfo, Delegate> MemberSerializationMethod = new();
+    internal readonly Dictionary<Type, Func<object, string>> TypeSerializationMethod = new();
+    internal readonly Dictionary<MemberInfo, Func<object, string>> MemberSerializationMethod = new();
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => new(this);
 
@@ -111,11 +111,12 @@ public class PrintingConfig<TOwner>
     private object? GetValue(object obj, MemberInfo memberInfo)
     {
         var val = memberInfo.GetValue(obj);
+        if (val is null) return null;
         var memberType = memberInfo.GetMemberType();
         return MemberSerializationMethod.TryGetValue(memberInfo, out var memberFunc)
-            ? memberFunc.DynamicInvoke(val)
+            ? memberFunc.Invoke(val)
             : TypeSerializationMethod.TryGetValue(memberType, out var typeFunc)
-                ? typeFunc.DynamicInvoke(val)
+                ? typeFunc.Invoke(val)
                 : val;
     }
 }
