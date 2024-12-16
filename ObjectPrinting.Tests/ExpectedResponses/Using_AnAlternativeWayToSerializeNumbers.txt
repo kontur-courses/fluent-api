@@ -1,8 +1,0 @@
-Person
-	Id = Guid
-	Name = Alex
-	Height = 185,5
-	Age = 10011
-	Parent = null
-	Child = null
-	Email = alex@gmail.com

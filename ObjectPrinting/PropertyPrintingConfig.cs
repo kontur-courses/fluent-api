@@ -27,12 +27,9 @@ namespace ObjectPrinting
             return AddAlternativeSerializationMethod(obj => print((TPropType)obj));
         }
 
-        public PrintingConfig<TOwner> Using(CultureInfo? culture)
+        public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
-            return AddAlternativeSerializationMethod(obj =>
-                obj is IFormattable formatted && culture != null
-                    ? formatted.ToString(null, culture)
-                    : obj.ToString());
+            return AddAlternativeSerializationMethod(obj => Convert.ToString(obj, culture));
         }
 
         private PrintingConfig<TOwner> AddAlternativeSerializationMethod(Func<object, string?> serializer)

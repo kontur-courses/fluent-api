@@ -16,7 +16,17 @@ public class PrintingConfigTests
     [Test]
     public void Excluding_MustExcludeFieldsAndTypePropertiesFromSerialization()
     {
-        var expected = File.ReadAllText("ExpectedResponses/Excluding_MustExcludeFieldsAndTypePropertiesFromSerialization.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 185,5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Excluding<string>();
         
@@ -28,7 +38,19 @@ public class PrintingConfigTests
     [Test]
     public void PrintToString_FullObjectSerialization()
     {
-        var expected = File.ReadAllText("ExpectedResponses/PrintToString_FullObjectSerialization.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tName = Alex",
+                "\tHeight = 185,5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = alex@gmail.com",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>();
         
         var actual = printer.PrintToString(defaultPerson);
@@ -37,9 +59,21 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public void Using_AnAlternativeWayToSerializeNumbers()
+    public void Using_AlternativeWayToSerializeNumbers()
     {
-        var expected = File.ReadAllText("ExpectedResponses/Using_AnAlternativeWayToSerializeNumbers.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tName = Alex",
+                "\tHeight = 185,5",
+                "\tAge = 10011",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = alex@gmail.com",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Printing<int>()
             .Using(number => Convert.ToString(number, 2));
@@ -52,7 +86,18 @@ public class PrintingConfigTests
     [Test]
     public void Excluding_NamePropertyIsExcluded()
     {
-        var expected = File.ReadAllText("ExpectedResponses/Excluding_NamePropertyIsExcluded.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tHeight = 185,5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = alex@gmail.com",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Excluding(p => p.Name);
         
@@ -64,7 +109,19 @@ public class PrintingConfigTests
     [Test]
     public void Using_OtherLocalizationOfEmailField()
     {
-        var expected = File.ReadAllText("ExpectedResponses/Using_OtherLocalizationOfEmailField.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tName = Alex",
+                "\tHeight = 185,5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = ALEX@GMAIL.COM",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Printing(p => p.Email)
             .Using(email => email.ToUpper() + Environment.NewLine);
@@ -84,7 +141,19 @@ public class PrintingConfigTests
             Age = defaultPerson.Age,
             Email = defaultPerson.Email
         };
-        var expected = File.ReadAllText("ExpectedResponses/Using_NamePropertyIsTruncated.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tName = Хьюберт Блейн Вольфе...",
+                "\tHeight = 185,5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = alex@gmail.com",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Printing(p => p.Name)
             .TrimmedToLength(20);
@@ -97,7 +166,19 @@ public class PrintingConfigTests
     [Test]
     public void Using_ChangedTypeSerializationCulture()
     {
-        var expected = File.ReadAllText("ExpectedResponses/Using_ChangedTypeSerializationCulture.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "Person",
+                "\tId = Guid",
+                "\tName = Alex",
+                "\tHeight = 185.5",
+                "\tAge = 19",
+                "\tParent = null",
+                "\tChild = null",
+                "\tEmail = alex@gmail.com",
+                string.Empty
+            ]);
         var printer = ObjectPrinter.For<Person>()
             .Printing<double>()
             .Using(new CultureInfo("en-US"));
@@ -123,10 +204,21 @@ public class PrintingConfigTests
     [Test]
     public void PrintToString_List_SerializedList()
     {
-        var expected = File.ReadAllText("ExpectedResponses/PrintToString_Collection_SerializedCollection.txt");
+        var expected = string.Join(
+            Environment.NewLine, 
+            [
+                "List<Int32>",
+                "\tCapacity = 4",
+                "\tCount = 3",
+                "\tcollection items:",
+                "\t\t1",
+                "\t\t2",
+                "\t\t3",
+                string.Empty
+            ]);
         var list = new List<int> { 1, 2, 3 };
         
-        CheckSerializationOfTheCollection(expected, list);
+        CheckSerializationOfCollection(expected, list);
     }
     
     [Test]
@@ -135,24 +227,24 @@ public class PrintingConfigTests
         var expected = File.ReadAllText("ExpectedResponses/PrintToString_Array_SerializedArray.txt");
         var array = new[] { 1, 2, 3 };
         
-        CheckSerializationOfTheCollection(expected, array);
+        CheckSerializationOfCollection(expected, array);
     }
     
     [Test]
     public void PrintToString_Dictionary_SerializedDictionary()
     {
         var expected = File.ReadAllText("ExpectedResponses/PrintToString_Dictionary_SerializedDictionary.txt");
-        var dict = new Dictionary<string, int>
+        var dict = new Dictionary<List<string>, int>
         {
-            { "1", 1 },
-            { "2", 2 },
-            { "3", 3 }
+            { ["1"], 1 },
+            { ["2"], 2 },
+            { ["3"], 3 }
         };
         
-        CheckSerializationOfTheCollection(expected, dict);
+        CheckSerializationOfCollection(expected, dict);
     }
 
-    private void CheckSerializationOfTheCollection<TCollection>(string expected, TCollection collection)
+    private void CheckSerializationOfCollection<TCollection>(string expected, TCollection collection)
     {
         var printer = ObjectPrinter.For<TCollection>();
         

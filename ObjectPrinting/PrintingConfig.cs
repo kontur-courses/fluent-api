@@ -2,9 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ObjectPrinting
 {
@@ -12,9 +14,12 @@ namespace ObjectPrinting
     {
         private static readonly ImmutableArray<Type> FinalTypes =
         [
-            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(int), typeof(double), typeof(float), typeof(long), typeof(ulong), typeof(short),
             typeof(DateTime),
-            typeof(TimeSpan)
+            typeof(TimeSpan),
+            typeof(string),
+            typeof(bool),
+            typeof(char),
         ];
         
         public PrintingConfig() : this(new SerializationSettings())
@@ -66,7 +71,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, new HashSet<object>());
         }
 
-        private string PrintToString(object? obj, int nestingLevel, HashSet<object> searized)
+        private string PrintToString(object? obj, int nestingLevel, HashSet<object> serialized)
         {
             if (obj is null)
                 return "null" + Environment.NewLine;
@@ -82,31 +87,43 @@ namespace ObjectPrinting
             
             var sb = new StringBuilder();
             var tabulation = new string('\t', nestingLevel + 1);
-            sb.AppendLine(type.Name);
-            sb.Append(obj is IEnumerable
-                ? SerializeСollection(obj, nestingLevel, tabulation, searized)
-                : SerializeInstance(obj, nestingLevel, tabulation, searized));
+            sb.AppendLine(SerializeNameOfType(type));
+            sb.Append(SerializeInstance(obj, nestingLevel, tabulation, serialized));
+            if (obj is IEnumerable) sb.Append(SerializeСollection(obj, nestingLevel, tabulation, serialized));
             return sb.ToString();
         }
 
-        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation, HashSet<object> searized)
+        private string SerializeNameOfType(Type type)
+        {
+            if (!type.IsGenericType) return type.Name;
+            
+            var separator = ", ";
+            var name = new Regex("(`[0-9]+)$").Replace(type.Name, "");
+            
+            return $"{name}<{string.Join(separator, type.GenericTypeArguments.Select(SerializeNameOfType))}>";
+        }
+
+        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation, HashSet<object> serialized)
         {
             var result = new StringBuilder();
             
             foreach (var member in GetPropertiesAndFields(obj.GetType()))
             {
+                // если member индексатор, то пропускаем
+                if (member.Name == "Item") continue;
+                
                 var memberValue = GetValue(obj, member);
                 if (!(memberValue is not null && Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
-                                                Settings.ExcludedPropertiesAndFields.Contains(member) || 
-                                                searized.Contains(memberValue)))
+                                                 Settings.ExcludedPropertiesAndFields.Contains(member) || 
+                                                 serialized.Contains(memberValue)))
                 {
                     if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
                         result.Append(tabulation + member.Name + " = " + serializer(memberValue));
                     else
                     {
-                        if (memberValue is not null) searized.Add(memberValue);
+                        if (memberValue is not null) serialized.Add(memberValue);
                         result.Append(tabulation + member.Name + " = " + 
-                                      PrintToString(memberValue, nestingLevel + 1, searized));
+                                      PrintToString(memberValue, nestingLevel + 1, serialized));
                     }
                 }
             }
@@ -118,11 +135,13 @@ namespace ObjectPrinting
             int nestingLevel, string tabulation, HashSet<object> searized)
         {
             var result = new StringBuilder();
+            result.Append($"{new string('\t', nestingLevel + 1)}collection items:{Environment.NewLine}");
+            tabulation = new string('\t', nestingLevel + 2);
             
             foreach (var elem in (IEnumerable)obj)
             {
                 if (elem is not null) searized.Add(elem);
-                result.Append(tabulation + PrintToString(elem, nestingLevel + 1, searized));
+                result.Append(tabulation + PrintToString(elem, nestingLevel + 3, searized));
             }
 
             return result;
@@ -132,7 +151,7 @@ namespace ObjectPrinting
         {
             foreach (var property in type.GetProperties())
                 yield return property;
-            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
+            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 yield return field;
         }
 
@@ -143,7 +162,7 @@ namespace ObjectPrinting
             if (member is FieldInfo fieldInfo)
                 return fieldInfo.GetValue(obj);
             
-            throw new ArgumentException();
+            throw new ArgumentException("member должен быть полем или свойством");
         }
     }
 }

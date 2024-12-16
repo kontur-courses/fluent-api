@@ -29,34 +29,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="ExpectedResponses\PrintToString_FullObjectSerialization.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Excluding_MustExcludeFieldsAndTypePropertiesFromSerialization.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Using_AnAlternativeWayToSerializeNumbers.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Excluding_NamePropertyIsExcluded.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Using_OtherLocalizationOfEmailField.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Using_NamePropertyIsTruncated.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\Using_ChangedTypeSerializationCulture.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\PrintToString_Collection_SerializedCollection.txt">
+      <None Update="ExpectedResponses\PrintToString_Dictionary_SerializedDictionary.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="ExpectedResponses\PrintToString_Array_SerializedArray.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ExpectedResponses\PrintToString_Dictionary_SerializedDictionary.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

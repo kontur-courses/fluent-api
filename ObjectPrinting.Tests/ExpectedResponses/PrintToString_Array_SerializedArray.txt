@@ -1,4 +1,15 @@
 Int32[]
-	1
-	2
-	3
+	Length = 3
+	LongLength = 3
+	Rank = 1
+	SyncRoot = Int32[]
+		IsReadOnly = False
+		IsFixedSize = True
+		collection items:
+			1
+			2
+			3
+	collection items:
+		1
+		2
+		3
