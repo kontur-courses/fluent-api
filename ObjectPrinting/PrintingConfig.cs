@@ -88,14 +88,14 @@ public class PrintingConfig<TOwner>
 
     private string GetSingleElementString(object obj, string numberOfTabs, int nestingLevel)
     {
-        var propertiesAndFields = obj
+        IEnumerable<MemberInfo?> propertiesAndFields = obj
             .GetType()
             .GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
             .Where(member => member is PropertyInfo or FieldInfo && !IsMemberExcluded(member));
         var sb = new StringBuilder();
         foreach (var memberInfo in propertiesAndFields)
         {
-            sb.Append(numberOfTabs + memberInfo.Name + " = " +
+            sb.Append(numberOfTabs + memberInfo?.Name + " = " +
                       PrintToString(GetValue(obj, memberInfo),
                           nestingLevel + 1));
         }
@@ -108,10 +108,10 @@ public class PrintingConfig<TOwner>
         excludedProperties.Contains(member.GetMemberType()) ||
         excludedMembers.Contains(member);
 
-    private object? GetValue(object obj, MemberInfo memberInfo)
+    private object? GetValue(object obj, MemberInfo? memberInfo)
     {
         var val = memberInfo.GetValue(obj);
-        if (val is null) return null;
+        if (val is null || memberInfo is null) return null;
         var memberType = memberInfo.GetMemberType();
         return MemberSerializationMethod.TryGetValue(memberInfo, out var memberFunc)
             ? memberFunc.Invoke(val)

@@ -12,9 +12,9 @@ public static class MemberInfoExtensions
             _ => null
         };
 
-    public static Type GetMemberType(this MemberInfo memberInfo) =>
+    public static Type GetMemberType(this MemberInfo? memberInfo) =>
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        memberInfo.MemberType switch
+        memberInfo?.MemberType switch
         {
             MemberTypes.Field => ((FieldInfo)memberInfo).FieldType,
             MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType,

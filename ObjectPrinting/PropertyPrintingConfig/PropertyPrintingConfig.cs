@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using ObjectPrinting.Extensions;
 
 namespace ObjectPrinting.PropertyPrintingConfig;
 
@@ -8,8 +7,8 @@ public class PropertyPrintingConfig<TOwner, TPropType>(
     MemberInfo? memberInfo = null)
     : IPropertyPrintingConfig<TOwner, TPropType>
 {
-    public MemberInfo PropertyMemberInfo =>
-        memberInfo != null ? memberInfo : throw new InvalidOperationException("MemberInfo is null.");
+    public MemberInfo? PropertyMemberInfo =>
+        memberInfo;
 
     public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {

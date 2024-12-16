@@ -27,6 +27,8 @@ public static class PropertyPrintingConfigExtensions
             throw new ArgumentException($"{nameof(maxLength)} should be greater than 1");
 
         var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+        
+        if (propConfig.PropertyMemberInfo is null) return parentConfig;
 
         parentConfig.MemberSerializationMethod.Add(propConfig.PropertyMemberInfo, str =>
         {
