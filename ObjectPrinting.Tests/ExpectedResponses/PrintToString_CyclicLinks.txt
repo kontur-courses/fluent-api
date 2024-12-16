@@ -1,0 +1,15 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = null
+	Height = 0
+	Age = 0
+	Parent = null
+	Child = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = null
+		Height = 0
+		Age = 0
+		Parent = ранее сериализованный объект (стр. 1)
+		Child = null
+		Email = null
+	Email = null

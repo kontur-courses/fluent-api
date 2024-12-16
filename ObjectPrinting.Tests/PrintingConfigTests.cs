@@ -20,7 +20,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tHeight = 185,5",
                 "\tAge = 19",
                 "\tParent = null",
@@ -42,7 +42,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Alex",
                 "\tHeight = 185,5",
                 "\tAge = 19",
@@ -65,7 +65,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Alex",
                 "\tHeight = 185,5",
                 "\tAge = 10011",
@@ -90,7 +90,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tHeight = 185,5",
                 "\tAge = 19",
                 "\tParent = null",
@@ -113,7 +113,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Alex",
                 "\tHeight = 185,5",
                 "\tAge = 19",
@@ -145,7 +145,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Хьюберт Блейн Вольфе...",
                 "\tHeight = 185,5",
                 "\tAge = 19",
@@ -170,7 +170,7 @@ public class PrintingConfigTests
             Environment.NewLine, 
             [
                 "Person",
-                "\tId = Guid",
+                "\tId = 00000000-0000-0000-0000-000000000000",
                 "\tName = Alex",
                 "\tHeight = 185.5",
                 "\tAge = 19",
@@ -197,8 +197,23 @@ public class PrintingConfigTests
         child.Parent = parent;
         var printer = ObjectPrinter.For<Person>();
         Action act = () => printer.PrintToString(parent);
-
+        
         act.Should().NotThrow<StackOverflowException>();
+    }
+
+    [Test]
+    public void PrintToString_CyclicLinks()
+    {
+        var expected = File.ReadAllText("ExpectedResponses/PrintToString_CyclicLinks.txt");
+        var parent = new Person();
+        var child = new Person();
+        parent.Child = child;
+        child.Parent = parent;
+        var printer = ObjectPrinter.For<Person>();
+        
+        var actual = printer.PrintToString(parent);
+        
+        actual.Should().Be(expected);
     }
     
     [Test]

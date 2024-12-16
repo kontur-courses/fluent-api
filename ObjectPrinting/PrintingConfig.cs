@@ -12,6 +12,9 @@ namespace ObjectPrinting
 {
     public record PrintingConfig<TOwner>(SerializationSettings Settings)
     {
+        private ulong CurrentLineNumberInSerialization { get; set; } = 1;
+        private readonly Dictionary<object, ulong> serialized = new();
+        
         private static readonly ImmutableArray<Type> FinalTypes =
         [
             typeof(int), typeof(double), typeof(float), typeof(long), typeof(ulong), typeof(short),
@@ -20,6 +23,7 @@ namespace ObjectPrinting
             typeof(string),
             typeof(bool),
             typeof(char),
+            typeof(Guid)
         ];
         
         public PrintingConfig() : this(new SerializationSettings())
@@ -68,28 +72,45 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, new HashSet<object>());
+            return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object? obj, int nestingLevel, HashSet<object> serialized)
+        private string PrintToString(object? obj, int nestingLevel)
         {
             if (obj is null)
+            {
+                CurrentLineNumberInSerialization++;
                 return "null" + Environment.NewLine;
+            }
             
             var type = obj.GetType();
             if (Settings.AlternativeTypeSerialization.TryGetValue(type, out var serializer) &&
                 !Settings.ExcludedTypes.Contains(type))
             {
+                CurrentLineNumberInSerialization++;
                 return serializer(obj) + Environment.NewLine;
             }
+
             if (FinalTypes.Contains(type))
+            {
+                CurrentLineNumberInSerialization++;
                 return obj + Environment.NewLine;
+            }
+
+            if (serialized.TryGetValue(obj, out var lineNumber))
+            {
+                CurrentLineNumberInSerialization++;
+                return  $"ранее сериализованный объект (стр. {lineNumber}){Environment.NewLine}";
+            }
+            serialized[obj] = CurrentLineNumberInSerialization;
             
             var sb = new StringBuilder();
             var tabulation = new string('\t', nestingLevel + 1);
             sb.AppendLine(SerializeNameOfType(type));
-            sb.Append(SerializeInstance(obj, nestingLevel, tabulation, serialized));
-            if (obj is IEnumerable) sb.Append(SerializeСollection(obj, nestingLevel, tabulation, serialized));
+            CurrentLineNumberInSerialization++;
+            sb.Append(SerializeInstance(obj, nestingLevel, tabulation));
+            if (obj is IEnumerable)
+                sb.Append(SerializeСollection(obj, nestingLevel));
             return sb.ToString();
         }
 
@@ -103,7 +124,7 @@ namespace ObjectPrinting
             return $"{name}<{string.Join(separator, type.GenericTypeArguments.Select(SerializeNameOfType))}>";
         }
 
-        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation, HashSet<object> serialized)
+        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation)
         {
             var result = new StringBuilder();
             
@@ -111,19 +132,16 @@ namespace ObjectPrinting
             {
                 // если member индексатор, то пропускаем
                 if (member.Name == "Item") continue;
-                
                 var memberValue = GetValue(obj, member);
                 if (!(memberValue is not null && Settings.ExcludedTypes.Contains(memberValue.GetType()) ||
-                                                 Settings.ExcludedPropertiesAndFields.Contains(member) || 
-                                                 serialized.Contains(memberValue)))
+                                                 Settings.ExcludedPropertiesAndFields.Contains(member)))
                 {
                     if (Settings.AlternativeSerializationOfFieldsAndProperties.TryGetValue(member, out var serializer))
                         result.Append(tabulation + member.Name + " = " + serializer(memberValue));
                     else
                     {
-                        if (memberValue is not null) serialized.Add(memberValue);
-                        result.Append(tabulation + member.Name + " = " + 
-                                      PrintToString(memberValue, nestingLevel + 1, serialized));
+                        result.Append(tabulation + member.Name + " = " +
+                                      PrintToString(memberValue, nestingLevel + 1));
                     }
                 }
             }
@@ -131,17 +149,18 @@ namespace ObjectPrinting
             return result;
         }
 
-        private StringBuilder SerializeСollection(object obj,
-            int nestingLevel, string tabulation, HashSet<object> searized)
+        private StringBuilder SerializeСollection(object obj, int nestingLevel)
         {
             var result = new StringBuilder();
             result.Append($"{new string('\t', nestingLevel + 1)}collection items:{Environment.NewLine}");
-            tabulation = new string('\t', nestingLevel + 2);
+            CurrentLineNumberInSerialization++;
+            var tabulation = new string('\t', nestingLevel + 2);
             
             foreach (var elem in (IEnumerable)obj)
             {
-                if (elem is not null) searized.Add(elem);
-                result.Append(tabulation + PrintToString(elem, nestingLevel + 3, searized));
+                if (elem is not null && Settings.ExcludedTypes.Contains(elem.GetType()))
+                    continue;
+                result.Append(tabulation +  PrintToString(elem, nestingLevel + 3));
             }
 
             return result;

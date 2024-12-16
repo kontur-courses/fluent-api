@@ -35,6 +35,9 @@
       <None Update="ExpectedResponses\PrintToString_Array_SerializedArray.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="ExpectedResponses\PrintToString_CyclicLinks.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
