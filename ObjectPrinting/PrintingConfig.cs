@@ -17,7 +17,12 @@ namespace ObjectPrinting
         
         private static readonly ImmutableArray<Type> FinalTypes =
         [
-            typeof(int), typeof(double), typeof(float), typeof(long), typeof(ulong), typeof(short),
+            typeof(int),
+            typeof(double),
+            typeof(float),
+            typeof(long),
+            typeof(ulong),
+            typeof(short),
             typeof(DateTime),
             typeof(TimeSpan),
             typeof(string),
@@ -45,10 +50,10 @@ namespace ObjectPrinting
         private MemberInfo GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             if (memberSelector.Body.NodeType != ExpressionType.MemberAccess)
-                throw new ArgumentException("memberSelector должен возвращать поле или свойство объекта");
+                throw new ArgumentException("Должен возвращать поле или свойство объекта", nameof(memberSelector));
             var memberExpr = (MemberExpression)memberSelector.Body;
             if (memberExpr.Member.MemberType != MemberTypes.Field && memberExpr.Member.MemberType != MemberTypes.Property)
-                throw new ArgumentException("memberSelector должен возвращать поле или свойство объекта");
+                throw new ArgumentException("Должен возвращать поле или свойство объекта", nameof(memberSelector));
             
             return memberExpr.Member;
         }
