@@ -27,8 +27,16 @@ public class PrintingConfigShould
         action.Should().NotThrow<StackOverflowException>();
     }
 
-    private static Person GetPersonWithRecursiveParent(Person person) =>
-        person with { Parent = person };
+    private static Person GetPersonWithRecursiveParent(Person person)
+    {
+        var newPerson = person with { Parent = person };
+        for (var i = 0; i < 10; i++)
+        {
+            newPerson = newPerson with { Parent = newPerson };
+        }
+
+        return person with { Parent = newPerson };
+    }
 
     [TestCase(2)]
     [TestCase(3)]
