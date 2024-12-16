@@ -9,15 +9,9 @@
 	HomeworksCompleted = 
 	Friends = 
 	EmergensyList = 
-		KeyValuePair`2
-			Key = wife
-			Value = 5-5-5-3-5-3-5
-
-		KeyValuePair`2
-			Key = father
-			Value = 8-800-2000-600
-
-		KeyValuePair`2
-			Key = mother
-			Value = +7 922 22 222 22
-
+		key = wife
+		value = 5-5-5-3-5-3-5
+		key = father
+		value = 8-800-2000-600
+		key = mother
+		value = +7 922 22 222 22
