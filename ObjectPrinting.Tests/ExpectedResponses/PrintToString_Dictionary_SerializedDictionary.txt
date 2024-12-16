@@ -1,0 +1,37 @@
+Dictionary<List<String>, Int32>
+	Comparer = ObjectEqualityComparer<List<String>>
+	Count = 3
+	Keys = KeyCollection<List<String>, Int32>
+		Count = 3
+		collection items:
+			List<String>
+					Capacity = 1
+					Count = 1
+					collection items:
+						1
+			List<String>
+					Capacity = 1
+					Count = 1
+					collection items:
+						2
+			List<String>
+					Capacity = 1
+					Count = 1
+					collection items:
+						3
+	Values = ValueCollection<List<String>, Int32>
+		Count = 3
+		collection items:
+			1
+			2
+			3
+	collection items:
+		KeyValuePair<List<String>, Int32>
+				Key = ранее сериализованный объект (стр. 7)
+				Value = 1
+		KeyValuePair<List<String>, Int32>
+				Key = ранее сериализованный объект (стр. 12)
+				Value = 2
+		KeyValuePair<List<String>, Int32>
+				Key = ранее сериализованный объект (стр. 17)
+				Value = 3

@@ -1,0 +1,12 @@
+Int32[]
+	Length = 3
+	LongLength = 3
+	Rank = 1
+	SyncRoot = ранее сериализованный объект (стр. 1)
+	IsReadOnly = False
+	IsFixedSize = True
+	IsSynchronized = False
+	collection items:
+		1
+		2
+		3
