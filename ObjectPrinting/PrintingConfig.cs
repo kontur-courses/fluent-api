@@ -82,7 +82,6 @@ namespace ObjectPrinting
                 CurrentLineNumberInSerialization++;
                 return "null" + Environment.NewLine;
             }
-            
             var type = obj.GetType();
             if (Settings.AlternativeTypeSerialization.TryGetValue(type, out var serializer) &&
                 !Settings.ExcludedTypes.Contains(type))
@@ -90,13 +89,11 @@ namespace ObjectPrinting
                 CurrentLineNumberInSerialization++;
                 return serializer(obj) + Environment.NewLine;
             }
-
             if (FinalTypes.Contains(type))
             {
                 CurrentLineNumberInSerialization++;
                 return obj + Environment.NewLine;
             }
-
             if (serialized.TryGetValue(obj, out var lineNumber))
             {
                 CurrentLineNumberInSerialization++;
@@ -104,13 +101,16 @@ namespace ObjectPrinting
             }
             serialized[obj] = CurrentLineNumberInSerialization;
             
+            return SerializeComplexObject(type, obj, nestingLevel);
+        }
+
+        private string SerializeComplexObject(Type type, object obj, int nestingLevel)
+        {
             var sb = new StringBuilder();
-            var tabulation = new string('\t', nestingLevel + 1);
             sb.AppendLine(SerializeNameOfType(type));
             CurrentLineNumberInSerialization++;
-            sb.Append(SerializeInstance(obj, nestingLevel, tabulation));
-            if (obj is IEnumerable)
-                sb.Append(SerializeСollection(obj, nestingLevel));
+            sb.Append(SerializeInstance(obj, nestingLevel));
+            if (obj is IEnumerable) sb.Append(SerializeСollection(obj, nestingLevel));
             return sb.ToString();
         }
 
@@ -124,9 +124,10 @@ namespace ObjectPrinting
             return $"{name}<{string.Join(separator, type.GenericTypeArguments.Select(SerializeNameOfType))}>";
         }
 
-        private StringBuilder SerializeInstance(object obj, int nestingLevel, string tabulation)
+        private StringBuilder SerializeInstance(object obj, int nestingLevel)
         {
             var result = new StringBuilder();
+            var tabulation = new string('\t', nestingLevel + 1);
             
             foreach (var member in GetPropertiesAndFields(obj.GetType()))
             {
