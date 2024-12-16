@@ -5,8 +5,8 @@ using ObjectPrinting.Extensions;
 
 namespace ObjectPrintingTests;
 
-[TestFixture, NonParallelizable] //поведение по умолчанию, но я решил явно указать
-public class ObjectPrinterAcceptanceTests
+[TestFixture, NonParallelizable]
+public class ObjectPrinterTests
 {
     private Person person;
     private PrintingConfig<Person> printer;
@@ -17,7 +17,8 @@ public class ObjectPrinterAcceptanceTests
         printer = ObjectPrinter.For<Person>();
         person = new Person()
         {
-            Name = "John",
+            Name = "Johnny",
+            Surname = "Cage",
             HouseAddress = new HouseAddress()
             {
                 City = "Kansas",
@@ -26,25 +27,26 @@ public class ObjectPrinterAcceptanceTests
             Age = 30,
             Height = 182.6,
             IsMarried = false,
+            BirthDate = new DateTime(2003, 8, 12)
         };
     }
 
     [Test]
     public void PrintToString_ReturnCorrect_WhenExcludedType()
     {
-        var expected = "false";
+        var expected = new[] { "false", "true", "IsMarried" };
 
         var actual = printer
             .Exclude<bool>()
             .PrintToString(person);
 
-        actual.Should().NotContain(expected);
+        actual.Should().NotContainAll(expected);
     }
 
     [Test]
     public void PrintToString_ReturnCorrect_WhenExcludedProperty()
     {
-        var expected = "false";
+        var expected = "IsMarried";
 
         var actual = printer
             .Exclude(x => x.IsMarried)
@@ -68,10 +70,10 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void PrintToString_ReturnCorrect_WithCustomTypeSerialization()
     {
-        var expected = "Height = 182,6";
+        var expected = "Height = 182,60";
 
         var actual = printer
-            .SerializeType<double>()
+            .Printing<double>()
             .Using(x => x.ToString("F"))
             .PrintToString(person);
 
@@ -84,7 +86,7 @@ public class ObjectPrinterAcceptanceTests
         var expected = "Height = 182.6";
 
         var actual = printer
-            .SerializeType<double>()
+            .Printing<double>()
             .Using(CultureInfo.InvariantCulture)
             .PrintToString(person);
 
@@ -92,12 +94,12 @@ public class ObjectPrinterAcceptanceTests
     }
 
     [Test]
-    public void PrintToString_ReturnCorrect_WuthCustomPropertySerialization()
+    public void PrintToString_ReturnCorrect_WithCustomPropertySerialization()
     {
         var expected = "182,60 cm";
 
         var actual = printer
-            .SerializeProperty(prop => prop.Height)
+            .Printing(prop => prop.Height)
             .Using(x => $"{x:F} cm")
             .PrintToString(person);
 
@@ -107,14 +109,14 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void PrintToString_ReturnCorrect_WithTrimForStrings()
     {
-        var expected = "Name = John";
+        var expected = new string[] { "Name = Jo", "Surname = Ca" };
 
         var actual = printer
-            .SerializeType<string>()
+            .Printing<string>()
             .Trimed(2)
             .PrintToString(person);
 
-        actual.Should().NotContain(expected);
+        actual.Should().ContainAll(expected);
     }
 
     [Test]
@@ -145,7 +147,7 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public void PrintToString_ReturnCorrect_WhenPrintCollections()
     {
-        var expected = new [] {"Parents = Person[]", "HouseAddress = null"};
+        var expected = new [] {"Parents = Person[]\r\n\t\tPerson"};
         person.Parents = new[]
         {
             new Person {Height = 175, Age = 30},
@@ -177,6 +179,145 @@ public class ObjectPrinterAcceptanceTests
 
         var actual = person
             .PrintToString(x => x.Exclude<bool>());
+
+        actual.Should().ContainAll(expected);
+    }
+
+    [Test]
+    public void PrintToString_ExcludeStringsIncludeCustomSerialization()
+    {
+        var expected = new[] { "Name", "Surname" };
+
+        var actual = printer
+            .Exclude<string>()
+            .Printing<string>()
+            .Using(x => x.ToUpper())
+            .PrintToString(person);
+
+        actual.Should().NotContainAll(expected);
+    }
+
+    [Test]
+    public void PrintToString_IncludeCustomSerializationExcludeStrings()
+    {
+        var expected = new[] { "Name", "Surname" };
+
+        var actual = printer
+            .Printing<string>()
+            .Using(x => x.ToUpper())
+            .Exclude<string>()
+            .PrintToString(person);
+
+        actual.Should().NotContainAll(expected);
+    }
+
+    [Test]
+    public void PrintToString_ExcludeDictionary()
+    {
+        var expected = "Documents";
+
+        var actual = printer
+            .Exclude<Dictionary<string, string>>()
+            .PrintToString(person);
+
+        actual.Should().NotContain(expected);
+    }
+
+    [Test]
+    public void PrintToString_ExcludeCollection()
+    {
+        var expected = "Parents";
+
+        var actual = printer
+            .Exclude<Person[]>()
+            .PrintToString(person);
+
+        actual.Should().NotContain(expected);
+        actual.Should().Contain("BestFriend");
+    }
+
+    [Test]
+    public void PrintToString_DateTimeSerialization()
+    {
+        var expected = "BirthDate = 12.08.03";
+
+        var actual = printer
+            .Printing<DateTime>()
+            .Using(x => x.ToString("dd.MM.yy"))
+            .PrintToString(person);
+
+        actual.Should().Contain(expected);
+    }
+
+    [Test]
+    public void PrintToString_ExcludeMultipleTypes()
+    {
+        var expected = new[] { "IsMarried", "Age" };
+
+        var actual = printer
+            .Exclude<int>()
+            .Exclude<bool>()
+            .PrintToString(person);
+
+        actual.Should().NotContainAll(expected);
+    }
+
+    [Test]
+    public void PrintToString_CombinedCustomSerializationAndExclusion()
+    {
+        var expected = "Height = 182,60";
+
+        var actual = printer
+            .Printing<double>()
+            .Using(x => x.ToString("F"))
+            .Exclude<bool>()
+            .PrintToString(person);
+
+        actual.Should().Contain(expected);
+        actual.Should().NotContain("IsMarried");
+    }
+
+    [Test]
+    public void PrintToString_MultipleExclusionsForSameType()
+    {
+        var expected = "Age";
+
+        var actual = printer
+            .Exclude<int>()
+            .Exclude<int>()
+            .PrintToString(person);
+
+        actual.Should().NotContain(expected);
+        printer.GetExcludeTypes().Should().HaveCount(1);
+    }
+
+    [Test]
+    public void PrintToString_AcceptanceTest()
+    {
+        var expected = new[] { 
+            "Name = JOHNNY", 
+            "Surname = Ca",
+            "Height = 182.60",
+            "BestFriend",
+            "BirthDate = 08/12/2003",  
+            "Documents",
+            "City = Ka",
+            "HouseNumber = 21"
+        };
+
+        var actual = printer
+            .Exclude<bool>()
+            .Exclude<Person[]>()
+            .Exclude(x => x.Age)
+            .Printing(x => x.Name)
+            .Using(x => x.ToUpper())
+            .Printing<DateTime>()
+            .Using(CultureInfo.InvariantCulture)
+            .Printing<string>()
+            .Trimed(2)
+            .Printing<double>()
+            .Using(x => x.ToString("F", CultureInfo.InvariantCulture))
+            .PrintToString(person);
 
         actual.Should().ContainAll(expected);
     }

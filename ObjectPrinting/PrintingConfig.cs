@@ -11,25 +11,27 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
-    private readonly List<object> serializedObjects = [];
-    private readonly List<Type> finalTypes =
+    private readonly HashSet<object> serializedObjects = [];
+    private readonly HashSet<Type> finalTypes =
     [
         typeof(int), typeof(double), typeof(float), typeof(string),
-        typeof(DateTime), typeof(TimeSpan), typeof(bool)
+        typeof(DateTime), typeof(TimeSpan), typeof(bool), typeof(Guid),
+        typeof(long), typeof(decimal), typeof(char), typeof(byte),
+        typeof(Uri), typeof(short),
     ];
-    private readonly List<Type> excludedTypes = [];
+    private readonly HashSet<Type> excludedTypes = [];
     private readonly Dictionary<Type, Func<object, string>> typeSerializers = new Dictionary<Type, Func<object, string>>();
-    private readonly List<MemberInfo> excludedMembers = [];
+    private readonly HashSet<MemberInfo> excludedMembers = [];
     private readonly Dictionary<MemberInfo, Func<object, string>> memberSerializers = new Dictionary<MemberInfo, Func<object, string>>();
 
     public string PrintToString(object obj, int nestingLevel = 0, bool isPrintObjName = true)
     {
         if (obj == null)
-            return "null\n";
+            return "null" + Environment.NewLine;
         if (finalTypes.Contains(obj.GetType()))
-            return $"{obj}\n";
+            return obj + Environment.NewLine;
         if (serializedObjects.Contains(obj))
-            return "Looped! Object was not added\n";
+            return "Looped! Object was not added" + Environment.NewLine;
         serializedObjects.Add(obj);
 
         return obj switch
@@ -51,7 +53,7 @@ public class PrintingConfig<TOwner>
     private string SerializeObject(object obj, int nestingLevel, bool isPrintObjName)
     {
         var objType = obj.GetType();
-        var objName = isPrintObjName ? $"{GetTabIndent(nestingLevel)}{objType.Name}\n" : "\n";
+        var objName = isPrintObjName ? $"{GetTabIndent(nestingLevel)}{objType.Name}" + Environment.NewLine : Environment.NewLine;
         var objBuilder = new StringBuilder(objName);
         foreach (var memberInfo in GetSerializedMembers(objType))
             objBuilder.Append($"{GetTabIndent(nestingLevel + 1)}{memberInfo.Name} = {SerializeMember(obj, memberInfo, nestingLevel)}");
@@ -60,12 +62,12 @@ public class PrintingConfig<TOwner>
 
     private string SerializeMember(object obj, MemberInfo memberInfo, int nestingLevel) =>
         TryGetCustomSerializer(memberInfo, out var serializer)
-            ? $"{serializer(memberInfo.GetValue(obj)!)}\n"
+            ? serializer(memberInfo.GetValue(obj)!) + Environment.NewLine
             : PrintToString(memberInfo.GetValue(obj)!, nestingLevel + 1, false);
     
     private string SerializeCollection(IEnumerable collection, int nestingLevel)
     {
-        var collectionBuilder = new StringBuilder($"{collection.GetType().Name}\n");
+        var collectionBuilder = new StringBuilder(collection.GetType().Name + Environment.NewLine);
         foreach (var item in collection)
             collectionBuilder.Append(PrintToString(item, nestingLevel + 1));
         return collectionBuilder.ToString();
@@ -73,24 +75,24 @@ public class PrintingConfig<TOwner>
 
     private string SerializeDictionary(IDictionary dictionary, int nestingLevel)
     {
-        var dictionaryBuilder = new StringBuilder($"{dictionary.GetType().Name}\n");
+        var dictionaryBuilder = new StringBuilder(dictionary.GetType().Name + Environment.NewLine);
         foreach (var key in dictionary.Keys)
         {
             dictionaryBuilder.Append(GetTabIndent(nestingLevel + 1));
             dictionaryBuilder.Append($"{PrintToString(key, nestingLevel + 1).Trim()} - ");
-            dictionaryBuilder.Append($"{PrintToString(dictionary[key]!, 0).Trim()}\n");
+            dictionaryBuilder.Append(PrintToString(dictionary[key]!, 0).Trim() + Environment.NewLine);
         }
         return dictionaryBuilder.ToString();
     }
 
-    public TypePrintingConfig<TOwner, TPropType> SerializeType<TPropType>() =>
-        new TypePrintingConfig<TOwner, TPropType>(this, typeSerializers);
+    public TypePrintingConfig<TOwner, TPropType> Printing<TPropType>() =>
+        new TypePrintingConfig<TOwner, TPropType>(this);
 
-    public PropertyPrintingConfig<TOwner, TPropType> SerializeProperty<TPropType>(
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
         var body = (MemberExpression)memberSelector.Body;
-        return new PropertyPrintingConfig<TOwner, TPropType>(this, memberSerializers, body.Member);
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, body.Member);
     }
 
     private bool TryGetCustomSerializer(MemberInfo memberInfo, out Func<object, string> serializer)
@@ -122,9 +124,17 @@ public class PrintingConfig<TOwner>
         excludedMembers.Add(body.Member);
         return this;
     }
-    
+
     private static string GetTabIndent(int indent) => new string('\t', indent);
 
     private static bool IsMemberInfoFieldOrProperty(MemberInfo memberInfo) =>
         memberInfo.MemberType is MemberTypes.Field or MemberTypes.Property;
+
+    internal void UpdateSerializer(MemberInfo memberInfo, Func<object, string> serializer) =>
+        memberSerializers[memberInfo] = serializer;
+
+    internal void UpdateSerializer(Type Type, Func<object, string> serializer) =>
+        typeSerializers[Type] = serializer;
+
+    public HashSet<Type> GetExcludeTypes() => excludedTypes;
 }
