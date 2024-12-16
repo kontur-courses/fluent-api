@@ -62,11 +62,12 @@ namespace ObjectPrinting.Tests
             return Verifier.Verify(result, DefaultSettings);
         }
 
-        [Test]
-        public Task ObjectPrinter_ShouldTrimStringType()
+        [TestCase(10, TestName = "Print original string when its length smaller than needed") ]
+        [TestCase(3, TestName = "Print trimmed string in right way")]
+        public Task ObjectPrinter_ShouldTrimStringType(int maxLen)
         {
             var result = ObjectPrinter.For<Person>()
-                .Printing<string>().TrimmedToLength(3)
+                .Printing<string>().TrimmedToLength(maxLen)
                 .PrintToString(person);
 
             return Verifier.Verify(result, DefaultSettings);

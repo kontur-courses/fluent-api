@@ -21,7 +21,10 @@ namespace ObjectPrinting
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner,
             string> propConfig, int maxLen)
         {
-            return propConfig.Using(x =>  x[..Math.Min(x.Length, maxLen)]);
+            return propConfig.Using(x =>
+                (x.Length > maxLen)
+                ? x[..maxLen]
+                : x);
         }
     }
 }
