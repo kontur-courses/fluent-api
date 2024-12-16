@@ -17,29 +17,13 @@ public class PrintingConfig<TOwner>
     internal readonly Dictionary<Type, Delegate> TypeSerializationMethod = new();
     internal readonly Dictionary<MemberInfo, Delegate> MemberSerializationMethod = new();
 
-    public PrintingConfig(PrintingConfig<TOwner>? parent = null)
-    {
-        if (parent == null)
-            return;
-
-        excludedProperties.AddRange(parent.excludedProperties);
-        excludedMembers.AddRange(parent.excludedMembers);
-        TypeSerializationMethod.AddRange(parent.TypeSerializationMethod);
-        MemberSerializationMethod.AddRange(parent.MemberSerializationMethod);
-    }
-
-    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-    {
-        var configCopy = new PrintingConfig<TOwner>(this);
-        return new PropertyPrintingConfig<TOwner, TPropType>(configCopy);
-    }
+    public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>() => new(this);
 
     public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
         Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        var configCopy = new PrintingConfig<TOwner>(this);
         var memberInfo = GetMemberInfo(memberSelector);
-        return new PropertyPrintingConfig<TOwner, TPropType>(configCopy, memberInfo);
+        return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
     }
 
     private static MemberInfo? GetMemberInfo<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector) =>
@@ -47,19 +31,17 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
     {
-        var configClone = new PrintingConfig<TOwner>(this);
         var memberInfo = GetMemberInfo(memberSelector);
         if (memberInfo is null)
             throw new ArgumentException("Invalid member selector.");
-        configClone.excludedMembers.Add(memberInfo);
-        return configClone;
+        excludedMembers.Add(memberInfo);
+        return this;
     }
 
     public PrintingConfig<TOwner> Excluding<TPropType>()
     {
-        var configCopy = new PrintingConfig<TOwner>(this);
-        configCopy.excludedProperties.Add(typeof(TPropType));
-        return configCopy;
+        excludedProperties.Add(typeof(TPropType));
+        return this;
     }
 
     public string PrintToString(TOwner owner) =>

@@ -15,7 +15,7 @@ public static class PropertyPrintingConfigExtensions
     {
         var parentConfig = ((IPropertyPrintingConfig<TOwner, TPropType>)propConfig).ParentConfig;
 
-        parentConfig.TypeSerializationMethod.AddMethod(typeof(TPropType), (Func<TPropType, string>)FormatFunc);
+        parentConfig.TypeSerializationMethod.Add(typeof(TPropType), (Func<TPropType, string>)FormatFunc);
 
         return parentConfig;
 
@@ -30,7 +30,7 @@ public static class PropertyPrintingConfigExtensions
 
         var parentConfig = ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
 
-        parentConfig.MemberSerializationMethod.AddMethod(propConfig.PropertyMemberInfo, (Func<string, string>)Function);
+        parentConfig.MemberSerializationMethod.Add(propConfig.PropertyMemberInfo, (Func<string, string>)Function);
 
         return parentConfig;
 
