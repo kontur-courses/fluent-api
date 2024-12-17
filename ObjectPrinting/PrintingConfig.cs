@@ -13,8 +13,8 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedProperties = new();
-        private readonly Dictionary<Type, Delegate> typeSerializers = new(); // конкретный делегат
-        private readonly Dictionary<string, Delegate> propertySerializers = new(); // конкретный делегат
+        private readonly Dictionary<Type, Delegate> typeSerializers = new();
+        private readonly Dictionary<string, Delegate> propertySerializers = new();
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<string, int> propertyTrim = new();
         private int MaxNestingLevel = 5;
@@ -34,16 +34,16 @@ namespace ObjectPrinting
         }
 
         // 2.  Указать альтернативный способ сериализации для определенного типа
-        public PrintingConfiguration<TOwner, TPropType> Printing<TPropType>(
+        public PropertyPrintingConfiguration<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var memberInfo = GetPropertyName(propertySelector);
-            return new PrintingConfiguration<TOwner, TPropType>(this, memberInfo);
+            return new PropertyPrintingConfiguration<TOwner, TPropType>(this, memberInfo);
         }
 
-        public PrintingConfiguration<TOwner, TPropType> Printing<TPropType>()
+        public PropertyPrintingConfiguration<TOwner, TPropType> Printing<TPropType>()
         {
-            return new PrintingConfiguration<TOwner, TPropType>(this, null);
+            return new PropertyPrintingConfiguration<TOwner, TPropType>(this, null);
         }
 
         // 6. Исключить из сериализации конкретного свойства
@@ -144,9 +144,6 @@ namespace ObjectPrinting
                 {
                     sb.Append($"{identation}{{{PrintToString(key, nestingLevel)}: " +
                               $"{PrintToString(dictionary[key], nestingLevel + 1)}}}");
-
-                    //sb.Append($"{identation}{{{PrintToString(key, nestingLevel)} = ");
-                    //sb.Append(PrintToString(dictionary[key], nestingLevel + 1) + "}; ");
                 }
             }
             else

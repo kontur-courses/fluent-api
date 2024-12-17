@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace ObjectPrinting.Tests
 {
-    public class Person//(Guid Id, string Name, double Height, int Age)
+    public class Person
     {
         public Guid Id { get; set; }
         public string Name { get; set; }

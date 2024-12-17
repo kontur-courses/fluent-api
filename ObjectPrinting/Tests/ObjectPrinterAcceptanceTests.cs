@@ -11,7 +11,6 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            //var person = new Person(new Guid(),"Alex",173.65,19);
             var person = new Person { Age = 19, Name = "Alex", Height = 173.65, Id = new Guid() };
 
             var printer = ObjectPrinter.For<Person>()

@@ -16,7 +16,6 @@ public class ObjectPrinterTests
     [SetUp]
     public void SetUp()
     {
-        //person = new Person(new Guid(), "Alex", 189.25, 19);
         person = new Person { Age = 19, Name = "Alex", Height = 173.65, Id = new Guid() };
     }
 
@@ -52,8 +51,6 @@ public class ObjectPrinterTests
             .Using(_ => printingType);
 
         var result = printer.PrintToString(person);
-        Console.WriteLine("-----------");
-        Console.WriteLine(result);
 
         result.Should().Contain($"{nameof(person.Age)} = {printingType}");
     }

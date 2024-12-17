@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ObjectPrinting;
 
-public class PrintingConfiguration<TOwner, TPropType>
+public class PropertyPrintingConfiguration<TOwner, TPropType>
 {
     private readonly PrintingConfig<TOwner> parentConfig;
     private readonly MemberInfo? propertyMemberInfo;
@@ -11,7 +11,7 @@ public class PrintingConfiguration<TOwner, TPropType>
     internal PrintingConfig<TOwner> ParentConfig => parentConfig;
     internal MemberInfo? PropertyMemberInfo => propertyMemberInfo;
 
-    public PrintingConfiguration(PrintingConfig<TOwner> parentConfig, MemberInfo? propertyMemberInfo)
+    public PropertyPrintingConfiguration(PrintingConfig<TOwner> parentConfig, MemberInfo? propertyMemberInfo)
     {
         this.parentConfig = parentConfig;
         this.propertyMemberInfo = propertyMemberInfo;
