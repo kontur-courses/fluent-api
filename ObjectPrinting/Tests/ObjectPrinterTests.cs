@@ -121,11 +121,13 @@ public class ObjectPrinterTests
     [Test]
     public void PrintToString_PrintClassWithList_ShouldSerializeList()
     {
-        var friends = new List<Person> { new(), new() };
+        var friends = new List<SimplePerson> { new(), new() };
 
-        person.Friends = friends;
+        SimplePerson simplePerson = new SimplePerson() { Name = "Alex", Id = new Guid() };
 
-        var result = person.PrintToString();
+        simplePerson.Friends = friends;
+
+        var result = simplePerson.PrintToString();
 
         result.Should().Contain("[");
         result.Should().Contain("]");
@@ -141,18 +143,20 @@ public class ObjectPrinterTests
     [Test]
     public void PrintToString_PrintClassWithDictionary_ShouldSerializeDictionary()
     {
-        var neighbours = new Dictionary<int, Person>
-            { { 12, new Person() }, { 19, new Person() } };
+        var neighbours = new Dictionary<int, SimplePerson>
+            { { 12, new SimplePerson() }, { 19, new SimplePerson() } };
 
-        person.Neighbours = neighbours;
+        SimplePerson simplePerson = new SimplePerson() { Name = "Alex", Id = new Guid() };
 
-        var result = person.PrintToString();
+        simplePerson.Neighbours = neighbours;
+
+        var result = simplePerson.PrintToString();
 
         foreach (var key in neighbours.Keys)
         {
             var neighbour = neighbours[key];
 
-            result.Should().Contain($"\t\t{{{key}: Person");
+            result.Should().Contain($"\t\t{{{key}: SimplePerson");
             result.Should().Contain($"\t\t\t{nameof(neighbour.Id)} = {neighbour.Id}");
             result.Should().Contain($"\t\t\t{nameof(neighbour.Name)} = {neighbour.Name}");
         }

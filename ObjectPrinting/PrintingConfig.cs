@@ -130,7 +130,7 @@ namespace ObjectPrinting
                 foreach (var key in dictionary.Keys)
                 {
                     sb.Append($"{identation}{{{PrintToString(key, nestingLevel)}: " +
-                              $"{PrintToString(dictionary[key], nestingLevel + 1)}}}");
+                              $"{PrintToString(dictionary[key], nestingLevel + 1)}}}\n");
                 }
             }
             else
