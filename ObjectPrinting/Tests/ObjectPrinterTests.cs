@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using System;
-using System.Threading.Channels;
 using FluentAssertions;
 using System.Globalization;
 using ObjectPrinting.Extensions;
@@ -16,7 +15,14 @@ public class ObjectPrinterTests
     [SetUp]
     public void SetUp()
     {
-        person = new Person { Age = 19, Name = "Alex", Height = 173.65, Id = new Guid() };
+        person = new Person
+        {
+            Age = 19, 
+            Name = "Alex", 
+            Height = 173.65, 
+            Id = new Guid(), 
+            DateOfBirth = new DateTime(1978, 6, 19)
+        };
     }
 
     [Test]
@@ -28,6 +34,78 @@ public class ObjectPrinterTests
         var result = printer.PrintToString(person);
 
         result.Should().NotContain($"{nameof(person.Id)} = {person.Id}");
+    }
+
+    [Test]
+    public void PrintingConfig_ExcludeAndAddSerialization_ShouldExcludeGivenType()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Exclude<string>()
+            .Printing<string>().Using(_ => "XXX");
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Name)} = XXX");
+    }
+
+    [Test]
+    public void PrintingConfig_AddSerializationAndExclude_ShouldExcludeGivenType()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Printing<string>().Using(_ => "XXX")
+            .Exclude<string>();
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Name)} = XXX");
+    }
+
+    [Test]
+    public void PrintingConfig_ExcludeCollection_ShouldExcludeGivenType()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Exclude<List<Person>>();
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Friends)}");
+    }
+
+    [Test]
+    public void PrintingConfig_ExcludeSomeTypes_ShouldExcludeGivenTypes()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Exclude<Guid>()
+            .Exclude<int>();
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Id)} = {person.Id}");
+        result.Should().NotContain($"{nameof(person.Age)} = {person.Age}");
+    }
+
+    [Test]
+    public void PrintingConfig_ExcludeTypeSeveralTimes_ShouldExcludeGivenType()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Exclude<Guid>()
+            .Exclude<Guid>();
+
+        var result = printer.PrintToString(person);
+
+        result.Should().NotContain($"{nameof(person.Id)} = {person.Id}");
+    }
+
+    [Test]
+    public void PrintingConfig_CorrectWorksWithTime()
+    {
+        var printer = ObjectPrinter.For<Person>()
+            .Printing(p => p.DateOfBirth)
+            .Using(x => x.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
+
+        var result = printer.PrintToString(person);
+
+        result.Should().Contain($"{nameof(person.DateOfBirth)} = 19/06/1978");
     }
 
     [Test]

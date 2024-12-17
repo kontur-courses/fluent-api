@@ -16,13 +16,27 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, Func<Object, string>> typeSerializers = new();
         private readonly Dictionary<string, Func<Object, string>> propertySerializers = new();
         private readonly Dictionary<string, int> propertyTrim = new();
-        private int MaxNestingLevel = 5;
+        private int maxNestingLevel = 5;
+
+        public int MaxNestingLevel
+        {
+            get => maxNestingLevel;
+            private set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(value), value, "The maxNestingDepth value must be positive.");
+                }
+                maxNestingLevel = value;
+            }
+        }
 
         private readonly HashSet<Type> finalTypes =
         [
             typeof(bool), typeof(sbyte),  typeof(byte),  typeof(short),  typeof(ushort),
             typeof(int),  typeof(uint),  typeof(long), typeof(ulong), typeof(float),
-            typeof(double),  typeof(decimal),  typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+            typeof(double),  typeof(decimal),  typeof(string), typeof(TimeSpan), typeof(Guid) // , typeof(DateTime)
         ];
 
         // 1. Исключить из сериализации свойства определенного типа
