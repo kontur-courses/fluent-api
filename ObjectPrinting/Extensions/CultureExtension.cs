@@ -9,7 +9,7 @@ public static class CultureExtension
         this PropertyPrintingConfiguration<TOwner, TPropType> propertyStringConfiguration,
         CultureInfo culture) where TPropType : IFormattable
     {
-        propertyStringConfiguration.ParentConfig.AddTypeSerializer<TPropType>(t => t.ToString(null, culture));
+        propertyStringConfiguration.ParentConfig.AddTypeSerializer<TPropType>(t => ((TPropType)t).ToString(null, culture));
 
         return propertyStringConfiguration.ParentConfig;
     }

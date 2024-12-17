@@ -13,8 +13,8 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedProperties = new();
-        private readonly Dictionary<Type, Delegate> typeSerializers = new();
-        private readonly Dictionary<string, Delegate> propertySerializers = new();
+        private readonly Dictionary<Type, Func<Object, string>> typeSerializers = new();
+        private readonly Dictionary<string, Func<Object, string>> propertySerializers = new();
         private readonly Dictionary<string, int> propertyTrim = new();
         private int MaxNestingLevel = 5;
 
@@ -76,7 +76,7 @@ namespace ObjectPrinting
                 return obj.ToString();
 
             if (typeSerializers.TryGetValue(type, out var serializer))
-                return serializer.DynamicInvoke(obj).ToString(); // 
+                return serializer(obj).ToString();
 
             if (obj is ICollection collection)
                 return SerializeCollection(collection, nestingLevel);
@@ -95,15 +95,15 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyType))
                     continue;
 
-                if (typeSerializers.TryGetValue(propertyType, out var typeSerializer)) //
+                if (typeSerializers.TryGetValue(propertyType, out var typeSerializer))
                 {
-                    sb.AppendLine($"{identation}{propertyName} = {typeSerializer.DynamicInvoke(propertyValue)}");
+                    sb.AppendLine($"{identation}{propertyName} = {typeSerializer(propertyValue)}");
                     continue;
                 }
 
                 if (propertySerializers.TryGetValue(propertyName, out var propertySerializer))
                 {
-                    sb.AppendLine($"{identation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}");
+                    sb.AppendLine($"{identation}{propertyName} = {propertySerializer(propertyValue)}");
                     continue;
                 }
 
@@ -157,10 +157,10 @@ namespace ObjectPrinting
             throw new ArgumentException("Invalid property selector expression");
         }
 
-        internal void AddPropertySerializer<TPropType>(string propertyName, Func<TPropType, string> serializer) =>
+        internal void AddPropertySerializer(string propertyName, Func<object, string> serializer) =>
             propertySerializers[propertyName] = serializer;
 
-        internal void AddTypeSerializer<TPropType>(Func<TPropType, string> serializer) =>
+        internal void AddTypeSerializer<TPropType>(Func<object, string> serializer) =>
             typeSerializers[typeof(TPropType)] = serializer;
 
         internal void AddStringPropertyTrim(string propertyName, int maxLength) =>

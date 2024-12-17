@@ -21,11 +21,11 @@ public class PropertyPrintingConfiguration<TOwner, TPropType>
     {
         if (propertyMemberInfo == null)
         {
-            parentConfig.AddTypeSerializer(printingMethod);
+            parentConfig.AddTypeSerializer<TPropType>(obj => printingMethod((TPropType)obj));
         }
         else
         {
-            parentConfig.AddPropertySerializer(propertyMemberInfo.Name, printingMethod);
+            parentConfig.AddPropertySerializer(propertyMemberInfo.Name, obj => printingMethod((TPropType)obj));
         }
 
         return parentConfig;
