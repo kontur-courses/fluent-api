@@ -193,7 +193,7 @@ public class ObjectPrinterTests
 
         var result = person.PrintToString();
 
-        result.Should().Contain("Достигнут максимум глубины сериализации");
+        result.Should().Contain("Maximum serialization depth has been reached");
     }
 
     [Test]

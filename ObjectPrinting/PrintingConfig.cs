@@ -36,17 +36,15 @@ namespace ObjectPrinting
         [
             typeof(bool), typeof(sbyte),  typeof(byte),  typeof(short),  typeof(ushort),
             typeof(int),  typeof(uint),  typeof(long), typeof(ulong), typeof(float),
-            typeof(double),  typeof(decimal),  typeof(string), typeof(TimeSpan), typeof(Guid) // , typeof(DateTime)
+            typeof(double),  typeof(decimal),  typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         ];
 
-        // 1. Исключить из сериализации свойства определенного типа
         public PrintingConfig<TOwner> Exclude<TPropType>()
         {
             excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
-        // 2.  Указать альтернативный способ сериализации для определенного типа
         public PropertyPrintingConfiguration<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> propertySelector)
         {
@@ -59,7 +57,6 @@ namespace ObjectPrinting
             return new PropertyPrintingConfiguration<TOwner, TPropType>(this, null);
         }
 
-        // 6. Исключить из сериализации конкретного свойства
         public PrintingConfig<TOwner> Exclude<TPropType>(Expression<Func<TOwner, TPropType>> propertySelector)
         {
             var propertyName = GetPropertyName(propertySelector);
@@ -76,7 +73,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (nestingLevel > MaxNestingLevel)
-                return "Достигнут максимум глубины сериализации";
+                return "Maximum serialization depth has been reached";
 
             if (obj == null)
                 return "null";
