@@ -15,7 +15,6 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludedProperties = new();
         private readonly Dictionary<Type, Delegate> typeSerializers = new();
         private readonly Dictionary<string, Delegate> propertySerializers = new();
-        private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<string, int> propertyTrim = new();
         private int MaxNestingLevel = 5;
 
@@ -76,11 +75,8 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj.ToString();
 
-            if (typeCultures.TryGetValue(type, out var culture) && obj is IFormattable formattable)
-                return formattable.ToString(null, culture);
-
             if (typeSerializers.TryGetValue(type, out var serializer))
-                return serializer.DynamicInvoke(obj).ToString();
+                return serializer.DynamicInvoke(obj).ToString(); // 
 
             if (obj is ICollection collection)
                 return SerializeCollection(collection, nestingLevel);
@@ -99,7 +95,7 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyType))
                     continue;
 
-                if (typeSerializers.TryGetValue(propertyType, out var typeSerializer))
+                if (typeSerializers.TryGetValue(propertyType, out var typeSerializer)) //
                 {
                     sb.AppendLine($"{identation}{propertyName} = {typeSerializer.DynamicInvoke(propertyValue)}");
                     continue;
@@ -109,15 +105,6 @@ namespace ObjectPrinting
                 {
                     sb.AppendLine($"{identation}{propertyName} = {propertySerializer.DynamicInvoke(propertyValue)}");
                     continue;
-                }
-
-                if (typeCultures.TryGetValue(propertyType, out var cult))
-                {
-                    if (propertyValue is IFormattable format)
-                    {
-                        sb.AppendLine($"{identation}{propertyName} = {format.ToString(null, cult)}");
-                        continue;
-                    }
                 }
 
                 if (propertyTrim.TryGetValue(propertyName, out var toTrimLength) && propertyValue is string stringValue)
@@ -178,8 +165,5 @@ namespace ObjectPrinting
 
         internal void AddStringPropertyTrim(string propertyName, int maxLength) =>
             propertyTrim[propertyName] = maxLength;
-
-        internal void AddNumericCulture<TNumericCulture>(CultureInfo culture) =>
-            typeCultures[typeof(TNumericCulture)] = culture;
     }
 }
