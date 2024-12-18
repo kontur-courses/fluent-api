@@ -66,12 +66,14 @@ namespace ObjectPrinting
             if (FinalTypes.Set.Contains(type))
                 return obj.ToString();
 
-            if (obj is ICollection)
-            {
-                var collection = (IEnumerable) obj;
-                return PrintCollection(collection, nestingLevel);
-            }
+            if (obj is not ICollection) return PrintObj(obj, nestingLevel);
+            var collection = (IEnumerable) obj;
+            return PrintCollection(collection, nestingLevel);
+        }
 
+        private string PrintObj( object obj,  int nestingLevel)
+        {
+            var type = obj.GetType();
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
@@ -81,12 +83,12 @@ namespace ObjectPrinting
                          .Cast<MemberInfo>()
                          .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public)))
             {
-                
+
                 var name = memberInfo.Name;
                 var value = memberInfo.GetValue(obj);
                 if (value == null)
                 {
-                    sb.Append(indentation + name  + " = null\n");
+                    sb.Append(indentation + name + " = null\n");
                     continue;
                 }
 
