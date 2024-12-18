@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework.Internal;
 
@@ -48,7 +49,7 @@ namespace ObjectPrinting
         private string PrintToString(object obj, int nestingLevel)
         {
             if (obj == null)
-                return string.Empty;
+                return "null" ;
 
             var type = obj.GetType();
 
@@ -60,40 +61,49 @@ namespace ObjectPrinting
 
             visitedObjects.Add(obj);
 
-            if (obj is ICollection)
-            {
-                var collection = (IEnumerable) obj;
-                return PrintCollection(collection, nestingLevel);
-            }
-
-
             if (typePrinters.TryGetValue(type, out var serializer))
                 return serializer(obj);
 
             if (FinalTypes.Set.Contains(type))
                 return obj.ToString();
 
+            if (obj is ICollection)
+            {
+                var collection = (IEnumerable) obj;
+                return PrintCollection(collection, nestingLevel);
+            }
+
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var memberInfo in type
+                         .GetProperties()
+                         .Cast<MemberInfo>()
+                         .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public)))
             {
-                var propertyType = propertyInfo.PropertyType;
-                var propertyName = propertyInfo.Name;
-                var propertyValue = propertyInfo.GetValue(obj);
-
-                if (propertyPrinters.TryGetValue(propertyName, out var propertySerializer))
+                
+                var name = memberInfo.Name;
+                var value = memberInfo.GetValue(obj);
+                if (value == null)
                 {
-                    sb.AppendLine(propertySerializer(propertyValue));
+                    sb.Append(indentation + name  + " = null\n");
                     continue;
                 }
 
-                if (typesToExclude.Contains(propertyType) || propertiesToExclude.Contains(propertyName))
+                var propertyType = value.GetType();
+
+                if (propertyPrinters.TryGetValue(name, out var propertyPrinter))
+                {
+                    sb.AppendLine(propertyPrinter(value));
+                    continue;
+                }
+
+                if (typesToExclude.Contains(propertyType) || propertiesToExclude.Contains(name))
                     continue;
 
-                sb.Append(indentation + propertyName + " = ");
-                sb.AppendLine(PrintToString(propertyValue, nestingLevel + 1));
+                sb.Append(indentation + name + " = ");
+                sb.AppendLine(PrintToString(value, nestingLevel + 1));
             }
             return sb.ToString();
         }
