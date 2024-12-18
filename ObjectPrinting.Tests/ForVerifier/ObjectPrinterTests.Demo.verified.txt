@@ -1,0 +1,48 @@
+﻿Person
+	Name = Dima
+	Height = 176
+	Age = Hidden
+	BirthDate = 7/27/1985 12:00:00 AM
+	Husband = null
+	Wife = null
+	HomeworksCompleted = 
+		Testi
+		Tag c
+		Markd
+		Objec
+	Friends = 
+		Person
+			Name = Nikit
+			Height = 0
+			Age = Hidden
+			BirthDate = 1/1/0001 12:00:00 AM
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+		Person
+			Name = Pasha
+			Height = Loop found
+			Age = Loop found
+			BirthDate = Loop found
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+	EmergensyList = 
+		key = wife
+		value = 8-800
+		key = fathe
+		value = 3-10-
+		key = mothe
+		value = 03
+	LastName = null
+	ToExclude = null

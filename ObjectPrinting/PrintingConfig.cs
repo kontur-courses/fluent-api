@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NUnit.Framework.Internal;
 
 namespace ObjectPrinting
 {
@@ -61,8 +60,8 @@ namespace ObjectPrinting
 
             visitedObjects.Add(obj);
 
-            if (typePrinters.TryGetValue(type, out var serializer))
-                return serializer(obj);
+            if (typePrinters.TryGetValue(type, out var printer))
+                return printer(obj);
 
             if (FinalTypes.Set.Contains(type))
                 return obj.ToString();
@@ -110,16 +109,15 @@ namespace ObjectPrinting
 
         private string PrintCollection(IEnumerable collection, int nestingLevel)
         {
-            if (collection is IDictionary)
-                return PrintDictionary( (IDictionary)collection,  nestingLevel);
+            if (collection is IDictionary dictionary)
+                return PrintDictionary( dictionary,  nestingLevel);
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
             foreach (var element in collection)
             {
-                sb.Append("\n");
-                sb.Append(indentation);
+                sb.Append("\n" + indentation);
                 sb.Append(PrintToString(element, nestingLevel + 1));
             }
             return sb.ToString();
@@ -132,12 +130,10 @@ namespace ObjectPrinting
 
             foreach (var key in collection.Keys)
             {
-                sb.Append("\n");
-                sb.Append(indentation);
+                sb.Append("\n" + indentation);
                 sb.Append("key = ");
                 sb.Append(PrintToString(key, nestingLevel + 1));
-                sb.Append("\n");
-                sb.Append(indentation);
+                sb.Append("\n" + indentation);
                 sb.Append("value = ");
                 sb.Append(PrintToString(collection[key], nestingLevel + 1));
             }
