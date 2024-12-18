@@ -60,6 +60,9 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> TrimStringsToLength(int maxLength)
     {
+        if (maxLength < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxLength), "Length must be a non-negative value.");
+        
         maxStringLength = maxLength;
         return this;
     }
@@ -130,7 +133,7 @@ public class PrintingConfig<TOwner>
         {
             result = (obj switch
             {
-                IFormattable formattable when typeCulture.ContainsKey(type) => formattable.ToString(null, typeCulture[type]),
+                IFormattable formattable when typeCulture.TryGetValue(type, out var format) => formattable.ToString(null, format),
                 string str => Trim(str),
                 _ => obj.ToString()
             })!;
@@ -147,7 +150,7 @@ public class PrintingConfig<TOwner>
     {
         if (str.Length > maxStringLength)
         {
-            return str[..Math.Min(str.Length, maxStringLength.Value)];
+            return str[..maxStringLength.Value];
         }
         return str;
     }

@@ -163,6 +163,19 @@ public class ObjectPrinterAcceptanceTests
                 c => c.TrimStringsToLength(1))
             .Should().Be(expected);
     }
+    
+    [Test]
+    public void PrintToString_TrimStringsNegative_ThrowsArgumentOutOfRange()
+    {
+        var person = new Person { Name = "Alex", Age = 19 };
+        var act = () =>
+        {
+            return ObjectPrinter.Serialize(person,
+                c => c.TrimStringsToLength(-1));
+        };
+        
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
 
     [Test]
     public void PrintToString_TrimStrings_WhenStringIsSmallerThanLength()
