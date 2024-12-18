@@ -26,9 +26,9 @@
 
 		Person
 			Name = Pasha
-			Height = Loop found
-			Age = Loop found
-			BirthDate = Loop found
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
 			Husband = null
 			Wife = null
 			HomeworksCompleted = null

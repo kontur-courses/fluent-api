@@ -25,10 +25,10 @@
 			ToExclude = null
 
 		Person
-			Id = Loop found
-			Height = Loop found
-			Age = Loop found
-			BirthDate = Loop found
+			Id = 00000000-0000-0000-0000-000000000000
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
 			Husband = null
 			Wife = null
 			HomeworksCompleted = null

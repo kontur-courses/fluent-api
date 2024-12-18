@@ -52,7 +52,7 @@ namespace ObjectPrinting
 
             var type = obj.GetType();
 
-            if (visitedObjects.Contains(obj))
+            if (visitedObjects.Contains(obj, ReferenceEqualityComparer.Instance))
                 return "Loop found";
 
             if (typesToExclude.Contains(type))
