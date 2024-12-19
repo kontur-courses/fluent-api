@@ -1,0 +1,48 @@
+﻿Person
+	Name = Dima
+	Height = 176
+	Age = 39
+	BirthDate = 27.07.1985 0:00:00
+	Husband = null
+	Wife = null
+	HomeworksCompleted = 
+		Testing
+		Tag cloud
+		Markdown
+		Object Printer
+	Friends = 
+		Person
+			Name = Nikita
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+		Person
+			Name = Pasha
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+	EmergensyList = 
+		key = wife
+		value = 8-800-5-5-5-3-5-3-5
+		key = father
+		value = 3-10-10-10
+		key = mother
+		value = 03
+	LastName = null
+	ToExclude = null

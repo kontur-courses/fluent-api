@@ -32,7 +32,7 @@ namespace ObjectPrinting.Solved
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private static string PrintToString(object obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)

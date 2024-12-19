@@ -1,0 +1,48 @@
+﻿Person
+	Id = 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+	Height = 176
+	Age = 39
+	BirthDate = 27.07.1985 0:00:00
+	Husband = null
+	Wife = null
+	HomeworksCompleted = 
+		
+		
+		
+		
+	Friends = 
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Height = 0
+			Age = 0
+			BirthDate = 01.01.0001 0:00:00
+			Husband = null
+			Wife = null
+			HomeworksCompleted = null
+			Friends = null
+			EmergensyList = null
+			LastName = null
+			ToExclude = null
+
+	EmergensyList = 
+		key = 
+		value = 
+		key = 
+		value = 
+		key = 
+		value = 
+	LastName = null
+	ToExclude = null
