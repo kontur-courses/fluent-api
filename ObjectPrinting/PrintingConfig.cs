@@ -12,18 +12,13 @@ namespace ObjectPrinting
         private readonly HashSet<Type> _excludedTypes;
         private readonly HashSet<string> _excludedProperties;
         
-        private readonly Dictionary<Type, Delegate> _typeSerializers;
-        private readonly Dictionary<string, Delegate> _propertySerializers;
+        private readonly Dictionary<Type, Func<object, string>> _typeSerializers;
+        private readonly Dictionary<string, Func<TOwner, string>> _propertySerializers;
+        private readonly HashSet<(string name, object current, object parent)> _printedObjects = []; 
 
-        public Dictionary<Type, Delegate> GetTypeSerializers()
-        {
-            return _typeSerializers;
-        }
-        
-        public Dictionary<string, Delegate> GetPropertySerializers()
-        {
-            return _propertySerializers;
-        }
+        public Dictionary<Type, Func<object, string>> GetTypeSerializers => _typeSerializers;
+        public Dictionary<string, Func<TOwner, string>> GetPropertySerializers => _propertySerializers;
+
 
         public PrintingConfig() : this(null)
         { }
@@ -31,21 +26,21 @@ namespace ObjectPrinting
         private PrintingConfig(
             HashSet<Type>? excludedTypes = null,
             HashSet<string>? excludedProperties = null,
-            Dictionary<Type, Delegate>? typeSerializers = null,
-            Dictionary<string, Delegate>? propertySerializers = null
+            Dictionary<Type, Func<object, string>>? typeSerializers = null,
+            Dictionary<string, Func<TOwner, string>>? propertySerializers = null
         )
         {
             _excludedTypes =  excludedTypes ?? new HashSet<Type>();
             _excludedProperties = excludedProperties ?? new HashSet<string>();
-            _typeSerializers = typeSerializers ?? new Dictionary<Type, Delegate>();
-            _propertySerializers = propertySerializers ?? new Dictionary<string, Delegate>();
+            _typeSerializers = typeSerializers ?? new Dictionary<Type, Func<object, string>>();
+            _propertySerializers = propertySerializers ?? new Dictionary<string, Func<TOwner, string>>();
         }
         
         public PrintingConfig<TOwner> BuildPrintingConfig(
             HashSet<Type>? excludedTypes = null,
             HashSet<string>? excludedProperties = null,
-            Dictionary<Type, Delegate>? typeSerializers = null,
-            Dictionary<string, Delegate>? propertySerializers = null
+            Dictionary<Type, Func<object, string>>? typeSerializers = null,
+            Dictionary<string, Func<TOwner, string>>? propertySerializers = null
         ) {
             return new PrintingConfig<TOwner>(
                 excludedTypes ?? _excludedTypes,
@@ -57,30 +52,27 @@ namespace ObjectPrinting
         
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
-            var typeSerializers = new Dictionary<Type, Delegate>(_typeSerializers);
-            typeSerializers.Add(typeof(TPropType), null!);
-            
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                BuildPrintingConfig(typeSerializers: typeSerializers)
+                BuildPrintingConfig(),
+                null!
             );
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var propertySerializers = new Dictionary<string, Delegate>(_propertySerializers);
-            propertySerializers.Add(GetPropertyName(memberSelector), null!);
-            
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                BuildPrintingConfig(propertySerializers: propertySerializers)
+                BuildPrintingConfig(),
+                memberSelector
             );
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var excludedProperties = new HashSet<string>(_excludedProperties);
-        
-            excludedProperties.Add(GetPropertyName(memberSelector));
-            
+            var excludedProperties = new HashSet<string>(_excludedProperties)
+            {
+                GetPropertyNameFromSelector(memberSelector)
+            };
+
             return BuildPrintingConfig(
                 excludedProperties: excludedProperties
             );
@@ -88,16 +80,17 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            var excludedTypes = new HashSet<Type>(_excludedTypes);
-        
-            excludedTypes.Add(typeof(TPropType));
-            
+            var excludedTypes = new HashSet<Type>(_excludedTypes)
+            {
+                typeof(TPropType)
+            };
+
             return BuildPrintingConfig(
                 excludedTypes: excludedTypes
             );
         }
         
-        private string GetPropertyName<TProperty>(
+        public string GetPropertyNameFromSelector<TProperty>(
             Expression<Func<TOwner, TProperty>> propertySelector)
         {
             if (propertySelector.Body is MemberExpression memberExpression)
@@ -120,9 +113,14 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel)
         {
-            if (obj == null)
+            if (obj == null!)
                 return "null" + Environment.NewLine;
-
+            
+            var type = obj.GetType();
+            if (_typeSerializers.TryGetValue(type, out var serializer))
+            {
+                return serializer(obj) + Environment.NewLine;
+            }
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
@@ -133,21 +131,38 @@ namespace ObjectPrinting
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (
-                    _excludedProperties.Contains(propertyInfo.Name)
-                    || _excludedTypes.Contains(propertyInfo.PropertyType)
-                ) {
+                if (IsExcluded(propertyInfo)) {
                     continue;
                 }
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+
+                string toPrint;
+                if (_propertySerializers.TryGetValue(propertyInfo.Name, out var propertySerializer) && type == typeof(TOwner))
+                {
+                    toPrint = propertySerializer((TOwner)obj) + Environment.NewLine;
+                }
+                else
+                {
+                    toPrint = "Printed earlier"  + Environment.NewLine;
+                    if (!_printedObjects.Contains((propertyInfo.Name, propertyInfo.GetValue(obj)!, obj)))
+                    {
+                        _printedObjects.Add((propertyInfo.Name, propertyInfo.GetValue(obj)!, obj));
+                        toPrint = PrintToString(propertyInfo.GetValue(obj)!,
+                            nestingLevel + 1);
+                    }
+                }
+
+                sb.Append(identation + propertyInfo.Name + " = " + toPrint);
             }
             return sb.ToString();
+        }
+        
+        private bool IsExcluded(PropertyInfo propertyInfo)
+        {
+            return _excludedProperties.Contains(propertyInfo.Name)
+                   || _excludedTypes.Contains(propertyInfo.PropertyType);
         }
     }
 }
