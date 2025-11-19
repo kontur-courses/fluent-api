@@ -1,41 +1,53 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly PrintingConfigData _data = new();
+
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            var serializer = new ObjectSerializer(_data);
+            return serializer.Serialize(obj);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public PrintingConfig<TOwner> ExcludeType<T>()
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            _data.ExcludedTypes.Add(typeof(T));
+            return this;
+        }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+        public TypeConfigurator<TOwner, T> ConfigureType<T>()
+        {
+            return new TypeConfigurator<TOwner, T>(this, _data);
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
+        public PropertyConfigurator<TOwner, TProp> ConfigureProperty<TProp>(
+            Expression<Func<TOwner, TProp>> propertySelector)
+        {
+            var memberExpression = propertySelector.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ArgumentException("Expression should be a property selector");
+
+            var propertyName = memberExpression.Member.Name;
+            return new PropertyConfigurator<TOwner, TProp>(this, _data, propertyName);
+        }
+
+        public CollectionsConfigurator<TOwner, TCollection> ConfigureCollection<TCollection>()
+        {
+            return new CollectionsConfigurator<TOwner, TCollection>(this, _data, typeof(TCollection));
+        }
+
+        public PrintingConfig<TOwner> ExcludeProperty<TProp>(Expression<Func<TOwner, TProp>> propertySelector)
+        {
+            var memberExpression = propertySelector.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ArgumentException("Expression should be a property selector");
+
+            _data.ExcludedProperties.Add(memberExpression.Member.Name);
+            return this;
         }
     }
 }

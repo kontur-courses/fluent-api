@@ -6,5 +6,6 @@ namespace ObjectPrinting
         {
             return new PrintingConfig<T>();
         }
+        
     }
 }
