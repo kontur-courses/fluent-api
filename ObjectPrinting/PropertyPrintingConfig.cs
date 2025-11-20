@@ -42,7 +42,7 @@ namespace ObjectPrinting
             } 
             else
                 serializers[typeof(TPropType)] = serializer;
-            return _printingConfig.BuildPrintingConfig(typeSerializers: serializers);
+            return _printingConfig.CopyWithChanges(typeSerializers: serializers);
         }
         
         private PrintingConfig<TOwner> UsingForProperty(Func<TPropType, string> print)
@@ -60,7 +60,7 @@ namespace ObjectPrinting
                 return print(propertyValue);
             };
             serializers[propertyName] = ownerSerializer;
-            return _printingConfig.BuildPrintingConfig(propertySerializers: serializers);
+            return _printingConfig.CopyWithChanges(propertySerializers: serializers);
         }
 
         private PrintingConfig<TOwner> UsingForProperty(Func<string, string> print)
@@ -80,7 +80,7 @@ namespace ObjectPrinting
                 return print(oldSerializer(owner));
             };
             serializers[propertyName] = ownerSerializer;
-            return _printingConfig.BuildPrintingConfig(propertySerializers: serializers);
+            return _printingConfig.CopyWithChanges(propertySerializers: serializers);
         }
         
 

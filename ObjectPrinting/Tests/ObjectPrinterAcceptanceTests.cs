@@ -28,48 +28,12 @@ namespace ObjectPrinting.Tests
                 //6. Исключить из сериализации конкретного свойства
                 .Excluding(p => p.Age);
             
-            string s1 = printer.PrintToString(person);
+            string s1 = printer.ToString(person);
             Console.WriteLine(s1);
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
-            Console.WriteLine(person.PrintToString());
+            Console.WriteLine(ObjectExtensions.ToString(person));
             //8. ...с конфигурированием
             Console.WriteLine(person.PrintToString(config => config.Excluding<int>()));
-        }
-
-        [Test]
-        public void PrintToString_DictionaryTest()
-        {
-            var dictionary = new Dictionary<int, Person>()
-            {
-                { 1, new Person() { Name = "Alex1" } },
-                { 2, new Person() { Age = 22 } },
-                { 3, new Person() { Height = 12.5 } }
-            };
-            Console.WriteLine(dictionary.PrintToString());
-        }
-        
-        [Test]
-        public void PrintToString_ListTest()
-        {
-            var collection = new List< Person>()
-            {
-                new() { Name = "Alex1" }, 
-                new() { Age = 22 }, 
-                new() { Height = 12.5 }
-            };
-            Console.WriteLine(collection.PrintToString());
-        }
-        
-        [Test]
-        public void PrintToString_ArrayTest()
-        {
-            var collection = new Person[]
-            {
-                new() { Name = "Alex1" }, 
-                new() { Age = 22 }, 
-                new() { Height = 12.5 }
-            };
-            Console.WriteLine(collection.PrintToString());
         }
         
         [Test]
@@ -77,9 +41,11 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
             var printer = ObjectPrinter.For<Person>().Excluding(p => p.Age).Excluding<string>();
-
-            var actual = printer.PrintToString(person);
             var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tParent = null\r\n";
+
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
             actual.Should().Be(expected);
         }
 
@@ -88,9 +54,11 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
             var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(p => "Number");
+            var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = Number\r\n\tName = Alex\r\n\tParent = null\r\n";
 
-            var actual = printer.PrintToString(person);
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = Number\r\n\tParent = null\r\n";
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
             actual.Should().Be(expected);
         }
         
@@ -99,9 +67,11 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
             var printer = ObjectPrinter.For<Person>().Printing<int>().Using(p => "Number");
+            var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = Number\r\n\tName = Alex\r\n\tParent = null\r\n";
 
-            var actual = printer.PrintToString(person);
-            var expected = "Person\r\n\tId = Guid\r\n\tName = Alex\r\n\tHeight = 0\r\n\tAge = Number\r\n\tParent = null\r\n";
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
             actual.Should().Be(expected);
         }
 
@@ -113,11 +83,13 @@ namespace ObjectPrinting.Tests
                 .For<Person>();
             var ruPrinter = printer.Printing<double>().Using(new CultureInfo("ru-RU"));
             var enPrinter = printer.Printing(p => p.Height).Using(new CultureInfo("en-US"));
+            var ruExpected = "Person\r\n\tId = Guid\r\n\tHeight = 1,9\r\n\tAge = 19\r\n\tName = null\r\n\tParent = null\r\n";
+            var enExpected = "Person\r\n\tId = Guid\r\n\tHeight = 1.9\r\n\tAge = 19\r\n\tName = null\r\n\tParent = null\r\n";
             
-            var ruActual = ruPrinter.PrintToString(person);
-            var enActual = enPrinter.PrintToString(person);
-            var ruExpected = "Person\r\n\tId = Guid\r\n\tName = null\r\n\tHeight = 1,9\r\n\tAge = 19\r\n\tParent = null\r\n";
-            var enExpected = "Person\r\n\tId = Guid\r\n\tName = null\r\n\tHeight = 1.9\r\n\tAge = 19\r\n\tParent = null\r\n";
+            var ruActual = ruPrinter.ToString(person);
+            var enActual = enPrinter.ToString(person);
+            Console.WriteLine(enActual);
+            Console.WriteLine(ruActual);
             
             ruActual.Should().Be(ruExpected);
             enActual.Should().Be(enExpected);
@@ -142,15 +114,17 @@ namespace ObjectPrinting.Tests
                 .For<Person>()
                 .Printing(p => p.Name).Using(p => p + "678910")
                 .Printing(p => p.Name).TrimmedToLength(10);
-            
             var typePrinter = ObjectPrinter
                 .For<Person>()
                 .Printing<string>().Using(p => p + "678910")
                 .Printing<string>().TrimmedToLength(10);
-            var propertyExpected = "Person\r\n\tId = Guid\r\n\tName = 1234567891\r\n\tHeight = 0\r\n\tAge = 0\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tName = 1234567891\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tParent = null\r\n";
-            var typeExpected = "Person\r\n\tId = Guid\r\n\tName = 1234567891\r\n\tHeight = 0\r\n\tAge = 0\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tName = 1234567891\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tParent = null\r\n";
-            var propertyActual = propertyPrinter.PrintToString(person);
-            var typeActual = typePrinter.PrintToString(person);
+            var propertyExpected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 0\r\n\tName = 1234567891\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tName = 1234567891\r\n\t\tParent = null\r\n";
+            var typeExpected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 0\r\n\tName = 1234567891\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tName = 1234567891\r\n\t\tParent = null\r\n";
+            
+            var propertyActual = propertyPrinter.ToString(person);
+            var typeActual = typePrinter.ToString(person);
+            Console.WriteLine(propertyActual);
+            Console.WriteLine(typeActual);
             
             typeActual.Should().Be(typeExpected);
             propertyActual.Should().Be(propertyExpected);
@@ -163,7 +137,7 @@ namespace ObjectPrinting.Tests
             var person2 = new Person { Name = "Alex2", Parent = person };
             person.Parent = person2;
 
-            Console.WriteLine(person.PrintToString());
+            Console.WriteLine(ObjectExtensions.ToString(person));
         }
     }
 }

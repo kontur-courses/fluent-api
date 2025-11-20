@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,8 +15,14 @@ namespace ObjectPrinting
         
         private readonly Dictionary<Type, Func<object, string>> _typeSerializers;
         private readonly Dictionary<string, Func<TOwner, string>> _propertySerializers;
-        private readonly HashSet<(string name, object current, object parent)> _printedObjects = []; 
-
+        
+        private readonly HashSet<PrintedObject> _printedObjects = []; 
+        private readonly Type[] finalTypes =
+        [
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        ];
+        
         public Dictionary<Type, Func<object, string>> GetTypeSerializers => _typeSerializers;
         public Dictionary<string, Func<TOwner, string>> GetPropertySerializers => _propertySerializers;
 
@@ -35,8 +42,8 @@ namespace ObjectPrinting
             _typeSerializers = typeSerializers ?? new Dictionary<Type, Func<object, string>>();
             _propertySerializers = propertySerializers ?? new Dictionary<string, Func<TOwner, string>>();
         }
-        
-        public PrintingConfig<TOwner> BuildPrintingConfig(
+
+        internal PrintingConfig<TOwner> CopyWithChanges(
             HashSet<Type>? excludedTypes = null,
             HashSet<string>? excludedProperties = null,
             Dictionary<Type, Func<object, string>>? typeSerializers = null,
@@ -53,7 +60,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                BuildPrintingConfig(),
+                CopyWithChanges(),
                 null!
             );
         }
@@ -61,7 +68,7 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(
-                BuildPrintingConfig(),
+                CopyWithChanges(),
                 memberSelector
             );
         }
@@ -73,7 +80,7 @@ namespace ObjectPrinting
                 GetPropertyNameFromSelector(memberSelector)
             };
 
-            return BuildPrintingConfig(
+            return CopyWithChanges(
                 excludedProperties: excludedProperties
             );
         }
@@ -85,7 +92,7 @@ namespace ObjectPrinting
                 typeof(TPropType)
             };
 
-            return BuildPrintingConfig(
+            return CopyWithChanges(
                 excludedTypes: excludedTypes
             );
         }
@@ -106,12 +113,12 @@ namespace ObjectPrinting
                 nameof(propertySelector));
         }
 
-        public string PrintToString(TOwner obj, int nestingLevel = 0)
+        public string ToString(TOwner obj, int nestingLevel = 0)
         {
-            return PrintToString((object)obj!, nestingLevel);
+            return ToString((object)obj!, nestingLevel);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string ToString(object obj, int nestingLevel)
         {
             if (obj == null!)
                 return "null" + Environment.NewLine;
@@ -121,48 +128,103 @@ namespace ObjectPrinting
             {
                 return serializer(obj) + Environment.NewLine;
             }
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            
+            if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
-
+            
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+
+            var collectionToString = CollectionToString(obj, identation, nestingLevel);
+            if (collectionToString is not null)
+                sb.Append(collectionToString);
+
+            foreach (var propertyInfo in GetOrderedProperties(obj)) 
             {
                 if (IsExcluded(propertyInfo)) {
                     continue;
                 }
-
-                string toPrint;
-                if (_propertySerializers.TryGetValue(propertyInfo.Name, out var propertySerializer) && type == typeof(TOwner))
-                {
-                    toPrint = propertySerializer((TOwner)obj) + Environment.NewLine;
-                }
-                else
-                {
-                    toPrint = "Printed earlier"  + Environment.NewLine;
-                    if (!_printedObjects.Contains((propertyInfo.Name, propertyInfo.GetValue(obj)!, obj)))
-                    {
-                        _printedObjects.Add((propertyInfo.Name, propertyInfo.GetValue(obj)!, obj));
-                        toPrint = PrintToString(propertyInfo.GetValue(obj)!,
-                            nestingLevel + 1);
-                    }
-                }
-
-                sb.Append(identation + propertyInfo.Name + " = " + toPrint);
+                var propertyForPrint = PropertyToString(obj, nestingLevel, propertyInfo);
+                if (propertyForPrint is not null)
+                    sb.Append(identation + propertyInfo.Name + " = " + propertyForPrint);
             }
             return sb.ToString();
         }
-        
+
+        private IOrderedEnumerable<PropertyInfo> GetOrderedProperties(object obj)
+        {
+            return obj.GetType()
+                .GetProperties()
+                .Where(p => p.GetIndexParameters().Length == 0)
+                .OrderBy(x =>
+                {
+                    var value = x.GetValue(obj);
+                    if (value is null)
+                        return int.MaxValue;
+                    return value.GetType().GetProperties().Length;
+                });
+        }
+
+        private string? CollectionToString(object obj, string identation, int nestingLevel)
+        {
+            if (IsCollection(obj.GetType()))
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine(identation + "{");
+                foreach (var item in (IEnumerable)obj)
+                {
+                    var itemToPrint = ToString(item, nestingLevel + 1);
+                    if (itemToPrint is not null)
+                        sb.Append(identation + itemToPrint);
+                }
+                sb.AppendLine(identation + "}");
+                return sb.ToString();
+            }
+
+            return null;
+        }
+
+        private string? PropertyToString(object obj, int nestingLevel, PropertyInfo propertyInfo)
+        {
+            if (
+                _propertySerializers.TryGetValue(propertyInfo.Name, out var propertySerializer) 
+                && obj.GetType() == typeof(TOwner)
+            ) {
+                return propertySerializer((TOwner)obj) + Environment.NewLine;
+            }
+            
+            var printedObject = new PrintedObject(propertyInfo.Name, propertyInfo.GetValue(obj)!, obj);
+            if (!_printedObjects.Contains(printedObject))
+            {
+                _printedObjects.Add(printedObject);
+                return ToString(
+                    propertyInfo.GetValue(obj)!,
+                    nestingLevel + 1);
+            }
+
+            return null;
+        }
+
         private bool IsExcluded(PropertyInfo propertyInfo)
         {
             return _excludedProperties.Contains(propertyInfo.Name)
                    || _excludedTypes.Contains(propertyInfo.PropertyType);
+        }
+        
+        private bool IsCollection(Type type)
+        {
+            if (type == typeof(string))
+                return false;
+    
+            if (typeof(IEnumerable).IsAssignableFrom(type))
+                return true;
+    
+            if (type.IsGenericType && 
+                type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return true;
+    
+            return false;
         }
     }
 }
