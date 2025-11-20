@@ -1,0 +1,19 @@
+using System;
+
+namespace ObjectPrinting
+{
+    public static class PropertyPrintingConfigExtensions
+    {
+        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        {
+            return config(ObjectPrinter.For<T>()).ToString(obj);
+        }
+
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        {
+            return propConfig.Using(text => 
+                text.Length > maxLen ? text.Substring(0, maxLen) : text
+                );
+        }
+    }
+}

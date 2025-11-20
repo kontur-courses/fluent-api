@@ -1,4 +1,8 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
@@ -6,22 +10,134 @@ namespace ObjectPrinting.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Demo()
+        public void DemonstatingTest()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person { Name = "12345", Height = 0.1241, Age = 19, Parent = new Person { Name = "Alex2" } };
 
-            var printer = ObjectPrinter.For<Person>();
+            var printer = ObjectPrinter
+                .For<Person>()
                 //1. Исключить из сериализации свойства определенного типа
+                .Excluding<Guid>()
                 //2. Указать альтернативный способ сериализации для определенного типа
+                .Printing(p => p.Name).Using(p => p + "678910")
                 //3. Для числовых типов указать культуру
+                .Printing<double>().Using(new CultureInfo("ru-RU"))
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
+                .Printing(p => p.Name).TrimmedToLength(10)
                 //6. Исключить из сериализации конкретного свойства
+                .Excluding(p => p.Age);
             
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            string s1 = printer.ToString(person);
+            Console.WriteLine(s1);
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
+            Console.WriteLine(ObjectExtensions.ToString(person));
             //8. ...с конфигурированием
+            Console.WriteLine(person.PrintToString(config => config.Excluding<int>()));
+        }
+        
+        [Test]
+        public void ExcludingPropertyAndTypesTest()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().Excluding(p => p.Age).Excluding<string>();
+            var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tParent = null\r\n";
+
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
+            actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void SerializePropertyTest()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().Printing(p => p.Age).Using(p => "Number");
+            var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = Number\r\n\tName = Alex\r\n\tParent = null\r\n";
+
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
+            actual.Should().Be(expected);
+        }
+        
+        [Test]
+        public void SerializeTypeTest()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+            var printer = ObjectPrinter.For<Person>().Printing<int>().Using(p => "Number");
+            var expected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = Number\r\n\tName = Alex\r\n\tParent = null\r\n";
+
+            var actual = printer.ToString(person);
+            Console.WriteLine(actual);
+            
+            actual.Should().Be(expected);
+        }
+
+        [Test]
+        public void SetCultureInfoTest()
+        {
+            var person = new Person { Height = 1.9, Age = 19 };
+            var printer = ObjectPrinter
+                .For<Person>();
+            var ruPrinter = printer.Printing<double>().Using(new CultureInfo("ru-RU"));
+            var enPrinter = printer.Printing(p => p.Height).Using(new CultureInfo("en-US"));
+            var ruExpected = "Person\r\n\tId = Guid\r\n\tHeight = 1,9\r\n\tAge = 19\r\n\tName = null\r\n\tParent = null\r\n";
+            var enExpected = "Person\r\n\tId = Guid\r\n\tHeight = 1.9\r\n\tAge = 19\r\n\tName = null\r\n\tParent = null\r\n";
+            
+            var ruActual = ruPrinter.ToString(person);
+            var enActual = enPrinter.ToString(person);
+            Console.WriteLine(enActual);
+            Console.WriteLine(ruActual);
+            
+            ruActual.Should().Be(ruExpected);
+            enActual.Should().Be(enExpected);
+        }
+
+        [Test]
+        public void SeparatePrintersTest()
+        {
+            var printer = ObjectPrinter
+                .For<Person>();
+            var withAgePrinter = printer.Printing(p => p.Age).Using(p => "Age");
+            var withoutAgePrinter = printer.Printing(p => p.Age).Using(p => "Not Age");
+
+            withAgePrinter.Should().NotBe(withoutAgePrinter);
+        }
+
+        [Test]
+        public void MultipleSerializeTest()
+        {
+            var person = new Person { Name = "12345", Parent = new Person { Name = "12345" } };
+            var propertyPrinter = ObjectPrinter
+                .For<Person>()
+                .Printing(p => p.Name).Using(p => p + "678910")
+                .Printing(p => p.Name).TrimmedToLength(10);
+            var typePrinter = ObjectPrinter
+                .For<Person>()
+                .Printing<string>().Using(p => p + "678910")
+                .Printing<string>().TrimmedToLength(10);
+            var propertyExpected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 0\r\n\tName = 1234567891\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tName = 1234567891\r\n\t\tParent = null\r\n";
+            var typeExpected = "Person\r\n\tId = Guid\r\n\tHeight = 0\r\n\tAge = 0\r\n\tName = 1234567891\r\n\tParent = Person\r\n\t\tId = Guid\r\n\t\tHeight = 0\r\n\t\tAge = 0\r\n\t\tName = 1234567891\r\n\t\tParent = null\r\n";
+            
+            var propertyActual = propertyPrinter.ToString(person);
+            var typeActual = typePrinter.ToString(person);
+            Console.WriteLine(propertyActual);
+            Console.WriteLine(typeActual);
+            
+            typeActual.Should().Be(typeExpected);
+            propertyActual.Should().Be(propertyExpected);
+        }
+        
+        [Test]
+        public void LoopPrintingTest()
+        {
+            var person = new Person { Name = "Alex"};
+            var person2 = new Person { Name = "Alex2", Parent = person };
+            person.Parent = person2;
+
+            Console.WriteLine(ObjectExtensions.ToString(person));
         }
     }
 }
