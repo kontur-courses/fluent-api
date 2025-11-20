@@ -9,5 +9,6 @@ public class PersonGroup
     public Person[] Members { get; set; }
     public int[] Scores { get; set; }
     public List<double> ScoresList { get; set; }
+    public List<List<double>> ScoresLists { get; set; }
     public Dictionary<string, Dictionary<string, int>> ScoresDictionary { get; set; }
 }

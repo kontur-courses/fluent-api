@@ -35,6 +35,7 @@ public class PrintingConfigTests
             ],
             Scores = [322, 67, 35],
             ScoresList = [3.0, 4.2, 6.1],
+            ScoresLists = [[3.0, 4.2, 6.1], [3.0, 4.2, 6.1]],
             ScoresDictionary = new Dictionary<string, Dictionary<string, int>>
             {
                 ["User1"] = new()
@@ -214,6 +215,8 @@ public class PrintingConfigTests
         result.Should().Contain("10");
         result.Should().Contain("Key = User2");
         result.Should().Contain("5");
+        result.Should().Contain("Key = User1, Value = Dictionary`2");
+        result.Should().Contain("Key = Score, Value = 10");
     }
 
     [Test]
@@ -248,8 +251,8 @@ public class PrintingConfigTests
         var result = config.PrintToString(group);
 
         result.Should().Contain("Name = LEADER:Leader");
-        result.Should().Contain("Name = LEADER:Alice");
-        result.Should().Contain("Name = LEADER:Bob");
+        result.Should().Contain("Name = Alice");
+        result.Should().Contain("Name = Bob");
     }
     
     [Test]
@@ -343,10 +346,10 @@ public class PrintingConfigTests
             .End();
 
         var result = config.PrintToString(group);
-
+        
         result.Should().NotContain("Age = 30");
-        result.Should().NotContain("Age = 25");
-        result.Should().NotContain("Age = 28");
+        result.Should().Contain("Age = 25");
+        result.Should().Contain("Age = 28");
     }
     [Test]
     public void CircularDependency_NotCauseStackOverflow()
@@ -356,12 +359,28 @@ public class PrintingConfigTests
         list.Add(list);
 
         var config = new PrintingConfig<List<object>>();
-
         var result = config.PrintToString(list);
 
         result.Should().Contain("List`1");
         result.Should().Contain("first");
-        result.Should().Contain("List`1 circular dependency");
+        result.Should().Contain("circular dependency");
     }
+    
+    [Test]
+    public void CollectionTypeSetSerializer_Work_ForConcreteCollectionType()
+    {
+        var group = CreateGroup();
+        var config = new PrintingConfig<PersonGroup>();
 
+        config.For<List<double>>()
+            .SetSerializer(list =>
+                $"List<double> (Count = {list.Count}): [{string.Join(", ", list)}]")
+            .End();
+
+        var result = config.PrintToString(group);
+
+        result.Should().Contain("ScoresList = List<double> (Count = 3): [3, 4,2, 6,1]");
+        result.Should().Contain("ScoresLists = List`1");
+        result.Should().Contain("List<double> (Count = 3): [3, 4,2, 6,1]");
+    }
 }

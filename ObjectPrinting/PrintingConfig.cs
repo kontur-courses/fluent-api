@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using ObjectPrinting.Context;
 
@@ -23,7 +24,7 @@ public class PrintingConfig<TOwner>
     private readonly Dictionary<string, Func<object, string>> propertySerializers = new();
     private readonly Dictionary<string, int> stringMaxLengths = new();
     private readonly HashSet<string> excludedProperties = [];
-
+    
     internal void SetTypeSerializer<T>(Func<T, string> serializer)
     {
         typeSerializers[typeof(T)] = o => serializer((T)o);
@@ -56,11 +57,11 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj)
     {
-        var visited = new HashSet<object>();
-        return PrintToString(obj, 0, visited);
+        var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        return PrintToString(obj, 0, visited, "");
     }
 
-    private string PrintToString(object obj, int nestingLevel, HashSet<object> visited)
+    private string PrintToString(object obj, int nestingLevel, HashSet<object> visited, string currentPath)
     {
         if (obj == null)
             return "null" + Environment.NewLine;
@@ -69,24 +70,42 @@ public class PrintingConfig<TOwner>
 
         if (excludedTypes.Contains(type))
             return string.Empty;
+        
+        if (TryPrintSimple(type, obj, out var simple))
+            return simple;
 
         if (!visited.Add(obj))
-        {
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-            {
-                return type.Name + " circular dependency" + Environment.NewLine;
-            } 
-            return obj + Environment.NewLine;
-        }
+            return "circular dependency" + Environment.NewLine;
         
-        if (TryPrintSimple(type, obj, out var simpleResult))
-            return simpleResult;
-
+        if (obj is IDictionary dict)
+            return PrintDictionary(dict, type, nestingLevel, visited, currentPath);
+        
         if (typeof(IEnumerable).IsAssignableFrom(type))
-            return PrintEnumerable((IEnumerable)obj, type, nestingLevel, visited);
+            return PrintEnumerable((IEnumerable)obj, type, nestingLevel, visited, currentPath);
 
-        return PrintComplexObject(obj, type, nestingLevel, visited);
+        return PrintComplexObject(obj, type, nestingLevel, visited, currentPath);
     }
+    
+    private string PrintDictionary(IDictionary dict, Type type, int nestingLevel, HashSet<object> visited, string currentPath)
+    {
+        var sb = new StringBuilder();
+        var ident = new string('\t', nestingLevel + 1);
+        sb.AppendLine(type.Name);
+
+        foreach (DictionaryEntry entry in dict)
+        {
+            var keyPath = currentPath + "[key]";
+            var valuePath = currentPath + "[value]";
+
+            var keyPrinted = PrintToString(entry.Key, nestingLevel + 1, visited, keyPath).TrimEnd('\r', '\n');
+            var valuePrinted = PrintToString(entry.Value, nestingLevel + 1, visited, valuePath).TrimEnd('\r', '\n');
+
+            sb.AppendLine($"{ident}Key = {keyPrinted}, Value = {valuePrinted}");
+        }
+
+        return sb.ToString();
+    }
+
 
     private bool TryPrintSimple(Type type, object obj, out string result)
     {
@@ -110,77 +129,102 @@ public class PrintingConfig<TOwner>
         return false;
     }
 
-    private string PrintComplexObject(object obj, Type type, int nestingLevel, HashSet<object> visited)
+    private string PrintComplexObject(object obj, Type type, int nestingLevel, HashSet<object> visited, string currentPath)
     {
         var ident = new string('\t', nestingLevel + 1);
         var sb = new StringBuilder();
         sb.AppendLine(type.Name);
 
-        foreach (var propertyInfo in type.GetProperties())
+        var flags = BindingFlags.Public | BindingFlags.Instance;
+        
+        foreach (var propertyInfo in type.GetProperties(flags))
         {
             var propName = propertyInfo.Name;
             var propType = propertyInfo.PropertyType;
 
-            if (excludedProperties.Contains(propName) || excludedTypes.Contains(propType))
+            var fullPropPath = string.IsNullOrEmpty(currentPath)
+                ? propName
+                : currentPath + "." + propName;
+
+            if (excludedProperties.Contains(fullPropPath) || excludedTypes.Contains(propType))
                 continue;
 
             var value = propertyInfo.GetValue(obj);
 
-            if (TryPrintPropertyWithCustomOrTrim(sb, ident, propName, propType, value))
+            if (TryPrintPropertyWithCustomOrTrim(sb, ident, fullPropPath, propType, value))
                 continue;
 
             sb.Append(ident + propName + " = " +
-                      PrintToString(value, nestingLevel + 1, visited));
+                      PrintToString(value, nestingLevel + 1, visited, fullPropPath));
+        }
+        
+        foreach (var fieldInfo in type.GetFields(flags))
+        {
+            var fieldName = fieldInfo.Name;
+            var fieldType = fieldInfo.FieldType;
+
+            var fullFieldPath = string.IsNullOrEmpty(currentPath)
+                ? fieldName
+                : currentPath + "." + fieldName;
+
+            if (excludedProperties.Contains(fullFieldPath) || excludedTypes.Contains(fieldType))
+                continue;
+
+            var value = fieldInfo.GetValue(obj);
+            
+            if (TryPrintPropertyWithCustomOrTrim(sb, ident, fullFieldPath, fieldType, value))
+                continue;
+
+            sb.Append(ident + fieldName + " = " +
+                      PrintToString(value, nestingLevel + 1, visited, fullFieldPath));
         }
 
         return sb.ToString();
     }
     
-    private bool TryPrintPropertyWithCustomOrTrim(
-        StringBuilder sb,
-        string ident,
-        string propName,
-        Type propType,
-        object value)
+    private bool TryPrintPropertyWithCustomOrTrim(StringBuilder sb, string ident, string fullPropPath, Type propType, object value)
     {
-        if (propertySerializers.TryGetValue(propName, out var propSerializer))
+        if (propertySerializers.TryGetValue(fullPropPath, out var propSerializer))
         {
-            sb.Append(ident + propName + " = " +
+            sb.Append(ident + fullPropPath + " = " +
                       propSerializer(value) + Environment.NewLine);
             return true;
         }
 
-        if (propType != typeof(string) || !stringMaxLengths.TryGetValue(propName, out var maxLength)) return false;
+        if (propType != typeof(string) || !stringMaxLengths.TryGetValue(fullPropPath, out var maxLength))
+            return false;
+
         var s = (string)value;
         if (s != null && s.Length > maxLength)
             s = s[..maxLength];
 
-        sb.Append(ident + propName + " = " + s + Environment.NewLine);
+        sb.Append(ident + fullPropPath + " = " + s + Environment.NewLine);
         return true;
-
     }
-
-    private string PrintEnumerable(IEnumerable enumerable, Type type, int nestingLevel, HashSet<object> visited)
+    
+    private string PrintEnumerable(IEnumerable enumerable, Type type, int nestingLevel, HashSet<object> visited, string currentPath)
     {
         var sb = new StringBuilder();
         var ident = new string('\t', nestingLevel + 1);
-
         sb.AppendLine(type.Name);
+        var index = 0;
 
         foreach (var item in enumerable)
         {
+            var itemPath = currentPath + "[" + index + "]";
+            index++;
+
             if (item == null)
             {
                 sb.Append(ident + "null" + Environment.NewLine);
                 continue;
             }
-
             var itemType = item.GetType();
 
             if (excludedTypes.Contains(itemType))
                 continue;
 
-            var printed = PrintToString(item, nestingLevel + 1, visited);
+            var printed = PrintToString(item, nestingLevel + 1, visited, itemPath);
             sb.Append(ident + printed);
         }
 
@@ -191,18 +235,31 @@ public class PrintingConfig<TOwner>
     {
         return new BaseContext<TOwner, T>(this);
     }
-
+    
     public IPropertyPrinterConfigContext<TOwner, T> For<T>(Expression<Func<TOwner, T>> propertySelector)
     {
-        var member = (MemberExpression)propertySelector.Body;
-        var propName = member.Member.Name;
-        return new PropertyContext<TOwner, T>(this, propName);
+        var propPath = GetPropertyPath(propertySelector);
+        return new PropertyContext<TOwner, T>(this, propPath);
     }
 
     public IStringPropertyPrinterConfigContext<TOwner> For(Expression<Func<TOwner, string>> propertySelector)
     {
-        var member = (MemberExpression)propertySelector.Body;
-        var propName = member.Member.Name;
-        return new StringPropertyContext<TOwner>(this, propName);
+        var propPath = GetPropertyPath(propertySelector);
+        return new StringPropertyContext<TOwner>(this, propPath);
+    }
+    
+    private static string GetPropertyPath(LambdaExpression expression)
+    {
+        var parts = new List<string>();
+        var current = expression.Body;
+
+        while (current is MemberExpression m)
+        {
+            parts.Add(m.Member.Name);
+            current = m.Expression;
+        }
+
+        parts.Reverse();
+        return string.Join(".", parts);
     }
 }
