@@ -1,19 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new HashSet<Type>();
-        private readonly HashSet<string> excludedProperties = new HashSet<string>();
+        private HashSet<Type> excludingTypes = new();
+        private HashSet<string> excludingProperties = new();
+        private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
 
         public PrintingConfig<TOwner> Exclude<T>()
         {
-            excludedTypes.Add(typeof(T));
+            excludingTypes.Add(typeof(T));
             return this;
+        }
+        
+        public PrintingConfig<TOwner> Exclude<TProp>(Expression<Func<TOwner, TProp>> propertySelector)
+        {
+            var propertyName = ((MemberExpression)propertySelector.Body).Member.Name;
+            excludingProperties.Add(propertyName);
+            return this;
+        }
+
+        public TypePrintingConfig<TOwner, TPropType> ConfigureType<TPropType>()
+        {
+            return new TypePrintingConfig<TOwner, TPropType>(this);
+        }
+
+        internal void AddTypeSerializer<TPropType>(Func<TPropType, string> serializer)
+        {
+            typeSerializers[typeof(TPropType)] = obj => serializer((TPropType)obj);
         }
 
         public string PrintToString(TOwner obj)
@@ -26,32 +45,34 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            var objectType = obj.GetType();
+
+            if (typeSerializers.TryGetValue(objectType, out var serializer))
+                return serializer(obj) + Environment.NewLine;
+
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan), typeof(Guid)
             };
             
-            if (finalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(objectType))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
+            sb.AppendLine(objectType.Name);
             
-            foreach (var propertyInfo in type.GetProperties())
+            foreach (var propertyInfo in objectType.GetProperties())
             {
-                // Проверяем исключения
-                if (excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
-                    
-                if (excludedProperties.Contains(propertyInfo.Name))
+                var propertyName = propertyInfo.Name;
+                var propertyType = propertyInfo.PropertyType;
+        
+                if (excludingProperties.Contains(propertyName) || excludingTypes.Contains(propertyType))
                     continue;
 
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                var value = propertyInfo.GetValue(obj);
+                sb.Append(identation + propertyName + " = " + PrintToString(value, nestingLevel + 1));
             }
             return sb.ToString();
         }
