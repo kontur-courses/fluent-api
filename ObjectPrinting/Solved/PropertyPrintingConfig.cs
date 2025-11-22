@@ -1,32 +1,39 @@
 ﻿using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting.Solved;
+
+public class PropertyPrintingConfig<TOwner, TPropType>(
+    PrintingConfig<TOwner> printingConfig,
+    string? memberName = null)
+    : IPropertyPrintingConfig<TOwner, TPropType>
 {
-    public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
+    public string? MemberName { get; } = memberName;
+
+    public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
     {
-        private readonly PrintingConfig<TOwner> printingConfig;
-
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        if (MemberName != null)
         {
-            this.printingConfig = printingConfig;
+            printingConfig.AddMemberSerializer(MemberName, print);
+        }
+        else
+        {
+            printingConfig.AddTypeSerializer(print);
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
-        {
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
-            return printingConfig;
-        }
-
-        PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
+        return printingConfig;
     }
 
-    public interface IPropertyPrintingConfig<TOwner, TPropType>
+    public PrintingConfig<TOwner> Using(CultureInfo culture)
     {
-        PrintingConfig<TOwner> ParentConfig { get; }
+        printingConfig.AddCulture<TPropType>(culture);
+        return printingConfig;
     }
+
+    public PrintingConfig<TOwner> ParentConfig => printingConfig;
+}
+
+public interface IPropertyPrintingConfig<TOwner, TPropType>
+{
+    PrintingConfig<TOwner> ParentConfig { get; }
 }
