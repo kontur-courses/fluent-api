@@ -1,0 +1,11 @@
+﻿List`1
+	[0] = Node
+		Id = 1
+		Child = Node
+			Id = 2
+			Child = <cyclic reference>
+	[1] = Node
+		Id = 2
+		Child = Node
+			Id = 1
+			Child = <cyclic reference>

@@ -1,0 +1,9 @@
+﻿Node
+	Id = 1
+	Child = Node
+		Id = 2
+		Child = Node
+			Id = 3
+			Child = Node
+				Id = 4
+				Child = <cyclic reference>

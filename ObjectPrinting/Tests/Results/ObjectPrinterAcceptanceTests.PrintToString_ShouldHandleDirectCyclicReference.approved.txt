@@ -1,0 +1,3 @@
+﻿Node
+	Id = 1
+	Child = <cyclic reference>

@@ -1,0 +1,6 @@
+﻿Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = null
+	Height = 80,05
+	Age = 50
+	Surname = Wick

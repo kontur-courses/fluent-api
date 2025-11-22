@@ -1,0 +1,4 @@
+﻿Tree
+	Root = Node
+		Id = 1
+		Child = null
