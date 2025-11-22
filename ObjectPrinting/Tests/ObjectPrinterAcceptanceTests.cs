@@ -1,27 +1,34 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using NUnit.Framework;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Tests;
+
+[TestFixture]
+public class ObjectPrinterAcceptanceTests
 {
-    [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    [Test]
+    public void Demo()
     {
-        [Test]
-        public void Demo()
+        var person = new Person
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            Name = "Alex",
+            Age = 19,
+            Height = 185.12,
+            Tags = ["tag1", "tag2"],
+            CustomProperties = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } },
+        };
 
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
-            
-            string s1 = printer.PrintToString(person);
+        var printer = ObjectPrinter.For<Person>()
+            .Exclude<Guid>()
+            .Exclude(p => p.Age)
+            .SpecifyCulture(p => p.LastTimeOnline, CultureInfo.GetCultureInfo("es-ES"))
+            .AddSerializer(p => p.Height, _ => "2005")
+            .Trim(p => p.Name, 2)
+            .Build();
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
-        }
+        var s1 = printer.PrintToString(person);
+        Console.WriteLine(s1);
     }
 }

@@ -1,0 +1,21 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Surname = null
+	Height = 0
+	Age = 19
+	LastTimeOnline = 01.01.0001 0:00:00
+	Father = Person
+		Id = 00000000-0000-0000-0000-000000000000
+		Name = John
+		Surname = null
+		Height = 0
+		Age = 42
+		LastTimeOnline = 01.01.0001 0:00:00
+		Father = null
+		Child = cyclic reference
+		Tags = null
+		CustomProperties = null
+	Child = null
+	Tags = null
+	CustomProperties = null

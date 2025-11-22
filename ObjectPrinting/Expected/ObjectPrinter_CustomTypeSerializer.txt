@@ -1,0 +1,11 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex - string
+	Surname = Brown - string
+	Height = 2005
+	Age = 19
+	LastTimeOnline = 01.01.0001 0:00:00
+	Father = null
+	Child = null
+	Tags = null
+	CustomProperties = null
