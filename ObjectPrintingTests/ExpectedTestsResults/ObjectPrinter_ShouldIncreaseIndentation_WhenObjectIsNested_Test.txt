@@ -1,0 +1,14 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 180
+	Age = 10
+	Friend = 
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = John
+			Height = 150
+			Age = 20
+			Friend = null
+			Scores = null
+	Scores = null

@@ -1,0 +1,6 @@
+Person
+	Name = Alex
+	Height = 181
+	Age = 30
+	Friend = null
+	Scores = null

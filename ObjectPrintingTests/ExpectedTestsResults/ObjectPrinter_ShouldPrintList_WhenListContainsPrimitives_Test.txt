@@ -1,0 +1,12 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Test
+	Height = 100
+	Age = 10
+	Friend = null
+	Scores = 
+		List`1 [
+			[0] = 1
+			[1] = 2
+			[2] = 3
+		]

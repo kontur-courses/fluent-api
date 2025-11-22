@@ -1,0 +1,14 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = A
+	Height = 0
+	Age = 0
+	Friend = 
+		Person
+			Id = 00000000-0000-0000-0000-000000000000
+			Name = B
+			Height = 0
+			Age = 0
+			Friend = [Cyclic Reference]
+			Scores = null
+	Scores = null

@@ -1,0 +1,8 @@
+Dictionary`2 [
+	[0] = KeyValuePair`2
+		Key = one
+		Value = 1
+	[1] = KeyValuePair`2
+		Key = two
+		Value = 2
+]

@@ -1,0 +1,7 @@
+Person
+	Id = 00000000-0000-0000-0000-000000000000
+	Name = Alex
+	Height = 100
+	Age = 5
+	Friend = null
+	Scores = null
