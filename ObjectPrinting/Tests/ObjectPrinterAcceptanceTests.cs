@@ -1,27 +1,136 @@
-﻿using NUnit.Framework;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using ApprovalTests;
+using ApprovalTests.Namers;
+using ApprovalTests.Reporters;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
     [TestFixture]
+    [UseReporter(typeof(DiffReporter))]
+    [UseApprovalSubdirectory("ApprovalTests")]
     public class ObjectPrinterAcceptanceTests
     {
-        [Test]
-        public void Demo()
+        private Family family;
+        
+        [SetUp]
+        public void SetUp()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
-
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
+            family = new Family
+            {
+                Father = new Person { Name = "Alex", Age = 19 },
+                Mother = new Person { Name = "Kate", Age = 21 },
+                Age = 55335.57d,
+                GrandParents = [new Person { Name = "Alex", Age = 19 }, new Person { Name = "Kate", Age = 21 }],
+                Parents = [new Person { Name = "Alex", Age = 19 }, new Person { Name = "Kate", Age = 21 }],
+                Children = new Dictionary<int, Person>
+                {
+                    [1] = new() { Name = "Alex", Age = 19 },
+                    [2] = new() { Name = "Kate", Age = 21 }
+                }
+            };
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenLotOfRules()
+        {
+            var printer = ObjectPrinter.For<Family>()
+                .Serialize<int>(x => $"{x}INT:")
+                .Using(x => x.Age).Serialize(x => $"A{x}:")
+                .Using<string>().Trim(2)
+                .Exclude(x => x.Father.Age);
+            var result = printer.PrintToString(family);
             
-            string s1 = printer.PrintToString(person);
-
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenNoAdditionalRules()
+        {
+            var printer = ObjectPrinter.For<Family>();
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenExcludingType()
+        {
+            var printer = ObjectPrinter.For<Family>().Exclude<int>();
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenSerializationsProperties()
+        {
+            var printer = ObjectPrinter.For<Family>().Serialize<int>(x => $"NUMBER {x}");
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenExcludingProperty()
+        {
+            var printer = ObjectPrinter.For<Family>().Exclude(x => x.Father.Age);
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenWhenSettingCulture()
+        {
+            var printer = ObjectPrinter.For<Family>().Using<int>().SetCulture(CultureInfo.CurrentCulture);
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenTrimmingProperties()
+        {
+            var printer = ObjectPrinter.For<Family>().Using<string>().Trim(3);
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenSerializationsProperty()
+        {
+            var printer = ObjectPrinter.For<Family>().Using(x => x.Father.Name).Serialize(x => $"PROPERTY {x}");
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenUsingExtension()
+        {
+            var result = family.PrintToString();
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenUsingExtensionWithConfig()
+        {
+            var result = family.PrintToString(x => x.Exclude<string>().Exclude<int>());
+            
+            Approvals.Verify(result);
+        }
+        
+        [Test]
+        public void PrintToString_ReturnsString_WhenTrimmingProperty()
+        {
+            var printer = ObjectPrinter.For<Family>().Using(x => x.Father.Name).Trim(3);
+            var result = printer.PrintToString(family);
+            
+            Approvals.Verify(result);
         }
     }
 }
