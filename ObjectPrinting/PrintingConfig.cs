@@ -1,41 +1,63 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
+using ObjectPrinting.Interface;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner> : IPrintingConfigInternal
 {
-    public class PrintingConfig<TOwner>
+    public HashSet<Type> ExcludedTypes { get; } = new();
+    public HashSet<string> ExcludedProperties { get; } = new();
+
+    public Dictionary<Type, Func<object, string>> TypeSerializers { get; } = new();
+    public Dictionary<string, Func<object, string>> PropertySerializers { get; } = new();
+    public Dictionary<string, int> TrimLengths { get; } = new();
+    public int? GlobalStringTrimLength { get; private set; }
+
+    private readonly ObjectSerializer objectSerializer = new ObjectSerializer();
+
+    public PrintingConfig<TOwner> TrimStringsGlobal(int maxLength)
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+        GlobalStringTrimLength = maxLength;
+        return this;
     }
+
+    public PrintingConfig<TOwner> Excluding<TProp>()
+    {
+        ExcludedTypes.Add(typeof(TProp));
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Excluding<TProp>(Expression<Func<TOwner, TProp>> selector)
+    {
+        var name = ((MemberExpression)selector.Body).Member.Name;
+        ExcludedProperties.Add(name);
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Printing<TProp>(Func<TProp, string> selector)
+    {
+        TypeSerializers[typeof(TProp)] = o => selector((TProp)o);
+        return this;
+    }
+    
+    public TypePrintingConfig<TOwner, TProp> Printing<TProp>()
+    {
+        return new TypePrintingConfig<TOwner, TProp>(this);
+    }
+
+    public MemberPrintingConfig<TOwner, TProp> SelectMember<TProp>(
+        Expression<Func<TOwner, TProp>> selector)
+    {
+        var name = ((MemberExpression)selector.Body).Member.Name;
+        return new MemberPrintingConfig<TOwner, TProp>(this, name);
+    }
+
+    public string PrintToString(TOwner obj)
+    {
+        return objectSerializer.Print(obj, this);
+    }
+    
 }
