@@ -1,0 +1,48 @@
+﻿SuperComplexClass
+	ShortName = Jo
+	VeryLongDescription = This is a very long 
+	Age = Age is 35
+	Salary = Salary: 75000,50$
+	BirthDate = 1988-05-15
+	Tags = Tags[4]
+	Scores = Scores[3]
+	Manager = SuperComplexClass
+		ShortName = Ma
+		VeryLongDescription = null
+		Age = Age is 45
+		Salary = Salary: 0$
+		BirthDate = 0001-01-01
+		Tags = Tags[0]
+		Scores = Scores[0]
+		Manager = null
+		Assistant = null
+		TeamMembers = [
+			(cyclic reference)
+		]
+	Assistant = SuperComplexClass
+		ShortName = Al
+		VeryLongDescription = null
+		Age = Age is 28
+		Salary = Salary: 60000,00$
+		BirthDate = 0001-01-01
+		Tags = Tags[0]
+		Scores = Scores[0]
+		Manager = null
+		Assistant = null
+		TeamMembers = [
+		]
+	TeamMembers = [
+		(cyclic reference)
+		SuperComplexClass
+			ShortName = Bo
+			VeryLongDescription = null
+			Age = Age is 32
+			Salary = Salary: 65000,00$
+			BirthDate = 0001-01-01
+			Tags = Tags[0]
+			Scores = Scores[0]
+			Manager = null
+			Assistant = null
+			TeamMembers = [
+			]
+	]
