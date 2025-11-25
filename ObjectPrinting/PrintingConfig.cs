@@ -1,41 +1,40 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using ObjectPrinting.Configs;
+using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    public Dictionary<Type, Func<object, string?>> TypeSerializers { get; } = new();
+    public Dictionary<string, Func<object, string>> PropertySerializers { get; } = new();
+    public HashSet<Type> ExcludedTypes { get; } = [];
+    public HashSet<string> ExcludedProperties { get; } = [];
+    
+    public readonly HashSet<object?> Visited = [];
+    public Dictionary<string, int> StringTrimmingRules { get; } = new();
+
+    public PrintingConfig<TOwner> Excluding<TProp>()
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        ExcludedTypes.Add(typeof(TProp));
+        return this;
+    }
+    public PrintingConfig<TOwner> Excluding(Expression<Func<TOwner, object>> selector)
+    {
+        ExcludedProperties.Add(PrintingConfigExtensions.GetPropertyName(selector));
+        return this;
+    }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+    public TypePrintingConfig<TOwner, TProp> Printing<TProp>()
+    {
+        return new TypePrintingConfig<TOwner, TProp>(this);
+    }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+    public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(
+        Expression<Func<TOwner, TProp>> selector)
+    {
+        return new PropertyPrintingConfig<TOwner, TProp>(this, selector);
     }
 }

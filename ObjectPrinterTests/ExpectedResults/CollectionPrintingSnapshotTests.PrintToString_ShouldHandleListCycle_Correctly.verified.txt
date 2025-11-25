@@ -1,0 +1,3 @@
+﻿List<Object> [
+	<cyclic reference>
+]

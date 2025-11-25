@@ -1,0 +1,20 @@
+﻿Person:
+	Name = John
+	Scores = Int32[] [
+		10
+		20
+	]
+	Tags = List<String> [
+		dev
+		qa
+	]
+	Addresses = Dictionary<String, Address> {
+		[home] = Address:
+			City = Chelyabinsk
+			Street = 
+
+		[work] = Address:
+			City = Sverdlovsk
+			Street = <cyclic reference>
+
+	}

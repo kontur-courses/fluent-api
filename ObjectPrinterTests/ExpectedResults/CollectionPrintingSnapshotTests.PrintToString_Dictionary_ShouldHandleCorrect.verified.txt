@@ -1,0 +1,4 @@
+﻿Dictionary<String, Int32> {
+	[a] = 1
+	[b] = 2
+}

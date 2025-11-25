@@ -1,0 +1,11 @@
+﻿B:
+	Data = A:
+		Name = Child
+		Number = 0
+		Price = 0
+		Id = 00000000-0000-0000-0000-000000000000
+
+	Parent = B:
+		Data = null
+		Parent = <cyclic reference>
+

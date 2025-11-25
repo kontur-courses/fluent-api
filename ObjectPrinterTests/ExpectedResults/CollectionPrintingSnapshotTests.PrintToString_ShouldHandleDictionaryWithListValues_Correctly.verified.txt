@@ -1,0 +1,9 @@
+﻿Dictionary<String, List<Int32>> {
+	[first] = List<Int32> [
+		1
+		2
+	]
+	[second] = List<Int32> [
+		3
+	]
+}

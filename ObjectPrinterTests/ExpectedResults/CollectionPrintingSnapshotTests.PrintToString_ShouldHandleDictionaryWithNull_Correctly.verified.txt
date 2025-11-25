@@ -1,0 +1,4 @@
+﻿Dictionary<String, List<Int32>> {
+	[first] = null
+	[second] = null
+}

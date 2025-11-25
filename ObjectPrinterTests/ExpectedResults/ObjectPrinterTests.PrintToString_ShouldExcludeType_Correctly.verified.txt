@@ -1,0 +1,4 @@
+﻿A:
+	Name = Alex
+	Number = 0
+	Price = 0

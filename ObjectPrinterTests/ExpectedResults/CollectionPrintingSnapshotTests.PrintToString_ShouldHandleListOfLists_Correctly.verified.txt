@@ -1,0 +1,9 @@
+﻿List<List<Int32>> [
+	List<Int32> [
+		1
+		2
+	]
+	List<Int32> [
+		3
+	]
+]
