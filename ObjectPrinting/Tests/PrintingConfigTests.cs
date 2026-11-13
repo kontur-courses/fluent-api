@@ -1,0 +1,94 @@
+﻿using System;
+using FluentAssertions;
+using NUnit.Framework;
+
+namespace ObjectPrinting.Tests;
+
+[TestFixture]
+public class PrintingConfigTests
+{
+    private static readonly Person Alex = new ()
+    {
+        Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        Name = "Alex",
+        Height = 180,
+        Age = 19
+    };
+
+    [Test]
+    public void PrintToString_ShouldPrintAllProperties_WhenNothingIsConfigured_Test()
+    {
+        var printer = ObjectPrinter.For<Person>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperties_WhenTheirTypeIsExcludedByGenericArgument_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude<Guid>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperties_WhenTheirTypeIsExcludedByTypeArgument_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(typeof(double));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipPropertiesOfEachType_WhenTypesAreExcludedByCollection_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude([typeof(Guid), typeof(double), typeof(int)]);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+}
