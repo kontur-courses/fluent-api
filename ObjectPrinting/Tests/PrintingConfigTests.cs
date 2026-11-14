@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -130,6 +131,56 @@ public class PrintingConfigTests
             "	Name = ALEX",
             "	Height = 180",
             "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [TestCase("ru-RU", "1,85")]
+    [TestCase("en-US", "1.85")]
+    public void PrintToString_ShouldUseCultureOnlyForConfiguredType_WhenCultureIsSet_Test(
+        string cultureName,
+        string expectedHeight)
+    {
+        var person = new Person { Name = "Alex", Height = 1.85, Age = 19 };
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude<Guid>()
+            .Printing<double>()
+            .Using(new CultureInfo(cultureName))
+            .Printing<int>()
+            .Using("D3", new CultureInfo("ru-RU"));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Name = Alex",
+            "	Height = " + expectedHeight,
+            "	Age = 019");
+
+        var printed = printer.PrintToString(person);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseFormat_WhenItIsSetForType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<int>()
+            .Using("X");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180",
+            "	Age = 13");
 
         var printed = printer.PrintToString(Alex);
 

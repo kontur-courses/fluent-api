@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -16,8 +17,9 @@ namespace ObjectPrinting.Tests
                 .Exclude<Guid>()
                 .Printing<int>()
                 .Using(i => i.ToString("X"))
+                .Printing<double>()
+                .Using(CultureInfo.InvariantCulture)
                 ;
-                //3. Для числовых типов указать культуру
                 //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //6. Исключить из сериализации конкретного свойства
