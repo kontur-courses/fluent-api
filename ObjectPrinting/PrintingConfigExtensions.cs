@@ -27,7 +27,7 @@ public static class PrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> Using<TOwner, TPrintingType>(
-        this TypePrintingConfig<TOwner, TPrintingType> config,
+        this ValuePrintingConfig<TOwner, TPrintingType> config,
         CultureInfo culture)
         where TPrintingType : IFormattable
     {
@@ -36,7 +36,7 @@ public static class PrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> Using<TOwner, TPrintingType>(
-        this TypePrintingConfig<TOwner, TPrintingType> config,
+        this ValuePrintingConfig<TOwner, TPrintingType> config,
         string format)
         where TPrintingType : IFormattable
     {
@@ -45,7 +45,7 @@ public static class PrintingConfigExtensions
     }
 
     public static PrintingConfig<TOwner> Using<TOwner, TPrintingType>(
-        this TypePrintingConfig<TOwner, TPrintingType> config,
+        this ValuePrintingConfig<TOwner, TPrintingType> config,
         string format,
         CultureInfo culture)
         where TPrintingType : IFormattable

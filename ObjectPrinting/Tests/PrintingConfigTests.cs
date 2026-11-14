@@ -188,4 +188,63 @@ public class PrintingConfigTests
             .Should()
             .Be(expected);
     }
+
+    [Test]
+    public void PrintToString_ShouldUseMemberPrinter_WhenItIsSetForProperty_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .Using(name => "<" + name + ">");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = <Alex>",
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldPreferMemberPrinter_WhenTypePrinterIsAlsoSet_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Height)
+            .Using(height => height + " cm")
+            .Printing<double>()
+            .Using(_ => "hidden");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180 cm",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void Printing_ShouldThrowArgumentException_WhenSelectorIsNotMember_Test()
+    {
+        var config = ObjectPrinter.For<Person>();
+
+        var printing = () => config.Printing(person => person.Name.Length);
+
+        printing
+            .Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Selector must return a member of the printed object*");
+    }
 }

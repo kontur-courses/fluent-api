@@ -19,8 +19,9 @@ namespace ObjectPrinting.Tests
                 .Using(i => i.ToString("X"))
                 .Printing<double>()
                 .Using(CultureInfo.InvariantCulture)
+                .Printing(p => p.Age)
+                .Using(age => age + " years")
                 ;
-                //4. Настроить сериализацию конкретного свойства
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //6. Исключить из сериализации конкретного свойства
             
