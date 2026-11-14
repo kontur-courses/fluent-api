@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectacle", "Samples\Specta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinter.Tests", "ObjectPrinter.Tests\ObjectPrinter.Tests.csproj", "{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinter.EntryPoint", "ObjectPrinter.EntryPoint\ObjectPrinter.EntryPoint.csproj", "{FEBFDF49-4394-4F2E-AB31-E704D68068C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEBFDF49-4394-4F2E-AB31-E704D68068C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEBFDF49-4394-4F2E-AB31-E704D68068C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEBFDF49-4394-4F2E-AB31-E704D68068C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEBFDF49-4394-4F2E-AB31-E704D68068C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,5 +55,8 @@ Global
 		{FEEA5AFE-459A-4D13-81D0-252E1A2E6F4E} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
 		{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3} = {6D308E4A-CEC7-4536-9B87-81CD337A87AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {469B9D2D-C5A6-4886-A62D-A3EE45C8DC2F}
 	EndGlobalSection
 EndGlobal

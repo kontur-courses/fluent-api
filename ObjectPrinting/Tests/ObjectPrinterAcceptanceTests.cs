@@ -11,8 +11,9 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>();
-            
+    
             string s1 = printer.PrintToString(person);
+
         }
     }
 }

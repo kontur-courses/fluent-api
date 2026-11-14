@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ObjectPrinting\ObjectPrinting.csproj" />
+  </ItemGroup>
+
 </Project>
