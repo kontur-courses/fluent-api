@@ -7,6 +7,7 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner>
 {
+    // ReSharper disable once StaticMemberInGenericType
     private static readonly Type[] FinalTypes =
     [
         typeof(string),
@@ -18,6 +19,7 @@ public class PrintingConfig<TOwner>
     ];
 
     private readonly HashSet<Type> _excludedTypes = [];
+    private readonly Dictionary<Type, Func<object, string>> _typePrinters = [];
 
     public string PrintToString(TOwner obj)
     {
@@ -30,9 +32,19 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
+    public TypePrintingConfig<TOwner, TPrintingType> Printing<TPrintingType>()
+    {
+        return new TypePrintingConfig<TOwner, TPrintingType>(this);
+    }
+
     internal void ExcludeType(Type excludedType)
     {
         _excludedTypes.Add(excludedType);
+    }
+
+    internal void SetTypePrinter(Type type, Func<object, string> printer)
+    {
+        _typePrinters[type] = printer;
     }
 
     private string PrintToString(object obj, int nestingLevel)
@@ -41,6 +53,9 @@ public class PrintingConfig<TOwner>
             return "null";
 
         var type = obj.GetType();
+        if (_typePrinters.TryGetValue(type, out var typePrinter))
+            return typePrinter(obj);
+
         if (IsFinalType(type))
             return obj.ToString();
 

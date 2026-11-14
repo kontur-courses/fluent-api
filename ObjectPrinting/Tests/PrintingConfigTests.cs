@@ -91,4 +91,50 @@ public class PrintingConfigTests
             .Should()
             .Be(expected);
     }
+
+    [Test]
+    public void PrintToString_ShouldUseCustomPrinter_WhenItIsSetForType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<int>()
+            .Using(age => age + " years");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180",
+            "	Age = 19 years");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseLastPrinter_WhenSeveralAreSetForSameType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<string>()
+            .Using(_ => "first")
+            .Printing<string>()
+            .Using(name => name.ToUpper());
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = ALEX",
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
 }
