@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12224.181 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinting", "ObjectPrinting\ObjectPrinting.csproj", "{07B8C9B7-8289-46CB-9875-048A57758EEE}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentMapping.Tests", "Samples\FluentMapper.Tests\FluentMapping.Tests.csproj", "{8A7BB3EA-3E6A-4D04-A801-D5CD1620DA0D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spectacle", "Samples\Spectacle\Spectacle.csproj", "{EFA9335C-411B-4597-B0B6-5438D1AE04C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectPrinter.Tests", "ObjectPrinter.Tests\ObjectPrinter.Tests.csproj", "{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFA9335C-411B-4597-B0B6-5438D1AE04C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC621C92-767F-4A88-A1EA-A20B4A2FE71A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
