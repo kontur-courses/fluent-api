@@ -1,5 +1,4 @@
-﻿using ObjectPrinting.Solved;
-using System;
+﻿using System;
 using System.Globalization;
 
 namespace ObjectPrinting;

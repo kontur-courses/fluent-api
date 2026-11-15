@@ -1,64 +1,93 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    private readonly Dictionary<Type, PrintingRule> _typeRules = new();
+    private readonly Dictionary<MemberInfo, PrintingRule> _memberRules = new();
+
+    public PrintingConfig<TOwner> Excluding<TType>()
     {
-        public PrintingConfig<TOwner> Excluding<TType>()
+        var type = typeof(TType);
+
+        if (!_typeRules.TryGetValue(type, out var rule))
         {
-            return this;
+            rule = new PrintingRule();
+            _typeRules[type] = rule;
         }
 
-        public PrintingConfig<TOwner> Excluding<TType>(Expression<Func<TOwner, TType>> selector)
+        rule.IsExcluded = true;
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Excluding<TType>(Expression<Func<TOwner, TType>> selector)
+    {
+        if (selector.Body is not MemberExpression expression || 
+            expression.Expression != selector.Parameters[0])
         {
-            return this;
+            throw new ArgumentException(
+                "Свойство должно быть указано напрямую, например p => p.Age.");
         }
 
-        public PropertyPrintingConfig<TOwner, TType> Printing<TType>()
+        var member = expression.Member;
+
+        if (!_memberRules.TryGetValue(member, out var rule))
         {
-            return new PropertyPrintingConfig<TOwner, TType>(this);
+            rule = new PrintingRule();
+            _memberRules[member] = rule;
         }
 
-        public PropertyPrintingConfig<TOwner, TType> Printing<TType>(Expression<Func<TOwner, TType>> selector)
+        rule.IsExcluded = true;
+        return this;
+    }
+
+    public PropertyPrintingConfig<TOwner, TType> Printing<TType>()
+    {
+        return new PropertyPrintingConfig<TOwner, TType>(this);
+    }
+
+    public PropertyPrintingConfig<TOwner, TType> Printing<TType>(Expression<Func<TOwner, TType>> selector)
+    {
+        if (selector.Body is not MemberExpression expression)
+            throw new ArgumentException();
+
+        return new PropertyPrintingConfig<TOwner, TType>(this, expression.Member);
+    }
+
+    public string PrintToString(TOwner obj)
+    {
+        return PrintToString(obj, 0);
+    }
+
+    private string PrintToString(object obj, int nestingLevel)
+    {
+        if (obj == null)
+            return "null" + Environment.NewLine;
+
+        var finalTypes = new[]
         {
-            if (selector.Body is not MemberExpression expression)
-                throw new ArgumentException();
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        };
+        if (finalTypes.Contains(obj.GetType()))
+            return obj + Environment.NewLine;
 
-            return new PropertyPrintingConfig<TOwner, TType>(this, expression.Member);
-        }
-
-        public string PrintToString(TOwner obj)
+        var identation = new string('\t', nestingLevel + 1);
+        var sb = new StringBuilder();
+        var type = obj.GetType();
+        sb.AppendLine(type.Name);
+        foreach (var propertyInfo in type.GetProperties())
         {
-            return PrintToString(obj, 0);
+            sb.Append(identation + propertyInfo.Name + " = " +
+                      PrintToString(propertyInfo.GetValue(obj),
+                          nestingLevel + 1));
         }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+        return sb.ToString();
     }
 }

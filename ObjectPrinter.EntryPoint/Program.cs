@@ -1,24 +1,30 @@
 ﻿using ObjectPrinting;
+using ObjectPrinting.Solved.Tests;
+using System.Globalization;
 using System.Text;
 
 Console.OutputEncoding = Encoding.UTF8;
 Console.WriteLine(ObjectPrinter.For<DateTime>().PrintToString(DateTime.Now));
 
-/*
-ObjectPrinter.For<TOwner>()
+
+var printer = ObjectPrinter.For<Person>()
   // Исключить тип
-  .Excluding<TType>()
+  .Excluding<Guid>()
   // Настроить сериализацию конкретного типа
-  .Printing<TType>().Using(value => value.ToString())
+  .Printing<int>().Using(value => value.ToString())
   // Обрезание строк
-  .Printing<string>().TrimmedToLength(int length)
+  .Printing<string>().TrimmedToLength(10)
   // Культура для типов, которые ее поддерживают
-  .Printing<TType>().Using(CultureInfo info)
+  .Printing<double>().Using(CultureInfo.InvariantCulture)
 
   // Исключить свойство/поле
-  .Excluding(obj => obj.Property)
+  .Excluding(obj => obj.Height)
   // Настроить сериализацию конкретного свойства/поля
-  .Printing(obj => obj.Property).Using(value => value.ToString())
+  .Printing(obj => obj.Age).Using(value => value.ToString())
   // Обрезание строк
-  .Printing(obj => obj.Property).TrimmedToLength(int length)
-*/
+  .Printing(obj => obj.Name).TrimmedToLength(10);
+
+var person = new Person();
+
+printer.PrintToString(person);
+person.PrintToString();
