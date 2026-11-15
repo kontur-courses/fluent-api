@@ -6,7 +6,7 @@ namespace ObjectPrinting;
 public class PropertyPrintingConfig<TOwner, TType>
 {
     internal PrintingConfig<TOwner> ParentConfig => _printingConfig;
-    internal readonly MemberInfo? Member;
+    internal readonly MemberInfo? Member = null;
     private readonly PrintingConfig<TOwner> _printingConfig;
 
     internal PropertyPrintingConfig(PrintingConfig<TOwner> config) 
@@ -22,6 +22,9 @@ public class PropertyPrintingConfig<TOwner, TType>
 
     public PrintingConfig<TOwner> Using(Func<TType, string> serializer)
     {
+        var rule = _printingConfig.GetOrCreateRule<TType>(Member);
+
+        rule.Serializer = value => serializer((TType)value);
         return _printingConfig;
     }
 }
