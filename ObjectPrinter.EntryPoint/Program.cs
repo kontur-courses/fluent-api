@@ -8,7 +8,7 @@ Console.WriteLine(ObjectPrinter.For<DateTime>().PrintToString(DateTime.Now));
 ObjectPrinter.For<TOwner>()
   // Исключить тип
   .Excluding<TType>()
-  // Альтернативный способ для типа
+  // Настроить сериализацию конкретного типа
   .Printing<TType>().Using(value => value.ToString())
   // Обрезание строк
   .Printing<string>().TrimmedToLength(int length)

@@ -1,11 +1,35 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public PrintingConfig<TOwner> Excluding<TType>()
+        {
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TType>(Expression<Func<TOwner, TType>> selector)
+        {
+            return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, TType> Printing<TType>()
+        {
+            return new PropertyPrintingConfig<TOwner, TType>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TType> Printing<TType>(Expression<Func<TOwner, TType>> selector)
+        {
+            if (selector.Body is not MemberExpression expression)
+                throw new ArgumentException();
+
+            return new PropertyPrintingConfig<TOwner, TType>(this, expression.Member);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
