@@ -14,34 +14,16 @@ public class PrintingConfig<TOwner>
 
     public PrintingConfig<TOwner> Excluding<TType>()
     {
-        var type = typeof(TType);
-
-        if (!_typeRules.TryGetValue(type, out var rule))
-        {
-            rule = new PrintingRule();
-            _typeRules[type] = rule;
-        }
-
+        var rule = GetOrCreateRule<TType>();
         rule.IsExcluded = true;
+
         return this;
     }
 
     public PrintingConfig<TOwner> Excluding<TType>(Expression<Func<TOwner, TType>> selector)
     {
-        if (selector.Body is not MemberExpression expression || 
-            expression.Expression != selector.Parameters[0])
-        {
-            throw new ArgumentException(
-                "Свойство должно быть указано напрямую, например p => p.Age.");
-        }
-
-        var member = expression.Member;
-
-        if (!_memberRules.TryGetValue(member, out var rule))
-        {
-            rule = new PrintingRule();
-            _memberRules[member] = rule;
-        }
+        var member = GetDirectMember(selector);
+        var rule = GetOrCreateRule<TType>(member);
 
         rule.IsExcluded = true;
         return this;
@@ -54,15 +36,21 @@ public class PrintingConfig<TOwner>
 
     public PropertyPrintingConfig<TOwner, TType> Printing<TType>(Expression<Func<TOwner, TType>> selector)
     {
-        if (selector.Body is not MemberExpression expression)
-            throw new ArgumentException();
+        var member = GetDirectMember(selector);
 
-        return new PropertyPrintingConfig<TOwner, TType>(this, expression.Member);
+        return new PropertyPrintingConfig<TOwner, TType>(this, member);
     }
 
     public string PrintToString(TOwner obj)
     {
         return PrintToString(obj, 0);
+    }
+
+    internal PrintingRule GetOrCreateRule<TType>(MemberInfo? member = null)
+    {
+        return member is null
+            ? GetOrCreateRule(_typeRules, typeof(TType))
+            : GetOrCreateRule(_memberRules, member);
     }
 
     private string PrintToString(object obj, int nestingLevel)
@@ -89,5 +77,30 @@ public class PrintingConfig<TOwner>
                           nestingLevel + 1));
         }
         return sb.ToString();
+    }
+
+    private static PrintingRule GetOrCreateRule<TKey>(
+        Dictionary<TKey, PrintingRule> rules, TKey key)
+        where TKey : notnull
+    {
+        if (!rules.TryGetValue(key, out var rule))
+        {
+            rule = new PrintingRule();
+            rules[key] = rule;
+        }
+
+        return rule;
+    }
+
+    private static MemberInfo GetDirectMember<TType>(Expression<Func<TOwner, TType>> selector)
+    {
+        if (selector.Body is not MemberExpression expression ||
+            expression.Expression != selector.Parameters[0])
+        {
+            throw new ArgumentException(
+                "Свойство должно быть указано напрямую, например p => p.Age");
+        }
+
+        return expression.Member;
     }
 }
