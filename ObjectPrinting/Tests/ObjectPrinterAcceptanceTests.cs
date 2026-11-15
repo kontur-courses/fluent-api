@@ -21,8 +21,9 @@ namespace ObjectPrinting.Tests
                 .Using(CultureInfo.InvariantCulture)
                 .Printing(p => p.Age)
                 .Using(age => age + " years")
+                .Printing(p => p.Name)
+                .TrimmedToLength(10)
                 ;
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
                 //6. Исключить из сериализации конкретного свойства
             
             string s1 = printer.PrintToString(person);

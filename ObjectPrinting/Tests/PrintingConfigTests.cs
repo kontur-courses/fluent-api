@@ -247,4 +247,67 @@ public class PrintingConfigTests
             .Throw<ArgumentException>()
             .WithMessage("Selector must return a member of the printed object*");
     }
+
+    [TestCase(2, "Al")]
+    [TestCase(4, "Alex")]
+    [TestCase(10, "Alex")]
+    [TestCase(0, "")]
+    public void PrintToString_ShouldTrimString_WhenMaxLengthIsSet_Test(int maxLength, string expectedName)
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .TrimmedToLength(maxLength);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = " + expectedName,
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [TestCase(2, "Al...")]
+    [TestCase(4, "Alex")]
+    public void PrintToString_ShouldAddEnding_WhenStringIsTrimmed_Test(int maxLength, string expectedName)
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .TrimmedToLength(maxLength, "...");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = " + expectedName,
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void TrimmedToLength_ShouldThrowArgumentOutOfRangeException_WhenMaxLengthIsNegative_Test()
+    {
+        var config = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name);
+
+        var trimming = () => config.TrimmedToLength(-1);
+
+        trimming
+            .Should()
+            .Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("maxLength");
+    }
 }

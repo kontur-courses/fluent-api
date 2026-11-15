@@ -54,4 +54,21 @@ public static class PrintingConfigExtensions
         ArgumentNullException.ThrowIfNull(culture);
         return config.Using(value => value.ToString(format, culture));
     }
+
+    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        this ValuePrintingConfig<TOwner, string> config,
+        int maxLength)
+    {
+        return config.TrimmedToLength(maxLength, string.Empty);
+    }
+
+    public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+        this ValuePrintingConfig<TOwner, string> config,
+        int maxLength,
+        string ending)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
+        ArgumentNullException.ThrowIfNull(ending);
+        return config.Using(value => value.Length <= maxLength ? value : value[..maxLength] + ending);
+    }
 }
