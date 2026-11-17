@@ -48,7 +48,6 @@ namespace ObjectPrinting.Solved.Tests
 
             result.Should()
                 .ContainAll(person.Name,
-                    person.SecondName,
                     person.Age.ToString(),
                     // ReSharper disable once SpecifyACultureInStringConversionExplicitly
                     person.Height.ToString(),
@@ -66,7 +65,7 @@ namespace ObjectPrinting.Solved.Tests
                 .PrintToString(person);
 
             result.Should()
-                .NotContainAll(person.Name, person.SecondName);
+                .NotContainAll(person.Name);
         }
 
         [Test]
@@ -110,7 +109,7 @@ namespace ObjectPrinting.Solved.Tests
 
         [TestCase("en-US", "1.85")]
         [TestCase("ru-RU", "1,85")]
-        public void PrintToString_PrintingTypeWithCulture_ShouldPrintFormatType(
+        public void PrintToString_PrintingWithCultureInfo_ShouldPrintFormatType(
             string cultureName,
             string expected)
         {
@@ -124,26 +123,30 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Contain(expected);
         }
 
-        [TestCase("en-US", "1.85")]
-        [TestCase("ru-RU", "1,85")]
-        public void PrintToString_PrintingPropertyWithCulture_ShouldPrintFormatProperty(
-            string cultureName,
-            string expected)
+        [TestCase("Alexandra", 4, "Alex")]
+        [TestCase("Alex", 4, "Alex")]
+        [TestCase("Al", 4, "Al")]
+        public void PrintToString_PrintingStringTrimmedToLength_ShouldPrintTrimmedString(
+            string name,
+            int maxLen,
+            string expectedName)
         {
             var person = GetDefaultPerson();
-            person.Height = 1.85;
+            person.Name = name;
 
             var result = ObjectPrinter.For<Person>()
-                .Printing(p => p.Height).Using(CultureInfo.GetCultureInfo(cultureName))
+                .Printing(p => p.Name).TrimmedToLength(maxLen)
                 .PrintToString(person);
 
-            result.Should().Contain(expected);
+            person.Name = expectedName;
+            var expected = ObjectPrinter.For<Person>().PrintToString(person);
+
+            result.Should().Be(expected);
         }
 
         private static Person GetDefaultPerson() => new Person
         {
             Name = "Alex",
-            SecondName = "Smith",
             Age = 19,
             Height = 1.85,
             Id = Guid.NewGuid()
