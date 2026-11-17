@@ -6,6 +6,10 @@ namespace ObjectPrinting
         internal const string CircularReferenceMarker = "[Circular reference]";
         internal const string MemberAssignmentSeparator = " = ";
 
+        internal const string CollectionEntryPrefix = "[";
+        internal const string CollectionEntrySuffix = "]";
+        internal const string EmptyCollectionMarker = "[empty]";
+
         internal const char IndentationCharacter = '\t';
     }
 }

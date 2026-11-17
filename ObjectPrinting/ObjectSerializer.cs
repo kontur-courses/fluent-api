@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -46,40 +47,151 @@ namespace ObjectPrinting
             }
 
             if (!type.IsValueType && !objectsInPath.Add(value))
-                return AppendLine(PrintingFormat.CircularReferenceMarker);
+            {
+                return AppendLine(
+                    PrintingFormat.CircularReferenceMarker);
+            }
 
             try
             {
-                var indentation = new string(
-                    PrintingFormat.IndentationCharacter,
-                    nestingLevel + 1);
-                var builder = new StringBuilder();
+                if (value is IDictionary dictionary)
+                {
+                    return PrintDictionary(
+                        dictionary,
+                        nestingLevel,
+                        objectsInPath);
+                }
 
-                builder.AppendLine(type.Name);
+                if (value is IEnumerable collection)
+                {
+                    return PrintCollection(
+                        collection,
+                        nestingLevel,
+                        objectsInPath);
+                }
 
-                AppendProperties(
-                    builder,
+                return PrintObject(
                     value,
                     type,
-                    indentation,
                     nestingLevel,
                     objectsInPath);
-
-                AppendFields(
-                    builder,
-                    value,
-                    type,
-                    indentation,
-                    nestingLevel,
-                    objectsInPath);
-
-                return builder.ToString();
             }
             finally
             {
                 if (!type.IsValueType)
                     objectsInPath.Remove(value);
             }
+        }
+
+        private string PrintObject(
+            object value,
+            Type type,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            var indentation = GetIndentation(nestingLevel);
+            var builder = new StringBuilder();
+
+            builder.AppendLine(type.Name);
+
+            AppendProperties(
+                builder,
+                value,
+                type,
+                indentation,
+                nestingLevel,
+                objectsInPath);
+
+            AppendFields(
+                builder,
+                value,
+                type,
+                indentation,
+                nestingLevel,
+                objectsInPath);
+
+            return builder.ToString();
+        }
+
+        private string PrintCollection(
+            IEnumerable collection,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            var builder = new StringBuilder();
+            var indentation = GetIndentation(nestingLevel);
+            var index = 0;
+
+            foreach (var item in collection)
+            {
+                AppendCollectionEntry(
+                    builder,
+                    indentation,
+                    index.ToString(CultureInfo.InvariantCulture),
+                    item,
+                    nestingLevel,
+                    objectsInPath);
+
+                index++;
+            }
+
+            if (index == 0)
+                AppendEmptyCollection(builder, indentation);
+
+            return builder.ToString();
+        }
+
+        private string PrintDictionary(
+            IDictionary dictionary,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            var builder = new StringBuilder();
+            var indentation = GetIndentation(nestingLevel);
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                AppendCollectionEntry(
+                    builder,
+                    indentation,
+                    FormatDictionaryKey(entry.Key),
+                    entry.Value,
+                    nestingLevel,
+                    objectsInPath);
+            }
+
+            if (dictionary.Count == 0)
+                AppendEmptyCollection(builder, indentation);
+
+            return builder.ToString();
+        }
+
+        private void AppendCollectionEntry(
+            StringBuilder builder,
+            string indentation,
+            string key,
+            object? value,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            builder.Append(indentation)
+                .Append(PrintingFormat.CollectionEntryPrefix)
+                .Append(key)
+                .Append(PrintingFormat.CollectionEntrySuffix)
+                .Append(PrintingFormat.MemberAssignmentSeparator)
+                .Append(PrintValue(
+                    value,
+                    nestingLevel + 1,
+                    objectsInPath));
+        }
+
+        private static void AppendEmptyCollection(
+            StringBuilder builder,
+            string indentation)
+        {
+            builder.Append(indentation)
+                .Append(PrintingFormat.EmptyCollectionMarker)
+                .AppendLine();
         }
 
         private void AppendProperties(
@@ -202,6 +314,27 @@ namespace ObjectPrinting
                 result = result[..^lineEnding.Length];
 
             return AppendLine(Truncate(result, maxLength.Value));
+        }
+
+        private string FormatDictionaryKey(object? key)
+        {
+            if (key is null)
+                return PrintingFormat.NullValue;
+
+            var type = key.GetType();
+            var formatter = settings.GetTypeFormatter(type);
+
+            if (formatter is not null)
+                return formatter(key);
+
+            return FormatValue(key, settings.GetTypeCulture(type));
+        }
+
+        private static string GetIndentation(int nestingLevel)
+        {
+            return new string(
+                PrintingFormat.IndentationCharacter,
+                nestingLevel + 1);
         }
 
         private static bool IsSimpleType(Type type)
