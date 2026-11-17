@@ -14,6 +14,8 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
+            printingConfig.SetSerializer(print);
+
             return printingConfig;
         }
 

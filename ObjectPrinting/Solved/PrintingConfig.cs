@@ -18,6 +18,9 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<Type> excludedTypes = [];
         private readonly HashSet<MemberInfo> excludedProperties = [];
 
+        private readonly Dictionary<Type, Func<object, string>> typeSerializers =
+            new Dictionary<Type, Func<object, string>>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -43,6 +46,11 @@ namespace ObjectPrinting.Solved
             return this;
         }
 
+        internal void SetSerializer<TPropType>(Func<TPropType, string> serializer)
+        {
+            typeSerializers[typeof(TPropType)] = value => serializer((TPropType)value);
+        }
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -66,6 +74,12 @@ namespace ObjectPrinting.Solved
                 if(excludedTypes.Contains(propertyInfo.PropertyType) ||
                    excludedProperties.Contains(propertyInfo))
                     continue;
+
+                if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)));
+                    continue;
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
