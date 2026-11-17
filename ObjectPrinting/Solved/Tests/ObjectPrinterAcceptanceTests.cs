@@ -39,15 +39,27 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         [Test]
+        public void PrintToString_Default_ShouldPrintAllPropertiesValues()
+        {
+            var person = GetDefaultPerson();
+
+            var result = ObjectPrinter.For<Person>()
+                .PrintToString(person);
+
+            result.Should()
+                .ContainAll(person.Name,
+                    person.SecondName,
+                    person.Age.ToString(),
+                    // ReSharper disable once SpecifyACultureInStringConversionExplicitly
+                    person.Height.ToString(),
+                    person.Id.ToString());
+        }
+
+
+        [Test]
         public void PrintToString_ExcludingType_ShouldExcludeType()
         {
-            var person = new Person
-            {
-                Name = "Alex",
-                SecondName = "Smith",
-                Age = 19,
-                Id = Guid.NewGuid()
-            };
+            var person = GetDefaultPerson();
 
             var result = ObjectPrinter.For<Person>()
                 .Excluding<string>()
@@ -60,13 +72,7 @@ namespace ObjectPrinting.Solved.Tests
         [Test]
         public void PrintToString_ExcludingProperty_ShouldExcludeProperty()
         {
-            var person = new Person
-            {
-                Name = "Alex",
-                SecondName = "Smith",
-                Age = 19,
-                Id = Guid.NewGuid()
-            };
+            var person = GetDefaultPerson();
 
             var result = ObjectPrinter.For<Person>()
                 .Excluding(p => p.Id)
@@ -75,5 +81,14 @@ namespace ObjectPrinting.Solved.Tests
             result.Should()
                 .NotContain(person.Id.ToString());
         }
+
+        private static Person GetDefaultPerson() => new Person
+        {
+            Name = "Alex",
+            SecondName = "Smith",
+            Age = 19,
+            Height = 1.85,
+            Id = Guid.NewGuid()
+        };
     }
 }
