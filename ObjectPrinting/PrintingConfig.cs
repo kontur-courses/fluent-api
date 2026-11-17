@@ -82,22 +82,22 @@ public class PrintingConfig<TOwner>
 
         var indentation = new string('\t', nestingLevel + 1);
         var builder = new StringBuilder(type.Name);
-        foreach (var propertyInfo in type.GetProperties())
+        foreach (var member in GetPrintedMembers(type))
         {
-            if (IsExcluded(propertyInfo))
+            if (IsExcluded(member))
                 continue;
 
-            var printedValue = PrintMember(propertyInfo, propertyInfo.GetValue(obj), nestingLevel);
-            builder.Append(Environment.NewLine + indentation + propertyInfo.Name + " = " + printedValue);
+            var printedValue = PrintMember(member, GetMemberValue(member, obj), nestingLevel);
+            builder.Append(Environment.NewLine + indentation + member.Name + " = " + printedValue);
         }
 
         return builder.ToString();
     }
 
-    private bool IsExcluded(PropertyInfo propertyInfo)
+    private bool IsExcluded(MemberInfo member)
     {
-        return _excludedMembers.Contains(propertyInfo)
-            || _excludedTypes.Contains(propertyInfo.PropertyType);
+        return _excludedMembers.Contains(member)
+            || _excludedTypes.Contains(GetMemberType(member));
     }
 
     private string PrintMember(MemberInfo member, object value, int nestingLevel)
@@ -121,6 +121,27 @@ public class PrintingConfig<TOwner>
             return;
 
         throw new ArgumentException("Selector must return a member of the printed object", paramName);
+    }
+
+    private static IEnumerable<MemberInfo> GetPrintedMembers(Type type)
+    {
+        return type
+            .GetProperties()
+            .Concat<MemberInfo>(type.GetFields());
+    }
+
+    private static Type GetMemberType(MemberInfo member)
+    {
+        return member is PropertyInfo property
+            ? property.PropertyType
+            : ((FieldInfo)member).FieldType;
+    }
+
+    private static object GetMemberValue(MemberInfo member, object obj)
+    {
+        return member is PropertyInfo property
+            ? property.GetValue(obj)
+            : ((FieldInfo)member).GetValue(obj);
     }
 
     private static bool IsFinalType(Type type)

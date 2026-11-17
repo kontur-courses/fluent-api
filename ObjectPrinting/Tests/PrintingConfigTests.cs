@@ -382,4 +382,39 @@ public class PrintingConfigTests
             .Throw<ArgumentException>()
             .WithMessage("Person has no public property or field named Surname*");
     }
+
+    [Test]
+    public void PrintToString_ShouldPrintFields_WhenObjectHasPublicFields_Test()
+    {
+        var printer = ObjectPrinter.For<(string, int)>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "ValueTuple`2",
+            "\tItem1 = Alex",
+            "\tItem2 = 19");
+
+        var printed = printer.PrintToString(("Alex", 19));
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipField_WhenItIsExcluded_Test()
+    {
+        var printer = ObjectPrinter
+            .For<(string, int)>()
+            .Exclude(tuple => tuple.Item2);
+        var expected = string.Join(
+            Environment.NewLine,
+            "ValueTuple`2",
+            "\tItem1 = Alex");
+
+        var printed = printer.PrintToString(("Alex", 19));
+
+        printed
+            .Should()
+            .Be(expected);
+    }
 }
