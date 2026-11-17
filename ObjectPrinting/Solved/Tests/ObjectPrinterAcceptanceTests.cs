@@ -95,6 +95,19 @@ namespace ObjectPrinting.Solved.Tests
                 .Contain(person.Age.ToString("B"));
         }
 
+        [Test]
+        public void PrintToString_PrintingPropertyWithUsing_ShouldPrintPropertyWithUsingLambda()
+        {
+            var person = GetDefaultPerson();
+
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Id).Using(x => "Айдишник: " + x.ToString("X"))
+                .PrintToString(person);
+
+            result.Should()
+                .Contain("Айдишник: " + person.Id.ToString("X"));
+        }
+
         private static Person GetDefaultPerson() => new Person
         {
             Name = "Alex",

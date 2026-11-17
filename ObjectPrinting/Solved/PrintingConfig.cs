@@ -21,6 +21,9 @@ namespace ObjectPrinting.Solved
         private readonly Dictionary<Type, Func<object, string>> typeSerializers =
             new Dictionary<Type, Func<object, string>>();
 
+        private readonly Dictionary<MemberInfo, Func<object, string>> propertySerializers =
+            new Dictionary<MemberInfo, Func<object, string>>();
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -28,7 +31,9 @@ namespace ObjectPrinting.Solved
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -46,9 +51,12 @@ namespace ObjectPrinting.Solved
             return this;
         }
 
-        internal void SetSerializer<TPropType>(Func<TPropType, string> serializer)
+        internal void SetSerializer<TPropType>(Func<TPropType, string> serializer, MemberInfo? memberInfo = null)
         {
-            typeSerializers[typeof(TPropType)] = value => serializer((TPropType)value);
+            if (memberInfo != null)
+                propertySerializers[memberInfo] = value => serializer((TPropType)value);
+            else
+                typeSerializers[typeof(TPropType)] = value => serializer((TPropType)value);
         }
 
         public string PrintToString(TOwner obj)
@@ -75,7 +83,13 @@ namespace ObjectPrinting.Solved
                    excludedProperties.Contains(propertyInfo))
                     continue;
 
-                if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer))
+                if(propertySerializers.TryGetValue(propertyInfo, out var serializer))
+                {
+                    sb.Append(identation + serializer(propertyInfo.GetValue(obj)));
+                    continue;
+                }
+
+                if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out serializer))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)));
                     continue;
