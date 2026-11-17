@@ -86,7 +86,10 @@ namespace ObjectPrinting.Solved
                 if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer) ||
                    propertySerializers.TryGetValue(propertyInfo, out serializer))
                 {
-                    sb.Append(identation + propertyInfo.Name + " = " + serializer(propertyInfo.GetValue(obj)));
+                    sb.Append(identation
+                              + propertyInfo.Name + " = "
+                              + serializer(propertyInfo.GetValue(obj))
+                              + Environment.NewLine);
                     continue;
                 }
 
