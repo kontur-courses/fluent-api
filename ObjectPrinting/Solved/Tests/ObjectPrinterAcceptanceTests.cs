@@ -101,11 +101,11 @@ namespace ObjectPrinting.Solved.Tests
             var person = GetDefaultPerson();
 
             var result = ObjectPrinter.For<Person>()
-                .Printing(p => p.Id).Using(x => "Айдишник: " + x.ToString("X"))
+                .Printing(p => p.Id).Using(x => x.ToString("X"))
                 .PrintToString(person);
 
             result.Should()
-                .Contain("Айдишник: " + person.Id.ToString("X"));
+                .Contain(person.Id.ToString("X"));
         }
 
         [TestCase("en-US", "1.85")]
