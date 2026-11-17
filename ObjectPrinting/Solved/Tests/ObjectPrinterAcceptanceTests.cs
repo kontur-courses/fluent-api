@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using NUnit.Framework;
+using FluentAssertions;
 
 namespace ObjectPrinting.Solved.Tests
 {
@@ -26,15 +27,34 @@ namespace ObjectPrinting.Solved.Tests
                 .Excluding(p => p.Age);
 
             string s1 = printer.PrintToString(person);
-            
+
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             string s2 = person.PrintToString();
-            
+
             //8. ...с конфигурированием
             string s3 = person.PrintToString(s => s.Excluding(p => p.Age));
             Console.WriteLine(s1);
             Console.WriteLine(s2);
             Console.WriteLine(s3);
+        }
+
+        [Test]
+        public void PrintToString_ExcludingType_ShouldExcludeType()
+        {
+            var person = new Person
+            {
+                Name = "Alex",
+                SecondName = "Smith",
+                Age = 19,
+                Id = Guid.NewGuid()
+            };
+
+            var result = ObjectPrinter.For<Person>()
+                .Excluding<string>()
+                .PrintToString(person);
+
+            result.Should()
+                .NotContainAll(person.Name, person.SecondName);
         }
     }
 }

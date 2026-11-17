@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,6 +8,14 @@ namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
+        private static readonly HashSet<Type> FinalTypes =
+        [
+            typeof(int), typeof(double), typeof(float),
+            typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        ];
+
+        private readonly HashSet<Type> excludedTypes = [];
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
@@ -22,8 +31,10 @@ namespace ObjectPrinting.Solved
             return this;
         }
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        public PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
+
             return this;
         }
 
@@ -38,12 +49,7 @@ namespace ObjectPrinting.Solved
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var identation = new string('\t', nestingLevel + 1);
@@ -52,6 +58,9 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                    continue;
+
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
