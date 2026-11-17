@@ -56,5 +56,24 @@ namespace ObjectPrinting.Solved.Tests
             result.Should()
                 .NotContainAll(person.Name, person.SecondName);
         }
+
+        [Test]
+        public void PrintToString_ExcludingProperty_ShouldExcludeProperty()
+        {
+            var person = new Person
+            {
+                Name = "Alex",
+                SecondName = "Smith",
+                Age = 19,
+                Id = Guid.NewGuid()
+            };
+
+            var result = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Id)
+                .PrintToString(person);
+
+            result.Should()
+                .NotContain(person.Id.ToString());
+        }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting.Solved
@@ -15,6 +16,7 @@ namespace ObjectPrinting.Solved
         ];
 
         private readonly HashSet<Type> excludedTypes = [];
+        private readonly HashSet<MemberInfo> excludedProperties = [];
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -28,6 +30,9 @@ namespace ObjectPrinting.Solved
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
+            excludedProperties.Add(memberInfo);
+
             return this;
         }
 
@@ -58,7 +63,8 @@ namespace ObjectPrinting.Solved
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if(excludedTypes.Contains(propertyInfo.PropertyType))
+                if(excludedTypes.Contains(propertyInfo.PropertyType) ||
+                   excludedProperties.Contains(propertyInfo))
                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = " +
