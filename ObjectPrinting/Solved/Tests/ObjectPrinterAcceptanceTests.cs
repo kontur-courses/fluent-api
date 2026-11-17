@@ -108,6 +108,38 @@ namespace ObjectPrinting.Solved.Tests
                 .Contain("Айдишник: " + person.Id.ToString("X"));
         }
 
+        [TestCase("en-US", "1.85")]
+        [TestCase("ru-RU", "1,85")]
+        public void PrintToString_PrintingTypeWithCulture_ShouldPrintFormatType(
+            string cultureName,
+            string expected)
+        {
+            var person = GetDefaultPerson();
+            person.Height = 1.85;
+
+            var result = ObjectPrinter.For<Person>()
+                .Printing<double>().Using(CultureInfo.GetCultureInfo(cultureName))
+                .PrintToString(person);
+
+            result.Should().Contain(expected);
+        }
+
+        [TestCase("en-US", "1.85")]
+        [TestCase("ru-RU", "1,85")]
+        public void PrintToString_PrintingPropertyWithCulture_ShouldPrintFormatProperty(
+            string cultureName,
+            string expected)
+        {
+            var person = GetDefaultPerson();
+            person.Height = 1.85;
+
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Height).Using(CultureInfo.GetCultureInfo(cultureName))
+                .PrintToString(person);
+
+            result.Should().Contain(expected);
+        }
+
         private static Person GetDefaultPerson() => new Person
         {
             Name = "Alex",
