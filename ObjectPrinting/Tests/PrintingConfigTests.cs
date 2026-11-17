@@ -310,4 +310,76 @@ public class PrintingConfigTests
             .Throw<ArgumentOutOfRangeException>()
             .WithParameterName("maxLength");
     }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperty_WhenItIsExcludedBySelector_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(person => person.Height);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperty_WhenItIsExcludedByName_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(nameof(Person.Name));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipEachProperty_WhenTheyAreExcludedByNames_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude([nameof(Person.Id), nameof(Person.Age)]);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex",
+            "\tHeight = 180");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void Exclude_ShouldThrowArgumentException_WhenMemberWithNameDoesNotExist_Test()
+    {
+        var config = ObjectPrinter.For<Person>();
+
+        var excluding = () => config.Exclude("Surname");
+
+        excluding
+            .Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Person has no public property or field named Surname*");
+    }
 }

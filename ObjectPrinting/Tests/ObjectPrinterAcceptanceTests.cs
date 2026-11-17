@@ -23,8 +23,8 @@ namespace ObjectPrinting.Tests
                 .Using(age => age + " years")
                 .Printing(p => p.Name)
                 .TrimmedToLength(10)
+                .Exclude(p => p.Height)
                 ;
-                //6. Исключить из сериализации конкретного свойства
             
             string s1 = printer.PrintToString(person);
 

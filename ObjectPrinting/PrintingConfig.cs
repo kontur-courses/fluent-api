@@ -21,6 +21,7 @@ public class PrintingConfig<TOwner>
     ];
 
     private readonly HashSet<Type> _excludedTypes = [];
+    private readonly HashSet<MemberInfo> _excludedMembers = [];
     private readonly Dictionary<Type, Func<object, string>> _typePrinters = [];
     private readonly Dictionary<MemberInfo, Func<object, string>> _memberPrinters = [];
 
@@ -32,6 +33,12 @@ public class PrintingConfig<TOwner>
     public PrintingConfig<TOwner> Exclude<TExcludingType>()
     {
         ExcludeType(typeof(TExcludingType));
+        return this;
+    }
+
+    public PrintingConfig<TOwner> Exclude<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
+    {
+        ExcludeMember(GetSelectedMember(memberSelector));
         return this;
     }
 
@@ -56,6 +63,11 @@ public class PrintingConfig<TOwner>
         _excludedTypes.Add(excludedType);
     }
 
+    internal void ExcludeMember(MemberInfo excludedMember)
+    {
+        _excludedMembers.Add(excludedMember);
+    }
+
     private string PrintToString(object obj, int nestingLevel)
     {
         if (obj == null)
@@ -72,7 +84,7 @@ public class PrintingConfig<TOwner>
         var builder = new StringBuilder(type.Name);
         foreach (var propertyInfo in type.GetProperties())
         {
-            if (_excludedTypes.Contains(propertyInfo.PropertyType))
+            if (IsExcluded(propertyInfo))
                 continue;
 
             var printedValue = PrintMember(propertyInfo, propertyInfo.GetValue(obj), nestingLevel);
@@ -80,6 +92,12 @@ public class PrintingConfig<TOwner>
         }
 
         return builder.ToString();
+    }
+
+    private bool IsExcluded(PropertyInfo propertyInfo)
+    {
+        return _excludedMembers.Contains(propertyInfo)
+            || _excludedTypes.Contains(propertyInfo.PropertyType);
     }
 
     private string PrintMember(MemberInfo member, object value, int nestingLevel)
@@ -94,7 +112,7 @@ public class PrintingConfig<TOwner>
         ArgumentNullException.ThrowIfNull(memberSelector);
         var memberExpression = memberSelector.Body as MemberExpression;
         ThrowIfNotOwnerMember(memberExpression, nameof(memberSelector));
-        return memberExpression.Member;
+        return memberExpression!.Member;
     }
 
     private static void ThrowIfNotOwnerMember(MemberExpression memberExpression, string paramName)
