@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -18,13 +19,19 @@ namespace ObjectPrinting
 
         internal string PrintToString(object? value)
         {
-            return PrintValue(value, 0);
+            var objectsInPath = new HashSet<object>(
+                ReferenceEqualityComparer.Instance);
+
+            return PrintValue(value, 0, objectsInPath);
         }
 
-        private string PrintValue(object? value, int nestingLevel)
+        private string PrintValue(
+            object? value,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
         {
             if (value is null)
-                return AppendLine("null");
+                return AppendLine(PrintingFormat.NullValue);
 
             var type = value.GetType();
             var formatter = settings.GetTypeFormatter(type);
@@ -38,15 +45,41 @@ namespace ObjectPrinting
                     FormatValue(value, settings.GetTypeCulture(type)));
             }
 
-            var indentation = new string('\t', nestingLevel + 1);
-            var builder = new StringBuilder();
+            if (!type.IsValueType && !objectsInPath.Add(value))
+                return AppendLine(PrintingFormat.CircularReferenceMarker);
 
-            builder.AppendLine(type.Name);
+            try
+            {
+                var indentation = new string(
+                    PrintingFormat.IndentationCharacter,
+                    nestingLevel + 1);
+                var builder = new StringBuilder();
 
-            AppendProperties(builder, value, type, indentation, nestingLevel);
-            AppendFields(builder, value, type, indentation, nestingLevel);
+                builder.AppendLine(type.Name);
 
-            return builder.ToString();
+                AppendProperties(
+                    builder,
+                    value,
+                    type,
+                    indentation,
+                    nestingLevel,
+                    objectsInPath);
+
+                AppendFields(
+                    builder,
+                    value,
+                    type,
+                    indentation,
+                    nestingLevel,
+                    objectsInPath);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                if (!type.IsValueType)
+                    objectsInPath.Remove(value);
+            }
         }
 
         private void AppendProperties(
@@ -54,7 +87,8 @@ namespace ObjectPrinting
             object obj,
             Type type,
             string indentation,
-            int nestingLevel)
+            int nestingLevel,
+            HashSet<object> objectsInPath)
         {
             var properties = type.GetProperties(
                 BindingFlags.Instance | BindingFlags.Public);
@@ -78,7 +112,8 @@ namespace ObjectPrinting
                     indentation,
                     property,
                     property.GetValue(obj),
-                    nestingLevel);
+                    nestingLevel,
+                    objectsInPath);
             }
         }
 
@@ -87,7 +122,8 @@ namespace ObjectPrinting
             object obj,
             Type type,
             string indentation,
-            int nestingLevel)
+            int nestingLevel,
+            HashSet<object> objectsInPath)
         {
             var fields = type.GetFields(
                 BindingFlags.Instance | BindingFlags.Public);
@@ -105,7 +141,8 @@ namespace ObjectPrinting
                     indentation,
                     field,
                     field.GetValue(obj),
-                    nestingLevel);
+                    nestingLevel,
+                    objectsInPath);
             }
         }
 
@@ -114,21 +151,27 @@ namespace ObjectPrinting
             string indentation,
             MemberInfo member,
             object? value,
-            int nestingLevel)
+            int nestingLevel,
+            HashSet<object> objectsInPath)
         {
             builder.Append(indentation)
                 .Append(member.Name)
-                .Append(" = ")
-                .Append(PrintMemberValue(member, value, nestingLevel + 1));
+                .Append(PrintingFormat.MemberAssignmentSeparator)
+                .Append(PrintMemberValue(
+                    member,
+                    value,
+                    nestingLevel + 1,
+                    objectsInPath));
         }
 
         private string PrintMemberValue(
             MemberInfo member,
             object? value,
-            int nestingLevel)
+            int nestingLevel,
+            HashSet<object> objectsInPath)
         {
             if (value is null)
-                return PrintValue(null, nestingLevel);
+                return PrintValue(null, nestingLevel, objectsInPath);
 
             var formatter = settings.GetMemberFormatter(member);
             var culture = settings.GetMemberCulture(member);
@@ -145,7 +188,7 @@ namespace ObjectPrinting
             }
             else
             {
-                result = PrintValue(value, nestingLevel);
+                result = PrintValue(value, nestingLevel, objectsInPath);
             }
 
             var maxLength = settings.GetMemberMaxLength(member);
