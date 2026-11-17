@@ -61,43 +61,54 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, []);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> processedObjects)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (FinalTypes.Contains(obj.GetType()))
+            var type = obj.GetType();
+
+            if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+            if (!type.IsValueType && !processedObjects.Add(obj))
+                return "[Circular reference]" + Environment.NewLine;
+
+            try
             {
-                if(excludedTypes.Contains(propertyInfo.PropertyType) ||
-                   excludedProperties.Contains(propertyInfo))
-                    continue;
-
-                if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer) ||
-                   propertySerializers.TryGetValue(propertyInfo, out serializer))
+                var identation = new string('\t', nestingLevel + 1);
+                var sb = new StringBuilder();
+                sb.AppendLine(type.Name);
+                foreach (var propertyInfo in type.GetProperties())
                 {
-                    sb.Append(identation
-                              + propertyInfo.Name + " = "
-                              + serializer(propertyInfo.GetValue(obj))
-                              + Environment.NewLine);
-                    continue;
-                }
+                    if(excludedTypes.Contains(propertyInfo.PropertyType) ||
+                       excludedProperties.Contains(propertyInfo))
+                        continue;
 
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                    if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer) ||
+                       propertySerializers.TryGetValue(propertyInfo, out serializer))
+                    {
+                        sb.Append(identation
+                                  + propertyInfo.Name + " = "
+                                  + serializer(propertyInfo.GetValue(obj))
+                                  + Environment.NewLine);
+                        continue;
+                    }
+
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              PrintToString(propertyInfo.GetValue(obj),
+                                  nestingLevel + 1, processedObjects));
+                }
+                return sb.ToString();
             }
-            return sb.ToString();
+            finally
+            {
+                if (!type.IsValueType)
+                    processedObjects.Remove(obj);
+            }
         }
     }
 }

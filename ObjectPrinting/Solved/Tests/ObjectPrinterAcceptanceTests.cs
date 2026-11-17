@@ -144,6 +144,45 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Be(expected);
         }
 
+        [Test]
+        public void PrintToString_WithCircularReferences_ShouldNotThrowStackOverflowException()
+        {
+            var loopNode = new LoopNode { Value = 1 };
+            loopNode.Next = loopNode;
+
+            var action = () => loopNode.PrintToString();
+
+            action.Should().NotThrow<StackOverflowException>();
+        }
+
+        [Test]
+        public void PrintToString_WithSharedReference_ShouldPrintBothOccurrences()
+        {
+            var loopNode = new LoopNode
+            {
+                Value = 1,
+                Next = new LoopNode { Value = 2 }
+            };
+            loopNode.Previous = loopNode.Next;
+
+            var result = loopNode.PrintToString();
+
+            var expected = string.Join(Environment.NewLine,
+                "LoopNode",
+                "\tValue = 1",
+                "\tNext = LoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "\tPrevious = LoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "");
+
+            result.Should().Be(expected);
+        }
+
         private static Person GetDefaultPerson() => new Person
         {
             Name = "Alex",
