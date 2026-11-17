@@ -1,25 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting;
 
-public class PrintingConfig<TOwner>
+public class PrintingConfig<TOwner> : IPrintingSettings
 {
-    // ReSharper disable once StaticMemberInGenericType
-    private static readonly Type[] FinalTypes =
-    [
-        typeof(string),
-        typeof(decimal),
-        typeof(Guid),
-        typeof(DateTime),
-        typeof(DateTimeOffset),
-        typeof(TimeSpan)
-    ];
-
     private readonly HashSet<Type> _excludedTypes = [];
     private readonly HashSet<MemberInfo> _excludedMembers = [];
     private readonly Dictionary<Type, Func<object, string>> _typePrinters = [];
@@ -27,7 +14,7 @@ public class PrintingConfig<TOwner>
 
     public string PrintToString(TOwner obj)
     {
-        return PrintToString(obj, 0);
+        return ObjectSerializer.Serialize(obj, this);
     }
 
     public PrintingConfig<TOwner> Exclude<TExcludingType>()
@@ -58,6 +45,22 @@ public class PrintingConfig<TOwner>
             printer => _memberPrinters[member] = printer);
     }
 
+    bool IPrintingSettings.IsExcluded(MemberInfo member, Type memberType)
+    {
+        return _excludedMembers.Contains(member)
+            || _excludedTypes.Contains(memberType);
+    }
+
+    bool IPrintingSettings.TryGetTypePrinter(Type type, out Func<object, string> printer)
+    {
+        return _typePrinters.TryGetValue(type, out printer);
+    }
+
+    bool IPrintingSettings.TryGetMemberPrinter(MemberInfo member, out Func<object, string> printer)
+    {
+        return _memberPrinters.TryGetValue(member, out printer);
+    }
+
     internal void ExcludeType(Type excludedType)
     {
         _excludedTypes.Add(excludedType);
@@ -66,45 +69,6 @@ public class PrintingConfig<TOwner>
     internal void ExcludeMember(MemberInfo excludedMember)
     {
         _excludedMembers.Add(excludedMember);
-    }
-
-    private string PrintToString(object obj, int nestingLevel)
-    {
-        if (obj == null)
-            return "null";
-
-        var type = obj.GetType();
-        if (_typePrinters.TryGetValue(type, out var typePrinter))
-            return typePrinter(obj);
-
-        if (IsFinalType(type))
-            return obj.ToString();
-
-        var indentation = new string('\t', nestingLevel + 1);
-        var builder = new StringBuilder(type.Name);
-        foreach (var member in GetPrintedMembers(type))
-        {
-            if (IsExcluded(member))
-                continue;
-
-            var printedValue = PrintMember(member, GetMemberValue(member, obj), nestingLevel);
-            builder.Append(Environment.NewLine + indentation + member.Name + " = " + printedValue);
-        }
-
-        return builder.ToString();
-    }
-
-    private bool IsExcluded(MemberInfo member)
-    {
-        return _excludedMembers.Contains(member)
-            || _excludedTypes.Contains(GetMemberType(member));
-    }
-
-    private string PrintMember(MemberInfo member, object value, int nestingLevel)
-    {
-        return _memberPrinters.TryGetValue(member, out var memberPrinter)
-            ? memberPrinter(value)
-            : PrintToString(value, nestingLevel + 1);
     }
 
     private static MemberInfo GetSelectedMember<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
@@ -121,33 +85,5 @@ public class PrintingConfig<TOwner>
             return;
 
         throw new ArgumentException("Selector must return a member of the printed object", paramName);
-    }
-
-    private static IEnumerable<MemberInfo> GetPrintedMembers(Type type)
-    {
-        return type
-            .GetProperties()
-            .Concat<MemberInfo>(type.GetFields());
-    }
-
-    private static Type GetMemberType(MemberInfo member)
-    {
-        return member is PropertyInfo property
-            ? property.PropertyType
-            : ((FieldInfo)member).FieldType;
-    }
-
-    private static object GetMemberValue(MemberInfo member, object obj)
-    {
-        return member is PropertyInfo property
-            ? property.GetValue(obj)
-            : ((FieldInfo)member).GetValue(obj);
-    }
-
-    private static bool IsFinalType(Type type)
-    {
-        return type.IsPrimitive
-            || type.IsEnum
-            || FinalTypes.Contains(type);
     }
 }
