@@ -13,10 +13,13 @@ public class Person
     public Address Address { get; set; }
     public List<string> Hobbies { get; set; }
     public Dictionary<string, int> Scores { get; set; }
+    public int[] ArrayOfInts { get; set; }
+    public string[] ArrayOfStrings { get; set; }
 }
 
 public class Address
 {
+    public string Name { get; set; }
     public string City { get; set; }
     public string Street { get; set; }
     public int ZipCode { get; set; }
@@ -40,4 +43,10 @@ public class SelfReferencing
 {
     public string Name { get; set; }
     public SelfReferencing Myself { get; set; }
+}
+
+public class ClassWithIndexer
+{
+    public string Name { get; set; }
+    public int this[int index] => index * 10;
 }
