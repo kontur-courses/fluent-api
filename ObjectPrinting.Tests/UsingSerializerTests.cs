@@ -14,7 +14,7 @@ internal class UsingSerializerTests : PersonFixture
         var result = person.PrintToString(cfg =>
             cfg.Printing<int>().Using(i => $"<{i}>"));
 
-        result.Should().Contain("Age = <42>").And.Contain("[0] = <10>");
+        result.Should().Contain($"{nameof(person.Age)} = <{person.Age}>").And.Contain($"[0] = <{person.Scores[0]}>");
     }
 
     [Test]
@@ -24,7 +24,7 @@ internal class UsingSerializerTests : PersonFixture
             .Printing<int>().Using(i => $"type:{i}")
             .Printing(p => p.Age).Using(i => $"member:{i}"));
 
-        result.Should().Contain("Age = member:42").And.Contain("[0] = type:10");
+        result.Should().Contain($"{nameof(person.Age)} = member:{person.Age}").And.Contain($"[0] = type:{person.Scores[0]}");
     }
 
     [Test]
@@ -33,6 +33,6 @@ internal class UsingSerializerTests : PersonFixture
         var result = person.PrintToString(cfg =>
             cfg.Printing(p => p.BirthDate).Using(new CultureInfo("ru-RU")));
 
-        result.Should().Contain("BirthDate = 12.05.1980");
+        result.Should().Contain($"{nameof(person.BirthDate)} = {person.BirthDate.ToString(new CultureInfo("ru-RU"))}");
     }
 }

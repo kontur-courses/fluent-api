@@ -20,7 +20,7 @@ internal class AcceptanceTests : PersonFixture
             
         result.Should()
             .Contain(nameof(Person))
-            .And.NotContain(new Guid().ToString())
+            .And.NotContain("Id = 00000000-0000-0000-0000-000000000000")
             .And.Contain("Name = Alex")
             .And.NotContain("Name = Alexandr")
             .And.Contain("Height = 1.85")

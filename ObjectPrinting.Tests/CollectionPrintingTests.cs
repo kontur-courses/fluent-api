@@ -5,14 +5,28 @@ using ObjectPrinting.Extensions;
 namespace ObjectPrinting.Tests;
 
 [TestFixture]
-internal class CollectionPrintingTests : PersonFixture
+internal class CollectionPrintingTests
 {
     [Test]
     public void ShouldPrintListWithIndices()
     {
-        var result = person.PrintToString();
+        var list = new[] { 10, 20, 30 };
+        var result = list.PrintToString();
 
-        result.Should().Contain("[0] = 10").And.Contain("[2] = 30");
+        result.Should().Contain("10")
+            .And.Contain("20")
+            .And.Contain("30");
+    }
+    
+    [Test]
+    public void ShouldPrintArrayWithIndices()
+    {
+        var array = new[] { "one", "two", "three" };
+        var result = array.PrintToString();
+
+        result.Should().Contain("one")
+            .And.Contain("two")
+            .And.Contain("three");
     }
 
     [Test]

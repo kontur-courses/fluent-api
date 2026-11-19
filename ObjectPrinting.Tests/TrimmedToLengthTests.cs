@@ -13,7 +13,8 @@ internal class TrimmedToLengthTests : PersonFixture
         var result = person.PrintToString(cfg =>
             cfg.Printing(p => p.Name).TrimmedToLength(2));
 
-        result.Should().Contain("Name = Al").And.NotContain("Name = Alex");
+        result.Should().Contain($"{nameof(person.Name)} = {person.Name.Substring(0, 2)}")
+            .And.NotContain($"{nameof(person.Name)} = {person.Name}");
     }
 
     [Test]

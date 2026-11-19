@@ -12,7 +12,7 @@ internal class ExcludingTests : PersonFixture
     {
         var result = person.PrintToString(cfg => cfg.Excluding<int>());
 
-        result.Should().NotContain("Age").And.NotContain("Building");
+        result.Should().NotContain(nameof(person.Age)).And.NotContain(nameof(person.Address.Building));
     }
 
     [Test]
@@ -20,6 +20,6 @@ internal class ExcludingTests : PersonFixture
     {
         var result = person.PrintToString(cfg => cfg.Excluding(p => p.Name));
 
-        result.Should().NotContain("Name");
+        result.Should().NotContain(nameof(person.Name));
     }
 }

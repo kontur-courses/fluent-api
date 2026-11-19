@@ -63,7 +63,7 @@ public class PrintingConfig<TOwner>
         throw new ArgumentException("Expression must select a property or field", nameof(selector));
     }
 
-    private static (Type, string) Key(MemberInfo member) => (member.DeclaringType, member.Name);
+    private static (Type, string) Key(MemberInfo member) => (member.DeclaringType, member.Name)!;
         
     public string PrintToString(TOwner obj)
     {
@@ -78,7 +78,7 @@ public class PrintingConfig<TOwner>
         var type = obj.GetType();
 
         if (typeSerializers.TryGetValue(type, out var typeSerializer))
-            return (string)typeSerializer.DynamicInvoke(obj) + Environment.NewLine;
+            return (string)typeSerializer.DynamicInvoke(obj)! + Environment.NewLine;
 
         if (IsFinalType(type))
             return obj + Environment.NewLine;
@@ -110,8 +110,7 @@ public class PrintingConfig<TOwner>
                 excludedMembers.Contains(Key(property)))
                 continue;
 
-            sb.Append(indentation + property.Name + " = " +
-                      PrintMember(property, obj, nestingLevel, path));
+            sb.Append($"{indentation}{property.Name} = {PrintMember(property, obj, nestingLevel, path)}");
         }
 
         return sb.ToString();
@@ -122,7 +121,7 @@ public class PrintingConfig<TOwner>
         var value = property.GetValue(owner);
             
         if (value != null && memberSerializers.TryGetValue(Key(property), out var serializer))
-            return (string)serializer.DynamicInvoke(value) + Environment.NewLine;
+            return (string)serializer.DynamicInvoke(value)! + Environment.NewLine;
 
         return PrintToString(value, nestingLevel + 1, path);
     }

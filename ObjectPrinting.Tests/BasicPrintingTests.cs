@@ -15,7 +15,7 @@ internal class BasicPrintingTests : PersonFixture
         result.Should()
             .Contain($"{nameof(Person.Name)} = {person.Name}")
             .And.Contain($"{nameof(Person.Age)} = {person.Age}")
-            .And.Contain($"{nameof(Person.Address.City)} = Moscow");
+            .And.Contain($"{nameof(Person.Address.City)} = {person.Address.City}");
     }
 
     [Test]
