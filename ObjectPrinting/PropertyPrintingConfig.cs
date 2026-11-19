@@ -31,14 +31,14 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TRoot> Using(CultureInfo culture)
+        internal PrintingConfig<TRoot> UsingCulture(CultureInfo culture)
         {
             printingConfig.Settings.SetMemberCulture(member, culture);
 
             return printingConfig;
         }
 
-        internal PrintingConfig<TRoot> TrimmedToLength(int maxLength)
+        internal PrintingConfig<TRoot> SetMaxLength(int maxLength)
         {
             printingConfig.Settings.SetMemberMaxLength(member, maxLength);
 

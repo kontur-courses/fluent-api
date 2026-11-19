@@ -5,27 +5,21 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly PrintingSettings settings;
         private readonly ObjectSerializer serializer;
-
-        public PrintingConfig()
-            : this(new PrintingSettings())
-        {
-        }
 
         internal PrintingConfig(PrintingSettings settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            this.settings = settings;
-            serializer = new ObjectSerializer(settings);
+            Settings = settings;
+            serializer = new ObjectSerializer(Settings);
         }
 
-        internal PrintingSettings Settings => settings;
+        internal PrintingSettings Settings { get; }
 
         public PrintingConfig<TOwner> Excluding<T>()
         {
-            settings.ExcludeType(typeof(T));
+            Settings.ExcludeType(typeof(T));
 
             return this;
         }
@@ -35,7 +29,7 @@ namespace ObjectPrinting
         {
             var member = MemberSelector.GetMember(memberSelector);
 
-            settings.ExcludeMember(member);
+            Settings.ExcludeMember(member);
 
             return this;
         }
@@ -50,9 +44,7 @@ namespace ObjectPrinting
         {
             var member = MemberSelector.GetMember(memberSelector);
 
-            return new PropertyPrintingConfig<TOwner, TValue>(
-                this,
-                member);
+            return new PropertyPrintingConfig<TOwner, TValue>(this, member);
         }
 
         public string PrintToString(TOwner obj)

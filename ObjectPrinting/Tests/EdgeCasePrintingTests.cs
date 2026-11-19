@@ -115,7 +115,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingNullMember_UsesNullMarkerWithoutCallingFormatter()
+        public void PrintingNullMember_UsesCustomFormatter()
         {
             var formatterCalls = 0;
             var record = new NullableName
@@ -128,17 +128,49 @@ namespace ObjectPrinting.Tests
                 .Using(name =>
                 {
                     formatterCalls++;
-                    return name ?? "fallback";
+                    return name ?? "Не указано";
                 })
                 .PrintToString(record);
 
             Assert.Multiple(() =>
             {
-                Assert.That(formatterCalls, Is.Zero);
-                Assert.That(result, Does.Contain("Name = null"));
-                Assert.That(result, Does.Not.Contain("fallback"));
+                Assert.That(formatterCalls, Is.EqualTo(1));
+                Assert.That(result, Does.Contain("Name = Не указано"));
             });
         }
+        
+        [Test]
+        public void PrintingType_UsesFormatterForNullMembers()
+        {
+            var person = new NullableName
+            {
+                Name = null
+            };
+
+            var result = ObjectPrinter.For<NullableName>()
+                .Printing<string?>()
+                .Using(name => name ?? "Отсутствует")
+                .PrintToString(person);
+
+            Assert.That(result, Does.Contain("Name = Отсутствует"));
+        }
+        
+        // [Test]
+        // public void TrimmedToLength_AppliesAfterCustomFormatter()
+        // {
+        //     var person = new Person
+        //     {
+        //         Name = "Alex"
+        //     };
+        //
+        //     var result = ObjectPrinter.For<Person>()
+        //         .Printing(p => p.Name)
+        //         .Using(name => $"Hello, {name}!")
+        //         .TrimmedToLength(9)
+        //         .PrintToString(person);
+        //
+        //     Assert.That(result, Does.Contain("Name = Hello, Al"));
+        // }
 
         [Test]
         public void PrintToString_PrintsMultidimensionalArrayElements()

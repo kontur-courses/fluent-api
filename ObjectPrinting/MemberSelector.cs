@@ -11,7 +11,7 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(memberSelector);
 
-            Expression expression = memberSelector.Body;
+            var expression = memberSelector.Body;
 
             while (expression is UnaryExpression unaryExpression &&
                    (unaryExpression.NodeType == ExpressionType.Convert ||

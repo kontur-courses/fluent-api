@@ -10,7 +10,7 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(propertyConfig);
 
-            return propertyConfig.TrimmedToLength(maxLength);
+            return propertyConfig.SetMaxLength(maxLength);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace ObjectPrinting
             if (IsSimpleType(type))
             {
                 return AppendLine(
-                    FormatValue(value, settings.GetTypeCulture(type)));
+                    FormatValue(value, null));
             }
 
             if (!type.IsValueType && !objectsInPath.Add(value))
@@ -282,38 +282,64 @@ namespace ObjectPrinting
             int nestingLevel,
             HashSet<object> objectsInPath)
         {
-            if (value is null)
-                return PrintValue(null, nestingLevel, objectsInPath);
-
             var formatter = settings.GetMemberFormatter(member);
-            var culture = settings.GetMemberCulture(member);
+            formatter ??= settings.GetTypeFormatter(GetMemberType(member));
 
-            string result;
+            if (formatter is null && value is not null)
+            {
+                formatter = settings.GetTypeFormatter(value.GetType());
+            }
+
+            var stringFormatter = settings.GetMemberStringFormatter(member);
 
             if (formatter is not null)
             {
-                result = AppendLine(formatter(value));
-            }
-            else if (culture is not null)
-            {
-                result = AppendLine(FormatValue(value, culture));
-            }
-            else
-            {
-                result = PrintValue(value, nestingLevel, objectsInPath);
+                var formattedValue = formatter(value);
+
+                if (stringFormatter is not null)
+                {
+                    formattedValue = stringFormatter(formattedValue);
+                }
+
+                return AppendLine(formattedValue);
             }
 
-            var maxLength = settings.GetMemberMaxLength(member);
+            if (value is null)
+            {
+                var nullValue = stringFormatter is null
+                    ? PrintingFormat.NullValue
+                    : stringFormatter(PrintingFormat.NullValue);
 
-            if (maxLength is null)
+                return AppendLine(nullValue);
+            }
+
+            var result = PrintValue(value, nestingLevel, objectsInPath);
+
+            if (stringFormatter is null)
+            {
                 return result;
+            }
 
-            var lineEnding = Environment.NewLine;
+            return AppendLine(stringFormatter(RemoveNewLine(result)));
+        }
+        
+        private static Type GetMemberType(MemberInfo member)
+        {
+            return member switch
+            {
+                PropertyInfo property => property.PropertyType,
+                FieldInfo field => field.FieldType,
+                _ => throw new ArgumentException(
+                    "Member must be a property or field.",
+                    nameof(member))
+            };
+        }
 
-            if (result.EndsWith(lineEnding, StringComparison.Ordinal))
-                result = result[..^lineEnding.Length];
-
-            return AppendLine(Truncate(result, maxLength.Value));
+        private static string RemoveNewLine(string value)
+        {
+            return value.EndsWith(PrintingFormat.NewLine, StringComparison.Ordinal)
+                ? value[..^PrintingFormat.NewLine.Length]
+                : value;
         }
 
         private string FormatDictionaryKey(object? key)
@@ -327,7 +353,7 @@ namespace ObjectPrinting
             if (formatter is not null)
                 return formatter(key);
 
-            return FormatValue(key, settings.GetTypeCulture(type));
+            return FormatValue(key, null);
         }
 
         private static string GetIndentation(int nestingLevel)
@@ -368,7 +394,7 @@ namespace ObjectPrinting
 
         private static string AppendLine(string value)
         {
-            return value + Environment.NewLine;
+            return value + PrintingFormat.NewLine;
         }
     }
 }

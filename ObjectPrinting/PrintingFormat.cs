@@ -1,3 +1,5 @@
+using System;
+
 namespace ObjectPrinting
 {
     internal static class PrintingFormat
@@ -11,5 +13,7 @@ namespace ObjectPrinting
         internal const string EmptyCollectionMarker = "[empty]";
 
         internal const char IndentationCharacter = '\t';
+
+        internal static readonly string NewLine = Environment.NewLine;
     }
 }

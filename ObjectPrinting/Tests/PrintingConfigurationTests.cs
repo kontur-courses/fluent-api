@@ -163,5 +163,13 @@ namespace ObjectPrinting.Tests
                 ObjectPrinter.For<Person>()
                     .Printing(person => person.Name.Length));
         }
+        
+        [Test]
+        public void Printing_ThrowsWhenExpressionDoesNotSelectMember()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                ObjectPrinter.For<Person>()
+                    .Printing(person => 42));
+        }
     }
 }

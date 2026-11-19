@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 
 namespace ObjectPrinting
 {
@@ -25,7 +24,7 @@ namespace ObjectPrinting
             return printingConfig;
         }
 
-        public PrintingConfig<TRoot> Using(CultureInfo culture)
+        internal PrintingConfig<TRoot> UsingCulture(System.Globalization.CultureInfo culture)
         {
             printingConfig.Settings.SetTypeCulture(typeof(TValue), culture);
 

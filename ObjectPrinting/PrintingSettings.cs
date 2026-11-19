@@ -36,22 +36,16 @@ namespace ObjectPrinting
                    && settings.IsExcluded;
         }
 
-        internal void SetTypeFormatter(
-            Type type,
-            Func<object?, string> formatter)
+        internal void SetTypeFormatter(Type type, Func<object?, string> formatter)
         {
             ArgumentNullException.ThrowIfNull(formatter);
 
-            var settings = GetTypeSettings(type);
-            settings.Formatter = formatter;
-            settings.Culture = null;
+            GetTypeSettings(type).Formatter = formatter;
         }
 
         internal Func<object?, string>? GetTypeFormatter(Type type)
         {
-            return typeSettings.TryGetValue(
-                NormalizeType(type),
-                out var settings)
+            return typeSettings.TryGetValue(NormalizeType(type), out var settings)
                 ? settings.Formatter
                 : null;
         }
@@ -60,29 +54,16 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(culture);
 
-            var settings = GetTypeSettings(type);
-            settings.Culture = CopyCulture(culture);
-            settings.Formatter = null;
+            var readOnlyCulture = CultureInfo.ReadOnly(culture);
+
+            SetTypeFormatter(type, value => FormatValue(value, readOnlyCulture));
         }
 
-        internal CultureInfo? GetTypeCulture(Type type)
-        {
-            return typeSettings.TryGetValue(
-                NormalizeType(type),
-                out var settings)
-                ? settings.Culture
-                : null;
-        }
-
-        internal void SetMemberFormatter(
-            MemberInfo member,
-            Func<object?, string> formatter)
+        internal void SetMemberFormatter(MemberInfo member, Func<object?, string> formatter)
         {
             ArgumentNullException.ThrowIfNull(formatter);
 
-            var settings = GetMemberSettings(member);
-            settings.Formatter = formatter;
-            settings.Culture = null;
+            GetMemberSettings(member).Formatter = formatter;
         }
 
         internal Func<object?, string>? GetMemberFormatter(MemberInfo member)
@@ -96,30 +77,26 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(culture);
 
-            var settings = GetMemberSettings(member);
-            settings.Culture = CopyCulture(culture);
-            settings.Formatter = null;
-        }
+            var readOnlyCulture = CultureInfo.ReadOnly(culture);
 
-        internal CultureInfo? GetMemberCulture(MemberInfo member)
-        {
-            return memberSettings.TryGetValue(member, out var settings)
-                ? settings.Culture
-                : null;
+            SetMemberFormatter(member, value => FormatValue(value, readOnlyCulture));
         }
 
         internal void SetMemberMaxLength(MemberInfo member, int maxLength)
         {
             if (maxLength < 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(maxLength));
+            }
 
-            GetMemberSettings(member).MaxLength = maxLength;
+            GetMemberSettings(member).StringFormatter = value =>
+                value.Length <= maxLength ? value : value[..maxLength];
         }
 
-        internal int? GetMemberMaxLength(MemberInfo member)
+        internal Func<string, string>? GetMemberStringFormatter(MemberInfo member)
         {
             return memberSettings.TryGetValue(member, out var settings)
-                ? settings.MaxLength
+                ? settings.StringFormatter
                 : null;
         }
 
@@ -156,16 +133,24 @@ namespace ObjectPrinting
             return Nullable.GetUnderlyingType(type) ?? type;
         }
 
-        private static CultureInfo CopyCulture(CultureInfo culture)
+        private static string FormatValue(object? value, CultureInfo culture)
         {
-            return CultureInfo.ReadOnly((CultureInfo)culture.Clone());
+            if (value is null)
+            {
+                return PrintingFormat.NullValue;
+            }
+
+            if (value is IFormattable formattable)
+            {
+                return formattable.ToString(null, culture) ?? string.Empty;
+            }
+
+            return value.ToString() ?? string.Empty;
         }
 
         private sealed class TypeSettings
         {
             internal Func<object?, string>? Formatter { get; set; }
-
-            internal CultureInfo? Culture { get; set; }
         }
 
         private sealed class MemberSettings
@@ -174,9 +159,7 @@ namespace ObjectPrinting
 
             internal Func<object?, string>? Formatter { get; set; }
 
-            internal CultureInfo? Culture { get; set; }
-
-            internal int? MaxLength { get; set; }
+            internal Func<string, string>? StringFormatter { get; set; }
         }
     }
 }
