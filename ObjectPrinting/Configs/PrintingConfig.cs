@@ -9,13 +9,15 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly PropertyInfo[] Properties = typeof(TOwner).GetProperties();
-        private static readonly List<PropertyInfo> PropertiesToExclude = [];
+        private readonly PropertyInfo[] properties = typeof(TOwner).GetProperties();
+        private readonly List<PropertyInfo> propertiesToExclude = [];
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
-            PropertiesToExclude
-                .AddRange(Properties
-                    .Where(propertyInfo => propertyInfo.PropertyType == typeof(TPropertyType)));
+            var propertyType = typeof(TPropertyType);
+            
+            propertiesToExclude
+                .AddRange(properties
+                    .Where(propertyInfo => propertyInfo.PropertyType == propertyType));
 
             return this;
         }
@@ -32,14 +34,17 @@ namespace ObjectPrinting
                 throw new ArgumentException("Выражение указывает на поле, а не на свойство.");
             }
             
-            PropertiesToExclude.Add(propertyInfo);
+            propertiesToExclude.Add(propertyInfo);
             
             return this;
         }
 
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>()
         {
-            throw  new NotImplementedException();
+
+
+
+            return new PropertyPrintingConfig<TOwner, TPropertyType>();
         }
         
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
@@ -70,12 +75,14 @@ namespace ObjectPrinting
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties().Where(prop => !PropertiesToExclude.Contains(prop)))
+            
+            foreach (var propertyInfo in properties.Where(prop => !propertiesToExclude.Contains(prop)))
             {
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
             }
+            
             return sb.ToString();
         }
     }
