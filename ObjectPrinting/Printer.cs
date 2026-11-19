@@ -78,7 +78,7 @@ namespace ObjectPrinting
                     continue;
 
                 var value = PrintingConfig<TOwner>.GetValue(member, obj);
-                var printed = value != null && _config._formaterMember.TryGetValue(member, out var propertyFormater)
+                var printed = value != null && _config._formaterMember.TryGetValue(MemberKey.From(member), out var propertyFormater)
                     ? propertyFormater(value) + Environment.NewLine
                     : PrintToString(value, nestingLevel + 1, path);
 

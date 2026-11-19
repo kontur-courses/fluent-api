@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace ObjectPrinterTest
 {
-    public class ObjectPrinterTest
+    public partial class ObjectPrinterTest
     {
 
         private static readonly string NL = Environment.NewLine;
@@ -200,28 +200,25 @@ namespace ObjectPrinterTest
             result.Should().Contain("Value = 7");
         }
 
-        //private class Base { public string? Name { get; set; } }
-        //private class Derived : Base { public int Age { get; set; } }
+        [Test]
+        public void Excluding_InheritedMember_RemovesIt()
+        {
+            var result = ObjectPrinter.For<Derived>()
+                .Excluding(p => p.Name)
+                .PrintToString(new Derived { Name = "Alex", Age = 19 });
 
-        //[Test]
-        //public void Excluding_InheritedMember_RemovesIt()
-        //{
-        //    var result = ObjectPrinter.For<Derived>()
-        //        .Excluding(p => p.Name)
-        //        .PrintToString(new Derived { Name = "Alex", Age = 19 });
+            result.Should().NotContain("Name").And.Contain("Age = 19");
+        }
 
-        //    result.Should().NotContain("Name").And.Contain("Age = 19");
-        //}
+        [Test]
+        public void Printing_InheritedMember_AppliesFormater()
+        {
+            var result = ObjectPrinter.For<Derived>()
+                .Printing(p => p.Name).Using(n => "<" + n + ">")
+                .PrintToString(new Derived { Name = "Alex" });
 
-        //[Test]
-        //public void Printing_InheritedMember_AppliesFormater()
-        //{
-        //    var result = ObjectPrinter.For<Derived>()
-        //        .Printing(p => p.Name).Using(n => "<" + n + ">")
-        //        .PrintToString(new Derived { Name = "Alex" });
-
-        //    result.Should().Contain("Name = <Alex>");
-        //}
+            result.Should().Contain("Name = <Alex>");
+        }
 
         private static string Lines(params string[] lines)
             => string.Join(NL, lines) + NL;

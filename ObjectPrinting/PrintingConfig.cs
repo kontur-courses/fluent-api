@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace ObjectPrinting
 {
@@ -19,10 +17,10 @@ namespace ObjectPrinting
                 typeof(sbyte), typeof(short)
         };
 
-        internal HashSet<MemberInfo> _excludingMember = new();
+        internal HashSet<MemberKey> _excludingMember = new();
         internal HashSet<Type> _excludingType = new();
 
-        internal Dictionary<MemberInfo, Func<object, string>> _formaterMember = new();
+        internal Dictionary<MemberKey, Func<object, string>> _formaterMember = new();
         internal Dictionary<Type, Func<object, string>> _formaterType = new();
 
 
@@ -38,7 +36,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            _excludingMember.Add(GetMember(memberSelector));
+            _excludingMember.Add(MemberKey.From(GetMember(memberSelector)));
             return this;
         }
 
@@ -77,7 +75,7 @@ namespace ObjectPrinting
 
         internal bool IsMemberExcluded(MemberInfo member)
         {
-            return _excludingMember.Contains(member)
+            return _excludingMember.Contains(MemberKey.From(member))
                 || _excludingType.Contains(GetMemberType(member));
         }
 

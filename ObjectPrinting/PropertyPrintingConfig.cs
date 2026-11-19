@@ -32,7 +32,7 @@ namespace ObjectPrinting
         private PrintingConfig<TOwner> Register(Func<object, string> formater)
         {
             if (member != null)
-                printingConfig._formaterMember[member] = formater;
+                printingConfig._formaterMember[MemberKey.From(member)] = formater;
             else
                 printingConfig._formaterType[typeof(TPropType)] = formater;
             return printingConfig;
