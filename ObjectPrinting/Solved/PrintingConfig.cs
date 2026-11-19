@@ -18,11 +18,8 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<Type> excludedTypes = [];
         private readonly HashSet<MemberInfo> excludedProperties = [];
 
-        private readonly Dictionary<Type, Func<object, string>> typeSerializers =
-            new Dictionary<Type, Func<object, string>>();
-
-        private readonly Dictionary<MemberInfo, Func<object, string>> propertySerializers =
-            new Dictionary<MemberInfo, Func<object, string>>();
+        private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
+        private readonly Dictionary<MemberInfo, Func<object, string>> propertySerializers = new();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -64,7 +61,7 @@ namespace ObjectPrinting.Solved
             return PrintToString(obj, 0, []);
         }
 
-        private string PrintToString(object obj, int nestingLevel, HashSet<object> processedObjects)
+        private string PrintToString(object? obj, int nestingLevel, HashSet<object> processedObjects)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
