@@ -43,7 +43,7 @@ namespace ObjectPrinting
         
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>()
         {
-            throw  new NotImplementedException();
+            return new PropertyPrintingConfig<TOwner, TPropertyType>(this);
         }
         
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
