@@ -32,45 +32,44 @@ namespace ObjectPrinting
             HashSet<object> objectsInPath)
         {
             if (value is null)
+            {
                 return AppendLine(PrintingFormat.NullValue);
+            }
 
             var type = value.GetType();
             var formatter = settings.GetTypeFormatter(type);
 
             if (formatter is not null)
+            {
                 return AppendLine(formatter(value));
+            }
 
             if (IsSimpleType(type))
             {
-                return AppendLine(
-                    FormatValue(value, null));
+                return AppendLine(FormatValue(value, null));
             }
 
+            return PrintComplexValue(
+                value,
+                type,
+                nestingLevel,
+                objectsInPath);
+        }
+
+        private string PrintComplexValue(
+            object value,
+            Type type,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
             if (!type.IsValueType && !objectsInPath.Add(value))
             {
-                return AppendLine(
-                    PrintingFormat.CircularReferenceMarker);
+                return AppendLine(PrintingFormat.CircularReferenceMarker);
             }
 
             try
             {
-                if (value is IDictionary dictionary)
-                {
-                    return PrintDictionary(
-                        dictionary,
-                        nestingLevel,
-                        objectsInPath);
-                }
-
-                if (value is IEnumerable collection)
-                {
-                    return PrintCollection(
-                        collection,
-                        nestingLevel,
-                        objectsInPath);
-                }
-
-                return PrintObject(
+                return PrintComplexValueContent(
                     value,
                     type,
                     nestingLevel,
@@ -79,8 +78,162 @@ namespace ObjectPrinting
             finally
             {
                 if (!type.IsValueType)
+                {
                     objectsInPath.Remove(value);
+                }
             }
+        }
+
+        private string PrintComplexValueContent(
+            object value,
+            Type type,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            if (value is IDictionary dictionary)
+            {
+                return PrintDictionary(dictionary, nestingLevel, objectsInPath);
+            }
+
+            if (value is Array array)
+            {
+                return PrintArray(array, nestingLevel, objectsInPath);
+            }
+
+            if (value is IEnumerable collection)
+            {
+                return PrintCollection(collection, nestingLevel, objectsInPath);
+            }
+
+            return PrintObject(value, type, nestingLevel, objectsInPath);
+        }
+
+        private string PrintArray(
+            Array array,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            var builder = new StringBuilder();
+            var indentation = GetIndentation(nestingLevel);
+
+            if (array.Length == 0)
+            {
+                AppendEmptyCollection(builder, indentation);
+                return builder.ToString();
+            }
+
+            var indices = new int[array.Rank];
+
+            AppendArrayEntries(
+                array,
+                0,
+                indices,
+                builder,
+                indentation,
+                nestingLevel,
+                objectsInPath);
+
+            return builder.ToString();
+        }
+
+        private void AppendArrayEntries(
+            Array array,
+            int dimension,
+            int[] indices,
+            StringBuilder builder,
+            string indentation,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            var index = array.GetLowerBound(dimension);
+            var upperBound = array.GetUpperBound(dimension);
+
+            while (true)
+            {
+                indices[dimension] = index;
+
+                AppendArrayDimensionEntry(
+                    array,
+                    dimension,
+                    indices,
+                    builder,
+                    indentation,
+                    nestingLevel,
+                    objectsInPath);
+
+                if (index == upperBound)
+                {
+                    break;
+                }
+
+                index++;
+            }
+        }
+
+        private void AppendArrayDimensionEntry(
+            Array array,
+            int dimension,
+            int[] indices,
+            StringBuilder builder,
+            string indentation,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            if (dimension == array.Rank - 1)
+            {
+                AppendArrayEntry(
+                    array,
+                    indices,
+                    builder,
+                    indentation,
+                    nestingLevel,
+                    objectsInPath);
+
+                return;
+            }
+
+            AppendArrayEntries(
+                array,
+                dimension + 1,
+                indices,
+                builder,
+                indentation,
+                nestingLevel,
+                objectsInPath);
+        }
+
+        private void AppendArrayEntry(
+            Array array,
+            int[] indices,
+            StringBuilder builder,
+            string indentation,
+            int nestingLevel,
+            HashSet<object> objectsInPath)
+        {
+            AppendCollectionEntry(
+                builder,
+                indentation,
+                FormatArrayIndices(indices),
+                array.GetValue(indices),
+                nestingLevel,
+                objectsInPath);
+        }
+
+        private static string FormatArrayIndices(int[] indices)
+        {
+            var builder = new StringBuilder();
+
+            for (var i = 0; i < indices.Length; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append(indices[i].ToString(CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
         }
 
         private string PrintObject(
@@ -92,7 +245,8 @@ namespace ObjectPrinting
             var indentation = GetIndentation(nestingLevel);
             var builder = new StringBuilder();
 
-            builder.AppendLine(type.Name);
+            builder.Append(type.Name)
+                .Append(PrintingFormat.NewLine);
 
             AppendProperties(
                 builder,
@@ -136,7 +290,9 @@ namespace ObjectPrinting
             }
 
             if (index == 0)
+            {
                 AppendEmptyCollection(builder, indentation);
+            }
 
             return builder.ToString();
         }
@@ -161,7 +317,9 @@ namespace ObjectPrinting
             }
 
             if (dictionary.Count == 0)
+            {
                 AppendEmptyCollection(builder, indentation);
+            }
 
             return builder.ToString();
         }
@@ -191,7 +349,7 @@ namespace ObjectPrinting
         {
             builder.Append(indentation)
                 .Append(PrintingFormat.EmptyCollectionMarker)
-                .AppendLine();
+                .Append(PrintingFormat.NewLine);
         }
 
         private void AppendProperties(
@@ -207,14 +365,7 @@ namespace ObjectPrinting
 
             foreach (var property in properties)
             {
-                if (property.GetGetMethod() is null)
-                    continue;
-
-                if (property.GetIndexParameters().Length > 0)
-                    continue;
-
-                if (settings.IsTypeExcluded(property.PropertyType) ||
-                    settings.IsMemberExcluded(property))
+                if (!ShouldPrintProperty(property))
                 {
                     continue;
                 }
@@ -227,6 +378,14 @@ namespace ObjectPrinting
                     nestingLevel,
                     objectsInPath);
             }
+        }
+
+        private bool ShouldPrintProperty(PropertyInfo property)
+        {
+            return property.GetGetMethod() is not null
+                   && property.GetIndexParameters().Length == 0
+                   && !settings.IsTypeExcluded(property.PropertyType)
+                   && !settings.IsMemberExcluded(property);
         }
 
         private void AppendFields(
@@ -242,8 +401,7 @@ namespace ObjectPrinting
 
             foreach (var field in fields)
             {
-                if (settings.IsTypeExcluded(field.FieldType) ||
-                    settings.IsMemberExcluded(field))
+                if (!ShouldPrintField(field))
                 {
                     continue;
                 }
@@ -256,6 +414,12 @@ namespace ObjectPrinting
                     nestingLevel,
                     objectsInPath);
             }
+        }
+
+        private bool ShouldPrintField(FieldInfo field)
+        {
+            return !settings.IsTypeExcluded(field.FieldType)
+                   && !settings.IsMemberExcluded(field);
         }
 
         private void AppendMember(
@@ -282,7 +446,33 @@ namespace ObjectPrinting
             int nestingLevel,
             HashSet<object> objectsInPath)
         {
+            var formatter = GetMemberFormatter(member, value);
+            var stringFormatter = settings.GetMemberStringFormatter(member);
+
+            if (formatter is not null)
+            {
+                return PrintFormattedMemberValue(
+                    formatter,
+                    value,
+                    stringFormatter);
+            }
+
+            if (value is null)
+            {
+                return PrintNullMemberValue(stringFormatter);
+            }
+
+            var result = PrintValue(value, nestingLevel, objectsInPath);
+
+            return ApplyStringFormatter(result, stringFormatter);
+        }
+
+        private Func<object?, string>? GetMemberFormatter(
+            MemberInfo member,
+            object? value)
+        {
             var formatter = settings.GetMemberFormatter(member);
+
             formatter ??= settings.GetTypeFormatter(GetMemberType(member));
 
             if (formatter is null && value is not null)
@@ -290,39 +480,45 @@ namespace ObjectPrinting
                 formatter = settings.GetTypeFormatter(value.GetType());
             }
 
-            var stringFormatter = settings.GetMemberStringFormatter(member);
+            return formatter;
+        }
 
-            if (formatter is not null)
+        private string PrintFormattedMemberValue(
+            Func<object?, string> formatter,
+            object? value,
+            Func<string, string>? stringFormatter)
+        {
+            var result = formatter(value);
+
+            if (stringFormatter is not null)
             {
-                var formattedValue = formatter(value);
-
-                if (stringFormatter is not null)
-                {
-                    formattedValue = stringFormatter(formattedValue);
-                }
-
-                return AppendLine(formattedValue);
+                result = stringFormatter(result);
             }
 
-            if (value is null)
-            {
-                var nullValue = stringFormatter is null
-                    ? PrintingFormat.NullValue
-                    : stringFormatter(PrintingFormat.NullValue);
+            return AppendLine(result);
+        }
 
-                return AppendLine(nullValue);
-            }
+        private string PrintNullMemberValue(Func<string, string>? stringFormatter)
+        {
+            var result = stringFormatter is null
+                ? PrintingFormat.NullValue
+                : stringFormatter(PrintingFormat.NullValue);
 
-            var result = PrintValue(value, nestingLevel, objectsInPath);
+            return AppendLine(result);
+        }
 
+        private string ApplyStringFormatter(
+            string value,
+            Func<string, string>? stringFormatter)
+        {
             if (stringFormatter is null)
             {
-                return result;
+                return value;
             }
 
-            return AppendLine(stringFormatter(RemoveNewLine(result)));
+            return AppendLine(stringFormatter(RemoveNewLine(value)));
         }
-        
+
         private static Type GetMemberType(MemberInfo member)
         {
             return member switch
@@ -345,13 +541,17 @@ namespace ObjectPrinting
         private string FormatDictionaryKey(object? key)
         {
             if (key is null)
+            {
                 return PrintingFormat.NullValue;
+            }
 
             var type = key.GetType();
             var formatter = settings.GetTypeFormatter(type);
 
             if (formatter is not null)
+            {
                 return formatter(key);
+            }
 
             return FormatValue(key, null);
         }
@@ -383,13 +583,6 @@ namespace ObjectPrinting
             }
 
             return value.ToString() ?? string.Empty;
-        }
-
-        private static string Truncate(string value, int maxLength)
-        {
-            return value.Length <= maxLength
-                ? value
-                : value[..maxLength];
         }
 
         private static string AppendLine(string value)

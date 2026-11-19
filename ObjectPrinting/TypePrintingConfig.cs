@@ -19,16 +19,31 @@ namespace ObjectPrinting
 
             printingConfig.Settings.SetTypeFormatter(
                 typeof(TValue),
-                value => formatter((TValue)value!));
+                value => FormatValue(value, formatter));
 
             return printingConfig;
         }
 
-        internal PrintingConfig<TRoot> UsingCulture(System.Globalization.CultureInfo culture)
+        internal PrintingConfig<TRoot> UsingCulture(
+            System.Globalization.CultureInfo culture)
         {
             printingConfig.Settings.SetTypeCulture(typeof(TValue), culture);
 
             return printingConfig;
+        }
+
+        private static string FormatValue(
+            object? value,
+            Func<TValue, string> formatter)
+        {
+            if (value is null &&
+                typeof(TValue).IsValueType &&
+                Nullable.GetUnderlyingType(typeof(TValue)) is null)
+            {
+                return PrintingFormat.NullValue;
+            }
+
+            return formatter((TValue)value!);
         }
     }
 }

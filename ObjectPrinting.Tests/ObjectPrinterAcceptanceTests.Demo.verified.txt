@@ -1,0 +1,4 @@
+﻿Person
+	Name = ALEXA
+	Height = 1,75
+	Age = #19

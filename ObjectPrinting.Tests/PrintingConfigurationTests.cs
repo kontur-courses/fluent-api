@@ -45,7 +45,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingMember_UsesCustomFormatter()
+        public void Printing_UsesCustomFormatter()
         {
             var person = new Person
             {
@@ -53,7 +53,7 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Printing(person => person.Age)
+                .Printing(p => p.Age)
                 .Using(age => $"Возраст: {age}")
                 .PrintToString(person);
 
@@ -61,7 +61,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintingMember_UsesSpecifiedCulture()
+        public void Printing_UsesSpecifiedCultureForMember()
         {
             var person = new Person
             {
@@ -69,7 +69,7 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Printing(person => person.Height)
+                .Printing(p => p.Height)
                 .Using(CultureInfo.GetCultureInfo("fr-FR"))
                 .PrintToString(person);
 
@@ -85,12 +85,40 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Printing(person => person.Name)
+                .Printing(p => p.Name)
                 .TrimmedToLength(4)
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Alex"));
-            Assert.That(result, Does.Not.Contain("Alexander"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Does.Contain("Name = Alex"));
+                Assert.That(result, Does.Not.Contain("Alexander"));
+            });
+        }
+
+        [Test]
+        public void PrintingStringMember_TrimsValueToZeroLength()
+        {
+            var person = new Person
+            {
+                Name = "Alexander"
+            };
+
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .TrimmedToLength(0)
+                .PrintToString(person);
+
+            var expected =
+                "Person" + PrintingTestFormat.NewLine +
+                "\tId = " + System.Guid.Empty + PrintingTestFormat.NewLine +
+                "\tName = " + PrintingTestFormat.NewLine +
+                "\tHeight = 0" + PrintingTestFormat.NewLine +
+                "\tAge = 0" + PrintingTestFormat.NewLine +
+                "\tExternalId = " + System.Guid.Empty + PrintingTestFormat.NewLine +
+                "\tScore = 42" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -102,11 +130,14 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Excluding(person => person.Age)
+                .Excluding(p => p.Age)
                 .PrintToString(person);
 
-            Assert.That(result, Does.Not.Contain("Age = "));
-            Assert.That(result, Does.Contain("Name = "));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Does.Not.Contain("Age = "));
+                Assert.That(result, Does.Contain("Name = "));
+            });
         }
 
         [Test]
@@ -118,7 +149,7 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Excluding(person => person.Score)
+                .Excluding(p => p.Score)
                 .PrintToString(person);
 
             Assert.That(result, Does.Not.Contain("Score = "));
@@ -136,7 +167,7 @@ namespace ObjectPrinting.Tests
             var result = ObjectPrinter.For<Person>()
                 .Printing<int>()
                 .Using(value => $"Type: {value}")
-                .Printing(person => person.Age)
+                .Printing(p => p.Age)
                 .Using(value => $"Member: {value}")
                 .PrintToString(person);
 
@@ -148,28 +179,89 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void TrimmedToLength_AppliesAfterCustomFormatter()
+        {
+            var person = new Person
+            {
+                Name = "Alex"
+            };
+
+            var printer = ObjectPrinter.For<Person>();
+
+            printer.Printing(p => p.Name)
+                .Using(name => $"Hello, {name}!");
+
+            printer.Printing(p => p.Name)
+                .TrimmedToLength(9);
+
+            var result = printer.PrintToString(person);
+
+            Assert.That(result, Does.Contain("Name = Hello, Al"));
+        }
+
+        [Test]
         public void TrimmedToLength_RejectsNegativeLength()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 ObjectPrinter.For<Person>()
-                    .Printing(person => person.Name)
+                    .Printing(p => p.Name)
                     .TrimmedToLength(-1));
         }
 
         [Test]
-        public void PrintingMember_RejectsNestedMemberExpression()
+        public void Printing_RejectsNestedMemberExpression()
         {
             Assert.Throws<ArgumentException>(() =>
                 ObjectPrinter.For<Person>()
-                    .Printing(person => person.Name.Length));
+                    .Printing(p => p.Name.Length));
         }
-        
+
         [Test]
-        public void Printing_ThrowsWhenExpressionDoesNotSelectMember()
+        public void Printing_RejectsExpressionWithoutMember()
         {
             Assert.Throws<ArgumentException>(() =>
                 ObjectPrinter.For<Person>()
-                    .Printing(person => 42));
+                    .Printing(p => 42));
         }
+
+        [Test]
+        public void PrintingType_UsesNullMarkerWhenFormatterTargetsUnderlyingType()
+        {
+            var record = new NullableAge();
+
+            var result = ObjectPrinter.For<NullableAge>()
+                .Printing<int>()
+                .Using(age => $"#{age}")
+                .PrintToString(record);
+
+            var expected =
+                "NullableAge" + PrintingTestFormat.NewLine +
+                "\tAge = null" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void PrintingType_PassesNullToNullableFormatter()
+        {
+            var record = new NullableAge();
+
+            var result = ObjectPrinter.For<NullableAge>()
+                .Printing<int?>()
+                .Using(age => age.HasValue ? $"#{age.Value}" : "No age")
+                .PrintToString(record);
+
+            var expected =
+                "NullableAge" + PrintingTestFormat.NewLine +
+                "\tAge = No age" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        private sealed class NullableAge
+        {
+            public int? Age { get; set; }
+        }
+
     }
 }

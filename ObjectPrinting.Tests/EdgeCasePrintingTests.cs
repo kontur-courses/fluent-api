@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -21,32 +20,13 @@ namespace ObjectPrinting.Tests
                 .Using(CultureInfo.GetCultureInfo("fr-FR"))
                 .PrintToString(value);
 
-            Assert.That(result, Does.Contain("CreatedAt = 01/11/2026 05:40:12"));
+            Assert.That(
+                result,
+                Does.Contain("CreatedAt = 01/11/2026 05:40:12"));
         }
 
         [Test]
-        public void PrintingStringMember_TrimsValueToZeroLength()
-        {
-            var person = new Person
-            {
-                Name = "Alexander"
-            };
-
-            var result = ObjectPrinter.For<Person>()
-                .Printing(pers => pers.Name)
-                .TrimmedToLength(0)
-                .PrintToString(person);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Does.Contain("Name = " + Environment.NewLine));
-
-                Assert.That(result, Does.Not.Contain("Alexander"));
-            });
-        }
-
-        [Test]
-        public void PrintingMember_UsesCustomFormatterForField()
+        public void Printing_UsesCustomFormatterForField()
         {
             var record = new FieldRecord();
 
@@ -55,11 +35,15 @@ namespace ObjectPrinting.Tests
                 .Using(number => $"Number: {number}")
                 .PrintToString(record);
 
-            Assert.That(result, Does.Contain("Number = Number: 17"));
+            var expected =
+                "FieldRecord" + PrintingTestFormat.NewLine +
+                "\tNumber = Number: 17" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
-        public void PrintingMember_IsScopedToSelectedMemberWhenNamesMatch()
+        public void Printing_IsScopedToSelectedMemberWhenNamesMatch()
         {
             var person = new PersonWithChild
             {
@@ -71,16 +55,17 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<PersonWithChild>()
-                .Printing(item => item.Name)
+                .Printing(p => p.Name)
                 .Using(name => $"Root: {name}")
                 .PrintToString(person);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Does.Contain("Name = Root: Parent"));
-                Assert.That(result, Does.Contain("Name = Nested"));
-                Assert.That(result, Does.Not.Contain("Root: Nested"));
-            });
+            var expected =
+                "PersonWithChild" + PrintingTestFormat.NewLine +
+                "\tName = Root: Parent" + PrintingTestFormat.NewLine +
+                "\tChild = Child" + PrintingTestFormat.NewLine +
+                "\t\tName = Nested" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -92,10 +77,14 @@ namespace ObjectPrinting.Tests
                 .Excluding<ChildDetails>()
                 .PrintToString(parent);
 
+            var expected =
+                "ParentWithTrackedChild" + PrintingTestFormat.NewLine +
+                "\tGetterCalls = 0" + PrintingTestFormat.NewLine;
+
             Assert.Multiple(() =>
             {
                 Assert.That(parent.GetterCalls, Is.Zero);
-                Assert.That(result, Does.Not.Contain("Details = "));
+                Assert.That(result, Is.EqualTo(expected));
             });
         }
 
@@ -111,20 +100,24 @@ namespace ObjectPrinting.Tests
                 .Excluding<int>()
                 .PrintToString(record);
 
-            Assert.That(result, Does.Not.Contain("Age = "));
+            var expected =
+                "OptionalAge" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
         public void PrintingNullMember_UsesCustomFormatter()
         {
             var formatterCalls = 0;
+
             var record = new NullableName
             {
                 Name = null
             };
 
             var result = ObjectPrinter.For<NullableName>()
-                .Printing(item => item.Name)
+                .Printing(p => p.Name)
                 .Using(name =>
                 {
                     formatterCalls++;
@@ -132,13 +125,17 @@ namespace ObjectPrinting.Tests
                 })
                 .PrintToString(record);
 
+            var expected =
+                "NullableName" + PrintingTestFormat.NewLine +
+                "\tName = Не указано" + PrintingTestFormat.NewLine;
+
             Assert.Multiple(() =>
             {
                 Assert.That(formatterCalls, Is.EqualTo(1));
-                Assert.That(result, Does.Contain("Name = Не указано"));
+                Assert.That(result, Is.EqualTo(expected));
             });
         }
-        
+
         [Test]
         public void PrintingType_UsesFormatterForNullMembers()
         {
@@ -152,80 +149,52 @@ namespace ObjectPrinting.Tests
                 .Using(name => name ?? "Отсутствует")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Отсутствует"));
-        }
-        
-        // [Test]
-        // public void TrimmedToLength_AppliesAfterCustomFormatter()
-        // {
-        //     var person = new Person
-        //     {
-        //         Name = "Alex"
-        //     };
-        //
-        //     var result = ObjectPrinter.For<Person>()
-        //         .Printing(p => p.Name)
-        //         .Using(name => $"Hello, {name}!")
-        //         .TrimmedToLength(9)
-        //         .PrintToString(person);
-        //
-        //     Assert.That(result, Does.Contain("Name = Hello, Al"));
-        // }
+            var expected =
+                "NullableName" + PrintingTestFormat.NewLine +
+                "\tName = Отсутствует" + PrintingTestFormat.NewLine;
 
-        [Test]
-        public void PrintToString_PrintsMultidimensionalArrayElements()
-        {
-            var numbers = new[,]
-            {
-                { 1, 2 },
-                { 3, 4 }
-            };
-
-            var result = ObjectPrinter.For<int[,]>()
-                .PrintToString(numbers);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Does.Contain("[0] = 1"));
-                Assert.That(result, Does.Contain("[1] = 2"));
-                Assert.That(result, Does.Contain("[2] = 3"));
-                Assert.That(result, Does.Contain("[3] = 4"));
-            });
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
-        public void PrintToString_PrintsSortedDictionaryEntries()
+        public void Printing_DoesNotPrintPrivateMembers()
         {
-            var scores = new SortedDictionary<string, int>
-            {
-                ["Alex"] = 95,
-                ["Bob"] = 87
-            };
+            var record = new PrivateMemberRecord();
 
-            var result = ObjectPrinter.For<SortedDictionary<string, int>>()
-                .PrintToString(scores);
+            var result = ObjectPrinter.For<PrivateMemberRecord>()
+                .PrintToString(record);
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Does.Contain("[Alex] = 95"));
-                Assert.That(result, Does.Contain("[Bob] = 87"));
-            });
+            var expected =
+                "PrivateMemberRecord" + PrintingTestFormat.NewLine +
+                "\tPublicName = Visible" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
-        public void PrintingType_UsesFormatterForDictionaryKeys()
+        public void PrintToString_UsesEmptyStringWhenFormattableReturnsNull()
         {
-            var values = new Dictionary<int, string>
+            var result = ObjectPrinter.For<NullFormattable>()
+                .PrintToString(new NullFormattable());
+
+            Assert.That(result, Is.EqualTo(PrintingTestFormat.NewLine));
+        }
+
+        [Test]
+        public void PrintToString_UsesEmptyStringWhenDictionaryKeyToStringReturnsNull()
+        {
+            var values = new System.Collections.Generic.Dictionary<NullToStringKey, int>
             {
-                [7] = "Seven"
+                [new NullToStringKey()] = 42
             };
 
-            var result = ObjectPrinter.For<Dictionary<int, string>>()
-                .Printing<int>()
-                .Using(number => $"key-{number}")
+            var result = ObjectPrinter.For<System.Collections.Generic.Dictionary<NullToStringKey, int>>()
                 .PrintToString(values);
 
-            Assert.That(result, Does.Contain("[key-7] = Seven"));
+            var expected =
+                "\t[] = 42" + PrintingTestFormat.NewLine;
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         private sealed class DateTimeHolder
@@ -277,6 +246,46 @@ namespace ObjectPrinting.Tests
         private sealed class NullableName
         {
             public string? Name { get; set; }
+        }
+
+        private sealed class PrivateMemberRecord
+        {
+            private readonly string hiddenField = "Hidden field";
+
+            private string HiddenProperty { get; } = "Hidden property";
+
+            public string PublicName { get; } = "Visible";
+
+            public string ReadPrivateMembers()
+            {
+                return hiddenField + HiddenProperty;
+            }
+        }
+
+        private sealed class NullFormattable : IFormattable
+        {
+            public string ToString(string? format, IFormatProvider? formatProvider)
+            {
+                return null!;
+            }
+        }
+
+        private sealed class NullToStringKey
+        {
+            public override string ToString()
+            {
+                return null!;
+            }
+
+            public override int GetHashCode()
+            {
+                return 1;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is NullToStringKey;
+            }
         }
     }
 }
