@@ -1,11 +1,34 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        public PrintingConfig<TOwner> Excluding<TPropertyType>()
+        {
+            
+            throw  new NotImplementedException();
+        }
+        
+        public PrintingConfig<TOwner> Excluding<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
+        {
+            
+            throw  new NotImplementedException();
+        }
+
+        public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>()
+        {
+            throw  new NotImplementedException();
+        }
+        
+        public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
+        {
+            throw  new NotImplementedException();
+        }
+        
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
