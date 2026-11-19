@@ -199,6 +199,18 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Contain("\tAge = " + $"Возраст:{person.Age}");
         }
 
+        [Test]
+        public void PrintToString_PrintingTypeTwice_ShouldPrintViaLastLambda()
+        {
+            var person = GetDefaultPerson();
+
+            var result = person.PrintToString(c => c
+                .Printing<int>().Using(x => $"Число:{x}")
+                .Printing<int>().Using(x => $"Digit:{x}"));
+
+            result.Should().Contain("\tAge = " + $"Digit:{person.Age}");
+        }
+
         private static Person GetDefaultPerson() => new()
         {
             Name = "Alex",
