@@ -9,42 +9,41 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly PropertyInfo[] properties = typeof(TOwner).GetProperties();
-        private readonly List<PropertyInfo> propertiesToExclude = [];
+        private readonly HashSet<MemberInfo> membersToExclude = [];
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
             var propertyType = typeof(TPropertyType);
-            
-            propertiesToExclude
-                .AddRange(properties
-                    .Where(propertyInfo => propertyInfo.PropertyType == propertyType));
+
+            foreach (var member in GetPrintableMembers(typeof(TOwner)))
+            {
+                var memberType = member is PropertyInfo property
+                    ? property.PropertyType
+                    : ((FieldInfo)member).FieldType;
+
+                if (memberType == propertyType)
+                    membersToExclude.Add(member);
+            }
 
             return this;
         }
         
         public PrintingConfig<TOwner> Excluding<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
         {
-            if (memberSelector.Body is not MemberExpression memberExpression)
+            if (memberSelector.Body is not MemberExpression memberExpression
+                || memberExpression.Expression != memberSelector.Parameters[0]
+                || memberExpression.Member is not (PropertyInfo or FieldInfo))
             {
                 throw new ArgumentException("Выражение должно указывать на свойство или поле.");
             }
             
-            if (memberExpression.Member is not PropertyInfo propertyInfo)
-            {
-                throw new ArgumentException("Выражение указывает на поле, а не на свойство.");
-            }
-            
-            propertiesToExclude.Add(propertyInfo);
+            membersToExclude.Add(memberExpression.Member);
             
             return this;
         }
-
+        
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>()
         {
-
-
-
-            return new PropertyPrintingConfig<TOwner, TPropertyType>();
+            throw  new NotImplementedException();
         }
         
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
@@ -71,19 +70,34 @@ namespace ObjectPrinting
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
+            var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
             sb.AppendLine(type.Name);
-            
-            foreach (var propertyInfo in properties.Where(prop => !propertiesToExclude.Contains(prop)))
+
+            foreach (var member in GetPrintableMembers(type))
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                if (membersToExclude.Contains(member))
+                    continue;
+                
+                var value = member is PropertyInfo property
+                    ? property.GetValue(obj)
+                    : ((FieldInfo)member).GetValue(obj);
+                
+                sb.Append(indentation + member.Name + " = " +
+                          PrintToString(value, nestingLevel + 1));
             }
             
             return sb.ToString();
+        }
+        
+        private static IEnumerable<MemberInfo> GetPrintableMembers(Type type)
+        {
+            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
+                .Where(member => member is FieldInfo
+                                 || member is PropertyInfo property
+                                 && property.GetMethod?.IsPublic == true
+                                 && property.GetIndexParameters().Length == 0);
         }
     }
 }
