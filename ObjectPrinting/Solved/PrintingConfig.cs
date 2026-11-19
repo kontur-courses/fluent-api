@@ -84,8 +84,8 @@ namespace ObjectPrinting.Solved
                        excludedProperties.Contains(propertyInfo))
                         continue;
 
-                    if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer) ||
-                       propertySerializers.TryGetValue(propertyInfo, out serializer))
+                    if(propertySerializers.TryGetValue(propertyInfo, out var serializer) ||
+                       typeSerializers.TryGetValue(propertyInfo.PropertyType, out serializer))
                     {
                         sb.Append(propertyInfo.FormatLine(
                             serializer(propertyInfo.GetValue(obj)),

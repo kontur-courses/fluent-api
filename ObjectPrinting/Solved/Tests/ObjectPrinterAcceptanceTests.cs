@@ -187,6 +187,18 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Be(expected);
         }
 
+        [Test]
+        public void PrintToString_PrintingTypeAndPrintingPropertySameType_ShouldPrintViaPropertySerializer()
+        {
+            var person = GetDefaultPerson();
+
+            var result = person.PrintToString(c => c
+                .Printing<int>().Using(x => $"Число:{x}")
+                .Printing(p => p.Age).Using(x => $"Возраст:{x}"));
+
+            result.Should().Contain("\tAge = " + $"Возраст:{person.Age}");
+        }
+
         private static Person GetDefaultPerson() => new()
         {
             Name = "Alex",
