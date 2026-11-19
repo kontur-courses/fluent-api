@@ -1,41 +1,55 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Linq.Expressions;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        private readonly ObjectSerializer serializer;
+
+        internal PrintingConfig(PrintingSettings settings)
         {
-            return PrintToString(obj, 0);
+            ArgumentNullException.ThrowIfNull(settings);
+
+            Settings = settings;
+            serializer = new ObjectSerializer(Settings);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        internal PrintingSettings Settings { get; }
+
+        public PrintingConfig<TOwner> Excluding<T>()
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            Settings.ExcludeType(typeof(T));
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+            return this;
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
+        public PrintingConfig<TOwner> Excluding<TValue>(
+            Expression<Func<TOwner, TValue>> memberSelector)
+        {
+            var member = MemberSelector.GetMember(memberSelector);
+
+            Settings.ExcludeMember(member);
+
+            return this;
+        }
+
+        public TypePrintingConfig<TOwner, TValue> Printing<TValue>()
+        {
+            return new TypePrintingConfig<TOwner, TValue>(this);
+        }
+
+        public PropertyPrintingConfig<TOwner, TValue> Printing<TValue>(
+            Expression<Func<TOwner, TValue>> memberSelector)
+        {
+            var member = MemberSelector.GetMember(memberSelector);
+
+            return new PropertyPrintingConfig<TOwner, TValue>(this, member);
+        }
+
+        public string PrintToString(TOwner obj)
+        {
+            return serializer.PrintToString(obj);
         }
     }
 }
