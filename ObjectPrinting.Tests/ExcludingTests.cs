@@ -2,25 +2,24 @@ using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Extensions;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Tests;
+
+[TestFixture]
+internal class ExcludingTests : PersonFixture
 {
-    [TestFixture]
-    internal class ExcludingTests : PersonFixture
+    [Test]
+    public void Excluding_ByType_ShouldRemoveAllPropertiesOfThatType()
     {
-        [Test]
-        public void Excluding_ByType_ShouldRemoveAllPropertiesOfThatType()
-        {
-            var result = person.PrintToString(cfg => cfg.Excluding<int>());
+        var result = person.PrintToString(cfg => cfg.Excluding<int>());
 
-            result.Should().NotContain("Age").And.NotContain("Building");
-        }
+        result.Should().NotContain("Age").And.NotContain("Building");
+    }
 
-        [Test]
-        public void Excluding_ByMember_ShouldRemoveOnlyThatMember()
-        {
-            var result = person.PrintToString(cfg => cfg.Excluding(p => p.Name));
+    [Test]
+    public void Excluding_ByMember_ShouldRemoveOnlyThatMember()
+    {
+        var result = person.PrintToString(cfg => cfg.Excluding(p => p.Name));
 
-            result.Should().NotContain("Name");
-        }
+        result.Should().NotContain("Name");
     }
 }

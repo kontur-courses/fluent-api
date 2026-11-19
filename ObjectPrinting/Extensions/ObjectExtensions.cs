@@ -1,18 +1,17 @@
 using System;
 using ObjectPrinting.PrintingConfigs;
 
-namespace ObjectPrinting.Extensions
+namespace ObjectPrinting.Extensions;
+
+public static class ObjectExtensions
 {
-    public static class ObjectExtensions
+    public static string PrintToString<T>(this T obj)
     {
-        public static string PrintToString<T>(this T obj)
-        {
-            return ObjectPrinter.For<T>().PrintToString(obj);
-        }
+        return ObjectPrinter.For<T>().PrintToString(obj);
+    }
         
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
-        {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
-        }
+    public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+    {
+        return config(ObjectPrinter.For<T>()).PrintToString(obj);
     }
 }
