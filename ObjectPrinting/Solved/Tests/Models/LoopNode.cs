@@ -1,4 +1,4 @@
-﻿namespace ObjectPrinting.Solved.Tests;
+﻿namespace ObjectPrinting.Solved.Tests.Models;
 
 public class LoopNode
 {

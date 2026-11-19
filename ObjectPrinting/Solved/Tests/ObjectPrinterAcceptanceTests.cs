@@ -2,6 +2,7 @@
 using System.Globalization;
 using NUnit.Framework;
 using FluentAssertions;
+using ObjectPrinting.Solved.Tests.Models;
 
 namespace ObjectPrinting.Solved.Tests
 {

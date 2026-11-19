@@ -1,7 +1,4 @@
-using System;
-using System.Threading;
-
-namespace SpectacleSample
+namespace Spectacle
 {
     public static class SpectacleExtensions
     {
