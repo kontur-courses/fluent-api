@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -68,6 +69,9 @@ namespace ObjectPrinting.Solved
 
             var type = obj.GetType();
 
+            if (typeSerializers.TryGetValue(type, out var serializer))
+                return serializer(obj) + Environment.NewLine;
+
             if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
@@ -76,34 +80,76 @@ namespace ObjectPrinting.Solved
 
             try
             {
-                var sb = new StringBuilder();
-                sb.AppendLine(type.Name);
-                foreach (var propertyInfo in type.GetProperties())
-                {
-                    if(excludedTypes.Contains(propertyInfo.PropertyType) ||
-                       excludedProperties.Contains(propertyInfo))
-                        continue;
-
-                    if(propertySerializers.TryGetValue(propertyInfo, out var serializer) ||
-                       typeSerializers.TryGetValue(propertyInfo.PropertyType, out serializer))
-                    {
-                        sb.AppendLine(propertyInfo.FormatLine(
-                            serializer(propertyInfo.GetValue(obj)),
-                            nestingLevel));
-                        continue;
-                    }
-
-                    sb.Append(propertyInfo.FormatLine(
-                        PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, processedObjects),
-                        nestingLevel));
-                }
-                return sb.ToString();
+                return obj is IEnumerable collection and not string
+                    ? SerializeCollection(collection, nestingLevel, processedObjects)
+                    : SerializeObject(obj, nestingLevel, processedObjects);
             }
             finally
             {
                 if (!type.IsValueType)
                     processedObjects.Remove(obj);
             }
+        }
+
+        private string SerializeObject(
+            object obj,
+            int nestingLevel,
+            HashSet<object> processedObjects)
+        {
+            var type = obj.GetType();
+            var sb = new StringBuilder();
+
+            sb.AppendLine(type.Name);
+
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                if (propertyInfo.GetIndexParameters().Length > 0 ||
+                    excludedTypes.Contains(propertyInfo.PropertyType) ||
+                    excludedProperties.Contains(propertyInfo))
+                    continue;
+
+                var value = propertyInfo.GetValue(obj);
+
+                if (propertySerializers.TryGetValue(
+                        propertyInfo, out var serializer))
+                {
+                    sb.AppendLine(propertyInfo.FormatLine(
+                        serializer(value!),
+                        nestingLevel));
+
+                    continue;
+                }
+
+                sb.Append(propertyInfo.FormatLine(
+                    PrintToString(
+                        value,
+                        nestingLevel + 1,
+                        processedObjects),
+                    nestingLevel));
+            }
+
+            return sb.ToString();
+        }
+
+        private string SerializeCollection(
+            IEnumerable collection,
+            int nestingLevel,
+            HashSet<object> processedObjects)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(collection.GetType().Name);
+
+            foreach (var item in collection)
+            {
+                sb.Append(new string('\t', nestingLevel + 1));
+
+                sb.Append(PrintToString(
+                    item,
+                    nestingLevel + 1,
+                    processedObjects));
+            }
+
+            return sb.ToString();
         }
     }
 }
