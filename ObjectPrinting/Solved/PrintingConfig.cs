@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -79,7 +79,6 @@ namespace ObjectPrinting.Solved
 
             try
             {
-                var identation = new string('\t', nestingLevel + 1);
                 var sb = new StringBuilder();
                 sb.AppendLine(type.Name);
                 foreach (var propertyInfo in type.GetProperties())
@@ -91,16 +90,16 @@ namespace ObjectPrinting.Solved
                     if(typeSerializers.TryGetValue(propertyInfo.PropertyType, out var serializer) ||
                        propertySerializers.TryGetValue(propertyInfo, out serializer))
                     {
-                        sb.Append(identation
-                                  + propertyInfo.Name + " = "
-                                  + serializer(propertyInfo.GetValue(obj))
-                                  + Environment.NewLine);
+                        sb.Append(propertyInfo.FormatLine(
+                            serializer(propertyInfo.GetValue(obj)),
+                            nestingLevel,
+                            Environment.NewLine));
                         continue;
                     }
 
-                    sb.Append(identation + propertyInfo.Name + " = " +
-                              PrintToString(propertyInfo.GetValue(obj),
-                                  nestingLevel + 1, processedObjects));
+                    sb.Append(propertyInfo.FormatLine(
+                        PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1, processedObjects),
+                        nestingLevel));
                 }
                 return sb.ToString();
             }

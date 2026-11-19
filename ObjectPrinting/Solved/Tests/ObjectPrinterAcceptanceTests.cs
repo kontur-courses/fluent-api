@@ -44,29 +44,30 @@ namespace ObjectPrinting.Solved.Tests
         {
             var person = GetDefaultPerson();
 
-            var result = ObjectPrinter.For<Person>()
-                .PrintToString(person);
+            var result = person.PrintToString();
 
-            result.Should()
-                .ContainAll(person.Name,
-                    person.Age.ToString(),
-                    // ReSharper disable once SpecifyACultureInStringConversionExplicitly
-                    person.Height.ToString(),
-                    person.Id.ToString());
+            var expected = string.Join(Environment.NewLine,
+                "Person",
+                "\tId = " + person.Id,
+                "\tName = " + person.Name,
+                "\tLastName = " + person.LastName,
+                "\tHeight = " + person.Height,
+                "\tAge = " + person.Age,
+                "");
+
+            result.Should().Be(expected);
         }
 
 
         [Test]
-        public void PrintToString_ExcludingType_ShouldExcludeType()
+        public void PrintToString_ExcludingType_ShouldExcludeAllSameType()
         {
             var person = GetDefaultPerson();
 
-            var result = ObjectPrinter.For<Person>()
-                .Excluding<string>()
-                .PrintToString(person);
+            var result = person.PrintToString(c => c.Excluding<string>());
 
             result.Should()
-                .NotContainAll(person.Name);
+                .NotContainAll("\tName = " + person.Name, "\tLastName = " + person.LastName);
         }
 
         [Test]
@@ -74,38 +75,45 @@ namespace ObjectPrinting.Solved.Tests
         {
             var person = GetDefaultPerson();
 
-            var result = ObjectPrinter.For<Person>()
-                .Excluding(p => p.Id)
-                .PrintToString(person);
+            var result = person.PrintToString(c => c.Excluding(p => p.Id));
 
             result.Should()
-                .NotContain(person.Id.ToString());
+                .NotContain("\tId = " + person.Id);
         }
 
         [Test]
-        public void PrintToString_PrintingTypeWithUsing_ShouldPrintTypeWithUsingLambda()
+        public void PrintToString_ExcludingProperty_ShouldNotExcludeOtherPropertySameType()
         {
             var person = GetDefaultPerson();
 
-            var result = ObjectPrinter.For<Person>()
-                .Printing<int>().Using(x => x.ToString("B"))
-                .PrintToString(person);
+            var result = person.PrintToString(c => c.Excluding(p => p.Name));
 
             result.Should()
-                .Contain(person.Age.ToString("B"));
+                .Contain("\tLastName = " + person.LastName);
         }
 
         [Test]
-        public void PrintToString_PrintingPropertyWithUsing_ShouldPrintPropertyWithUsingLambda()
+        public void PrintToString_PrintingTypeWithUsing_ShouldPrintTypesViaLambda()
         {
             var person = GetDefaultPerson();
 
-            var result = ObjectPrinter.For<Person>()
-                .Printing(p => p.Id).Using(x => x.ToString("X"))
-                .PrintToString(person);
+            var result = person.PrintToString(
+                c => c.Printing<string>().Using(x => x + "wrap by using"));
 
             result.Should()
-                .Contain(person.Id.ToString("X"));
+                .ContainAll("\tName = " + person.Name + "wrap by using", "\tLastName = " + person.LastName + "wrap by using");
+        }
+
+        [Test]
+        public void PrintToString_PrintingPropertyWithUsing_ShouldPrintPropertyViaLambda()
+        {
+            var person = GetDefaultPerson();
+
+            var result = person.PrintToString(
+                c => c.Printing(p => p.Id).Using(x => x.ToString("X")));
+
+            result.Should()
+                .Contain("\tId = " + person.Id.ToString("X"));
         }
 
         [TestCase("en-US", "1.85")]
@@ -117,32 +125,27 @@ namespace ObjectPrinting.Solved.Tests
             var person = GetDefaultPerson();
             person.Height = 1.85;
 
-            var result = ObjectPrinter.For<Person>()
-                .Printing<double>().Using(CultureInfo.GetCultureInfo(cultureName))
-                .PrintToString(person);
+            var result = person.PrintToString(
+                c => c.Printing<double>().Using(CultureInfo.GetCultureInfo(cultureName)));
 
-            result.Should().Contain(expected);
+            result.Should().Contain("\tHeight = " + expected);
         }
 
-        [TestCase("Alexandra", 4, "Alex")]
-        [TestCase("Alex", 4, "Alex")]
-        [TestCase("Al", 4, "Al")]
+        [TestCase("Ale", "Ale")]
+        [TestCase("Alex", "Alex")]
+        [TestCase("Alexa", "Alex")]
         public void PrintToString_PrintingStringTrimmedToLength_ShouldPrintTrimmedString(
-            string name,
-            int maxLen,
-            string expectedName)
+            string name, string expectedName)
         {
             var person = GetDefaultPerson();
             person.Name = name;
+            const int maxLen = 4;
 
-            var result = ObjectPrinter.For<Person>()
-                .Printing(p => p.Name).TrimmedToLength(maxLen)
-                .PrintToString(person);
+            var result = person.PrintToString(
+                c => c.Printing(p => p.Name).TrimmedToLength(maxLen));
 
-            person.Name = expectedName;
-            var expected = ObjectPrinter.For<Person>().PrintToString(person);
-
-            result.Should().Be(expected);
+            result.Split(Environment.NewLine).Should()
+                .Contain($"\tName = {expectedName}");
         }
 
         [Test]
@@ -166,8 +169,6 @@ namespace ObjectPrinting.Solved.Tests
             };
             loopNode.Previous = loopNode.Next;
 
-            var result = loopNode.PrintToString();
-
             var expected = string.Join(Environment.NewLine,
                 "LoopNode",
                 "\tValue = 1",
@@ -181,12 +182,15 @@ namespace ObjectPrinting.Solved.Tests
                 "\t\tPrevious = null",
                 "");
 
+            var result = loopNode.PrintToString();
+
             result.Should().Be(expected);
         }
 
-        private static Person GetDefaultPerson() => new Person
+        private static Person GetDefaultPerson() => new()
         {
             Name = "Alex",
+            LastName = "Smith",
             Age = 19,
             Height = 1.85,
             Id = Guid.NewGuid()
