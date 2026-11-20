@@ -7,6 +7,10 @@ using System.Text;
 
 namespace ObjectPrinting;
 
+/// <summary>
+/// Сериализует объект в строку с настраиваемыми правилами:
+/// исключением членов/типов, кастомными сериализаторами и культурой чисел
+/// </summary>
 public class ObjectSerializer
 {
     private readonly HashSet<Type> _excludedTypes = [];
@@ -18,8 +22,13 @@ public class ObjectSerializer
     private readonly Dictionary<Type, Func<object?, string>>
         _modifiedTypeSerializers = [];
 
-    private CultureInfo _cultureInfo = CultureInfo.CurrentCulture;
+    private CultureInfo _numericCultureInfo = CultureInfo.CurrentCulture;
 
+    /// <summary>
+    /// Сериализует <paramref name="obj"/> в строку.
+    /// </summary>
+    /// <param name="obj">Объект для сериализации</param>
+    /// <returns>Строковое представление объекта с переводами строк и табуляцией</returns>
     public string SerializeObject(object? obj)
     {
         return PrintToString(obj, 0, 
@@ -41,6 +50,7 @@ public class ObjectSerializer
 
     public void AddExcludedType(Type type)
     {
+        ArgumentNullException.ThrowIfNull(type);
         _excludedTypes.Add(type);
     }
 
@@ -53,7 +63,7 @@ public class ObjectSerializer
     public void SetNumericCulture(CultureInfo cultureInfo)
     {
         ArgumentNullException.ThrowIfNull(cultureInfo);
-        _cultureInfo = cultureInfo;
+        _numericCultureInfo = cultureInfo;
     }
     
     private string PrintToString(object? obj, int nestingLevel, HashSet<object> visited)
@@ -198,7 +208,7 @@ public class ObjectSerializer
     private string SerializeSimpleTypeObject(object obj)
     {
         var result = obj is IFormattable formattable
-            ? formattable.ToString(null, _cultureInfo)
+            ? formattable.ToString(null, _numericCultureInfo)
             : obj.ToString();
 
         return result + Environment.NewLine;
