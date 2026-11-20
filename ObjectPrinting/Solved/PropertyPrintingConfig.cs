@@ -1,24 +1,30 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Numerics;
+using System.Reflection;
 
 namespace ObjectPrinting.Solved
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly HashSet<MemberInfo> targetMembers;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, HashSet<MemberInfo> targetMembers)
         {
             this.printingConfig = printingConfig;
+            this.targetMembers = targetMembers;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            return printingConfig;
-        }
-
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
+            foreach (var member in targetMembers)
+            {
+                printingConfig.CustomSerializers[member] = value => print((TPropType)value);
+            }
             return printingConfig;
         }
 
