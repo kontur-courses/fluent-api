@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -42,11 +43,6 @@ namespace ObjectPrinting.Solved
             return this;
         }
 
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
         public void SetTypeSerialize<TPropType>(Func<TPropType, string> print)
         {
             _typeSerializersDict[typeof(TPropType)] = x => print((TPropType)x);
@@ -57,57 +53,118 @@ namespace ObjectPrinting.Solved
             _propertySerializersDict[property] = x => print((TPropType)x);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public string PrintToString(TOwner obj)
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (_excludeTypes.Contains(propertyInfo.PropertyType)) continue;
-
-                if (_excludeProperties.Contains(propertyInfo)) continue;
-
-                if (_typeSerializersDict.TryGetValue(propertyInfo.PropertyType, out var typeSerializer))
-                {
-                    sb.Append(
-                        identation +
-                        propertyInfo.Name +
-                        " = " +
-                        typeSerializer(propertyInfo.GetValue(obj)));
-                    continue;
-                }
-
-                if (_propertySerializersDict.TryGetValue(propertyInfo, out var propertySerializer))
-                {
-                    sb.Append(
-                        identation +
-                        propertyInfo.Name +
-                        " = " +
-                        propertySerializer(propertyInfo.GetValue(obj)));
-                    continue;
-                }
-
-                sb.Append(
-                    identation + 
-                    propertyInfo.Name + 
-                    " = " +
-                    PrintToString(propertyInfo.GetValue(obj), nestingLevel + 1));
-            }
+            var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
+            AppendValue(sb, obj, nestingLevel: 0, visited);
             return sb.ToString();
+        }
+
+        private static readonly HashSet<Type> FinalTypes = new()
+        {
+            typeof(string), typeof(decimal),
+            typeof(DateTime), typeof(DateTimeOffset),
+            typeof(TimeSpan), typeof(Guid),
+        };
+
+        private static bool IsFinalType(Type type) =>
+            type.IsPrimitive || type.IsEnum || FinalTypes.Contains(type);
+
+        private void AppendValue(StringBuilder sb, object? value, int nestingLevel, HashSet<object> visited)
+        {
+            if (value is null) 
+            { 
+                sb.Append("null"); 
+                return; 
+            }
+
+            var type = value.GetType();
+            if (IsFinalType(type)) 
+            { 
+                sb.Append(value); 
+                return; 
+            }
+
+            if (!type.IsValueType && !visited.Add(value))
+            {
+                sb.Append("is cycle");
+                return;
+            }
+
+            if (value is IDictionary dict) SerializeDictionary(sb, dict, nestingLevel, visited);
+            else if (value is IEnumerable seq) SerializeEnumerable(sb, seq, nestingLevel, visited);
+            else SerializeObject(sb, value, type, nestingLevel, visited);
+
+            if (!type.IsValueType) visited.Remove(value);
+        }
+
+        private void SerializeObject(StringBuilder sb, object obj, Type type, int nestingLevel, HashSet<object> visited)
+        {
+            var memberIndent = new string('\t', nestingLevel + 1);
+            var closeIndent = new string('\t', nestingLevel);
+            var nl = Environment.NewLine;
+
+            sb.Append(type.Name).Append(" {").Append(nl);
+
+            foreach (var property in type.GetProperties())
+            {
+                if (_excludeTypes.Contains(property.PropertyType)) continue;
+                if (_excludeProperties.Contains(property)) continue;
+
+                sb.Append(memberIndent).Append(property.Name).Append(" = ");
+                SerializeMemberValue(sb, property, property.GetValue(obj), nestingLevel + 1, visited);
+                sb.Append(nl);
+            }
+
+            sb.Append(closeIndent).Append('}');
+        }
+
+        private void SerializeMemberValue(StringBuilder sb, PropertyInfo property, object? value, int nestingLevel, HashSet<object> visited)
+        {
+            if (_propertySerializersDict.TryGetValue(property, out var propSerializer))
+                sb.Append(propSerializer(value!));
+
+            else if (_typeSerializersDict.TryGetValue(property.PropertyType, out var typeSerializer))
+                sb.Append(typeSerializer(value!));
+
+            else 
+                AppendValue(sb, value, nestingLevel, visited);
+        }
+
+        private void SerializeEnumerable(StringBuilder sb, IEnumerable enumerable, int nestingLevel, HashSet<object> visited)
+        {
+            var itemIndent = new string('\t', nestingLevel + 1);
+            var closeIndent = new string('\t', nestingLevel);
+            var nl = Environment.NewLine;
+
+            sb.Append('[').Append(nl);
+            var i = 0;
+            foreach (var item in enumerable)
+            {
+                sb.Append(itemIndent).Append('[').Append(i++).Append("] = ");
+                AppendValue(sb, item, nestingLevel + 1, visited);
+                sb.Append(nl);
+            }
+            sb.Append(closeIndent).Append(']');
+        }
+
+        private void SerializeDictionary(StringBuilder sb, IDictionary dict, int nestingLevel, HashSet<object> visited)
+        {
+            var itemIndent = new string('\t', nestingLevel + 1);
+            var closeIndent = new string('\t', nestingLevel);
+            var nl = Environment.NewLine;
+
+            sb.Append('{').Append(nl);
+            foreach (DictionaryEntry entry in dict)
+            {
+                sb.Append(itemIndent);
+                AppendValue(sb, entry.Key, nestingLevel + 1, visited);
+                sb.Append(" = ");
+                AppendValue(sb, entry.Value, nestingLevel + 1, visited);
+                sb.Append(nl);
+            }
+            sb.Append(closeIndent).Append('}');
         }
     }
 }

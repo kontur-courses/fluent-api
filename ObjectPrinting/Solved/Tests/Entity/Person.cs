@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrinting.Solved.Tests.Entity
 {
     public class Person
     {
