@@ -50,7 +50,7 @@ public class PrintingConfig<TOwner>
     {
         return member is null
             ? GetOrCreateRule(_typeRules, typeof(TType))
-            : GetOrCreateRule(_memberRules, member);
+            : GetOrCreateRule(_memberRules, PrintableMember.GetKey(member));
     }
 
     private string PrintToString(object obj, int nestingLevel)
