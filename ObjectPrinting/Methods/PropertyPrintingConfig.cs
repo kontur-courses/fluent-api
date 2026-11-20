@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Reflection;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Methods
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
@@ -29,12 +29,12 @@ namespace ObjectPrinting
 
         PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
 
-        private PrintingConfig<TOwner> Register(Func<object, string> formater)
+        private PrintingConfig<TOwner> Register(Func<object, string> formatter)
         {
             if (member != null)
-                printingConfig._formaterMember[MemberKey.From(member)] = formater;
+                printingConfig.Rules.MemberFormatters[MemberKey.From(member)] = formatter;
             else
-                printingConfig._formaterType[typeof(TPropType)] = formater;
+                printingConfig.Rules.TypeFormatters[typeof(TPropType)] = formatter;
             return printingConfig;
         }
 

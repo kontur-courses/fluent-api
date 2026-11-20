@@ -1,4 +1,7 @@
-﻿using System;
+﻿using ObjectPrinting.Methods;
+using ObjectPrinting.Printing;
+using ObjectPrinting.Printing.Validation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,12 +20,7 @@ namespace ObjectPrinting
                 typeof(sbyte), typeof(short)
         };
 
-        internal HashSet<MemberKey> _excludingMember = new();
-        internal HashSet<Type> _excludingType = new();
-
-        internal Dictionary<MemberKey, Func<object, string>> _formaterMember = new();
-        internal Dictionary<Type, Func<object, string>> _formaterType = new();
-
+        internal PrintingRules Rules { get; } = new();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -36,13 +34,13 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            _excludingMember.Add(MemberKey.From(GetMember(memberSelector)));
+            Rules.ExcludedMembers.Add(MemberKey.From(GetMember(memberSelector)));
             return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>()
         {
-            _excludingType.Add(typeof(TPropType));
+            Rules.ExcludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -53,31 +51,7 @@ namespace ObjectPrinting
         internal MemberInfo GetMember<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
             => ((MemberExpression)memberSelector.Body).Member;
 
-        internal static IEnumerable<MemberInfo> GetMembers(Type type)
-        {
-            const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
 
-            var properties = type.GetProperties(flags)
-                .Where(p => p.GetIndexParameters().Length == 0);
-
-            return properties.Cast<MemberInfo>().Concat(type.GetFields(flags));
-        }
-
-        internal static Type GetMemberType(MemberInfo member)
-            => member is PropertyInfo property 
-            ? property.PropertyType 
-            : ((FieldInfo)member).FieldType;
-
-        internal static object? GetValue(MemberInfo member, object obj)
-            => member is PropertyInfo property 
-            ? property.GetValue(obj) 
-            : ((FieldInfo)member).GetValue(obj);
-
-        internal bool IsMemberExcluded(MemberInfo member)
-        {
-            return _excludingMember.Contains(MemberKey.From(member))
-                || _excludingType.Contains(GetMemberType(member));
-        }
 
     }
 }

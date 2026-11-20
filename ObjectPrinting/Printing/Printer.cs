@@ -14,28 +14,33 @@ namespace ObjectPrinting
             _config = config;
         }
 
-        public string PrintToString(object obj, int nestingLevel, HashSet<object> path)
+        public string PrintToString(object? obj, int nestingLevel, HashSet<object> path)
+            => Print(_config.Rules.ForValue(obj), nestingLevel, path);
+
+        private string Print(PrintDecision decision, int nestingLevel, HashSet<object> path)
         {
+            var obj = decision.Value;
+
             if (obj == null)
                 return "null" + Environment.NewLine;
 
+            if (decision.Formatter != null)
+                return decision.Formatter(obj) + Environment.NewLine;
+
             var type = obj.GetType();
 
-            if (_config._formaterType.TryGetValue(type, out var typeFormater))
-                return typeFormater(obj) + Environment.NewLine;
-
-            if (_config.finalTypes.Contains(obj.GetType()))
+            if (_config.finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             if (!path.Add(obj))
                 return $"{type.Name} (cycle){Environment.NewLine}";
 
-            var result = obj is IEnumerable collectino
-                ? SerializeCollection(collectino, nestingLevel, path)
-                : SerializeProperty(obj, nestingLevel, path);
+            var result = obj is IEnumerable collection
+                ? SerializeCollection(collection, nestingLevel, path)
+                : SerializeMembers(obj, nestingLevel, path);
+
             path.Remove(obj);
             return result;
-
         }
 
         private string SerializeCollection(IEnumerable collection, int nestingLevel, HashSet<object> path)
@@ -48,7 +53,8 @@ namespace ObjectPrinting
             {
                 foreach (DictionaryEntry entry in dictionary)
                 {
-                    var key = PrintToString(entry.Key, nestingLevel + 1, path).TrimEnd();
+                    var key = PrintToString(entry.Key, nestingLevel + 1, path);
+                    key = key.Substring(0, key.Length - Environment.NewLine.Length);
                     sb.Append(identation + "[" + key + "] = " +
                               PrintToString(entry.Value, nestingLevel + 1, path));
                 }
@@ -64,7 +70,7 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeProperty(object obj, int nestingLevel, HashSet<object> path)
+        private string SerializeMembers(object obj, int nestingLevel, HashSet<object> path)
         {
             var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
@@ -72,18 +78,13 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            foreach (var member in PrintingConfig<TOwner>.GetMembers(type))
+            foreach (var member in MemberAccessor.GetMembers(type))
             {
-                if (_config.IsMemberExcluded(member))
+                var decision = _config.Rules.ForMember(member, obj);
+                if (decision.IsExcluded)
                     continue;
 
-                var value = PrintingConfig<TOwner>.GetValue(member, obj);
-                var printed = value != null && _config._formaterMember.TryGetValue(MemberKey.From(member), out var propertyFormater)
-                    ? propertyFormater(value) + Environment.NewLine
-                    : PrintToString(value, nestingLevel + 1, path);
-
-                sb.Append(identation + member.Name + " = " + printed);
-
+                sb.Append(identation + member.Name + " = " + Print(decision, nestingLevel + 1, path));
             }
             return sb.ToString();
         }

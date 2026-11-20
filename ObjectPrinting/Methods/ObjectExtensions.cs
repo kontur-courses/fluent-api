@@ -1,6 +1,4 @@
-using ObjectPrinting;
-
-namespace ObjectPrinting
+namespace ObjectPrinting.Methods
 {
     public static class ObjectExtensions
     {

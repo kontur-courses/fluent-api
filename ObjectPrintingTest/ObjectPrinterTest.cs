@@ -1,6 +1,8 @@
 using FluentAssertions;
 using ObjectPrinterTest.SerializationClasses;
 using ObjectPrinting;
+using ObjectPrinting.Methods;
+using ObjectPrintingTest.SerializationClasses;
 using System.Globalization;
 
 namespace ObjectPrinterTest
@@ -219,6 +221,27 @@ namespace ObjectPrinterTest
 
             result.Should().Contain("Name = <Alex>");
         }
+
+        [Test]
+        public void Excluding_Type_ExcludesMemberWithMatchingRuntimeType()
+        {
+            var result = ObjectPrinter.For<Box>()
+                .Excluding<int>()
+                .PrintToString(new Box { Value = 42 });
+
+            result.Should().NotContain("Value");
+        }
+
+        [Test]
+        public void Excluding_Type_DoesNotExcludeMemberWithOtherRuntimeType()
+        {
+            var result = ObjectPrinter.For<Box>()
+                .Excluding<int>()
+                .PrintToString(new Box { Value = "text" });
+
+            result.Should().Contain("Value = text");
+        }
+
 
         private static string Lines(params string[] lines)
             => string.Join(NL, lines) + NL;
