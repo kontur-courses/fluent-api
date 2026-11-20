@@ -11,14 +11,6 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
 
-        internal HashSet<Type> finalTypes = new()
-        {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan), typeof(Guid), typeof(bool),
-                typeof(long), typeof(decimal), typeof(byte),
-                typeof(sbyte), typeof(short)
-        };
-
         internal PrintingRules Rules { get; } = new();
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()

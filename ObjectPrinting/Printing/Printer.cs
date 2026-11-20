@@ -30,7 +30,7 @@ namespace ObjectPrinting.Printing
 
             var type = obj.GetType();
 
-            if (_config.finalTypes.Contains(type))
+            if (MemberAccessor.IsSimpleType(type))
                 return obj + Environment.NewLine;
 
             if (!path.Add(obj))

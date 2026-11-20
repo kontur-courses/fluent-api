@@ -7,6 +7,17 @@ namespace ObjectPrinting.Printing.Validation
 {
     internal static class MemberAccessor
     {
+        private static readonly HashSet<Type> AdditionalSimpleTypes = new()
+        {
+            typeof(string), typeof(decimal),
+            typeof(DateTime), typeof(DateTimeOffset), typeof(TimeSpan),
+            typeof(DateOnly), typeof(TimeOnly),
+            typeof(Guid)
+        };
+
+        public static bool IsSimpleType(Type type)
+            => type.IsPrimitive || type.IsEnum || AdditionalSimpleTypes.Contains(type);
+
         public static IEnumerable<MemberInfo> GetMembers(Type type)
         {
             const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;

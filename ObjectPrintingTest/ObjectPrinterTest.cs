@@ -252,6 +252,14 @@ namespace ObjectPrinterTest
                 .And.NotContain("PrivateGet");
         }
 
+        [Test]
+        public void Serialize_EnumAndChar_PrintedAsValues()
+        {
+            var result = ObjectPrinter.For<WithEnumAndChar>().PrintToString(new WithEnumAndChar());
+
+            result.Should().Contain("Color = Green" + NL).And.Contain("Letter = x" + NL);
+        }
+
 
         private static string Lines(params string[] lines)
             => string.Join(NL, lines) + NL;
