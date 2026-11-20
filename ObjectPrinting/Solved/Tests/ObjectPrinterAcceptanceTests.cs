@@ -275,6 +275,13 @@ namespace ObjectPrinting.Solved.Tests
 
         //}
 
+        // todo
+        //[TestCaseSource]
+        //public void ShouldSerializeCustomlyWithLastGivenSerializer()
+        //{
+
+        //}
+
         [Test]
         public void ObjectPrinterExcludingShouldAffectAnotherInstanceOfSameClass()
         {
