@@ -1,9 +1,10 @@
-﻿using System;
+﻿using ObjectPrinting.Printing.Validation;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Printing
 {
     internal class Printer<TOwner>
     {
@@ -37,7 +38,7 @@ namespace ObjectPrinting
 
             var result = obj is IEnumerable collection
                 ? SerializeCollection(collection, nestingLevel, path)
-                : SerializeMembers(obj, nestingLevel, path);
+                : SerializeMembers(obj, nestingLevel, path, type);
 
             path.Remove(obj);
             return result;
@@ -70,9 +71,8 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        private string SerializeMembers(object obj, int nestingLevel, HashSet<object> path)
+        private string SerializeMembers(object obj, int nestingLevel, HashSet<object> path, Type type)
         {
-            var type = obj.GetType();
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 

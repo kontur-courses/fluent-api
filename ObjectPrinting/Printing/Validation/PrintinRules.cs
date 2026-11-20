@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-namespace ObjectPrinting;
+namespace ObjectPrinting.Printing.Validation;
 internal class PrintingRules
 {
     internal readonly HashSet<MemberKey> ExcludedMembers = new();

@@ -2,7 +2,7 @@
 using System.Reflection;
 
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Printing.Validation
 {
     internal record struct MemberKey
     {
