@@ -10,13 +10,14 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19, Height = 12.1 };
+            var person = new Person { Name = "Alex", Age = 19, Height = 12.1, Nickname = "OG Alex" };
 
             var printer = ObjectPrinter.For<Person>()
                             .Excluding<Guid>()
-                            .Using<int>(number => number.ToString() + " 67")
-                            .WithCulture<double>(new CultureInfo("ru-RU"))
-                            .Using(person => person.Name, name => $"<{name}>");
+                            .Configure<int>().Using(number => $"{number} 67")
+                            .Configure<double>().WithCulture(new CultureInfo("ru-RU"))
+                            .Configure(person => person.Name).Using(name => $"<{name}>")
+                            .Configure(person => person.Name).Truncate(2);
             //1. Исключить из сериализации свойства определенного типа
             //2. Указать альтернативный способ сериализации для определенного типа
             //3. Для числовых типов указать культуру
@@ -70,10 +71,10 @@ namespace ObjectPrinting.Tests
             var person = new Person { Age = 19 };
 
             var result = ObjectPrinter.For<Person>()
-                .Using<int>(number => $"age: {number}")
+                .Configure<int>().Using(number => $"{number} y.o.")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Age = age: 19" + Environment.NewLine));
+            Assert.That(result, Does.Contain("Age = 19 y.o." + Environment.NewLine));
         }
 
         [Test]
@@ -86,7 +87,7 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Using(person => person.Name, name => $"<{name}>")
+                .Configure(person => person.Name).Using(name => $"<{name}>")
                 .PrintToString(person);
 
             Assert.That(result, Does.Contain("Name = <Alex>" + Environment.NewLine));
@@ -103,7 +104,7 @@ namespace ObjectPrinting.Tests
             };
 
             var result = ObjectPrinter.For<Person>()
-                .Using(person => person.Nickname, nickname => $"[{nickname}]")
+                .Configure(person => person.Nickname).Using(nickname => $"[{nickname}]")
                 .PrintToString(person);
 
             Assert.That(result, Does.Contain("Nickname = [OG Alex]" + Environment.NewLine));
@@ -116,11 +117,28 @@ namespace ObjectPrinting.Tests
             var person = new Person { Height = 12.5 };
 
             var result = ObjectPrinter.For<Person>()
-                .WithCulture<double>(new CultureInfo("ru-RU"))
+                .Configure<double>().WithCulture(new CultureInfo("ru-RU"))
                 .PrintToString(person);
 
             Assert.That(result, Does.Contain("Height = 12,5" + Environment.NewLine));
         }
 
+        [Test]
+        public void Truncates_selected_string_property_only()
+        {
+            var person = new Person
+            {
+                Name = "Alexander",
+                Nickname = "OG Alex"
+            };
+
+            var result = ObjectPrinter.For<Person>()
+                .Configure(person => person.Name)
+                .Truncate(4)
+                .PrintToString(person);
+
+            Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
+            Assert.That(result, Does.Contain("Nickname = OG Alex" + Environment.NewLine));
+        }
     }
 }

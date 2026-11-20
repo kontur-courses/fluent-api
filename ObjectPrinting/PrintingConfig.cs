@@ -24,44 +24,37 @@ namespace ObjectPrinting
             typeof(TimeSpan)
         };
 
-        private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<object> excludedTypes = new();
         private readonly Dictionary<Type, Func<object?, string>> typeSerializers = new();
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<MemberInfo, Func<object?, string>> memberSerializers = new();
+        private readonly Dictionary<MemberInfo, int> memberStringLimits = new();
 
-        public PrintingConfig<TOwner> Excluding<T>()
+        public PrintingConfig<TOwner> Excluding<TValue>()
         {
-            excludedTypes.Add(typeof(T));
+            excludedTypes.Add(typeof(TValue));
             return this;
         }
 
-        public PrintingConfig<TOwner> Using<T>(Func<T, string> serializer)
+        public TypeConfig<TOwner, TValue> Configure<TValue>()
         {
-            typeSerializers[typeof(T)] = value => serializer((T)value);
-            return this;
+            return new TypeConfig<TOwner, TValue>(this);
         }
 
-        public PrintingConfig<TOwner> Using<TProperty>(
-            Expression<Func<TOwner, TProperty>> memberExpression,
-            Func<TProperty, string> serializer)
+        public MemberConfig<TOwner, TValue> Configure<TValue>(
+            Expression<Func<TOwner, TValue>> expression)
         {
-            if (memberExpression.Body is not MemberExpression memberExpressionBody)
-                throw new ArgumentException(
-                    "Ожидалось выражение, обращающееся к свойству или полю",
-                    nameof(memberExpression));
-
-            var member = memberExpressionBody.Member;
-
-            memberSerializers[member] = value => serializer((TProperty)value);
-            return this;
+            return new MemberConfig<TOwner, TValue>(
+                this,
+                GetSelectedMember(expression));
         }
 
-        public PrintingConfig<TOwner> WithCulture<T>(CultureInfo culture)
+        public StringMemberConfig<TOwner> Configure(
+            Expression<Func<TOwner, string>> expression)
         {
-            ArgumentNullException.ThrowIfNull(culture);
-
-            typeCultures[typeof(T)] = culture;
-            return this;
+            return new StringMemberConfig<TOwner>(
+                this,
+                GetSelectedMember(expression));
         }
 
         public string PrintToString(TOwner obj)
@@ -99,6 +92,13 @@ namespace ObjectPrinting
                     _ => null
                 };
 
+                if (value is string text
+                && memberStringLimits.TryGetValue(member, out var maxLength)
+                && text.Length > maxLength)
+                {
+                    value = text[..maxLength];
+                }
+
                 sb.Append(indentation)
                     .Append(member.Name)
                     .Append(" = ");
@@ -133,6 +133,56 @@ namespace ObjectPrinting
                 FieldInfo field => field.FieldType,
                 _ => throw new ArgumentException("Неизвестный тип")
             };
+        }
+
+        internal void SetTypeSerializer<TValue>(Func<TValue, string> serializer)
+        {
+            ArgumentNullException.ThrowIfNull(serializer);
+
+            typeSerializers[typeof(TValue)] =
+                value => serializer((TValue)value!);
+        }
+
+        internal void SetTypeCulture<TValue>(CultureInfo culture)
+        {
+            ArgumentNullException.ThrowIfNull(culture);
+            typeCultures[typeof(TValue)] = culture;
+        }
+
+        internal void SetMemberSerializer<TValue>(
+            MemberInfo member,
+            Func<TValue, string> serializer)
+        {
+            ArgumentNullException.ThrowIfNull(serializer);
+
+            memberSerializers[member] =
+                value => serializer((TValue)value!);
+        }
+
+        internal void SetMemberStringLimit(MemberInfo member, int maxLength)
+        {
+            if (maxLength < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxLength));
+
+            memberStringLimits[member] = maxLength;
+        }
+
+        private static MemberInfo GetSelectedMember<TValue>(
+    Expression<Func<TOwner, TValue>> expression)
+        {
+            ArgumentNullException.ThrowIfNull(expression);
+
+            if (expression.Body is MemberExpression selectedMember
+                && selectedMember.Expression == expression.Parameters[0]
+                && (selectedMember.Member is PropertyInfo
+                    || selectedMember.Member is FieldInfo))
+            {
+                return selectedMember.Member;
+            }
+
+            throw new ArgumentException(
+                "Ожидался выбор свойства или поля на входе",
+                nameof(expression));
         }
 
     }
