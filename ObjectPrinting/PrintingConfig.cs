@@ -58,10 +58,16 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(
+                obj,
+                0,
+                new HashSet<object>(ReferenceEqualityComparer.Instance));
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
+        private string PrintToString(
+            object? obj,
+            int nestingLevel,
+            HashSet<object> activeReferences)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
@@ -81,51 +87,64 @@ namespace ObjectPrinting
             if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-            foreach (var member in GetPublicMembers(type))
+            var isReferenceType = !type.IsValueType;
+            if (isReferenceType && !activeReferences.Add(obj))
+                return $"[Циклическая ссылка: {type.Name}]" + Environment.NewLine;
+
+            try
             {
-                var memberType = GetMemberType(member);
-                memberSettings.TryGetValue(member, out var memberConfiguration);
-
-                if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
-                        && typeConfiguration.IsExcluded)
-                    || memberConfiguration?.IsExcluded == true)
+                var indentation = new string('\t', nestingLevel + 1);
+                var sb = new StringBuilder();
+                sb.AppendLine(type.Name);
+                foreach (var member in GetPublicMembers(type))
                 {
-                    continue;
+                    var memberType = GetMemberType(member);
+                    memberSettings.TryGetValue(member, out var memberConfiguration);
+
+                    if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
+                            && typeConfiguration.IsExcluded)
+                        || memberConfiguration?.IsExcluded == true)
+                    {
+                        continue;
+                    }
+
+                    var value = member switch
+                    {
+                        PropertyInfo property => property.GetValue(obj),
+                        FieldInfo field => field.GetValue(obj),
+                        _ => throw new ArgumentException("Неизвестный тип", nameof(member))
+                    };
+
+                    if (value is string text
+                        && memberConfiguration?.MaxStringLength is int maxLength
+                        && text.Length > maxLength)
+                    {
+                        value = text[..maxLength];
+                    }
+
+                    sb.Append(indentation)
+                        .Append(member.Name)
+                        .Append(" = ");
+
+                    var memberSerializer = memberConfiguration?.Serializer;
+                    if (memberSerializer is not null)
+                    {
+                        sb.Append(memberSerializer(value))
+                            .Append(Environment.NewLine);
+                    }
+                    else
+                    {
+                        sb.Append(PrintToString(value, nestingLevel + 1, activeReferences));
+                    }
                 }
 
-                var value = member switch
-                {
-                    PropertyInfo property => property.GetValue(obj),
-                    FieldInfo field => field.GetValue(obj),
-                    _ => throw new ArgumentException("Unknown member type.", nameof(member))
-                };
-
-                if (value is string text
-                    && memberConfiguration?.MaxStringLength is int maxLength
-                    && text.Length > maxLength)
-                {
-                    value = text[..maxLength];
-                }
-
-                sb.Append(indentation)
-                    .Append(member.Name)
-                    .Append(" = ");
-
-                var memberSerializer = memberConfiguration?.Serializer;
-                if (memberSerializer is not null)
-                {
-                    sb.Append(memberSerializer(value))
-                        .Append(Environment.NewLine);
-                }
-                else
-                {
-                    sb.Append(PrintToString(value, nestingLevel + 1));
-                }
+                return sb.ToString();
             }
-            return sb.ToString();
+            finally
+            {
+                if (isReferenceType)
+                    activeReferences.Remove(obj);
+            }
         }
 
         private static IEnumerable<MemberInfo> GetPublicMembers(Type type)

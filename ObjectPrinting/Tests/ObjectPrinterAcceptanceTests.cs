@@ -141,5 +141,44 @@ namespace ObjectPrinting.Tests
             Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
             Assert.That(result, Does.Contain("Nickname = OG Alex" + Environment.NewLine));
         }
+
+        [Test]
+        public void Prints_cycle_between_objects_without_infinite_recursion()
+        {
+            var first = new Node { Name = "first" };
+            var second = new Node { Name = "second" };
+            first.Next = second;
+            second.Next = first;
+
+            var result = ObjectPrinter.For<Node>().PrintToString(first);
+
+            Assert.That(result, Does.Contain("Name = first" + Environment.NewLine));
+            Assert.That(result, Does.Contain("Name = second" + Environment.NewLine));
+            Assert.That(result, Does.Contain("[Циклическая ссылка: Node]"));
+        }
+
+        [Test]
+        public void Prints_shared_reference_in_each_branch_without_marking_it_as_cycle()
+        {
+            var shared = new Node { Name = "shared" };
+            var root = new Node { Left = shared, Right = shared };
+
+            var result = ObjectPrinter.For<Node>().PrintToString(root);
+
+            Assert.That(result, Does.Contain("Left = Node"));
+            Assert.That(result, Does.Contain("Right = Node"));
+            Assert.That(
+                result.Split("Name = shared", StringSplitOptions.None).Length - 1,
+                Is.EqualTo(2));
+            Assert.That(result, Does.Not.Contain("[Циклическая ссылка:"));
+        }
+
+        private sealed class Node
+        {
+            public string Name { get; set; } = string.Empty;
+            public Node? Next { get; set; }
+            public Node? Left { get; set; }
+            public Node? Right { get; set; }
+        }
     }
 }
