@@ -4,11 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
-using System.Security.Cryptography;
 using System.Text;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace ObjectPrinting
 {
@@ -24,7 +20,8 @@ namespace ObjectPrinting
             typeof(TimeSpan)
         };
 
-        private readonly HashSet<object> excludedTypes = new();
+        private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly Dictionary<Type, Func<object?, string>> typeSerializers = new();
         private readonly Dictionary<Type, CultureInfo> typeCultures = new();
         private readonly Dictionary<MemberInfo, Func<object?, string>> memberSerializers = new();
@@ -32,8 +29,14 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> Excluding<TValue>()
         {
-            excludedTypes.Add(typeof(TValue));
-            return this;
+            return new TypeConfig<TOwner, TValue>(this).Excluding();
+        }
+
+        public PrintingConfig<TOwner> Excluding<TValue>(Expression<Func<TOwner, TValue>> expression)
+        {
+            return new MemberConfig<TOwner, TValue>(
+                this,
+                GetSelectedMember(expression)).Excluding();
         }
 
         public TypeConfig<TOwner, TValue> Configure<TValue>()
@@ -82,7 +85,7 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var member in GetPublicMembers(type))
             {
-                if (excludedTypes.Contains(GetMemberType(member)))
+                if (excludedTypes.Contains(GetMemberType(member)) || excludedMembers.Contains(member))
                     continue;
 
                 var value = member switch
@@ -149,6 +152,11 @@ namespace ObjectPrinting
             typeCultures[typeof(TValue)] = culture;
         }
 
+        internal void SetExcludingType<TValue>()
+        {
+            excludedTypes.Add(typeof(TValue));
+        }
+
         internal void SetMemberSerializer<TValue>(
             MemberInfo member,
             Func<TValue, string> serializer)
@@ -165,6 +173,11 @@ namespace ObjectPrinting
                 throw new ArgumentOutOfRangeException(nameof(maxLength));
 
             memberStringLimits[member] = maxLength;
+        }
+
+        internal void SetExcludingMember(MemberInfo member)
+        {
+            excludedMembers.Add(member);
         }
 
         private static MemberInfo GetSelectedMember<TValue>(

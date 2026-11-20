@@ -22,6 +22,12 @@ namespace ObjectPrinting
             PrintingConfig.SetMemberSerializer(MemberInfo, serializer);
             return PrintingConfig;
         }
+
+        public PrintingConfig<TOwner> Excluding()
+        {
+            PrintingConfig.SetExcludingMember(MemberInfo);
+            return PrintingConfig;
+        }
     }
 
     public sealed class StringMemberConfig<TOwner>
@@ -32,13 +38,6 @@ namespace ObjectPrinting
             MemberInfo memberInfo)
             : base(printingConfig, memberInfo)
         {
-        }
-
-        public new PrintingConfig<TOwner> Using(
-            Func<string, string> serializer)
-        {
-            base.Using(serializer);
-            return PrintingConfig;
         }
 
         public PrintingConfig<TOwner> Truncate(int maxLength)

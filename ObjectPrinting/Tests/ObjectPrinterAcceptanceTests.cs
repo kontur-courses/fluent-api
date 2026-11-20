@@ -17,7 +17,8 @@ namespace ObjectPrinting.Tests
                             .Configure<int>().Using(number => $"{number} 67")
                             .Configure<double>().WithCulture(new CultureInfo("ru-RU"))
                             .Configure(person => person.Name).Using(name => $"<{name}>")
-                            .Configure(person => person.Name).Truncate(2);
+                            .Configure(person => person.Name).Truncate(2)
+                            .Excluding(person => person.Nickname);
             //1. Исключить из сериализации свойства определенного типа
             //2. Указать альтернативный способ сериализации для определенного типа
             //3. Для числовых типов указать культуру

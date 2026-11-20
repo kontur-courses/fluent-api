@@ -25,5 +25,11 @@ namespace ObjectPrinting
             printingConfig.SetTypeCulture<TValue>(culture);
             return printingConfig;
         }
+
+        public PrintingConfig<TOwner> Excluding()
+        {
+            printingConfig.SetExcludingType<TValue>();
+            return printingConfig;
+        }
     }
 }
