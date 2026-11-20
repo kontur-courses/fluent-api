@@ -8,6 +8,8 @@ namespace ObjectPrinting;
 
 internal class ObjectSerializer
 {
+    private const string CycleMark = "<cycle>";
+
     private static readonly Type[] FinalTypes =
     [
         typeof(string),
@@ -19,6 +21,7 @@ internal class ObjectSerializer
     ];
 
     private readonly IPrintingSettings _settings;
+    private readonly HashSet<object> _objectsBeingPrinted = new(ReferenceEqualityComparer.Instance);
 
     private ObjectSerializer(IPrintingSettings settings)
     {
@@ -43,7 +46,12 @@ internal class ObjectSerializer
         if (IsFinalType(type))
             return obj.ToString();
 
-        return PrintMembers(obj, type, nestingLevel);
+        if (!_objectsBeingPrinted.Add(obj))
+            return CycleMark;
+
+        var printed = PrintMembers(obj, type, nestingLevel);
+        _objectsBeingPrinted.Remove(obj);
+        return printed;
     }
 
     private string PrintMembers(object obj, Type type, int nestingLevel)
