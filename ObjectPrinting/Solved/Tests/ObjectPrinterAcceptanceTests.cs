@@ -199,9 +199,28 @@ namespace ObjectPrinting.Solved.Tests
         [TestCaseSource(nameof(SequenceCases))]
         public void PrintToString_Sequence_ShouldPrintExpected(IEnumerable<int> sequence, string typeName)
         {
-            var expected = string.Join(Environment.NewLine, typeName, "\t3", "\t1", "\t3", "");
+            var expected = string.Join(Environment.NewLine, typeName, "\t3", "\t1", "\t2", "");
 
             sequence.PrintToString().Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_UsingTypeFormatter_ShouldFormatNestedCollectionItems()
+        {
+            var numbers = new[] { new[] { 3, 1 }, new[] { 2 } };
+            var expected = string.Join(Environment.NewLine,
+                "Int32[][]",
+                "\tInt32[]",
+                "\t\t[3]",
+                "\t\t[1]",
+                "\tInt32[]",
+                "\t\t[2]",
+                "");
+
+            var result = numbers.PrintToString(c => c
+                .Printing<int>().Using(number => $"[{number}]"));
+
+            result.Should().Be(expected);
         }
 
         private static Person GetDefaultPerson() => new()
@@ -215,8 +234,8 @@ namespace ObjectPrinting.Solved.Tests
 
         private static IEnumerable<TestCaseData> SequenceCases()
         {
-            yield return new TestCaseData(new[] { 3, 1, 3 }, "Int32[]").SetArgDisplayNames("array");
-            yield return new TestCaseData(new List<int> { 3, 1, 3 }, "List`1").SetArgDisplayNames("list");
+            yield return new TestCaseData(new[] { 3, 1, 2 }, "Int32[]").SetArgDisplayNames("array");
+            yield return new TestCaseData(new List<int> { 3, 1, 2 }, "List`1").SetArgDisplayNames("list");
         }
     }
 }
