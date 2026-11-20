@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.Configuration;
 
 public class PropertyPrintingConfig<TOwner, TType>
 {

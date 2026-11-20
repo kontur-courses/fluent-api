@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.Serialization;
 
 internal class PrintableMember
 {
