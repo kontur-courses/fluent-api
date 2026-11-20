@@ -103,7 +103,7 @@ namespace ObjectPrinting.Solved.Tests
         [TestCase("Alexander", 4, "Alex")]
         [TestCase("Alex", 10, "Alex")]
         [TestCase("Alex", 0, "")]
-        public void TrimmedToLength_ShouldTrimmediString_WhenMaximumLengthIsConfigured(
+        public void TrimmedToLength_ShouldTrimmedString_WhenMaximumLengthIsConfigured(
             string name, int maxLen, string expectedName)
         {
             var person = new Person { Name = name };
@@ -156,7 +156,8 @@ namespace ObjectPrinting.Solved.Tests
             var parent = new { Left = child, Right = child };
 
             var actual = parent.PrintToString();
-            actual.Should().Contain("Left = Person").And.Contain("Right = Person").And.NotContain("Parent");
+
+            actual.Should().Contain("Name = shared", Exactly.Twice());
         }
 
         [Test]
