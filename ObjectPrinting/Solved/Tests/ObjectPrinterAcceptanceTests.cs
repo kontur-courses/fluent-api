@@ -120,14 +120,14 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         [Test]
-        public void PrintToString_WithCircularReferences_ShouldNotThrowStackOverflowException()
+        public void PrintToString_WithCircularReference_ShouldPrintCircularReferenceMarker()
         {
             var loopNode = new LoopNode { Value = 1 };
             loopNode.Next = loopNode;
 
-            var action = () => loopNode.PrintToString();
+            var result = loopNode.PrintToString();
 
-            action.Should().NotThrow<StackOverflowException>();
+            result.Should().Contain("\tNext = [Circular reference]");
         }
 
         [Test]
