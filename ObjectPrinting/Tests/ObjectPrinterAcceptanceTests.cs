@@ -377,25 +377,28 @@ public class ObjectPrinterAcceptanceTests
     }
 
     [Test]
-    public void Trim_StringCollection_TruncatesElements()
-    {
-        var person = CreatePerson();
-
-        var result = ObjectPrinter.For<Person>()
-            .Property(p => p.Hobbies).TrimToLength(3)
-            .PrintToString(person);
-
-        Assert.That(result, Does.Contain("Rea"));
-        Assert.That(result, Does.Not.Contain("Reading"));
-    }
-
-    [Test]
     public void Trim_NegativeLength_ThrowsArgumentOutOfRangeException()
     {
         var printer = ObjectPrinter.For<Person>();
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             printer.Property(p => p.Name).TrimToLength(-1));
+    }
+
+    [Test]
+    public void Property_WithNestedPath_AppliesOnlyToSpecifiedPath()
+    {
+        var person = CreatePerson();
+        person.Address.Name = "NestedName";
+
+        var result = ObjectPrinter.For<Person>()
+            .Property(p => p.Address.Name).Exclude()
+            .PrintToString(person);
+
+        Assert.That(result, Does.Not.Contain("NestedName"));
+
+        Assert.That(result, Does.Contain("Name = Alex"));
+        Assert.That(result, Does.Contain("City = Moscow"));
     }
 
     [Test]

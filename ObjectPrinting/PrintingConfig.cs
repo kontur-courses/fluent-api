@@ -63,10 +63,20 @@ namespace ObjectPrinting
             if (body is UnaryExpression unary)
                 body = unary.Operand;
 
-            if (body is MemberExpression member)
-                return member.Member.Name;
+            var parts = new List<string>();
 
-            throw new ArgumentException("Expression must be a property access");
+            while (body is MemberExpression member)
+            {
+                parts.Add(member.Member.Name);
+                body = member.Expression;
+            }
+
+            if (body != null && body.NodeType != ExpressionType.Parameter)
+                throw new ArgumentException("Expression must be a property access");
+
+            parts.Reverse();
+
+            return string.Join(".", parts);
         }
     }
 }

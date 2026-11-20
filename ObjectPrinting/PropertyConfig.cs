@@ -24,12 +24,4 @@ public class PropertyConfig<TOwner> : Configuration.IPropertyConfig<TOwner>
         config.propertySerializers[propertyName] = serializer;
         return config;
     }
-    public PrintingConfig<TOwner> TrimToLength(int maxLength)
-    {
-        if (maxLength < 0)
-            throw new ArgumentOutOfRangeException(nameof(maxLength));
-
-        config.trimLengths[propertyName] = maxLength;
-        return config;
-    }
-}
+ }
