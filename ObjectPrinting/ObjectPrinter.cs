@@ -1,12 +1,11 @@
 using ObjectPrinting.Configuration;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+public static class ObjectPrinter
 {
-    public class ObjectPrinter
+    public static PrintingConfig<TOwner> For<TOwner>()
     {
-        public static PrintingConfig<TOwner> For<TOwner>()
-        {
-            return new PrintingConfig<TOwner>();
-        }
+        return new PrintingConfig<TOwner>();
     }
 }
