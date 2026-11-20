@@ -12,7 +12,8 @@ namespace ObjectPrinting.Printing.Validation
             const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
 
             var properties = type.GetProperties(flags)
-                .Where(p => p.GetIndexParameters().Length == 0);
+                .Where(p => p.GetGetMethod() != null
+                && p.GetIndexParameters().Length == 0);
 
             return properties.Cast<MemberInfo>().Concat(type.GetFields(flags));
         }

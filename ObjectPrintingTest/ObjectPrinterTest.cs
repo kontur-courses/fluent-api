@@ -242,6 +242,16 @@ namespace ObjectPrinterTest
             result.Should().Contain("Value = text");
         }
 
+        [Test]
+        public void Serialize_PropertiesWithoutPublicGetter_AreSkipped()
+        {
+            var result = ObjectPrinter.For<Hidden>().PrintToString(new Hidden());
+
+            result.Should().Contain("Visible = 1")
+                .And.NotContain("WriteOnly")
+                .And.NotContain("PrivateGet");
+        }
+
 
         private static string Lines(params string[] lines)
             => string.Join(NL, lines) + NL;
