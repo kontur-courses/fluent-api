@@ -1,6 +1,6 @@
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
-    public static class ObjectExtensions
+    public static class ObjectExte
     {
         public static string PrintToString<T>(this T obj)
         {
