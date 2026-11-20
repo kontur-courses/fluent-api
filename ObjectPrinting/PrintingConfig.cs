@@ -65,13 +65,16 @@ public class PrintingConfig<TOwner>
         return rule;
     }
 
-    private static MemberInfo GetDirectMember<TType>(Expression<Func<TOwner, TType>> selector)
+    private static MemberInfo GetDirectMember<TType>(
+        Expression<Func<TOwner, TType>> selector)
     {
         if (selector.Body is not MemberExpression expression ||
-            expression.Expression != selector.Parameters[0])
+            expression.Expression != selector.Parameters[0] ||
+            expression.Member is not (PropertyInfo or FieldInfo))
         {
             throw new ArgumentException(
-                "Свойство должно быть указано напрямую, например p => p.Age");
+                "Укажи свойство или поле напрямую, например p => p.Age.",
+                nameof(selector));
         }
 
         return expression.Member;
