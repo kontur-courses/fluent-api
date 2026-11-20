@@ -22,12 +22,6 @@ namespace ObjectPrinting
             PrintingConfig.SetMemberSerializer(MemberInfo, serializer);
             return PrintingConfig;
         }
-
-        public PrintingConfig<TOwner> Excluding()
-        {
-            PrintingConfig.SetExcludingMember(MemberInfo);
-            return PrintingConfig;
-        }
     }
 
     public sealed class StringMemberConfig<TOwner>

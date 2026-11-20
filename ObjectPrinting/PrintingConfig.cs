@@ -20,23 +20,19 @@ namespace ObjectPrinting
             typeof(TimeSpan)
         };
 
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly Dictionary<Type, Func<object?, string>> typeSerializers = new();
-        private readonly Dictionary<Type, CultureInfo> typeCultures = new();
-        private readonly Dictionary<MemberInfo, Func<object?, string>> memberSerializers = new();
-        private readonly Dictionary<MemberInfo, int> memberStringLimits = new();
+        private readonly Dictionary<Type, TypeSettings> typeSettings = new();
+        private readonly Dictionary<MemberInfo, MemberSettings> memberSettings = new();
 
         public PrintingConfig<TOwner> Excluding<TValue>()
         {
-            return new TypeConfig<TOwner, TValue>(this).Excluding();
+            SetExcludingType<TValue>();
+            return this;
         }
 
         public PrintingConfig<TOwner> Excluding<TValue>(Expression<Func<TOwner, TValue>> expression)
         {
-            return new MemberConfig<TOwner, TValue>(
-                this,
-                GetSelectedMember(expression)).Excluding();
+            SetExcludingMember(GetSelectedMember(expression));
+            return this;
         }
 
         public TypeConfig<TOwner, TValue> Configure<TValue>()
@@ -70,34 +66,46 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (typeSerializers.TryGetValue(obj.GetType(), out var serializer))
-                return serializer(obj) + Environment.NewLine;
+            var type = obj.GetType();
+            if (typeSettings.TryGetValue(type, out var settings))
+            {
+                var typeSerializer = settings.Serializer;
+                if (typeSerializer is not null)
+                    return typeSerializer(obj) + Environment.NewLine;
 
-            if (typeCultures.TryGetValue(obj.GetType(), out var culture) && obj is IFormattable formattable)
-                return formattable.ToString(null, culture) + Environment.NewLine;
+                var culture = settings.Culture;
+                if (culture is not null && obj is IFormattable formattable)
+                    return formattable.ToString(null, culture) + Environment.NewLine;
+            }
 
-            if (FinalTypes.Contains(obj.GetType()))
+            if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
             sb.AppendLine(type.Name);
             foreach (var member in GetPublicMembers(type))
             {
-                if (excludedTypes.Contains(GetMemberType(member)) || excludedMembers.Contains(member))
+                var memberType = GetMemberType(member);
+                memberSettings.TryGetValue(member, out var memberConfiguration);
+
+                if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
+                        && typeConfiguration.IsExcluded)
+                    || memberConfiguration?.IsExcluded == true)
+                {
                     continue;
+                }
 
                 var value = member switch
                 {
                     PropertyInfo property => property.GetValue(obj),
                     FieldInfo field => field.GetValue(obj),
-                    _ => null
+                    _ => throw new ArgumentException("Unknown member type.", nameof(member))
                 };
 
                 if (value is string text
-                && memberStringLimits.TryGetValue(member, out var maxLength)
-                && text.Length > maxLength)
+                    && memberConfiguration?.MaxStringLength is int maxLength
+                    && text.Length > maxLength)
                 {
                     value = text[..maxLength];
                 }
@@ -105,7 +113,9 @@ namespace ObjectPrinting
                 sb.Append(indentation)
                     .Append(member.Name)
                     .Append(" = ");
-                if (memberSerializers.TryGetValue(member, out var memberSerializer))
+
+                var memberSerializer = memberConfiguration?.Serializer;
+                if (memberSerializer is not null)
                 {
                     sb.Append(memberSerializer(value))
                         .Append(Environment.NewLine);
@@ -142,19 +152,25 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(serializer);
 
-            typeSerializers[typeof(TValue)] =
-                value => serializer((TValue)value!);
+            Func<object?, string> objectSerializer = value => serializer((TValue)value!);
+            UpdateTypeSettings(
+                typeof(TValue),
+                settings => settings with { Serializer = objectSerializer });
         }
 
         internal void SetTypeCulture<TValue>(CultureInfo culture)
         {
             ArgumentNullException.ThrowIfNull(culture);
-            typeCultures[typeof(TValue)] = culture;
+            UpdateTypeSettings(
+                typeof(TValue),
+                settings => settings with { Culture = culture });
         }
 
         internal void SetExcludingType<TValue>()
         {
-            excludedTypes.Add(typeof(TValue));
+            UpdateTypeSettings(
+                typeof(TValue),
+                settings => settings with { IsExcluded = true });
         }
 
         internal void SetMemberSerializer<TValue>(
@@ -163,8 +179,10 @@ namespace ObjectPrinting
         {
             ArgumentNullException.ThrowIfNull(serializer);
 
-            memberSerializers[member] =
-                value => serializer((TValue)value!);
+            Func<object?, string> objectSerializer = value => serializer((TValue)value!);
+            UpdateMemberSettings(
+                member,
+                settings => settings with { Serializer = objectSerializer });
         }
 
         internal void SetMemberStringLimit(MemberInfo member, int maxLength)
@@ -172,16 +190,40 @@ namespace ObjectPrinting
             if (maxLength < 0)
                 throw new ArgumentOutOfRangeException(nameof(maxLength));
 
-            memberStringLimits[member] = maxLength;
+            UpdateMemberSettings(
+                member,
+                settings => settings with { MaxStringLength = maxLength });
         }
 
         internal void SetExcludingMember(MemberInfo member)
         {
-            excludedMembers.Add(member);
+            UpdateMemberSettings(
+                member,
+                settings => settings with { IsExcluded = true });
+        }
+
+        private void UpdateTypeSettings(Type type, Func<TypeSettings, TypeSettings> update)
+        {
+            var current = typeSettings.TryGetValue(type, out var settings)
+                ? settings
+                : new TypeSettings();
+
+            typeSettings[type] = update(current);
+        }
+
+        private void UpdateMemberSettings(
+            MemberInfo member,
+            Func<MemberSettings, MemberSettings> update)
+        {
+            var current = memberSettings.TryGetValue(member, out var settings)
+                ? settings
+                : new MemberSettings();
+
+            memberSettings[member] = update(current);
         }
 
         private static MemberInfo GetSelectedMember<TValue>(
-    Expression<Func<TOwner, TValue>> expression)
+            Expression<Func<TOwner, TValue>> expression)
         {
             ArgumentNullException.ThrowIfNull(expression);
 
@@ -197,6 +239,16 @@ namespace ObjectPrinting
                 "Ожидался выбор свойства или поля на входе",
                 nameof(expression));
         }
+
+        private sealed record TypeSettings(
+            bool IsExcluded = false,
+            Func<object?, string>? Serializer = null,
+            CultureInfo? Culture = null);
+
+        private sealed record MemberSettings(
+            bool IsExcluded = false,
+            Func<object?, string>? Serializer = null,
+            int? MaxStringLength = null);
 
     }
 }
