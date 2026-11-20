@@ -16,22 +16,23 @@ internal class AcceptanceTests : PersonFixture
             .Printing(p => p.Name).TrimmedToLength(4)                  
             .Printing<double>().Using(d => d.ToString("0.00", CultureInfo.InvariantCulture))
             .Printing(p => p.BirthDate).Using(new CultureInfo("ru-RU"))
-            .Excluding(p => p.Address.Street));                       
-            
+            .Excluding(p => p.Address.Street));
+
         result.Should()
-            .Contain(nameof(Person))
-            .And.NotContain("Id = 00000000-0000-0000-0000-000000000000")
-            .And.Contain("Name = Alex")
-            .And.NotContain("Name = Alexandr")
-            .And.Contain("Height = 1.85")
-            .And.Contain("BirthDate = 12.05.1980")
-            .And.Contain("Status = Active")
-            .And.Contain("City = Moscow")
-            .And.Contain("Building = 7")
-            .And.NotContain("Street")
-            .And.Contain("[0] = 10")
-            .And.Contain("[1] = 20")
-            .And.Contain("[2] = 30");
+            .Be("Person\r\n" +
+                "\tName = Alex\r\n" +
+                "\tAge = 42\r\n" +
+                "\tHeight = 1.85\r\n" +
+                "\tBirthDate = 12.05.1980 0:00:00\r\n" +
+                "\tStatus = Active\r\n" +
+                "\tAddress = Address\r\n" +
+                "\t\tCity = Moscow\r\n" +
+                "\t\tBuilding = 7\r\n" +
+                "\tScores = List<Int32>\r\n" +
+                "\t\t[0] = 10\r\n" +
+                "\t\t[1] = 20\r\n" +
+                "\t\t[2] = 30\r\n"
+            );
     }
 
     [Test]

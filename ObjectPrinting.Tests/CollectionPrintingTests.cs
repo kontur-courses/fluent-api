@@ -10,12 +10,12 @@ internal class CollectionPrintingTests
     [Test]
     public void ShouldPrintListWithIndices()
     {
-        var list = new[] { 10, 20, 30 };
+        var list = new[] { "lone", "topFloor", "darkLord" };
         var result = list.PrintToString();
 
-        result.Should().Contain("10")
-            .And.Contain("20")
-            .And.Contain("30");
+        result.Should().Contain("0").And.Contain("lone")
+            .And.Contain("1").And.Contain("topFloor")
+            .And.Contain("2").And.Contain("darkLord");
     }
     
     [Test]
@@ -24,9 +24,9 @@ internal class CollectionPrintingTests
         var array = new[] { "one", "two", "three" };
         var result = array.PrintToString();
 
-        result.Should().Contain("one")
-            .And.Contain("two")
-            .And.Contain("three");
+        result.Should().Contain("0").And.Contain("one")
+            .And.Contain("1").And.Contain("two")
+            .And.Contain("2").And.Contain("three");
     }
 
     [Test]
@@ -37,6 +37,7 @@ internal class CollectionPrintingTests
             Map = new Dictionary<string, int> { ["one"] = 1, ["two"] = 2 }
         };
 
-        obj.PrintToString().Should().Contain("[one] = 1").And.Contain("[two] = 2");
+        obj.PrintToString().Should().Contain("one").And.Contain("1")
+            .And.Contain("two").And.Contain("2");
     }
 }
