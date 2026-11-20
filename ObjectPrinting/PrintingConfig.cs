@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ObjectPrinting
@@ -36,6 +38,21 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+        public PrintingConfig<TOwner> ExcludeType<Tprop>()
+        {
+            return this;
+        }
+
+        public PrintingConfig<TOwner> SetSerializeForType<Tprop>(Func<PrintingConfig<TOwner>, object[]> func)
+        {
+            return this;
+        }
+
+        public PrintingConfig<TOwner> ExcludeProperty(MemberInfo info)
+        {
+            return this;
         }
     }
 }

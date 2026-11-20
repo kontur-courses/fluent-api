@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Solved
 {
@@ -9,10 +10,17 @@ namespace ObjectPrinting.Solved
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
+        //cutstring
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return propConfig.Using(x => x.Substring(0, maxLen));
         }
 
+        //culture
+        public static PrintingConfig<TOwner> Using<TOwner, TPropType>(this PropertyPrintingConfig<TOwner, TPropType> propConfig, 
+            CultureInfo culture) where TPropType : IFormattable
+        {
+            return propConfig.Using(x => x.ToString(null, culture));
+        }
     }
 }
