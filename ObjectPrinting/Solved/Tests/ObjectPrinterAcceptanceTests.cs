@@ -11,12 +11,6 @@ namespace ObjectPrinting.Solved.Tests
     public class ObjectPrinterAcceptanceTests
     {
         [Test]
-        public void Demo()
-        {
-
-        }
-
-        [Test]
         public void PrintToString_Default_ShouldPrintAllPropertiesValues()
         {
             var person = GetDefaultPerson();
@@ -188,6 +182,28 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Contain("\tAge = " + $"Digit:{person.Age}");
         }
 
+        [Test]
+        public void PrintToString_Dictionary_ShouldPrintExpected()
+        {
+            var dictionary = new Dictionary<string, int> { ["apples"] = 3 };
+            var expected = string.Join(Environment.NewLine,
+                "Dictionary`2",
+                "\tKeyValuePair`2",
+                "\t\tKey = apples",
+                "\t\tValue = 3",
+                "");
+
+            dictionary.PrintToString().Should().Be(expected);
+        }
+
+        [TestCaseSource(nameof(SequenceCases))]
+        public void PrintToString_Sequence_ShouldPrintExpected(IEnumerable<int> sequence, string typeName)
+        {
+            var expected = string.Join(Environment.NewLine, typeName, "\t3", "\t1", "\t3", "");
+
+            sequence.PrintToString().Should().Be(expected);
+        }
+
         private static Person GetDefaultPerson() => new()
         {
             Name = "Alex",
@@ -196,5 +212,11 @@ namespace ObjectPrinting.Solved.Tests
             Height = 1.85,
             Id = Guid.NewGuid()
         };
+
+        private static IEnumerable<TestCaseData> SequenceCases()
+        {
+            yield return new TestCaseData(new[] { 3, 1, 3 }, "Int32[]").SetArgDisplayNames("array");
+            yield return new TestCaseData(new List<int> { 3, 1, 3 }, "List`1").SetArgDisplayNames("list");
+        }
     }
 }
