@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Collections;
 
 namespace ObjectPrinting
 {
@@ -70,71 +71,119 @@ namespace ObjectPrinting
             HashSet<object> activeReferences)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+                return "null";
 
             var type = obj.GetType();
             if (typeSettings.TryGetValue(type, out var settings))
             {
                 var typeSerializer = settings.Serializer;
                 if (typeSerializer is not null)
-                    return typeSerializer(obj) + Environment.NewLine;
+                    return typeSerializer(obj);
 
                 var culture = settings.Culture;
                 if (culture is not null && obj is IFormattable formattable)
-                    return formattable.ToString(null, culture) + Environment.NewLine;
+                    return formattable.ToString(null, culture);
             }
 
             if (FinalTypes.Contains(type))
-                return obj + Environment.NewLine;
+                return obj.ToString();
 
             var isReferenceType = !type.IsValueType;
             if (isReferenceType && !activeReferences.Add(obj))
-                return $"[Циклическая ссылка: {type.Name}]" + Environment.NewLine;
+                return $"[Циклическая ссылка: {type.Name}]";
 
             try
             {
-                var indentation = new string('\t', nestingLevel + 1);
+                var indentation = new string('\t', nestingLevel);
+                var childIndentation = new string('\t', nestingLevel + 1);
                 var sb = new StringBuilder();
-                sb.AppendLine(type.Name);
-                foreach (var member in GetPublicMembers(type))
+                if (obj is not IDictionary && obj is not IEnumerable)
+                    sb.Append(type.Name).Append(':');
+
+                if (obj is IDictionary dictionary)
                 {
-                    var memberType = GetMemberType(member);
-                    memberSettings.TryGetValue(member, out var memberConfiguration);
+                    if (nestingLevel == 0)
+                        sb.AppendLine();
 
-                    if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
-                            && typeConfiguration.IsExcluded)
-                        || memberConfiguration?.IsExcluded == true)
+                    sb.Append('{');
+                    var hasEntries = false;
+                    foreach (DictionaryEntry entry in dictionary)
                     {
-                        continue;
+                        sb.AppendLine()
+                            .Append(childIndentation)
+                            .Append(PrintToString(entry.Key, nestingLevel + 1, activeReferences))
+                            .Append(": ")
+                            .Append(PrintToString(entry.Value, nestingLevel + 1, activeReferences));
+                        hasEntries = true;
                     }
 
-                    var value = member switch
-                    {
-                        PropertyInfo property => property.GetValue(obj),
-                        FieldInfo field => field.GetValue(obj),
-                        _ => throw new ArgumentException("Неизвестный тип", nameof(member))
-                    };
+                    if (hasEntries)
+                        sb.AppendLine().Append(indentation);
 
-                    if (value is string text
-                        && memberConfiguration?.MaxStringLength is int maxLength
-                        && text.Length > maxLength)
+                    sb.Append('}');
+                }
+                else if (obj is IEnumerable collection)
+                {
+                    if (nestingLevel == 0)
+                        sb.AppendLine();
+
+                    sb.Append('[');
+                    var hasItems = false;
+                    foreach (var item in collection)
                     {
-                        value = text[..maxLength];
+                        sb.AppendLine()
+                            .Append(childIndentation)
+                            .Append(PrintToString(item, nestingLevel + 1, activeReferences));
+                        hasItems = true;
                     }
 
-                    sb.Append(indentation)
-                        .Append(member.Name)
-                        .Append(" = ");
+                    if (hasItems)
+                        sb.AppendLine().Append(indentation);
 
-                    var memberSerializer = memberConfiguration?.Serializer;
-                    if (memberSerializer is not null)
+                    sb.Append(']');
+                }
+                else
+                {
+                    foreach (var member in GetPublicMembers(type))
                     {
-                        sb.Append(memberSerializer(value))
-                            .Append(Environment.NewLine);
-                    }
-                    else
-                    {
-                        sb.Append(PrintToString(value, nestingLevel + 1, activeReferences));
+                        var memberType = GetMemberType(member);
+                        memberSettings.TryGetValue(member, out var memberConfiguration);
+
+                        if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
+                                && typeConfiguration.IsExcluded)
+                            || memberConfiguration?.IsExcluded == true)
+                        {
+                            continue;
+                        }
+
+                        var value = member switch
+                        {
+                            PropertyInfo property => property.GetValue(obj),
+                            FieldInfo field => field.GetValue(obj),
+                            _ => throw new ArgumentException("Неизвестный тип", nameof(member))
+                        };
+
+                        if (value is string text
+                            && memberConfiguration?.MaxStringLength is int maxLength
+                            && text.Length > maxLength)
+                        {
+                            value = text[..maxLength];
+                        }
+
+                        sb.AppendLine()
+                            .Append(childIndentation)
+                            .Append(member.Name)
+                            .Append(" = ");
+
+                        var memberSerializer = memberConfiguration?.Serializer;
+                        if (memberSerializer is not null)
+                        {
+                            sb.Append(memberSerializer(value));
+                        }
+                        else
+                        {
+                            sb.Append(PrintToString(value, nestingLevel + 1, activeReferences));
+                        }
                     }
                 }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
 
@@ -92,7 +93,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
 
             Assert.That(result, Does.Contain("Name = <Alex>" + Environment.NewLine));
-            Assert.That(result, Does.Contain("Nickname = OG Alex" + Environment.NewLine));
+            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
         }
 
         [Test]
@@ -108,7 +109,7 @@ namespace ObjectPrinting.Tests
                 .Configure(person => person.Nickname).Using(nickname => $"[{nickname}]")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Nickname = [OG Alex]" + Environment.NewLine));
+            Assert.That(result, Does.EndWith("Nickname = [OG Alex]"));
             Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
         }
 
@@ -139,7 +140,7 @@ namespace ObjectPrinting.Tests
                 .PrintToString(person);
 
             Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
-            Assert.That(result, Does.Contain("Nickname = OG Alex" + Environment.NewLine));
+            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
         }
 
         [Test]
@@ -165,12 +166,77 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<Node>().PrintToString(root);
 
-            Assert.That(result, Does.Contain("Left = Node"));
-            Assert.That(result, Does.Contain("Right = Node"));
+            Assert.That(result, Does.Contain("Left = Node:"));
+            Assert.That(result, Does.Contain("Right = Node:"));
             Assert.That(
                 result.Split("Name = shared", StringSplitOptions.None).Length - 1,
                 Is.EqualTo(2));
             Assert.That(result, Does.Not.Contain("[Циклическая ссылка:"));
+        }
+
+        [Test]
+        public void Prints_items_from_array_property()
+        {
+            var sample = new CollectionSample
+            {
+                ArrayItems = new[] { "array-first", "array-second" }
+            };
+
+            var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
+
+            Assert.That(result, Does.Contain(
+                $"ArrayItems = [{Environment.NewLine}\t\tarray-first" +
+                $"{Environment.NewLine}\t\tarray-second{Environment.NewLine}\t]" +
+                $"{Environment.NewLine}\tListItems ="));
+        }
+
+        [Test]
+        public void Prints_items_from_list_property()
+        {
+            var sample = new CollectionSample
+            {
+                ListItems = new List<string> { "list-first", "list-second" }
+            };
+
+            var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
+
+            Assert.That(result, Does.Contain(
+                $"ListItems = [{Environment.NewLine}\t\tlist-first" +
+                $"{Environment.NewLine}\t\tlist-second{Environment.NewLine}\t]"));
+        }
+
+        [Test]
+        public void Prints_keys_and_values_from_dictionary_property()
+        {
+            var sample = new CollectionSample
+            {
+                DictionaryItems = new Dictionary<string, string>
+                {
+                    ["key"] = "value"
+                }
+            };
+
+            var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
+
+            Assert.That(result, Does.Contain(
+                $"DictionaryItems = {{{Environment.NewLine}\t\tkey: value" +
+                $"{Environment.NewLine}\t}}"));
+            Assert.That(result, Does.Not.EndWith(Environment.NewLine));
+        }
+
+        [Test]
+        public void Indents_objects_inside_collections_once_per_level()
+        {
+            var sample = new NodeCollectionSample
+            {
+                Nodes = new List<Node> { new() { Name = "nested" } }
+            };
+
+            var result = ObjectPrinter.For<NodeCollectionSample>().PrintToString(sample);
+
+            Assert.That(result, Does.Contain(
+                $"Nodes = [{Environment.NewLine}\t\tNode:" +
+                $"{Environment.NewLine}\t\t\tName = nested"));
         }
 
         private sealed class Node
@@ -179,6 +245,18 @@ namespace ObjectPrinting.Tests
             public Node? Next { get; set; }
             public Node? Left { get; set; }
             public Node? Right { get; set; }
+        }
+
+        private sealed class CollectionSample
+        {
+            public string[] ArrayItems { get; set; } = Array.Empty<string>();
+            public List<string> ListItems { get; set; } = new();
+            public Dictionary<string, string> DictionaryItems { get; set; } = new();
+        }
+
+        private sealed class NodeCollectionSample
+        {
+            public List<Node> Nodes { get; set; } = new();
         }
     }
 }
