@@ -22,7 +22,8 @@ public class ObjectSerializer
 
     public string SerializeObject(object? obj)
     {
-        return PrintToString(obj, 0, []);
+        return PrintToString(obj, 0, 
+            new HashSet<object>(ReferenceEqualityComparer.Instance));
     }
 
     public void AddModifiedMemberSerializer<TMember>(MemberInfo memberInfo, Func<TMember, string> serializer)
