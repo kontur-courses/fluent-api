@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace ObjectPrinting.Solved.Tests.Entity
 {
-    internal class dawd
+    public class CollectionsHolder
     {
+        public int[] Numbers { get; set; }
+        public List<string> Strings { get; set; }
+        public Dictionary<string, int> Map { get; set; }
     }
 }

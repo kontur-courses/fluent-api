@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace ObjectPrinting.Solved.Tests.Entity
 {
-    internal class Class1
+    public class Node
     {
+        public string Name { get; set; }
+        public Node Parent { get; set; }
+        public List<Node> Children { get; set; } = new();
     }
 }

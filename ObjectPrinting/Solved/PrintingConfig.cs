@@ -75,7 +75,7 @@ namespace ObjectPrinting.Solved
         {
             if (value is null) 
             { 
-                sb.Append("null"); 
+                sb.Append("is null"); 
                 return; 
             }
 
