@@ -1,12 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private readonly HashSet<Type> excludedTypes = [];
+        private readonly HashSet<PropertyInfo> excludedProperties = [];
+
+        private readonly Dictionary<Type, Func<object, string>> formattersByType = new();
+        private readonly Dictionary<PropertyInfo, Func<object, string>> formattersByProperty = new();
+        
+        
+        
+        
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this);
