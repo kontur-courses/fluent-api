@@ -58,30 +58,50 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0, []);
+            var sb = new StringBuilder();
+            AppendValue(obj, 0, [], sb);
+
+            return sb.ToString();
         }
 
-        private string PrintToString(object? obj, int nestingLevel, HashSet<object> processedObjects)
+        private void AppendValue(
+            object? obj,
+            int nestingLevel,
+            HashSet<object> processedObjects,
+            StringBuilder sb)
         {
             if (obj == null)
-                return "null" + Environment.NewLine;
+            {
+                sb.AppendLine("null");
+                return;
+            }
 
             var type = obj.GetType();
 
             if (typeSerializers.TryGetValue(type, out var serializer))
-                return serializer(obj) + Environment.NewLine;
+            {
+                sb.AppendLine(serializer(obj));
+                return;
+            }
 
             if (FinalTypes.Contains(type))
-                return obj + Environment.NewLine;
+            {
+                sb.Append(obj).AppendLine();
+                return;
+            }
 
             if (!type.IsValueType && !processedObjects.Add(obj))
-                return "[Circular reference]" + Environment.NewLine;
+            {
+                sb.AppendLine("[Circular reference]");
+                return;
+            }
 
             try
             {
-                return obj is IEnumerable collection and not string
-                    ? SerializeCollection(collection, nestingLevel, processedObjects)
-                    : SerializeObject(obj, nestingLevel, processedObjects);
+                if (obj is IEnumerable collection and not string)
+                    SerializeCollection(collection, nestingLevel, processedObjects, sb);
+                else
+                    SerializeObject(obj, nestingLevel, processedObjects, sb);
             }
             finally
             {
@@ -90,13 +110,13 @@ namespace ObjectPrinting
             }
         }
 
-        private string SerializeObject(
+        private void SerializeObject(
             object obj,
             int nestingLevel,
-            HashSet<object> processedObjects)
+            HashSet<object> processedObjects,
+            StringBuilder sb)
         {
             var type = obj.GetType();
-            var sb = new StringBuilder();
 
             sb.AppendLine(type.Name);
 
@@ -108,47 +128,30 @@ namespace ObjectPrinting
                     continue;
 
                 var value = propertyInfo.GetValue(obj);
+                sb.Append('\t', nestingLevel + 1)
+                    .Append(propertyInfo.Name)
+                    .Append(" = ");
 
-                if (propertySerializers.TryGetValue(
-                        propertyInfo, out var serializer))
-                {
-                    sb.AppendLine(propertyInfo.FormatLine(
-                        serializer(value!),
-                        nestingLevel));
-
-                    continue;
-                }
-
-                sb.Append(propertyInfo.FormatLine(
-                    PrintToString(
-                        value,
-                        nestingLevel + 1,
-                        processedObjects),
-                    nestingLevel));
+                if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
+                    sb.AppendLine(serializer(value!));
+                else
+                    AppendValue(value, nestingLevel + 1, processedObjects, sb);
             }
-
-            return sb.ToString();
         }
 
-        private string SerializeCollection(
+        private void SerializeCollection(
             IEnumerable collection,
             int nestingLevel,
-            HashSet<object> processedObjects)
+            HashSet<object> processedObjects,
+            StringBuilder sb)
         {
-            var sb = new StringBuilder();
             sb.AppendLine(collection.GetType().Name);
 
             foreach (var item in collection)
             {
-                sb.Append(new string('\t', nestingLevel + 1));
-
-                sb.Append(PrintToString(
-                    item,
-                    nestingLevel + 1,
-                    processedObjects));
+                sb.Append('\t', nestingLevel + 1);
+                AppendValue(item, nestingLevel + 1, processedObjects, sb);
             }
-
-            return sb.ToString();
         }
     }
 }
