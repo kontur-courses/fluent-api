@@ -225,7 +225,7 @@ namespace ObjectPrinting.Tests
             var nodes = new List<LoopNode> { node, node };
 
             var expected = string.Join(Environment.NewLine,
-                "List`1",
+                "[",
                 "\tLoopNode",
                 "\t\tValue = 2",
                 "\t\tNext = null",
@@ -234,6 +234,7 @@ namespace ObjectPrinting.Tests
                 "\t\tValue = 2",
                 "\t\tNext = null",
                 "\t\tPrevious = null",
+                "]",
                 "");
 
             var result = nodes.PrintToString();
@@ -270,19 +271,43 @@ namespace ObjectPrinting.Tests
         {
             var dictionary = new Dictionary<string, int> { ["apples"] = 3 };
             var expected = string.Join(Environment.NewLine,
-                "Dictionary`2",
-                "\tKeyValuePair`2",
-                "\t\tKey = apples",
-                "\t\tValue = 3",
+                "{",
+                "\tapples: 3",
+                "}",
+                "");
+
+            dictionary.PrintToString().Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_DictionaryWithNestedValues_ShouldPrintExpected()
+        {
+            var dictionary = new Dictionary<int, object>
+            {
+                [1] = new[] { 3, 4 },
+                [2] = new Dictionary<string, int>()
+            };
+            dictionary[3] = dictionary;
+
+            var expected = string.Join(Environment.NewLine,
+                "{",
+                "\t1: [",
+                "\t\t3",
+                "\t\t4",
+                "\t]",
+                "\t2: {",
+                "\t}",
+                "\t3: [Circular reference]",
+                "}",
                 "");
 
             dictionary.PrintToString().Should().Be(expected);
         }
 
         [TestCaseSource(nameof(SequenceCases))]
-        public void PrintToString_Sequence_ShouldPrintExpected(IEnumerable<int> sequence, string typeName)
+        public void PrintToString_Sequence_ShouldPrintExpected(IEnumerable<int> sequence)
         {
-            var expected = string.Join(Environment.NewLine, typeName, "\t3", "\t1", "\t2", "");
+            var expected = string.Join(Environment.NewLine, "[", "\t3", "\t1", "\t2", "]", "");
 
             sequence.PrintToString().Should().Be(expected);
         }
@@ -292,12 +317,15 @@ namespace ObjectPrinting.Tests
         {
             var numbers = new[] { new[] { 3, 1 }, new[] { 2 } };
             var expected = string.Join(Environment.NewLine,
-                "Int32[][]",
-                "\tInt32[]",
+                "[",
+                "\t[",
                 "\t\t[3]",
                 "\t\t[1]",
-                "\tInt32[]",
+                "\t]",
+                "\t[",
                 "\t\t[2]",
+                "\t]",
+                "]",
                 "");
 
             var result = numbers.PrintToString(c => c
@@ -317,8 +345,8 @@ namespace ObjectPrinting.Tests
 
         private static IEnumerable<TestCaseData> SequenceCases()
         {
-            yield return new TestCaseData(new[] { 3, 1, 2 }, "Int32[]").SetArgDisplayNames("array");
-            yield return new TestCaseData(new List<int> { 3, 1, 2 }, "List`1").SetArgDisplayNames("list");
+            yield return new TestCaseData(new[] { 3, 1, 2 }).SetArgDisplayNames("array");
+            yield return new TestCaseData(new List<int> { 3, 1, 2 }).SetArgDisplayNames("list");
         }
     }
 }

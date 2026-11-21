@@ -99,10 +99,18 @@ namespace ObjectPrinting
 
             try
             {
-                if (obj is IEnumerable collection and not string)
-                    SerializeCollection(collection, nestingLevel, processedObjects, sb);
-                else
-                    SerializeObject(obj, nestingLevel, processedObjects, sb);
+                switch (obj)
+                {
+                    case IDictionary dictionary:
+                        SerializeDictionary(dictionary, nestingLevel, processedObjects, sb);
+                        break;
+                    case ICollection collection:
+                        SerializeCollection(collection, nestingLevel, processedObjects, sb);
+                        break;
+                    default:
+                        SerializeObject(obj, nestingLevel, processedObjects, sb);
+                        break;
+                }
             }
             finally
             {
@@ -140,19 +148,42 @@ namespace ObjectPrinting
             }
         }
 
-        private void SerializeCollection(
-            IEnumerable collection,
+        private void SerializeDictionary(
+            IDictionary dictionary,
             int nestingLevel,
             HashSet<object> processedObjects,
             StringBuilder sb)
         {
-            sb.AppendLine(collection.GetType().Name);
+            sb.AppendLine("{");
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                sb.Append('\t', nestingLevel + 1);
+                AppendValue(entry.Key, nestingLevel + 1, processedObjects, sb);
+                sb.Length -= Environment.NewLine.Length;
+
+                sb.Append(": ");
+                AppendValue(entry.Value, nestingLevel + 1, processedObjects, sb);
+            }
+
+            sb.Append('\t', nestingLevel).AppendLine("}");
+        }
+
+        private void SerializeCollection(
+            ICollection collection,
+            int nestingLevel,
+            HashSet<object> processedObjects,
+            StringBuilder sb)
+        {
+            sb.AppendLine("[");
 
             foreach (var item in collection)
             {
                 sb.Append('\t', nestingLevel + 1);
                 AppendValue(item, nestingLevel + 1, processedObjects, sb);
             }
+
+            sb.Append('\t', nestingLevel).AppendLine("]");
         }
     }
 }
