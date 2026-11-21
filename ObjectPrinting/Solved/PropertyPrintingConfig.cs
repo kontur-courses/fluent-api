@@ -14,25 +14,37 @@ namespace ObjectPrinting.Solved
             this.memberName = memberName;
         }
 
-        public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
+        public PrintingConfig<TOwner> Using(Func<TPropType, string?> print)
         {
             if (memberName is null)
-                printingConfig.TypeSerializers[typeof(TPropType)] = o => print((TPropType)o);
+            {
+                printingConfig.TypeSerializers[typeof(TPropType)] = obj => print((TPropType)obj)!;
+            }
             else
-                printingConfig.MemberSerializers[memberName] = o => print((TPropType)o);
+            {
+                printingConfig.MemberSerializers[memberName] = obj => print((TPropType)obj)!;
+            }
+
             return printingConfig;
         }
 
         public PrintingConfig<TOwner> Using(CultureInfo culture)
         {
             if (!typeof(IFormattable).IsAssignableFrom(typeof(TPropType)))
+            {
                 throw new InvalidOperationException(
                     $"Type {typeof(TPropType).Name} does not implement IFormattable.");
+            }
 
             if (memberName is null)
+            {
                 printingConfig.TypeCultures[typeof(TPropType)] = culture;
+            }
             else
+            {
                 printingConfig.MemberCultures[memberName] = culture;
+            }
+
             return printingConfig;
         }
     }

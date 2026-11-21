@@ -5,11 +5,12 @@ using System.Text;
 
 namespace ObjectPrinting.Solved
 {
-    public class ObjectSerializer<TOwner>
+    internal sealed class ObjectSerializer<TOwner>
     {
         private readonly PrintingConfig<TOwner> config;
         private readonly int maxDepth;
-        private readonly HashSet<object> visited = new(ReferenceEqualityComparer.Instance);
+        private readonly HashSet<object> visited =
+            new(ReferenceEqualityComparer.Instance);
 
         public ObjectSerializer(PrintingConfig<TOwner> config, int maxDepth)
         {
@@ -17,146 +18,188 @@ namespace ObjectPrinting.Solved
             this.maxDepth = maxDepth;
         }
 
-        public string Serialize(object? obj) => Print(obj, 0);
+        public string Serialize(object? obj)
+        {
+            var builder = new StringBuilder();
+            Print(builder, obj, 0);
+            return builder.ToString();
+        }
 
-        private string Print(object? obj, int level)
+        private void Print(StringBuilder builder, object? obj, int level)
         {
             if (obj is null)
-                return "null" + Environment.NewLine;
+            {
+                builder.Append("null").Append(Environment.NewLine);
+                return;
+            }
 
             var type = obj.GetType();
 
             if (config.ExcludedTypes.Contains(type))
-                return string.Empty;
+            {
+                return;
+            }
+
+            if (config.TypeSerializers.TryGetValue(type, out var serializer))
+            {
+                builder.Append(serializer(obj) ?? "null").Append(Environment.NewLine);
+                return;
+            }
+
+            if (config.TypeCultures.TryGetValue(type, out var culture)
+                && obj is IFormattable formattable)
+            {
+                builder.Append(formattable.ToString(null, culture)).Append(Environment.NewLine);
+                return;
+            }
 
             if (TypeInspector.IsFinalType(type))
-                return PrintFinal(obj, type);
+            {
+                builder.Append(obj).Append(Environment.NewLine);
+                return;
+            }
 
-            if (obj is IDictionary dict)
-                return PrintDictionary(dict, level);
+            if (obj is IDictionary dictionary)
+            {
+                PrintDictionary(builder, dictionary, level);
+                return;
+            }
 
             if (obj is IEnumerable enumerable and not string)
-                return PrintEnumerable(enumerable, level);
+            {
+                PrintEnumerable(builder, enumerable, level);
+                return;
+            }
 
-            return PrintComplex(obj, type, level);
+            PrintComplex(builder, obj, type, level);
         }
 
-        private string PrintFinal(object obj, Type type)
-        {
-            if (config.TypeSerializers.TryGetValue(type, out var ser))
-                return ser(obj) + Environment.NewLine;
-
-            if (config.TypeCultures.TryGetValue(type, out var culture) && obj is IFormattable f)
-                return f.ToString(null, culture) + Environment.NewLine;
-
-            return obj + Environment.NewLine;
-        }
-
-        private string PrintComplex(object obj, Type type, int level)
+        private void PrintWithGuards(
+            StringBuilder builder, object obj, Type type, int level, Action body)
         {
             if (!visited.Add(obj))
-                return "<cycle>" + Environment.NewLine;
-
-            if (level >= maxDepth)
             {
-                visited.Remove(obj);
-                return $"<{type.Name}>" + Environment.NewLine;
+                builder.Append("<cycle>").Append(Environment.NewLine);
+                return;
             }
 
             try
             {
-                var sb = new StringBuilder();
-                sb.AppendLine(type.Name);
+                if (level >= maxDepth)
+                {
+                    builder.Append('<').Append(type.Name).Append('>').Append(Environment.NewLine);
+                    return;
+                }
+
+                body();
+            }
+            finally
+            {
+                visited.Remove(obj);
+            }
+        }
+
+        private void PrintComplex(StringBuilder builder, object obj, Type type, int level)
+            => PrintWithGuards(builder, obj, type, level, () =>
+            {
+                builder.AppendLine(type.Name);
                 var indentation = new string('\t', level + 1);
 
                 foreach (var member in TypeInspector.GetMembers(type))
                 {
-                    if (config.ExcludedTypes.Contains(member.MemberType)) continue;
-                    if (config.ExcludedMembers.Contains(member.Name)) continue;
+                    if (config.ExcludedTypes.Contains(member.MemberType))
+                    {
+                        continue;
+                    }
+
+                    if (config.ExcludedMembers.Contains(member.Name))
+                    {
+                        continue;
+                    }
 
                     var value = member.GetValue(obj);
-                    sb.Append(indentation + member.Name + " = ");
-                    sb.Append(PrintMember(member.Name, value, level + 1));
+
+                    if (value is not null && config.ExcludedTypes.Contains(value.GetType()))
+                    {
+                        continue;
+                    }
+
+                    builder.Append(indentation).Append(member.Name).Append(" = ");
+                    PrintMember(builder, member.Name, value, level + 1);
                 }
+            });
 
-                return sb.ToString();
-            }
-            finally
-            {
-                visited.Remove(obj);
-            }
-        }
-
-        private string PrintMember(string memberName, object? value, int level)
+        private void PrintMember(
+            StringBuilder builder, string memberName, object? value, int level)
         {
-            if (config.MemberSerializers.TryGetValue(memberName, out var ser))
-                return ser(value) + Environment.NewLine;
+            if (config.MemberSerializers.TryGetValue(memberName, out var serializer))
+            {
+                builder.Append(serializer(value) ?? "null").Append(Environment.NewLine);
+                return;
+            }
 
             if (value is not null
-                && config.MemberCultures.TryGetValue(memberName, out var culture) && value is IFormattable f)
-                return f.ToString(null, culture) + Environment.NewLine;
-
-            return Print(value, level);
-        }
-
-        private string PrintEnumerable(IEnumerable enumerable, int level)
-        {
-            if (!visited.Add(enumerable))
-                return "<cycle>" + Environment.NewLine;
-
-            if (level >= maxDepth)
+                && config.MemberCultures.TryGetValue(memberName, out var culture)
+                && value is IFormattable formattable)
             {
-                visited.Remove(enumerable);
-                return $"<{enumerable.GetType().Name}>" + Environment.NewLine;
+                builder.Append(formattable.ToString(null, culture)).Append(Environment.NewLine);
+                return;
             }
 
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine(enumerable.GetType().Name);
-                var indentation = new string('\t', level + 1);
+            Print(builder, value, level);
+        }
 
+        private void PrintEnumerable(StringBuilder builder, IEnumerable enumerable, int level)
+            => PrintWithGuards(builder, enumerable, enumerable.GetType(), level, () =>
+            {
+                builder.Append('[');
+
+                var first = true;
                 foreach (var item in enumerable)
-                    sb.Append(indentation + "- " + Print(item, level + 1));
-
-                return sb.ToString();
-            }
-            finally
-            {
-                visited.Remove(enumerable);
-            }
-        }
-
-        private string PrintDictionary(IDictionary dict, int level)
-        {
-            if (!visited.Add(dict))
-                return "<cycle>" + Environment.NewLine;
-
-            if (level >= maxDepth)
-            {
-                visited.Remove(dict);
-                return $"<{dict.GetType().Name}>" + Environment.NewLine;
-            }
-
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine(dict.GetType().Name);
-                var indentation = new string('\t', level + 1);
-
-                foreach (DictionaryEntry entry in dict)
                 {
-                    sb.Append(indentation + "[");
-                    sb.Append(Print(entry.Key, level + 1).TrimEnd());
-                    sb.Append("] = ");
-                    sb.Append(Print(entry.Value, level + 1));
+                    if (!first)
+                    {
+                        builder.Append(", ");
+                    }
+
+                    first = false;
+
+                    var start = builder.Length;
+                    Print(builder, item, level + 1);
+                    TrimTrailingNewLine(builder, start);
                 }
 
-                return sb.ToString();
-            }
-            finally
+                builder.Append(']').Append(Environment.NewLine);
+            });
+
+        private void PrintDictionary(StringBuilder builder, IDictionary dictionary, int level)
+            => PrintWithGuards(builder, dictionary, dictionary.GetType(), level, () =>
             {
-                visited.Remove(dict);
+                builder.AppendLine(dictionary.GetType().Name);
+                var indentation = new string('\t', level + 1);
+
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    builder.Append(indentation).Append('[');
+
+                    var start = builder.Length;
+                    Print(builder, entry.Key, level + 1);
+                    TrimTrailingNewLine(builder, start);
+
+                    builder.Append("] = ");
+                    Print(builder, entry.Value, level + 1);
+                }
+            });
+
+        private static void TrimTrailingNewLine(StringBuilder builder, int since)
+        {
+            var newLineLength = Environment.NewLine.Length;
+            if (builder.Length >= since + newLineLength
+                && string.CompareOrdinal(
+                    builder.ToString(builder.Length - newLineLength, newLineLength),
+                    Environment.NewLine) == 0)
+            {
+                builder.Length -= newLineLength;
             }
         }
     }

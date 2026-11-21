@@ -30,19 +30,25 @@ namespace ObjectPrinting.Solved
         }
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-            => new(this, null);
+            => new PropertyPrintingConfig<TOwner, TPropType>(this, null);
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
-            => new(this, GetMemberName(memberSelector));
+            => new PropertyPrintingConfig<TOwner, TPropType>(
+                this, GetMemberName(memberSelector));
 
         public string PrintToString(TOwner obj, int maxDepth = int.MaxValue)
             => new ObjectSerializer<TOwner>(this, maxDepth).Serialize(obj);
 
         private static string GetMemberName<TPropType>(
-            Expression<Func<TOwner, TPropType>> selector)
-            => selector.Body is MemberExpression me
-                ? me.Member.Name
-                : throw new ArgumentException("Selector must be a member expression.");
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            if (memberSelector.Body is MemberExpression memberExpression)
+            {
+                return memberExpression.Member.Name;
+            }
+
+            throw new ArgumentException("Selector must be a member expression.");
+        }
     }
 }

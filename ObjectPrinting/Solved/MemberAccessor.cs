@@ -14,20 +14,20 @@ namespace ObjectPrinting.Solved
         private readonly PropertyInfo? property;
         private readonly FieldInfo? field;
 
-        public MemberAccessor(PropertyInfo p)
+        public MemberAccessor(PropertyInfo property)
         {
-            Name = p.Name;
-            MemberType = p.PropertyType;
-            property = p;
+            Name = property.Name;
+            MemberType = property.PropertyType;
+            this.property = property;
             field = null;
         }
 
-        public MemberAccessor(FieldInfo f)
+        public MemberAccessor(FieldInfo field)
         {
-            Name = f.Name;
-            MemberType = f.FieldType;
+            Name = field.Name;
+            MemberType = field.FieldType;
             property = null;
-            field = f;
+            this.field = field;
         }
 
         public object? GetValue(object obj)
