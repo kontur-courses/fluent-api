@@ -1,28 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Collections;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private static readonly HashSet<Type> FinalTypes = new()
-        {
-            typeof(int),
-            typeof(double),
-            typeof(float),
-            typeof(string),
-            typeof(DateTime),
-            typeof(TimeSpan)
-        };
-
         private readonly Dictionary<Type, TypeSettings> typeSettings = new();
         private readonly Dictionary<MemberInfo, MemberSettings> memberSettings = new();
+        private readonly ObjectWriter objectWriter;
+
+        public PrintingConfig()
+        {
+            objectWriter = new ObjectWriter(typeSettings, memberSettings);
+        }
 
         public PrintingConfig<TOwner> Excluding<TValue>()
         {
@@ -59,189 +52,7 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintValue(
-                obj,
-                0,
-                new HashSet<object>(ReferenceEqualityComparer.Instance));
-        }
-
-        private string PrintValue(
-            object? obj,
-            int nestingLevel,
-            HashSet<object> activeReferences)
-        {
-            if (obj == null)
-                return "null";
-
-            var type = obj.GetType();
-            if (typeSettings.TryGetValue(type, out var settings))
-            {
-                var typeSerializer = settings.Serializer;
-                if (typeSerializer is not null)
-                    return typeSerializer(obj);
-
-                var culture = settings.Culture;
-                if (culture is not null && obj is IFormattable formattable)
-                    return formattable.ToString(null, culture);
-            }
-
-            if (FinalTypes.Contains(type))
-                return obj.ToString();
-
-            var isReferenceType = !type.IsValueType;
-            if (isReferenceType && !activeReferences.Add(obj))
-                return $"[Циклическая ссылка: {type.Name}]";
-
-            try
-            {
-                if (obj is IDictionary dictionary)
-                    return PrintDictionary(dictionary, nestingLevel, activeReferences);
-
-                if (obj is IEnumerable collection)
-                    return PrintCollection(collection, nestingLevel, activeReferences);
-
-                return PrintObjectMembers(obj, type, nestingLevel, activeReferences);
-            }
-            finally
-            {
-                if (isReferenceType)
-                    activeReferences.Remove(obj);
-            }
-        }
-
-        private string PrintDictionary(
-            IDictionary dictionary,
-            int nestingLevel,
-            HashSet<object> activeReferences)
-        {
-            var indentation = new string('\t', nestingLevel);
-            var childIndentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-
-            sb.Append('{');
-            var hasEntries = false;
-            foreach (DictionaryEntry entry in dictionary)
-            {
-                if (hasEntries)
-                    sb.Append(',');
-
-                sb.AppendLine()
-                    .Append(childIndentation)
-                    .Append(PrintValue(entry.Key, nestingLevel + 1, activeReferences))
-                    .Append(": ")
-                    .Append(PrintValue(entry.Value, nestingLevel + 1, activeReferences));
-                hasEntries = true;
-            }
-
-            if (hasEntries)
-                sb.AppendLine().Append(indentation);
-
-            sb.Append('}');
-            return sb.ToString();
-        }
-
-        private string PrintCollection(
-            IEnumerable collection,
-            int nestingLevel,
-            HashSet<object> activeReferences)
-        {
-            var indentation = new string('\t', nestingLevel);
-            var childIndentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-
-            sb.Append('[');
-            var hasItems = false;
-            foreach (var item in collection)
-            {
-                if (hasItems)
-                    sb.Append(',');
-
-                sb.AppendLine()
-                    .Append(childIndentation)
-                    .Append(PrintValue(item, nestingLevel + 1, activeReferences));
-                hasItems = true;
-            }
-
-            if (hasItems)
-                sb.AppendLine().Append(indentation);
-
-            sb.Append(']');
-            return sb.ToString();
-        }
-
-        private string PrintObjectMembers(
-            object obj,
-            Type type,
-            int nestingLevel,
-            HashSet<object> activeReferences)
-        {
-            var childIndentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.Append(type.Name).Append(':');
-
-            foreach (var member in GetPublicMembers(type))
-            {
-                var memberType = GetMemberType(member);
-                memberSettings.TryGetValue(member, out var memberConfiguration);
-
-                if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
-                        && typeConfiguration.IsExcluded)
-                    || memberConfiguration?.IsExcluded == true)
-                {
-                    continue;
-                }
-
-                var value = member switch
-                {
-                    PropertyInfo property => property.GetValue(obj),
-                    FieldInfo field => field.GetValue(obj),
-                    _ => throw new ArgumentException("Неизвестный тип", nameof(member))
-                };
-
-                if (value is string text
-                    && memberConfiguration?.MaxStringLength is int maxLength
-                    && text.Length > maxLength)
-                {
-                    value = text[..maxLength];
-                }
-
-                sb.AppendLine()
-                    .Append(childIndentation)
-                    .Append(member.Name)
-                    .Append(" = ");
-
-                var memberSerializer = memberConfiguration?.Serializer;
-                if (memberSerializer is not null)
-                {
-                    sb.Append(memberSerializer(value));
-                }
-                else
-                {
-                    sb.Append(PrintValue(value, nestingLevel + 1, activeReferences));
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        private static IEnumerable<MemberInfo> GetPublicMembers(Type type)
-        {
-            var properties = type
-                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(property => property.GetIndexParameters().Length == 0 && property.GetGetMethod() is not null);
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
-
-            return properties.Cast<MemberInfo>().Concat(fields);
-        }
-
-        private static Type GetMemberType(MemberInfo member)
-        {
-            return member switch
-            {
-                PropertyInfo property => property.PropertyType,
-                FieldInfo field => field.FieldType,
-                _ => throw new ArgumentException("Неизвестный тип")
-            };
+            return objectWriter.Print(obj);
         }
 
         internal void SetTypeSerializer<TValue>(Func<TValue, string> serializer)
@@ -335,16 +146,15 @@ namespace ObjectPrinting
                 "Ожидался выбор свойства или поля на входе",
                 nameof(expression));
         }
-
-        private sealed record TypeSettings(
-            bool IsExcluded = false,
-            Func<object?, string>? Serializer = null,
-            CultureInfo? Culture = null);
-
-        private sealed record MemberSettings(
-            bool IsExcluded = false,
-            Func<object?, string>? Serializer = null,
-            int? MaxStringLength = null);
-
     }
+
+    internal sealed record TypeSettings(
+        bool IsExcluded = false,
+        Func<object?, string>? Serializer = null,
+        CultureInfo? Culture = null);
+
+    internal sealed record MemberSettings(
+        bool IsExcluded = false,
+        Func<object?, string>? Serializer = null,
+        int? MaxStringLength = null);
 }
