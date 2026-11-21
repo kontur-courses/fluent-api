@@ -143,6 +143,30 @@ namespace ObjectPrinting.Tests
             lines.Should().Contain("\tScore = 26");
         }
         
+        [TestCase(true, "1.5")]
+        [TestCase(false, "1,5")]
+        public void Printing_ByType_UsesSpecifiedCulture(
+            bool useInvariantCulture, string expectedHeight)
+        {
+            var culture = useInvariantCulture
+                ? CultureInfo.InvariantCulture
+                : CultureInfo.GetCultureInfo("ru-RU");
+
+            var sample = new SampleWithHeight { Height = 1.5 };
+
+            var result = ObjectPrinter.For<SampleWithHeight>()
+                .Printing<double>().Using(culture)
+                .PrintToString(sample);
+
+            result.Split(Environment.NewLine)
+                .Should().Contain($"\tHeight = {expectedHeight}");
+        }
+
+        private sealed class SampleWithHeight
+        {
+            public double Height { get; set; }
+        }
+        
         private sealed class SampleWithIntMembers
         {
             public int Age { get; set; } = 19;
