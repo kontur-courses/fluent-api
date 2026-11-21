@@ -25,16 +25,18 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetProperty(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
+            excludedProperties.Add(GetProperty(memberSelector));
             return this;
         }
 
         internal PrintingConfig<TOwner> Excluding<TPropType>()
         {
+            excludedTypes.Add(typeof(TPropType));
             return this;
         }
 
@@ -68,6 +70,21 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+
+        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TPropType>> selector)
+        {
+            //метод должен на основе селектора(например p => p.Name) вернуть PropertyInfo, описывающее свойство (напр Person.Name)
+            
+            
+            throw new NotImplementedException();
+        }
+
+        internal void SetFormatter(Type type, PropertyInfo? property, Func<object, string> formatter)
+        {
+            if (property == null) formattersByType[type] = formatter;
+            else formattersByProperty[property] = formatter;
         }
     }
 }
