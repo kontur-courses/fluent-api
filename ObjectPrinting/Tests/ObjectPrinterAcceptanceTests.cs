@@ -1,27 +1,66 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
-namespace ObjectPrinting.Tests
+namespace ObjectPrinting.Tests;
+
+[TestFixture]
+public class ObjectPrinterAcceptanceTests
 {
-    [TestFixture]
-    public class ObjectPrinterAcceptanceTests
+    [Test]
+    public void Demo()
     {
-        [Test]
-        public void Demo()
+        var person = new Person
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            Name = "Alexandr",
+            Age = 19,
+            Height = 182.5,
+            Father = new Person { Name = "Ivan", Age = 45, Height = 178.3 }
+        };
 
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
-            
-            string s1 = printer.PrintToString(person);
+        var printer = ObjectPrinter.For<Person>()
+            // 1. Исключить из сериализации свойства определенного типа
+            .Exclude<Guid>()
+            // 2. Указать альтернативный способ сериализации для определенного типа
+            .For<int>().Using(i => i.ToString("X"))
+            // 3. Для числовых типов указать культуру
+            .For<double>().Using(CultureInfo.InvariantCulture)
+            // 4. Настроить сериализацию конкретного свойства
+            .For(p => p.Age).Using(age => $"{age} years")
+            // 5. Настроить обрезание строковых свойств (метод виден только для string)
+            .For(p => p.Name).Truncate(4)
+            // 6. Исключить из сериализации конкретное свойство
+            .Exclude(p => p.Father);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
-        }
+        var s1 = printer.PrintToString(person);
+
+        // 7. Синтаксический сахар в виде метода расширения, сериализующего по умолчанию
+        var s2 = person.PrintToString();
+
+        // 8. ...с конфигурированием
+        var s3 = person.PrintToString(cfg => cfg
+            .Exclude<Guid>()
+            .For(p => p.Name).Truncate(4));
+
+        Console.WriteLine(s1);
+        Console.WriteLine(s2);
+        Console.WriteLine(s3);
+
+        s1.Should()
+            .NotContain("Id =")
+            .And.NotContain("Father =")
+            .And.Contain("Name = Alex" + Environment.NewLine)
+            .And.Contain("Height = 182.5" + Environment.NewLine)
+            .And.Contain("Age = 19 years" + Environment.NewLine);
+
+        s2.Should()
+            .Contain("Id = ")
+            .And.Contain("Name = Alexandr" + Environment.NewLine)
+            .And.Contain("Father = Person" + Environment.NewLine);
+
+        s3.Should()
+            .NotContain("Id =")
+            .And.Contain("Name = Alex" + Environment.NewLine);
     }
 }
