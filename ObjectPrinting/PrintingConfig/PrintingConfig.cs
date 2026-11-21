@@ -18,6 +18,14 @@ public class PrintingConfig<TOwner>
         this.state = state;
     }
 
+    public MemberPrintingConfig<TOwner, TProp> For<TProp>() => new(this);
+
+    public MemberPrintingConfig<TOwner, TProp> For<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
+    {
+        var member = ExtractMemberInfo(memberSelector);
+        return new(this, member);
+    }
+
     public string PrintToString(TOwner obj) =>
         new ObjectSerializer(state).Serialize(obj);
 
