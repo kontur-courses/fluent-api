@@ -21,12 +21,12 @@ internal class ObjectSerializer
         typeof(TimeSpan)
     ];
 
-    private readonly IPrintingSettings _settings;
-    private readonly HashSet<object> _objectsBeingPrinted = new(ReferenceEqualityComparer.Instance);
+    private readonly IPrintingSettings settings;
+    private readonly HashSet<object> objectsBeingPrinted = new(ReferenceEqualityComparer.Instance);
 
     private ObjectSerializer(IPrintingSettings settings)
     {
-        _settings = settings;
+        this.settings = settings;
     }
 
     public static string Serialize(object obj, IPrintingSettings settings)
@@ -41,17 +41,17 @@ internal class ObjectSerializer
             return "null";
 
         var type = obj.GetType();
-        if (_settings.TryGetTypePrinter(type, out var typePrinter))
+        if (settings.TryGetTypePrinter(type, out var typePrinter))
             return typePrinter(obj);
 
         if (IsFinalType(type))
             return obj.ToString();
 
-        if (!_objectsBeingPrinted.Add(obj))
+        if (!objectsBeingPrinted.Add(obj))
             return CycleMark;
 
         var printed = PrintComposite(obj, type, nestingLevel);
-        _objectsBeingPrinted.Remove(obj);
+        objectsBeingPrinted.Remove(obj);
         return printed;
     }
 
@@ -99,7 +99,7 @@ internal class ObjectSerializer
     {
         foreach (var member in GetPrintedMembers(type))
         {
-            if (_settings.IsExcluded(member, GetMemberType(member)))
+            if (settings.IsExcluded(member, GetMemberType(member)))
                 continue;
 
             var printedValue = PrintMember(member, GetMemberValue(member, obj), nestingLevel);
@@ -109,7 +109,7 @@ internal class ObjectSerializer
 
     private string PrintMember(MemberInfo member, object value, int nestingLevel)
     {
-        return _settings.TryGetMemberPrinter(member, out var memberPrinter)
+        return settings.TryGetMemberPrinter(member, out var memberPrinter)
             ? memberPrinter(value)
             : PrintToString(value, nestingLevel + 1);
     }

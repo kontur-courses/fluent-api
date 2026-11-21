@@ -32,7 +32,7 @@ namespace ObjectPrinting.Tests
                 "\tName = Alex",
                 "\tAge = 19 years");
 
-            string s1 = printer.PrintToString(person);
+            var s1 = printer.PrintToString(person);
 
             s1
                 .Should()

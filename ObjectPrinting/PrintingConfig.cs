@@ -7,10 +7,10 @@ namespace ObjectPrinting;
 
 public class PrintingConfig<TOwner> : IPrintingSettings
 {
-    private readonly HashSet<Type> _excludedTypes = [];
-    private readonly HashSet<MemberInfo> _excludedMembers = [];
-    private readonly Dictionary<Type, Func<object, string>> _typePrinters = [];
-    private readonly Dictionary<MemberInfo, Func<object, string>> _memberPrinters = [];
+    private readonly HashSet<Type> excludedTypes = [];
+    private readonly HashSet<MemberInfo> excludedMembers = [];
+    private readonly Dictionary<Type, Func<object, string>> typePrinters = [];
+    private readonly Dictionary<MemberInfo, Func<object, string>> memberPrinters = [];
 
     public string PrintToString(TOwner obj)
     {
@@ -33,7 +33,7 @@ public class PrintingConfig<TOwner> : IPrintingSettings
     {
         return new ValuePrintingConfig<TOwner, TPrintingType>(
             this,
-            printer => _typePrinters[typeof(TPrintingType)] = printer);
+            printer => typePrinters[typeof(TPrintingType)] = printer);
     }
 
     public ValuePrintingConfig<TOwner, TMemberType> Printing<TMemberType>(
@@ -42,33 +42,33 @@ public class PrintingConfig<TOwner> : IPrintingSettings
         var member = GetSelectedMember(memberSelector);
         return new ValuePrintingConfig<TOwner, TMemberType>(
             this,
-            printer => _memberPrinters[member] = printer);
+            printer => memberPrinters[member] = printer);
     }
 
     bool IPrintingSettings.IsExcluded(MemberInfo member, Type memberType)
     {
-        return _excludedMembers.Contains(member)
-            || _excludedTypes.Contains(memberType);
+        return excludedMembers.Contains(member)
+            || excludedTypes.Contains(memberType);
     }
 
     bool IPrintingSettings.TryGetTypePrinter(Type type, out Func<object, string> printer)
     {
-        return _typePrinters.TryGetValue(type, out printer);
+        return typePrinters.TryGetValue(type, out printer);
     }
 
     bool IPrintingSettings.TryGetMemberPrinter(MemberInfo member, out Func<object, string> printer)
     {
-        return _memberPrinters.TryGetValue(member, out printer);
+        return memberPrinters.TryGetValue(member, out printer);
     }
 
     internal void ExcludeType(Type excludedType)
     {
-        _excludedTypes.Add(excludedType);
+        excludedTypes.Add(excludedType);
     }
 
     internal void ExcludeMember(MemberInfo excludedMember)
     {
-        _excludedMembers.Add(excludedMember);
+        excludedMembers.Add(excludedMember);
     }
 
     private static MemberInfo GetSelectedMember<TMemberType>(Expression<Func<TOwner, TMemberType>> memberSelector)
