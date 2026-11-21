@@ -17,10 +17,10 @@ namespace ObjectPrinting
         ];
 
         private readonly HashSet<Type> excludedTypes = [];
-        private readonly HashSet<MemberInfo> excludedProperties = [];
+        private readonly HashSet<string> excludedProperties = [];
 
         private readonly Dictionary<Type, Func<object, string>> typeSerializers = new();
-        private readonly Dictionary<MemberInfo, Func<object, string>> propertySerializers = new();
+        private readonly Dictionary<string, Func<object, string>> propertySerializers = new(StringComparer.Ordinal);
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
@@ -29,15 +29,12 @@ namespace ObjectPrinting
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
-
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, memberInfo);
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetMemberPath(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var memberInfo = ((MemberExpression)memberSelector.Body).Member;
-            excludedProperties.Add(memberInfo);
+            excludedProperties.Add(GetMemberPath(memberSelector));
 
             return this;
         }
@@ -49,10 +46,10 @@ namespace ObjectPrinting
             return this;
         }
 
-        internal void SetSerializer<TPropType>(Func<TPropType, string> serializer, MemberInfo? memberInfo = null)
+        internal void SetSerializer<TPropType>(Func<TPropType, string> serializer, string? memberPath = null)
         {
-            if (memberInfo != null)
-                propertySerializers[memberInfo] = value => serializer((TPropType)value);
+            if (memberPath != null)
+                propertySerializers[memberPath] = value => serializer((TPropType)value);
             else
                 typeSerializers[typeof(TPropType)] = value => serializer((TPropType)value);
         }
@@ -61,7 +58,7 @@ namespace ObjectPrinting
         {
             var sb = new StringBuilder();
             var processedObjects = new HashSet<object>(ReferenceEqualityComparer.Instance);
-            AppendValue(obj, 0, processedObjects, sb);
+            AppendValue(obj, 0, processedObjects, sb, string.Empty);
 
             return sb.ToString();
         }
@@ -70,7 +67,8 @@ namespace ObjectPrinting
             object? obj,
             int nestingLevel,
             HashSet<object> processedObjects,
-            StringBuilder sb)
+            StringBuilder sb,
+            string? memberPath)
         {
             if (obj == null)
             {
@@ -109,7 +107,7 @@ namespace ObjectPrinting
                         SerializeCollection(collection, nestingLevel, processedObjects, sb);
                         break;
                     default:
-                        SerializeObject(obj, nestingLevel, processedObjects, sb);
+                        SerializeObject(obj, nestingLevel, processedObjects, sb, memberPath);
                         break;
                 }
             }
@@ -124,7 +122,8 @@ namespace ObjectPrinting
             object obj,
             int nestingLevel,
             HashSet<object> processedObjects,
-            StringBuilder sb)
+            StringBuilder sb,
+            string? parentPath)
         {
             var type = obj.GetType();
 
@@ -142,7 +141,15 @@ namespace ObjectPrinting
                     ? property.PropertyType
                     : ((FieldInfo)member).FieldType;
 
-                if (excludedTypes.Contains(memberType) || excludedProperties.Contains(member))
+                var memberPath = parentPath switch
+                {
+                    null => null,
+                    "" => member.Name,
+                    _ => $"{parentPath}.{member.Name}"
+                };
+
+                if (excludedTypes.Contains(memberType)
+                    || (memberPath != null && excludedProperties.Contains(memberPath)))
                     continue;
 
                 var value = member is PropertyInfo propertyInfo
@@ -153,10 +160,10 @@ namespace ObjectPrinting
                     .Append(member.Name)
                     .Append(" = ");
 
-                if (propertySerializers.TryGetValue(member, out var serializer))
+                if (memberPath != null && propertySerializers.TryGetValue(memberPath, out var serializer))
                     sb.AppendLine(serializer(value!));
                 else
-                    AppendValue(value, nestingLevel + 1, processedObjects, sb);
+                    AppendValue(value, nestingLevel + 1, processedObjects, sb, memberPath);
             }
         }
 
@@ -171,11 +178,11 @@ namespace ObjectPrinting
             foreach (DictionaryEntry entry in dictionary)
             {
                 sb.Append('\t', nestingLevel + 1);
-                AppendValue(entry.Key, nestingLevel + 1, processedObjects, sb);
+                AppendValue(entry.Key, nestingLevel + 1, processedObjects, sb, null);
                 sb.Length -= Environment.NewLine.Length;
 
                 sb.Append(": ");
-                AppendValue(entry.Value, nestingLevel + 1, processedObjects, sb);
+                AppendValue(entry.Value, nestingLevel + 1, processedObjects, sb, null);
             }
 
             sb.Append('\t', nestingLevel).AppendLine("}");
@@ -192,10 +199,27 @@ namespace ObjectPrinting
             foreach (var item in collection)
             {
                 sb.Append('\t', nestingLevel + 1);
-                AppendValue(item, nestingLevel + 1, processedObjects, sb);
+                AppendValue(item, nestingLevel + 1, processedObjects, sb, null);
             }
 
             sb.Append('\t', nestingLevel).AppendLine("]");
+        }
+
+        private static string GetMemberPath<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            var path = new Stack<string>();
+            var current = memberSelector.Body;
+
+            while (current is MemberExpression memberExpression)
+            {
+                path.Push(memberExpression.Member.Name);
+                current = memberExpression.Expression;
+            }
+
+            if (path.Count == 0 || current != memberSelector.Parameters[0])
+                throw new ArgumentException("Select a property or field via lambda parameter.", nameof(memberSelector));
+
+            return string.Join(".", path);
         }
     }
 }

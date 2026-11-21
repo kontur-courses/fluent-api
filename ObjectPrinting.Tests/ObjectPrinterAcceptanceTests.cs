@@ -7,23 +7,6 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
-
-        [Test]
-        public void Demo()
-        {
-            var node = new LoopNode()
-            {
-                Value = 1,
-                Next = new LoopNode { Value = 2 },
-                Previous = new LoopNode { Value = 3 }
-            };
-
-            var result = node.PrintToString(c => c.
-                Printing(n => n.Previous.Value).Using(x => $"Число:{x}"));
-
-            Console.WriteLine(result);
-        }
-
         [Test]
         public void PrintToString_Default_ShouldPrintAllPropertiesValues()
         {
@@ -105,6 +88,34 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_ExcludeNestedProperty_ShouldExcludeOnlySelectedPath()
+        {
+            var node = new LoopNode()
+            {
+                Value = 1,
+                Next = new LoopNode { Value = 2 },
+                Previous = new LoopNode { Value = 3 }
+            };
+
+            var result = node.PrintToString(c => c.
+                Excluding(n => n.Previous.Value));
+
+            var expected = string.Join(Environment.NewLine,
+                "LoopNode",
+                "\tValue = 1",
+                "\tNext = LoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "\tPrevious = LoopNode",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "");
+
+            result.Should().Be(expected);
+        }
+
+        [Test]
         public void PrintToString_ExcludingProperty_ShouldNotExcludeOtherPropertySameType()
         {
             var person = GetDefaultPerson();
@@ -169,6 +180,35 @@ namespace ObjectPrinting.Tests
 
             result.Split(Environment.NewLine).Should()
                 .Contain($"\tName = {expectedName}");
+        }
+
+        [Test]
+        public void PrintToString_PrintingNestedProperty_ShouldFormatOnlySelectedPath()
+        {
+            var node = new LoopNode()
+            {
+                Value = 1,
+                Next = new LoopNode { Value = 2 },
+                Previous = new LoopNode { Value = 3 }
+            };
+
+            var result = node.PrintToString(c => c.
+                Printing(n => n.Previous.Value).Using(x => $"Число:{x}"));
+
+            var expected = string.Join(Environment.NewLine,
+                "LoopNode",
+                "\tValue = 1",
+                "\tNext = LoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "\tPrevious = LoopNode",
+                "\t\tValue = Число:3",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "");
+
+            result.Should().Be(expected);
         }
 
         [Test]

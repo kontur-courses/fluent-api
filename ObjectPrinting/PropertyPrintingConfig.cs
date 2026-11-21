@@ -1,22 +1,21 @@
 ﻿using System;
-using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly MemberInfo? memberInfo;
+        private readonly string? memberPath;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo? memberInfo = null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string? memberPath = null)
         {
             this.printingConfig = printingConfig;
-            this.memberInfo = memberInfo;
+            this.memberPath = memberPath;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            printingConfig.SetSerializer(print, memberInfo);
+            printingConfig.SetSerializer(print, memberPath);
 
             return printingConfig;
         }
