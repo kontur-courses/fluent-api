@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using System.Text;
+using ObjectPrinting.Serialization;
 
 namespace ObjectPrinting;
 
@@ -19,24 +20,33 @@ internal class ObjectSerializer
         typeof(TimeOnly)
     ];
 
+    private static readonly ISerializationStrategy[] DefaultStrategies =
+    [
+        new ComplexObjectSerializer()
+    ];
+
     private readonly PrintingConfigState state;
+    private readonly IReadOnlyList<ISerializationStrategy> strategies;
+    private readonly HashSet<object> visited = new(ReferenceEqualityComparer.Instance);
 
     public ObjectSerializer(PrintingConfigState state)
+        : this(state, DefaultStrategies)
+    {
+    }
+
+    internal ObjectSerializer(PrintingConfigState state, IReadOnlyList<ISerializationStrategy> strategies)
     {
         this.state = state;
+        this.strategies = strategies;
     }
 
     public string Serialize(object? obj)
     {
-        var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
-        return Serialize(obj, 0, null, visited);
+        visited.Clear();
+        return Serialize(obj, 0);
     }
 
-    private string Serialize(
-        object? obj,
-        int nestingLevel,
-        MemberInfo? member,
-        HashSet<object> visited)
+    internal string Serialize(object? obj, int nestingLevel, MemberInfo? member = null)
     {
         if (obj is null)
             return "null" + Environment.NewLine;
@@ -54,22 +64,8 @@ internal class ObjectSerializer
 
         try
         {
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            sb.AppendLine(type.Name);
-
-            foreach (var (memberInfo, memberType, value) in GetMembers(obj, type))
-            {
-                if (IsExcluded(memberInfo, memberType))
-                    continue;
-
-                sb.Append(indentation)
-                    .Append(memberInfo.Name)
-                    .Append(" = ")
-                    .Append(Serialize(value, nestingLevel + 1, memberInfo, visited));
-            }
-
-            return sb.ToString();
+            var strategy = strategies.First(s => s.CanSerialize(obj));
+            return strategy.Serialize(obj, nestingLevel, this);
         }
         finally
         {
@@ -77,6 +73,12 @@ internal class ObjectSerializer
                 visited.Remove(obj);
         }
     }
+
+    internal bool IsExcluded(MemberInfo member, Type memberType) =>
+        state.ExcludedMembers.Contains(member) || state.ExcludedTypes.Contains(memberType);
+
+    internal bool IsTypeExcluded(Type type) =>
+        state.ExcludedTypes.Contains(type);
 
     private bool TrySerializeCustom(
         object obj,
@@ -142,27 +144,6 @@ internal class ObjectSerializer
     private static string TruncateString(string value, int maxLength) =>
         value.Length > maxLength ? value[..maxLength] : value;
 
-    private bool IsExcluded(MemberInfo member, Type memberType) =>
-        state.ExcludedMembers.Contains(member) || state.ExcludedTypes.Contains(memberType);
-
     private static bool IsFinalType(Type type) =>
         type.IsPrimitive || type.IsEnum || FinalTypes.Contains(type);
-
-    private static IEnumerable<(MemberInfo Member, Type MemberType, object? Value)> GetMembers(object obj, Type type)
-    {
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
-
-        foreach (var property in type.GetProperties(flags))
-        {
-            if (!property.CanRead || property.GetIndexParameters().Length > 0)
-                continue;
-
-            yield return (property, property.PropertyType, property.GetValue(obj));
-        }
-
-        foreach (var field in type.GetFields(flags))
-        {
-            yield return (field, field.FieldType, field.GetValue(obj));
-        }
-    }
 }
