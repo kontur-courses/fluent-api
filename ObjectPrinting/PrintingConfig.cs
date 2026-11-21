@@ -29,7 +29,7 @@ public sealed class PrintingConfig<TOwner>
     }
 
     // переход в доп.контекст типа
-    public TypeConfig<TOwner, TType> For<TType>() where TType : notnull
+    public TypeConfig<TOwner, TType> For<TType>()
     {
         return new(this);
     }

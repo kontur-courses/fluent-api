@@ -10,8 +10,8 @@ internal sealed class PrintingRules
     internal ImmutableHashSet<Type> ExcludedTypes { get; }
     internal ImmutableHashSet<MemberPath> ExcludedMembers { get; }
 
-    internal ImmutableDictionary<Type, Func<object, string>> TypeSerializationRules { get; }
-    internal ImmutableDictionary<MemberPath, Func<object, string>> MemberSerializationRules { get; }
+    internal ImmutableDictionary<Type, Func<object?, string>> TypeSerializationRules { get; }
+    internal ImmutableDictionary<MemberPath, Func<object?, string>> MemberSerializationRules { get; }
 
     internal ImmutableDictionary<Type, CultureInfo> TypeCultureRules { get; }
     internal ImmutableDictionary<MemberPath, CultureInfo> MemberCultureRules { get; }
@@ -23,8 +23,8 @@ internal sealed class PrintingRules
     {
         ExcludedTypes = [];
         ExcludedMembers = [];
-        TypeSerializationRules = ImmutableDictionary.Create<Type, Func<object, string>>();
-        MemberSerializationRules = ImmutableDictionary.Create<MemberPath, Func<object, string>>();
+        TypeSerializationRules = ImmutableDictionary.Create<Type, Func<object?, string>>();
+        MemberSerializationRules = ImmutableDictionary.Create<MemberPath, Func<object?, string>>();
         TypeCultureRules = ImmutableDictionary.Create<Type, CultureInfo>();
         MemberCultureRules = ImmutableDictionary.Create<MemberPath, CultureInfo>();
         TypeTruncateRules = ImmutableDictionary.Create<Type, int>();
@@ -35,8 +35,8 @@ internal sealed class PrintingRules
         PrintingRules source,
         ImmutableHashSet<Type>? excludedTypes = null,
         ImmutableHashSet<MemberPath>? excludedMembers = null,
-        ImmutableDictionary<Type, Func<object, string>>? typeSerializationRules = null,
-        ImmutableDictionary<MemberPath, Func<object, string>>? memberSerializationRules = null,
+        ImmutableDictionary<Type, Func<object?, string>>? typeSerializationRules = null,
+        ImmutableDictionary<MemberPath, Func<object?, string>>? memberSerializationRules = null,
         ImmutableDictionary<Type, CultureInfo>? typeCultureRules = null,
         ImmutableDictionary<MemberPath, CultureInfo>? memberCultureRules = null,
         ImmutableDictionary<Type, int>? typeTruncateRules = null,
@@ -59,14 +59,22 @@ internal sealed class PrintingRules
     internal PrintingRules ExcludeMember(MemberPath member) =>
         new(this, excludedMembers: ExcludedMembers.Add(member));
 
-    internal PrintingRules AddTypeSerializationRule<TType>(Func<TType, string> serializationRule) =>
-        new(this, typeSerializationRules: TypeSerializationRules.SetItem(typeof(TType), obj => serializationRule((TType)obj)));
+    internal PrintingRules AddTypeSerializationRule<TType>(Func<TType, string> serializationRule)
+    {
+        var targetType = Nullable.GetUnderlyingType(typeof(TType)) ?? typeof(TType);
+        return new(this, typeSerializationRules: TypeSerializationRules.SetItem(targetType, obj =>
+            obj is null ? serializationRule(default!) : serializationRule((TType)obj)));
+    }
 
     internal PrintingRules AddMemberSerializationRule<TMember>(MemberPath member, Func<TMember, string> serializationRule) =>
-        new(this, memberSerializationRules: MemberSerializationRules.SetItem(member, obj => serializationRule((TMember)obj)));
+        new(this, memberSerializationRules: MemberSerializationRules.SetItem(member, obj =>
+            obj is null ? serializationRule(default!) : serializationRule((TMember)obj)));
 
-    internal PrintingRules AddTypeCultureRule(Type type, CultureInfo culture) =>
-        new(this, typeCultureRules: TypeCultureRules.SetItem(type, culture));
+    internal PrintingRules AddTypeCultureRule(Type type, CultureInfo culture)
+    {
+        var targetType = Nullable.GetUnderlyingType(type) ?? type;
+        return new(this, typeCultureRules: TypeCultureRules.SetItem(targetType, culture));
+    }
 
     internal PrintingRules AddMemberCultureRule(MemberPath member, CultureInfo culture) =>
         new(this, memberCultureRules: MemberCultureRules.SetItem(member, culture));

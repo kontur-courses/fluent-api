@@ -1,6 +1,7 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests;
 
@@ -35,7 +36,6 @@ public class ObjectPrinterAcceptanceTests
             Father = father
         };
 
-        // Создаем циклическую ссылку: Отец -> Ребенок -> Отец
         father.Children.Add(_person);
     }
 
@@ -43,23 +43,25 @@ public class ObjectPrinterAcceptanceTests
     public void Demo_ConfiguredPrinter()
     {
         var printer = ObjectPrinter.Setup<Person>()
-                                        .Exclude<Guid>()
-                                        .Exclude(p => p.Children)
-                                        .For<double>()
-                                            .SetCulture(CultureInfo.InvariantCulture)
-                                            .Then()
-                                        .For(p => p.HeightInMeters)
-                                            .SetFormat(height => $"{height} см.")
-                                            .Then()
-                                        .For(p => p.FirstName)
-                                            .Truncate(4)
-                                            .Then()
-                                        .Apply();
+            .Exclude<Guid>()
+            .Exclude(p => p.Children)
+            .For<double>()
+                .SetCulture(CultureInfo.InvariantCulture)
+                .Then()
+            .For(p => p.HeightInMeters)
+                .SetFormat(height => $"{height.ToString(CultureInfo.InvariantCulture)} см.")
+                .Then()
+            .For(p => p.FirstName)
+                .Truncate(4)
+                .Then()
+            .Apply();
 
         var result = printer.PrintToString(_person);
 
-        Console.WriteLine("=== Результат с полной конфигурацией ===");
-        Console.WriteLine(result);
+        result.Should().NotContain("Id =");
+        result.Should().Contain("WeightInKilograms = 75.3");
+        result.Should().Contain("HeightInMeters = 192.54 см.");
+        result.Should().Contain("FirstName = Alex");
     }
 
     [Test]
@@ -67,8 +69,9 @@ public class ObjectPrinterAcceptanceTests
     {
         var defaultResult = _person.PrintToString();
 
-        Console.WriteLine("=== Дефолтная сериализация с циклической ссылкой ===");
-        Console.WriteLine(defaultResult);
+        defaultResult.Should().Contain(nameof(Person));
+        defaultResult.Should().Contain("FirstName = Alexander");
+        defaultResult.Should().Contain("[cyclic reference]");
     }
 
     [Test]
@@ -80,11 +83,11 @@ public class ObjectPrinterAcceptanceTests
                 .SetFormat(s => s is null ? "Отсутствует" : s)
                 .Then()
             .For(p => p.Father)
-                // Кастомный вывод вложенного объекта: вместо раскрытия свойств отца пишем кратко
                 .SetFormat(f => f is null ? "Не указан" : $"{f.FirstName} {f.Secondname} (Возраст: {f.Age})")
                 .Then());
 
-        Console.WriteLine("=== Быстрая сериализация на лету ===");
-        Console.WriteLine(inlineResult);
+        inlineResult.Should().NotContain(nameof(Person.Id));
+        inlineResult.Should().Contain("Surname = Junior");
+        inlineResult.Should().Contain("Father = Aaron Smith (Возраст: 56)");
     }
 }
