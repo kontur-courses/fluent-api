@@ -1,8 +1,6 @@
-﻿using System;
-using System.Reflection;
-using Newtonsoft.Json;
+﻿using System.Reflection;
 
-namespace ObjectPrinting.Solved;
+namespace ObjectPrinting;
 
 public static class PropertyInfoExtensions
 {

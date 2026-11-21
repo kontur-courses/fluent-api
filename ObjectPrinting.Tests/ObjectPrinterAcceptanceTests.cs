@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using NUnit.Framework;
+﻿using System.Globalization;
 using FluentAssertions;
-using ObjectPrinting.Solved.Tests.Models;
+using ObjectPrinting.Tests.Models;
 
-namespace ObjectPrinting.Solved.Tests
+namespace ObjectPrinting.Tests
 {
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
@@ -102,21 +99,33 @@ namespace ObjectPrinting.Solved.Tests
             result.Should().Contain("\tHeight = " + expected);
         }
 
-        [TestCase("Ale", "Ale")]
-        [TestCase("Alex", "Alex")]
-        [TestCase("Alexa", "Alex")]
+        [TestCase("Ale", 4, "Ale")]
+        [TestCase("Alex", 4, "Alex")]
+        [TestCase("Alexa", 4, "Alex")]
+        [TestCase("Alex", 0, "")]
+        [TestCase(null, 0, "null")]
         public void PrintToString_PrintingStringTrimmedToLength_ShouldPrintTrimmedString(
-            string name, string expectedName)
+            string? name, int maxLen, string expectedName)
         {
             var person = GetDefaultPerson();
-            person.Name = name;
-            const int maxLen = 4;
+            person.Name = name!;
 
             var result = person.PrintToString(
                 c => c.Printing(p => p.Name).TrimmedToLength(maxLen));
 
             result.Split(Environment.NewLine).Should()
                 .Contain($"\tName = {expectedName}");
+        }
+
+        [Test]
+        public void TrimmedToLength_WithNegativeLimit_ShouldThrowDuringConfiguration()
+        {
+            var propertyConfig = ObjectPrinter.For<Person>().Printing(p => p.Name);
+
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(
+                () => propertyConfig.TrimmedToLength(-1));
+
+            Assert.That(exception!.ParamName, Is.EqualTo("maxLen"));
         }
 
         [Test]
