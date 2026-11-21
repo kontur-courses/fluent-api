@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public static class PropertyPrintingConfigExtensions
     {
@@ -12,7 +12,11 @@ namespace ObjectPrinting.Solved
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return propConfig.Using(x => x.Length > maxLen ? x[..maxLen] : x);
+            ArgumentOutOfRangeException.ThrowIfNegative(maxLen);
+
+            return propConfig.Using(x => x is null
+                ? "null"
+                : x.Length > maxLen ? x[..maxLen] : x);
         }
 
         public static PrintingConfig<TOwner> Using<TOwner, TPropType>(
