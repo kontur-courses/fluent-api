@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Numerics;
 
 namespace ObjectPrinting;
 
@@ -19,7 +18,7 @@ public static class MemberPrintingConfigExtensions
     public static PrintingConfig<TOwner> Using<TOwner, TProp>(
         this MemberPrintingConfig<TOwner, TProp> config,
         CultureInfo culture)
-        where TProp : INumber<TProp>
+        where TProp : IFormattable
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(culture);

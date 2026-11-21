@@ -28,7 +28,7 @@ public class PrintingConfigTests
     }
 
     [TestCaseSource(nameof(CultureCases))]
-    public void Culture_FormatsNumericTypesAndMembers(Func<string> serialize, string expected)
+    public void Culture_FormatsFormattableTypesAndMembers(Func<string> serialize, string expected)
     {
         var result = serialize();
 
@@ -114,8 +114,18 @@ public class PrintingConfigTests
     private static IEnumerable<TestCaseData> CultureCases()
     {
         var ru = CultureInfo.GetCultureInfo("ru-RU");
+        var enUs = CultureInfo.GetCultureInfo("en-US");
         var inv = CultureInfo.InvariantCulture;
         var numbers = new TwoDoubles { First = 1.5, Second = 2.75 };
+        var dateTime = new DateTime(2025, 5, 10, 14, 30, 0);
+        var dateOnly = new DateOnly(2025, 5, 10);
+        var timeOnly = new TimeOnly(14, 30, 0);
+        var temporal = new DateTimeHolder
+        {
+            Timestamp = dateTime,
+            Date = dateOnly,
+            Time = timeOnly
+        };
 
         yield return new TestCaseData(
                 () => numbers.PrintToString(cfg => cfg.For<double>().Using(ru)),
@@ -142,6 +152,30 @@ public class PrintingConfigTests
                     "\tFirst = 1,5",
                     "\tSecond = 2.75"))
             .SetName("Culture_MemberOverridesType");
+
+        yield return new TestCaseData(
+                () => temporal.PrintToString(cfg => cfg
+                    .For<DateTime>().Using(ru)
+                    .For<DateOnly>().Using(ru)
+                    .For<TimeOnly>().Using(ru)),
+                Lines(
+                    nameof(DateTimeHolder),
+                    $"\tTimestamp = {dateTime.ToString(ru)}",
+                    $"\tDate = {dateOnly.ToString(ru)}",
+                    $"\tTime = {timeOnly.ToString(ru)}"))
+            .SetName("Culture_DateTimeTypes_RuRU");
+
+        yield return new TestCaseData(
+                () => temporal.PrintToString(cfg => cfg
+                    .For<DateTime>().Using(enUs)
+                    .For(x => x.Date).Using(inv)
+                    .For(x => x.Time).Using(enUs)),
+                Lines(
+                    nameof(DateTimeHolder),
+                    $"\tTimestamp = {dateTime.ToString(enUs)}",
+                    $"\tDate = {dateOnly.ToString(inv)}",
+                    $"\tTime = {timeOnly.ToString(enUs)}"))
+            .SetName("Culture_DateTimeTypes_MixedTypeAndMember");
     }
 
     private static IEnumerable<TestCaseData> TruncationCases()
@@ -230,5 +264,12 @@ public class PrintingConfigTests
     {
         public int PublicField;
         public string PublicProperty { get; set; } = string.Empty;
+    }
+
+    private class DateTimeHolder
+    {
+        public DateTime Timestamp { get; set; }
+        public DateOnly Date { get; set; }
+        public TimeOnly Time { get; set; }
     }
 }
