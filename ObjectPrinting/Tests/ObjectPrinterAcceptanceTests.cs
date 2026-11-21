@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using FluentAssertions;
 
 namespace ObjectPrinting.Tests
 {
@@ -22,6 +23,18 @@ namespace ObjectPrinting.Tests
 
             //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
             //8. ...с конфигурированием
+        }
+
+        [Test]
+        public void PrintToString_ExcludingType()
+        {
+            var person = new Person() { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config => config.ExcludingType<int>());
+
+            result.Should().
+                Contain("Name").And.
+                NotContain("Age").And.Contain("Height");
         }
     }
 }

@@ -1,17 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private HashSet<Type> excludedTypes = new HashSet<Type>();
-
+        private readonly HashSet<Type> excludedTypes = new();
+        private readonly HashSet<MemberInfo> excludedMembers = new();
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
+        }
+
+        public PrintingConfig<TOwner> ExcludingType<T>()
+        {
+            excludedTypes.Add(typeof(T));
+            return this;
         }
 
         private string PrintToString(object obj, int nestingLevel)
@@ -34,6 +41,11 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
+                if (excludedTypes.Contains(propertyInfo.PropertyType)) //проверка исключенного типа
+                    continue;
+
+               
+
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
                               nestingLevel + 1));
@@ -41,10 +53,5 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
-        public PrintingConfig<TOwner> ExcludingType<T>()
-        {
-            excludedTypes.Add(typeof(T));
-            return this;
-        }
     }
 }
