@@ -115,13 +115,13 @@ public class ObjectSerializerCollectionsTests
     {
         var people = new List<Person>
         {
-            new Person { Name = "Alex", Age = 19 },
-            new Person { Name = "Bob", Age = 20 }
+            new () { Name = "Alex", Age = 19 },
+            new () { Name = "Bob", Age = 20 }
         };
         var printer = ObjectPrinter
             .For<List<Person>>()
-            .Exclude<Guid>()
-            .Exclude<double>();
+            .ExcludeType<Guid>()
+            .ExcludeType<double>();
         var expected = string.Join(
             Environment.NewLine,
             "List`1",
@@ -187,7 +187,7 @@ public class ObjectSerializerCollectionsTests
     {
         var printer = ObjectPrinter
             .For<int[]>()
-            .Printing<int>()
+            .PrintingType<int>()
             .Using("X");
         var expected = string.Join(
             Environment.NewLine,
@@ -247,7 +247,7 @@ public class ObjectSerializerCollectionsTests
         };
         var printer = ObjectPrinter
             .For<TreeNode>()
-            .Printing(node => node.Children)
+            .PrintingMember(node => node.Children)
             .Using(children => children.Count + " children");
         var expected = string.Join(
             Environment.NewLine,

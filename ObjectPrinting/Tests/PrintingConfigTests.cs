@@ -40,7 +40,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude<Guid>();
+            .ExcludeType<Guid>();
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -60,7 +60,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude(typeof(double));
+            .ExcludeType(typeof(double));
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -80,7 +80,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude([typeof(Guid), typeof(double), typeof(int)]);
+            .ExcludeType([typeof(Guid), typeof(double), typeof(int)]);
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -98,15 +98,15 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing<int>()
+            .PrintingType<int>()
             .Using(age => age + " years");
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = Alex",
-            "	Height = 180",
-            "	Age = 19 years");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 19 years");
 
         var printed = printer.PrintToString(Alex);
 
@@ -120,17 +120,17 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing<string>()
+            .PrintingType<string>()
             .Using(_ => "first")
-            .Printing<string>()
+            .PrintingType<string>()
             .Using(name => name.ToUpper());
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = ALEX",
-            "	Height = 180",
-            "	Age = 19");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = ALEX",
+            "\tHeight = 180",
+            "\tAge = 19");
 
         var printed = printer.PrintToString(Alex);
 
@@ -148,17 +148,17 @@ public class PrintingConfigTests
         var person = new Person { Name = "Alex", Height = 1.85, Age = 19 };
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude<Guid>()
-            .Printing<double>()
+            .ExcludeType<Guid>()
+            .PrintingType<double>()
             .Using(new CultureInfo(cultureName))
-            .Printing<int>()
+            .PrintingType<int>()
             .Using("D3", new CultureInfo("ru-RU"));
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Name = Alex",
-            "	Height = " + expectedHeight,
-            "	Age = 019");
+            "\tName = Alex",
+            "\tHeight = " + expectedHeight,
+            "\tAge = 019");
 
         var printed = printer.PrintToString(person);
 
@@ -172,15 +172,15 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing<int>()
+            .PrintingType<int>()
             .Using("X");
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = Alex",
-            "	Height = 180",
-            "	Age = 13");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 13");
 
         var printed = printer.PrintToString(Alex);
 
@@ -194,15 +194,15 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing(person => person.Name)
+            .PrintingMember(person => person.Name)
             .Using(name => "<" + name + ">");
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = <Alex>",
-            "	Height = 180",
-            "	Age = 19");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = <Alex>",
+            "\tHeight = 180",
+            "\tAge = 19");
 
         var printed = printer.PrintToString(Alex);
 
@@ -216,17 +216,17 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing(person => person.Height)
+            .PrintingMember(person => person.Height)
             .Using(height => height + " cm")
-            .Printing<double>()
+            .PrintingType<double>()
             .Using(_ => "hidden");
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = Alex",
-            "	Height = 180 cm",
-            "	Age = 19");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tHeight = 180 cm",
+            "\tAge = 19");
 
         var printed = printer.PrintToString(Alex);
 
@@ -236,11 +236,11 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public void Printing_ShouldThrowArgumentException_WhenSelectorIsNotMember_Test()
+    public void PrintingMember_ShouldThrowArgumentException_WhenSelectorIsNotMember_Test()
     {
         var config = ObjectPrinter.For<Person>();
 
-        var printing = () => config.Printing(person => person.Name.Length);
+        var printing = () => config.PrintingMember(person => person.Name.Length);
 
         printing
             .Should()
@@ -256,15 +256,15 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing(person => person.Name)
+            .PrintingMember(person => person.Name)
             .TrimmedToLength(maxLength);
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = " + expectedName,
-            "	Height = 180",
-            "	Age = 19");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = " + expectedName,
+            "\tHeight = 180",
+            "\tAge = 19");
 
         var printed = printer.PrintToString(Alex);
 
@@ -279,15 +279,15 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Printing(person => person.Name)
+            .PrintingMember(person => person.Name)
             .TrimmedToLength(maxLength, "...");
         var expected = string.Join(
             Environment.NewLine,
             "Person",
-            "	Id = 11111111-1111-1111-1111-111111111111",
-            "	Name = " + expectedName,
-            "	Height = 180",
-            "	Age = 19");
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = " + expectedName,
+            "\tHeight = 180",
+            "\tAge = 19");
 
         var printed = printer.PrintToString(Alex);
 
@@ -301,7 +301,7 @@ public class PrintingConfigTests
     {
         var config = ObjectPrinter
             .For<Person>()
-            .Printing(person => person.Name);
+            .PrintingMember(person => person.Name);
 
         var trimming = () => config.TrimmedToLength(-1);
 
@@ -316,7 +316,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude(person => person.Height);
+            .ExcludeMember(person => person.Height);
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -336,7 +336,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude(nameof(Person.Name));
+            .ExcludeMember(nameof(Person.Name));
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -356,7 +356,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<Person>()
-            .Exclude([nameof(Person.Id), nameof(Person.Age)]);
+            .ExcludeMember([nameof(Person.Id), nameof(Person.Age)]);
         var expected = string.Join(
             Environment.NewLine,
             "Person",
@@ -371,11 +371,11 @@ public class PrintingConfigTests
     }
 
     [Test]
-    public void Exclude_ShouldThrowArgumentException_WhenMemberWithNameDoesNotExist_Test()
+    public void ExcludeMember_ShouldThrowArgumentException_WhenMemberWithNameDoesNotExist_Test()
     {
         var config = ObjectPrinter.For<Person>();
 
-        var excluding = () => config.Exclude("Surname");
+        var excluding = () => config.ExcludeMember("Surname");
 
         excluding
             .Should()
@@ -405,7 +405,7 @@ public class PrintingConfigTests
     {
         var printer = ObjectPrinter
             .For<(string, int)>()
-            .Exclude(tuple => tuple.Item2);
+            .ExcludeMember(tuple => tuple.Item2);
         var expected = string.Join(
             Environment.NewLine,
             "ValueTuple`2",

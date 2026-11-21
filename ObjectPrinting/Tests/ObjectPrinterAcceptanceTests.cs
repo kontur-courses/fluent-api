@@ -14,18 +14,17 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter
-                    .For<Person>()
-                    .Exclude<Guid>()
-                    .Printing<int>()
-                    .Using(i => i.ToString("X"))
-                    .Printing<double>()
-                    .Using(CultureInfo.InvariantCulture)
-                    .Printing(p => p.Age)
-                    .Using(age => age + " years")
-                    .Printing(p => p.Name)
-                    .TrimmedToLength(10)
-                    .Exclude(p => p.Height)
-                ;
+                .For<Person>()
+                .ExcludeType<Guid>()
+                .PrintingType<int>()
+                .Using(i => i.ToString("X"))
+                .PrintingType<double>()
+                .Using(CultureInfo.InvariantCulture)
+                .PrintingMember(p => p.Age)
+                .Using(age => age + " years")
+                .PrintingMember(p => p.Name)
+                .TrimmedToLength(10)
+                .ExcludeMember(p => p.Height);
             var expected = string.Join(
                 Environment.NewLine,
                 "Person",

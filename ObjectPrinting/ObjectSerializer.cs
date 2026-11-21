@@ -11,25 +11,44 @@ internal class ObjectSerializer
 {
     private const string CycleMark = "<cycle>";
 
-    private static readonly Type[] FinalTypes =
+    private static readonly HashSet<Type> FinalTypes =
     [
-        typeof(string),
+        typeof(bool),
+        typeof(char),
+        typeof(byte),
+        typeof(sbyte),
+        typeof(short),
+        typeof(ushort),
+        typeof(int),
+        typeof(uint),
+        typeof(long),
+        typeof(ulong),
+        typeof(nint),
+        typeof(nuint),
+        typeof(Int128),
+        typeof(UInt128),
+        typeof(Half),
+        typeof(float),
+        typeof(double),
         typeof(decimal),
+        typeof(string),
         typeof(Guid),
         typeof(DateTime),
         typeof(DateTimeOffset),
+        typeof(DateOnly),
+        typeof(TimeOnly),
         typeof(TimeSpan)
     ];
 
-    private readonly IPrintingSettings settings;
+    private readonly PrintingSettings settings;
     private readonly HashSet<object> objectsBeingPrinted = new(ReferenceEqualityComparer.Instance);
 
-    private ObjectSerializer(IPrintingSettings settings)
+    private ObjectSerializer(PrintingSettings settings)
     {
         this.settings = settings;
     }
 
-    public static string Serialize(object obj, IPrintingSettings settings)
+    public static string Serialize(object obj, PrintingSettings settings)
     {
         var serializer = new ObjectSerializer(settings);
         return serializer.PrintToString(obj, 0);
@@ -47,9 +66,10 @@ internal class ObjectSerializer
         if (IsFinalType(type))
             return obj.ToString();
 
-        if (!objectsBeingPrinted.Add(obj))
+        if (objectsBeingPrinted.Contains(obj))
             return CycleMark;
 
+        objectsBeingPrinted.Add(obj);
         var printed = PrintComposite(obj, type, nestingLevel);
         objectsBeingPrinted.Remove(obj);
         return printed;
@@ -137,8 +157,7 @@ internal class ObjectSerializer
 
     private static bool IsFinalType(Type type)
     {
-        return type.IsPrimitive
-            || type.IsEnum
+        return type.IsEnum
             || FinalTypes.Contains(type);
     }
 }

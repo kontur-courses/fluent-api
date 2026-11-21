@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -7,6 +8,18 @@ namespace ObjectPrinting.Tests;
 [TestFixture]
 public class ObjectSerializerTests
 {
+    [TestCaseSource(nameof(FinalTypeValues))]
+    public void PrintToString_ShouldPrintValueItself_WhenTypeIsFinal_Test(object value, string expectedPrinted)
+    {
+        var printer = ObjectPrinter.For<object>();
+
+        var printed = printer.PrintToString(value);
+
+        printed
+            .Should()
+            .Be(expectedPrinted);
+    }
+
     [Test]
     public void PrintToString_ShouldPrintNull_WhenMemberValuesAreNull_Test()
     {
@@ -60,7 +73,7 @@ public class ObjectSerializerTests
         var node = new Node { Name = "first", Next = new Node { Name = "second" } };
         var printer = ObjectPrinter
             .For<Node>()
-            .Exclude<string>();
+            .ExcludeType<string>();
         var expected = string.Join(
             Environment.NewLine,
             "Node",
@@ -160,5 +173,23 @@ public class ObjectSerializerTests
         printed
             .Should()
             .Be(expected);
+    }
+
+    private static IEnumerable<TestCaseData> FinalTypeValues()
+    {
+        yield return new TestCaseData(true, "True");
+        yield return new TestCaseData('a', "a");
+        yield return new TestCaseData((byte)1, "1");
+        yield return new TestCaseData((sbyte)-1, "-1");
+        yield return new TestCaseData((short)-2, "-2");
+        yield return new TestCaseData((ushort)2, "2");
+        yield return new TestCaseData(3u, "3");
+        yield return new TestCaseData(-4L, "-4");
+        yield return new TestCaseData(4UL, "4");
+        yield return new TestCaseData((nint)5, "5");
+        yield return new TestCaseData((Int128)6, "6");
+        yield return new TestCaseData(DayOfWeek.Monday, "Monday");
+        yield return new TestCaseData(new TimeSpan(1, 2, 3), "01:02:03");
+        yield return new TestCaseData(Guid.Parse("11111111-1111-1111-1111-111111111111"), "11111111-1111-1111-1111-111111111111");
     }
 }

@@ -8,27 +8,27 @@ namespace ObjectPrinting;
 
 public static class PrintingConfigExtensions
 {
-    public static PrintingConfig<TOwner> Exclude<TOwner>(this PrintingConfig<TOwner> config, Type excludedType)
+    public static PrintingConfig<TOwner> ExcludeType<TOwner>(this PrintingConfig<TOwner> config, Type typeToExclude)
     {
-        ArgumentNullException.ThrowIfNull(excludedType);
-        config.ExcludeType(excludedType);
+        ArgumentNullException.ThrowIfNull(typeToExclude);
+        config.Settings.ExcludeType(typeToExclude);
         return config;
     }
 
-    public static PrintingConfig<TOwner> Exclude<TOwner>(
+    public static PrintingConfig<TOwner> ExcludeType<TOwner>(
         this PrintingConfig<TOwner> config,
-        IEnumerable<Type> excludedTypes)
+        IEnumerable<Type> typesToExclude)
     {
-        ArgumentNullException.ThrowIfNull(excludedTypes);
-        foreach (var excludedType in excludedTypes)
+        ArgumentNullException.ThrowIfNull(typesToExclude);
+        foreach (var typeToExclude in typesToExclude)
         {
-            config.Exclude(excludedType);
+            config.ExcludeType(typeToExclude);
         }
 
         return config;
     }
 
-    public static PrintingConfig<TOwner> Exclude<TOwner>(this PrintingConfig<TOwner> config, string memberName)
+    public static PrintingConfig<TOwner> ExcludeMember<TOwner>(this PrintingConfig<TOwner> config, string memberName)
     {
         ArgumentNullException.ThrowIfNull(memberName);
         var members = typeof(TOwner).GetMember(
@@ -36,18 +36,18 @@ public static class PrintingConfigExtensions
             MemberTypes.Property | MemberTypes.Field,
             BindingFlags.Public | BindingFlags.Instance);
         ThrowIfMemberNotFound<TOwner>(members, memberName);
-        config.ExcludeMember(members.Single());
+        config.Settings.ExcludeMember(members.Single());
         return config;
     }
 
-    public static PrintingConfig<TOwner> Exclude<TOwner>(
+    public static PrintingConfig<TOwner> ExcludeMember<TOwner>(
         this PrintingConfig<TOwner> config,
         IEnumerable<string> memberNames)
     {
         ArgumentNullException.ThrowIfNull(memberNames);
         foreach (var memberName in memberNames)
         {
-            config.Exclude(memberName);
+            config.ExcludeMember(memberName);
         }
 
         return config;
