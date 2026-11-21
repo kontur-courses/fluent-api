@@ -60,5 +60,60 @@ namespace ObjectPrinting.Tests
             
             result.Should().Throw<ArgumentException>();
         }
+
+        [Test]
+        public void Print_PrintTypeAs_UsesCustomPrinterInsteadOfDefault()
+        {
+            var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config => config.PrintTypeAs<int>(i => $"[{i}]"));
+
+            result.Should().Contain("Age = [19]")
+                .And.Contain("Height");
+        }
+
+        [Test]
+        public void Print_PrintTypeAs_WorksForNonFinalTypes()
+        {
+            var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config => config.PrintTypeAs<Guid>(guid => $"ID:{guid}"));
+
+            result.Should().Contain("Id = ID:");
+        }
+
+        [Test]
+        public void Print_SelfReference_DoesNotCrash()
+        {
+            var a = new Node("a", null);
+            a.Next = a;
+
+            var result = ObjectPrinter.For<Node>().PrintToString(a);
+
+            result.Should().Contain("Name = a");
+        }
+
+        [Test]
+        public void Print_MutualReference_DoesNotCrash()
+        {
+            var a = new Node("a", null);
+            var b = new Node("b",a);
+            a.Next = b;
+
+            var result = ObjectPrinter.For<Node>().PrintToString(a);
+
+            result.Should().Contain("Name = a").And.Contain("Name = b");
+        }
+
+        [Test]
+        public void Print_CyclicReference_ContainsCyclicMarker()
+        {
+            var a = new Node("a", null);
+            a.Next = a;
+
+            var result = ObjectPrinter.For<Node>().PrintToString(a);
+
+            result.Should().Contain("cycle reference");
+        }
     }
 }

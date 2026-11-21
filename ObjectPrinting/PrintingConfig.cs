@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,9 +12,12 @@ namespace ObjectPrinting
     {
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
+        private readonly Dictionary<Type,Func<object, string>> customPrinters = new();
+        //private HashSet<object> visitedObjects = new();
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            var visitedObjects = new HashSet<object> (ReferenceEqualityComparer.Instance);
+            return PrintToString(obj, 0, visitedObjects);
         }
 
         public PrintingConfig<TOwner> ExcludingType<T>()
@@ -34,11 +38,26 @@ namespace ObjectPrinting
             return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public PrintingConfig<TOwner> PrintTypeAs<T>(Func<T, string> printer)
+        {
+            customPrinters[typeof(T)] = obj => printer((T)obj);
+            return this;
+        }
+        
+        public PrintingConfig<TOwner> WithCulture<T>(CultureInfo culture) where T : IFormattable
+        {
+
+            return this;
+        }
+
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects)
         {
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+
+            if (customPrinters.TryGetValue(obj.GetType(), out var printer)) //проверка PrintTypeAs
+                return printer(obj) + Environment.NewLine;
 
             var finalTypes = new[]
             {
@@ -47,6 +66,11 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
+
+            if (visitedObjects.Contains(obj))
+                return "cycle reference" + Environment.NewLine; //проверка рекурсивности
+
+            visitedObjects.Add(obj);
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
@@ -62,7 +86,7 @@ namespace ObjectPrinting
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                              nestingLevel + 1, visitedObjects));
             }
             return sb.ToString();
         }
