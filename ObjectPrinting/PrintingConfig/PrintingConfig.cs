@@ -18,6 +18,15 @@ public class PrintingConfig<TOwner>
         this.state = state;
     }
 
+    public PrintingConfig<TOwner> Exclude<TProp>() =>
+        new(state with { ExcludedTypes = state.ExcludedTypes.Add(typeof(TProp)) });
+
+    public PrintingConfig<TOwner> Exclude<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
+    {
+        var member = ExtractMemberInfo(memberSelector);
+        return new(state with { ExcludedMembers = state.ExcludedMembers.Add(member) });
+    }
+
     public MemberPrintingConfig<TOwner, TProp> For<TProp>() => new(this);
 
     public MemberPrintingConfig<TOwner, TProp> For<TProp>(Expression<Func<TOwner, TProp>> memberSelector)
