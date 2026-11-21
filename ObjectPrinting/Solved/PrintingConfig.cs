@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,6 +15,12 @@ namespace ObjectPrinting.Solved
         private readonly Dictionary<Type, Func<object, string>> typePrinters = new();
         private readonly Dictionary<(Type? Type, string Name), Func<object, string>> memberPrinters = new();
 
+        private readonly Type[] finalTypes =
+        [
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan)
+        ];
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
         {
             return new PropertyPrintingConfig<TOwner, TPropType>(this, RegisterTypePrinter);
@@ -24,7 +31,12 @@ namespace ObjectPrinting.Solved
         {
             var key = GetMemberKey(memberSelector);
             return new PropertyPrintingConfig<TOwner, TPropType>(this,
-                print => { memberPrinters[key] = value => print((TPropType)value); });
+                print => RegisterMemberPrinter(key, print));
+        }
+
+        private void RegisterMemberPrinter<TPropType>((Type? Type, string Name) key, Func<TPropType, string> print)
+        {
+            memberPrinters[key] = value => print((TPropType)value);
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
@@ -60,64 +72,80 @@ namespace ObjectPrinting.Solved
 
         private string PrintToString(object? obj, int nestingLevel)
         {
-            var currentPath = new HashSet<object>();
-            return PrintValue(obj, nestingLevel);
+            return PrintToString(obj, nestingLevel, new HashSet<object>());
+        }
 
-            string PrintValue(object? value, int level)
+        private string PrintToString(object? value, int level, HashSet<object> currentPath)
+        {
+            if (value == null)
+                return "null" + Environment.NewLine;
+
+            var type = value.GetType();
+            if (typePrinters.TryGetValue(type, out var print))
+                return print(value) + Environment.NewLine;
+
+            if (finalTypes.Contains(type))
+                return value + Environment.NewLine;
+
+            if (!currentPath.Add(value))
+                return "Parent" + Environment.NewLine;
+
+            var indentation = new string('\t', level + 1);
+            var sb = new StringBuilder();
+            sb.AppendLine(type.Name);
+
+            if (value is IDictionary dictionary)
             {
-                if (value == null)
-                    return "null" + Environment.NewLine;
-
-                var type = value.GetType();
-                if (typePrinters.TryGetValue(type, out var print))
-                    return print(value) + Environment.NewLine;
-
-                var finalTypes = new[]
+                foreach (DictionaryEntry entry in dictionary)
                 {
-                    typeof(int), typeof(double), typeof(float), typeof(string),
-                    typeof(DateTime), typeof(TimeSpan)
-                };
-                if (finalTypes.Contains(type))
-                    return value + Environment.NewLine;
-
-                if (!currentPath.Add(value))
-                    return "Parent" + Environment.NewLine;
-
-                var indentation = new string('\t', level + 1);
-                var sb = new StringBuilder();
-                sb.AppendLine(type.Name);
-                var memberFlag = BindingFlags.Public | BindingFlags.Instance;
-                foreach (var property in type.GetProperties(memberFlag))
-                {
-                    if (excludedTypes.Contains(property.PropertyType) ||
-                        excludedMembers.Contains((property.DeclaringType, property.Name)))
-                        continue;
-
-                    sb.Append(indentation + property.Name + " = " +
-                              PrintMember(property, property.GetValue(value)!, level + 1));
+                    var text = PrintToString(entry.Value, level + 1, currentPath);
+                    sb.Append($"{indentation}[{entry.Key}] = {text}");
                 }
-
-                foreach (var field in type.GetFields(memberFlag))
+            }
+            
+            else if (value is IEnumerable collection)
+            {
+                var index = 0;
+                foreach (var item in collection)
                 {
-                    if (excludedTypes.Contains(field.FieldType) || excludedMembers.Contains((field.DeclaringType,
-                            field.Name)))
-                        continue;
-
-                    sb.Append(indentation + field.Name + " = " +
-                              PrintMember(field, field.GetValue(value)!, level + 1));
+                    var text = PrintToString(item, level + 1, currentPath);
+                    sb.Append($"{indentation}[{index}] = {text}");
+                    index++;
                 }
-
-                currentPath.Remove(value);
-                return sb.ToString();
             }
 
-            string PrintMember(MemberInfo member, object value, int level)
+            else
             {
-                if (memberPrinters.TryGetValue((member.DeclaringType, member.Name), out var print))
-                    return print(value) + Environment.NewLine;
+                var flag = BindingFlags.Public | BindingFlags.Instance;
+                foreach (var property in type.GetProperties(flag))
+                {
+                    var key = (property.DeclaringType, property.Name);
+                    if (excludedTypes.Contains(property.PropertyType) || excludedMembers.Contains(key))
+                        continue;
 
-                return PrintValue(value, level);
+                    var propertyValue = property.GetValue(value);
+                    var text = memberPrinters.TryGetValue(key, out var memberPrint)
+                        ? memberPrint(propertyValue!) + Environment.NewLine
+                        : PrintToString(propertyValue, level + 1, currentPath);
+                    sb.Append($"{indentation}{property.Name} = {text}");
+                }
+
+                foreach (var field in type.GetFields(flag))
+                {
+                    var key = (field.DeclaringType, field.Name);
+                    if (excludedTypes.Contains(field.FieldType) || excludedMembers.Contains(key))
+                        continue;
+
+                    var fieldValue = field.GetValue(value);
+                    var text = memberPrinters.TryGetValue(key, out var memberPrint)
+                        ? memberPrint(fieldValue!) + Environment.NewLine
+                        : PrintToString(fieldValue, level + 1, currentPath);
+                    sb.Append($"{indentation}{field.Name} = {text}");
+                }
             }
+
+            currentPath.Remove(value);
+            return sb.ToString();
         }
     }
 }
