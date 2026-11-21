@@ -1,5 +1,6 @@
-﻿using NUnit.Framework;
-using FluentAssertions;
+﻿using FluentAssertions;
+using NUnit.Framework;
+using System;
 
 namespace ObjectPrinting.Tests
 {
@@ -21,12 +22,12 @@ namespace ObjectPrinting.Tests
             
             string s1 = printer.PrintToString(person);
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
+            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию
             //8. ...с конфигурированием
         }
 
         [Test]
-        public void PrintToString_ExcludingType()
+        public void PrintToString_ExcludingType_PrintWothoutType()
         {
             var person = new Person() { Age = 19, Height = 180, Name = "Arseny" };
 
@@ -35,6 +36,29 @@ namespace ObjectPrinting.Tests
             result.Should().
                 Contain("Name").And.
                 NotContain("Age").And.Contain("Height");
+        }
+
+        [Test]
+        public void Print_ExcludingMember_SkipsOnlyThatProperty()
+        {
+            var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config => config.Excluding(p => p.Age));
+
+            result.Should().Contain("Name = Arseny")
+                .And.Contain("Height")
+                .And.NotContain("Age");
+        }
+
+        [Test]
+        public void Excluding_ThrowsArgumentException_WhenSelectorIsNotMemberAccess()
+        {
+            var config = ObjectPrinter.For<Person>();
+
+            var result = config.Invoking(c =>
+                         c.Excluding(p => p.Age + 1));
+            
+            result.Should().Throw<ArgumentException>();
         }
     }
 }

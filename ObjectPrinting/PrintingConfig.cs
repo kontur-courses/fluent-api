@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -18,6 +19,18 @@ namespace ObjectPrinting
         public PrintingConfig<TOwner> ExcludingType<T>()
         {
             excludedTypes.Add(typeof(T));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TProp>(Expression<Func<TOwner,TProp>> selector)
+        {
+            var memberExpression = selector.Body as MemberExpression;
+
+            if (memberExpression == null)
+                throw new ArgumentException("Неправильное обращение к свойству. Необходим делегат вида p => p.Age");
+
+            excludedMembers.Add(memberExpression.Member);
+
             return this;
         }
 
@@ -44,7 +57,8 @@ namespace ObjectPrinting
                 if (excludedTypes.Contains(propertyInfo.PropertyType)) //проверка исключенного типа
                     continue;
 
-               
+                if (excludedMembers.Contains(propertyInfo)) //проверка исключенного свойства
+                     continue;
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
