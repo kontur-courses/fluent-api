@@ -1,24 +1,22 @@
 ﻿using System;
-using System.Globalization;
 
-namespace ObjectPrinting.Solved
+namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType> : IPropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
+        private readonly string? memberPath;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string? memberPath = null)
         {
             this.printingConfig = printingConfig;
+            this.memberPath = memberPath;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            return printingConfig;
-        }
+            printingConfig.SetSerializer(print, memberPath);
 
-        public PrintingConfig<TOwner> Using(CultureInfo culture)
-        {
             return printingConfig;
         }
 
