@@ -219,6 +219,29 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_ListWithSharedReference_ShouldPrintBothOccurrences()
+        {
+            var node = new LoopNode { Value = 2 };
+            var nodes = new List<LoopNode> { node, node };
+
+            var expected = string.Join(Environment.NewLine,
+                "List`1",
+                "\tLoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "\tLoopNode",
+                "\t\tValue = 2",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "");
+
+            var result = nodes.PrintToString();
+
+            result.Should().Be(expected);
+        }
+
+        [Test]
         public void PrintToString_PrintingTypeAndPrintingPropertySameType_ShouldPrintViaPropertySerializer()
         {
             var person = GetDefaultPerson();
