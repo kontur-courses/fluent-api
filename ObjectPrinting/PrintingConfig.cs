@@ -1,41 +1,82 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
+using ObjectPrinting.Configuration;
 
 namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        public string PrintToString(TOwner obj)
+        internal HashSet<Type> excludedTypes { get; } = new();
+        internal HashSet<string> excludedProperties { get; } = new();
+        internal Dictionary<Type, Func<object, string>> typeSerializers { get; } = new();
+        internal Dictionary<string, Func<object, string>> propertySerializers { get; } = new();
+        internal Dictionary<Type, CultureInfo> typeCultures { get; } = new();
+        internal Dictionary<string, int> trimLengths { get; } = new();
+
+        public PrintingConfig<TOwner> Exclude<T>()
         {
-            return PrintToString(obj, 0);
+            excludedTypes.Add(typeof(T));
+            return this;
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        public PrintingConfig<TOwner> Using<T>(Func<T, string> serializer)
         {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+            typeSerializers[typeof(T)] = obj => serializer((T)obj);
+            return this;
+        }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+        public PrintingConfig<TOwner> UsingCulture<T>(CultureInfo culture)
+        {
+            typeCultures[typeof(T)] = culture;
+            return this;
+        }
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
+        public IPropertyConfig<TOwner> Property(string propertyName)
+        {
+            return new PropertyConfig<TOwner>(this, propertyName);
+        }
+
+        public IStringPropertyConfig<TOwner> Property(Expression<Func<TOwner, string>> propertySelector)
+        {
+            var name = GetPropertyName(propertySelector);
+            return new StringPropertyConfig<TOwner>(this, name);
+        }
+
+        public IPropertyConfig<TOwner> Property(Expression<Func<TOwner, object>> propertySelector)
+        {
+            var name = GetPropertyName(propertySelector);
+            return new PropertyConfig<TOwner>(this, name);
+        }
+
+        public string PrintToString(TOwner obj)
+        {
+            var serializer = new ObjectSerializer<TOwner>(this);
+            return serializer.Serialize(obj);
+        }
+
+        private string GetPropertyName(LambdaExpression selector)
+        {
+            var body = selector.Body;
+
+            if (body is UnaryExpression unary)
+                body = unary.Operand;
+
+            var parts = new List<string>();
+
+            while (body is MemberExpression member)
             {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                parts.Add(member.Member.Name);
+                body = member.Expression;
             }
-            return sb.ToString();
+
+            if (body != null && body.NodeType != ExpressionType.Parameter)
+                throw new ArgumentException("Expression must be a property access");
+
+            parts.Reverse();
+
+            return string.Join(".", parts);
         }
     }
 }
