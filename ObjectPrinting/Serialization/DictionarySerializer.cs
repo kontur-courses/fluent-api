@@ -5,7 +5,10 @@ namespace ObjectPrinting.Serialization;
 
 internal class DictionarySerializer : ISerializationStrategy
 {
-    public bool CanSerialize(object obj) => obj is IDictionary;
+    public bool CanSerialize(object obj)
+    {
+        return obj is IDictionary;
+    }
 
     public string Serialize(object obj, int nestingLevel, ObjectSerializer serializer)
     {
@@ -17,9 +20,7 @@ internal class DictionarySerializer : ISerializationStrategy
         {
             if (serializer.IsTypeExcluded(entry.Key.GetType()) ||
                 (entry.Value is not null && serializer.IsTypeExcluded(entry.Value.GetType())))
-            {
                 continue;
-            }
 
             var key = serializer.Serialize(entry.Key, nestingLevel + 1).TrimEnd('\r', '\n');
             var value = serializer.Serialize(entry.Value, nestingLevel + 1);

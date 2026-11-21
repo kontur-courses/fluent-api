@@ -20,6 +20,8 @@ internal class MemberInfoComparer : IEqualityComparer<MemberInfo>
                && left.DeclaringType == right.DeclaringType;
     }
 
-    public int GetHashCode(MemberInfo obj) =>
-        HashCode.Combine(obj.MetadataToken, obj.Module, obj.DeclaringType);
+    public int GetHashCode(MemberInfo obj)
+    {
+        return HashCode.Combine(obj.MetadataToken, obj.Module, obj.DeclaringType);
+    }
 }

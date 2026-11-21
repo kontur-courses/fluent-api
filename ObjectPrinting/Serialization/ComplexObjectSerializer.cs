@@ -7,7 +7,10 @@ namespace ObjectPrinting.Serialization;
 
 internal class ComplexObjectSerializer : ISerializationStrategy
 {
-    public bool CanSerialize(object obj) => true;
+    public bool CanSerialize(object obj)
+    {
+        return true;
+    }
 
     public string Serialize(object obj, int nestingLevel, ObjectSerializer serializer)
     {
@@ -42,9 +45,6 @@ internal class ComplexObjectSerializer : ISerializationStrategy
             yield return (property, property.PropertyType, property.GetValue(obj));
         }
 
-        foreach (var field in type.GetFields(flags))
-        {
-            yield return (field, field.FieldType, field.GetValue(obj));
-        }
+        foreach (var field in type.GetFields(flags)) yield return (field, field.FieldType, field.GetValue(obj));
     }
 }

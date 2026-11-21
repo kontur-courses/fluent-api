@@ -6,8 +6,8 @@ namespace ObjectPrinting;
 
 public class MemberPrintingConfig<TOwner, TProp>
 {
-    private readonly PrintingConfig<TOwner> parentConfig;
     private readonly MemberInfo? member;
+    private readonly PrintingConfig<TOwner> parentConfig;
 
     internal MemberPrintingConfig(PrintingConfig<TOwner> parentConfig, MemberInfo? member = null)
     {
@@ -23,13 +23,17 @@ public class MemberPrintingConfig<TOwner, TProp>
             : parentConfig.WithTypeSerializer(typeof(TProp), boxedSerializer);
     }
 
-    internal PrintingConfig<TOwner> WithCulture(CultureInfo culture) =>
-        member is not null
+    internal PrintingConfig<TOwner> WithCulture(CultureInfo culture)
+    {
+        return member is not null
             ? parentConfig.WithMemberCulture(member, culture)
             : parentConfig.WithTypeCulture(typeof(TProp), culture);
+    }
 
-    internal PrintingConfig<TOwner> WithMaxLength(int maxLength) =>
-        member is not null
+    internal PrintingConfig<TOwner> WithMaxLength(int maxLength)
+    {
+        return member is not null
             ? parentConfig.WithMemberMaxLength(member, maxLength)
             : parentConfig.WithStringMaxLength(maxLength);
+    }
 }

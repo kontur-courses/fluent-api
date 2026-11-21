@@ -33,13 +33,13 @@ public class ObjectPrinterAcceptanceTests
             // 6. Исключить из сериализации конкретное свойство
             .Exclude(p => p.Father);
 
-        string s1 = printer.PrintToString(person);
+        var s1 = printer.PrintToString(person);
 
         // 7. Синтаксический сахар в виде метода расширения, сериализующего по умолчанию
-        string s2 = person.PrintToString();
+        var s2 = person.PrintToString();
 
         // 8. ...с конфигурированием
-        string s3 = person.PrintToString(cfg => cfg
+        var s3 = person.PrintToString(cfg => cfg
             .Exclude<Guid>()
             .For(p => p.Name).Truncate(4));
 

@@ -5,7 +5,10 @@ namespace ObjectPrinting.Serialization;
 
 internal class CollectionSerializer : ISerializationStrategy
 {
-    public bool CanSerialize(object obj) => obj is IEnumerable;
+    public bool CanSerialize(object obj)
+    {
+        return obj is IEnumerable;
+    }
 
     public string Serialize(object obj, int nestingLevel, ObjectSerializer serializer)
     {

@@ -76,11 +76,15 @@ internal class ObjectSerializer
         }
     }
 
-    internal bool IsExcluded(MemberInfo member, Type memberType) =>
-        state.ExcludedMembers.Contains(member) || state.ExcludedTypes.Contains(memberType);
+    internal bool IsExcluded(MemberInfo member, Type memberType)
+    {
+        return state.ExcludedMembers.Contains(member) || state.ExcludedTypes.Contains(memberType);
+    }
 
-    internal bool IsTypeExcluded(Type type) =>
-        state.ExcludedTypes.Contains(type);
+    internal bool IsTypeExcluded(Type type)
+    {
+        return state.ExcludedTypes.Contains(type);
+    }
 
     private bool TrySerializeCustom(
         object obj,
@@ -98,7 +102,8 @@ internal class ObjectSerializer
                 return true;
             }
 
-            if (state.MemberCultures.TryGetValue(member, out var memberCulture) && obj is IFormattable memberFormattable)
+            if (state.MemberCultures.TryGetValue(member, out var memberCulture) &&
+                obj is IFormattable memberFormattable)
             {
                 result = memberFormattable.ToString(null, memberCulture);
                 return true;
@@ -143,9 +148,13 @@ internal class ObjectSerializer
         return obj.ToString() ?? string.Empty;
     }
 
-    private static string TruncateString(string value, int maxLength) =>
-        value.Length > maxLength ? value[..maxLength] : value;
+    private static string TruncateString(string value, int maxLength)
+    {
+        return value.Length > maxLength ? value[..maxLength] : value;
+    }
 
-    private static bool IsFinalType(Type type) =>
-        type.IsPrimitive || type.IsEnum || FinalTypes.Contains(type);
+    private static bool IsFinalType(Type type)
+    {
+        return type.IsPrimitive || type.IsEnum || FinalTypes.Contains(type);
+    }
 }
