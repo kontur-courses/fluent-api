@@ -13,6 +13,10 @@ namespace ObjectPrinting.Solved
         private readonly HashSet<PropertyInfo> _excludedProperties;
         private readonly HashSet<FieldInfo> _excludedFields;
         internal readonly Dictionary<MemberInfo, Func<object, string>> CustomSerializers;
+        private readonly Type[] _finalTypes = [
+                typeof(int), typeof(double), typeof(float), typeof(string),
+                typeof(DateTime), typeof(TimeSpan)
+            ];
 
         public PrintingConfig()
         {
@@ -117,37 +121,27 @@ namespace ObjectPrinting.Solved
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
+            if (_finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
             var type = obj.GetType();
             var isReferenceType = !type.IsValueType;
             if (isReferenceType)
             {
-                if (!ids.TryGetValue(obj, out var id))
-                {
-                    id = ids.Count + 1;
-                    ids[obj] = id;
-                }
+                int id = UpdateIds(obj, ids);
 
                 if (!visited.Add(obj))
                     return $"<{type.Name}#{id}>{Environment.NewLine}";
             }
 
+            var sb = new StringBuilder();
+            var overridenToStringMethods = type.GetMethods().Where(m => m.Name == "ToString" && m.GetParameters().Length == 0);
+            var toStringData =
+                overridenToStringMethods.Any() && overridenToStringMethods.Single().DeclaringType == type
+                ? $" {obj}" : string.Empty;
+            var idText = isReferenceType ? $"#{ids[obj]}" : string.Empty;
             try
             {
-                var identation = new string('\t', nestingLevel + 1);
-                var sb = new StringBuilder();
-                var overridenToStringMethods = type.GetMethods().Where(m => m.Name == "ToString" && m.GetParameters().Length == 0);
-                var toStringData =
-                    overridenToStringMethods.Any() && overridenToStringMethods.Single().DeclaringType == type
-                    ? $" {obj}" : string.Empty;
-                var idText = isReferenceType ? $"#{ids[obj]}" : string.Empty;
                 sb.AppendLine(type.Name + idText + toStringData);
                 sb.Append(MembersToStringBuilder(
                     nestingLevel,
@@ -170,6 +164,17 @@ namespace ObjectPrinting.Solved
                 if (isReferenceType)
                     visited.Remove(obj);
             }
+        }
+
+        private static int UpdateIds(object obj, Dictionary<object, int> ids)
+        {
+            if (!ids.TryGetValue(obj, out var id))
+            {
+                id = ids.Count + 1;
+                ids[obj] = id;
+            }
+
+            return id;
         }
 
         private StringBuilder MembersToStringBuilder<TMemberType>(

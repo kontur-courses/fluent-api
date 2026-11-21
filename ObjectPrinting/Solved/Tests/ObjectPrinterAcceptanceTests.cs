@@ -4,13 +4,14 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Solved.Tests
 {
-    public static class Sources
+    public static partial class Sources
     {
         private static readonly Person _alexPerson = new Person { Name = "Alex", Age = 19 };
 
@@ -31,7 +32,7 @@ namespace ObjectPrinting.Solved.Tests
             };
         }
 
-        public static IEnumerable<TestCaseData> Source_ShouldExcludeTypePropertyFromSerialization_WhenOrderedTo()
+        public static IEnumerable<TestCaseData> Source_ShouldExcludePropertyAndFieldTypesFromSerialization_WhenOrderedTo()
         {
             yield return new(
                 _alexPerson,
@@ -69,7 +70,7 @@ namespace ObjectPrinting.Solved.Tests
             { TypeArgs = [typeof(Person), typeof(double)] };
         }
 
-        public static IEnumerable<TestCaseData> Source_ShouldSerializePropertiesAndFields_WhenGivenCustomSerializer()
+        public static IEnumerable<TestCaseData> Source_ShouldSerializePropertiesAndFieldsCustomly_WhenGivenCustomSerializer()
         {
             Person person = new() { Weight = 6, Height = 0.5 };
             Expression<Func<Person, int>> selector = p => p.Age;
@@ -97,7 +98,7 @@ namespace ObjectPrinting.Solved.Tests
             { TypeArgs = [typeof(Parent), typeof(Parent)] };
         }
 
-        public static IEnumerable<TestCaseData> Source_ShouldTrimStringProperties_WhenOrderedTo()
+        public static IEnumerable<TestCaseData> Source_ShouldTrimStringPropertiesAndFields_WhenOrderedTo()
         {
             Expression<Func<Person, string>> selector = person => person.Name;
             Dictionary<string, string> formattablePropNamesAndValues = new()
@@ -112,16 +113,29 @@ namespace ObjectPrinting.Solved.Tests
             yield return new(new Person() { Name = "Qwertyuiop" }, selector, formattablePropNamesAndValues, 0);
         }
 
-        public static IEnumerable<TestCaseData> Source_ShouldExcludeGivenPropertyFromSerialization_WhenOrderedTo()
+        public static IEnumerable<TestCaseData> Source_ShouldExcludeGivenPropertyOrFieldFromSerialization_WhenOrderedTo()
         {
             Expression<Func<Person, Guid>> selector = person => person.Id;
             yield return new(_alexPerson, selector);
         }
+
+        public static IEnumerable<TestCaseData> Source_ShouldSerializeOwnerCorrectly_WhenOwnerIsCollection()
+        {
+            yield return new(new int[] { 1, 2, 3 }, GetRegexIntArray123());
+            yield return new(new Dictionary<int, Person> { { 1, _alexPerson } }, GetRegexDictionaryIntPerson())
+            { TypeArgs = [typeof(KeyValuePair<int, Person>)]};
+        }
+
+        [GeneratedRegex(@"\[\r\n\t+1\r\n\t+2\r\n\t+3\r\n\t+\]")]
+        private static partial Regex GetRegexIntArray123();
+
+        [GeneratedRegex(@"\[\r\n\t+1\r\n\t+Person#2\r\n\t+.*\r\n\t+\]")]
+        private static partial Regex GetRegexDictionaryIntPerson();
     }
 
     internal static class Helpers
     {
-        public static void TestSerializableProperties<TOwner, TPropType>(
+        public static void TestSerializablePropertiesAndFields<TOwner, TPropType>(
             TOwner owner,
             IDictionary<string, TPropType> formattablePropNamesAndValues,
             PrintingConfig<TOwner> config,
@@ -129,17 +143,17 @@ namespace ObjectPrinting.Solved.Tests
         {
             var result = config.PrintToString(owner);
 
-            var propsFormatted = GetSerializedProperties(result);
+            var propsFormatted = GetSerializedPropertiesAndFields(result);
             using (new AssertionScope())
             {
-                AssertFormattableProps(
+                AssertFormattablePropertiesAndFields(
                     formattablePropNamesAndValues,
                     propsFormatted,
                     propToString);
             }
         }
 
-        public static IDictionary<string, string> GetSerializedProperties(string properties)
+        public static IDictionary<string, string> GetSerializedPropertiesAndFields(string properties)
         {
             return properties
                 .Split("\r\n")
@@ -148,7 +162,7 @@ namespace ObjectPrinting.Solved.Tests
                 .ToDictionary(s => s[0].Trim(), s => s[1].Trim());
         }
 
-        public static void AssertFormattableProps<TPropType>(
+        public static void AssertFormattablePropertiesAndFields<TPropType>(
             IDictionary<string, TPropType> formattablePropNamesAndValues,
             IDictionary<string, string> propsFormatted,
             Func<TPropType, string> paramToString)
@@ -196,14 +210,14 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         // 1
-        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldExcludeTypePropertyFromSerialization_WhenOrderedTo))]
-        public void ShouldExcludeTypePropertyFromSerialization_WhenOrderedTo<TObject, TExcludeType>(
+        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldExcludePropertyAndFieldTypesFromSerialization_WhenOrderedTo))]
+        public void ShouldExcludePropertyAndFieldTypesFromSerialization_WhenOrderedTo<TObject, TExcludeType>(
             TObject owner,
             HashSet<string> typesToExclude)
         {
             var printer = ObjectPrinter.For<TObject>().Excluding<TExcludeType>();
 
-            Helpers.GetSerializedProperties(printer.PrintToString(owner))
+            Helpers.GetSerializedPropertiesAndFields(printer.PrintToString(owner))
                 .Should()
                 .NotContainKeys(typesToExclude);
         }
@@ -218,7 +232,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).Using(serializer);
 
-            Helpers.TestSerializableProperties(
+            Helpers.TestSerializablePropertiesAndFields(
                 owner,
                 formattablePropNamesAndValues,
                 printer,
@@ -237,7 +251,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing<TFormattableType>().Using(culture);
 
-            Helpers.TestSerializableProperties(
+            Helpers.TestSerializablePropertiesAndFields(
                 owner,
                 formattablePropNamesAndValues,
                 printer,
@@ -245,8 +259,8 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         // 4
-        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldSerializePropertiesAndFields_WhenGivenCustomSerializer))]
-        public void ShouldSerializePropertiesAndFields_WhenGivenCustomSerializer<TOwner, TPropType>(
+        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldSerializePropertiesAndFieldsCustomly_WhenGivenCustomSerializer))]
+        public void ShouldSerializePropertiesAndFieldsCustomly_WhenGivenCustomSerializer<TOwner, TPropType>(
             TOwner owner,
             Expression<Func<TOwner, TPropType>> selector,
             Func<TPropType, string> serializer,
@@ -255,7 +269,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).Using(serializer);
 
-            Helpers.TestSerializableProperties(
+            Helpers.TestSerializablePropertiesAndFields(
                 owner,
                 formattablePropNamesAndValues,
                 printer,
@@ -263,8 +277,8 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         // 5
-        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldTrimStringProperties_WhenOrderedTo))]
-        public void ShouldTrimStringProperties_WhenOrderedTo<TOwner>(
+        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldTrimStringPropertiesAndFields_WhenOrderedTo))]
+        public void ShouldTrimStringPropertiesAndFields_WhenOrderedTo<TOwner>(
             TOwner owner,
             Expression<Func<TOwner, string>> selector,
             IDictionary<string, string> formattablePropNamesAndValues,
@@ -272,7 +286,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).TrimmedToLength(maxLen);
 
-            Helpers.TestSerializableProperties(
+            Helpers.TestSerializablePropertiesAndFields(
                 owner,
                 formattablePropNamesAndValues,
                 printer,
@@ -280,8 +294,8 @@ namespace ObjectPrinting.Solved.Tests
         }
 
         // 6
-        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldExcludeGivenPropertyFromSerialization_WhenOrderedTo))]
-        public void ShouldExcludeGivenPropertyFromSerialization_WhenOrderedTo<TOwner, TPropType>(
+        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldExcludeGivenPropertyOrFieldFromSerialization_WhenOrderedTo))]
+        public void ShouldExcludeGivenPropertyOrFieldFromSerialization_WhenOrderedTo<TOwner, TPropType>(
             TOwner owner,
             Expression<Func<TOwner, TPropType>> selector
             )
@@ -290,8 +304,21 @@ namespace ObjectPrinting.Solved.Tests
 
             var result = printer.PrintToString(owner);
 
-            var propsFormatted = Helpers.GetSerializedProperties(result);
+            var propsFormatted = Helpers.GetSerializedPropertiesAndFields(result);
             propsFormatted.Keys.Should().NotContain(PrintingConfig<TOwner>.GetMemberExpression(selector).Member.Name);
+        }
+
+        [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldSerializeOwnerCorrectly_WhenOwnerIsCollection))]
+        public void ShouldSerializeOwnerCorrectly_WhenOwnerIsCollection<TCollection>(
+            ICollection<TCollection> owner,
+            Regex regexToMatch)
+        {
+            var printer = ObjectPrinter.For<ICollection<TCollection>>();
+
+            string result = printer.PrintToString(owner);
+            bool doesMatch = regexToMatch.IsMatch(result);
+
+            doesMatch.Should().Be(true);
         }
 
         [Test]
