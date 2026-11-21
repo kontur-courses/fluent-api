@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace ObjectPrinting
 {
@@ -23,7 +22,8 @@ namespace ObjectPrinting
             int maxLength)
         {
             config.Using(s => 
-                            s.Length <= maxLength ? s :
+                            s.Length <= maxLength ?
+                            s :
                             s.Substring(0, maxLength));
             return config;
         }

@@ -1,8 +1,6 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace ObjectPrinting.Tests
 {

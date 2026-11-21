@@ -1,11 +1,10 @@
-using FluentAssertions;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Globalization;
 using System.Text;
 
 namespace ObjectPrinting
@@ -17,7 +16,7 @@ namespace ObjectPrinting
         private readonly Dictionary<Type,Func<object, string>> customPrinters = new();
         private readonly Dictionary<Type, CultureInfo> customCultures = new();
         private readonly Dictionary<MemberInfo, Func<object, string>> memberPrinters = new();
-        //private HashSet<object> visitedObjects = new();
+
         public string PrintToString(TOwner obj)
         {
             var visitedObjects = new HashSet<object> (ReferenceEqualityComparer.Instance);
@@ -71,7 +70,6 @@ namespace ObjectPrinting
 
         private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
