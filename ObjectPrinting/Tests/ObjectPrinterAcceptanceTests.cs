@@ -180,6 +180,55 @@ namespace ObjectPrinting.Tests
             lines.Should().Contain($"\tName = {expectedName}");
             lines.Should().Contain("\tGender = Male");
         }
+        
+        [TestCase(false, TestName = "PrintToString_StopsAtSelfReference")]
+        [TestCase(true, TestName = "PrintToString_StopsAtCycleThroughAnotherObject")]
+        public void PrintToString_StopsAtCycle(bool useSecondNode)
+        {
+            var first = new Node { Name = "First" };
+
+            first.Next = useSecondNode
+                ? new Node { Name = "Second", Next = first }
+                : first;
+
+            var result = ObjectPrinter.For<Node>().PrintToString(first);
+            var lines = result.Split(Environment.NewLine);
+
+            lines.Should().Contain("\tName = First");
+
+            if (useSecondNode)
+                lines.Should().Contain("\t\tName = Second");
+
+            lines.Should().Contain(
+                useSecondNode ? "\t\tNext = <cycle>" : "\tNext = <cycle>");
+        }
+
+        [Test]
+        public void PrintToString_PrintsSharedReferenceInBothBranches()
+        {
+            var shared = new Node { Name = "Shared" };
+            var pair = new NodePair { Left = shared, Right = shared };
+
+            var result = ObjectPrinter.For<NodePair>().PrintToString(pair);
+            var lines = result.Split(Environment.NewLine);
+
+            lines.Should().Contain("\tLeft = Node");
+            lines.Should().Contain("\tRight = Node");
+            lines.Should().Contain(line => line == "\t\tName = Shared");
+            result.Should().NotContain("<cycle>");
+        }
+
+        private sealed class Node
+        {
+            public string Name { get; set; } = "";
+            public Node? Next { get; set; }
+        }
+
+        private sealed class NodePair
+        {
+            public Node? Left { get; set; }
+            public Node? Right { get; set; }
+        }
 
         private sealed class SampleWithHeight
         {

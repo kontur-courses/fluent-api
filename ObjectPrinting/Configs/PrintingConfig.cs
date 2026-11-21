@@ -73,12 +73,12 @@ namespace ObjectPrinting
         
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            var currentPath = new HashSet<object>(ReferenceEqualityComparer.Instance);
+            return PrintToString(obj, 0, currentPath);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object obj, int nestingLevel, HashSet<object> currentPath)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
             
@@ -94,33 +94,43 @@ namespace ObjectPrinting
             };
             if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
-
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             
-            sb.AppendLine(type.Name);
+            if (!currentPath.Add(obj))
+                return "<cycle>" + Environment.NewLine;
 
-            foreach (var member in GetPrintableMembers(type))
+            try
             {
-                if (membersToExclude.Contains(member))
-                    continue;
-                
-                var value = member is PropertyInfo property
-                    ? property.GetValue(obj)
-                    : ((FieldInfo)member).GetValue(obj);
-                
-                var printedValue =
-                    value is not null && formattersByMember.TryGetValue(member, out var memberFormatter)
-                        ? memberFormatter(value) + Environment.NewLine
-                        : PrintToString(value, nestingLevel + 1);
+                var indentation = new string('\t', nestingLevel + 1);
+                var sb = new StringBuilder();
 
-                sb.Append(indentation)
-                    .Append(member.Name)
-                    .Append(" = ")
-                    .Append(printedValue);
+                sb.AppendLine(type.Name);
+
+                foreach (var member in GetPrintableMembers(type))
+                {
+                    if (membersToExclude.Contains(member))
+                        continue;
+
+                    var value = member is PropertyInfo property
+                        ? property.GetValue(obj)
+                        : ((FieldInfo)member).GetValue(obj);
+
+                    var printedValue =
+                        value is not null && formattersByMember.TryGetValue(member, out var memberFormatter)
+                            ? memberFormatter(value) + Environment.NewLine
+                            : PrintToString(value, nestingLevel + 1, currentPath);
+
+                    sb.Append(indentation)
+                        .Append(member.Name)
+                        .Append(" = ")
+                        .Append(printedValue);
+                }
+
+                return sb.ToString();
             }
-            
-            return sb.ToString();
+            finally
+            {
+                currentPath.Remove(obj);
+            }
         }
         
         private static IEnumerable<MemberInfo> GetPrintableMembers(Type type)
