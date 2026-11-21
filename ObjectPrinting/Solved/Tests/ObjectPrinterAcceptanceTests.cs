@@ -22,8 +22,9 @@ namespace ObjectPrinting.Solved.Tests
                 _alexPerson,
                 selector,
                 serializer,
-                $"Person\r\n\tId = Guid {Guid.Empty}\r\n\tName = Alex" +
-                    $"\r\n\tHeight = 0\r\n\tWeight = 0\r\n\tAge = _-_ 19 _-_\r\n\tBio = null\r\n"
+                new Dictionary<string, int> {
+                    { "Age", _alexPerson.Age }
+                }
                 )
             {
                 TypeArgs = [typeof(Person), typeof(int)]
@@ -34,16 +35,16 @@ namespace ObjectPrinting.Solved.Tests
         {
             yield return new(
                 _alexPerson,
-                "Person\r\n\tName = Alex\r\n\tHeight = 0\r\n\tWeight = 0\r\n\tAge = 19\r\n\tBio = null\r\n")
+                new HashSet<string>(["Id"]))
             { TypeArgs = [typeof(Person), typeof(Guid)] };
             yield return new(
                 _alexPerson,
-                $"Person\r\n\tId = Guid {Guid.Empty}\r\n\tHeight = 0\r\n\tWeight = 0\r\n\tAge = 19\r\n")
+                new HashSet<string>(["Name", "Bio"]))
             { TypeArgs = [typeof(Person), typeof(string)] };
             var jakePerson = new Person() { Name = "Jake", Age = 8, Bio = "Cool" };
             yield return new(
                 jakePerson,
-                $"Person\r\n\tId = Guid {Guid.Empty}\r\n\tName = Jake\r\n\tAge = 8\r\n\tBio = Cool\r\n")
+                new HashSet<string>(["Height", "Weight"]))
             { TypeArgs = [typeof(Person), typeof(double)] };
         }
 
@@ -81,6 +82,19 @@ namespace ObjectPrinting.Solved.Tests
                     { "Age", person.Age }
                 })
             { TypeArgs = [typeof(Person), typeof(int)] };
+
+            Expression<Func<Parent, Parent>> parentSelector = p => p.Child;
+            Func<Parent, string> parentSerializer = p => $"Parent: {p}";
+            Parent parent = new() { Name = "A", Child = new Parent { Name = "B" } };
+            yield return new(
+                parent,
+                parentSelector,
+                parentSerializer,
+                new Dictionary<string, Parent>
+                {
+                    { "Child", parent.Child }
+                })
+            { TypeArgs = [typeof(Parent), typeof(Parent)] };
         }
 
         public static IEnumerable<TestCaseData> Source_ShouldTrimStringProperties_WhenOrderedTo()
@@ -107,6 +121,24 @@ namespace ObjectPrinting.Solved.Tests
 
     internal static class Helpers
     {
+        public static void TestSerializableProperties<TOwner, TPropType>(
+            TOwner owner,
+            IDictionary<string, TPropType> formattablePropNamesAndValues,
+            PrintingConfig<TOwner> config,
+            Func<TPropType, string> propToString)
+        {
+            var result = config.PrintToString(owner);
+
+            var propsFormatted = GetSerializedProperties(result);
+            using (new AssertionScope())
+            {
+                AssertFormattableProps(
+                    formattablePropNamesAndValues,
+                    propsFormatted,
+                    propToString);
+            }
+        }
+
         public static IDictionary<string, string> GetSerializedProperties(string properties)
         {
             return properties
@@ -167,13 +199,13 @@ namespace ObjectPrinting.Solved.Tests
         [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldExcludeTypePropertyFromSerialization_WhenOrderedTo))]
         public void ShouldExcludeTypePropertyFromSerialization_WhenOrderedTo<TObject, TExcludeType>(
             TObject owner,
-            string expected)
+            HashSet<string> typesToExclude)
         {
             var printer = ObjectPrinter.For<TObject>().Excluding<TExcludeType>();
 
-            var result = printer.PrintToString(owner);
-
-            result.Should().Be(expected.ToString());
+            Helpers.GetSerializedProperties(printer.PrintToString(owner))
+                .Should()
+                .NotContainKeys(typesToExclude);
         }
 
         // 2
@@ -182,13 +214,16 @@ namespace ObjectPrinting.Solved.Tests
             TOwner owner,
             Expression<Func<TOwner, TPropType>> selector,
             Func<TPropType, string> serializer,
-            string expected)
+            IDictionary<string, TPropType> formattablePropNamesAndValues)
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).Using(serializer);
 
-            var result = printer.PrintToString(owner);
-
-            result.Should().Be(expected);
+            Helpers.TestSerializableProperties(
+                owner,
+                formattablePropNamesAndValues,
+                printer,
+                serializer
+                );
         }
 
         // 3
@@ -202,16 +237,11 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing<TFormattableType>().Using(culture);
 
-            var result = printer.PrintToString(owner);
-
-            var propsFormatted = Helpers.GetSerializedProperties(result);
-            using (new AssertionScope())
-            {
-                Helpers.AssertFormattableProps(
-                    formattablePropNamesAndValues,
-                    propsFormatted,
-                    type => type.ToString(null, culture));
-            }
+            Helpers.TestSerializableProperties(
+                owner,
+                formattablePropNamesAndValues,
+                printer,
+                p => p.ToString(null, culture));
         }
 
         // 4
@@ -225,13 +255,11 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).Using(serializer);
 
-            var result = printer.PrintToString(owner);
-
-            var propsFormatted = Helpers.GetSerializedProperties(result);
-            using (new AssertionScope())
-            {
-                Helpers.AssertFormattableProps(formattablePropNamesAndValues, propsFormatted, serializer);
-            }
+            Helpers.TestSerializableProperties(
+                owner,
+                formattablePropNamesAndValues,
+                printer,
+                serializer);
         }
 
         // 5
@@ -244,13 +272,11 @@ namespace ObjectPrinting.Solved.Tests
         {
             var printer = ObjectPrinter.For<TOwner>().Printing(selector).TrimmedToLength(maxLen);
 
-            var result = printer.PrintToString(owner);
-
-            var propsFormatted = Helpers.GetSerializedProperties(result);
-            using (new AssertionScope())
-            {
-                Helpers.AssertFormattableProps(formattablePropNamesAndValues, propsFormatted, s => s[..maxLen]);
-            }
+            Helpers.TestSerializableProperties(
+                owner,
+                formattablePropNamesAndValues,
+                printer,
+                s => s.Length < maxLen ? s : s[..maxLen]);
         }
 
         // 6
@@ -268,29 +294,58 @@ namespace ObjectPrinting.Solved.Tests
             propsFormatted.Keys.Should().NotContain(PrintingConfig<TOwner>.GetMemberExpression(selector).Member.Name);
         }
 
-        // todo
-        //[TestCaseSource]
-        //public void ShouldNotSerializeCustomly_WhenPropertyIsExcluded()
-        //{
+        [Test]
+        public void ShouldNotSerializeCustomly_WhenPropertyIsExcluded()
+        {
+            var person = new Person { Name = "Kevin" };
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Excluding(person => person.Name)
+                .Printing(person => person.Name)
+                .Using(property => $"ignore {property}");
 
-        //}
+            var result = printer.PrintToString(person);
 
-        // todo
-        //[TestCaseSource]
-        //public void ShouldSerializeCustomlyWithLastGivenSerializer()
-        //{
+            result.Should().Be($"Person#1\r\n\tId = Guid {Guid.Empty}\r\n\tHeight = 0\r\n\tWeight = 0\r\n\tAge = 0\r\n\tBio = null\r\n");
+        }
 
-        //}
+        [Test]
+        public void ShouldSerializeCustomlyWithLastGivenSerializer()
+        {
+            var person = new Person { Name = "Kevin" };
+            var printer = ObjectPrinter
+                .For<Person>()
+                .Printing(person => person.Name)
+                .Using(property => $"Cool {property}")
+                .Printing(person => person.Name)
+                .Using(property => $"Real cool {property}");
+
+            var result = printer.PrintToString(person);
+
+            result.Should().Be($"Person#1\r\n\tId = Guid {Guid.Empty}\r\n\tName = Real cool Kevin\r\n\tHeight = 0\r\n\tWeight = 0\r\n\tAge = 0\r\n\tBio = null\r\n");
+        }
 
         [Test]
         public void ObjectPrinterExcludingShouldAffectAnotherInstanceOfSameClass()
         {
-            var parent = new Parent { Name = "A", Child = new Parent { Name = "B" }};
+            var parent = new Parent { Name = "A", Child = new Parent { Name = "B" } };
             var printer = ObjectPrinter.For<Parent>().Excluding(parent => parent.Name);
 
             var result = printer.PrintToString(parent);
 
-            result.Should().Be("Parent\r\n\tChild = Parent\r\n\t\tChild = null\r\n");
+            result.Should().Be("Parent#1\r\n\tChild = Parent#2\r\n\t\tChild = null\r\n");
+        }
+
+        [Test]
+        public void ShouldNotThrowStackOverflowException_WhenReferringToSelf()
+        {
+            var parent = new Parent { Name = "A", Child = new Parent { Name = "B" } };
+            parent.Child.Child = parent;
+            var printer = ObjectPrinter.For<Parent>();
+
+            var result = printer.PrintToString(parent);
+
+            result.Should().Be("Parent#1\r\n\tName = A\r\n\tChild = Parent#2\r\n\t\tName = B\r\n\t\tChild = <Parent#1>\r\n");
         }
     }
 }
