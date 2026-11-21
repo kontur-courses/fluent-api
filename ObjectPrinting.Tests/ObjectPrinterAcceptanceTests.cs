@@ -57,7 +57,9 @@ namespace ObjectPrinting.Tests
             var result = person.PrintToString(c => c.Excluding<string>());
 
             result.Should()
-                .NotContainAll("\tName = " + person.Name, "\tLastName = " + person.LastName);
+                .NotContain("\tName = " + person.Name)
+                .And
+                .NotContain("\tLastName = " + person.LastName);
         }
 
         [Test]
