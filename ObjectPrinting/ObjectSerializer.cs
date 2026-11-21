@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -49,25 +50,61 @@ internal class ObjectSerializer
         if (!_objectsBeingPrinted.Add(obj))
             return CycleMark;
 
-        var printed = PrintMembers(obj, type, nestingLevel);
+        var printed = PrintComposite(obj, type, nestingLevel);
         _objectsBeingPrinted.Remove(obj);
         return printed;
     }
 
-    private string PrintMembers(object obj, Type type, int nestingLevel)
+    private string PrintComposite(object obj, Type type, int nestingLevel)
     {
         var indentation = new string('\t', nestingLevel + 1);
         var builder = new StringBuilder(type.Name);
+        foreach (var line in GetLines(obj, type, nestingLevel))
+        {
+            builder.Append(Environment.NewLine + indentation + line);
+        }
+
+        return builder.ToString();
+    }
+
+    private IEnumerable<string> GetLines(object obj, Type type, int nestingLevel)
+    {
+        return obj switch
+        {
+            IDictionary dictionary => GetDictionaryLines(dictionary, nestingLevel),
+            IEnumerable collection => GetCollectionLines(collection, nestingLevel),
+            _ => GetMemberLines(obj, type, nestingLevel)
+        };
+    }
+
+    private IEnumerable<string> GetDictionaryLines(IDictionary dictionary, int nestingLevel)
+    {
+        foreach (DictionaryEntry entry in dictionary)
+        {
+            var printedKey = PrintToString(entry.Key, nestingLevel + 1);
+            var printedValue = PrintToString(entry.Value, nestingLevel + 1);
+            yield return printedKey + " = " + printedValue;
+        }
+    }
+
+    private IEnumerable<string> GetCollectionLines(IEnumerable collection, int nestingLevel)
+    {
+        foreach (var element in collection)
+        {
+            yield return PrintToString(element, nestingLevel + 1);
+        }
+    }
+
+    private IEnumerable<string> GetMemberLines(object obj, Type type, int nestingLevel)
+    {
         foreach (var member in GetPrintedMembers(type))
         {
             if (_settings.IsExcluded(member, GetMemberType(member)))
                 continue;
 
             var printedValue = PrintMember(member, GetMemberValue(member, obj), nestingLevel);
-            builder.Append(Environment.NewLine + indentation + member.Name + " = " + printedValue);
+            yield return member.Name + " = " + printedValue;
         }
-
-        return builder.ToString();
     }
 
     private string PrintMember(MemberInfo member, object value, int nestingLevel)
