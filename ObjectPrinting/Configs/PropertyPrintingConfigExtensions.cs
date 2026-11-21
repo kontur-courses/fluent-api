@@ -14,6 +14,7 @@ public static class PropertyPrintingConfigExtensions
     
     public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propertyPrintingConfig, int length)
     {
-        throw  new NotImplementedException();
+        return propertyPrintingConfig.Using(
+            value => value.Length > length ? value.Remove(length) : value);
     }
 }

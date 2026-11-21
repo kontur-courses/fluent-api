@@ -161,6 +161,25 @@ namespace ObjectPrinting.Tests
             result.Split(Environment.NewLine)
                 .Should().Contain($"\tHeight = {expectedHeight}");
         }
+        
+        [TestCase("Alexander", "Ale")]
+        [TestCase("Alex", "Ale")]
+        [TestCase("Ale", "Ale")]
+        [TestCase("Al", "Al")]
+        public void TrimmedToLength_TrimsOnlySelectedMember(
+            string name, string expectedName)
+        {
+            var person = new PersonWithField { Name = name, Gender = "Male" };
+
+            var result = ObjectPrinter.For<PersonWithField>()
+                .Printing(p => p.Name).TrimmedToLength(3)
+                .PrintToString(person);
+
+            var lines = result.Split(Environment.NewLine);
+
+            lines.Should().Contain($"\tName = {expectedName}");
+            lines.Should().Contain("\tGender = Male");
+        }
 
         private sealed class SampleWithHeight
         {
