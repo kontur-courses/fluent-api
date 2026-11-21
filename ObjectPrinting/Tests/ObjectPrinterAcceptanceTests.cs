@@ -34,13 +34,14 @@ namespace ObjectPrinting.Tests
             //8. ...с конфигурированием
         }
         [Test]
-        public void Prints_public_properties_and_fields()
+        public void Prints_public_properties_and_fields_on_separate_lines()
         {
             var person = new Person
             {
                 Name = "Alex",
                 Age = 19,
-                Height = 180
+                Height = 180,
+                Nickname = "OG Alex"
             };
 
             var result = ObjectPrinter.For<Person>().PrintToString(person);
@@ -48,6 +49,22 @@ namespace ObjectPrinting.Tests
             Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
             Assert.That(result, Does.Contain("Age = 19" + Environment.NewLine));
             Assert.That(result, Does.Contain("Height = 180" + Environment.NewLine));
+            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
+        }
+
+        [Test]
+        public void Skips_properties_without_a_public_getter()
+        {
+            var sample = new PropertyGetterSample
+            {
+                Readable = "visible",
+                SetterWithPrivateGetter = "hidden"
+            };
+
+            var result = ObjectPrinter.For<PropertyGetterSample>().PrintToString(sample);
+
+            Assert.That(result, Does.Contain("Readable = visible"));
+            Assert.That(result, Does.Not.Contain("SetterWithPrivateGetter ="));
         }
 
         [Test]
@@ -76,7 +93,7 @@ namespace ObjectPrinting.Tests
                 .Configure<int>().Using(number => $"{number} y.o.")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Age = 19 y.o." + Environment.NewLine));
+            Assert.That(result, Does.Contain("Age = 19 y.o."));
         }
 
         [Test]
@@ -92,8 +109,8 @@ namespace ObjectPrinting.Tests
                 .Configure(person => person.Name).Using(name => $"<{name}>")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = <Alex>" + Environment.NewLine));
-            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
+            Assert.That(result, Does.Contain("Name = <Alex>"));
+            Assert.That(result, Does.Contain("Nickname = OG Alex"));
         }
 
         [Test]
@@ -109,8 +126,8 @@ namespace ObjectPrinting.Tests
                 .Configure(person => person.Nickname).Using(nickname => $"[{nickname}]")
                 .PrintToString(person);
 
-            Assert.That(result, Does.EndWith("Nickname = [OG Alex]"));
-            Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
+            Assert.That(result, Does.Contain("Name = Alex"));
+            Assert.That(result, Does.Contain("Nickname = [OG Alex]"));
         }
 
         [Test]
@@ -122,7 +139,7 @@ namespace ObjectPrinting.Tests
                 .Configure<double>().WithCulture(new CultureInfo("ru-RU"))
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Height = 12,5" + Environment.NewLine));
+            Assert.That(result, Does.Contain("Height = 12,5"));
         }
 
         [Test]
@@ -139,8 +156,8 @@ namespace ObjectPrinting.Tests
                 .Truncate(4)
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
-            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
+            Assert.That(result, Does.Contain("Name = Alex"));
+            Assert.That(result, Does.Contain("Nickname = OG Alex"));
         }
 
         [Test]
@@ -168,9 +185,10 @@ namespace ObjectPrinting.Tests
 
             Assert.That(result, Does.Contain("Left = Node:"));
             Assert.That(result, Does.Contain("Right = Node:"));
-            Assert.That(
-                result.Split("Name = shared", StringSplitOptions.None).Length - 1,
-                Is.EqualTo(2));
+            Assert.That(result, Does.Contain(
+                $"Left = Node:{Environment.NewLine}\t\tName = shared"));
+            Assert.That(result, Does.Contain(
+                $"Right = Node:{Environment.NewLine}\t\tName = shared"));
             Assert.That(result, Does.Not.Contain("[Циклическая ссылка:"));
         }
 
@@ -185,7 +203,7 @@ namespace ObjectPrinting.Tests
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
             Assert.That(result, Does.Contain(
-                $"ArrayItems = [{Environment.NewLine}\t\tarray-first" +
+                $"ArrayItems = [{Environment.NewLine}\t\tarray-first," +
                 $"{Environment.NewLine}\t\tarray-second{Environment.NewLine}\t]" +
                 $"{Environment.NewLine}\tListItems ="));
         }
@@ -201,7 +219,7 @@ namespace ObjectPrinting.Tests
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
             Assert.That(result, Does.Contain(
-                $"ListItems = [{Environment.NewLine}\t\tlist-first" +
+                $"ListItems = [{Environment.NewLine}\t\tlist-first," +
                 $"{Environment.NewLine}\t\tlist-second{Environment.NewLine}\t]"));
         }
 
@@ -212,14 +230,16 @@ namespace ObjectPrinting.Tests
             {
                 DictionaryItems = new Dictionary<string, string>
                 {
-                    ["key"] = "value"
+                    ["key"] = "value",
+                    ["second-key"] = "second-value"
                 }
             };
 
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
             Assert.That(result, Does.Contain(
-                $"DictionaryItems = {{{Environment.NewLine}\t\tkey: value" +
+                $"DictionaryItems = {{{Environment.NewLine}\t\tkey: value," +
+                $"{Environment.NewLine}\t\tsecond-key: second-value" +
                 $"{Environment.NewLine}\t}}"));
             Assert.That(result, Does.Not.EndWith(Environment.NewLine));
         }
@@ -257,6 +277,12 @@ namespace ObjectPrinting.Tests
         private sealed class NodeCollectionSample
         {
             public List<Node> Nodes { get; set; } = new();
+        }
+
+        private sealed class PropertyGetterSample
+        {
+            public string Readable { get; set; } = string.Empty;
+            public string SetterWithPrivateGetter { private get; set; } = string.Empty;
         }
     }
 }
