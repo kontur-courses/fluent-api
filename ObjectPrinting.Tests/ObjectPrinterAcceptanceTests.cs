@@ -7,6 +7,23 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+
+        [Test]
+        public void Demo()
+        {
+            var node = new LoopNode()
+            {
+                Value = 1,
+                Next = new LoopNode { Value = 2 },
+                Previous = new LoopNode { Value = 3 }
+            };
+
+            var result = node.PrintToString(c => c.
+                Printing(n => n.Previous.Value).Using(x => $"Число:{x}"));
+
+            Console.WriteLine(result);
+        }
+
         [Test]
         public void PrintToString_Default_ShouldPrintAllPropertiesValues()
         {
@@ -24,6 +41,16 @@ namespace ObjectPrinting.Tests
                 "");
 
             result.Should().Be(expected);
+        }
+
+        [Test]
+        public void PrintToString_WithPublicField_ShouldPrintPublicValues()
+        {
+            var item = new ObjectWithFields(10, 20.5);
+
+            var expected = string.Join(Environment.NewLine, "ObjectWithFields", "\tPublicField = 10", "");
+
+            item.PrintToString().Should().Be(expected);
         }
 
         [TestCase(true, "True")]

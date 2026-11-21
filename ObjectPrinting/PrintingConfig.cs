@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -129,19 +130,30 @@ namespace ObjectPrinting
 
             sb.AppendLine(type.Name);
 
-            foreach (var propertyInfo in type.GetProperties())
+            var properties = type.GetProperties()
+                .Where(property => property.GetIndexParameters().Length == 0);
+
+            var fields = type
+                .GetFields(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var member in properties.Concat<MemberInfo>(fields))
             {
-                if (propertyInfo.GetIndexParameters().Length > 0 ||
-                    excludedTypes.Contains(propertyInfo.PropertyType) ||
-                    excludedProperties.Contains(propertyInfo))
+                var memberType = member is PropertyInfo property
+                    ? property.PropertyType
+                    : ((FieldInfo)member).FieldType;
+
+                if (excludedTypes.Contains(memberType) || excludedProperties.Contains(member))
                     continue;
 
-                var value = propertyInfo.GetValue(obj);
+                var value = member is PropertyInfo propertyInfo
+                    ? propertyInfo.GetValue(obj)
+                    : ((FieldInfo)member).GetValue(obj);
+
                 sb.Append('\t', nestingLevel + 1)
-                    .Append(propertyInfo.Name)
+                    .Append(member.Name)
                     .Append(" = ");
 
-                if (propertySerializers.TryGetValue(propertyInfo, out var serializer))
+                if (propertySerializers.TryGetValue(member, out var serializer))
                     sb.AppendLine(serializer(value!));
                 else
                     AppendValue(value, nestingLevel + 1, processedObjects, sb);
