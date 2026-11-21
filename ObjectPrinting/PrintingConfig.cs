@@ -13,6 +13,7 @@ namespace ObjectPrinting
         private readonly HashSet<Type> excludedTypes = new();
         private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly Dictionary<Type,Func<object, string>> customPrinters = new();
+        private readonly Dictionary<Type, CultureInfo> customCultures = new();
         //private HashSet<object> visitedObjects = new();
         public string PrintToString(TOwner obj)
         {
@@ -44,9 +45,9 @@ namespace ObjectPrinting
             return this;
         }
         
-        public PrintingConfig<TOwner> WithCulture<T>(CultureInfo culture) where T : IFormattable
+        public PrintingConfig<TOwner> WithCulture<TProp>(CultureInfo culture) where TProp : IFormattable
         {
-
+            customCultures[typeof(TProp)] = culture;
             return this;
         }
 
@@ -58,6 +59,10 @@ namespace ObjectPrinting
 
             if (customPrinters.TryGetValue(obj.GetType(), out var printer)) //проверка PrintTypeAs
                 return printer(obj) + Environment.NewLine;
+
+            if (customCultures.TryGetValue(obj.GetType(), out var culture) //проверка культуры
+                && obj is IFormattable formattable) 
+                return formattable.ToString(null, culture) + Environment.NewLine;
 
             var finalTypes = new[]
             {

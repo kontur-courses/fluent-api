@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Tests
 {
@@ -114,6 +115,17 @@ namespace ObjectPrinting.Tests
             var result = ObjectPrinter.For<Node>().PrintToString(a);
 
             result.Should().Contain("cycle reference");
+        }
+
+        [Test]
+        public void Print_WithCulture_UsesSpecifiedCulture()
+        {
+            var person = new Person { Age = 19, Height = 180.5, Name = "Arseny" };
+
+            var result = person.Print(config =>
+                config.WithCulture<double>(CultureInfo.InvariantCulture));
+
+            result.Should().Contain("Height = 180.5");
         }
     }
 }
