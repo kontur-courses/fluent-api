@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ObjectPrinting.Serialization;
 
-internal sealed class ComplexObjectSerializer : ISerializationStrategy
+internal class ComplexObjectSerializer : ISerializationStrategy
 {
     public bool CanSerialize(object obj) => true;
 

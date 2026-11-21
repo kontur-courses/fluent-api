@@ -22,6 +22,8 @@ internal class ObjectSerializer
 
     private static readonly ISerializationStrategy[] DefaultStrategies =
     [
+        new DictionarySerializer(),
+        new CollectionSerializer(),
         new ComplexObjectSerializer()
     ];
 
