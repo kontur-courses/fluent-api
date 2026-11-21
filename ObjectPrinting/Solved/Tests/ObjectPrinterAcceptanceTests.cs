@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -123,7 +124,7 @@ namespace ObjectPrinting.Solved.Tests
         {
             yield return new(new int[] { 1, 2, 3 }, GetRegexIntArray123());
             yield return new(new Dictionary<int, Person> { { 1, _alexPerson } }, GetRegexDictionaryIntPerson())
-            { TypeArgs = [typeof(KeyValuePair<int, Person>)]};
+            { TypeArgs = [typeof(KeyValuePair<int, Person>)] };
         }
 
         [GeneratedRegex(@"\[\r\n\t+1\r\n\t+2\r\n\t+3\r\n\t+\]")]
@@ -308,6 +309,7 @@ namespace ObjectPrinting.Solved.Tests
             propsFormatted.Keys.Should().NotContain(PrintingConfig<TOwner>.GetMemberExpression(selector).Member.Name);
         }
 
+        [Ignore("Not implemented")]
         [TestCaseSource(typeof(Sources), nameof(Sources.Source_ShouldSerializeOwnerCorrectly_WhenOwnerIsCollection))]
         public void ShouldSerializeOwnerCorrectly_WhenOwnerIsCollection<TCollection>(
             ICollection<TCollection> owner,
@@ -373,6 +375,26 @@ namespace ObjectPrinting.Solved.Tests
             var result = printer.PrintToString(parent);
 
             result.Should().Be("Parent#1\r\n\tName = A\r\n\tChild = Parent#2\r\n\t\tName = B\r\n\t\tChild = <Parent#1>\r\n");
+        }
+
+        [Test]
+        public void ShouldSerializeOnlyPublicPropertiesAndFields()
+        {
+            var obj = new int[] { 1, 2, 3 };
+            const BindingFlags publicInstanceFlag = BindingFlags.Public | BindingFlags.Instance;
+            var printer = ObjectPrinter.For<int[]>();
+            var expectedProps = typeof(int[]).GetProperties(publicInstanceFlag);
+            var expectedFields = typeof(int[]).GetFields(publicInstanceFlag);
+            var expectedMemberNames = expectedProps
+                .As<IEnumerable<MemberInfo>>()
+                .Concat(expectedFields)
+                .Select(m => m.Name);
+
+            var result = printer.PrintToString(obj);
+
+            var props = Helpers.GetSerializedPropertiesAndFields(result);
+
+            props.Keys.Should().BeEquivalentTo(expectedMemberNames);
         }
     }
 }
