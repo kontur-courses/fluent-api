@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -6,6 +7,8 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
+        private HashSet<Type> excludedTypes = new HashSet<Type>();
+
         public string PrintToString(TOwner obj)
         {
             return PrintToString(obj, 0);
@@ -36,6 +39,12 @@ namespace ObjectPrinting
                               nestingLevel + 1));
             }
             return sb.ToString();
+        }
+
+        public PrintingConfig<TOwner> ExcludingType<T>()
+        {
+            excludedTypes.Add(typeof(T));
+            return this;
         }
     }
 }
