@@ -14,12 +14,12 @@ namespace ObjectPrinting.Tests
             var person = new Person { Name = "Alex", Age = 19 };
 
             var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
+                //1. Исключить из сериализации свойства определенного типа ExcludingType<Type>()
+                //2. Указать альтернативный способ сериализации для определенного типа PrintTypeAs<Type>
+                //3. Для числовых типов указать культуру WithCulture<Type>
+                //4. Настроить сериализацию конкретного свойства 
                 //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
+                //6. Исключить из сериализации конкретного свойства Excluding
             
             string s1 = printer.PrintToString(person);
 
@@ -126,6 +126,30 @@ namespace ObjectPrinting.Tests
                 config.WithCulture<double>(CultureInfo.InvariantCulture));
 
             result.Should().Contain("Height = 180.5");
+        }
+
+        [Test]
+        public void Print_PrintingMember_UsesCustomPrinterForThatProperty()
+        {
+            var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config =>
+                config.Printing(p => p.Name).Using(n => n.ToUpper()));
+
+            result.Should().Contain("Name = ARSENY")
+                            .And.Contain("Age = 19");
+        }
+
+        [Test]
+        public void Print_TrimToLength_TruncatesStringValue()
+        {
+            var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
+
+            var result = person.Print(config =>
+                config.Printing(p => p.Name).TrimToLength(3));
+
+            result.Should().Contain("Name = Ars")
+                .And.Contain("Age = 19");
         }
     }
 }

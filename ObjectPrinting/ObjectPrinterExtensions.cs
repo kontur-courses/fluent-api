@@ -17,6 +17,16 @@ namespace ObjectPrinting
             configure(config);
             return config.PrintToString(obj);
         }
+
+        public static PropertyPrintingConfig<TOwner, string> TrimToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> config,
+            int maxLength)
+        {
+            config.Using(s => 
+                            s.Length <= maxLength ? s :
+                            s.Substring(0, maxLength));
+            return config;
+        }
     }
 }
 

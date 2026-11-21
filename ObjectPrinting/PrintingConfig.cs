@@ -1,3 +1,4 @@
+using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,6 +15,7 @@ namespace ObjectPrinting
         private readonly HashSet<MemberInfo> excludedMembers = new();
         private readonly Dictionary<Type,Func<object, string>> customPrinters = new();
         private readonly Dictionary<Type, CultureInfo> customCultures = new();
+        private readonly Dictionary<MemberInfo, Func<object, string>> memberPrinters = new();
         //private HashSet<object> visitedObjects = new();
         public string PrintToString(TOwner obj)
         {
@@ -49,6 +51,21 @@ namespace ObjectPrinting
         {
             customCultures[typeof(TProp)] = culture;
             return this;
+        }
+
+        public PropertyPrintingConfig<TOwner, TProp> Printing<TProp>(Expression<Func<TOwner,TProp>> selector)
+        {
+            var expression = selector.Body as MemberExpression;
+
+            if (expression == null)
+                throw new ArgumentException("Ќеправильное обращение к свойству.");
+
+            return new PropertyPrintingConfig<TOwner, TProp>(this, expression.Member);
+        }
+
+        internal void SetMemberPrinter(MemberInfo member, Func<object, string> printer)
+        {
+            memberPrinters[member] = printer;
         }
 
         private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects)
@@ -88,6 +105,13 @@ namespace ObjectPrinting
 
                 if (excludedMembers.Contains(propertyInfo)) //проверка исключенного свойства
                      continue;
+
+                if (memberPrinters.TryGetValue(propertyInfo, out var memberPrinter))
+                {
+                    sb.Append(identation + propertyInfo.Name + " = " +
+                              memberPrinter(propertyInfo.GetValue(obj)) + Environment.NewLine);
+                    continue;
+                }
 
                 sb.Append(identation + propertyInfo.Name + " = " +
                           PrintToString(propertyInfo.GetValue(obj),
