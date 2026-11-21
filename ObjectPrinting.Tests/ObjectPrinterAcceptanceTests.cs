@@ -57,6 +57,8 @@ namespace ObjectPrinting.Tests
             var result = person.PrintToString(c => c.Excluding<string>());
 
             result.Should()
+                .NotBeEmpty()
+                .And
                 .NotContain("\tName = " + person.Name)
                 .And
                 .NotContain("\tLastName = " + person.LastName);
@@ -70,6 +72,8 @@ namespace ObjectPrinting.Tests
             var result = person.PrintToString(c => c.Excluding(p => p.Id));
 
             result.Should()
+                .NotBeEmpty()
+                .And
                 .NotContain("\tId = " + person.Id);
         }
 
