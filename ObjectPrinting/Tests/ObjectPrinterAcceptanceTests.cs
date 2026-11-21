@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace ObjectPrinting.Tests
@@ -150,6 +151,52 @@ namespace ObjectPrinting.Tests
 
             result.Should().Contain("Name = Ars")
                 .And.Contain("Age = 19");
+        }
+
+        [Test]
+        public void Print_Array_PrintsElements()
+        {
+            var arr = new[] { 1, 2, 3 };
+
+            var result = ObjectPrinter.For<int[]>().PrintToString(arr);
+
+            result.Should().Contain("[0] = 1")
+                        .And.Contain("[1] = 2")
+                        .And.Contain("[2] = 3");
+        }
+
+        [Test]
+        public void Print_List_PrintsElements()
+        {
+            var list = new List<string> { "a", "b", "c" };
+
+            var result = ObjectPrinter.For<List<string>>().PrintToString(list);
+
+            result.Should().Contain("[0] = a")
+                .And.Contain("[1] = b")
+                .And.Contain("[2] = c");
+        }
+        [Test]
+        public void Print_Dictionary_PrintsKeyValuePairs()
+        {
+            var dict = new Dictionary<string, int> { { "one", 1 }, { "two", 2 } };
+
+            var result = ObjectPrinter.For<Dictionary<string, int>>().PrintToString(dict);
+
+            result.Should().Contain("[one] = 1")
+                .And.Contain("[two] = 2");
+        }
+
+        [Test]
+        public void Print_NestedCollections_PrintsCorrectly()
+        {
+            var nested = new List<int[]> { new[] { 1, 2 }, new[] { 3, 4 } };
+
+            var result = ObjectPrinter.For<List<int[]>>().PrintToString(nested);
+
+            result.Should().Contain("[0] = ")
+                .And.Contain("[0] = 1")
+                .And.Contain("[1] = 4");
         }
     }
 }

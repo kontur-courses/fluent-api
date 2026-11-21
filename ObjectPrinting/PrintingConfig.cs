@@ -2,6 +2,7 @@ using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Collections;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -94,6 +95,12 @@ namespace ObjectPrinting
 
             visitedObjects.Add(obj);
 
+            if (obj is IDictionary dictionary)
+                return PrintDictionary(dictionary, nestingLevel, visitedObjects);
+
+            if (obj is IEnumerable enumerable)
+                return PrintCollection(enumerable, nestingLevel, visitedObjects);
+
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
             var type = obj.GetType();
@@ -120,5 +127,39 @@ namespace ObjectPrinting
             return sb.ToString();
         }
 
+        private string PrintCollection(IEnumerable collection, int nestingLevel, HashSet<object> visitedObjects)
+        {
+            var sb = new StringBuilder();
+            var indent = new string('\t', nestingLevel + 1);
+
+            sb.AppendLine(collection.GetType().Name);
+
+            int index = 0;
+            foreach (var item in collection)
+            {
+                sb.Append(indent + $"[{index}] = " +
+                          PrintToString(item, nestingLevel + 1, visitedObjects));
+                index++;
+            }
+
+            return sb.ToString();
+        }
+
+        private string PrintDictionary(IDictionary dictionary, int nestingLevel, HashSet<object> visitedObjects)
+        {
+            var sb = new StringBuilder();
+            var indent = new string('\t', nestingLevel + 1);
+
+            sb.AppendLine(dictionary.GetType().Name);
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                var keyStr = PrintToString(entry.Key, 0, visitedObjects).TrimEnd('\r', '\n');
+                sb.Append(indent + $"[{keyStr}] = " +
+                          PrintToString(entry.Value, nestingLevel + 1, visitedObjects));
+            }
+
+            return sb.ToString();
+        }
     }
 }
