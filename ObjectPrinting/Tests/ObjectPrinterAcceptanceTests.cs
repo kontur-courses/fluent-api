@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
 {
@@ -10,18 +13,30 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person { Name = "Alex", Age = 19 };
 
-            var printer = ObjectPrinter.For<Person>();
-                //1. Исключить из сериализации свойства определенного типа
-                //2. Указать альтернативный способ сериализации для определенного типа
-                //3. Для числовых типов указать культуру
-                //4. Настроить сериализацию конкретного свойства
-                //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-                //6. Исключить из сериализации конкретного свойства
-            
-            string s1 = printer.PrintToString(person);
+            var printer = ObjectPrinter
+                    .For<Person>()
+                    .Exclude<Guid>()
+                    .Printing<int>()
+                    .Using(i => i.ToString("X"))
+                    .Printing<double>()
+                    .Using(CultureInfo.InvariantCulture)
+                    .Printing(p => p.Age)
+                    .Using(age => age + " years")
+                    .Printing(p => p.Name)
+                    .TrimmedToLength(10)
+                    .Exclude(p => p.Height)
+                ;
+            var expected = string.Join(
+                Environment.NewLine,
+                "Person",
+                "\tName = Alex",
+                "\tAge = 19 years");
 
-            //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-            //8. ...с конфигурированием
+            var s1 = printer.PrintToString(person);
+
+            s1
+                .Should()
+                .Be(expected);
         }
     }
 }

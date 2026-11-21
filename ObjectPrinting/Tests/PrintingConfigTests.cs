@@ -1,0 +1,420 @@
+﻿using System;
+using System.Globalization;
+using FluentAssertions;
+using NUnit.Framework;
+
+namespace ObjectPrinting.Tests;
+
+[TestFixture]
+public class PrintingConfigTests
+{
+    private static readonly Person Alex = new ()
+    {
+        Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        Name = "Alex",
+        Height = 180,
+        Age = 19
+    };
+
+    [Test]
+    public void PrintToString_ShouldPrintAllProperties_WhenNothingIsConfigured_Test()
+    {
+        var printer = ObjectPrinter.For<Person>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperties_WhenTheirTypeIsExcludedByGenericArgument_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude<Guid>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperties_WhenTheirTypeIsExcludedByTypeArgument_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(typeof(double));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipPropertiesOfEachType_WhenTypesAreExcludedByCollection_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude([typeof(Guid), typeof(double), typeof(int)]);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseCustomPrinter_WhenItIsSetForType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<int>()
+            .Using(age => age + " years");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180",
+            "	Age = 19 years");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseLastPrinter_WhenSeveralAreSetForSameType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<string>()
+            .Using(_ => "first")
+            .Printing<string>()
+            .Using(name => name.ToUpper());
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = ALEX",
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [TestCase("ru-RU", "1,85")]
+    [TestCase("en-US", "1.85")]
+    public void PrintToString_ShouldUseCultureOnlyForConfiguredType_WhenCultureIsSet_Test(
+        string cultureName,
+        string expectedHeight)
+    {
+        var person = new Person { Name = "Alex", Height = 1.85, Age = 19 };
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude<Guid>()
+            .Printing<double>()
+            .Using(new CultureInfo(cultureName))
+            .Printing<int>()
+            .Using("D3", new CultureInfo("ru-RU"));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Name = Alex",
+            "	Height = " + expectedHeight,
+            "	Age = 019");
+
+        var printed = printer.PrintToString(person);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseFormat_WhenItIsSetForType_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing<int>()
+            .Using("X");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180",
+            "	Age = 13");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldUseMemberPrinter_WhenItIsSetForProperty_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .Using(name => "<" + name + ">");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = <Alex>",
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldPreferMemberPrinter_WhenTypePrinterIsAlsoSet_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Height)
+            .Using(height => height + " cm")
+            .Printing<double>()
+            .Using(_ => "hidden");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = Alex",
+            "	Height = 180 cm",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void Printing_ShouldThrowArgumentException_WhenSelectorIsNotMember_Test()
+    {
+        var config = ObjectPrinter.For<Person>();
+
+        var printing = () => config.Printing(person => person.Name.Length);
+
+        printing
+            .Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Selector must return a member of the printed object*");
+    }
+
+    [TestCase(2, "Al")]
+    [TestCase(4, "Alex")]
+    [TestCase(10, "Alex")]
+    [TestCase(0, "")]
+    public void PrintToString_ShouldTrimString_WhenMaxLengthIsSet_Test(int maxLength, string expectedName)
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .TrimmedToLength(maxLength);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = " + expectedName,
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [TestCase(2, "Al...")]
+    [TestCase(4, "Alex")]
+    public void PrintToString_ShouldAddEnding_WhenStringIsTrimmed_Test(int maxLength, string expectedName)
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name)
+            .TrimmedToLength(maxLength, "...");
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "	Id = 11111111-1111-1111-1111-111111111111",
+            "	Name = " + expectedName,
+            "	Height = 180",
+            "	Age = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void TrimmedToLength_ShouldThrowArgumentOutOfRangeException_WhenMaxLengthIsNegative_Test()
+    {
+        var config = ObjectPrinter
+            .For<Person>()
+            .Printing(person => person.Name);
+
+        var trimming = () => config.TrimmedToLength(-1);
+
+        trimming
+            .Should()
+            .Throw<ArgumentOutOfRangeException>()
+            .WithParameterName("maxLength");
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperty_WhenItIsExcludedBySelector_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(person => person.Height);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tName = Alex",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipProperty_WhenItIsExcludedByName_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude(nameof(Person.Name));
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tId = 11111111-1111-1111-1111-111111111111",
+            "\tHeight = 180",
+            "\tAge = 19");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipEachProperty_WhenTheyAreExcludedByNames_Test()
+    {
+        var printer = ObjectPrinter
+            .For<Person>()
+            .Exclude([nameof(Person.Id), nameof(Person.Age)]);
+        var expected = string.Join(
+            Environment.NewLine,
+            "Person",
+            "\tName = Alex",
+            "\tHeight = 180");
+
+        var printed = printer.PrintToString(Alex);
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void Exclude_ShouldThrowArgumentException_WhenMemberWithNameDoesNotExist_Test()
+    {
+        var config = ObjectPrinter.For<Person>();
+
+        var excluding = () => config.Exclude("Surname");
+
+        excluding
+            .Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Person has no public property or field named Surname*");
+    }
+
+    [Test]
+    public void PrintToString_ShouldPrintFields_WhenObjectHasPublicFields_Test()
+    {
+        var printer = ObjectPrinter.For<(string, int)>();
+        var expected = string.Join(
+            Environment.NewLine,
+            "ValueTuple`2",
+            "\tItem1 = Alex",
+            "\tItem2 = 19");
+
+        var printed = printer.PrintToString(("Alex", 19));
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+
+    [Test]
+    public void PrintToString_ShouldSkipField_WhenItIsExcluded_Test()
+    {
+        var printer = ObjectPrinter
+            .For<(string, int)>()
+            .Exclude(tuple => tuple.Item2);
+        var expected = string.Join(
+            Environment.NewLine,
+            "ValueTuple`2",
+            "\tItem1 = Alex");
+
+        var printed = printer.PrintToString(("Alex", 19));
+
+        printed
+            .Should()
+            .Be(expected);
+    }
+}
