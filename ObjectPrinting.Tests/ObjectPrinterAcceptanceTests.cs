@@ -112,19 +112,18 @@ namespace ObjectPrinting.Tests
                 .Contain("\tId = " + person.Id.ToString("X"));
         }
 
-        [TestCase("en-US", "1.85")]
-        [TestCase("ru-RU", "1,85")]
+        [TestCase("en-US", "11/19/2026 11:19:11 AM")]
+        [TestCase("ru-RU", "19.11.2026 11:19:11")]
         public void PrintToString_PrintingWithCultureInfo_ShouldPrintFormatType(
             string cultureName,
             string expected)
         {
-            var person = GetDefaultPerson();
-            person.Height = 1.85;
+            var date = new DateTime(2026 ,11, 19, 11, 19, 11);
 
-            var result = person.PrintToString(
-                c => c.Printing<double>().Using(CultureInfo.GetCultureInfo(cultureName)));
+            var result = date.PrintToString(
+                c => c.Printing<DateTime>().Using(CultureInfo.GetCultureInfo(cultureName)));
 
-            result.Should().Contain("\tHeight = " + expected);
+            result.Should().Be(expected + Environment.NewLine);
         }
 
         [TestCase("Ale", 4, "Ale")]
