@@ -59,7 +59,8 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             var sb = new StringBuilder();
-            AppendValue(obj, 0, [], sb);
+            var processedObjects = new HashSet<object>(ReferenceEqualityComparer.Instance);
+            AppendValue(obj, 0, processedObjects, sb);
 
             return sb.ToString();
         }

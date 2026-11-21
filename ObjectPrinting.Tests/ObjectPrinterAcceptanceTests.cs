@@ -140,6 +140,30 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
+        public void PrintToString_WithDistinctEqualObjects_ShouldPrintBothObjects()
+        {
+            var node = new LoopNode()
+            {
+                Value = 1,
+                Next = new LoopNode { Value = 1 }
+            };
+
+            var result = node.PrintToString();
+
+            var expected = string.Join(Environment.NewLine,
+                "LoopNode",
+                "\tValue = 1",
+                "\tNext = LoopNode",
+                "\t\tValue = 1",
+                "\t\tNext = null",
+                "\t\tPrevious = null",
+                "\tPrevious = null",
+                "");
+
+            result.Should().Be(expected);
+        }
+
+        [Test]
         public void PrintToString_WithSharedReference_ShouldPrintBothOccurrences()
         {
             var loopNode = new LoopNode
