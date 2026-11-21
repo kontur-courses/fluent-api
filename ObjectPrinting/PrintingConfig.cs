@@ -3,7 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
