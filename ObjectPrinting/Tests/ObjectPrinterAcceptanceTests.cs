@@ -111,18 +111,43 @@ namespace ObjectPrinting.Tests
             serialisedAfterExcluding.Should().Contain("\tName = Alex");
             serialisedAfterExcluding.Should().Contain("\tAge = 19");
         }
+
+        [Test]
+        public void Printing_ByType_FormatsPublicFieldsAndPropertiesOfThatType()
+        {
+            var person = new SampleWithIntMembers();
+
+            var result = ObjectPrinter.For<SampleWithIntMembers>()
+                .Printing<int>().Using(value => value.ToString("X"))
+                .PrintToString(person);
+
+            var lines = result.Split(Environment.NewLine);
+
+            lines.Should().Contain("\tAge = 13");
+            lines.Should().Contain("\tScore = 1A");
+            lines.Should().Contain("\tName = Alex");
+        }
         
         [Test]
-        public void Printing_UsesCustomFormatterForInt()
+        public void Printing_BySelector_FormatsOnlySelectedMember()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new SampleWithIntMembers(); // Age = 19, Score = 26
 
-            var printer = ObjectPrinter.For<Person>()
-                .Printing<int>().Using(value => value.ToString("X"));
-            
-            var serialised = printer.PrintToString(person);
-            
-            serialised.Split(Environment.NewLine).Should().Contain("\tAge = 13");
+            var result = ObjectPrinter.For<SampleWithIntMembers>()
+                .Printing(p => p.Age).Using(value => value.ToString("X"))
+                .PrintToString(person);
+
+            var lines = result.Split(Environment.NewLine);
+
+            lines.Should().Contain("\tAge = 13");
+            lines.Should().Contain("\tScore = 26");
+        }
+        
+        private sealed class SampleWithIntMembers
+        {
+            public int Age { get; set; } = 19;
+            public int Score = 26;
+            public string Name { get; set; } = "Alex";
         }
     }
 }

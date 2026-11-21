@@ -10,6 +10,9 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<MemberInfo> membersToExclude = [];
+        private readonly Dictionary<Type, Func<object, string>> formatters = [];
+        private readonly Dictionary<MemberInfo, Func<object, string>> formattersByMember = [];
+        
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
             var propertyType = typeof(TPropertyType);
@@ -48,7 +51,24 @@ namespace ObjectPrinting
         
         public PropertyPrintingConfig<TOwner, TPropertyType> Printing<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
         {
-            throw  new NotImplementedException();
+            if (memberSelector.Body is not MemberExpression memberExpression
+                || memberExpression.Expression != memberSelector.Parameters[0]
+                || memberExpression.Member is not (PropertyInfo or FieldInfo))
+            {
+                throw new ArgumentException("Выражение должно указывать на свойство или поле.");
+            }
+            
+            return new PropertyPrintingConfig<TOwner, TPropertyType>(this, memberExpression.Member);
+        }
+
+        internal void RegisterFormatter<T>(Func<T, string> print)
+        {
+            formatters[typeof(T)] = value => print((T)value);
+        }
+        
+        internal void RegisterFormatterByMember<T>(MemberInfo member, Func<T, string> print)
+        {
+            formattersByMember[member] = value => print((T)value);
         }
         
         public string PrintToString(TOwner obj)
@@ -61,18 +81,23 @@ namespace ObjectPrinting
             //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
+            
+            var type = obj.GetType();
 
+            if (formatters.TryGetValue(type, out var formatter))
+                return formatter(obj) + Environment.NewLine;
+            
             var finalTypes = new[]
             {
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
+            if (finalTypes.Contains(type))
                 return obj + Environment.NewLine;
 
             var indentation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
-            var type = obj.GetType();
+            
             sb.AppendLine(type.Name);
 
             foreach (var member in GetPrintableMembers(type))
@@ -84,8 +109,15 @@ namespace ObjectPrinting
                     ? property.GetValue(obj)
                     : ((FieldInfo)member).GetValue(obj);
                 
-                sb.Append(indentation + member.Name + " = " +
-                          PrintToString(value, nestingLevel + 1));
+                var printedValue =
+                    value is not null && formattersByMember.TryGetValue(member, out var memberFormatter)
+                        ? memberFormatter(value) + Environment.NewLine
+                        : PrintToString(value, nestingLevel + 1);
+
+                sb.Append(indentation)
+                    .Append(member.Name)
+                    .Append(" = ")
+                    .Append(printedValue);
             }
             
             return sb.ToString();
