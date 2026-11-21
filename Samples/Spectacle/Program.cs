@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SpectacleSample
+﻿namespace Spectacle
 {
     public class Program
     {
