@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace ObjectPrinting.Tests
 {
@@ -195,6 +197,69 @@ namespace ObjectPrinting.Tests
             result.Should().Contain("[0] = ")
                 .And.Contain("[0] = 1")
                 .And.Contain("[1] = 4");
+        }
+
+        [Test]
+        public void Print_ComplexEnterprise_UsesAllConfigurationMethods()
+        {
+            var uvz = new Enterprise
+            {
+                Name = "Уралвагонзавод",
+                FoundedDate = new DateTime(1936, 10, 11),
+                Description = "Крупнейший производитель танков и железнодорожных вагонов в России",
+                Director = new Director
+                {
+                    Name = "Александр Потапов",
+                    Age = 58,
+                    Position = "Генеральный директор",
+                    Salary = 2500000.50,
+                    PersonalPhone = "+7-999-123-45-67"
+                },
+                Employees = new List<Employee>
+                {
+                    new Employee { Name = "Иван Иванов", Age = 35, Department = "Цех 1", Salary = 85000.75, Email = "ivanov@uvz.ru" },
+                    new Employee { Name = "Пётр Петров", Age = 42, Department = "Цех 2", Salary = 92000.25, Email = "petrov@uvz.ru" },
+                    new Employee { Name = "Сергей Сидоров", Age = 28, Department = "IT", Salary = 120000.00, Email = "sidorov@uvz.ru" }
+                },
+                Assets = new Dictionary<string, double>
+                {
+                    { "Танки Т-90", 1500.5 },
+                    { "Вагоны грузовые", 3200.75 },
+                    { "Оборудование", 8900.0 }
+                }
+            };
+
+            uvz.ParentCompany = uvz;//цикл не сломает тест
+
+            var result = uvz.Print(config => 
+            config.ExcludingType<Guid>()
+                .Excluding(e => e.Director.PersonalPhone)
+                .PrintTypeAs<DateTime>(date => date.ToString("dd.MM.yyyy"))
+                .WithCulture<double>(CultureInfo.InvariantCulture)
+                .Printing(e => e.Name).Using(n => n.ToUpper())
+                .Printing(e => e.Description).TrimToLength(30) //тут короче была проблема, тк я возвращал в PropertyPrintingConfig
+                                                               //не родителя, контекст терялся
+                                                               //и нельзя было написать несколько Printing
+            );
+
+            result.Should()
+                .NotContain("Guid").And
+                .NotContain("PersonalPhone").And
+                .NotContain("+7-999-123-45-67").And
+                .Contain("FoundedDate = 11.10.1936").And
+                .NotContain("01/01/0001").And
+                .Contain("Salary = 2500000.5").And
+                .Contain("85000.75").And
+                .Contain("Name = УРАЛВАГОНЗАВОД").And
+                .Contain("Description = Крупнейший производитель тан").And
+                .NotContain("Крупнейший производитель танков и железнодорожных вагонов в России").And
+                .Contain("[0] = ").And
+                .Contain("[Танки Т-90] = ").And
+                .Contain("cycle reference").And
+                .Contain("Enterprise").And
+                .Contain("Director").And
+                .Contain("Employees").And
+                .Contain("Assets");
         }
     }
 }

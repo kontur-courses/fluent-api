@@ -14,10 +14,10 @@ namespace ObjectPrinting
             Member = member;
         }
 
-        public PropertyPrintingConfig<TOwner, TProp> Using(Func<TProp, string> printer)
+        public PrintingConfig<TOwner> Using(Func<TProp, string> printer)
         {
             Parent.SetMemberPrinter(Member, obj => printer((TProp)obj));
-            return this;
+            return Parent;
         }
     }
 }
