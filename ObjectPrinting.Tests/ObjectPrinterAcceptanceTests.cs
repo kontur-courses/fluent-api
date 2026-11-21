@@ -26,6 +26,28 @@ namespace ObjectPrinting.Tests
             result.Should().Be(expected);
         }
 
+        [TestCase(true, "True")]
+        [TestCase(false, "False")]
+        public void PrintToString_Boolean_ShouldPrintValue(bool value, string expected)
+        {
+            value.PrintToString().Should().Be(expected + Environment.NewLine);
+        }
+
+        [Test]
+        public void PrintToString_DateTime_ShouldPrintValue()
+        {
+            var value = new DateTime(2026, 11, 19, 19, 11, 19);
+
+            value.PrintToString().Should().Be(value.ToString(CultureInfo.CurrentCulture) + Environment.NewLine);
+        }
+
+        [Test]
+        public void PrintToString_TimeSpan_ShouldPrintValue()
+        {
+            var value = new TimeSpan(1, 2, 3, 4);
+
+            value.PrintToString().Should().Be("1.02:03:04" + Environment.NewLine);
+        }
 
         [Test]
         public void PrintToString_ExcludingType_ShouldExcludeAllSameType()

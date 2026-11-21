@@ -11,7 +11,7 @@ namespace ObjectPrinting
     {
         private static readonly HashSet<Type> FinalTypes =
         [
-            typeof(int), typeof(double), typeof(float),
+            typeof(bool), typeof(int), typeof(double), typeof(float),
             typeof(string), typeof(DateTime), typeof(TimeSpan), typeof(Guid)
         ];
 
