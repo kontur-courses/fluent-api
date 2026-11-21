@@ -101,12 +101,19 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(
+                obj,
+                0,
+                new HashSet<object>(ReferenceEqualityComparer.Instance),
+                new(ReferenceEqualityComparer.Instance));
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(
+            object obj,
+            int nestingLevel,
+            HashSet<object> visited,
+            Dictionary<object, int> ids)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
@@ -118,24 +125,60 @@ namespace ObjectPrinting.Solved
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
             var type = obj.GetType();
-            var overridenToStringMethods = type.GetMethods().Where(m => m.Name == "ToString" && m.GetParameters().Length == 0);
-            var toStringData =
-                overridenToStringMethods.Any() && overridenToStringMethods.Single().DeclaringType == type
-                ? $" {obj}" : string.Empty;
-            sb.AppendLine(type.Name + toStringData);
-            sb.Append(MembersToStringBuilder(nestingLevel, type.GetProperties(PublicInstanceFlag), _excludedProperties, m => m.GetValue(obj)));
-            sb.Append(MembersToStringBuilder(nestingLevel, type.GetFields(PublicInstanceFlag), _excludedFields, m => m.GetValue(obj)));
-            return sb.ToString();
+            var isReferenceType = !type.IsValueType;
+            if (isReferenceType)
+            {
+                if (!ids.TryGetValue(obj, out var id))
+                {
+                    id = ids.Count + 1;
+                    ids[obj] = id;
+                }
+
+                if (!visited.Add(obj))
+                    return $"<{type.Name}#{id}>{Environment.NewLine}";
+            }
+
+            try
+            {
+                var identation = new string('\t', nestingLevel + 1);
+                var sb = new StringBuilder();
+                var overridenToStringMethods = type.GetMethods().Where(m => m.Name == "ToString" && m.GetParameters().Length == 0);
+                var toStringData =
+                    overridenToStringMethods.Any() && overridenToStringMethods.Single().DeclaringType == type
+                    ? $" {obj}" : string.Empty;
+                var idText = isReferenceType ? $"#{ids[obj]}" : string.Empty;
+                sb.AppendLine(type.Name + idText + toStringData);
+                sb.Append(MembersToStringBuilder(
+                    nestingLevel,
+                    type.GetProperties(PublicInstanceFlag),
+                    _excludedProperties,
+                    m => m.GetValue(obj),
+                    visited,
+                    ids));
+                sb.Append(MembersToStringBuilder(
+                    nestingLevel,
+                    type.GetFields(PublicInstanceFlag),
+                    _excludedFields,
+                    m => m.GetValue(obj),
+                    visited,
+                    ids));
+                return sb.ToString();
+            }
+            finally
+            {
+                if (isReferenceType)
+                    visited.Remove(obj);
+            }
         }
 
         private StringBuilder MembersToStringBuilder<TMemberType>(
             int nestingLevel,
             IEnumerable<TMemberType> members,
             ICollection<TMemberType> excludedMembers,
-            Func<TMemberType, object?> getObj)
+            Func<TMemberType, object?> getObj,
+            HashSet<object> visited,
+            Dictionary<object, int> ids)
             where TMemberType : MemberInfo
         {
             var identation = new string('\t', nestingLevel + 1);
@@ -146,7 +189,7 @@ namespace ObjectPrinting.Solved
                 var obj = getObj(memberInfo);
                 var memberInfoString = hasCustomSerializer
                     ? customSerializer(obj) + Environment.NewLine
-                    : PrintToString(obj, nestingLevel + 1);
+                    : PrintToString(obj, nestingLevel + 1, visited, ids);
                 if (excludedMembers.Contains(memberInfo)) continue;
                 sb.Append(identation + memberInfo.Name + " = " +
                           memberInfoString);
