@@ -1,6 +1,8 @@
+using System;
 using NUnit.Framework;
 using FluentAssertions;
 using System.Collections;
+using System.Globalization;
 
 
 namespace ObjectPrinting.Tests;
@@ -13,6 +15,11 @@ public class ObjectPrintingTests
         public string City { get; set; } = "";
     }
 
+    public class TestWeight
+    {
+        public double Weight { get; set; } = 1.5;
+    }
+
     public class TestPerson
     {
         public string Name { get; set; } = "";
@@ -22,10 +29,103 @@ public class ObjectPrintingTests
 
     public class TestNode
     {
-        var result = obj;
         public string Name { get; set; } = "";
         public TestNode? Next { get; set; }
     }
+
+    public class TestScores
+    {
+        public int Score { get; set; }
+        public int Bonus;
+    }
+
+    [Test]
+    public void ExcludingType_RemovesPropertiesAndFieldsOfThatType()
+    {
+        var scores = new TestScores { Score = 26, Bonus = 31 };
+
+        var result = ObjectPrinter.For<TestScores>().Excluding<int>().PrintToString(scores);
+
+        result.Should().Be("TestScores" + Environment.NewLine);
+    }
+
+    [Test]
+    public void PrintingType_FormatsPropertiesAndFieldsOfThatType()
+    {
+        var scores = new TestScores { Score = 26, Bonus = 31 };
+
+        var result = ObjectPrinter.For<TestScores>()
+            .Printing<int>().Using(value => value.ToString("X"))
+            .PrintToString(scores);
+
+        result.Should().Be("TestScores" + Environment.NewLine + "\tScore = 1A" + Environment.NewLine + "\tBonus = 1F" +
+                           Environment.NewLine);
+    }
+
+    [Test]
+    public void ExcludingType_RemovesAllPropertiesOfThatType()
+    {
+        var person = new TestPerson { Name = "Alex", Age = 19 };
+
+        var result = ObjectPrinter.For<TestPerson>().Excluding<int>().PrintToString(person);
+
+        result.Should().Be("TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine +
+                           "\tAddress = null" + Environment.NewLine);
+    }
+
+    [Test]
+    [SetCulture("en-US")]
+    public void PrintingType_UsesConfiguredCulture()
+    {
+        var item = new TestWeight { Weight = 1.5 };
+
+        var result = ObjectPrinter.For<TestWeight>()
+            .Printing<double>().Using(CultureInfo.GetCultureInfo("fr-FR"))
+            .PrintToString(item);
+
+        result.Should().Be("TestWeight" + Environment.NewLine + "\tWeight = 1,5" + Environment.NewLine);
+    }
+
+    [Test]
+    public void PrintingMember_OverridesTypeFormatterForSelectedField()
+    {
+        var scores = new TestScores { Score = 26, Bonus = 31 };
+
+        var result = ObjectPrinter.For<TestScores>().Printing<int>().Using(value => value.ToString("X"))
+            .Printing(s => s.Bonus).Using(value => value + " points").PrintToString(scores);
+
+        result.Should().Be("TestScores" + Environment.NewLine + "\tScore = 1A" + Environment.NewLine +
+                           "\tBonus = 31 points" + Environment.NewLine);
+    }
+    
+    [Test]
+    public void TrimmingString_CutsValueToMaxLength()
+    {
+        var person = new TestPerson { Name = "Alexandra", Age = 19 };
+
+        var result = ObjectPrinter.For<TestPerson>().Printing(p => p.Name).TrimmedToLength(4).PrintToString(person);
+
+        result.Should().Be("TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tAge = 19" + Environment.NewLine + "\tAddress = null" + Environment.NewLine);
+    }
+    
+    public static IEnumerable HappyPathCases
+    {
+        get
+        {
+            yield return new TestCaseData<TestPerson, string>(new TestPerson { Name = "Alex", Age = 20 },
+                    "TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tAge = 20" +
+                    Environment.NewLine + "\tAddress = null" + Environment.NewLine)
+                .SetName("HappyPath: simple object prints all public properties");
+
+            yield return new TestCaseData<TestPerson, string>(
+                new TestPerson { Name = "Alex", Age = 20, Address = new TestAddress { City = "Paris" } },
+                "TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tAge = 20" +
+                Environment.NewLine + "\tAddress = TestAddress" + Environment.NewLine + "\t\tCity = Paris" +
+                Environment.NewLine).SetName("HappyPath: nested object is printed with extra indentation");
+        }
+    }
+
+
     public static IEnumerable CycleCases
     {
         get
@@ -51,6 +151,15 @@ public class ObjectPrintingTests
                 Environment.NewLine).SetName("Cycle: three objects forming a loop");
         }
     }
+
+    [TestCaseSource(nameof(HappyPathCases))]
+    public void ObjectPrinter_PrintsObjects(TestPerson obj, string expected)
+    {
+        var result = obj.PrintToString();
+
+        result.Should().Be(expected);
+    }
+
     [TestCaseSource(nameof(CycleCases))]
     public void ObjectPrinter_HandlesCycles(TestNode obj, string expected)
     {
@@ -58,5 +167,4 @@ public class ObjectPrintingTests
 
         result.Should().Be(expected);
     }
-    
 }
