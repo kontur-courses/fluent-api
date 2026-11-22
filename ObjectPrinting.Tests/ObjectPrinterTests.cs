@@ -49,10 +49,12 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintingConfig_DoesNotPrintProperty_WhenPropertyExcluded()
     {
-        var printer = ObjectPrinter.For<Person>();
-        printer.Exclude(p => p.Name);
+        var printer = ObjectPrinter.For<Book>();
+        printer
+            .Exclude(b => b.Title)
+            .Exclude(b => b.Author);
         
-        var actual = printer.PrintToString(person);
+        var actual = printer.PrintToString(book);
         
         return VerifySnapshot(actual);
     }
