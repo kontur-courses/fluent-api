@@ -8,33 +8,45 @@ public class ObjectPrinterAcceptanceTests
     [Test]
     public Task Demo()
     {
-        var book = new Book
+        var student = new Student
         {
-            Title = "Преступление и наказание",
-            Author = "Фёдор Достоевский",
-            Description = "Роман о преступлении, нравственных терзаниях и искуплении.",
-            PublishingHouse = "Русский вестник",
-            PublishingYear = 1866
+            FirstName = "Иван",
+            LastName = "Петров",
+            Age = 20,
+            AverageGrade = 4.75,
+            University = "Уральский федеральный университет",
+            Specialty = "Программная инженерия",
+            Course = 3,
+            Scholarship = 2500.50m,
+            IsBudget = true,
+            EnrollmentDate = new DateTime(2024, 9, 1),
+            StudentId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
-        var printer = ObjectPrinter.For<Book>();
-        //1. Исключить из сериализации свойства определенного типа
-        //2. Указать альтернативный способ сериализации для определенного типа
-        //3. Для числовых типов указать культуру
-        //4. Настроить сериализацию конкретного свойства
-        //5. Настроить обрезание строковых свойств (метод должен быть виден только для строковых свойств)
-        //6. Исключить из сериализации конкретного свойства
+
+        var printer = ObjectPrinter.For<Student>();
+
+        // 1. Исключить из сериализации свойства определенного типа
+        // 2. Указать альтернативный способ сериализации для определенного типа
+        // 3. Настроить культуру для числового свойства
+        // 4. Настроить сериализацию конкретного свойства
+        // 5. Обрезать строковое свойство
+        // 6. Исключить конкретное свойство
 
         printer
             .Exclude<int>()
             .SetTypeSerialization<string>(str => $"\"{str}\"")
-            .SetNumericCulture(new CultureInfo("ru-RU"))
+            .ForProperty(s => s.AverageGrade)
+                .SetNumericCulture(new CultureInfo("ru-RU"))
+            .ForProperty(s => s.Age)
+                .SetNumericCulture(CultureInfo.CurrentCulture)
             .SetModifiedSerialization(
-                b => b.PublishingHouse,
-                s => $"Издательство: \"{s}\"")
-            .Truncate(b => b.Description, 20)
-            .Exclude(b => b.PublishingYear);
+                s => s.University,
+                name => $"Университет: \"{name}\"")
+            .Truncate(s => s.Specialty, 15)
+            .Exclude(s => s.StudentId);
+
             
-        var serialized = printer.PrintToString(book);
+        var serialized = printer.PrintToString(student);
 
         //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
         //8. ...с конфигурированием

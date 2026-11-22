@@ -81,19 +81,6 @@ public class PrintingConfig<TOwner>
     }
     
     /// <summary>
-    /// Устанавливает культуру для форматирования чисел
-    /// </summary>
-    /// <param name="cultureInfo">Используемая культура</param>
-    /// <exception cref="ArgumentNullException">Если <paramref name="cultureInfo"/> равен <c>null</c></exception>
-    public PrintingConfig<TOwner> SetNumericCulture(CultureInfo cultureInfo)
-    {
-        ArgumentNullException.ThrowIfNull(cultureInfo);
-
-        _objectSerializer.SetNumericCulture(cultureInfo);
-        return this;
-    }
-
-    /// <summary>
     /// Обрезает строковое значение члена до <paramref name="length"/> символов
     /// </summary>
     /// <param name="selector">Прямое обращение к строковому члену</param>
@@ -106,5 +93,32 @@ public class PrintingConfig<TOwner>
         return SetModifiedSerialization(
             selector,
             value => value[..Math.Min(length, value.Length)]);
+    }
+    
+    public NumericPropertyConfig<TOwner, double> ForProperty
+        (Expression<Func<TOwner, double>> selector)
+    {
+        var propertyConfig = new NumericPropertyConfig<TOwner, double>(
+            this,
+            _objectSerializer,
+            selector
+        );
+        return propertyConfig;
+    }
+    
+    public NumericPropertyConfig<TOwner, int> ForProperty(
+        Expression<Func<TOwner, int>> selector)
+    {
+        return new NumericPropertyConfig<TOwner, int>(
+            this,
+            _objectSerializer,
+            selector);
+    }
+    
+    public PropertyConfig<TOwner, TProperty> ForProperty<TProperty>(
+        Expression<Func<TOwner, TProperty>> selector)
+    {
+        return new PropertyConfig<TOwner, TProperty>(
+            this, _objectSerializer, selector);
     }
 }

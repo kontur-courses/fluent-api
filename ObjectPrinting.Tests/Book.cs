@@ -10,4 +10,6 @@ public class Book
     
     public int PublishingYear { get; set; }
     public int Pages;
+
+    public double Rating { get; set; } = 5.0;
 }

@@ -1,3 +1,4 @@
 ﻿Book
 	Pages = 0
 	PublishingYear = 1866
+	Rating = 5

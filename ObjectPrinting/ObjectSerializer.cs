@@ -25,7 +25,7 @@ public class ObjectSerializer
     private readonly Dictionary<Type, Func<object?, string>>
         _modifiedTypeSerializers = [];
 
-    private CultureInfo _numericCultureInfo = CultureInfo.CurrentCulture;
+    private readonly Dictionary<MemberInfo, CultureInfo> numericCultures = [];
 
     /// <summary>
     /// Сериализует <paramref name="obj"/> в строку.
@@ -63,13 +63,13 @@ public class ObjectSerializer
         _excludedMembers.Add(memberInfo);
     }
 
-    public void SetNumericCulture(CultureInfo cultureInfo)
+    public void SetNumericCulture(MemberInfo memberInfo, CultureInfo? cultureInfo)
     {
         ArgumentNullException.ThrowIfNull(cultureInfo);
-        _numericCultureInfo = cultureInfo;
+        numericCultures[memberInfo] = cultureInfo;
     }
     
-    private string PrintToString(object? obj, int nestingLevel, HashSet<object> visited)
+    private string PrintToString(object? obj, int nestingLevel, HashSet<object> visited, MemberInfo? memberInfo = null)
     {
         if (obj == null)
             return NullRepresentation;
@@ -79,7 +79,7 @@ public class ObjectSerializer
             return typeSerializer(obj) + Environment.NewLine;
         
         if (obj.GetType().IsSimpleType())
-            return SerializeSimpleTypeObject(obj);
+            return SerializeSimpleTypeObject(obj, memberInfo);
         
         if (!visited.Add(obj))
             return $"{obj.GetType().Name} - cycle link" + Environment.NewLine;
@@ -210,13 +210,18 @@ public class ObjectSerializer
                 memberInfo, out var memberSerializer))
             return memberSerializer(value) + Environment.NewLine;
 
-        return PrintToString(value, nestingLevel, visited);
+        return PrintToString(value, nestingLevel, visited, memberInfo);
     }
     
-    private string SerializeSimpleTypeObject(object obj)
+    private string SerializeSimpleTypeObject(object obj, MemberInfo? memberInfo = null)
     {
+        var cultureInfo = memberInfo != null &&
+                          numericCultures.TryGetValue(memberInfo, out var culture)
+            ? culture
+            : CultureInfo.CurrentCulture;
+        
         var result = obj is IFormattable formattable
-            ? formattable.ToString(null, _numericCultureInfo)
+            ? formattable.ToString(null, cultureInfo)
             : obj.ToString();
 
         return result + Environment.NewLine;

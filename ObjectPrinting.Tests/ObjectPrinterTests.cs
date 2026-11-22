@@ -96,7 +96,9 @@ public class ObjectPrinterTests
         var culture = CultureInfo.GetCultureInfo("fr-FR");
 
         var printer = ObjectPrinter.For<Person>();
-        printer.SetNumericCulture(culture);
+        printer
+            .ForProperty(p => p.Age)
+            .SetNumericCulture(culture);
 
         var actual = printer.PrintToString(person);
         return VerifySnapshot(actual);
