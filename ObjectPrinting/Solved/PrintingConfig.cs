@@ -1,62 +1,54 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ObjectPrinting.Solved
 {
     public class PrintingConfig<TOwner>
     {
+        internal HashSet<Type> ExcludedTypes { get; } = new();
+        internal HashSet<string> ExcludedMembers { get; } = new();
+
+        internal Dictionary<Type, Func<object, string>> TypeSerializers { get; } = new();
+        internal Dictionary<string, Func<object, string>> MemberSerializers { get; } = new();
+
+        internal Dictionary<Type, CultureInfo> TypeCultures { get; } = new();
+        internal Dictionary<string, CultureInfo> MemberCultures { get; } = new();
+
+        public PrintingConfig<TOwner> Excluding<TPropType>()
+        {
+            ExcludedTypes.Add(typeof(TPropType));
+            return this;
+        }
+
+        public PrintingConfig<TOwner> Excluding<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+        {
+            ExcludedMembers.Add(GetMemberName(memberSelector));
+            return this;
+        }
+
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
-        {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
-        }
+            => new PropertyPrintingConfig<TOwner, TPropType>(this, null);
 
-        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-        {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this);
-        }
+        public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
+            => new PropertyPrintingConfig<TOwner, TPropType>(
+                this, GetMemberName(memberSelector));
 
-        public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
-        {
-            return this;
-        }
+        public string PrintToString(TOwner obj, int maxDepth = int.MaxValue)
+            => new ObjectSerializer<TOwner>(this, maxDepth).Serialize(obj);
 
-        internal PrintingConfig<TOwner> Excluding<TPropType>()
+        private static string GetMemberName<TPropType>(
+            Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return this;
-        }
-
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
-
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
-
-            var finalTypes = new[]
+            if (memberSelector.Body is MemberExpression memberExpression)
             {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
-
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
+                return memberExpression.Member.Name;
             }
-            return sb.ToString();
+
+            throw new ArgumentException("Selector must be a member expression.");
         }
     }
 }

@@ -1,18 +1,22 @@
-using System;
+﻿using System;
 
 namespace ObjectPrinting.Solved
 {
     public static class PropertyPrintingConfigExtensions
     {
-        public static string PrintToString<T>(this T obj, Func<PrintingConfig<T>, PrintingConfig<T>> config)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return config(ObjectPrinter.For<T>()).PrintToString(obj);
-        }
+            if (maxLen < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maxLen), maxLen, "Maximum length must be non-negative.");
+            }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
-        {
-            return ((IPropertyPrintingConfig<TOwner, string>)propConfig).ParentConfig;
+            return propConfig.Using(value =>
+                value is null
+                    ? null
+                    : value.Length > maxLen ? value.Substring(0, maxLen) : value);
         }
-
     }
 }
