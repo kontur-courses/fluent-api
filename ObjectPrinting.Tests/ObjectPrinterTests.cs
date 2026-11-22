@@ -48,8 +48,10 @@ public class ObjectPrinterTests
     {
         var printer = ObjectPrinter.For<Book>();
         printer
-            .Exclude(b => b.Title)
-            .Exclude(b => b.Author);
+            .ForProperty(b => b.Title)
+                .Exclude()
+            .ForProperty(b => b.Author)
+                .Exclude();
         
         var actual = printer.PrintToString(book);
         
@@ -71,7 +73,7 @@ public class ObjectPrinterTests
     public Task PrintingConfig_CustomSerializing_WhenSetModifiedSerialization()
     {
         var printer = ObjectPrinter.For<Person>();
-        printer.SetModifiedSerialization(p => p.Id,
+        printer.ForProperty(p => p.Id).SetModifiedSerialization(
             guid => $"{guid} - Globally Unique Identifier");
 
         var actual = printer.PrintToString(person);
@@ -108,7 +110,7 @@ public class ObjectPrinterTests
     public Task PrintingConfig_TruncatesString_WhenTruncateSet()
     {
         var printer = ObjectPrinter.For<Person>();
-        printer.Truncate(p => p.Name, 2);
+        printer.ForProperty(p => p.Name).Truncate(2);
 
         var actual = printer.PrintToString(person);
         return VerifySnapshot(actual);
@@ -118,7 +120,7 @@ public class ObjectPrinterTests
     public void PrintingConfig_DoesNotTruncate_WhenLengthExceedsStringLength()
     {
         var printer = ObjectPrinter.For<Person>();
-        printer.Truncate(p => p.Name, 100);
+        printer.ForProperty(p => p.Name).Truncate(100);
 
         var actual = printer.PrintToString(person);
 
@@ -130,7 +132,7 @@ public class ObjectPrinterTests
     {
         var printer = ObjectPrinter.For<Person>();
 
-        var action = () => printer.Truncate(p => p.Name, -1);
+        var action = () => printer.ForProperty(p => p.Name).Truncate(-1);
 
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -273,7 +275,7 @@ public class ObjectPrinterTests
         );
 
         var printer = ObjectPrinter.For<FieldSample>();
-        printer.Exclude(x => x.Number);
+        printer.ForProperty(x => x.Number).Exclude();
 
         var actual = printer.PrintToString(obj);
         actual.Should().Be(expected);
@@ -384,7 +386,7 @@ public class ObjectPrinterTests
         var printer = ObjectPrinter.For<Person>();
 
         printer.SetTypeSerialization<string>(value => $"Type: {value}");
-        printer.SetModifiedSerialization(p => p.Name, value => $"Member: {value}");
+        printer.ForProperty(p => p.Name).SetModifiedSerialization(value => $"Member: {value}");
 
         var actual = printer.PrintToString(person);
 
@@ -408,7 +410,7 @@ public class ObjectPrinterTests
     public void Exclude_ThrowsArgumentException_WhenExpressionIsConstant()
     {
         var printer = ObjectPrinter.For<Book>();
-        var act = () => printer.Exclude(p => 16);
+        var act = () => printer.ForProperty(p => 16).Exclude();
 
         act.Should().Throw<ArgumentException>();
     }
@@ -418,7 +420,7 @@ public class ObjectPrinterTests
     {
         var printer = ObjectPrinter.For<Book>();
         var act = 
-            () => printer.Exclude(b => new Book().Author);
+            () => printer.ForProperty(b => new Book().Author).Exclude();
 
         act.Should().Throw<ArgumentException>();
     }
@@ -427,7 +429,7 @@ public class ObjectPrinterTests
     public void Exclude_ThrowsArgumentException_WhenExpressionIsNotMemberAccess()
     {
         var printer = ObjectPrinter.For<Book>();
-        var act = () => printer.Exclude(p => "hello".Length);
+        var act = () => printer.ForProperty(p => "hello".Length).Exclude();
 
         act.Should().Throw<ArgumentException>();
     }

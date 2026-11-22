@@ -5,10 +5,12 @@ namespace ObjectPrinting.Tests;
 [TestFixture]
 public class ObjectPrinterAcceptanceTests
 {
-    [Test]
-    public Task Demo()
+    private Student student;
+
+    [SetUp]
+    public void SetUp()
     {
-        var student = new Student
+        student = new Student
         {
             FirstName = "Иван",
             LastName = "Петров",
@@ -22,15 +24,12 @@ public class ObjectPrinterAcceptanceTests
             EnrollmentDate = new DateTime(2024, 9, 1),
             StudentId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
-
+    }
+    
+    [Test]
+    public Task Demo()
+    {
         var printer = ObjectPrinter.For<Student>();
-
-        // 1. Исключить из сериализации свойства определенного типа
-        // 2. Указать альтернативный способ сериализации для определенного типа
-        // 3. Настроить культуру для числового свойства
-        // 4. Настроить сериализацию конкретного свойства
-        // 5. Обрезать строковое свойство
-        // 6. Исключить конкретное свойство
 
         printer
             .Exclude<int>()
@@ -39,18 +38,63 @@ public class ObjectPrinterAcceptanceTests
                 .SetNumericCulture(new CultureInfo("ru-RU"))
             .ForProperty(s => s.Age)
                 .SetNumericCulture(CultureInfo.CurrentCulture)
-            .SetModifiedSerialization(
-                s => s.University,
+            .ForProperty(s => s.Scholarship)
+                .SetNumericCulture(new CultureInfo("en-US"))
+            .ForProperty(s => s.University)
+                .SetModifiedSerialization(
                 name => $"Университет: \"{name}\"")
-            .Truncate(s => s.Specialty, 15)
-            .Exclude(s => s.StudentId);
+            .ForProperty(s => s.Specialty)
+                .Truncate(15)
+            .ForProperty(s => s.StudentId).Exclude();
 
             
         var serialized = printer.PrintToString(student);
 
-        //7. Синтаксический сахар в виде метода расширения, сериализующего по-умолчанию        
-        //8. ...с конфигурированием
-
         return ObjectPrinterTests.VerifySnapshot(serialized);
+    }
+
+    [Test]
+    public Task DemoWithConfig()
+    {
+        var serializedWithConfig = student.PrintToString(config =>
+        {
+            config
+                .Exclude<int>()
+                .SetTypeSerialization<string>(str => $"\"{str}\"");
+
+            config
+                .ForProperty(s => s.AverageGrade)
+                .SetNumericCulture(new CultureInfo("ru-RU"));
+
+            config.ForProperty(s => s.Scholarship)
+                .SetNumericCulture(new CultureInfo("en-US"));
+
+            config
+                .ForProperty(s => s.Age)
+                .SetNumericCulture(CultureInfo.CurrentCulture);
+
+            config
+                .ForProperty(s => s.University)
+                .SetModifiedSerialization(
+                    name => $"Университет: \"{name}\"");
+
+            config
+                .ForProperty(s => s.Specialty)
+                .Truncate(15);
+
+            config
+                .ForProperty(s => s.StudentId)
+                .Exclude();
+        });
+        
+        return ObjectPrinterTests.VerifySnapshot(serializedWithConfig);
+    }
+
+    [Test]
+    public Task DemoWithEmptyConfig()
+    {
+        var serializedWithEmptyConfig = student.PrintToString();
+        
+        return ObjectPrinterTests.VerifySnapshot(serializedWithEmptyConfig);
     }
 }
