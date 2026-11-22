@@ -9,6 +9,8 @@ namespace ObjectPrinting.Tests;
 public class ObjectPrinterTests
 {
     private Person person = null!;
+    private Book book = null;
+    
     // используется фиксированное значение для verify
     private readonly Guid fixedGuid = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly string SnapshotsDirectory = "Snapshots";
@@ -17,6 +19,14 @@ public class ObjectPrinterTests
     public void SetUp()
     {
         person = new Person { Age = 20, Height = 185.5, Id = fixedGuid, Name = "yey" };
+        book = new Book
+        {
+            Title = "Преступление и наказание",
+            Author = "Фёдор Достоевский",
+            Description = "Роман о преступлении, нравственных терзаниях и искуплении.",
+            PublishingHouse = "Русский вестник",
+            PublishingYear = 1866
+        };
     }
     
     private static SettingsTask VerifySnapshot(object? value)
@@ -50,10 +60,10 @@ public class ObjectPrinterTests
     [Test]
     public Task PrintingConfig_DoesNotPrintProperty_WhenTypeExcluded()
     {
-        var printer = ObjectPrinter.For<Person>();
+        var printer = ObjectPrinter.For<Book>();
         printer.Exclude<string>();
         
-        var actual = printer.PrintToString(person);
+        var actual = printer.PrintToString(book);
         
         return VerifySnapshot(actual);
     }
