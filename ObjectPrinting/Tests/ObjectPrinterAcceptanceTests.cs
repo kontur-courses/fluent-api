@@ -10,7 +10,11 @@ namespace ObjectPrinting.Tests
         [Test]
         public void Demo()
         {
-            var person = new Person { Name = "Alex", Age = 19 };
+            var person = new Person
+            {
+                Name = "AlexMoreThanTenSymbolssss", Age = 1990,
+                AgeProperty = 20
+            };
 
             var printer = ObjectPrinter.For<Person>()
                 //1. Исключить из сериализации свойства определенного типа

@@ -6,7 +6,7 @@ namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType>(
         PrintingConfig<TOwner> printingConfig,
-        PropertyInfo? property = null) : IPropertyPrintingConfig<TOwner, TPropType>
+        MemberInfo? property = null) : IPropertyPrintingConfig<TOwner, TPropType>
     {
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {

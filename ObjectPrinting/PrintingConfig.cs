@@ -11,10 +11,10 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = [];
-        private readonly HashSet<PropertyInfo> excludedProperties = [];
+        private readonly HashSet<MemberInfo> excludedMembers = [];
 
         private readonly Dictionary<Type, Func<object, string>> formattersByType = new();
-        private readonly Dictionary<PropertyInfo, Func<object, string>> formattersByProperty = new();
+        private readonly Dictionary<MemberInfo, Func<object, string>> formattersByMember = new();
 
 
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>()
@@ -25,12 +25,12 @@ namespace ObjectPrinting
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetProperty(memberSelector));
+            return new PropertyPrintingConfig<TOwner, TPropType>(this, GetMember(memberSelector));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedProperties.Add(GetProperty(memberSelector));
+            excludedMembers.Add(GetMember(memberSelector));
             return this;
         }
 
@@ -56,51 +56,85 @@ namespace ObjectPrinting
                 typeof(int), typeof(double), typeof(float), typeof(string),
                 typeof(DateTime), typeof(TimeSpan)
             };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
 
             var type = obj.GetType();
+            if (IsFinalType(type))
+                return obj + Environment.NewLine;
 
 
             var identation = new string('\t', nestingLevel + 1);
             var sb = new StringBuilder();
 
             sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                if (excludedProperties.Contains(propertyInfo) || excludedTypes.Contains(propertyInfo.PropertyType))
-                    continue;
 
-                var value = propertyInfo.GetValue(obj);
+            const BindingFlags publicInstanceFlags = BindingFlags.Public | BindingFlags.Instance;
+
+            foreach (var propertyInfo in type.GetProperties(publicInstanceFlags))
+            {
+                if (IsPublicProperty(propertyInfo))
+                {
+                    AppendMember(propertyInfo, propertyInfo.PropertyType, () => propertyInfo.GetValue(obj));
+                }
+            }
+
+            foreach (var fieldInfo in type.GetFields(publicInstanceFlags))
+            {
+                AppendMember(fieldInfo, fieldInfo.FieldType, () => fieldInfo.GetValue(obj));
+            }
+
+            return sb.ToString();
+
+            void AppendMember(MemberInfo member, Type memberType, Func<object?> readValue)
+            {
+                if (excludedMembers.Contains(member) || excludedTypes.Contains(memberType))
+                    return;
+
+                var value = readValue();
                 string printedValue;
 
-                if (value is not null && TryGetFormatter(propertyInfo, out var formatter))
+                if (value is not null && TryGetFormatter(member, memberType, out var formatter))
                     printedValue = formatter(value) + Environment.NewLine;
                 else
                     printedValue = PrintToString(value, nestingLevel + 1);
 
-                sb.Append(identation + propertyInfo.Name + " = " + printedValue);
+                sb.Append(identation + member.Name + " = " + printedValue);
             }
-
-            return sb.ToString();
         }
 
-        private bool TryGetFormatter(PropertyInfo propertyInfo, [NotNullWhen(true)] out Func<object, string>? formatter)
+        private static bool IsPublicProperty(PropertyInfo propertyInfo)
         {
-            return formattersByProperty.TryGetValue(propertyInfo, out formatter)
-                   || formattersByType.TryGetValue(propertyInfo.PropertyType, out formatter);
+            return propertyInfo.GetMethod is { IsPublic: true } && propertyInfo.GetIndexParameters().Length == 0;
+        }
+
+        private bool TryGetFormatter(
+            MemberInfo member,
+            Type memberType,
+            [NotNullWhen(true)] out Func<object, string>? formatter)
+        {
+            return formattersByMember.TryGetValue(member, out formatter)
+                   || formattersByType.TryGetValue(memberType, out formatter);
         }
 
 
-        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
-            selector.Body is MemberExpression { Member: PropertyInfo property }
-                ? property
+        private static MemberInfo GetMember<TPropType>(Expression<Func<TOwner, TPropType>> selector) =>
+            selector.Body is MemberExpression { Member: var member and (PropertyInfo or FieldInfo) }
+                ? member
                 : throw new ArgumentException("selector expression must be a member expression");
 
-        internal void SetFormatter(Type type, PropertyInfo? property, Func<object, string> formatter)
+        internal void SetFormatter(Type type, MemberInfo? member, Func<object, string> formatter)
         {
-            if (property == null) formattersByType[type] = formatter;
-            else formattersByProperty[property] = formatter;
+            if (member == null) formattersByType[type] = formatter;
+            else formattersByMember[member] = formatter;
         }
+
+        private static bool IsFinalType(Type type) =>
+            type.IsPrimitive
+            || type.IsEnum
+            || type == typeof(string)
+            || type == typeof(decimal)
+            || type == typeof(Guid)
+            || type == typeof(DateTime)
+            || type == typeof(DateTimeOffset)
+            || type == typeof(TimeSpan);
     }
 }
