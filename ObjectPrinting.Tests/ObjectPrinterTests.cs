@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using NUnit.Framework;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using System.Globalization;
 
 namespace ObjectPrinting.Tests;
@@ -403,5 +400,33 @@ public class ObjectPrinterTests
 
         var actual = printer.PrintToString(42);
         actual.Should().Be(expected);
+    }
+
+    [Test]
+    public void Exclude_ThrowsArgumentException_WhenExpressionIsConstant()
+    {
+        var printer = ObjectPrinter.For<Book>();
+        var act = () => printer.Exclude(p => 16);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Exclude_ThrowsArgumentException_WhenExpressionReferencesMemberOfAnotherObject()
+    {
+        var printer = ObjectPrinter.For<Book>();
+        var act = 
+            () => printer.Exclude(b => new Book().Author);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Exclude_ThrowsArgumentException_WhenExpressionIsNotMemberAccess()
+    {
+        var printer = ObjectPrinter.For<Book>();
+        var act = () => printer.Exclude(p => "hello".Length);
+
+        act.Should().Throw<ArgumentException>();
     }
 }
