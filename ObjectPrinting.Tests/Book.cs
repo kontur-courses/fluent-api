@@ -9,4 +9,5 @@ public class Book
     public string PublishingHouse;
     
     public int PublishingYear { get; set; }
+    public int Pages;
 }
