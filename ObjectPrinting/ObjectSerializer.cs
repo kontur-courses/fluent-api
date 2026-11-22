@@ -126,17 +126,24 @@ public class ObjectSerializer
 
         foreach (DictionaryEntry entry in dictionary)
         {
-            sb.Append(indentation)
-                .AppendLine($"[{index}]");
+            if (entry.Key.GetType().IsSimpleType()
+                && entry.Value.GetType().IsSimpleType())
+            {
+                sb.Append(indentation)
+                    .AppendLine($"[{entry.Key}] = {entry.Value}");
+            }
+            else {
+                sb.Append(indentation)
+                    .AppendLine($"[{index}]");
 
-            sb.Append(entryIndentation)
-                .Append("Key = ")
-                .Append(PrintToString(entry.Key, nestingLevel + 2, visited));
+                sb.Append(entryIndentation)
+                    .Append("Key = ")
+                    .Append(PrintToString(entry.Key, nestingLevel + 2, visited));
 
-            sb.Append(entryIndentation)
-                .Append("Value = ")
-                .Append(PrintToString(entry.Value, nestingLevel + 2, visited));
-
+                sb.Append(entryIndentation)
+                    .Append("Value = ")
+                    .Append(PrintToString(entry.Value, nestingLevel + 2, visited));
+            }
             index++;
         }
 
