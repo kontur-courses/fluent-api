@@ -1,41 +1,57 @@
 using System;
-using System.Linq;
-using System.Text;
+using System.Globalization;
+using System.Linq.Expressions;
 
-namespace ObjectPrinting
+namespace ObjectPrinting;
+
+/// <summary>
+/// Настраивает правила сериализации объекта <typeparamref name="TOwner"/>
+/// в строку: исключение членов/типов, кастомные сериализаторы,
+/// культуру чисел и обрезку строк
+/// </summary>
+public class PrintingConfig<TOwner>
 {
-    public class PrintingConfig<TOwner>
+    private readonly ObjectSerializer _objectSerializer = new();
+
+    /// <summary>
+    /// Сериализует <paramref name="obj"/> в строку с учётом настроек
+    /// </summary>
+    /// <param name="obj">Объект для сериализации</param>
+    /// <returns>Строковое представление сериализованного объекта</returns>
+    public string PrintToString(TOwner obj)
     {
-        public string PrintToString(TOwner obj)
-        {
-            return PrintToString(obj, 0);
-        }
+        return _objectSerializer.SerializeObject(obj);
+    }
 
-        private string PrintToString(object obj, int nestingLevel)
-        {
-            //TODO apply configurations
-            if (obj == null)
-                return "null" + Environment.NewLine;
+    /// <summary>
+    /// Исключает из вывода все члены типа <typeparamref name="T"/>
+    /// </summary>
+    /// <typeparam name="T">Тип, члены которого не должны попадать в результат</typeparam>
+    public PrintingConfig<TOwner> Exclude<T>()
+    {
+        _objectSerializer.AddExcludedType(typeof(T));
+        return this;
+    }
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(obj.GetType()))
-                return obj + Environment.NewLine;
+    /// <summary>
+    /// Задаёт кастомный сериализатор для всех членов типа <typeparamref name="TMember"/>.
+    /// Применяется, если для конкретного члена не задан кастомный сериализатор
+    /// </summary>
+    /// <typeparam name="TMember">Тип, для которого задаётся сериализатор</typeparam>
+    /// <param name="serializer">Функция преобразования значения в строку</param>
+    /// <exception cref="ArgumentNullException">Если <paramref name="serializer"/> равен <c>null</c></exception>
+    public PrintingConfig<TOwner> SetTypeSerialization<TMember>(Func<TMember, string> serializer)
+    {
+        ArgumentNullException.ThrowIfNull(serializer);
 
-            var identation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-            var type = obj.GetType();
-            sb.AppendLine(type.Name);
-            foreach (var propertyInfo in type.GetProperties())
-            {
-                sb.Append(identation + propertyInfo.Name + " = " +
-                          PrintToString(propertyInfo.GetValue(obj),
-                              nestingLevel + 1));
-            }
-            return sb.ToString();
-        }
+        _objectSerializer.AddModifiedTypeSerializer<TMember>(serializer);
+        return this;
+    }
+    
+    public PropertyConfig<TOwner, TProperty> ForProperty<TProperty>(
+        Expression<Func<TOwner, TProperty>> selector)
+    {
+        return new PropertyConfig<TOwner, TProperty>(
+            this, _objectSerializer, selector);
     }
 }

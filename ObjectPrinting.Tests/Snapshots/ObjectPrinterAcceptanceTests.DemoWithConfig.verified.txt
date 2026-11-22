@@ -1,0 +1,10 @@
+﻿Student
+	FirstName = "Иван"
+	LastName = "Петров"
+	AverageGrade = 4,75
+	University = Университет: "Уральский федеральный университет"
+	Specialty = Программная инж
+	Scholarship = 2500.50
+	IsBudget = True
+	EnrollmentDate = 01.09.2024 0:00:00
+	FullName = "Иван Петров"

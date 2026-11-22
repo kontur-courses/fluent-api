@@ -1,0 +1,6 @@
+﻿Book
+	Description = Роман о преступлении, нравственных терзаниях и искуплении.
+	PublishingHouse = Русский вестник
+	Pages = 0
+	PublishingYear = 1866
+	Rating = 5
