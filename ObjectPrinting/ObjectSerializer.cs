@@ -13,6 +13,9 @@ namespace ObjectPrinting;
 /// </summary>
 public class ObjectSerializer
 {
+    private static readonly string NullRepresentation =
+        "null" + Environment.NewLine;
+    
     private readonly HashSet<Type> _excludedTypes = [];
     private readonly HashSet<MemberInfo> _excludedMembers = [];
 
@@ -69,7 +72,7 @@ public class ObjectSerializer
     private string PrintToString(object? obj, int nestingLevel, HashSet<object> visited)
     {
         if (obj == null)
-            return "null" + Environment.NewLine;
+            return NullRepresentation;
 
         if (_modifiedTypeSerializers.TryGetValue(
                 obj.GetType(), out var typeSerializer))
@@ -201,7 +204,7 @@ public class ObjectSerializer
         var value = memberInfo.GetMemberValue(obj);
 
         if (value is null)
-            return "null" + Environment.NewLine;
+            return NullRepresentation;
 
         if (_modifiedMemberSerializers.TryGetValue(
                 memberInfo, out var memberSerializer))
