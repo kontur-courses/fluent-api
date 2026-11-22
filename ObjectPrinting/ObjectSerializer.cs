@@ -177,9 +177,7 @@ public class ObjectSerializer
         var indentation = new string('\t', nestingLevel + 1);
         foreach (var member in members)
         {
-            if (member is PropertyInfo property &&
-                (property.GetMethod?.IsPublic != true ||
-                 property.GetIndexParameters().Length > 0))
+            if (member.IsSerializableMember())
                 continue;
 
             var memberType = member.GetMemberType();
