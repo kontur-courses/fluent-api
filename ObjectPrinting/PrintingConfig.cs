@@ -42,24 +42,23 @@ namespace ObjectPrinting
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            var path = new HashSet<object>(ReferenceEqualityComparer.Instance);
+            
+            return PrintToString(obj, 0, path);
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
+        private string PrintToString(object? obj, int nestingLevel, HashSet<object> path)
         {
-            //TODO apply configurations
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
 
             var type = obj.GetType();
             if (IsFinalType(type))
                 return obj + Environment.NewLine;
+            
+            if(!path.Add(obj))
+                return "<Cycle>" + Environment.NewLine;
 
 
             var identation = new string('\t', nestingLevel + 1);
@@ -82,6 +81,8 @@ namespace ObjectPrinting
                 AppendMember(fieldInfo, fieldInfo.FieldType, () => fieldInfo.GetValue(obj));
             }
 
+
+            path.Remove(obj);
             return sb.ToString();
 
             void AppendMember(MemberInfo member, Type memberType, Func<object?> readValue)
@@ -95,7 +96,7 @@ namespace ObjectPrinting
                 if (value is not null && TryGetFormatter(member, memberType, out var formatter))
                     printedValue = formatter(value) + Environment.NewLine;
                 else
-                    printedValue = PrintToString(value, nestingLevel + 1);
+                    printedValue = PrintToString(value, nestingLevel + 1, path);
 
                 sb.Append(identation + member.Name + " = " + printedValue);
             }
