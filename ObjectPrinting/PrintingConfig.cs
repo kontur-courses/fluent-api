@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace ObjectPrinting
         public string PrintToString(TOwner obj)
         {
             var path = new HashSet<object>(ReferenceEqualityComparer.Instance);
-            
+
             return PrintToString(obj, 0, path);
         }
 
@@ -52,13 +53,19 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-
             var type = obj.GetType();
             if (IsFinalType(type))
                 return obj + Environment.NewLine;
-            
-            if(!path.Add(obj))
+
+            if (!path.Add(obj))
                 return "<Cycle>" + Environment.NewLine;
+
+
+            if (obj is IEnumerable enumerable)
+            {
+                var items = enumerable.Cast<object>().Select(x => PrintToString(x, nestingLevel + 1, path));
+                return "[ " + string.Join(", ", items) + " ]";
+            }
 
 
             var identation = new string('\t', nestingLevel + 1);

@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using FluentAssertions;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 
 
@@ -61,7 +62,36 @@ public class ObjectPrintingTests
         result.Should().Be("TestScores" + Environment.NewLine + "\tScore = 1A" + Environment.NewLine + "\tBonus = 1F" +
                            Environment.NewLine);
     }
+    
+    [Test]
+    public void ObjectPrinter_PrintsArrayElements()
+    {
+        var colors = new[] { "red", "green", "blue" };
 
+        var result = colors.PrintToString();
+
+        result.Should().Contain("red").And.Contain("green").And.Contain("blue");
+    }
+    
+    [Test]
+    public void ObjectPrinter_PrintsNestedList()
+    {
+        var team = new
+        {
+            Members = new List<object?>
+            {
+                new { Name = "Alice" },
+                null
+            }
+        };
+
+        var result = team.PrintToString();
+
+        result.Should().Contain("Members = ");
+        result.Should().Contain("Name = Alice");
+        result.Should().Contain("null");
+    }
+    
     [Test]
     public void ExcludingType_RemovesAllPropertiesOfThatType()
     {
