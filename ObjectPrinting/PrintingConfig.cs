@@ -61,10 +61,20 @@ namespace ObjectPrinting
                 return "<Cycle>" + Environment.NewLine;
 
 
-            if (obj is IEnumerable enumerable)
+            switch (obj)
             {
-                var items = enumerable.Cast<object>().Select(x => PrintToString(x, nestingLevel + 1, path));
-                return "[ " + string.Join(", ", items) + " ]";
+                case IDictionary dictionary:
+                {
+                    var dictItems = new List<string>(dictionary.Count);
+                    foreach (DictionaryEntry entry in dictionary)
+                        dictItems.Add($"{PrintToString(entry.Key, nestingLevel + 1, path).TrimEnd()} : {PrintToString(entry.Value, nestingLevel + 1, path).TrimEnd()}");
+                    return "{ " + string.Join(", ", dictItems) + " }" + Environment.NewLine;
+                }
+                case IEnumerable enumerable:
+                {
+                    var items = enumerable.Cast<object>().Select(x => PrintToString(x, nestingLevel + 1, path).TrimEnd());
+                    return "[ " + string.Join(", ", items) + " ]" + Environment.NewLine;
+                }
             }
 
 

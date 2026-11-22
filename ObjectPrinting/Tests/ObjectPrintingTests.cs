@@ -62,7 +62,23 @@ public class ObjectPrintingTests
         result.Should().Be("TestScores" + Environment.NewLine + "\tScore = 1A" + Environment.NewLine + "\tBonus = 1F" +
                            Environment.NewLine);
     }
-    
+
+    [Test]
+    public void ObjectPrinter_PrintsDictionary()
+    {
+        var scores = new Dictionary<string, int>
+        {
+            ["Alice"] = 10,
+            ["Bob"] = 25
+        };
+
+        var result = scores.PrintToString();
+
+        result.Should().Contain("Alice : 10");
+        result.Should().Contain("Bob : 25");
+    }
+
+
     [Test]
     public void ObjectPrinter_PrintsArrayElements()
     {
@@ -72,7 +88,7 @@ public class ObjectPrintingTests
 
         result.Should().Contain("red").And.Contain("green").And.Contain("blue");
     }
-    
+
     [Test]
     public void ObjectPrinter_PrintsNestedList()
     {
@@ -91,7 +107,7 @@ public class ObjectPrintingTests
         result.Should().Contain("Name = Alice");
         result.Should().Contain("null");
     }
-    
+
     [Test]
     public void ExcludingType_RemovesAllPropertiesOfThatType()
     {
@@ -127,7 +143,7 @@ public class ObjectPrintingTests
         result.Should().Be("TestScores" + Environment.NewLine + "\tScore = 1A" + Environment.NewLine +
                            "\tBonus = 31 points" + Environment.NewLine);
     }
-    
+
     [Test]
     public void TrimmingString_CutsValueToMaxLength()
     {
@@ -135,9 +151,10 @@ public class ObjectPrintingTests
 
         var result = ObjectPrinter.For<TestPerson>().Printing(p => p.Name).TrimmedToLength(4).PrintToString(person);
 
-        result.Should().Be("TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tAge = 19" + Environment.NewLine + "\tAddress = null" + Environment.NewLine);
+        result.Should().Be("TestPerson" + Environment.NewLine + "\tName = Alex" + Environment.NewLine + "\tAge = 19" +
+                           Environment.NewLine + "\tAddress = null" + Environment.NewLine);
     }
-    
+
     public static IEnumerable HappyPathCases
     {
         get
