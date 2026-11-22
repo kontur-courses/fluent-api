@@ -11,7 +11,8 @@ public static class MemberInfoExtensions
         {
             PropertyInfo property => property.GetValue(obj),
             FieldInfo field => field.GetValue(obj),
-            _ => throw new NotSupportedException()
+            _ => throw new NotSupportedException(
+                $"Тип MemberInfo '{memberInfo.GetType().Name}' не поддерживается")
         };
     }
     
@@ -21,7 +22,8 @@ public static class MemberInfoExtensions
         {
             PropertyInfo p => p.PropertyType,
             FieldInfo f => f.FieldType,
-            _ => throw new NotSupportedException()
+            _ => throw new NotSupportedException(
+                $"Тип MemberInfo '{memberInfo.GetType().Name}' не поддерживается")
         };
     }
 
