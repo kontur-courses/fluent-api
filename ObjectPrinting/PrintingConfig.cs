@@ -45,7 +45,7 @@ namespace ObjectPrinting
             return PrintToString(obj, 0);
         }
 
-        private string PrintToString(object obj, int nestingLevel)
+        private string PrintToString(object? obj, int nestingLevel)
         {
             //TODO apply configurations
             if (obj == null)
@@ -73,13 +73,7 @@ namespace ObjectPrinting
         }
 
 
-        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TPropType>> selector)
-        {
-            //метод должен на основе селектора(например p => p.Name) вернуть PropertyInfo, описывающее свойство (напр Person.Name)
-            
-            
-            throw new NotImplementedException();
-        }
+        private static PropertyInfo GetProperty<TPropType>(Expression<Func<TOwner, TPropType>> selector) => selector.Body is MemberExpression { Member: PropertyInfo property } ? property : throw new ArgumentException("selector expression must be a member expression");
 
         internal void SetFormatter(Type type, PropertyInfo? property, Func<object, string> formatter)
         {
