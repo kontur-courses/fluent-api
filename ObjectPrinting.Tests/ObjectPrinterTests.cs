@@ -26,7 +26,7 @@ public class ObjectPrinterTests
         };
     }
     
-    private static SettingsTask VerifySnapshot(object? value)
+    public static SettingsTask VerifySnapshot(object? value)
     {
         var settings = new VerifySettings();
         settings.UseDirectory(SnapshotsDirectory);

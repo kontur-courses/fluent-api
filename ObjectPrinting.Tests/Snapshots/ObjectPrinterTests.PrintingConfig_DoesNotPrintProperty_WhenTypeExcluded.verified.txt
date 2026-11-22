@@ -1,2 +1,3 @@
 ﻿Book
+	Pages = 0
 	PublishingYear = 1866
