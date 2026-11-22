@@ -9,136 +9,98 @@ namespace ObjectPrinting.Tests;
 public class ObjectPrinterTests
 {
     private Person person = null!;
-
+    // используется фиксированное значение для verify
+    private readonly Guid fixedGuid = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly string SnapshotsDirectory = "Snapshots";
+    
     [SetUp]
     public void SetUp()
     {
-        person = new Person { Age = 20, Height = 185.5, Id = Guid.NewGuid(), Name = "yey" };
+        person = new Person { Age = 20, Height = 185.5, Id = fixedGuid, Name = "yey" };
+    }
+    
+    private static SettingsTask VerifySnapshot(object? value)
+    {
+        var settings = new VerifySettings();
+        settings.UseDirectory(SnapshotsDirectory);
+
+        return Verify(value, settings);
     }
 
     [Test]
-    public void PrintingConfig_PrintsPersonData_WhenNoFilters()
+    public Task PrintingConfig_PrintsPersonData_WhenNoFilters()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id}",
-            $"\tName = {person.Name}",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
         var printer = ObjectPrinter.For<Person>();
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_DoesNotPrintProperty_WhenPropertyExcluded()
+    public Task PrintingConfig_DoesNotPrintProperty_WhenPropertyExcluded()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id}",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
         var printer = ObjectPrinter.For<Person>();
         printer.Exclude(p => p.Name);
+        
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+        
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_DoesNotPrintProperty_WhenTypeExcluded()
+    public Task PrintingConfig_DoesNotPrintProperty_WhenTypeExcluded()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id}",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
         var printer = ObjectPrinter.For<Person>();
         printer.Exclude<string>();
+        
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+        
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_CustomSerializing_WhenSetModifiedSerialization()
+    public Task PrintingConfig_CustomSerializing_WhenSetModifiedSerialization()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id} - Globally Unique Identifier",
-            $"\tName = {person.Name}",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
         var printer = ObjectPrinter.For<Person>();
         printer.SetModifiedSerialization(p => p.Id,
             guid => $"{guid} - Globally Unique Identifier");
 
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_CustomSerializing_WhenSetTypeSerialization()
+    public Task PrintingConfig_CustomSerializing_WhenSetTypeSerialization()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id} - Globally Unique Identifier",
-            $"\tName = {person.Name}",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
         var printer = ObjectPrinter.For<Person>();
         printer.SetTypeSerialization<Guid>(guid => $"{guid} - Globally Unique Identifier");
 
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_UsesSpecifiedCulture_WhenNumericCultureSet()
+    public Task PrintingConfig_UsesSpecifiedCulture_WhenNumericCultureSet()
     {
         var culture = CultureInfo.GetCultureInfo("fr-FR");
-
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id}",
-            $"\tName = {person.Name}",
-            "\tHeight = 185,5",
-            $"\tAge = {person.Age}",
-            ""
-        );
 
         var printer = ObjectPrinter.For<Person>();
         printer.SetNumericCulture(culture);
 
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+        return VerifySnapshot(actual);
     }
 
     [Test]
-    public void PrintingConfig_TruncatesString_WhenTruncateSet()
+    public Task PrintingConfig_TruncatesString_WhenTruncateSet()
     {
-        var expected = string.Join(Environment.NewLine,
-            "Person",
-            $"\tId = {person.Id}",
-            "\tName = ye",
-            $"\tHeight = {person.Height}",
-            $"\tAge = {person.Age}",
-            ""
-        );
-
         var printer = ObjectPrinter.For<Person>();
         printer.Truncate(p => p.Name, 2);
 
         var actual = printer.PrintToString(person);
-        actual.Should().Be(expected);
+        return VerifySnapshot(actual);
     }
 
     [Test]
@@ -220,24 +182,14 @@ public class ObjectPrinterTests
     }
 
     [Test]
-    public void PrintingConfig_PrintsListOfObjects_WhenComplexTypeListProvided()
+    public Task PrintingConfig_PrintsListOfObjects_WhenComplexTypeListProvided()
     {
         var people = new List<Person> { person };
-
-        var expected = string.Join(Environment.NewLine,
-            "List`1",
-            "\t[0] = Person",
-            $"\t\tId = {person.Id}",
-            $"\t\tName = {person.Name}",
-            $"\t\tHeight = {person.Height}",
-            $"\t\tAge = {person.Age}",
-            ""
-        );
-
         var printer = ObjectPrinter.For<List<Person>>();
 
         var actual = printer.PrintToString(people);
-        actual.Should().Be(expected);
+        
+        return VerifySnapshot(actual);
     }
 
     [Test]
@@ -251,12 +203,8 @@ public class ObjectPrinterTests
 
         var expected = string.Join(Environment.NewLine,
             "Dictionary`2",
-            "\t[0]",
-            "\t\tKey = aa",
-            "\t\tValue = 20",
-            "\t[1]",
-            "\t\tKey = bb",
-            "\t\tValue = 25",
+            "\t[aa] = 20",
+            "\t[bb] = 25",
             ""
         );
 
