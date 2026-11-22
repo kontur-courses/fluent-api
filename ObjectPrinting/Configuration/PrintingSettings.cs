@@ -1,58 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace ObjectPrinting
 {
-    public class PrintingConfig<TOwner>
+    internal sealed class PrintingSettings
     {
         private readonly Dictionary<Type, TypeSettings> typeSettings = new();
         private readonly Dictionary<MemberInfo, MemberSettings> memberSettings = new();
-        private readonly ObjectWriter objectWriter;
 
-        public PrintingConfig()
+        internal TypeSettings? GetTypeSettings(Type type)
         {
-            objectWriter = new ObjectWriter(typeSettings, memberSettings);
+            return typeSettings.TryGetValue(type, out var settings) ? settings : null;
         }
 
-        public PrintingConfig<TOwner> Excluding<TValue>()
+        internal MemberSettings? GetMemberSettings(MemberInfo member)
         {
-            SetExcludingType<TValue>();
-            return this;
-        }
-
-        public PrintingConfig<TOwner> Excluding<TValue>(Expression<Func<TOwner, TValue>> expression)
-        {
-            SetExcludingMember(GetSelectedMember(expression));
-            return this;
-        }
-
-        public TypeConfig<TOwner, TValue> Configure<TValue>()
-        {
-            return new TypeConfig<TOwner, TValue>(this);
-        }
-
-        public MemberConfig<TOwner, TValue> Configure<TValue>(
-            Expression<Func<TOwner, TValue>> expression)
-        {
-            return new MemberConfig<TOwner, TValue>(
-                this,
-                GetSelectedMember(expression));
-        }
-
-        public StringMemberConfig<TOwner> Configure(
-            Expression<Func<TOwner, string>> expression)
-        {
-            return new StringMemberConfig<TOwner>(
-                this,
-                GetSelectedMember(expression));
-        }
-
-        public string PrintToString(TOwner obj)
-        {
-            return objectWriter.Print(obj);
+            return memberSettings.TryGetValue(member, out var settings) ? settings : null;
         }
 
         internal void SetTypeSerializer<TValue>(Func<TValue, string> serializer)
@@ -127,24 +92,6 @@ namespace ObjectPrinting
                 : new MemberSettings();
 
             memberSettings[member] = update(current);
-        }
-
-        private static MemberInfo GetSelectedMember<TValue>(
-            Expression<Func<TOwner, TValue>> expression)
-        {
-            ArgumentNullException.ThrowIfNull(expression);
-
-            if (expression.Body is MemberExpression selectedMember
-                && selectedMember.Expression == expression.Parameters[0]
-                && (selectedMember.Member is PropertyInfo
-                    || selectedMember.Member is FieldInfo))
-            {
-                return selectedMember.Member;
-            }
-
-            throw new ArgumentException(
-                "Ожидался выбор свойства или поля на входе",
-                nameof(expression));
         }
     }
 

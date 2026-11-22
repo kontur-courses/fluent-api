@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Numerics;
 using NUnit.Framework;
 
 namespace ObjectPrinting.Tests
@@ -46,10 +47,15 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<Person>().PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
-            Assert.That(result, Does.Contain("Age = 19" + Environment.NewLine));
-            Assert.That(result, Does.Contain("Height = 180" + Environment.NewLine));
-            Assert.That(result, Does.EndWith("Nickname = OG Alex"));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = Alex",
+                "\tHeight = 180",
+                "\tAge = 19",
+                "\tNickname = OG Alex");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -63,8 +69,35 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<PropertyGetterSample>().PrintToString(sample);
 
-            Assert.That(result, Does.Contain("Readable = visible"));
-            Assert.That(result, Does.Not.Contain("SetterWithPrivateGetter ="));
+            var expected = string.Join(Environment.NewLine,
+                "PropertyGetterSample:",
+                "\tReadable = visible");
+
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [TestCase(true)]
+        [TestCase((byte)12)]
+        [TestCase((sbyte)-12)]
+        [TestCase('R')]
+        [TestCase(12.5d)]
+        [TestCase(12.5f)]
+        [TestCase((short)-12)]
+        [TestCase((ushort)12)]
+        [TestCase(12)]
+        [TestCase(12u)]
+        [TestCase(12L)]
+        [TestCase(12UL)]
+        [TestCase("scalar")]
+        [TestCaseSource(nameof(ScalarValuesNotAllowedInAttributes))]
+        public void Prints_scalar_values_as_values(object value)
+        {
+            var sample = new ScalarSample { Value = value };
+
+            var result = ObjectPrinter.For<ScalarSample>().PrintToString(sample);
+            var expected = $"ScalarSample:{Environment.NewLine}\tValue = {value}";
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -80,8 +113,14 @@ namespace ObjectPrinting.Tests
                 .Excluding<Guid>()
                 .PrintToString(person);
 
-            Assert.That(result, Does.Not.Contain("Id ="));
-            Assert.That(result, Does.Contain("Name = Alex" + Environment.NewLine));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                "\tName = Alex",
+                "\tHeight = 0",
+                "\tAge = 0",
+                "\tNickname = ");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -93,7 +132,15 @@ namespace ObjectPrinting.Tests
                 .Configure<int>().Using(number => $"{number} y.o.")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Age = 19 y.o."));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = null",
+                "\tHeight = 0",
+                "\tAge = 19 y.o.",
+                "\tNickname = ");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -109,8 +156,15 @@ namespace ObjectPrinting.Tests
                 .Configure(person => person.Name).Using(name => $"<{name}>")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = <Alex>"));
-            Assert.That(result, Does.Contain("Nickname = OG Alex"));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = <Alex>",
+                "\tHeight = 0",
+                "\tAge = 0",
+                "\tNickname = OG Alex");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -126,8 +180,15 @@ namespace ObjectPrinting.Tests
                 .Configure(person => person.Nickname).Using(nickname => $"[{nickname}]")
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Alex"));
-            Assert.That(result, Does.Contain("Nickname = [OG Alex]"));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = Alex",
+                "\tHeight = 0",
+                "\tAge = 0",
+                "\tNickname = [OG Alex]");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -139,7 +200,15 @@ namespace ObjectPrinting.Tests
                 .Configure<double>().WithCulture(new CultureInfo("ru-RU"))
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Height = 12,5"));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = null",
+                "\tHeight = 12,5",
+                "\tAge = 0",
+                "\tNickname = ");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -156,8 +225,15 @@ namespace ObjectPrinting.Tests
                 .Truncate(4)
                 .PrintToString(person);
 
-            Assert.That(result, Does.Contain("Name = Alex"));
-            Assert.That(result, Does.Contain("Nickname = OG Alex"));
+            var expected = string.Join(Environment.NewLine,
+                "Person:",
+                $"\tId = {Guid.Empty}",
+                "\tName = Alex",
+                "\tHeight = 0",
+                "\tAge = 0",
+                "\tNickname = OG Alex");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -170,9 +246,18 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<Node>().PrintToString(first);
 
-            Assert.That(result, Does.Contain("Name = first" + Environment.NewLine));
-            Assert.That(result, Does.Contain("Name = second" + Environment.NewLine));
-            Assert.That(result, Does.Contain("[Циклическая ссылка: Node]"));
+            var expected = string.Join(Environment.NewLine,
+                "Node:",
+                "\tName = first",
+                "\tNext = Node:",
+                "\t\tName = second",
+                "\t\tNext = [Циклическая ссылка: Node]",
+                "\t\tLeft = null",
+                "\t\tRight = null",
+                "\tLeft = null",
+                "\tRight = null");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -183,13 +268,22 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<Node>().PrintToString(root);
 
-            Assert.That(result, Does.Contain("Left = Node:"));
-            Assert.That(result, Does.Contain("Right = Node:"));
-            Assert.That(result, Does.Contain(
-                $"Left = Node:{Environment.NewLine}\t\tName = shared"));
-            Assert.That(result, Does.Contain(
-                $"Right = Node:{Environment.NewLine}\t\tName = shared"));
-            Assert.That(result, Does.Not.Contain("[Циклическая ссылка:"));
+            var expected = string.Join(Environment.NewLine,
+                "Node:",
+                "\tName = ",
+                "\tNext = null",
+                "\tLeft = Node:",
+                "\t\tName = shared",
+                "\t\tNext = null",
+                "\t\tLeft = null",
+                "\t\tRight = null",
+                "\tRight = Node:",
+                "\t\tName = shared",
+                "\t\tNext = null",
+                "\t\tLeft = null",
+                "\t\tRight = null");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -202,10 +296,16 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
-            Assert.That(result, Does.Contain(
-                $"ArrayItems = [{Environment.NewLine}\t\tarray-first," +
-                $"{Environment.NewLine}\t\tarray-second{Environment.NewLine}\t]" +
-                $"{Environment.NewLine}\tListItems ="));
+            var expected = string.Join(Environment.NewLine,
+                "CollectionSample:",
+                "\tArrayItems = [",
+                "\t\tarray-first,",
+                "\t\tarray-second",
+                "\t]",
+                "\tListItems = []",
+                "\tDictionaryItems = {}");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -218,9 +318,16 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
-            Assert.That(result, Does.Contain(
-                $"ListItems = [{Environment.NewLine}\t\tlist-first," +
-                $"{Environment.NewLine}\t\tlist-second{Environment.NewLine}\t]"));
+            var expected = string.Join(Environment.NewLine,
+                "CollectionSample:",
+                "\tArrayItems = []",
+                "\tListItems = [",
+                "\t\tlist-first,",
+                "\t\tlist-second",
+                "\t]",
+                "\tDictionaryItems = {}");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -237,11 +344,16 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<CollectionSample>().PrintToString(sample);
 
-            Assert.That(result, Does.Contain(
-                $"DictionaryItems = {{{Environment.NewLine}\t\tkey: value," +
-                $"{Environment.NewLine}\t\tsecond-key: second-value" +
-                $"{Environment.NewLine}\t}}"));
-            Assert.That(result, Does.Not.EndWith(Environment.NewLine));
+            var expected = string.Join(Environment.NewLine,
+                "CollectionSample:",
+                "\tArrayItems = []",
+                "\tListItems = []",
+                "\tDictionaryItems = {",
+                "\t\tkey: value,",
+                "\t\tsecond-key: second-value",
+                "\t}");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         [Test]
@@ -254,9 +366,17 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<NodeCollectionSample>().PrintToString(sample);
 
-            Assert.That(result, Does.Contain(
-                $"Nodes = [{Environment.NewLine}\t\tNode:" +
-                $"{Environment.NewLine}\t\t\tName = nested"));
+            var expected = string.Join(Environment.NewLine,
+                "NodeCollectionSample:",
+                "\tNodes = [",
+                "\t\tNode:",
+                "\t\t\tName = nested",
+                "\t\t\tNext = null",
+                "\t\t\tLeft = null",
+                "\t\t\tRight = null",
+                "\t]");
+
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         private sealed class Node
@@ -284,5 +404,28 @@ namespace ObjectPrinting.Tests
             public string Readable { get; set; } = string.Empty;
             public string SetterWithPrivateGetter { private get; set; } = string.Empty;
         }
+
+        private sealed class ScalarSample
+        {
+            public object? Value { get; set; }
+        }
+
+        private static readonly TestCaseData[] ScalarValuesNotAllowedInAttributes =
+        {
+            new TestCaseData(12.5m),
+            new TestCaseData((Half)12.5f),
+            new TestCaseData(new IntPtr(12)),
+            new TestCaseData(new UIntPtr(12u)),
+            new TestCaseData((Int128)12),
+            new TestCaseData((UInt128)12),
+            new TestCaseData(new BigInteger(12)),
+            new TestCaseData(new Complex(1, 2)),
+            new TestCaseData(Guid.Parse("d85b1407-351d-4694-9392-03acc5870eb1")),
+            new TestCaseData(new DateTime(2025, 1, 2, 3, 4, 5)),
+            new TestCaseData(new DateTimeOffset(2025, 1, 2, 3, 4, 5, TimeSpan.Zero)),
+            new TestCaseData(new DateOnly(2025, 1, 2)),
+            new TestCaseData(new TimeOnly(3, 4, 5)),
+            new TestCaseData(new TimeSpan(1, 2, 3))
+        };
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 
@@ -11,23 +12,40 @@ namespace ObjectPrinting
     {
         private static readonly HashSet<Type> FinalTypes = new()
         {
-            typeof(int),
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(char),
+            typeof(decimal),
             typeof(double),
             typeof(float),
+            typeof(Half),
+            typeof(short),
+            typeof(ushort),
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(IntPtr),
+            typeof(UIntPtr),
+            typeof(Int128),
+            typeof(UInt128),
+            typeof(BigInteger),
+            typeof(Complex),
             typeof(string),
+            typeof(Guid),
             typeof(DateTime),
-            typeof(TimeSpan)
+            typeof(DateTimeOffset),
+            typeof(DateOnly),
+            typeof(TimeOnly),
+            typeof(TimeSpan),
         };
 
-        private readonly IReadOnlyDictionary<Type, TypeSettings> typeSettings;
-        private readonly IReadOnlyDictionary<MemberInfo, MemberSettings> memberSettings;
+        private readonly PrintingSettings printingSettings;
 
-        internal ObjectWriter(
-            IReadOnlyDictionary<Type, TypeSettings> typeSettings,
-            IReadOnlyDictionary<MemberInfo, MemberSettings> memberSettings)
+        internal ObjectWriter(PrintingSettings printingSettings)
         {
-            this.typeSettings = typeSettings;
-            this.memberSettings = memberSettings;
+            this.printingSettings = printingSettings;
         }
 
         internal string Print(object? obj)
@@ -55,16 +73,17 @@ namespace ObjectPrinting
             }
 
             var type = obj.GetType();
-            if (typeSettings.TryGetValue(type, out var settings))
+            var typeSettings = printingSettings.GetTypeSettings(type);
+            if (typeSettings is not null)
             {
-                var typeSerializer = settings.Serializer;
+                var typeSerializer = typeSettings.Serializer;
                 if (typeSerializer is not null)
                 {
                     builder.Append(typeSerializer(obj));
                     return;
                 }
 
-                var culture = settings.Culture;
+                var culture = typeSettings.Culture;
                 if (culture is not null && obj is IFormattable formattable)
                 {
                     builder.Append(formattable.ToString(null, culture));
@@ -72,7 +91,7 @@ namespace ObjectPrinting
                 }
             }
 
-            if (FinalTypes.Contains(type))
+            if (FinalTypes.Contains(type) || type.IsEnum)
             {
                 builder.Append(obj.ToString());
                 return;
@@ -177,10 +196,10 @@ namespace ObjectPrinting
             foreach (var member in GetPublicMembers(type))
             {
                 var memberType = GetMemberType(member);
-                memberSettings.TryGetValue(member, out var memberConfiguration);
+                var memberConfiguration = printingSettings.GetMemberSettings(member);
+                var typeConfiguration = printingSettings.GetTypeSettings(memberType);
 
-                if ((typeSettings.TryGetValue(memberType, out var typeConfiguration)
-                        && typeConfiguration.IsExcluded)
+                if (typeConfiguration?.IsExcluded == true
                     || memberConfiguration?.IsExcluded == true)
                 {
                     continue;
