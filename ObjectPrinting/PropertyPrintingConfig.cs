@@ -1,26 +1,27 @@
 ﻿using System;
+using System.Reflection;
 
 namespace ObjectPrinting
 {
     public class PropertyPrintingConfig<TOwner, TPropType>
     {
         private readonly PrintingConfig<TOwner> printingConfig;
-        private readonly string? fieldName;
+        private readonly MemberInfo? fieldMember;
 
-        public string? FieldName => fieldName;
+        public MemberInfo? FieldMember => fieldMember;
         public PrintingConfig<TOwner> ParentConfig => printingConfig;
 
-        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, string? fieldName=null)
+        public PropertyPrintingConfig(PrintingConfig<TOwner> printingConfig, MemberInfo? fieldMember = null)
         {
             this.printingConfig = printingConfig;
-            this.fieldName = fieldName;
+            this.fieldMember = fieldMember;
         }
 
         public PrintingConfig<TOwner> Using(Func<TPropType, string> print)
         {
-            if (fieldName != null)
+            if (fieldMember != null)
             {
-                printingConfig.AddNewFieldPrintingFunc(fieldName, TPropTypeObject => print((TPropType)TPropTypeObject));
+                printingConfig.AddNewFieldPrintingFunc(fieldMember.DeclaringType!, fieldMember.Name, TPropTypeObject => print((TPropType)TPropTypeObject));
             }
             else
             {

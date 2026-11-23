@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Execution;
 using ObjectPrinting.Tests.Models;
 using System.Globalization;
 
@@ -208,8 +207,16 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Shop>()
                 .Excluding(shop => shop.Products)
                 .Excluding(shop => shop.PersonalSalary);
-            var result = printer.PrintToString(MakeTestShop()).Replace("\t", "    ");
-            result.Should().Be(File.ReadAllText(Path.Combine("TestResults", "array_test_result.txt")));
+            var result = printer.PrintToString(MakeTestShop());
+            result.Should().Be((
+                "Shop {{Environment.NewLine}" +
+                "\tPersonalNames = {{Environment.NewLine}" +
+                "\t\tCount = 3{Environment.NewLine}" +
+                "\t\t[0] = Данил{Environment.NewLine}" +
+                "\t\t[1] = Руслан{Environment.NewLine}" +
+                "\t\t[2] = Максимка{Environment.NewLine}" +
+                "\t}{Environment.NewLine}" +
+                "}{Environment.NewLine}").Replace("{Environment.NewLine}", Environment.NewLine));
         }
 
         [Test]
@@ -218,8 +225,22 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Shop>()
                 .Excluding(shop => shop.PersonalNames)
                 .Excluding(shop => shop.PersonalSalary);
-            var result = printer.PrintToString(MakeTestShop()).Replace("\t", "    ");
-            result.Should().Be(File.ReadAllText(Path.Combine("TestResults", "list_test_result.txt")));
+            var result = printer.PrintToString(MakeTestShop());
+            result.Should().Be((
+                "Shop {{Environment.NewLine}" +
+                "\tProducts = {{Environment.NewLine}" +
+                "\t\tCount = 3{Environment.NewLine}" +
+                "\t\t[0] = Product {{Environment.NewLine}" +
+                "\t\t\tProductName = Кашка{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t\t[1] = Product {{Environment.NewLine}" +
+                "\t\t\tProductName = Греча{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t\t[2] = Product {{Environment.NewLine}" +
+                "\t\t\tProductName = Супец{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t}{Environment.NewLine}" +
+                "}{Environment.NewLine}").Replace("{Environment.NewLine}", Environment.NewLine));
         }
 
         [Test]
@@ -228,8 +249,25 @@ namespace ObjectPrinting.Tests
             var printer = ObjectPrinter.For<Shop>()
                 .Excluding(shop => shop.PersonalNames)
                 .Excluding(shop => shop.Products);
-            var result = printer.PrintToString(MakeTestShop()).Replace("\t", "    ");
-            result.Should().Be(File.ReadAllText(Path.Combine("TestResults", "dictionary_test_result.txt")));
+            var result = printer.PrintToString(MakeTestShop());
+            result.Should().Be((
+                "Shop {{Environment.NewLine}" +
+                "\tPersonalSalary = {{Environment.NewLine}" +
+                "\t\tCount = 3{Environment.NewLine}" +
+                "\t\t[0] = {{Environment.NewLine}" +
+                "\t\t\tKey = Данил{Environment.NewLine}" +
+                "\t\t\tValue = 100000{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t\t[1] = {{Environment.NewLine}" +
+                "\t\t\tKey = Руслан{Environment.NewLine}" +
+                "\t\t\tValue = 0{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t\t[2] = {{Environment.NewLine}" +
+                "\t\t\tKey = Максимка{Environment.NewLine}" +
+                "\t\t\tValue = -100{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t}{Environment.NewLine}" +
+                "}{Environment.NewLine}").Replace("{Environment.NewLine}", Environment.NewLine));
         }
 
         [Test]
@@ -242,6 +280,32 @@ namespace ObjectPrinting.Tests
                 "\tName = Ruslan{Environment.NewLine}" +
                 "\tHeight = 170{Environment.NewLine}" +
                 "\tAge = 20{Environment.NewLine}" +
+                "}{Environment.NewLine}").Replace("{Environment.NewLine}", Environment.NewLine));
+        }
+
+        [Test]
+        public void ObjectPrinter_TestFieldExcludedOnlyFromRerquiredClass()
+        {
+            var aboba = new Aboba() { Name = "Aboba", Nums = new List<int>() { 0, 6} };
+            var preAboba = new PreAboba { Name = "PreAboba", Nums = new List<int>() { 1, 9 }, MyAboba = aboba };
+            var printer = ObjectPrinter.For<PreAboba>()
+                .Excluding(pa => pa.Name);
+
+            printer.PrintToString(preAboba).Should().Be((
+                "PreAboba {{Environment.NewLine}" +
+                "\tNums = {{Environment.NewLine}" +
+                "\t\tCount = 2{Environment.NewLine}" +
+                "\t\t[0] = 1{Environment.NewLine}" +
+                "\t\t[1] = 9{Environment.NewLine}" +
+                "\t}{Environment.NewLine}" +
+                "\tMyAboba = Aboba {{Environment.NewLine}" +
+                "\t\tName = Aboba{Environment.NewLine}" +
+                "\t\tNums = {{Environment.NewLine}" +
+                "\t\t\tCount = 2{Environment.NewLine}" +
+                "\t\t\t[0] = 0{Environment.NewLine}" +
+                "\t\t\t[1] = 6{Environment.NewLine}" +
+                "\t\t}{Environment.NewLine}" +
+                "\t}{Environment.NewLine}" +
                 "}{Environment.NewLine}").Replace("{Environment.NewLine}", Environment.NewLine));
         }
     }

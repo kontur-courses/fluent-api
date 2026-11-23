@@ -12,7 +12,7 @@ namespace ObjectPrinting
 
         public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            if (propConfig.FieldName == null)
+            if (propConfig.FieldMember == null)
             {
                 throw new InvalidOperationException("TrimmedToLength можно применить только к конкретному свойству");
             }
@@ -21,14 +21,14 @@ namespace ObjectPrinting
                 throw new ArgumentException("Длина не может быть отрицательной");
             }
 
-            propConfig.ParentConfig.AddNewFieldTrim(propConfig.FieldName, maxLen);
+            propConfig.ParentConfig.AddNewFieldTrim(propConfig.FieldMember.DeclaringType!, propConfig.FieldMember.Name, maxLen);
 
             return propConfig.ParentConfig;
         }
 
         public static PrintingConfig<TOwner> UsingCulture<TOwner, TPropType>(this PropertyPrintingConfig<TOwner, TPropType> propConfig, CultureInfo culture) where TPropType : IFormattable
         {
-            if (propConfig.FieldName != null)
+            if (propConfig.FieldMember != null)
             {
                 throw new InvalidOperationException("UsingCulture нельзя применить к конкретному свойству");
             }
