@@ -10,23 +10,15 @@ namespace ObjectPrinting
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<MemberInfo> membersToExclude = [];
-        private readonly Dictionary<Type, Func<object, string>> formatters = [];
-        private readonly Dictionary<MemberInfo, Func<object, string>> formattersByMember = [];
+        private readonly HashSet<Type> typesToExclude = [];
+        
+        private readonly Dictionary<Type, Func<object, string>> typesFormatters = [];
+        private readonly Dictionary<MemberInfo, Func<object, string>> membersFormatters = [];
         
         public PrintingConfig<TOwner> Excluding<TPropertyType>()
         {
             var propertyType = typeof(TPropertyType);
-
-            foreach (var member in typeof(TOwner).GetPrintableMembers())
-            {
-                var memberType = member is PropertyInfo property
-                    ? property.PropertyType
-                    : ((FieldInfo)member).FieldType;
-
-                if (memberType == propertyType)
-                    membersToExclude.Add(member);
-            }
-
+            typesToExclude.Add(propertyType);
             return this;
         }
         
@@ -61,14 +53,14 @@ namespace ObjectPrinting
             return new PropertyPrintingConfig<TOwner, TPropertyType>(this, memberExpression.Member);
         }
 
-        internal void RegisterFormatter<T>(Func<T, string> print)
+        internal void RegistertypeFormatter<T>(Func<T, string> print)
         {
-            formatters[typeof(T)] = value => print((T)value);
+            typesFormatters[typeof(T)] = value => print((T)value);
         }
         
-        internal void RegisterFormatterByMember<T>(MemberInfo member, Func<T, string> print)
+        internal void RegisterMemberFormatter<T>(MemberInfo member, Func<T, string> print)
         {
-            formattersByMember[member] = value => print((T)value);
+            membersFormatters[member] = value => print((T)value);
         }
         
         public string PrintToString(TOwner obj)
@@ -77,14 +69,14 @@ namespace ObjectPrinting
             return PrintToString(obj, 0, currentPath);
         }
 
-        private string PrintToString(object obj, int nestingLevel, HashSet<object> currentPath)
+        private string PrintToString(object? obj, int nestingLevel, HashSet<object> currentPath)
         {
             if (obj == null)
                 return "null" + Environment.NewLine;
             
             var type = obj.GetType();
 
-            if (formatters.TryGetValue(type, out var formatter))
+            if (typesFormatters.TryGetValue(type, out var formatter))
                 return formatter(obj) + Environment.NewLine;
             
             var finalTypes = new[]
@@ -107,6 +99,15 @@ namespace ObjectPrinting
 
                 foreach (var member in type.GetPrintableMembers())
                 {
+                    var memberType = member is PropertyInfo propertyInfo 
+                        ? propertyInfo.PropertyType 
+                        : member is FieldInfo fieldInfo 
+                            ? fieldInfo.FieldType 
+                            : throw new ArgumentException();
+                    
+                    if (typesToExclude.Contains(memberType)) 
+                        continue;
+                    
                     if (membersToExclude.Contains(member))
                         continue;
 
@@ -115,7 +116,7 @@ namespace ObjectPrinting
                         : ((FieldInfo)member).GetValue(obj);
 
                     var printedValue =
-                        value is not null && formattersByMember.TryGetValue(member, out var memberFormatter)
+                        value is not null && membersFormatters.TryGetValue(member, out var memberFormatter)
                             ? memberFormatter(value) + Environment.NewLine
                             : PrintToString(value, nestingLevel + 1, currentPath);
 

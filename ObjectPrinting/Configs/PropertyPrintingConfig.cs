@@ -8,10 +8,10 @@ public class PropertyPrintingConfig<TOwner, TPropertyType>(PrintingConfig<TOwner
     public PrintingConfig<TOwner> Using(Func<TPropertyType, string> print)
     {
         if (member == null)
-            printingConfig.RegisterFormatter(print);
+            printingConfig.RegistertypeFormatter(print);
 
         else
-            printingConfig.RegisterFormatterByMember(member, print);
+            printingConfig.RegisterMemberFormatter(member, print);
         
         return printingConfig;
     }
