@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using ObjectPrinting.Configs;
@@ -113,6 +114,21 @@ public class ObjectPrinterTests
         lines.Should().Contain("\tScore = 26");
     }
 
+    [Test]
+    public void Printing_BySelector_FormatsOnlySelectedField()
+    {
+        var sample = new SampleWithIntMembers(); // Score = 26, Age = 19
+
+        var result = ObjectPrinter.For<SampleWithIntMembers>()
+            .Printing(x => x.Score).Using(value => value.ToString("X"))
+            .PrintToString(sample);
+
+        var lines = result.Split(Environment.NewLine);
+
+        lines.Should().Contain("\tScore = 1A");
+        lines.Should().Contain("\tAge = 19");
+    }
+
     [TestCase(true, "1.5")]
     [TestCase(false, "1,5")]
     public void Printing_ByType_UsesSpecifiedCulture(
@@ -184,8 +200,73 @@ public class ObjectPrinterTests
 
         lines.Should().Contain("\tLeft = Node");
         lines.Should().Contain("\tRight = Node");
-        lines.Should().Contain(line => line == "\t\tName = Shared");
+        lines.Where(line => line == "\t\tName = Shared").Should().HaveCount(2);
         result.Should().NotContain("<cycle>");
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Printing_MemberFormatterOverridesTypeFormatter(
+        bool registerMemberFirst)
+    {
+        var printer = ObjectPrinter.For<Sample>();
+
+        if (registerMemberFirst)
+        {
+            printer.Printing(x => x.Score).Using(value => $"score:{value}");
+            printer.Printing<int>().Using(value => $"int:{value}");
+        }
+        else
+        {
+            printer.Printing<int>().Using(value => $"int:{value}");
+            printer.Printing(x => x.Score).Using(value => $"score:{value}");
+        }
+
+        var lines = printer.PrintToString(new Sample()).Split(Environment.NewLine);
+
+        lines.Should().Contain("\tScore = score:26");
+        lines.Should().Contain("\tAge = int:19");
+    }
+
+    [Test]
+    public void Excluding_MemberOverridesFormatterRegisteredAfterIt()
+    {
+        var result = ObjectPrinter.For<Sample>()
+            .Excluding(x => x.Score)
+            .Printing(x => x.Score).Using(value => $"score:{value}")
+            .Printing<int>().Using(value => $"int:{value}")
+            .PrintToString(new Sample());
+
+        var lines = result.Split(Environment.NewLine);
+
+        lines.Any(line => line.StartsWith("\tScore = ", StringComparison.Ordinal))
+            .Should().BeFalse();
+        lines.Should().Contain("\tAge = int:19");
+    }
+
+    [Test]
+    public void Excluding_TypeOverridesFormattersRegisteredAfterIt()
+    {
+        var result = ObjectPrinter.For<Sample>()
+            .Excluding<int>()
+            .Printing<int>().Using(value => $"int:{value}")
+            .Printing(x => x.Score).Using(value => $"score:{value}")
+            .PrintToString(new Sample());
+
+        var lines = result.Split(Environment.NewLine);
+
+        lines.Any(line => line.StartsWith("\tScore = ", StringComparison.Ordinal))
+            .Should().BeFalse();
+        lines.Any(line => line.StartsWith("\tAge = ", StringComparison.Ordinal))
+            .Should().BeFalse();
+        lines.Should().Contain("\tName = Alex");
+    }
+
+    private sealed class Sample
+    {
+        public readonly int Score = 26;
+        public int Age { get; } = 19;
+        public string Name { get; } = "Alex";
     }
 
     private sealed class Node
@@ -207,7 +288,7 @@ public class ObjectPrinterTests
 
     private sealed class SampleWithIntMembers
     {
-        public int Score = 26;
+        public readonly int Score = 26;
         public int Age { get; } = 19;
         public string Name { get; set; } = "Alex";
     }
