@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.Extensions;
 
 public static class TypeExtensions
 {

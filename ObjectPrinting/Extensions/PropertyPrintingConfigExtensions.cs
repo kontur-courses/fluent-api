@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Globalization;
+using ObjectPrinting.Configs;
 
-namespace ObjectPrinting.Configs;
+namespace ObjectPrinting.Extensions;
 
 public static class PropertyPrintingConfigExtensions
 {
     public static PrintingConfig<TOwner> Using<TOwner, TPropertyType>(
-        this PropertyPrintingConfig<TOwner, TPropertyType> propertyPrintingConfig, CultureInfo cultureInfo)
+        this PropertyPrintingConfig<TOwner, TPropertyType> propertyPrintingConfig,
+        CultureInfo cultureInfo)
         where TPropertyType : IFormattable
     {
         return propertyPrintingConfig.Using(value => value.ToString(null, cultureInfo));
