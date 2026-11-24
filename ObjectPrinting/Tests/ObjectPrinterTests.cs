@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using FluentAssertions;
@@ -260,6 +261,67 @@ public class ObjectPrinterTests
         lines.Any(line => line.StartsWith("\tAge = ", StringComparison.Ordinal))
             .Should().BeFalse();
         lines.Should().Contain("\tName = Alex");
+    }
+
+    [TestCase(false, TestName = "PrintToString_PrintsArrayElementsInOrder")]
+    [TestCase(true, TestName = "PrintToString_PrintsListElementsInOrder")]
+    public void PrintToString_PrintsSequenceElementsInOrder(bool useList)
+    {
+        object collection = useList
+            ? new List<int> { 31, 17, 31 }
+            : new[] { 31, 17, 31 };
+
+        var result = ObjectPrinter.For<object>().PrintToString(collection);
+
+        result.Split(Environment.NewLine).Should().ContainInOrder(
+            "\t[0] = 31",
+            "\t[1] = 17",
+            "\t[2] = 31");
+    }
+
+    [Test]
+    public void PrintToString_PrintsDictionaryKeysWithTheirValues()
+    {
+        var dictionary = new Dictionary<string, int>
+        {
+            ["alpha"] = 41,
+            ["beta"] = 73
+        };
+
+        var result = ObjectPrinter.For<Dictionary<string, int>>()
+            .PrintToString(dictionary);
+
+        var lines = result.Split(Environment.NewLine);
+
+        lines.Should().Contain("\t[alpha] = 41");
+        lines.Should().Contain("\t[beta] = 73");
+    }
+
+    [Test]
+    public void PrintToString_PrintsMembersOfObjectsInNestedCollection()
+    {
+        var sample = new
+        {
+            Items = new List<Node> { new() { Name = "Nested" } }
+        };
+
+        var result = sample.PrintToString();
+
+        result.Split(Environment.NewLine).Should().ContainInOrder(
+            "\t\t[0] = Node",
+            "\t\t\tName = Nested");
+    }
+    
+    [Test]
+    public void PrintToString_StopsAtCollectionContainingItself()
+    {
+        var list = new List<object>();
+        list.Add(list);
+
+        var result = ObjectPrinter.For<List<object>>().PrintToString(list);
+
+        result.Split(Environment.NewLine)
+            .Should().Contain("\t[0] = <cycle>");
     }
 
     private sealed class Sample
