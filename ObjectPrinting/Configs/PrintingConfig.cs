@@ -17,7 +17,6 @@ public class PrintingConfig<TOwner>
     ];
 
     private readonly Dictionary<MemberInfo, Func<object, string>> membersFormatters = [];
-
     private readonly HashSet<MemberInfo> membersToExclude = [];
 
     private readonly Dictionary<Type, Func<object, string>> typesFormatters = [];
@@ -30,7 +29,8 @@ public class PrintingConfig<TOwner>
         return this;
     }
 
-    public PrintingConfig<TOwner> Excluding<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
+    public PrintingConfig<TOwner> Excluding<TPropertyType>(
+        Expression<Func<TOwner, TPropertyType>> memberSelector)
     {
         var member = GetSelectedMember(memberSelector);
         membersToExclude.Add(member);
@@ -46,18 +46,17 @@ public class PrintingConfig<TOwner>
         Expression<Func<TOwner, TPropertyType>> memberSelector)
     {
         var member = GetSelectedMember(memberSelector);
-
         return new PropertyPrintingConfig<TOwner, TPropertyType>(this, member);
     }
 
     internal void RegisterTypeFormatter<T>(Func<T, string> print)
     {
-        typesFormatters[typeof(T)] = value => print((T)value);
+        typesFormatters[typeof(T)] = (value) => print((T)value);
     }
 
     internal void RegisterMemberFormatter<T>(MemberInfo member, Func<T, string> print)
     {
-        membersFormatters[member] = value => print((T)value);
+        membersFormatters[member] = (value) => print((T)value);
     }
 
     public string PrintToString(TOwner obj)

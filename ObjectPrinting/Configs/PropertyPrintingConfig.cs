@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Reflection;
-using ObjectPrinting.Configs;
 
-namespace ObjectPrinting;
+namespace ObjectPrinting.Configs;
 
 public class PropertyPrintingConfig<TOwner, TPropertyType>(
     PrintingConfig<TOwner> printingConfig,
@@ -12,7 +11,6 @@ public class PropertyPrintingConfig<TOwner, TPropertyType>(
     {
         if (member == null)
             printingConfig.RegisterTypeFormatter(print);
-
         else
             printingConfig.RegisterMemberFormatter(member, print);
 
