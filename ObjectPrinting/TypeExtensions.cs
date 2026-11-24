@@ -11,8 +11,8 @@ public static class TypeExtensions
     {
         return type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
             .Where(member => member is FieldInfo
-                             || member is PropertyInfo property
-                             && property.GetMethod?.IsPublic == true
-                             && property.GetIndexParameters().Length == 0);
+                             || (member is PropertyInfo property
+                                 && property.GetMethod?.IsPublic == true
+                                 && property.GetIndexParameters().Length == 0));
     }
 }
