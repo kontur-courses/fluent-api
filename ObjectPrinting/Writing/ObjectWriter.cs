@@ -1,0 +1,272 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Reflection;
+using System.Text;
+
+namespace ObjectPrinting
+{
+    /// <summary>Формирует строковое представление объекта по заданным правилам печати</summary>
+    internal sealed class ObjectWriter
+    {
+        private static readonly HashSet<Type> FinalTypes = new()
+        {
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(char),
+            typeof(decimal),
+            typeof(double),
+            typeof(float),
+            typeof(Half),
+            typeof(short),
+            typeof(ushort),
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(IntPtr),
+            typeof(UIntPtr),
+            typeof(Int128),
+            typeof(UInt128),
+            typeof(BigInteger),
+            typeof(Complex),
+            typeof(string),
+            typeof(Guid),
+            typeof(DateTime),
+            typeof(DateTimeOffset),
+            typeof(DateOnly),
+            typeof(TimeOnly),
+            typeof(TimeSpan),
+        };
+
+        private readonly PrintingSettings printingSettings;
+
+        /// <summary>Получает правила, которые будут применяться при печати</summary>
+        internal ObjectWriter(PrintingSettings printingSettings)
+        {
+            this.printingSettings = printingSettings;
+        }
+
+        /// <summary>Печатает объект, создавая новый буфер и множество активных ссылок для каждого вызова</summary>
+        internal string Print(object? obj)
+        {
+            var builder = new StringBuilder();
+            AppendValue(
+                builder,
+                obj,
+                0,
+                new HashSet<object>(ReferenceEqualityComparer.Instance));
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Добавляет значение в буфер, применяя настройки его типа или выбирая стандартный способ печати
+        /// Проверяет циклы по ссылкам в текущей ветке обхода
+        /// </summary>
+        private void AppendValue(
+            StringBuilder builder,
+            object? obj,
+            int nestingLevel,
+            HashSet<object> activeReferences)
+        {
+            if (obj == null)
+            {
+                builder.Append("null");
+                return;
+            }
+
+            var type = obj.GetType();
+            var typeSettings = printingSettings.GetTypeSettings(type);
+            if (typeSettings is not null)
+            {
+                var typeSerializer = typeSettings.Serializer;
+                if (typeSerializer is not null)
+                {
+                    builder.Append(typeSerializer(obj));
+                    return;
+                }
+
+                var culture = typeSettings.Culture;
+                if (culture is not null && obj is IFormattable formattable)
+                {
+                    builder.Append(formattable.ToString(null, culture));
+                    return;
+                }
+            }
+
+            if (FinalTypes.Contains(type) || type.IsEnum)
+            {
+                builder.Append(obj.ToString());
+                return;
+            }
+
+            var isReferenceType = !type.IsValueType;
+            if (isReferenceType && !activeReferences.Add(obj))
+            {
+                builder.Append($"[Циклическая ссылка: {type.Name}]");
+                return;
+            }
+
+            try
+            {
+                if (obj is IDictionary dictionary)
+                {
+                    AppendDictionary(builder, dictionary, nestingLevel, activeReferences);
+                    return;
+                }
+
+                if (obj is IEnumerable collection)
+                {
+                    AppendCollection(builder, collection, nestingLevel, activeReferences);
+                    return;
+                }
+
+                AppendObjectMembers(builder, obj, type, nestingLevel, activeReferences);
+            }
+            finally
+            {
+                if (isReferenceType)
+                    activeReferences.Remove(obj);
+            }
+        }
+
+        /// <summary>Выводит записи словаря в фигурных скобках в виде пар «ключ: значение»</summary>
+        private void AppendDictionary(
+            StringBuilder builder,
+            IDictionary dictionary,
+            int nestingLevel,
+            HashSet<object> activeReferences)
+        {
+            var indentation = new string('\t', nestingLevel);
+            var childIndentation = new string('\t', nestingLevel + 1);
+
+            builder.Append('{');
+            var hasEntries = false;
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                if (hasEntries)
+                    builder.Append(',');
+
+                builder.AppendLine().Append(childIndentation);
+                AppendValue(builder, entry.Key, nestingLevel + 1, activeReferences);
+                builder.Append(": ");
+                AppendValue(builder, entry.Value, nestingLevel + 1, activeReferences);
+                hasEntries = true;
+            }
+
+            if (hasEntries)
+                builder.AppendLine().Append(indentation);
+
+            builder.Append('}');
+        }
+
+        /// <summary>Выводит элементы коллекции в квадратных скобках с отступами</summary>
+        private void AppendCollection(
+            StringBuilder builder,
+            IEnumerable collection,
+            int nestingLevel,
+            HashSet<object> activeReferences)
+        {
+            var indentation = new string('\t', nestingLevel);
+            var childIndentation = new string('\t', nestingLevel + 1);
+
+            builder.Append('[');
+            var hasItems = false;
+            foreach (var item in collection)
+            {
+                if (hasItems)
+                    builder.Append(',');
+
+                builder.AppendLine().Append(childIndentation);
+                AppendValue(builder, item, nestingLevel + 1, activeReferences);
+                hasItems = true;
+            }
+
+            if (hasItems)
+                builder.AppendLine().Append(indentation);
+
+            builder.Append(']');
+        }
+
+        /// <summary>Выводит имя типа и значения публичных свойств и полей с учётом их настроек</summary>
+        private void AppendObjectMembers(
+            StringBuilder builder,
+            object obj,
+            Type type,
+            int nestingLevel,
+            HashSet<object> activeReferences)
+        {
+            var childIndentation = new string('\t', nestingLevel + 1);
+            builder.Append(type.Name).Append(':');
+
+            foreach (var member in GetPublicMembers(type))
+            {
+                var memberType = GetMemberType(member);
+                var memberConfiguration = printingSettings.GetMemberSettings(member);
+                var typeConfiguration = printingSettings.GetTypeSettings(memberType);
+
+                if (typeConfiguration?.IsExcluded == true
+                    || memberConfiguration?.IsExcluded == true)
+                {
+                    continue;
+                }
+
+                var value = member switch
+                {
+                    PropertyInfo property => property.GetValue(obj),
+                    FieldInfo field => field.GetValue(obj),
+                    _ => throw new ArgumentException("Неизвестный тип", nameof(member))
+                };
+
+                if (value is string text
+                    && memberConfiguration?.MaxStringLength is int maxLength
+                    && text.Length > maxLength)
+                {
+                    value = text[..maxLength];
+                }
+
+                builder.AppendLine()
+                    .Append(childIndentation)
+                    .Append(member.Name)
+                    .Append(" = ");
+
+                var memberSerializer = memberConfiguration?.Serializer;
+                if (memberSerializer is not null)
+                {
+                    builder.Append(memberSerializer(value));
+                }
+                else
+                {
+                    AppendValue(builder, value, nestingLevel + 1, activeReferences);
+                }
+            }
+        }
+
+        /// <summary>Возвращает публичные свойства с открытым геттером без индекса и публичные поля экземпляра</summary>
+        private static IEnumerable<MemberInfo> GetPublicMembers(Type type)
+        {
+            var properties = type
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(property => property.GetIndexParameters().Length == 0
+                    && property.GetGetMethod() is not null);
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+
+            return properties.Cast<MemberInfo>().Concat(fields);
+        }
+
+        /// <summary>Возвращает объявленный тип свойства или поля</summary>
+        private static Type GetMemberType(MemberInfo member)
+        {
+            return member switch
+            {
+                PropertyInfo property => property.PropertyType,
+                FieldInfo field => field.FieldType,
+                _ => throw new ArgumentException("Неизвестный тип")
+            };
+        }
+    }
+}
