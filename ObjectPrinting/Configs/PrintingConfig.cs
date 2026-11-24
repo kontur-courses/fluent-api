@@ -5,10 +5,17 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace ObjectPrinting
+namespace ObjectPrinting.Configs
 {
     public class PrintingConfig<TOwner>
     {
+        // ReSharper disable once StaticMemberInGenericType
+        private static readonly Type[] FinalTypes =
+        [
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan), typeof(Guid)
+        ];
+        
         private readonly HashSet<MemberInfo> membersToExclude = [];
         private readonly HashSet<Type> typesToExclude = [];
         
@@ -79,12 +86,7 @@ namespace ObjectPrinting
             if (typesFormatters.TryGetValue(type, out var formatter))
                 return formatter(obj) + Environment.NewLine;
             
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
-            if (finalTypes.Contains(type))
+            if (FinalTypes.Contains(type))
                 return obj + Environment.NewLine;
             
             if (!currentPath.Add(obj))
