@@ -51,12 +51,12 @@ public class PrintingConfig<TOwner>
 
     internal void RegisterTypeFormatter<T>(Func<T, string> print)
     {
-        typesFormatters[typeof(T)] = (value) => print((T)value);
+        typesFormatters[typeof(T)] = value => print((T)value);
     }
 
     internal void RegisterMemberFormatter<T>(MemberInfo member, Func<T, string> print)
     {
-        membersFormatters[member] = (value) => print((T)value);
+        membersFormatters[member] = value => print((T)value);
     }
 
     public string PrintToString(TOwner obj)
@@ -90,11 +90,7 @@ public class PrintingConfig<TOwner>
 
             foreach (var member in type.GetPrintableMembers())
             {
-                var memberType = member is PropertyInfo propertyInfo
-                    ? propertyInfo.PropertyType
-                    : member is FieldInfo fieldInfo
-                        ? fieldInfo.FieldType
-                        : throw new ArgumentException();
+                var memberType = member.GetMemberType();
 
                 if (typesToExclude.Contains(memberType))
                     continue;
