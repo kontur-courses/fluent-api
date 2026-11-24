@@ -9,6 +9,8 @@ namespace ObjectPrinting.Tests
     [TestFixture]
     public class ObjectPrinterAcceptanceTests
     {
+        private const string CycleMarker = "cycle reference";
+
         [Test]
         public void Demo()
         {
@@ -29,15 +31,17 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void PrintToString_ExcludingType_PrintWothoutType()
+        public void PrintToString_ExcludingType_PrintWithoutType()
         {
             var person = new Person() { Age = 19, Height = 180, Name = "Arseny" };
 
             var result = person.Print(config => config.ExcludingType<int>());
 
             result.Should().
-                Contain("Name").And.
-                NotContain("Age").And.Contain("Height");
+                Contain($"{nameof(Person.Name)} = {person.Name}").And.
+                NotContain(nameof(Person.Age)).And
+                .NotContain(person.Age.ToString()).And.
+                Contain($"{nameof(Person.Height)} = {person.Height}");
         }
 
         [Test]
@@ -47,9 +51,10 @@ namespace ObjectPrinting.Tests
 
             var result = person.Print(config => config.Excluding(p => p.Age));
 
-            result.Should().Contain("Name = Arseny")
-                .And.Contain("Height")
-                .And.NotContain("Age");
+            result.Should().Contain($"{nameof(Person.Name)} = {person.Name}")
+                .And.Contain($"{nameof(Person.Height)} = {person.Height}")
+                .And.NotContain(nameof(Person.Age)).And
+                .NotContain(person.Age.ToString());
         }
 
         [Test]
@@ -70,8 +75,7 @@ namespace ObjectPrinting.Tests
 
             var result = person.Print(config => config.PrintTypeAs<int>(i => $"[{i}]"));
 
-            result.Should().Contain("Age = [19]")
-                .And.Contain("Height");
+            result.Should().Contain($"{nameof(Person.Age)} = [{person.Age}]");
         }
 
         [Test]
@@ -81,18 +85,19 @@ namespace ObjectPrinting.Tests
 
             var result = person.Print(config => config.PrintTypeAs<Guid>(guid => $"ID:{guid}"));
 
-            result.Should().Contain("Id = ID:");
+            result.Should().Contain($"{nameof(Person.Id)} = ID:{person.Id}");
         }
 
         [Test]
-        public void Print_SelfReference_DoesNotCrash()
+        public void Print_SelfReference_DoesNotCrashAndMarkerCycle()
         {
             var a = new Node("a", null);
             a.Next = a;
 
             var result = ObjectPrinter.For<Node>().PrintToString(a);
 
-            result.Should().Contain("Name = a");
+            result.Should().Contain($"{nameof(Node.Name)} = a")
+                .And.Contain(CycleMarker);
         }
 
         [Test]
@@ -104,18 +109,7 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<Node>().PrintToString(a);
 
-            result.Should().Contain("Name = a").And.Contain("Name = b");
-        }
-
-        [Test]
-        public void Print_CyclicReference_ContainsCyclicMarker()
-        {
-            var a = new Node("a", null);
-            a.Next = a;
-
-            var result = ObjectPrinter.For<Node>().PrintToString(a);
-
-            result.Should().Contain("cycle reference");
+            result.Should().Contain($"{nameof(Node.Name)} = a").And.Contain($"{nameof(Node.Name)} = b");
         }
 
         [Test]
@@ -126,7 +120,7 @@ namespace ObjectPrinting.Tests
             var result = person.Print(config =>
                 config.WithCulture<double>(CultureInfo.InvariantCulture));
 
-            result.Should().Contain("Height = 180.5");
+            result.Should().Contain($"{nameof(Person.Height)} = 180.5");
         }
 
         [Test]
@@ -137,8 +131,7 @@ namespace ObjectPrinting.Tests
             var result = person.Print(config =>
                 config.Printing(p => p.Name).Using(n => n.ToUpper()));
 
-            result.Should().Contain("Name = ARSENY")
-                            .And.Contain("Age = 19");
+            result.Should().Contain($"{nameof(Person.Name)} = {person.Name.ToUpper()}");
         }
 
         [Test]
@@ -149,8 +142,7 @@ namespace ObjectPrinting.Tests
             var result = person.Print(config =>
                 config.Printing(p => p.Name).TrimToLength(3));
 
-            result.Should().Contain("Name = Ars")
-                .And.Contain("Age = 19");
+            result.Should().Contain($"{nameof(Person.Name)} = {person.Name.Substring(0, 3)}");
         }
 
         [Test]
@@ -160,9 +152,10 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<int[]>().PrintToString(arr);
 
-            result.Should().Contain("[0] = 1")
-                        .And.Contain("[1] = 2")
-                        .And.Contain("[2] = 3");
+            result.Should().Contain($"{nameof(Int32)}[]") //массив
+                        .And.Contain("[0] = 1") //элемент массива
+                        .And.Contain("[1] = 2") //элемент массива
+                        .And.Contain("[2] = 3"); //элемент массива
         }
 
         [Test]
@@ -194,8 +187,8 @@ namespace ObjectPrinting.Tests
 
             var result = ObjectPrinter.For<List<int[]>>().PrintToString(nested);
 
-            result.Should().Contain("[0] = ")
-                .And.Contain("[0] = 1")
+            result.Should()
+                .Contain("[0] = Int32[]")
                 .And.Contain("[1] = 4");
         }
 
@@ -243,11 +236,10 @@ namespace ObjectPrinting.Tests
             );
 
             result.Should()
-                .NotContain("Guid").And
-                .NotContain("PersonalPhone").And
-                .NotContain("+7-999-123-45-67").And
-                .Contain("FoundedDate = 11.10.1936").And
-                .NotContain("01/01/0001").And
+                .NotContain(nameof(Guid)).And
+                .NotContain(nameof(Director.PersonalPhone)).And
+                .NotContain(uvz.Director.PersonalPhone).And
+                .Contain($"{nameof(Enterprise.FoundedDate)} = 11.10.1936").And
                 .Contain("Salary = 2500000.5").And
                 .Contain("85000.75").And
                 .Contain("Name = УРАЛВАГОНЗАВОД").And
@@ -255,7 +247,7 @@ namespace ObjectPrinting.Tests
                 .NotContain("Крупнейший производитель танков и железнодорожных вагонов в России").And
                 .Contain("[0] = ").And
                 .Contain("[Танки Т-90] = ").And
-                .Contain("cycle reference").And
+                .Contain(CycleMarker).And
                 .Contain("Enterprise").And
                 .Contain("Director").And
                 .Contain("Employees").And
