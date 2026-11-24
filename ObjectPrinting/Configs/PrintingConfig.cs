@@ -16,10 +16,10 @@ public class PrintingConfig<TOwner>
         typeof(DateTime), typeof(TimeSpan), typeof(Guid)
     ];
 
-    private readonly Dictionary<MemberInfo, Func<object, string>> membersFormatters = [];
+    private readonly Dictionary<MemberInfo, Func<object, string>> memberFormatters = [];
     private readonly HashSet<MemberInfo> membersToExclude = [];
 
-    private readonly Dictionary<Type, Func<object, string>> typesFormatters = [];
+    private readonly Dictionary<Type, Func<object, string>> typeFormatters = [];
     private readonly HashSet<Type> typesToExclude = [];
 
     public PrintingConfig<TOwner> Excluding<TPropertyType>()
@@ -51,12 +51,12 @@ public class PrintingConfig<TOwner>
 
     internal void RegisterTypeFormatter<T>(Func<T, string> print)
     {
-        typesFormatters[typeof(T)] = value => print((T)value);
+        typeFormatters[typeof(T)] = value => print((T)value);
     }
 
     internal void RegisterMemberFormatter<T>(MemberInfo member, Func<T, string> print)
     {
-        membersFormatters[member] = value => print((T)value);
+        memberFormatters[member] = value => print((T)value);
     }
 
     public string PrintToString(TOwner obj)
@@ -72,7 +72,7 @@ public class PrintingConfig<TOwner>
 
         var type = obj.GetType();
 
-        if (typesFormatters.TryGetValue(type, out var formatter))
+        if (typeFormatters.TryGetValue(type, out var formatter))
             return formatter(obj) + Environment.NewLine;
 
         if (FinalTypes.Contains(type))
@@ -103,7 +103,7 @@ public class PrintingConfig<TOwner>
                     : ((FieldInfo)member).GetValue(obj);
 
                 var printedValue =
-                    value is not null && membersFormatters.TryGetValue(member, out var memberFormatter)
+                    value is not null && memberFormatters.TryGetValue(member, out var memberFormatter)
                         ? memberFormatter(value) + Environment.NewLine
                         : PrintToString(value, nestingLevel + 1, currentPath);
 
