@@ -81,45 +81,45 @@ public class PrintingConfig<TOwner>
 
         if (!currentPath.Add(obj))
             return "<cycle>" + Environment.NewLine;
-
+        
         try
         {
-            var indentation = new string('\t', nestingLevel + 1);
-            var sb = new StringBuilder();
-
-            sb.AppendLine(type.Name);
-
-            foreach (var member in type.GetPrintableMembers())
-            {
-                var memberType = member.GetMemberType();
-
-                if (typesToExclude.Contains(memberType))
-                    continue;
-
-                if (membersToExclude.Contains(member))
-                    continue;
-
-                var value = member is PropertyInfo property
-                    ? property.GetValue(obj)
-                    : ((FieldInfo)member).GetValue(obj);
-
-                var printedValue =
-                    value is not null && memberFormatters.TryGetValue(member, out var memberFormatter)
-                        ? memberFormatter(value) + Environment.NewLine
-                        : PrintToString(value, nestingLevel + 1, currentPath);
-
-                sb.Append(indentation)
-                    .Append(member.Name)
-                    .Append(" = ")
-                    .Append(printedValue);
-            }
-
-            return sb.ToString();
+            return PrintObjectMembers(obj, type, nestingLevel + 1, currentPath);
         }
         finally
         {
             currentPath.Remove(obj);
         }
+    }
+    
+    private string PrintObjectMembers(
+        object obj, Type type, int memberLevel, HashSet<object> currentPath)
+    {
+        var indentation = new string('\t', memberLevel);
+        var result = new StringBuilder().AppendLine(type.Name);
+
+        foreach (var member in type.GetPrintableMembers())
+        {
+            if (typesToExclude.Contains(member.GetMemberType())
+                || membersToExclude.Contains(member))
+                continue;
+
+            var value = member is PropertyInfo property
+                ? property.GetValue(obj)
+                : ((FieldInfo)member).GetValue(obj);
+
+            var printedValue =
+                value is not null && memberFormatters.TryGetValue(member, out var formatter)
+                    ? formatter(value) + Environment.NewLine
+                    : PrintToString(value, memberLevel, currentPath);
+
+            result.Append(indentation)
+                .Append(member.Name)
+                .Append(" = ")
+                .Append(printedValue);
+        }
+
+        return result.ToString();
     }
 
     private static MemberInfo GetSelectedMember<TPropertyType>(Expression<Func<TOwner, TPropertyType>> memberSelector)
