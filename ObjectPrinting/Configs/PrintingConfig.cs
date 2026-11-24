@@ -17,7 +17,7 @@ namespace ObjectPrinting
         {
             var propertyType = typeof(TPropertyType);
 
-            foreach (var member in GetPrintableMembers(typeof(TOwner)))
+            foreach (var member in typeof(TOwner).GetPrintableMembers())
             {
                 var memberType = member is PropertyInfo property
                     ? property.PropertyType
@@ -105,7 +105,7 @@ namespace ObjectPrinting
 
                 sb.AppendLine(type.Name);
 
-                foreach (var member in GetPrintableMembers(type))
+                foreach (var member in type.GetPrintableMembers())
                 {
                     if (membersToExclude.Contains(member))
                         continue;
@@ -133,13 +133,6 @@ namespace ObjectPrinting
             }
         }
         
-        private static IEnumerable<MemberInfo> GetPrintableMembers(Type type)
-        {
-            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                .Where(member => member is FieldInfo
-                                 || member is PropertyInfo property
-                                 && property.GetMethod?.IsPublic == true
-                                 && property.GetIndexParameters().Length == 0);
-        }
+        
     }
 }
