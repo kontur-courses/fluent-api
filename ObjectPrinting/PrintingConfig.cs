@@ -17,6 +17,15 @@ namespace ObjectPrinting
         private readonly Dictionary<Type, CultureInfo> customCultures = new();
         private readonly Dictionary<MemberInfo, Func<object, string>> memberPrinters = new();
 
+        private static readonly HashSet<Type> finalTypes = new()
+        {
+            typeof(int), typeof(double), typeof(float), typeof(string),
+            typeof(DateTime), typeof(TimeSpan),
+            typeof(decimal), typeof(bool), typeof(char), typeof(Guid),
+            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort),
+            typeof(uint), typeof(long), typeof(ulong)
+        };
+
         public string PrintToString(TOwner obj)
         {
             var visitedObjects = new HashSet<object> (ReferenceEqualityComparer.Instance);
@@ -80,11 +89,7 @@ namespace ObjectPrinting
                 && obj is IFormattable formattable) 
                 return formattable.ToString(null, culture) + Environment.NewLine;
 
-            var finalTypes = new[]
-            {
-                typeof(int), typeof(double), typeof(float), typeof(string),
-                typeof(DateTime), typeof(TimeSpan)
-            };
+            
             if (finalTypes.Contains(obj.GetType()))
                 return obj + Environment.NewLine;
 
