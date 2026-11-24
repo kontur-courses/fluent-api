@@ -8,6 +8,7 @@ using System.Text;
 
 namespace ObjectPrinting
 {
+    /// <summary>Формирует строковое представление объекта по заданным правилам печати</summary>
     internal sealed class ObjectWriter
     {
         private static readonly HashSet<Type> FinalTypes = new()
@@ -43,11 +44,13 @@ namespace ObjectPrinting
 
         private readonly PrintingSettings printingSettings;
 
+        /// <summary>Получает правила, которые будут применяться при печати</summary>
         internal ObjectWriter(PrintingSettings printingSettings)
         {
             this.printingSettings = printingSettings;
         }
 
+        /// <summary>Печатает объект, создавая новый буфер и множество активных ссылок для каждого вызова</summary>
         internal string Print(object? obj)
         {
             var builder = new StringBuilder();
@@ -60,6 +63,10 @@ namespace ObjectPrinting
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Добавляет значение в буфер, применяя настройки его типа или выбирая стандартный способ печати
+        /// Проверяет циклы по ссылкам в текущей ветке обхода
+        /// </summary>
         private void AppendValue(
             StringBuilder builder,
             object? obj,
@@ -127,6 +134,7 @@ namespace ObjectPrinting
             }
         }
 
+        /// <summary>Выводит записи словаря в фигурных скобках в виде пар «ключ: значение»</summary>
         private void AppendDictionary(
             StringBuilder builder,
             IDictionary dictionary,
@@ -156,6 +164,7 @@ namespace ObjectPrinting
             builder.Append('}');
         }
 
+        /// <summary>Выводит элементы коллекции в квадратных скобках с отступами</summary>
         private void AppendCollection(
             StringBuilder builder,
             IEnumerable collection,
@@ -183,6 +192,7 @@ namespace ObjectPrinting
             builder.Append(']');
         }
 
+        /// <summary>Выводит имя типа и значения публичных свойств и полей с учётом их настроек</summary>
         private void AppendObjectMembers(
             StringBuilder builder,
             object obj,
@@ -236,6 +246,7 @@ namespace ObjectPrinting
             }
         }
 
+        /// <summary>Возвращает публичные свойства с открытым геттером без индекса и публичные поля экземпляра</summary>
         private static IEnumerable<MemberInfo> GetPublicMembers(Type type)
         {
             var properties = type
@@ -247,6 +258,7 @@ namespace ObjectPrinting
             return properties.Cast<MemberInfo>().Concat(fields);
         }
 
+        /// <summary>Возвращает объявленный тип свойства или поля</summary>
         private static Type GetMemberType(MemberInfo member)
         {
             return member switch
