@@ -35,7 +35,9 @@ namespace ObjectPrinting.Tests
         {
             var person = new Person() { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config => config.ExcludingType<int>());
+            var result = ObjectPrinter.For<Person>()
+                .ExcludingType<int>()
+                .PrintToString(person);
 
             result.Should().
                 Contain($"{nameof(Person.Name)} = {person.Name}").And.
@@ -45,11 +47,13 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_ExcludingMember_SkipsOnlyThatProperty()
+        public void PrintToString_ExcludingMember_SkipsOnlyThatProperty()
         {
             var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config => config.Excluding(p => p.Age));
+            var result = ObjectPrinter.For<Person>()
+                .Excluding(p => p.Age)
+                .PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Name)} = {person.Name}")
                 .And.Contain($"{nameof(Person.Height)} = {person.Height}")
@@ -69,27 +73,29 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_PrintTypeAs_UsesCustomPrinterInsteadOfDefault()
+        public void PrintToString_PrintTypeAs_UsesCustomPrinterInsteadOfDefault()
         {
             var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config => config.PrintTypeAs<int>(i => $"[{i}]"));
+            var result = ObjectPrinter.For<Person>()
+                .PrintTypeAs<int>(i => $"[{i}]")
+                .PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Age)} = [{person.Age}]");
         }
 
         [Test]
-        public void Print_PrintTypeAs_WorksForNonFinalTypes()
+        public void PrintToString_PrintTypeAs_WorksForNonFinalTypes()
         {
             var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config => config.PrintTypeAs<Guid>(guid => $"ID:{guid}"));
+            var result = ObjectPrinter.For<Person>().PrintTypeAs<Guid>(guid => $"ID:{guid}").PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Id)} = ID:{person.Id}");
         }
 
         [Test]
-        public void Print_SelfReference_DoesNotCrashAndMarkerCycle()
+        public void PrintToString_SelfReference_DoesNotCrashAndMarkerCycle()
         {
             var a = new Node("a", null);
             a.Next = a;
@@ -101,7 +107,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_MutualReference_DoesNotCrash()
+        public void PrintToString_MutualReference_DoesNotCrash()
         {
             var a = new Node("a", null);
             var b = new Node("b",a);
@@ -113,40 +119,46 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_WithCulture_UsesSpecifiedCulture()
+        public void PrintToString_WithCulture_UsesSpecifiedCulture()
         {
             var person = new Person { Age = 19, Height = 180.5, Name = "Arseny" };
 
-            var result = person.Print(config =>
-                config.WithCulture<double>(CultureInfo.InvariantCulture));
+            var result = ObjectPrinter
+                .For<Person>()
+                .WithCulture<double>(CultureInfo.InvariantCulture)
+                .PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Height)} = 180.5");
         }
 
         [Test]
-        public void Print_PrintingMember_UsesCustomPrinterForThatProperty()
+        public void PrintToString_PrintingMember_UsesCustomPrinterForThatProperty()
         {
             var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config =>
-                config.Printing(p => p.Name).Using(n => n.ToUpper()));
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .Using(n => n.ToUpper())
+                .PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Name)} = {person.Name.ToUpper()}");
         }
 
         [Test]
-        public void Print_TrimToLength_TruncatesStringValue()
+        public void PrintToString_TrimToLength_TruncatesStringValue()
         {
             var person = new Person { Age = 19, Height = 180, Name = "Arseny" };
 
-            var result = person.Print(config =>
-                config.Printing(p => p.Name).TrimToLength(3));
+            var result = ObjectPrinter.For<Person>()
+                .Printing(p => p.Name)
+                .TrimToLength(3)
+                .PrintToString(person);
 
             result.Should().Contain($"{nameof(Person.Name)} = {person.Name.Substring(0, 3)}");
         }
 
         [Test]
-        public void Print_Array_PrintsElements()
+        public void PrintToString_Array_PrintsElements()
         {
             var arr = new[] { 1, 2, 3 };
 
@@ -159,18 +171,20 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_List_PrintsElements()
+        public void PrintToString_List_PrintsElements()
         {
             var list = new List<string> { "a", "b", "c" };
 
-            var result = ObjectPrinter.For<List<string>>().PrintToString(list);
+            var result = ObjectPrinter
+                .For<List<string>>()
+                .PrintToString(list);
 
             result.Should().Contain("[0] = a")
                 .And.Contain("[1] = b")
                 .And.Contain("[2] = c");
         }
         [Test]
-        public void Print_Dictionary_PrintsKeyValuePairs()
+        public void PrintToString_Dictionary_PrintsKeyValuePairs()
         {
             var dict = new Dictionary<string, int> { { "one", 1 }, { "two", 2 } };
 
@@ -181,7 +195,7 @@ namespace ObjectPrinting.Tests
         }
 
         [Test]
-        public void Print_NestedCollections_PrintsCorrectly()
+        public void PrintToString_NestedCollections_PrintsCorrectly()
         {
             var nested = new List<int[]> { new[] { 1, 2 }, new[] { 3, 4 } };
 
@@ -190,6 +204,31 @@ namespace ObjectPrinting.Tests
             result.Should()
                 .Contain("[0] = Int32[]")
                 .And.Contain("[1] = 4");
+        }
+
+        //тесты на "сахар" или методы расширения из 7-8 заданий
+        [Test]
+        public void Print_ExtensionWithoutConfig_PrintsDefault()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var result = person.Print();
+
+            result.Should()
+                .Contain($"{nameof(Person.Name)} = Alex")
+                .And.Contain($"{nameof(Person.Age)} = 19");
+        }
+
+        [Test]
+        public void Print_ExtensionWithConfig_AppliesConfiguration()
+        {
+            var person = new Person { Name = "Alex", Age = 19 };
+
+            var result = person.Print(config => config.ExcludingType<int>());
+
+            result.Should()
+                .Contain($"{nameof(Person.Name)} = Alex")
+                .And.NotContain(nameof(Person.Age));
         }
 
         [Test]
