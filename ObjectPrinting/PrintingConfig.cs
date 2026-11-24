@@ -39,7 +39,7 @@ namespace ObjectPrinting
             var memberExpression = selector.Body as MemberExpression;
 
             if (memberExpression == null)
-                throw new ArgumentException("Неправильное обращение к свойству. Необходим делегат вида p => p.Age");
+                throw new ArgumentException("Incorrect access to the property.A delegate of the form p => p.Age is required.");
 
             settings.ExcludeMember(memberExpression.Member);
 
@@ -63,7 +63,7 @@ namespace ObjectPrinting
             var expression = selector.Body as MemberExpression;
 
             if (expression == null)
-                throw new ArgumentException("Неправильное обращение к свойству.");
+                throw new ArgumentException("Incorrect access to the property. A delegate of the form p => p.Age is required.");
 
             return new PropertyPrintingConfig<TOwner, TProp>(this, expression.Member);
         }
