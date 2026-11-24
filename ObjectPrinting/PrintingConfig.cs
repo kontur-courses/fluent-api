@@ -11,11 +11,7 @@ namespace ObjectPrinting
 {
     public class PrintingConfig<TOwner>
     {
-        private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<MemberInfo> excludedMembers = new();
-        private readonly Dictionary<Type,Func<object, string>> customPrinters = new();
-        private readonly Dictionary<Type, CultureInfo> customCultures = new();
-        private readonly Dictionary<MemberInfo, Func<object, string>> memberPrinters = new();
+        private readonly PrintingSettings settings = new();
 
         private static readonly HashSet<Type> finalTypes = new()
         {
@@ -34,7 +30,7 @@ namespace ObjectPrinting
 
         public PrintingConfig<TOwner> ExcludingType<T>()
         {
-            excludedTypes.Add(typeof(T));
+            settings.ExcludeType(typeof(T));
             return this;
         }
 
@@ -45,20 +41,20 @@ namespace ObjectPrinting
             if (memberExpression == null)
                 throw new ArgumentException("Неправильное обращение к свойству. Необходим делегат вида p => p.Age");
 
-            excludedMembers.Add(memberExpression.Member);
+            settings.ExcludeMember(memberExpression.Member);
 
             return this;
         }
 
         public PrintingConfig<TOwner> PrintTypeAs<T>(Func<T, string> printer)
         {
-            customPrinters[typeof(T)] = obj => printer((T)obj);
+            settings.SetTypePrinter(typeof(T), obj => printer((T)obj));
             return this;
         }
         
         public PrintingConfig<TOwner> WithCulture<TProp>(CultureInfo culture) where TProp : IFormattable
         {
-            customCultures[typeof(TProp)] = culture;
+            settings.SetCulture(typeof(TProp), culture);
             return this;
         }
 
@@ -74,7 +70,7 @@ namespace ObjectPrinting
 
         internal void SetMemberPrinter(MemberInfo member, Func<object, string> printer)
         {
-            memberPrinters[member] = printer;
+            settings.SetMemberPrinter(member, printer);
         }
 
         private string PrintToString(object obj, int nestingLevel, HashSet<object> visitedObjects)
@@ -82,10 +78,10 @@ namespace ObjectPrinting
             if (obj == null)
                 return "null" + Environment.NewLine;
 
-            if (customPrinters.TryGetValue(obj.GetType(), out var printer)) //проверка PrintTypeAs
+            if (settings.TryGetTypePrinter(obj.GetType(), out var printer)) //проверка PrintTypeAs
                 return printer(obj) + Environment.NewLine;
 
-            if (customCultures.TryGetValue(obj.GetType(), out var culture) //проверка культуры
+            if (settings.TryGetCulture(obj.GetType(), out var culture) //проверка культуры
                 && obj is IFormattable formattable) 
                 return formattable.ToString(null, culture) + Environment.NewLine;
 
@@ -110,13 +106,13 @@ namespace ObjectPrinting
             sb.AppendLine(type.Name);
             foreach (var propertyInfo in type.GetProperties())
             {
-                if (excludedTypes.Contains(propertyInfo.PropertyType)) //проверка исключенного типа
+                if (settings.IsTypeExcluded(propertyInfo.PropertyType)) //проверка исключенного типа
                     continue;
 
-                if (excludedMembers.Contains(propertyInfo)) //проверка исключенного свойства
+                if (settings.IsMemberExcluded(propertyInfo)) //проверка исключенного свойства
                      continue;
 
-                if (memberPrinters.TryGetValue(propertyInfo, out var memberPrinter))
+                if (settings.TryGetMemberPrinter(propertyInfo, out var memberPrinter))
                 {
                     sb.Append(identation + propertyInfo.Name + " = " +
                               memberPrinter(propertyInfo.GetValue(obj)) + Environment.NewLine);
