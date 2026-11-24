@@ -131,19 +131,23 @@ public class PrintingConfig<TOwner>
     {
         var indentation = new string('\t', itemLevel);
         var result = new StringBuilder().AppendLine(collection.GetType().Name);
-        var index = 0;
 
         if (collection is IDictionary dictionary)
+        {
             foreach (DictionaryEntry entry in dictionary)
                 result.Append(indentation)
                     .Append('[').Append(entry.Key).Append("] = ")
                     .Append(PrintToString(entry.Value, itemLevel, currentPath));
+        }
 
         else
+        {
+            var index = 0;
             foreach (var item in collection)
                 result.Append(indentation)
                     .Append('[').Append(index++).Append("] = ")
                     .Append(PrintToString(item, itemLevel, currentPath));
+        }
 
         return result.ToString();
     }

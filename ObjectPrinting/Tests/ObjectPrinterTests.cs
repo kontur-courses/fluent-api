@@ -311,7 +311,7 @@ public class ObjectPrinterTests
             "\t\t[0] = Node",
             "\t\t\tName = Nested");
     }
-    
+
     [Test]
     public void PrintToString_StopsAtCollectionContainingItself()
     {
