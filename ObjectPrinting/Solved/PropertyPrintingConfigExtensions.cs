@@ -9,11 +9,12 @@ namespace ObjectPrinting.Solved
             return config(ObjectPrinter.For<T>()).PrintToString(obj);
         }
 
-        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
+        public static PrintingConfig<TOwner> TrimmedToLength<TOwner>(
+            this PropertyPrintingConfig<TOwner, string> propConfig, int maxLen)
         {
-            return maxLen < 0 ? throw new ArgumentException(maxLen.ToString()) 
+            return maxLen < 0
+                ? throw new ArgumentException(maxLen.ToString())
                 : propConfig.Using(value => value[..Math.Min(value.Length, maxLen)]);
         }
-
     }
 }

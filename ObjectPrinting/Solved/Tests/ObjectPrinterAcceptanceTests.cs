@@ -53,15 +53,16 @@ namespace ObjectPrinting.Solved.Tests
             actual.Should().Contain("Score = [42]").And.Contain("Age = 19");
         }
 
-        [Test]
-        public void Printing_ShouldUseCulture_WhenFormattingNumber()
+        [TestCase("en-US", "1.75")]
+        [TestCase("ru-RU", "1,75")]
+        public void Printing_ShouldUseCulture_WhenFormattingNumber(string cultureName, string expectedHeight)
         {
             var person = new Person { Name = "Dima", Height = 1.75 };
-            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.InvariantCulture);
+            var printer = ObjectPrinter.For<Person>().Printing<double>().Using(CultureInfo.GetCultureInfo(cultureName));
 
             var actual = printer.PrintToString(person);
 
-            actual.Should().Contain("Height = 1.75");
+            actual.Should().Contain($"Height = {expectedHeight}");
         }
 
         [Test]
@@ -100,6 +101,22 @@ namespace ObjectPrinting.Solved.Tests
             actual.Should().Contain("Score = 42.5");
         }
 
+        [Test]
+        public void Printing_ShouldUseSeparateFormatters_ForMembersInDifferentBranches()
+        {
+            var value = new
+            {
+                Left = new Person { Name = "Dima" },
+                Right = new Person { Name = "Sonya" }
+            };
+
+            var actual = value.PrintToString(config => config
+                .Printing(p => p.Left.Name).Using(name => $"[{name}]")
+                .Printing(p => p.Right.Name).Using(name => $"({name})"));
+
+            actual.Should().Contain("Name = [Dima]").And.Contain("Name = (Sonya)");
+        }
+
         [TestCase("Alexander", 4, "Alex")]
         [TestCase("Dima", 10, "Dima")]
         [TestCase("Dima", 0, "")]
@@ -122,6 +139,20 @@ namespace ObjectPrinting.Solved.Tests
             var actual = value.PrintToString(config => config.Excluding(p => p.Age));
 
             actual.Should().NotContain("Age =").And.Contain("Score = 42");
+        }
+
+        [Test]
+        public void Excluding_ShouldExcludeOnlySelectedProperty_WhenBranchesHaveSameType()
+        {
+            var value = new
+            {
+                Left = new Person { Name = "Dima", Age = 19 },
+                Right = new Person { Name = "Sonya" }
+            };
+
+            var actual = value.PrintToString(config => config.Excluding(p => p.Left.Name));
+
+            actual.Should().NotContain("Name = Dima").And.Contain("Name = Sonya").And.Contain("Age = 19");
         }
 
         [Test]

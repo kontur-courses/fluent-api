@@ -11,9 +11,9 @@ namespace ObjectPrinting.Solved
     public class PrintingConfig<TOwner>
     {
         private readonly HashSet<Type> excludedTypes = new();
-        private readonly HashSet<(Type? Type, string Name)> excludedMembers = new();
+        private readonly HashSet<string> excludedMembers = new();
         private readonly Dictionary<Type, Func<object, string>> typePrinters = new();
-        private readonly Dictionary<(Type? Type, string Name), Func<object, string>> memberPrinters = new();
+        private readonly Dictionary<string, Func<object, string>> memberPrinters = new(StringComparer.Ordinal);
 
         private readonly Type[] finalTypes =
         [
@@ -29,19 +29,14 @@ namespace ObjectPrinting.Solved
         public PropertyPrintingConfig<TOwner, TPropType> Printing<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            var key = GetMemberKey(memberSelector);
+            var path = GetMemberPath(memberSelector);
             return new PropertyPrintingConfig<TOwner, TPropType>(this,
-                print => RegisterMemberPrinter(key, print));
-        }
-
-        private void RegisterMemberPrinter<TPropType>((Type? Type, string Name) key, Func<TPropType, string> print)
-        {
-            memberPrinters[key] = value => print((TPropType)value);
+                print => memberPrinters[path] = value => print((TPropType)value));
         }
 
         public PrintingConfig<TOwner> Excluding<TPropType>(Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            excludedMembers.Add(GetMemberKey(memberSelector));
+            excludedMembers.Add(GetMemberPath(memberSelector));
             return this;
         }
 
@@ -53,16 +48,21 @@ namespace ObjectPrinting.Solved
 
         public string PrintToString(TOwner obj)
         {
-            return PrintToString(obj, 0);
+            return PrintToString(obj, 0, new HashSet<object>(), string.Empty);
         }
 
-        private static (Type? Type, string Name) GetMemberKey<TPropType>(
+        private static string GetMemberPath<TPropType>(
             Expression<Func<TOwner, TPropType>> memberSelector)
         {
-            if (memberSelector.Body is not MemberExpression member)
-                throw new ArgumentException(nameof(memberSelector));
+            var segments = new Stack<string>();
+            var expression = memberSelector.Body;
+            while (expression is MemberExpression member)
+            {
+                segments.Push("/" + member.Member.Name);
+                expression = member.Expression;
+            }
 
-            return (member.Member.DeclaringType, member.Member.Name);
+            return string.Concat(segments);
         }
 
         private void RegisterTypePrinter<TPropType>(Func<TPropType, string> print)
@@ -70,12 +70,7 @@ namespace ObjectPrinting.Solved
             typePrinters[typeof(TPropType)] = value => print((TPropType)value);
         }
 
-        private string PrintToString(object? obj, int nestingLevel)
-        {
-            return PrintToString(obj, nestingLevel, new HashSet<object>());
-        }
-
-        private string PrintToString(object? value, int level, HashSet<object> currentPath)
+        private string PrintToString(object? value, int level, HashSet<object> currentPath, string memberPath)
         {
             if (value == null)
                 return "null" + Environment.NewLine;
@@ -98,17 +93,16 @@ namespace ObjectPrinting.Solved
             {
                 foreach (DictionaryEntry entry in dictionary)
                 {
-                    var text = PrintToString(entry.Value, level + 1, currentPath);
+                    var text = PrintToString(entry.Value, level + 1, currentPath, memberPath + "[]");
                     sb.Append($"{indentation}[{entry.Key}] = {text}");
                 }
             }
-            
             else if (value is IEnumerable collection)
             {
                 var index = 0;
                 foreach (var item in collection)
                 {
-                    var text = PrintToString(item, level + 1, currentPath);
+                    var text = PrintToString(item, level + 1, currentPath, memberPath + "[]");
                     sb.Append($"{indentation}[{index}] = {text}");
                     index++;
                 }
@@ -119,27 +113,27 @@ namespace ObjectPrinting.Solved
                 var flag = BindingFlags.Public | BindingFlags.Instance;
                 foreach (var property in type.GetProperties(flag))
                 {
-                    var key = (property.DeclaringType, property.Name);
-                    if (excludedTypes.Contains(property.PropertyType) || excludedMembers.Contains(key))
+                    var path = memberPath + "/" + property.Name;
+                    if (excludedTypes.Contains(property.PropertyType) || excludedMembers.Contains(path))
                         continue;
 
                     var propertyValue = property.GetValue(value);
-                    var text = memberPrinters.TryGetValue(key, out var memberPrint)
+                    var text = memberPrinters.TryGetValue(path, out var memberPrint)
                         ? memberPrint(propertyValue!) + Environment.NewLine
-                        : PrintToString(propertyValue, level + 1, currentPath);
+                        : PrintToString(propertyValue, level + 1, currentPath, path);
                     sb.Append($"{indentation}{property.Name} = {text}");
                 }
 
                 foreach (var field in type.GetFields(flag))
                 {
-                    var key = (field.DeclaringType, field.Name);
-                    if (excludedTypes.Contains(field.FieldType) || excludedMembers.Contains(key))
+                    var path = memberPath + "/" + field.Name;
+                    if (excludedTypes.Contains(field.FieldType) || excludedMembers.Contains(path))
                         continue;
 
                     var fieldValue = field.GetValue(value);
-                    var text = memberPrinters.TryGetValue(key, out var memberPrint)
+                    var text = memberPrinters.TryGetValue(path, out var memberPrint)
                         ? memberPrint(fieldValue!) + Environment.NewLine
-                        : PrintToString(fieldValue, level + 1, currentPath);
+                        : PrintToString(fieldValue, level + 1, currentPath, path);
                     sb.Append($"{indentation}{field.Name} = {text}");
                 }
             }
