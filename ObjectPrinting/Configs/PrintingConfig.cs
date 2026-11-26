@@ -85,10 +85,15 @@ public class PrintingConfig<TOwner>
 
         try
         {
-            if (obj is IEnumerable collection)
-                return PrintCollection(collection, nestingLevel + 1, currentPath);
-
-            return PrintObjectMembers(obj, type, nestingLevel + 1, currentPath);
+            switch (obj)
+            {
+                case IDictionary dictionary:
+                    return PrintDictionary(dictionary, nestingLevel + 1, currentPath);
+                case IEnumerable collection:
+                    return PrintCollection(collection, nestingLevel + 1, currentPath);
+                default:
+                    return PrintObjectMembers(obj, type, nestingLevel + 1, currentPath);
+            }
         }
         finally
         {
@@ -126,28 +131,36 @@ public class PrintingConfig<TOwner>
         return result.ToString();
     }
 
+    private string PrintDictionary(IDictionary dictionary, int entryLevel, HashSet<object> currentPath)
+    {
+        var entryIndentation = new string('\t', entryLevel);
+        var memberLevel = entryLevel + 1;
+        var memberIndentation = new string('\t', memberLevel);
+        var result = new StringBuilder().AppendLine(dictionary.GetType().Name);
+        var index = 0;
+
+        foreach (DictionaryEntry entry in dictionary)
+            result.Append(entryIndentation)
+                .Append('[').Append(index++).AppendLine("]") // [0]
+                .Append(memberIndentation).Append("Key = ") // Key = ...
+                .Append(PrintToString(entry.Key, memberLevel, currentPath))
+                .Append(memberIndentation).Append("Value = ") // Value = ...
+                .Append(PrintToString(entry.Value, memberLevel, currentPath));
+
+        return result.ToString();
+    }
+
     private string PrintCollection(
         IEnumerable collection, int itemLevel, HashSet<object> currentPath)
     {
         var indentation = new string('\t', itemLevel);
         var result = new StringBuilder().AppendLine(collection.GetType().Name);
 
-        if (collection is IDictionary dictionary)
-        {
-            foreach (DictionaryEntry entry in dictionary)
-                result.Append(indentation)
-                    .Append('[').Append(entry.Key).Append("] = ")
-                    .Append(PrintToString(entry.Value, itemLevel, currentPath));
-        }
-
-        else
-        {
-            var index = 0;
-            foreach (var item in collection)
-                result.Append(indentation)
-                    .Append('[').Append(index++).Append("] = ")
-                    .Append(PrintToString(item, itemLevel, currentPath));
-        }
+        var index = 0;
+        foreach (var item in collection)
+            result.Append(indentation)
+                .Append('[').Append(index++).Append("] = ")
+                .Append(PrintToString(item, itemLevel, currentPath));
 
         return result.ToString();
     }

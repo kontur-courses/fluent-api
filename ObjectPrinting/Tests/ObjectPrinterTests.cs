@@ -149,8 +149,8 @@ public class ObjectPrinterTests
             .Should().Contain($"\tHeight = {expectedHeight}");
     }
 
-    [TestCase("Alexander", "Ale")]
-    [TestCase("Alex", "Ale")]
+    [TestCase("Alexander", "Ale...")]
+    [TestCase("Alex", "Ale...")]
     [TestCase("Ale", "Ale")]
     [TestCase("Al", "Al")]
     public void TrimmedToLength_TrimsOnlySelectedMember(
@@ -291,10 +291,42 @@ public class ObjectPrinterTests
         var result = ObjectPrinter.For<Dictionary<string, int>>()
             .PrintToString(dictionary);
 
-        var lines = result.Split(Environment.NewLine);
+        result.Should().Contain(string.Join(Environment.NewLine,
+            "\t\tKey = alpha",
+            "\t\tValue = 41"));
 
-        lines.Should().Contain("\t[alpha] = 41");
-        lines.Should().Contain("\t[beta] = 73");
+        result.Should().Contain(string.Join(Environment.NewLine,
+            "\t\tKey = beta",
+            "\t\tValue = 73"));
+    }
+
+    [Test]
+    public void PrintToString_PrintsPropertiesOfComplexDictionaryKeysAndValues()
+    {
+        var dictionary = new Dictionary<DictionaryPerson, DictionaryPerson>
+        {
+            [new DictionaryPerson("Alex")] = new("Chris"),
+            [new DictionaryPerson("Sam")] = new("Pat")
+        };
+
+        var result = ObjectPrinter
+            .For<Dictionary<DictionaryPerson, DictionaryPerson>>()
+            .PrintToString(dictionary);
+
+        var lines = result.Split(Environment.NewLine);
+        lines.Should().ContainInOrder("\t[0]", "\t[1]");
+
+        result.Should().Contain(string.Join(Environment.NewLine,
+            "\t\tKey = DictionaryPerson",
+            "\t\t\tName = Alex",
+            "\t\tValue = DictionaryPerson",
+            "\t\t\tName = Chris"));
+
+        result.Should().Contain(string.Join(Environment.NewLine,
+            "\t\tKey = DictionaryPerson",
+            "\t\t\tName = Sam",
+            "\t\tValue = DictionaryPerson",
+            "\t\t\tName = Pat"));
     }
 
     [Test]
@@ -322,6 +354,11 @@ public class ObjectPrinterTests
 
         result.Split(Environment.NewLine)
             .Should().Contain("\t[0] = <cycle>");
+    }
+
+    private sealed class DictionaryPerson(string name)
+    {
+        public string Name { get; } = name;
     }
 
     private sealed class Sample
