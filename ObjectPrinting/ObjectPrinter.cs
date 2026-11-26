@@ -1,10 +1,11 @@
-namespace ObjectPrinting
+using ObjectPrinting.Configs;
+
+namespace ObjectPrinting;
+
+public static class ObjectPrinter
 {
-    public class ObjectPrinter
+    public static PrintingConfig<T> For<T>()
     {
-        public static PrintingConfig<T> For<T>()
-        {
-            return new PrintingConfig<T>();
-        }
+        return new PrintingConfig<T>();
     }
 }
